@@ -9,3 +9,21 @@ playwright-report/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# Logs
+*.log
+logs/
+
+# Coverage
+coverage/
+*.lcov
+
+# Env/seguridad
+.env
+.env.*.local
+
+# IDE/OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
