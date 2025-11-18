@@ -1,77 +1,55 @@
+// playwright.config.ts
 import { defineConfig, devices } from '@playwright/test';
-
 import * as dotenv from 'dotenv';
-dotenv.config();
 
-/**
- * Read environment variables from file.
- *
- * https://github.com/motdotla/dotenv
- */
-// import dotenv from 'dotenv';
-// import path from 'path';
-// dotenv.config({ path: path.resolve(__dirname, '.env') });
+// Carga de variables por defecto desde .env.test (environment TEST)
+const envName = process.env.ENV || 'test';    
+dotenv.config({ path: `.env.${envName}` });
 
-/**
- * See https://playwright.dev/docs/test-configuration.
- */
+
+const storageByEnv: Record<string, string> = {
+  test: 'storage/state-carrier-test.json',
+  uat:  'storage/state-carrier-uat.json',
+  prod: 'storage/state-carrier-prod.json',
+};
+
 export default defineConfig({
   testDir: './tests',
-  /* Run tests in files in parallel */
   fullyParallel: true,
-  /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
-  /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
-  /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: 'html',
-  /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
+
+  // Login previo y storageState para reutilizar sesión
+  globalSetup: require.resolve('./global-setup'),
+
+  // Opciones compartidas para todos los proyectos
   use: {
-  baseURL: process.env.BASE_URL,
-  // otros flags (headless, viewport, etc.)
+    baseURL: process.env.BASE_URL,
+    storageState: storageByEnv[envName],
+    headless: process.env.HEADLESS === 'true',   // ver punto 3,
+    // trace: 'on-first-retry',
   },
 
-  /* Configure projects for major browsers */
+  // Proyectos por navegador
   projects: [
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
-
     {
       name: 'firefox',
       use: { ...devices['Desktop Firefox'] },
     },
-
     {
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },
     },
-
-    /* Test against mobile viewports. */
-    // {
-    //   name: 'Mobile Chrome',
-    //   use: { ...devices['Pixel 5'] },
-    // },
-    // {
-    //   name: 'Mobile Safari',
-    //   use: { ...devices['iPhone 12'] },
-    // },
-
-    /* Test against branded browsers. */
-    // {
-    //   name: 'Microsoft Edge',
-    //   use: { ...devices['Desktop Edge'], channel: 'msedge' },
-    // },
-    // {
-    //   name: 'Google Chrome',
-    //   use: { ...devices['Desktop Chrome'], channel: 'chrome' },
-    // },
+    // móviles y otros navegadores quedan comentados para cuando los necesites
   ],
 
-  /* Run your local dev server before starting the tests */
+  // webServer opcional si tu app corre local
   // webServer: {
   //   command: 'npm run start',
   //   url: 'http://localhost:3000',

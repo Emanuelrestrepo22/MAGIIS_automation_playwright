@@ -4,13 +4,16 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "npx playwright test",
-    "test:headed": "npx playwright test --headed",
+    "test:test": "ENV=test npx playwright test",
+    "test:test:headed": "ENV=test npx playwright test --headed",
     "test:auth": "npx playwright test tests/specs/auth tests/specs/api",
-    "test:auth": "npx playwright test tests/specs/auth",
     "test:navbar": "npx playwright test tests/specs/navbar",
     "test:smoke": "npx playwright test tests/specs/auth tests/specs/navbar",
-    "test:regression": "npx playwright test"
+    "test:regression": "npx playwright test",
+    "test:uat": "ENV=uat npx playwright test",
+    "test:uat:headed": "ENV=uat npx playwright test --headed",
+    "test:prod:smoke": "ENV=prod npx playwright test tests/specs/smoke",
+    "test:prod:smoke:headed": "ENV=prod npx playwright test tests/specs/smoke --headed"
   },
   "keywords": [],
   "author": "",
