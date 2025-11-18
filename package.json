@@ -4,9 +4,22 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "npx playwright test",
+    "test:headed": "npx playwright test --headed",
+    "test:auth": "npx playwright test tests/specs/auth tests/specs/api",
+    "test:auth": "npx playwright test tests/specs/auth",
+    "test:navbar": "npx playwright test tests/specs/navbar",
+    "test:smoke": "npx playwright test tests/specs/auth tests/specs/navbar",
+    "test:regression": "npx playwright test"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.56.1",
+    "@types/node": "^24.10.1"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3"
+  }
 }
