@@ -1,19 +1,12 @@
 // tests/specs/auth/login-success.e2e.test.ts
-import { test, expect } from '../../TestBase';
+import { test, expect } from '@playwright/test';
+import { LoginPage } from '../../pages/LoginPage';
 
-test.describe('TS-AUTH-XX Login - Portal Carrier', () => {
-  test('TS-AUTH-TC01-validar-login-exitoso-portal-carrier', async ({ loginPage, page }) => {
-    // Arrange
-    const username = process.env.USER_CARRIER as string;
-    const password = process.env.PASS_CARRIER as string;
+test('TS-AUTH-TC01-validar-login-exitoso-portal-carrier', async ({ page }) => {
+  const loginPage = new LoginPage(page);
 
-    // Act
-    await loginPage.goto();
-    await loginPage.login(username, password);
+  await loginPage.goto();
+  await loginPage.login('usuario_qa', 'password_qa');
 
-    // Assert
-    // Suposición: al loguear correctamente se ve algo del home, ejemplo un texto o menú "Gestión de Viajes"
-    const homeTitle = page.getByText('Gestión de Viajes', { exact: false });
-    await expect(homeTitle).toBeVisible();
-  });
+  await expect(page).toHaveURL(/home\/carrier\/dashboard/);
 });

@@ -1,5 +1,5 @@
 // tests/pages/LoginPage.ts
-import { Page, Locator } from '@playwright/test';
+import { Page, Locator, expect } from '@playwright/test';
 
 export class LoginPage {
   private readonly page: Page;
@@ -9,16 +9,22 @@ export class LoginPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.emailInput = page.locator('#email');
-    this.passwordInput = page.locator('#password-input');
-    // Buenas prácticas: evitar CSS full-path; mientras tanto usamos el que tenemos
-    this.loginButton = page.locator(
-      'body > app-root > login-carrier > div > div.auth-page-content > div > div.row.justify-content-center > div > div > div > div.p-2.mt-4 > form > div.mt-4 > button'
-    );
+    this.emailInput = page.getByPlaceholder('Usuario');
+    this.passwordInput = page.getByPlaceholder('Contraseña');
+    this.loginButton = page.getByRole('button', { name: /ingresar/i });
   }
 
   async goto() {
-    await this.page.goto('/'); // usa baseURL del config
+    await this.page.context().clearCookies();
+    const response = await this.page.goto('/carrier/login');
+
+    // 1) Validar que el servidor no devuelva 404/500
+    expect(response?.ok(), 'La página de login debe responder 2xx').toBeTruthy();
+
+    // 2) Validar que realmente estoy viendo el formulario de login
+    await expect(this.emailInput).toBeVisible({
+      timeout: 10_000,
+    });
   }
 
   async login(username: string, password: string) {
