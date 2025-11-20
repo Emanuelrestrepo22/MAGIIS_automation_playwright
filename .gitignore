@@ -19,7 +19,7 @@ coverage/
 *.lcov
 
 # Env/seguridad
-.env
+.env.test
 .env.*.local
 
 # IDE/OS
