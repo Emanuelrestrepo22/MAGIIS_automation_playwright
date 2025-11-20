@@ -5,33 +5,31 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+
 jobs:
   test-e2e:
     runs-on: ubuntu-latest
-    environment: test   # <- usa el environment "test" de Settings > Environments
+    environment: test # usa el Environment "test"
 
     env:
-      ENV: ${{ vars.ENV }}
-      BASE_URL: ${{ vars.BASE_URL }}
-      AUTH_API_URL: ${{ vars.AUTH_API_URL }}
-      USER_CARRIER_ADMIN: ${{ secrets.USER_CARRIER_ADMIN }}
-      PASS_CARRIER_ADMIN: ${{ secrets.PASS_CARRIER_ADMIN }}
+      BASE_URL: ${{ vars.BASE_URL }} # Environment variable
+      AUTH_API_URL: ${{ vars.AUTH_API_URL }} # Environment variable
+      USER_CARRIER_ADMIN: ${{ secrets.USER_CARRIER_ADMIN }} # Environment secret
+      PASS_CARRIER_ADMIN: ${{ secrets.PASS_CARRIER_ADMIN }} # Environment secret
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Crear archivo .env.test
-        run: |
-          cat <<EOF > .env.test
-          ENV=${ENV}
-          BASE_URL=${BASE_URL}
-          AUTH_API_URL=${AUTH_API_URL}
-          USER_CARRIER_ADMIN=${USER_CARRIER_ADMIN}
-          PASS_CARRIER_ADMIN=${PASS_CARRIER_ADMIN}
-          EOF
+    - name: Crear archivo .env.test
+      run: |
+        cat <<EOF > .env.test
+        BASE_URL=${BASE_URL}
+        AUTH_API_URL=${AUTH_API_URL}
+        USER_CARRIER_ADMIN=${USER_CARRIER_ADMIN}
+        PASS_CARRIER_ADMIN=${PASS_CARRIER_ADMIN}
+        EOF
 
-      # Ejemplo: acá iría tu comando de tests
-      - name: Run tests
-        run: |
-          echo "Acá correría tus tests usando .env.test"
+    - name: Run tests
+      run: |
+        echo "Acá correría tus tests usando .env.test"

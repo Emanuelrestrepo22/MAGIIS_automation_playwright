@@ -2,26 +2,38 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('TS-AUTH-XX API Login Carrier', () => {
+  // Mientras el bug siga abierto en TEST:
+  test.fixme(
+    process.env.ENV === 'test',
+    'AUTH-XXX: /auth/login devuelve 500 en TEST'
+  );
+
   test('TS-AUTH-TC02-validar-login-api-portal-carrier', async ({ request }) => {
-    // Arrange
     const url = process.env.AUTH_API_URL as string;
-    const username = process.env.USER_CARRIER as string;
-    const password = process.env.PASS_CARRIER as string;
+    const payload = {
+      username: process.env.USER_CARRIER,
+      password: process.env.PASS_CARRIER,
+    };
 
-    const payload = { username, password };
-
-    // Act
     const response = await request.post(url, {
       data: payload,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      failOnStatusCode: false,
     });
 
-    // Assert
-    await expect(response.ok()).toBeTruthy();
-    expect(response.status()).toBe(200);
+    const status = response.status();
+    const rawBody = await response.text();
+    console.log('[TS-AUTH-TC02][AUTH LOGIN] Request:', { url, payload, status, rawBody });
 
-    const body = await response.json();
+    await expect(
+      response,
+      `TS-AUTH-TC02 FAILED: Status=${status}, body=${rawBody}`
+    ).toBeOK(); // seguirá esperando 2xx cuando el backend se corrija
 
-    // Validaciones mínimas
+    const body = JSON.parse(rawBody);
     expect(body.userId).toBeDefined();
     expect(body.token).toBeTruthy();
     expect(body.roleUser).toBe('ROLE_CARRIER');

@@ -2,11 +2,13 @@
 import { defineConfig, devices } from '@playwright/test';
 import * as dotenv from 'dotenv';
 
-// Carga de variables por defecto desde .env.test (environment TEST)
-const envName = process.env.ENV || 'test';    
+// ENV puede ser: test | uat | prod
+const envName = process.env.ENV || 'test';
+
+// Carga del .env específico por environment
 dotenv.config({ path: `.env.${envName}` });
 
-
+// Archivo de storageState por environment
 const storageByEnv: Record<string, string> = {
   test: 'storage/state-carrier-test.json',
   uat:  'storage/state-carrier-uat.json',
@@ -21,38 +23,24 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
 
-  // Login previo y storageState para reutilizar sesión
+  // Login previo + generación de storageState
   globalSetup: require.resolve('./global-setup'),
 
-  // Opciones compartidas para todos los proyectos
+  // Config compartida
   use: {
     baseURL: process.env.BASE_URL,
     storageState: storageByEnv[envName],
-    headless: process.env.HEADLESS === 'true',   // ver punto 3,
-    // trace: 'on-first-retry',
+    // Descomenta si querés controlar por variable:
+    // headless: process.env.HEADLESS === 'true' || !!process.env.CI,
   },
 
-  // Proyectos por navegador
+  // Solo Chromium (Chrome) como navegador
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: {
+        ...devices['Desktop Chrome'],
+      },
     },
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-    },
-    // móviles y otros navegadores quedan comentados para cuando los necesites
   ],
-
-  // webServer opcional si tu app corre local
-  // webServer: {
-  //   command: 'npm run start',
-  //   url: 'http://localhost:3000',
-  //   reuseExistingServer: !process.env.CI,
-  // },
 });

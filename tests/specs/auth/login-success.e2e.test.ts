@@ -1,12 +1,25 @@
 // tests/specs/auth/login-success.e2e.test.ts
-import { test, expect } from '@playwright/test';
-import { LoginPage } from '../../pages/LoginPage';
+import { test, expect } from '../../TestBase';
 
-test('TS-AUTH-TC01-validar-login-exitoso-portal-carrier', async ({ page }) => {
-  const loginPage = new LoginPage(page);
+test.describe('TS-AUTH-XX Login - Portal Carrier', () => {
+  test('TS-AUTH-TC01-validar-login-exitoso-portal-carrier', async ({ loginPage, page }) => {
+    const username = process.env.USER_CARRIER as string;
+    const password = process.env.PASS_CARRIER as string;
+    console.log('[TS-AUTH-TC01] usando usuario de env:', username);
 
-  await loginPage.goto();
-  await loginPage.login('usuario_qa', 'password_qa');
+    // Arrange + Act
+    await loginPage.goto();
+    await loginPage.login(username, password);
 
-  await expect(page).toHaveURL(/home\/carrier\/dashboard/);
+    // Assert URL correcta
+    await expect(page).toHaveURL('https://apps-test.magiis.com/carrier/#/dashboard', {
+      timeout: 15_000,
+    });
+    // O más flexible:
+    // await expect(page).toHaveURL(/\/carrier\/#\/dashboard$/);
+
+    // Assert header con nombre de usuario
+    const userName = page.locator('span.user-name-text');
+    await expect(userName).toHaveText('S&G Remis', { timeout: 15_000 });
+  });
 });

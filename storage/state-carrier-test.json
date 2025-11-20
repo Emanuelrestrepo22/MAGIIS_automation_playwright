@@ -2,50 +2,50 @@
   "cookies": [
     {
       "name": "dsid",
-      "value": "5997278f-891b-426c-8b71-bc924a19d45a-1763510844733",
+      "value": "22250fb1-c1f4-4374-b2b0-b05340dc9e1f-1763598517014",
       "domain": ".mercadolibre.com",
       "path": "/",
-      "expires": 1798070843.877941,
+      "expires": 1798158516.399096,
       "httpOnly": true,
       "secure": true,
       "sameSite": "None"
     },
     {
       "name": "edsid",
-      "value": "768f043f-9a05-4a2f-afa5-7495c926ff5d-1763510844733",
+      "value": "fd290db7-6e47-45e2-96c3-976072161dd0-1763598517014",
       "domain": ".mercadolibre.com",
       "path": "/",
-      "expires": 1798070843.877959,
+      "expires": 1798158516.399159,
       "httpOnly": true,
       "secure": true,
       "sameSite": "None"
     },
     {
       "name": "_d2id",
-      "value": "8d296687-2f28-41c1-9326-f962a63935b4-n",
+      "value": "8381fc82-9931-404c-a37c-2c465f116b6e-n",
       "domain": ".mercadolibre.com",
       "path": "/",
-      "expires": 1795046843.884003,
+      "expires": 1795134516.404081,
       "httpOnly": false,
       "secure": true,
       "sameSite": "None"
     },
     {
       "name": "_d2id",
-      "value": "8b4242cd-1acb-4876-bd3c-e9e7188cc185-n",
+      "value": "87d927c7-69a8-4275-8010-f39269567d5d-n",
       "domain": ".mercadolivre.com",
       "path": "/",
-      "expires": 1795046844.098832,
+      "expires": 1795134516.777716,
       "httpOnly": false,
       "secure": true,
       "sameSite": "None"
     },
     {
       "name": "p_dsid",
-      "value": "a3b6987c-1da6-4541-b8cf-da059dd263d0-1763510844959",
+      "value": "46e02bf4-d6f2-400f-ae57-715475f2af4c-1763598517333",
       "domain": "www.mercadolivre.com",
       "path": "/",
-      "expires": 1798070844.098969,
+      "expires": 1798158516.777821,
       "httpOnly": true,
       "secure": true,
       "sameSite": "None",
@@ -54,10 +54,10 @@
     },
     {
       "name": "p_edsid",
-      "value": "29568525-d0ec-47ef-aedf-90af80d532ae-1763510844959",
+      "value": "2af71c2a-c22a-4c92-bd31-7f773a414b29-1763598517333",
       "domain": "www.mercadolivre.com",
       "path": "/",
-      "expires": 1798070844.099054,
+      "expires": 1798158516.777882,
       "httpOnly": true,
       "secure": true,
       "sameSite": "None",
@@ -83,7 +83,7 @@
         },
         {
           "name": "0",
-          "value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJyZW1pc2VyaWFtYWdpaXNAZ21haWwuY29tIiwicm9sZXMiOiJST0xFX0NBUlJJRVIiLCJ1c2VyX2FjY2VzcyI6WyJSRVAuMTkiLCJUTUcuMyIsIkNPUCIsIk1HVC4xIiwiUkVQLkcuMSIsIlJFUC5HLjIiLCJSRVAuRy4zIiwiUkVQLkcuNCIsIlJFUC5HLjUiLCJDRkcuWkEiLCJNQi5NTlUiLCJNQi5TYWxlcyIsIk1CLkV4cCIsIk1CLkN1cyIsIk1HVC4yIiwiSE1QIiwiVFJQIiwiUVRTIiwiVE1HIiwiUkNSIiwiQ0xJIiwiQ0xJLkkiLCJDTEkuRSIsIkNBSi5DIiwiQ0FKLlAiLCJDQUouUiIsIkxJUSIsIkxJUS5FIiwiTElRLkkiLCJMSVEuRCIsIkxJUS5PIiwiQ0MiLCJDQy5DIiwiQ0MuRCIsIkNDLk8iLCJDQy5NIiwiVkhDIiwiVkhDLjEiLCJPV04iLCJPV04uMSIsIkRSViIsIkRSVi4xIiwiUkVQIiwiUkVQLjEiLCJSRVAuMiIsIlJFUC4zIiwiUkVQLjQiLCJSRVAuNSIsIlJFUC42IiwiUkVQLjciLCJSRVAuOCIsIlJFUC45IiwiUkVQLjEwIiwiUkVQLjExIiwiUkVQLjEyIiwiUkVQLjEzIiwiUkVQLjE0IiwiUkVQLjE1IiwiUkVQLjE2IiwiUkVQLjE3IiwiQUZJIiwiQUZJLlAiLCJBRkkuTyIsIkFGSS5TIiwiQUZJLjEiLCJBRkkuMiIsIkFGSS4zIiwiR05FVCIsIkdORVQuTyIsIkdORVQuSSIsIkdORVQuQyIsIk1BRyIsIkNGRyIsIkNGRy5QIiwiQ0ZHLlYiLCJDRkcuUyIsIkNGRy5YIiwiQ0ZHLk8iLCJDRkcuTSIsIkNGRy5CIiwiQ0ZHLloiLCJDRkcuQSIsIkNGRy5SIiwiQ0ZHLlUiLCJNQVAiLCJNWUMiLCJNRUwiLCJSRVAuMS4xIiwiTkVXIiwiVE1HLjEiLCJUTUcuMiIsIkNPUC4xLjEiLCJDT1AuMS4yIiwiQ0xJLkkuMSIsIkNMSS5FLjEiLCJDRkcuQyIsIlhYWCIsIk1TRyIsIk5PVCIsIkNGRy5QUkVDSU9TIiwiVE1VIiwiUkVQLjE4Il0sImV4cCI6MTc2NDExNTY0NH0._KNM-NhX6hvar5wV30MA4nPgL2x9GFqB41RCSm8QE7gp5Secb-IcxQRAx6mrBjM_Odk-DEKsWEX1OY1xBjleGg"
+          "value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJyZW1pc2VyaWFtYWdpaXNAZ21haWwuY29tIiwicm9sZXMiOiJST0xFX0NBUlJJRVIiLCJ1c2VyX2FjY2VzcyI6WyJSRVAuMTkiLCJUTUcuMyIsIkNPUCIsIk1HVC4xIiwiUkVQLkcuMSIsIlJFUC5HLjIiLCJSRVAuRy4zIiwiUkVQLkcuNCIsIlJFUC5HLjUiLCJDRkcuWkEiLCJNQi5NTlUiLCJNQi5TYWxlcyIsIk1CLkV4cCIsIk1CLkN1cyIsIk1HVC4yIiwiSE1QIiwiVFJQIiwiUVRTIiwiVE1HIiwiUkNSIiwiQ0xJIiwiQ0xJLkkiLCJDTEkuRSIsIkNBSi5DIiwiQ0FKLlAiLCJDQUouUiIsIkxJUSIsIkxJUS5FIiwiTElRLkkiLCJMSVEuRCIsIkxJUS5PIiwiQ0MiLCJDQy5DIiwiQ0MuRCIsIkNDLk8iLCJDQy5NIiwiVkhDIiwiVkhDLjEiLCJPV04iLCJPV04uMSIsIkRSViIsIkRSVi4xIiwiUkVQIiwiUkVQLjEiLCJSRVAuMiIsIlJFUC4zIiwiUkVQLjQiLCJSRVAuNSIsIlJFUC42IiwiUkVQLjciLCJSRVAuOCIsIlJFUC45IiwiUkVQLjEwIiwiUkVQLjExIiwiUkVQLjEyIiwiUkVQLjEzIiwiUkVQLjE0IiwiUkVQLjE1IiwiUkVQLjE2IiwiUkVQLjE3IiwiQUZJIiwiQUZJLlAiLCJBRkkuTyIsIkFGSS5TIiwiQUZJLjEiLCJBRkkuMiIsIkFGSS4zIiwiR05FVCIsIkdORVQuTyIsIkdORVQuSSIsIkdORVQuQyIsIk1BRyIsIkNGRyIsIkNGRy5QIiwiQ0ZHLlYiLCJDRkcuUyIsIkNGRy5YIiwiQ0ZHLk8iLCJDRkcuTSIsIkNGRy5CIiwiQ0ZHLloiLCJDRkcuQSIsIkNGRy5SIiwiQ0ZHLlUiLCJNQVAiLCJNWUMiLCJNRUwiLCJSRVAuMS4xIiwiTkVXIiwiVE1HLjEiLCJUTUcuMiIsIkNPUC4xLjEiLCJDT1AuMS4yIiwiQ0xJLkkuMSIsIkNMSS5FLjEiLCJDRkcuQyIsIlhYWCIsIk1TRyIsIk5PVCIsIkNGRy5QUkVDSU9TIiwiVE1VIiwiUkVQLjE4Il0sImV4cCI6MTc2NDIwMzMxNX0.voD2cKqcPSvWkBBL3vMVpQY_HJcFraE7JhDrNRUQN4U_3WIvQn8zUXu6C9K1XWv_45mdK8FdHGj4qNAAjXfY6w"
         },
         {
           "name": "17",
@@ -276,7 +276,7 @@
       "localStorage": [
         {
           "name": "ml_jsuuid",
-          "value": "5eb7448e-7271-409c-be10-d388f0fbda6c-1763510844734"
+          "value": "e8c0bd5f-d67c-4d34-8d31-af545ee0eaa4-1763598517017"
         }
       ]
     }
