@@ -1,8 +1,29 @@
 // tests/specs/auth/login-success.e2e.test.ts
 import { test, expect } from '../../TestBase';
+import { DataGenerator } from '../../utils/dataGenerator';
+
+test.describe('TS-AUTH-XX Login negativo', () => {
+  test('TS-AUTH-TC01-login-con-credenciales-invalidas', async ({ loginPage }) => {
+    const { email, password } = DataGenerator.getInvalidCredentials();
+
+    console.log(`[Negativo] Intentando login con: ${email}`);
+
+    // Arrange + Act
+    await loginPage.goto();
+    await loginPage.login(email, password);
+
+    // Assert
+    await expect(await loginPage.isLoginErrorVisible()).toBeTruthy();
+
+    const errorMessage = await loginPage.getLoginErrorMessage();
+    console.log(`[Negativo] Error mostrado en pantalla: "${errorMessage?.trim()}"`);
+
+    await expect(loginPage['errorMessage']).toHaveText('Email or Password is Incorrect.');
+  });
+});
 
 test.describe('TS-AUTH-XX Login - Portal Carrier', () => {
-  test('TS-AUTH-TC01-validar-login-exitoso-portal-carrier', async ({ loginPage, page }) => {
+  test('TS-AUTH-TC02-validar-login-exitoso-portal-carrier', async ({ loginPage, page }) => {
     const username = process.env.USER_CARRIER as string;
     const password = process.env.PASS_CARRIER as string;
     console.log('[TS-AUTH-TC01] usando usuario de env:', username);

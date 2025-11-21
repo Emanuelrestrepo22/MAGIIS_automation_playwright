@@ -21,6 +21,15 @@ export class LoginPage {
     console.log('[LoginPage.goto] status:', response?.status(), 'url:', this.page.url());
   }
 
+  async isLoginErrorVisible(): Promise<boolean> {
+  return await this.errorMessage.isVisible();
+}
+
+  async getLoginErrorMessage(): Promise<string> {
+  return (await this.errorMessage.textContent()) ?? '';
+}
+
+
   async login(username: string, password: string) {
     console.log('[LoginPage.login] usuario:', username);
 
