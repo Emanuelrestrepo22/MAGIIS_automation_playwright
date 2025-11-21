@@ -26,8 +26,8 @@ export class LoginPage {
   return await this.errorMessage.isVisible();
 }
 
-  async getLoginErrorMessage(): Promise<string> {
-  return (await this.errorMessage.textContent()) ?? '';
+  async getLoginErrorMessage(): Promise<string | null> {
+  return await this.errorMessage.textContent();
 }
 
 
