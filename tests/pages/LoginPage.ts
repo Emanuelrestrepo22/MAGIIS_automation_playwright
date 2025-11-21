@@ -1,5 +1,6 @@
 // tests/pages/LoginPage.ts
 import { Page, Locator } from '@playwright/test';
+import { loginSelectors } from '../selectors/login'; // 👈 importar desde selectors
 
 export class LoginPage {
   private readonly page: Page;
@@ -10,10 +11,10 @@ export class LoginPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.emailInput = page.locator('#email');
-    this.passwordInput = page.locator('#password-input');
-    this.loginButton = page.locator('form button[type="submit"]'); // simplificado
-    this.errorMessage = page.locator('span.error-sign-in');
+    this.emailInput = page.locator(loginSelectors.emailInput);
+    this.passwordInput = page.locator(loginSelectors.passwordInput);
+    this.loginButton = page.locator(loginSelectors.submitButton);
+    this.errorMessage = page.locator(loginSelectors.errorMessage);
   }
 
   async goto() {
