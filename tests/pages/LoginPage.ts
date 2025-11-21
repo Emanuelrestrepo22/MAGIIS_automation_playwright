@@ -6,12 +6,14 @@ export class LoginPage {
   private readonly emailInput: Locator;
   private readonly passwordInput: Locator;
   private readonly loginButton: Locator;
+  private readonly errorMessage: Locator;
 
   constructor(page: Page) {
     this.page = page;
     this.emailInput = page.locator('#email');
     this.passwordInput = page.locator('#password-input');
     this.loginButton = page.locator('form button[type="submit"]'); // simplificado
+    this.errorMessage = page.locator('span.error-sign-in');
   }
 
   async goto() {
@@ -29,6 +31,7 @@ export class LoginPage {
     console.log('[LoginPage.login] botones submit encontrados:', buttons);
 
     await this.loginButton.click();
+    console.log('[LoginPage.login] clic en botón login enviado');
     // Sin expect acá: solo dejamos que el test haga las validaciones
   }
 }

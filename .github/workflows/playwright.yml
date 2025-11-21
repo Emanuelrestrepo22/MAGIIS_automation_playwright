@@ -1,25 +1,37 @@
 name: E2E Tests
 
 on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
-
+  pull_request:
+    types: [ closed ]
+    branches:
+    - main
 
 jobs:
   test-e2e:
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
-    environment: test # usa el Environment "test"
+    environment: test
 
     env:
-      BASE_URL: ${{ vars.BASE_URL }} # Environment variable
-      AUTH_API_URL: ${{ vars.AUTH_API_URL }} # Environment variable
-      USER_CARRIER_ADMIN: ${{ secrets.USER_CARRIER_ADMIN }} # Environment secret
-      PASS_CARRIER_ADMIN: ${{ secrets.PASS_CARRIER_ADMIN }} # Environment secret
+      BASE_URL: ${{ vars.BASE_URL }}
+      AUTH_API_URL: ${{ vars.AUTH_API_URL }}
+      USER_CARRIER_ADMIN: ${{ secrets.USER_CARRIER_ADMIN }}
+      PASS_CARRIER_ADMIN: ${{ secrets.PASS_CARRIER_ADMIN }}
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Install Playwright Browsers
+      run: npx playwright install --with-deps
 
     - name: Crear archivo .env.test
       run: |
@@ -30,6 +42,7 @@ jobs:
         PASS_CARRIER_ADMIN=${PASS_CARRIER_ADMIN}
         EOF
 
-    - name: Run tests
+    - name: Run Playwright tests
       run: |
-        echo "Acá correría tus tests usando .env.test"
+        echo "Running tests..."
+        npx playwright test --project=chromium --config=playwright.config.ts --env=.env.test
