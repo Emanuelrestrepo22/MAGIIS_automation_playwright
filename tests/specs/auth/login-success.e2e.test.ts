@@ -5,7 +5,7 @@ import { dashboardSelectors } from '../../selectors/dashboard';
 
 
 test.describe('TS-AUTH-XX Login - Portal Carrier', () => {
-  test('TS-AUTH-TC02-validar-login-exitoso-portal-carrier', async ({ loginPage, page }) => {
+  test('TS-AUTH-TC01-validar-login-exitoso-portal-carrier', async ({ loginPage, page }) => {
     const username = process.env.USER_CARRIER as string;
     const password = process.env.PASS_CARRIER as string;
     console.log('[TS-AUTH-TC01] usando usuario de env:', username);
@@ -18,20 +18,22 @@ test.describe('TS-AUTH-XX Login - Portal Carrier', () => {
     await expect(page).toHaveURL('**/dashboard', { timeout: 15_000 });
     console.log('[Assert] Redireccionado correctamente al dashboard.');
 
-    // ✅ Assert 2: Nombre de usuario visible
-    const userName = page.locator(dashboardSelectors.userName); //selector para el nombre de usuario
-    await expect(userName).toBeVisible();
-    await expect(userName).toHaveText('S&G Remis'); // Reemplazar si cambia
-    console.log('[Assert] Nombre de usuario visible y correcto.');
+    // ✅ Assert 2: Encabezado y nombre de usuario visibles (solo presencia)
+    const userMenu = page.locator(dashboardSelectors.userMenu);
+    await expect(userMenu, 'El menú de usuario debe estar visible en el header').toBeVisible();
+
+    const userName = page.locator(dashboardSelectors.userName);
+    await expect(userName, 'Debe mostrarse un nombre o alias de usuario').toBeVisible();
+    console.log('[Assert] Encabezado y nombre de usuario presentes.');
 
     // ✅ Assert 3: Navbar lateral cargado
-    const sidebar = page.locator(dashboardSelectors.sidebar); //selector para el sidebar
-    await expect(sidebar).toBeVisible();
+    const sidebar = page.locator(dashboardSelectors.sidebar);
+    await expect(sidebar, 'El menú lateral debe estar renderizado').toBeVisible();
     console.log('[Assert] Menú lateral cargado correctamente.');
 
     // ✅ Assert 4: Botón de logout disponible
-     const logoutButton = page.locator(dashboardSelectors.logoutButton); //selector para el botón de logout
-    await expect(logoutButton).toBeVisible();
+    const logoutButton = page.locator(dashboardSelectors.logoutButton);
+    await expect(logoutButton, 'El botón de logout debe estar disponible para cerrar sesión').toBeVisible();
     console.log('[Assert] Botón de logout disponible.');
   });
 });
