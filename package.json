@@ -5,7 +5,6 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-   
     "test:test": "ENV=test npx playwright test",
     "test:test:headed": "ENV=test npx playwright test --headed",
     "test:auth": "npx playwright test tests/specs/auth tests/specs/api",
@@ -16,28 +15,31 @@
     "test:uat:headed": "ENV=uat npx playwright test --headed",
     "test:prod:smoke": "ENV=prod npx playwright test tests/specs/smoke",
     "test:prod:smoke:headed": "ENV=prod npx playwright test tests/specs/smoke --headed",
-
-
     "pw:install": "npx playwright install --with-deps chromium",
     "test:plan": "npx playwright test --reporter=list --project=chromium --list",
     "test:ui": "npx playwright test --ui",
     "test:trace": "npx playwright show-trace",
     "test:debug": "npx playwright test --project=chromium --debug",
-
     "clean:reports": "rm -rf test-results && rm -rf playwright-report && rm -rf allure-results && rm -rf allure-report",
     "allure:gen": "allure generate --clean -o allure-report",
     "allure:open": "npx http-server allure-report -p 7070",
-
- 
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "prettier:check": "npx prettier --check tests/**/*.ts",
     "prettier:fix": "npx prettier --write tests/**/*.ts",
-
-
-    "check:ts": "tsc --noEmit"
+    "check:ts": "tsc --noEmit",
+    "test:login": "pnpm exec playwright test tests/specs/auth/login-success.e2e.test.ts",
+    "test:login:headed": "pnpm exec playwright test tests/specs/auth/login-success.e2e.test.ts --headed"
   },
-  "keywords": ["playwright", "e2e", "typescript", "automation", "qa", "testing", "magiis"],
+  "keywords": [
+    "playwright",
+    "e2e",
+    "typescript",
+    "automation",
+    "qa",
+    "testing",
+    "magiis"
+  ],
   "author": "MAGIIS QA Team",
   "license": "ISC",
   "devDependencies": {
@@ -46,18 +48,18 @@
     "@types/node": "^24.10.1",
     "@typescript-eslint/eslint-plugin": "^8.47.0",
     "@typescript-eslint/parser": "^8.47.0",
+    "allure-commandline": "^2.33.0",
+    "allure-playwright": "^3.2.0",
     "eslint": "^9.39.1",
+    "eslint-import-resolver-alias": "^1.1.2",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-only-warn": "^1.1.0",
     "eslint-plugin-prettier": "^5.5.4",
-    "eslint-import-resolver-alias": "^1.1.2",
     "prettier": "^3.0.0",
     "prettier-eslint": "^16.3.0",
-    "allure-commandline": "^2.33.0",
-    "allure-playwright": "^3.2.0",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.2.0"
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "dotenv": "^17.2.3"

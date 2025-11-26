@@ -1,17 +1,42 @@
-import { defineConfig, PlaywrightTestConfig } from '@playwright/test';
-import MyReporter from './project-root/custom-reporter/MyReporter';
-import * as dotenv from 'dotenv';
-dotenv.config();
+import { defineConfig } from '@playwright/test';
+import dotenv from 'dotenv';
 
-const config: PlaywrightTestConfig = {
+// 🔄 Carga dinámica del archivo .env (ej: ENV_FILE=.env.test)
+dotenv.config({ path: process.env.ENV_FILE || '.env' });
+
+export default defineConfig({
   testDir: './tests/specs',
-  timeout: 30 * 1000,
-  retries: 1,
-  workers: 1,
-  reporter: [
-    [new MyReporter()], // ✅ Instancia del custom reporter
-    ['html', { outputFolder: 'playwright-report', open: 'never' }]
-  ]
-};
+  timeout: 60 * 1000,
+  expect: {
+    timeout: 5000,
+  },
+  fullyParallel: true,
 
-export default defineConfig(config);
+  globalSetup: './global-setup.ts', // ✅ Ejecuta login y guarda storageState
+
+  reporter: [['list'], ['html', { open: 'never' }]],
+
+  use: {
+    baseURL: process.env.BASE_URL,
+    headless: process.env.HEADLESS !== 'false', // ✅ Se puede setear HEADLESS=false en local
+    trace: 'on-first-retry',
+    screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
+    storageState: 'storage/state-carrier-test.json', // ✅ Usa el login guardado
+  },
+
+  projects: [
+    {
+      name: 'chromium',
+      use: { browserName: 'chromium' },
+    },
+    {
+      name: 'firefox',
+      use: { browserName: 'firefox' },
+    },
+    {
+      name: 'webkit',
+      use: { browserName: 'webkit' },
+    },
+  ],
+});

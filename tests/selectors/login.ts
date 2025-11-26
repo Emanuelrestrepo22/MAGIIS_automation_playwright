@@ -1,3 +1,4 @@
+//tests\selectors\login.ts
 export const loginSelectors = {
   emailInput: '#email',
   passwordInput: '#password-input',
