@@ -28,8 +28,9 @@
     "prettier:check": "npx prettier --check tests/**/*.ts",
     "prettier:fix": "npx prettier --write tests/**/*.ts",
     "check:ts": "tsc --noEmit",
-    "test:login": "pnpm exec playwright test tests/specs/auth/login-success.e2e.test.ts",
-    "test:login:headed": "pnpm exec playwright test tests/specs/auth/login-success.e2e.test.ts --headed"
+
+    "test:login": "pnpm exec playwright test tests/specs/auth/login-success.e2e.test.ts --project=chromium",
+    "test:login:headed": "pnpm exec playwright test tests/specs/auth/login-success.e2e.test.ts --project=chromium --headed"
   },
   "keywords": [
     "playwright",
