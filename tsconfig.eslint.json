@@ -1,14 +1,13 @@
-// tsconfig.eslint.json
 {
   "extends": "./tsconfig.json",
   "include": [
-    ".eslintrc.json",         // ✅ ESLint config
-    "**/*.ts"                 // ✅ Todos los archivos TypeScript
+    ".eslintrc.json",
+    "**/*.ts"
   ],
   "exclude": [
-    "node_modules",           // ⛔ Evita analizar dependencias
-    "playwright-report",      // ⛔ Reportes de Playwright (si existen)
-    "dist",                   // ⛔ Código transpilado (opcional)
-    "coverage"                // ⛔ Carpeta de cobertura (si se usa)
+    "node_modules",
+    "playwright-report",
+    "dist",
+    "coverage"
   ]
 }

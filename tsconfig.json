@@ -1,0 +1,38 @@
+{
+  "compilerOptions": {
+    "target": "ES2021",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "ignoreDeprecations": "6.0",
+
+    "rootDirs": ["."],
+    "paths": {
+      "@pages/*": ["tests/pages/*"],
+      "@helper/*": ["tests/helper/*"],
+      "@data/*": ["tests/data/*"],
+      "@type/*": ["tests/interfaces/*"],
+      "@api/*": ["tests/apis/*"],
+      "@TestBase": ["tests/pages/TestBase.ts"],
+      "@playwrightConfig": ["playwright.config.ts"]
+    }
+  },
+  "include": [
+    "./**/*.ts",
+    "global-setup.ts",
+    "playwright.config.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "playwright-report",
+    "test-results",
+    "dist",
+    "coverage"
+  ]
+}
