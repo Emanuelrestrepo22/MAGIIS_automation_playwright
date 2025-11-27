@@ -14,7 +14,7 @@ jobs:
 
     env:
       BASE_URL: ${{ vars.BASE_URL }}
-      AUTH_API_URL: ${{ vars.AUTH_API_URL }}
+      AUTH_API_URL: ${{ vars.AUTH_API_URL }} # ⚠️ Debe existir en Environment "test"
       USER_CARRIER_ADMIN: ${{ secrets.USER_CARRIER_ADMIN }}
       PASS_CARRIER_ADMIN: ${{ secrets.PASS_CARRIER_ADMIN }}
 
@@ -42,7 +42,10 @@ jobs:
         PASS_CARRIER_ADMIN=${PASS_CARRIER_ADMIN}
         EOF
 
-    - name: Run Playwright tests
+    - name: Debug .env.test
+      run: cat .env.test
+
+    - name: Run Playwright tests (chromium + .env.test)
       run: |
         echo "Running tests..."
-        npx playwright test --project=chromium --config=playwright.config.ts --env=.env.test
+        ENV_FILE=.env.test npx playwright test --project=chromium --config=playwright.config.ts
