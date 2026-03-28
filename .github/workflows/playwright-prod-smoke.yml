@@ -1,0 +1,72 @@
+name: Smoke Tests — PROD Environment
+
+on:
+  # Se ejecuta manualmente desde GitHub Actions
+  workflow_dispatch:
+    inputs:
+      headed:
+        description: 'Run with browser visible (headed mode)'
+        required: false
+        default: 'false'
+
+  # Se ejecuta automáticamente al hacer merge a main
+  push:
+    branches: [main]
+
+jobs:
+  smoke-prod:
+    name: Smoke Tests PROD
+    runs-on: ubuntu-latest
+    environment: prod
+
+    env:
+      ENV: prod
+      HEADLESS: true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Browsers (chromium only)
+        run: npx playwright install --with-deps chromium
+
+      - name: Create .env.prod from secrets
+        run: |
+          cat > .env.prod << 'ENVEOF'
+          ENV=prod
+          BASE_URL=${{ vars.PROD_BASE_URL }}
+          AUTH_API_URL=${{ vars.PROD_AUTH_API_URL }}
+          LOGIN_PATH="/#/authentication/login/carrier"
+          DASHBOARD_URL_PATTERN="**dashboard**"
+          USER_CARRIER=${{ secrets.PROD_USER_CARRIER }}
+          PASS_CARRIER=${{ secrets.PROD_PASS_CARRIER }}
+          HEADLESS=true
+          ENVEOF
+
+      - name: Run Smoke Tests (PROD)
+        run: npm run test:prod:smoke
+
+      - name: Upload evidence (screenshots/videos on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: evidence-prod-${{ github.run_number }}
+          path: evidence/prod/artifacts/
+          retention-days: 30
+
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-prod-${{ github.run_number }}
+          path: evidence/prod/report/
+          retention-days: 30

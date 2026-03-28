@@ -1,11 +1,8 @@
 node_modules/
+
+# Playwright artifacts
 test-results/
 playwright-report/
-.env
-.DS_Store
-
-# Playwright
-/playwright-report/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
@@ -18,13 +15,27 @@ logs/
 coverage/
 *.lcov
 
-# Env/seguridad
+# ─── Credenciales y variables de entorno ───────────────────
+# NUNCA subir archivos .env al repositorio
 .env
-.env*
+.env.*
 .env.*.local
 
-# IDE/OS
+# ─── Evidencia y artefactos de ejecución ───────────────────
+# Screenshots, videos y reportes generados por los tests
+evidence/
+
+# Sesiones de autenticación guardadas (contienen cookies/tokens)
+storage/state-carrier-*.json
+
+# Screenshots de debug generados durante desarrollo
+debug-*.png
+
+# ─── IDE/OS ────────────────────────────────────────────────
 .vscode/
 .idea/
 .DS_Store
-Thumbs.dbdebug-login.png
+Thumbs.db
+
+# ─── Claude Code internal ──────────────────────────────────
+.claude/
