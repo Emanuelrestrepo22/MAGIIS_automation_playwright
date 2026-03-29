@@ -38,16 +38,19 @@ jobs:
       - name: Install Playwright Browsers (chromium only)
         run: npx playwright install --with-deps chromium
 
+      - name: Create storage directory
+        run: mkdir -p storage
+
       - name: Create .env.test from secrets
         run: |
           cat > .env.test << 'ENVEOF'
           ENV=test
-          BASE_URL=${{ vars.TEST_BASE_URL }}
-          AUTH_API_URL=${{ vars.TEST_AUTH_API_URL }}
+          BASE_URL=${{ vars.BASE_URL }}
+          AUTH_API_URL=${{ vars.AUTH_API_URL }}
           LOGIN_PATH="/carrier/#/auth/login"
           DASHBOARD_URL_PATTERN="**/dashboard"
-          USER_CARRIER=${{ secrets.TEST_USER_CARRIER }}
-          PASS_CARRIER=${{ secrets.TEST_PASS_CARRIER }}
+          USER_CARRIER=${{ secrets.USER_CARRIER }}
+          PASS_CARRIER=${{ secrets.PASS_CARRIER }}
           HEADLESS=true
           ENVEOF
 

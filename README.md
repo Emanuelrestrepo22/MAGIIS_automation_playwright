@@ -1,7 +1,8 @@
 <!--! MAGIIS AUTOMATION FRAMEWORK -->
-# 🧪 MAGIIS Automation - Playwright (TypeScript) 👨🏻‍💻 QA Framework
+# MAGIIS Automation — Playwright + TypeScript
 
-[![CI Pipeline - E2E Tests](https://github.com/Emanuelrestrepo22/MAGIIS_automation_playwright/actions/workflows/ci-e2e.yml/badge.svg)](https://github.com/Emanuelrestrepo22/MAGIIS_automation_playwright/actions/workflows/ci-e2e.yml)
+[![E2E Tests — TEST](https://github.com/Emanuelrestrepo22/MAGIIS_automation_playwright/actions/workflows/playwright.yml/badge.svg)](https://github.com/Emanuelrestrepo22/MAGIIS_automation_playwright/actions/workflows/playwright.yml)
+[![Smoke Tests — PROD](https://github.com/Emanuelrestrepo22/MAGIIS_automation_playwright/actions/workflows/playwright-prod-smoke.yml/badge.svg)](https://github.com/Emanuelrestrepo22/MAGIIS_automation_playwright/actions/workflows/playwright-prod-smoke.yml)
 
 <!-- TOOLING -->
 [![typescript-logo]][typescript-site]
@@ -9,36 +10,97 @@
 [![github-actions]][github-actions-docu]
 [![eslint]][eslint-site]
 [![node-logo]][node-site]
-[![yarn]][yarn-docu]
 
-Este repositorio contiene el proyecto de automatización de pruebas E2E para la plataforma **MAGIIS**, implementado con **Playwright + TypeScript**. El objetivo es automatizar los **flujos críticos del sistema**, comenzando con el proceso de **Login**, siguiendo buenas prácticas de automatización, estructura POM (Page Object Model), logs de validación y CI/CD.
-
-> 💡 Este framework está diseñado para escalar con el crecimiento funcional de la plataforma MAGIIS.
+Framework de automatización E2E para la plataforma **MAGIIS**, construido con **Playwright + TypeScript**. Cubre flujos críticos con arquitectura POM, gestión multi-entorno, autenticación vía API y pipelines CI/CD por entorno (TEST / UAT / PROD).
 
 ---
 
-## 📁 Estructura del Repositorio
+## Tabla de contenidos
 
-```bash
-├── .github/workflows/         # Pipelines de GitHub Actions
-├── coverage/                  # Documentación de cobertura de pruebas
-├── tests/
-│   ├── pages/                 # Page Objects (estructura POM)
-│   ├── specs/                 # Archivos de prueba e2e
-│   ├── selectors/             # Selectores centralizados por módulo
-│   └── utils/                 # Utilidades: data generator, helpers, etc.
-├── TestBase.ts                # Setup de fixtures personalizados
-├── global-setup.ts           # Setup previo a test run
-├── playwright.config.ts      # Configuración principal de Playwright
-├── tsconfig.json             # Configuración TypeScript
-├── tsconfig.eslint.json      # Configuración ESLint para TS
-├── .env                      # Variables de entorno locales
-└── README.md                 # Documentación general del proyecto
+1. [Arquitectura multi-entorno](#arquitectura-multi-entorno)
+2. [Estructura del repositorio](#estructura-del-repositorio)
+3. [Configuración inicial](#configuración-inicial)
+4. [Variables de entorno](#variables-de-entorno)
+5. [Scripts disponibles](#scripts-disponibles)
+6. [CI/CD — GitHub Actions](#cicd--github-actions)
+7. [Secrets y Variables en GitHub](#secrets-y-variables-en-github)
+8. [Estrategia de pruebas](#estrategia-de-pruebas)
+9. [Cobertura actual](#cobertura-actual)
+10. [Estándares técnicos](#estándares-técnicos)
+11. [Contribuciones](#contribuciones)
+
+---
+
+## Arquitectura multi-entorno
+
+El framework soporta tres entornos con configuración aislada:
+
+| Entorno | Propósito                     | Archivo env  | CI/CD Workflow                |
+|---------|-------------------------------|--------------|-------------------------------|
+| `test`  | Desarrollo diario y regresión | `.env.test`  | `playwright.yml`              |
+| `uat`   | Validación pre-release (UAT)  | `.env.uat`   | _(manual / pendiente CI)_     |
+| `prod`  | Smoke tests en producción     | `.env.prod`  | `playwright-prod-smoke.yml`   |
+
+La variable `ENV` controla qué archivo `.env.<env>` carga `playwright.config.ts` via `dotenv`. El `storageState` y los artefactos de evidencia se segregan por entorno:
+
+```text
+evidence/
+├── test/
+│   ├── artifacts/   # screenshots / videos
+│   └── report/      # HTML report
+├── uat/
+└── prod/
+
+storage/
+├── state-carrier-test.json    # sesión guardada (gitignored)
+├── state-carrier-uat.json
+└── state-carrier-prod.json
 ```
 
 ---
 
-## 🚀 ¿Cómo empezar?
+## Estructura del repositorio
+
+```text
+magiiss-playwright/
+├── .github/
+│   └── workflows/
+│       ├── playwright.yml              # CI — TEST (push/PR a main y develop)
+│       └── playwright-prod-smoke.yml  # CI — PROD smoke (push a main + manual)
+├── tests/
+│   ├── pages/                         # Page Objects (POM)
+│   │   ├── LoginPage.ts
+│   │   ├── DashboardPage.ts
+│   │   └── Navbar.ts
+│   ├── selectors/                     # Selectores centralizados por módulo
+│   │   ├── login.ts
+│   │   └── dashboard.ts
+│   ├── specs/
+│   │   ├── auth/                      # Tests de autenticación E2E
+│   │   │   ├── login-success.e2e.test.ts
+│   │   │   └── login-failure.e2e.test.ts
+│   │   ├── api/                       # Tests de capa API
+│   │   │   └── auth-login.api.test.ts
+│   │   └── smoke/                     # Smoke tests (se ejecutan en PROD)
+│   │       └── login.smoke.test.ts
+│   ├── utils/
+│   │   ├── apiClient.ts               # Cliente HTTP reutilizable
+│   │   └── dataGenerator.ts          # Faker — generación de datos de prueba
+│   └── TestBase.ts                    # Fixtures personalizados (extend test)
+├── storage/                           # storageState por entorno (gitignored)
+├── evidence/                          # Artefactos de ejecución (gitignored)
+├── .env.test                          # Variables locales TEST (gitignored)
+├── .env.uat                           # Variables locales UAT  (gitignored)
+├── .env.prod                          # Variables locales PROD (gitignored)
+├── global-setup.ts                    # Login vía API antes del test run
+├── playwright.config.ts               # Configuración principal Playwright
+├── tsconfig.json
+└── package.json
+```
+
+---
+
+## Configuración inicial
 
 ### 1. Clonar el repositorio
 
@@ -53,103 +115,281 @@ cd MAGIIS_automation_playwright
 npm install
 ```
 
-> También puedes usar `yarn` si tienes `yarn.lock`.
-
-### 3. Instalar navegadores de Playwright
+### 3. Instalar navegadores Playwright
 
 ```bash
-npx playwright install
+npm run pw:install
+# equivalente: npx playwright install --with-deps chromium
 ```
 
-### 4. Crear archivo `.env`
+### 4. Crear archivos de entorno
 
-```env
-# .env
-BASE_URL=xxxxxxxxxx
-USER_CARRIER_ADMIN=xxxxxxxxx
-PASS_CARRIER_ADMIN=xxxxxxxxx
-```
-
-> Nunca publiques este archivo en el repositorio (está en `.gitignore`).
-
----
-
-## 📦 Scripts disponibles
-
-| Comando                    | Descripción                            |
-|---------------------------|----------------------------------------|
-| `npx playwright test`     | Ejecuta todos los tests e2e            |
-| `npx playwright test tests/specs/auth/login-success.e2e.test.ts` | Ejecuta un test específico |
-| `npx playwright show-report` | Abre el último reporte HTML           |
-| `npm run lint`            | Ejecuta ESLint sobre el código fuente  |
-
----
-
-## 📁 Carpeta `coverage/` – ¿Qué contiene?
-
-La carpeta `coverage/` contiene la **documentación funcional de cobertura de pruebas automatizadas** en archivos `.md`, con el detalle de:
-
-- Casos cubiertos y pendientes
-- ID de test, descripciones y escenarios
-- Notas técnicas por flujo funcional
-- Trazabilidad con funcionalidades clave
-
-### Ejemplo de archivos:
+Copia la plantilla para el entorno que necesites (nunca subas estos archivos al repo):
 
 ```bash
-coverage/
-├── login.md                 # Login: validación de credenciales
-├── logout.md                # Logout seguro
-├── navbar.md                # Validación del menú lateral
-├── errors.md                # Mensajes y errores visibles
-├── session-handling.md      # Expiración y control de sesiones
-├── README.md                # Índice de cobertura
+# .env.test
+ENV=test
+BASE_URL=https://test.magiis.com
+AUTH_API_URL=https://test.magiis.com/magiis-v0.2/auth/login
+LOGIN_PATH="/carrier/#/auth/login"
+DASHBOARD_URL_PATTERN="**/dashboard"
+USER_CARRIER=tu-usuario@test.com
+PASS_CARRIER=tu-password
+HEADLESS=true
 ```
 
-Esta documentación permite tener trazabilidad clara entre el sistema y lo que se valida automáticamente en cada ejecución.
+```bash
+# .env.prod
+ENV=prod
+BASE_URL=https://apps.magiis.com
+AUTH_API_URL=https://apps.magiis.com/magiis-v0.2/auth/login
+LOGIN_PATH="/#/authentication/login/carrier"
+DASHBOARD_URL_PATTERN="**dashboard**"
+USER_CARRIER=tu-usuario@prod.com
+PASS_CARRIER=tu-password
+HEADLESS=true
+```
+
+> Todos los archivos `.env.*` están en `.gitignore`. Nunca los publiques.
 
 ---
 
-## 🛠️ Estándares técnicos
+## Variables de entorno
 
-- ✅ Page Object Model (POM)
-- ✅ Arquitectura modular y tipada
-- ✅ Fixtures personalizados
-- ✅ Uso de Faker para generar data dinámica
-- ✅ Validaciones con `expect`
-- ✅ Logs de ejecución visibles en consola
-- ✅ Integración continua (CI) con GitHub Actions
-- ✅ Configuración ESLint + TSConfig
+| Variable                | Descripción                                       | Requerida |
+|-------------------------|---------------------------------------------------|-----------|
+| `ENV`                   | Entorno activo: `test`, `uat`, `prod`             | Sí        |
+| `BASE_URL`              | URL base de la aplicación                         | Sí        |
+| `AUTH_API_URL`          | Endpoint de login (para global-setup vía API)     | Sí        |
+| `LOGIN_PATH`            | Ruta relativa de la página de login               | Sí        |
+| `DASHBOARD_URL_PATTERN` | Patrón de URL para verificar dashboard post-login | Sí        |
+| `USER_CARRIER`          | Usuario de prueba (rol carrier)                   | Sí        |
+| `PASS_CARRIER`          | Contraseña de prueba                              | Sí        |
+| `HEADLESS`              | `true` = sin UI / `false` = con navegador visible | No        |
 
 ---
 
-## 📚 Referencias útiles
+## Scripts disponibles
+
+### TEST (desarrollo diario)
+
+| Comando                      | Descripción                                    |
+|------------------------------|------------------------------------------------|
+| `npm run test:test`          | Todos los tests en TEST (headless)             |
+| `npm run test:test:headed`   | Todos los tests en TEST con navegador visible  |
+| `npm run test:test:smoke`    | Solo smoke tests en TEST                       |
+| `npm run test:test:auth`     | Tests de auth + API en TEST                    |
+| `npm run test:test:debug`    | Modo debug interactivo (Playwright Inspector)  |
+| `npm run test:test:ui`       | Playwright UI Mode                             |
+
+### UAT
+
+| Comando                      | Descripción                          |
+|------------------------------|--------------------------------------|
+| `npm run test:uat:smoke`     | Smoke tests en UAT                   |
+| `npm run test:uat:regression`| Regresión completa en UAT            |
+| `npm run test:uat:headed`    | Regresión en UAT con navegador       |
+
+### PROD
+
+| Comando                            | Descripción                        |
+|------------------------------------|------------------------------------|
+| `npm run test:prod:smoke`          | Smoke tests en PROD (headless)     |
+| `npm run test:prod:smoke:headed`   | Smoke tests en PROD con navegador  |
+| `npm run test:prod:regression`     | Regresión completa en PROD         |
+
+### Utilidades
+
+| Comando                   | Descripción                                    |
+|---------------------------|------------------------------------------------|
+| `npm run test:plan`       | Lista todos los tests sin ejecutarlos          |
+| `npm run test:trace`      | Abre el Playwright Trace Viewer                |
+| `npm run lint`            | ESLint sobre código fuente TypeScript          |
+| `npm run lint:fix`        | Auto-fix de errores ESLint                     |
+| `npm run prettier:fix`    | Auto-format con Prettier                       |
+| `npm run check:ts`        | Verificación de tipos TypeScript               |
+| `npm run clean:all`       | Limpia evidencias, reportes y resultados       |
+
+---
+
+## CI/CD — GitHub Actions
+
+### Workflow 1: `playwright.yml` — E2E Tests (TEST)
+
+**Triggers:**
+
+- Push a `main` o `develop`
+- Pull Request hacia `main`
+- Ejecución manual (`workflow_dispatch`)
+
+**Qué hace:**
+
+1. Checkout del código
+2. Node.js 20 + caché de npm
+3. `npm ci` + instala Chromium
+4. Construye `.env.test` desde GitHub Secrets/Variables del entorno `test`
+5. Ejecuta `npm run test:test`
+6. Sube artefactos de evidencia en fallos (14 días)
+7. Sube reporte HTML siempre (7 días)
+
+---
+
+### Workflow 2: `playwright-prod-smoke.yml` — Smoke Tests (PROD)
+
+**Triggers:**
+
+- Push a `main` (smoke automático post-merge)
+- Ejecución manual (`workflow_dispatch`) con opción `headed`
+
+**Qué hace:**
+
+1. Checkout del código
+2. Node.js 20 + caché de npm
+3. `npm ci` + instala Chromium
+4. Construye `.env.prod` desde GitHub Secrets/Variables del entorno `prod`
+5. Ejecuta `npm run test:prod:smoke`
+6. Sube evidencia en fallos (30 días)
+7. Sube reporte HTML siempre (30 días)
+
+---
+
+## Secrets y Variables en GitHub
+
+Los pipelines construyen el archivo `.env.<env>` en runtime usando secretos y variables configurados **por entorno** en GitHub. **Nunca se hardcodean credenciales en el código.**
+
+> Los secrets y variables son **environment-scoped**: cada entorno (`prod`, `test`, `uat`) tiene su propio conjunto. En el workflow se acceden como `${{ secrets.NOMBRE }}` y `${{ vars.NOMBRE }}` — sin prefijo de entorno, porque GitHub ya los resuelve según el entorno activo del job.
+
+### Entorno `prod` — configuración requerida
+
+#### Secrets (cifrados, solo legibles en Actions)
+
+| Nombre en GitHub  | Variable en `.env.prod` | Descripción              |
+|-------------------|-------------------------|--------------------------|
+| `USER_CARRIER`    | `USER_CARRIER`          | Usuario de prueba PROD   |
+| `PASS_CARRIER`    | `PASS_CARRIER`          | Contraseña de prueba PROD|
+
+#### Variables (visibles, no sensibles)
+
+| Nombre en GitHub | Variable en `.env.prod` | Valor                                            |
+|------------------|-------------------------|--------------------------------------------------|
+| `BASE_URL`       | `BASE_URL`              | `https://apps.magiis.com`                        |
+| `AUTH_API_URL`   | `AUTH_API_URL`          | `https://apps.magiis.com/magiis-v0.2/auth/login` |
+
+### Entorno `test` — configuración requerida
+
+#### Secrets
+
+| Nombre en GitHub  | Variable en `.env.test` | Descripción              |
+|-------------------|-------------------------|--------------------------|
+| `USER_CARRIER`    | `USER_CARRIER`          | Usuario de prueba TEST   |
+| `PASS_CARRIER`    | `PASS_CARRIER`          | Contraseña de prueba TEST|
+
+#### Variables
+
+| Nombre en GitHub | Variable en `.env.test` | Descripción         |
+|------------------|-------------------------|---------------------|
+| `BASE_URL`       | `BASE_URL`              | URL base de TEST    |
+| `AUTH_API_URL`   | `AUTH_API_URL`          | Endpoint auth TEST  |
+
+> Para configurarlos: **GitHub repo → Settings → Environments → [nombre del entorno] → Add secret / Add variable**
+
+---
+
+## Estrategia de pruebas
+
+```text
+TEST  →  UAT  →  PROD
+ ↑          ↑       ↑
+E2E +    Regresión  Smoke
+API       pre-release tests
+tests
+```
+
+| Tipo de test   | Entorno     | Trigger                        | Suite                   |
+|----------------|-------------|--------------------------------|-------------------------|
+| E2E Auth       | TEST        | Push / PR a main o develop     | `tests/specs/auth/`     |
+| API Tests      | TEST        | Push / PR a main o develop     | `tests/specs/api/`      |
+| Regresión UAT  | UAT         | Manual                         | Todos los specs         |
+| Smoke PROD     | PROD        | Push a main / manual           | `tests/specs/smoke/`    |
+
+**Decisiones de diseño:**
+
+- `global-setup.ts` realiza el login vía API antes de la suite y guarda el `storageState` → los tests individuales no hacen login UI, lo que los hace más rápidos y estables.
+- Los tests de smoke en PROD solo validan flujos críticos (login, dashboard) y no modifican datos.
+- Los artefactos (screenshots, videos, reportes) se organizan por entorno y se retienen más tiempo en PROD que en TEST.
+
+---
+
+## Cobertura actual
+
+| Funcionalidad          | Tipo  | Entornos        | Estado      |
+|------------------------|-------|-----------------|-------------|
+| Login exitoso (carrier)| E2E   | test, uat, prod | Completo    |
+| Login fallido          | E2E   | test            | Completo    |
+| Auth vía API           | API   | test            | Completo    |
+| Dashboard post-login   | Smoke | test, prod      | Completo    |
+| Navbar / menú lateral  | E2E   | test            | En progreso |
+| Logout                 | E2E   | test            | Pendiente   |
+| Control de sesión      | E2E   | test            | Pendiente   |
+
+---
+
+## Estándares técnicos
+
+- **Page Object Model (POM)** — lógica de UI separada de los specs
+- **Selectores centralizados** — en `tests/selectors/`, sin selectores inline en los tests
+- **Global Setup vía API** — autenticación pre-suite, storageState reutilizado
+- **Fixtures personalizados** — `TestBase.ts` extiende `test` de Playwright
+- **Multi-entorno** — un único config carga el `.env.<env>` correcto
+- **Evidencia aislada** — artefactos y reportes en `evidence/<env>/`
+- **Credenciales seguras** — nunca en código; en CI via GitHub Secrets; localmente en `.env.*` (gitignored)
+- **TypeScript estricto** — `tsc --noEmit` como verificación de tipos
+- **ESLint + Prettier** — calidad y formato uniforme del código
+
+---
+
+## Contribuciones
+
+### Flujo de ramas
+
+```text
+main        → producción / smoke tests automáticos
+develop     → integración
+feature/*   → nuevas funcionalidades
+fix/*       → correcciones
+```
+
+### Convención de commits
+
+```bash
+git checkout -b feature/MAG-123/validar-login-carrier
+git commit -m "test(auth): agregar validación de login negativo con credenciales inválidas"
+```
+
+Prefijos: `feat`, `fix`, `test`, `chore`, `refactor`, `docs`
+
+### Antes de hacer PR
+
+```bash
+npm run check:ts       # sin errores de tipos
+npm run lint           # sin errores ESLint
+npm run test:test:smoke # smoke local pasa
+```
+
+---
+
+## Referencias
 
 - [Playwright Docs](https://playwright.dev/docs/intro)
 - [TypeScript Docs](https://www.typescriptlang.org/docs/)
-- [Dotenv](https://www.npmjs.com/package/dotenv)
+- [GitHub Actions — Environments](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment)
 - [ESLint](https://eslint.org/)
-- [GitHub Actions](https://docs.github.com/en/actions)
+- [Faker.js](https://fakerjs.dev/)
 
 ---
 
-## 🤝 Contribuciones
-
-Sigue el flujo de ramas y convenciones de commits para mantener el código limpio:
-
-```bash
-git checkout -b feature/GX3-123/validar-login
-git commit -m "test: (GX3-123) agregar validación de login negativo"
-```
-
-Usa el template de Pull Request para documentar cambios y resultados.
-
----
-
-## 📬 Contacto
-
-Proyecto mantenido por el equipo de **QA Automation en MAGIIS**  
-Repositorio: [MAGIIS Automation Playwright](https://github.com/Emanuelrestrepo22/MAGIIS_automation_playwright)
+**Proyecto mantenido por el equipo de QA Automation — MAGIIS**
+[github.com/Emanuelrestrepo22/MAGIIS_automation_playwright](https://github.com/Emanuelrestrepo22/MAGIIS_automation_playwright)
 
 ---
 
@@ -164,21 +404,3 @@ Repositorio: [MAGIIS Automation Playwright](https://github.com/Emanuelrestrepo22
 [eslint-site]: https://eslint.org/
 [node-logo]: https://img.shields.io/badge/node.js-6DA55F?style=for-the-badge&logo=node.js&logoColor=white
 [node-site]: https://nodejs.org/
-[yarn]: https://img.shields.io/badge/yarn-%232C8EBB.svg?style=for-the-badge&logo=yarn&logoColor=white
-[yarn-docu]: https://yarnpkg.com/cli
-# MAGIIS - Cobertura de pruebas E2E
-
-Este directorio contiene el detalle de la cobertura de pruebas automatizadas usando Playwright y TypeScript.
-
-## Índice de funcionalidades cubiertas
-
-| Funcionalidad         | Archivo                | Estado     |
-|----------------------|------------------------|------------|
-| Login                | [login.md](login.md)   | ✅ Completo |
-| Logout               | [logout.md](logout.md) | ⏳ En progreso |
-| Navbar / Menú        | [navbar.md](navbar.md) | ⏳ En progreso |
-| Manejo de sesión     | [session-handling.md](session-handling.md) | ❌ Pendiente |
-| Control de acceso    | [access-control.md](access-control.md) | ❌ Pendiente |
-| Validaciones de error| [errors.md](errors.md) | ✅ Parcial  |
-
-Actualizado por QA Automation Team – `{{fecha}}`
