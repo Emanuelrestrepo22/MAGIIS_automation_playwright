@@ -30,7 +30,7 @@ test.describe('TS-AUTH-XX Login negativo', () => {
 		await test.step('[TS-AUTH-TC02][STEP-01] Navegar a pantalla de login', async () => {
 			await loginPage.goto();
 			const url = page.url();
-			if (!url.includes('/auth/login')) {
+			if (!url.includes('/authentication/login/carrier')) {
 				console.warn(`[${LOGIN_NEGATIVE_FLAGS.NOT_ON_LOGIN_URL}] URL inesperada después de goto: ${url}`);
 			}
 		});
@@ -58,7 +58,7 @@ test.describe('TS-AUTH-XX Login negativo', () => {
 
 			try {
 				// Validamos el copy exacto porque este mensaje forma parte del comportamiento esperado.
-				await expect(loginPage.errorMessage).toHaveText('Email or Password is Incorrect.');
+				await expect(loginPage.errorMessage).toContainText('El usuario y/o contraseña son incorrectos');
 			} catch (err) {
 				console.error(`[${LOGIN_NEGATIVE_FLAGS.ERROR_TEXT_UNEXPECTED}] Texto de error distinto al esperado`);
 				throw err;

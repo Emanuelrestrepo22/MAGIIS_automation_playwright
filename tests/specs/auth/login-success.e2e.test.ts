@@ -22,7 +22,7 @@ test.describe('TS-AUTH-XX Login - Portal Carrier', () => {
 		});
 
 		await test.step('[TS-AUTH-TC01][STEP-03] Validar URL de dashboard', async () => {
-			await expect(page).toHaveURL(/carrier\/#\/dashboard/, {
+			await expect(page).toHaveURL(/#\/home\/carrier\/dashboard/, {
 				timeout: 15_000
 			});
 			console.log('[TS-AUTH-TC01] URL /dashboard OK');

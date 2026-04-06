@@ -1,6 +1,7 @@
 import type { Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 import { getPortalCredentials, getPortalUrl } from '../config/gatewayPortalRuntime';
+import { resolveLoginPath } from '../config/runtime';
 import { STRIPE_CVC, STRIPE_EXPIRY, STRIPE_TEST_CARDS, TEST_DATA } from '../shared/gateway-pg/stripeTestData';
 import { NewTravelPage, ThreeDSModal, ThreeDSErrorPopup, TravelDetailPage, TravelManagementPage } from '../pages/gateway-pg';
 
@@ -11,11 +12,11 @@ export { STRIPE_CVC, STRIPE_EXPIRY, STRIPE_TEST_CARDS, TEST_DATA, getPortalUrl }
 export async function loginAsDispatcher(page: Page): Promise<void> {
 	// Login rápido del portal carrier para journeys disparados por dispatcher.
 	const { user, pass } = getPortalCredentials('carrier');
-	await page.goto(`${getPortalUrl('carrier')}/login`);
-	await page.getByLabel('Email').fill(user);
-	await page.getByLabel('Contraseña').fill(pass);
-	await page.getByRole('button', { name: 'Ingresar' }).click();
-	await page.waitForURL('**/dashboard**', { timeout: 15_000 });
+	await page.goto(`${getPortalUrl('carrier')}${resolveLoginPath('carrier')}`);
+	await page.locator('input[placeholder="Email"]').fill(user);
+	await page.locator('input[placeholder="Contraseña"]').fill(pass);
+	await page.locator('button[type="submit"]').click();
+	await page.waitForURL('**dashboard**', { timeout: 15_000 });
 }
 
 export async function loginAsPax(page: Page): Promise<void> {
