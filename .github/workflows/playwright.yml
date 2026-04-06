@@ -2,9 +2,9 @@ name: E2E Tests — TEST Environment
 
 on:
   push:
-    branches: [main, develop]
+    branches: [ main, develop ]
   pull_request:
-    branches: [main]
+    branches: [ main ]
   workflow_dispatch:
     inputs:
       headed:
@@ -16,70 +16,70 @@ jobs:
   e2e-test:
     name: E2E Tests (TEST)
     runs-on: ubuntu-latest
-    environment: test
+    environment: TEST
 
     env:
       ENV: test
       HEADLESS: true
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 10
 
-      - name: Setup Node.js 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: pnpm
+    - name: Setup Node.js 20
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        cache: pnpm
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
 
-      - name: Install Playwright Browsers (chromium only)
-        run: pnpm exec playwright install --with-deps chromium
+    - name: Install Playwright Browsers (chromium only)
+      run: pnpm exec playwright install --with-deps chromium
 
-      - name: Create storage directory
-        run: mkdir -p storage
+    - name: Create storage directory
+      run: mkdir -p storage
 
-      - name: Create .env.test from secrets
-        run: |
-          cat > .env.test << 'ENVEOF'
-          ENV=test
-          BASE_URL=${{ vars.BASE_URL }}
-          AUTH_API_URL=${{ vars.AUTH_API_URL }}
-          LOGIN_PATH="/#/authentication/login/carrier"
-          DASHBOARD_URL_PATTERN="dashboard"
-          USER_CARRIER=${{ secrets.USER_CARRIER }}
-          PASS_CARRIER=${{ secrets.PASS_CARRIER }}
-          HEADLESS=true
-          ENVEOF
-          # Validar que los secrets no estén vacíos
-          if grep -q "^USER_CARRIER=$" .env.test || grep -q "^PASS_CARRIER=$" .env.test; then
-            echo "❌ ERROR: USER_CARRIER o PASS_CARRIER vacíos en GitHub Secrets"
-            echo "Configurar en: Settings → Secrets and variables → Actions"
-            exit 1
-          fi
+    - name: Create .env.test from secrets
+      run: |
+        cat > .env.test << 'ENVEOF'
+        ENV=test
+        BASE_URL=${{ vars.BASE_URL }}
+        AUTH_API_URL=${{ vars.AUTH_API_URL }}
+        LOGIN_PATH="/#/authentication/login/carrier"
+        DASHBOARD_URL_PATTERN="dashboard"
+        USER_CARRIER=${{ secrets.USER_CARRIER }}
+        PASS_CARRIER=${{ secrets.PASS_CARRIER }}
+        HEADLESS=true
+        ENVEOF
+        # Validar que los secrets no estén vacíos
+        if grep -q "^USER_CARRIER=$" .env.test || grep -q "^PASS_CARRIER=$" .env.test; then
+          echo "❌ ERROR: USER_CARRIER o PASS_CARRIER vacíos en GitHub Secrets"
+          echo "Configurar en: Settings → Secrets and variables → Actions"
+          exit 1
+        fi
 
-      - name: Run E2E Tests (TEST)
-        run: pnpm run test:test
+    - name: Run E2E Tests (TEST)
+      run: pnpm run test:test
 
-      - name: Upload evidence on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: evidence-test-${{ github.run_number }}
-          path: evidence/test/
-          retention-days: 14
+    - name: Upload evidence on failure
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: evidence-test-${{ github.run_number }}
+        path: evidence/test/
+        retention-days: 14
 
-      - name: Upload HTML report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: report-test-${{ github.run_number }}
-          path: evidence/test/report/
-          retention-days: 7
+    - name: Upload HTML report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: report-test-${{ github.run_number }}
+        path: evidence/test/report/
+        retention-days: 7
