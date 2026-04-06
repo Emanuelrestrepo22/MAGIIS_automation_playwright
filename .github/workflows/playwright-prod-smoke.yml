@@ -27,17 +27,22 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
+          cache: pnpm
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Install Playwright Browsers (chromium only)
-        run: npx playwright install --with-deps chromium
+        run: pnpm exec playwright install --with-deps chromium
 
       - name: Create storage directory
         run: mkdir -p storage
@@ -49,14 +54,14 @@ jobs:
           BASE_URL=${{ vars.BASE_URL }}
           AUTH_API_URL=${{ vars.AUTH_API_URL }}
           LOGIN_PATH="/#/authentication/login/carrier"
-          DASHBOARD_URL_PATTERN="**dashboard**"
+          DASHBOARD_URL_PATTERN="dashboard"
           USER_CARRIER=${{ secrets.USER_CARRIER }}
           PASS_CARRIER=${{ secrets.PASS_CARRIER }}
           HEADLESS=true
           ENVEOF
 
       - name: Run Smoke Tests (PROD)
-        run: npm run test:prod:smoke
+        run: pnpm run test:prod:smoke
 
       - name: Upload evidence (screenshots/videos on failure)
         if: failure()
