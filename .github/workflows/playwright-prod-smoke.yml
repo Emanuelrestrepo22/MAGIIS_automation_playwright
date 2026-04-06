@@ -59,6 +59,12 @@ jobs:
           PASS_CARRIER=${{ secrets.PASS_CARRIER }}
           HEADLESS=true
           ENVEOF
+          # Validar que los secrets no estén vacíos
+          if grep -q "^USER_CARRIER=$" .env.prod || grep -q "^PASS_CARRIER=$" .env.prod; then
+            echo "❌ ERROR: USER_CARRIER o PASS_CARRIER vacíos en GitHub Secrets"
+            echo "Configurar en: Settings → Secrets and variables → Actions"
+            exit 1
+          fi
 
       - name: Run Smoke Tests (PROD)
         run: pnpm run test:prod:smoke

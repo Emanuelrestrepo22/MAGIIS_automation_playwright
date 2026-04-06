@@ -58,6 +58,12 @@ jobs:
           PASS_CARRIER=${{ secrets.PASS_CARRIER }}
           HEADLESS=true
           ENVEOF
+          # Validar que los secrets no estén vacíos
+          if grep -q "^USER_CARRIER=$" .env.test || grep -q "^PASS_CARRIER=$" .env.test; then
+            echo "❌ ERROR: USER_CARRIER o PASS_CARRIER vacíos en GitHub Secrets"
+            echo "Configurar en: Settings → Secrets and variables → Actions"
+            exit 1
+          fi
 
       - name: Run E2E Tests (TEST)
         run: pnpm run test:test
