@@ -13,11 +13,13 @@ const LOGIN_NEGATIVE_FLAGS = {
 } as const;
 
 test.describe('TS-AUTH-XX Login negativo', () => {
-	// ⚠️ Evitamos storageState logueado, para que exista pantalla de login
-	test.use({ storageState: undefined });
+	// Evitamos storageState logueado para garantizar que el test empiece
+	// siempre en la pantalla real de autenticación.
+	test.use({ role: 'carrier', storageState: undefined });
 
 	test.beforeEach(() => {
-		// Datos reproducibles si hace falta debugear un caso puntual
+		// Semilla fija para poder reproducir exactamente las credenciales inválidas
+		// cuando haya que investigar un fallo puntual.
 		DataGenerator.seedOnce();
 	});
 
@@ -41,6 +43,8 @@ test.describe('TS-AUTH-XX Login negativo', () => {
 			const errorVisible = await loginPage.isLoginErrorVisible();
 			console.log(`[TS-AUTH-TC02][CHECK] ¿Error visible?: ${errorVisible}`);
 
+			// Dejamos flags de diagnóstico porque en UI negativa suele ser clave
+			// diferenciar entre "no hubo error" y "hubo error pero no visible".
 			if (!errorVisible) {
 				console.error(`[${LOGIN_NEGATIVE_FLAGS.ERROR_NOT_VISIBLE}] No se mostró el mensaje de error esperado`);
 			}
@@ -53,6 +57,7 @@ test.describe('TS-AUTH-XX Login negativo', () => {
 			console.log(`[TS-AUTH-TC02][CHECK] Mensaje recibido: "${errorMessage?.trim()}"`);
 
 			try {
+				// Validamos el copy exacto porque este mensaje forma parte del comportamiento esperado.
 				await expect(loginPage.errorMessage).toHaveText('Email or Password is Incorrect.');
 			} catch (err) {
 				console.error(`[${LOGIN_NEGATIVE_FLAGS.ERROR_TEXT_UNEXPECTED}] Texto de error distinto al esperado`);

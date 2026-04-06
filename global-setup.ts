@@ -1,46 +1,55 @@
 //global-setup.ts
 import type { FullConfig } from "@playwright/test";
-import { chromium } from '@playwright/test';
-import * as dotenv from 'dotenv';
-import { loginSelectors } from './tests/selectors/login';
+import { chromium } from "@playwright/test";
+import * as dotenv from "dotenv";
+import { loginSelectors } from "./tests/selectors/login";
 
 async function globalSetup(config: FullConfig) {
+  // Este setup "legacy" prepara una sola sesión carrier y guarda su storageState.
+  // Sigue siendo útil para entender el flujo base de autenticación sin la capa multi-role.
+
   // Carga el .env correcto según ENV_FILE o el entorno (ENV)
-  const envFile = process.env.ENV_FILE ?? `.env.${process.env.ENV ?? 'test'}`;
+  const envFile = process.env.ENV_FILE ?? `.env.${process.env.ENV ?? "test"}`;
   dotenv.config({ path: envFile });
 
-  const env = process.env.ENV ?? 'test';
+  // Leemos toda la configuración necesaria al inicio para fallar rápido si falta algo.
+  const env = process.env.ENV ?? "test";
   const baseUrl = process.env.BASE_URL;
   const username = process.env.USER_CARRIER;
   const password = process.env.PASS_CARRIER;
-  const loginPath = process.env.LOGIN_PATH ?? '/carrier/#/auth/login';
-  const dashboardPattern = process.env.DASHBOARD_URL_PATTERN ?? '**/dashboard';
+  const loginPath = process.env.LOGIN_PATH ?? "/carrier/#/auth/login";
+  const dashboardPattern = process.env.DASHBOARD_URL_PATTERN ?? "**/dashboard";
   const storageStatePath = `storage/state-carrier-${env}.json`;
 
   if (!baseUrl) throw new Error(`❌ BASE_URL no está definida en ${envFile}`);
   if (!username)
-		throw new Error(`❌ USER_CARRIER no está definida en ${envFile}`);
+    throw new Error(`❌ USER_CARRIER no está definida en ${envFile}`);
   if (!password)
-		throw new Error(`❌ PASS_CARRIER no está definida en ${envFile}`);
+    throw new Error(`❌ PASS_CARRIER no está definida en ${envFile}`);
 
   console.log(`[GlobalSetup] Entorno: ${env.toUpperCase()}`);
   console.log(`[GlobalSetup] Navegando a: ${baseUrl}${loginPath}`);
 
+  // Abrimos un navegador real porque necesitamos ejecutar el login completo
+  // y capturar cookies/localStorage tal como lo haría un usuario.
   const browser = await chromium.launch({
-    headless: process.env.HEADLESS !== 'false',
+    headless: process.env.HEADLESS !== "false",
   });
   const page = await browser.newPage();
 
-  await page.goto(`${baseUrl}${loginPath}`, { waitUntil: 'load' });
+  await page.goto(`${baseUrl}${loginPath}`, { waitUntil: "load" });
 
+  // Primero esperamos los campos mínimos del formulario para asegurarnos
+  // de que la pantalla de autenticación terminó de renderizar.
   const emailInput = page.locator(loginSelectors.emailInput);
-  console.log('[GlobalSetup] Esperando que #email sea visible...');
-  await emailInput.waitFor({ state: 'visible', timeout: 15000 });
+  console.log("[GlobalSetup] Esperando que #email sea visible...");
+  await emailInput.waitFor({ state: "visible", timeout: 15000 });
 
   const passwordInput = page.locator(loginSelectors.passwordInput);
   const loginButton = page.locator(loginSelectors.submitButton);
 
-  console.log('[GlobalSetup] Completando login con usuario:', username);
+  // Reproducimos el login manual paso a paso para obtener un estado autenticado confiable.
+  console.log("[GlobalSetup] Completando login con usuario:", username);
   await emailInput.fill(username);
   await passwordInput.fill(password);
   await loginButton.click();
@@ -50,11 +59,13 @@ async function globalSetup(config: FullConfig) {
     (pattern) => window.location.href.includes(pattern),
     "dashboard",
     { timeout: 20000 },
-	);
+  );
 
   console.log(`[GlobalSetup] Login exitoso. URL actual: ${page.url()}`);
   console.log(`[GlobalSetup] Guardando estado en: ${storageStatePath}`);
 
+  // Persistimos el estado para que los tests arranquen ya autenticados
+  // y no repitan el login en cada ejecución.
   await page.context().storageState({ path: storageStatePath });
 
   await browser.close();

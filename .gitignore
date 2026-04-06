@@ -24,6 +24,7 @@ coverage/
 # ─── Evidencia y artefactos de ejecución ───────────────────
 # Screenshots, videos y reportes generados por los tests
 evidence/
+tests/mobile/appium/.generated/
 
 # Sesiones de autenticación guardadas (contienen cookies/tokens)
 storage/state-carrier-*.json
@@ -39,3 +40,11 @@ Thumbs.db
 
 # ─── Claude Code internal ──────────────────────────────────
 .claude/
+.agents/
+
+# ─── Documentos de entorno de trabajo local ────────────────
+# Archivos .md generados por Claude Code para contexto local,
+# no forman parte del código ni la documentación del proyecto.
+CLAUDE.md
+ARCHITECTURE.md
+GATEWAY_PG_ARCHITECTURE.md

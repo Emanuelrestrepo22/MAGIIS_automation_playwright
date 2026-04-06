@@ -9,26 +9,31 @@
     "test:test": "cross-env ENV=test npx playwright test --project=chromium",
     "test:test:headed": "cross-env ENV=test npx playwright test --project=chromium --headed",
     "test:test:auth": "cross-env ENV=test npx playwright test tests/specs/auth tests/specs/api --project=chromium",
+    "test:test:gateway-pg": "cross-env ENV=test npx playwright test -c playwright.gateway-pg.config.ts",
+    "test:test:gateway-pg:stripe": "cross-env ENV=test npx playwright test tests/specs/gateway-pg/stripe -c playwright.gateway-pg.config.ts",
+    "test:test:gateway-pg:3ds": "cross-env ENV=test npx playwright test tests/specs/gateway-pg/3ds-failure.spec.ts --project=chromium --workers=1",
+    "test:test:e2e:flow1:web": "cross-env ENV=test npx playwright test tests/specs/e2e-flows/flow1-carrier-web-driver-app.e2e.spec.ts --project=chromium --workers=1",
+    "test:test:e2e:flow2": "cross-env ENV=test npx playwright test tests/specs/e2e-flows/flow2-passenger-app-driver-app.e2e.spec.ts --project=chromium",
     "test:test:smoke": "cross-env ENV=test npx playwright test tests/specs/smoke --project=chromium",
     "test:test:regression": "cross-env ENV=test npx playwright test --project=chromium",
     "test:test:ui": "cross-env ENV=test npx playwright test --ui",
     "test:test:debug": "cross-env ENV=test npx playwright test --project=chromium --debug",
-
     "---REGRESSION (UAT)---": "─── Regresión en UAT ───",
     "test:uat:smoke": "cross-env ENV=uat npx playwright test tests/specs/smoke --project=chromium",
     "test:uat:regression": "cross-env ENV=uat npx playwright test --project=chromium",
     "test:uat:headed": "cross-env ENV=uat npx playwright test --project=chromium --headed",
-
     "---REGRESSION (PROD)---": "─── Regresión en PROD ───",
     "test:prod:smoke": "cross-env ENV=prod npx playwright test tests/specs/smoke --project=chromium",
     "test:prod:smoke:headed": "cross-env ENV=prod npx playwright test tests/specs/smoke --project=chromium --headed",
     "test:prod:regression": "cross-env ENV=prod npx playwright test --project=chromium",
-
     "---UTILS---": "─── Utilidades ───",
     "pw:install": "npx playwright install --with-deps chromium",
     "test:plan": "npx playwright test --reporter=list --project=chromium --list",
     "test:ui": "npx playwright test --ui",
     "test:trace": "npx playwright show-trace",
+    "appium:mcp:driver:config": "node tests/mobile/appium/scripts/generateAppiumMcpConfig.mjs driver",
+    "appium:mcp:passenger:config": "node tests/mobile/appium/scripts/generateAppiumMcpConfig.mjs passenger",
+    "appium:mcp:help": "node tests/mobile/appium/scripts/generateAppiumMcpConfig.mjs --help",
     "clean:evidence": "rm -rf evidence",
     "clean:all": "rm -rf evidence test-results playwright-report allure-results allure-report",
     "allure:gen": "allure generate --clean -o allure-report",
@@ -58,6 +63,7 @@
     "@types/node": "^24.10.1",
     "@typescript-eslint/eslint-plugin": "^8.47.0",
     "@typescript-eslint/parser": "^8.47.0",
+    "@wdio/globals": "^9.27.0",
     "allure-commandline": "^2.33.0",
     "allure-playwright": "^3.2.0",
     "cross-env": "^7.0.3",
@@ -71,9 +77,12 @@
     "prettier-eslint": "^16.3.0",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "webdriverio": "^9.27.0",
+    "xlsx": "^0.18.5"
   },
   "dependencies": {
-    "dotenv": "^17.2.3"
+    "dotenv": "^17.2.3",
+    "openai": "^6.33.0"
   }
 }

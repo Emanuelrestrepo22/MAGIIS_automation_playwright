@@ -1,5 +1,5 @@
 // tests/specs/smoke/login.smoke.test.ts
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../../TestBase';
 import { LoginPage } from '../../pages/LoginPage';
 import { loginSelectors } from '../../selectors/login';
 import { DataGenerator } from '../../utils/dataGenerator';
@@ -7,14 +7,18 @@ import { DataGenerator } from '../../utils/dataGenerator';
 const env = process.env.ENV ?? 'test';
 
 test.describe(`[SMOKE][${env.toUpperCase()}] Login - Portal Carrier`, () => {
-	// Sesión limpia para validar login desde cero en cada test
-	test.use({ storageState: { cookies: [], origins: [] } });
+	// Smoke de login siempre parte desde sesión limpia para detectar rápido
+	// problemas reales de autenticación en el ambiente.
+	test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
 
 	test.beforeEach(() => {
+		// Repetibilidad para que el caso negativo sea fácil de reconstruir.
 		DataGenerator.seedOnce();
 	});
 
 	test('SMOKE-AUTH-TC01 - Login exitoso con credenciales válidas', async ({ page }) => {
+		// En smoke usamos credenciales reales del ambiente porque queremos
+		// validar la disponibilidad básica del portal.
 		const username = process.env.USER_CARRIER as string;
 		const password = process.env.PASS_CARRIER as string;
 		const loginPage = new LoginPage(page);
@@ -28,6 +32,8 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Login - Portal Carrier`, () => {
 		});
 
 		await test.step('[SMOKE-AUTH-TC01][STEP-03] Validar que ya no estamos en pantalla de login', async () => {
+			// Para smoke alcanza con confirmar que el formulario desapareció:
+			// es una señal barata y estable de que el login funcionó.
 			const loginInput = page.locator(loginSelectors.emailInput);
 			await expect(loginInput).toBeHidden({ timeout: 20_000 });
 			console.log(`[SMOKE-AUTH-TC01] Login exitoso en ${env.toUpperCase()} ✅`);
@@ -35,6 +41,8 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Login - Portal Carrier`, () => {
 	});
 
 	test('SMOKE-AUTH-TC02 - Login fallido con credenciales inválidas', async ({ page }) => {
+		// Este segundo smoke cubre el guardrail mínimo del formulario:
+		// rechazar credenciales incorrectas mostrando feedback al usuario.
 		const { email, password } = DataGenerator.getInvalidCredentials();
 		console.log(`[SMOKE-AUTH-TC02][DATA] email: ${email} | password: ${password}`);
 		const loginPage = new LoginPage(page);

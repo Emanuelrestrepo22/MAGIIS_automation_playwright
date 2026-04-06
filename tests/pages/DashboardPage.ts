@@ -1,14 +1,16 @@
 // tests/pages/DashboardPage.ts
 import type { Page } from '@playwright/test';
 import { expect } from '@playwright/test';
-import { SuperPage } from './SuperPage.bak';
+import { SuperPage } from './SuperPage';
 
 export class DashboardPage extends SuperPage {
 	constructor(page: Page) {
 		super(page);
 	}
 
-	// Versión básica: URL + ancla "New Trip"
+	// Validación mínima pero confiable del dashboard:
+	// 1. confirmar que salimos del login por URL
+	// 2. confirmar que el shell principal del portal ya es visible
 	async ensureDashboardLoaded(): Promise<void> {
 		console.log('[DashboardPage.ensureDashboardLoaded][S00] Validando URL /dashboard...');
 		await expect(this.page).toHaveURL(/.*dashboard/, { timeout: 15_000 });

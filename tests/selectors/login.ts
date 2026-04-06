@@ -1,10 +1,10 @@
 //tests\selectors\login.ts
 
 const loginSelectorsTest = {
-	emailInput: '#email',
-	passwordInput: '#password-input',
-	submitButton: 'form button[type="submit"]',
-	errorMessage: 'span.error-sign-in'
+	emailInput: 'input[placeholder="Email"]',
+	passwordInput: 'input[placeholder="Contraseña"]',
+	submitButton: 'button[type="submit"]',
+	errorMessage: '.toast-message'
 };
 
 const loginSelectorsProd = {
