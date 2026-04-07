@@ -18,9 +18,10 @@ export class LoginPage {
 		this.page = page;
 		this.role = role;
 		this.baseURL = baseURL;
-		this.emailInput = page.getByRole('textbox', { name: /Email|eMail/i });
-		this.passwordInput = page.getByRole('textbox', { name: /Contrase\u00f1a|Password/i });
-		this.loginButton = page.getByRole('button', { name: /Ingresar|Login/i });
+		// Selectores validados contra magiis-fe source (input[formcontrolname] es atributo Angular estable)
+		this.emailInput = page.locator('input[formcontrolname="email"]');
+		this.passwordInput = page.locator('input[formcontrolname="password"]');
+		this.loginButton = page.locator('button[type="submit"]');
 		this.errorMessage = page.locator('.toast-message, div.toast-message');
 	}
 
