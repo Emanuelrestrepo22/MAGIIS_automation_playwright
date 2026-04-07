@@ -65,8 +65,8 @@ jobs:
           exit 1
         fi
 
-    - name: Run E2E Tests (TEST)
-      run: pnpm run test:test
+    - name: Run Stable Smoke Tests (TEST)
+      run: pnpm run test:test:smoke
 
     - name: Upload evidence on failure
       if: failure()

@@ -30,20 +30,27 @@
  */
 
 import { test, expect } from '../../TestBase';
+import { loginAsDispatcher } from '../../fixtures/gateway.fixtures';
 import { NewTravelPage }    from '../../pages/NewTravelPage';
 import { TravelDetailPage } from '../../pages/TravelDetailPage';
 import { GatewayPgJourneyOrchestrator } from '../../shared/orchestration/GatewayPgJourneyOrchestrator';
+import { TEST_DATA } from '../../shared/gateway-pg/stripeTestData';
 import { STRIPE_TEST_CARDS } from '../../data/stripe-cards';
 
 const orchestrator = new GatewayPgJourneyOrchestrator();
 
 test.describe('[E2E-FLOW-1] Carrier Web → Driver App @regression @stripe @hybrid-e2e', () => {
+  test.fixme(true, 'BLOQUEADO: requiere Appium Server + emulador Android activo. Fase mobile no implementada.');
 
-  test.use({ role: 'carrier' });
+  test.use({ role: 'carrier', storageState: undefined });
+
+  test.beforeEach(async ({ page }) => {
+    await loginAsDispatcher(page);
+  });
 
   test('FLOW1-TC01-validar-alta-viaje-web-handoff-a-driver', async ({ page }) => {
     // Precondiciones:
-    //   - Dispatcher autenticado en portal Carrier (storageState)
+    //   - Dispatcher autenticado en portal Carrier mediante LoginPage
     //   - Pasajero con tarjeta Stripe vinculada (visa_success: 4242424242424242)
     //   - Ambiente: TEST con Stripe en test mode
     //   - Driver app lista para recibir solicitudes (fase Appium — separada)
@@ -65,18 +72,16 @@ test.describe('[E2E-FLOW-1] Carrier Web → Driver App @regression @stripe @hybr
       await travelPage.goto();
     });
 
-    await test.step('[FLOW1-TC01][STEP-02] Completar datos del viaje', async () => {
-      // TODO: reemplazar con datos reales del ambiente TEST
-      await travelPage.searchPassenger('Juan Pérez Test');
-      await travelPage.setOrigin('Av. Corrientes 1234, CABA');
-      await travelPage.setDestination('Av. Santa Fe 5678, CABA');
+    await test.step('[FLOW1-TC01][STEP-02] Completar datos y tarjeta del viaje', async () => {
+      await travelPage.fillMinimum({
+        passenger: TEST_DATA.passenger,
+        origin: TEST_DATA.origin,
+        destination: TEST_DATA.destination,
+        cardLast4: STRIPE_TEST_CARDS.visa_success.last4,
+      });
     });
 
-    await test.step('[FLOW1-TC01][STEP-03] Seleccionar tarjeta de pago', async () => {
-      await travelPage.selectCard(STRIPE_TEST_CARDS.visa_success.last4);
-    });
-
-    await test.step('[FLOW1-TC01][STEP-04] Crear viaje — sistema procesa hold', async () => {
+    await test.step('[FLOW1-TC01][STEP-03] Crear viaje — sistema procesa hold', async () => {
       // Assert: validar respuesta de la API de pagos
       const [response] = await Promise.all([
         page.waitForResponse(
@@ -93,7 +98,7 @@ test.describe('[E2E-FLOW-1] Carrier Web → Driver App @regression @stripe @hybr
       });
     });
 
-    await test.step('[FLOW1-TC01][STEP-05] Verificar estado SEARCHING_DRIVER en portal', async () => {
+    await test.step('[FLOW1-TC01][STEP-04] Verificar estado SEARCHING_DRIVER en portal', async () => {
       await page.waitForURL(/\/travels\/\w+/, { timeout: 15_000 });
 
       // Capturar tripId de la URL
@@ -109,7 +114,7 @@ test.describe('[E2E-FLOW-1] Carrier Web → Driver App @regression @stripe @hybr
     });
 
     // ── Fase 3: Preparar handoff hacia Driver App ─────────────────────────
-    await test.step('[FLOW1-TC01][STEP-06] Persistir contexto para handoff a Driver App', async () => {
+    await test.step('[FLOW1-TC01][STEP-05] Persistir contexto para handoff a Driver App', async () => {
       journey = orchestrator.prepareMobileHandoff(
         journey,
         `Viaje ${journey.tripId} listo. Driver App debe aceptar y completar el viaje.`

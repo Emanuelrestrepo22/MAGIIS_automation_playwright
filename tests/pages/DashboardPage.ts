@@ -16,8 +16,17 @@ export class DashboardPage extends SuperPage {
 		await expect(this.page).toHaveURL(/.*dashboard/, { timeout: 15_000 });
 		console.log('[DashboardPage.ensureDashboardLoaded][S01] URL /dashboard OK');
 
-		console.log('[DashboardPage.ensureDashboardLoaded][S02] Validando ancla básica (New Trip)...');
-		await this.ensureSidebarVisible();
+		console.log('[DashboardPage.ensureDashboardLoaded][S02] Validando ancla básica (Nuevo Viaje)...');
+		await this.ensureNewTripVisible();
 		console.log('[DashboardPage.ensureDashboardLoaded][S03] Dashboard básico cargado');
+	}
+
+	async openNewTravel(): Promise<void> {
+		console.log('[DashboardPage.openNewTravel][S00] Navegando al formulario de nuevo viaje...');
+		await Promise.all([
+			this.page.waitForURL(/\/home\/carrier\/travel\/create/, { timeout: 15_000 }),
+			super.openNewTravel()
+		]);
+		console.log('[DashboardPage.openNewTravel][S01] URL de nuevo viaje confirmada');
 	}
 }

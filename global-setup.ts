@@ -2,7 +2,8 @@
 import type { FullConfig } from "@playwright/test";
 import { chromium } from "@playwright/test";
 import * as dotenv from "dotenv";
-import { loginSelectors } from "./tests/selectors/login";
+import { DashboardPage } from "./tests/pages/DashboardPage";
+import { LoginPage } from "./tests/pages/LoginPage";
 
 async function globalSetup(config: FullConfig) {
   // Este setup "legacy" prepara una sola sesión carrier y guarda su storageState.
@@ -18,7 +19,6 @@ async function globalSetup(config: FullConfig) {
   const username = process.env.USER_CARRIER;
   const password = process.env.PASS_CARRIER;
   const loginPath = process.env.LOGIN_PATH ?? "/carrier/#/auth/login";
-  const dashboardPattern = process.env.DASHBOARD_URL_PATTERN ?? "**/dashboard";
   const storageStatePath = `storage/state-carrier-${env}.json`;
 
   if (!baseUrl) throw new Error(`❌ BASE_URL no está definida en ${envFile}`);
@@ -36,30 +36,15 @@ async function globalSetup(config: FullConfig) {
     headless: process.env.HEADLESS !== "false",
   });
   const page = await browser.newPage();
+  const loginPage = new LoginPage(page, 'carrier', baseUrl);
+  const dashboardPage = new DashboardPage(page);
 
-  await page.goto(`${baseUrl}${loginPath}`, { waitUntil: "load" });
-
-  // Primero esperamos los campos mínimos del formulario para asegurarnos
-  // de que la pantalla de autenticación terminó de renderizar.
-  const emailInput = page.locator(loginSelectors.emailInput);
-  console.log("[GlobalSetup] Esperando que #email sea visible...");
-  await emailInput.waitFor({ state: "visible", timeout: 15000 });
-
-  const passwordInput = page.locator(loginSelectors.passwordInput);
-  const loginButton = page.locator(loginSelectors.submitButton);
+  await loginPage.goto();
 
   // Reproducimos el login manual paso a paso para obtener un estado autenticado confiable.
   console.log("[GlobalSetup] Completando login con usuario:", username);
-  await emailInput.fill(username);
-  await passwordInput.fill(password);
-  await loginButton.click();
-
-  // waitForFunction es más fiable que waitForURL con hash-routing (SPAs)
-  await page.waitForFunction(
-    (pattern) => window.location.href.includes(pattern),
-    "dashboard",
-    { timeout: 20000 },
-  );
+  await loginPage.login(username, password);
+  await dashboardPage.ensureDashboardLoaded();
 
   console.log(`[GlobalSetup] Login exitoso. URL actual: ${page.url()}`);
   console.log(`[GlobalSetup] Guardando estado en: ${storageStatePath}`);

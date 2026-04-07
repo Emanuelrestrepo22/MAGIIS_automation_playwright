@@ -1,7 +1,7 @@
 // tests/specs/smoke/login.smoke.test.ts
 import { test, expect } from '../../TestBase';
 import { LoginPage } from '../../pages/LoginPage';
-import { loginSelectors } from '../../selectors/login';
+import { DashboardPage } from '../../pages/DashboardPage';
 import { DataGenerator } from '../../utils/dataGenerator';
 
 const env = process.env.ENV ?? 'test';
@@ -22,6 +22,7 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Login - Portal Carrier`, () => {
 		const username = process.env.USER_CARRIER as string;
 		const password = process.env.PASS_CARRIER as string;
 		const loginPage = new LoginPage(page);
+		const dashboardPage = new DashboardPage(page);
 
 		await test.step(`[SMOKE-AUTH-TC01][STEP-01] Navegar a pantalla de login (${env.toUpperCase()})`, async () => {
 			await loginPage.goto();
@@ -32,10 +33,8 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Login - Portal Carrier`, () => {
 		});
 
 		await test.step('[SMOKE-AUTH-TC01][STEP-03] Validar que ya no estamos en pantalla de login', async () => {
-			// Para smoke alcanza con confirmar que el formulario desapareció:
-			// es una señal barata y estable de que el login funcionó.
-			const loginInput = page.locator(loginSelectors.emailInput);
-			await expect(loginInput).toBeHidden({ timeout: 20_000 });
+			// La página de dashboard es el criterio de éxito más sólido aquí.
+			await dashboardPage.ensureDashboardLoaded();
 			console.log(`[SMOKE-AUTH-TC01] Login exitoso en ${env.toUpperCase()} ✅`);
 		});
 	});

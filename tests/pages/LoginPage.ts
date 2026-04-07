@@ -1,26 +1,27 @@
 // tests/pages/LoginPage.ts
 import type { Page, Locator } from '@playwright/test';
-import type { AppRole } from '../config/runtime';
+import type { LoginRole } from '../config/runtime';
 import { getDefaultRole, resolveLoginPath } from '../config/runtime';
-import { loginSelectors } from '../selectors/login';
 
 export class LoginPage {
 	// Guardamos page, role y locators como estado interno para que cada método
 	// exprese intención de negocio y no detalles repetitivos del DOM.
 	private readonly page: Page;
-	private readonly role: AppRole;
+	private readonly role: LoginRole;
+	private readonly baseURL?: string;
 	private readonly emailInput: Locator;
 	private readonly passwordInput: Locator;
 	private readonly loginButton: Locator;
 	readonly errorMessage: Locator;
 
-	constructor(page: Page, role: AppRole = getDefaultRole()) {
+	constructor(page: Page, role: LoginRole = getDefaultRole(), baseURL?: string) {
 		this.page = page;
 		this.role = role;
-		this.emailInput = page.locator(loginSelectors.emailInput);
-		this.passwordInput = page.locator(loginSelectors.passwordInput);
-		this.loginButton = page.locator(loginSelectors.submitButton);
-		this.errorMessage = page.locator(loginSelectors.errorMessage);
+		this.baseURL = baseURL;
+		this.emailInput = page.getByRole('textbox', { name: /Email|eMail/i });
+		this.passwordInput = page.getByRole('textbox', { name: /Contrase\u00f1a|Password/i });
+		this.loginButton = page.getByRole('button', { name: /Ingresar|Login/i });
+		this.errorMessage = page.locator('.toast-message, div.toast-message');
 	}
 
 	async isLoginErrorVisible(timeout = 8000): Promise<boolean> {
@@ -51,7 +52,8 @@ export class LoginPage {
 			window.sessionStorage.clear();
 		});
 
-		await this.page.goto(loginPath, { waitUntil: 'load' });
+		const targetUrl = this.baseURL ? new URL(loginPath, this.baseURL).toString() : loginPath;
+		await this.page.goto(targetUrl, { waitUntil: 'load' });
 
 		// Esperamos el campo email como señal de que el formulario quedó listo para interactuar.
 		await this.emailInput.waitFor({ state: 'visible', timeout: 15_000 });

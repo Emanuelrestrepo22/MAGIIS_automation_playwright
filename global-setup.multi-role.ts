@@ -6,7 +6,8 @@ import {
   getRoleRuntimeConfig,
   resolveRoleCredentials,
 } from "./tests/config/runtime";
-import { loginSelectors } from "./tests/selectors/login";
+import { DashboardPage } from "./tests/pages/DashboardPage";
+import { LoginPage } from "./tests/pages/LoginPage";
 
 async function globalSetup(): Promise<void> {
   // Este setup autentica todos los roles configurados en el .env
@@ -38,31 +39,16 @@ async function globalSetup(): Promise<void> {
     const roleConfig = getRoleRuntimeConfig(role);
     const credentials = resolveRoleCredentials(role);
     const page = await browser.newPage();
+    const loginPage = new LoginPage(page, role, roleConfig.baseURL);
+    const dashboardPage = new DashboardPage(page);
 
     console.log(
       `[GlobalSetup][${role}] Navigating to ${roleConfig.baseURL}${roleConfig.loginPath}`,
     );
-    await page.goto(`${roleConfig.baseURL}${roleConfig.loginPath}`, {
-      waitUntil: "networkidle",
-      timeout: 30_000,
-    });
+    await loginPage.goto();
+    await loginPage.login(credentials.username, credentials.password);
 
-    const emailInput = page.locator(loginSelectors.emailInput);
-    const passwordInput = page.locator(loginSelectors.passwordInput);
-    const loginButton = page.locator(loginSelectors.submitButton);
-
-    await emailInput.waitFor({ state: "visible", timeout: 30_000 });
-    await emailInput.fill(credentials.username);
-    await passwordInput.fill(credentials.password);
-    await loginButton.click();
-
-    // En portales con hash-routing esperamos un fragmento de URL en lugar
-    // de una ruta exacta, para evitar falsos negativos.
-    // waitForURL soporta patrones glob como "**/dashboard".
-    await page.waitForURL(
-      (url) => url.href.includes('dashboard'),
-      { timeout: 30_000 },
-    );
+    await dashboardPage.ensureDashboardLoaded();
 
     // Cada rol guarda su propio estado para que las specs puedan reutilizarlo
     // sin mezclarse entre sí.

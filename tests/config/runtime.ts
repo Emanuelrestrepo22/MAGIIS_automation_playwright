@@ -3,6 +3,7 @@
 export const SUPPORTED_ROLES = ['carrier', 'contractor', 'web'] as const;
 
 export type AppRole = (typeof SUPPORTED_ROLES)[number];
+export type LoginRole = AppRole | 'pax';
 
 export type RoleCredentials = {
 	username: string;
@@ -22,11 +23,12 @@ export type RoleRuntimeConfig = {
 const DEFAULT_ROLE: AppRole = 'carrier';
 
 // Valores por defecto que usamos cuando el .env no define una ruta específica por rol.
-const DEFAULT_LOGIN_PATHS: Record<AppRole, string> = {
+const DEFAULT_LOGIN_PATHS: Record<LoginRole, string> = {
 	// Carrier migró al login single-page que vive bajo /#/authentication/login/carrier.
 	carrier: '/#/authentication/login/carrier',
 	contractor: '/contractor/#/auth/login',
-	web: '/#/authentication/login'
+	web: '/#/authentication/login',
+	pax: '/#/authentication/login'
 };
 
 // Cada portal puede aterrizar en una URL distinta después del login,
@@ -96,8 +98,12 @@ export function resolveRoleCredentials(role: AppRole): RoleCredentials {
 	return { username, password };
 }
 
-export function resolveLoginPath(role: AppRole): string {
+export function resolveLoginPath(role: LoginRole): string {
 	// Permite customizar la ruta por rol sin duplicar lógica en los page objects.
+	if (role === 'pax') {
+		return process.env.PAX_LOGIN_PATH ?? process.env.LOGIN_PATH ?? DEFAULT_LOGIN_PATHS.pax;
+	}
+
 	return readRoleFirstEnv('LOGIN_PATH', role) ?? DEFAULT_LOGIN_PATHS[role];
 }
 

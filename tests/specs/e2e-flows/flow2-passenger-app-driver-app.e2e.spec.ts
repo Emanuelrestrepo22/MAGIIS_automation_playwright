@@ -45,6 +45,7 @@ import { GatewayPgJourneyOrchestrator } from '../../shared/orchestration/Gateway
 const orchestrator = new GatewayPgJourneyOrchestrator();
 
 test.describe('[E2E-FLOW-2] Passenger App → Driver App @regression @stripe @hybrid-e2e', () => {
+  test.fixme(true, 'BLOQUEADO: 100% mobile. Requiere WebdriverIO + Appium + screens implementadas.');
 
   test('FLOW2-TC01-validar-alta-viaje-passenger-app-completado-por-driver', async () => {
     test.fixme(
