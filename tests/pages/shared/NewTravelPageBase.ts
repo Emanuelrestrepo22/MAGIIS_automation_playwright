@@ -48,6 +48,19 @@ export abstract class NewTravelPageBase {
 	}
 
 	async setOrigin(address: string): Promise<void> {
+		// El formulario pre-carga la dirección "home" del pasajero como origen por defecto.
+		// Si hay una dirección pre-cargada, se limpia con el botón X antes de ingresar la nueva.
+		const clearBtn = this.page.locator('input[formcontrolname="origin"]')
+			.locator('..')
+			.locator('button[aria-label="Clear"], button.clear-btn, i.fa-times, span.ng-clear-wrapper')
+			.first();
+
+		if (await clearBtn.isVisible({ timeout: 2_000 }).catch(() => false)) {
+			await clearBtn.click();
+		} else {
+			await this.originInput.clear();
+		}
+
 		await this.originInput.fill(address);
 		await this.page.getByRole('option').filter({ hasText: address }).first().click();
 	}
