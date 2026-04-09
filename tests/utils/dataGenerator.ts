@@ -2,18 +2,29 @@
 import { faker } from '@faker-js/faker';
 
 export class DataGenerator {
-  static getInvalidEmail(): string {
-    return faker.internet.email();
-  }
+	private static seeded = false;
 
-  static getInvalidPassword(): string {
-    return faker.internet.password();
-  }
+	static seedOnce(): void {
+		if (!this.seeded) {
+			const seed = Date.now();
+			faker.seed(seed);
+			this.seeded = true;
+			console.log(`[DataGenerator] Seed fijado: ${seed}`);
+		}
+	}
 
-  static getInvalidCredentials(): { email: string; password: string } {
-    return {
-      email: this.getInvalidEmail(),
-      password: this.getInvalidPassword(),
-    };
-  }
+	static getInvalidEmail(): string {
+		return faker.internet.email();
+	}
+
+	static getInvalidPassword(): string {
+		return faker.internet.password();
+	}
+
+	static getInvalidCredentials(): { email: string; password: string } {
+		return {
+			email: this.getInvalidEmail(),
+			password: this.getInvalidPassword()
+		};
+	}
 }

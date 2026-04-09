@@ -1,0 +1,65 @@
+import { chromium } from "@playwright/test";
+import * as dotenv from "dotenv";
+import {
+  getConfiguredRoles,
+  getEnvFile,
+  getRoleRuntimeConfig,
+  resolveRoleCredentials,
+} from "./tests/config/runtime";
+import { DashboardPage } from "./tests/pages/DashboardPage";
+import { LoginPage } from "./tests/pages/LoginPage";
+
+async function globalSetup(): Promise<void> {
+  // Este setup autentica todos los roles configurados en el .env
+  // y deja un storageState separado para cada uno.
+  const envFile = getEnvFile();
+  dotenv.config({ path: envFile });
+
+  // Si un rol no tiene credenciales configuradas, preferimos saltearlo
+  // antes que romper toda la corrida.
+  const configuredRoles = getConfiguredRoles();
+  if (configuredRoles.length === 0) {
+    console.warn(
+      `[GlobalSetup] No role credentials found in ${envFile}. Skipping shared storage setup.`,
+    );
+    return;
+  }
+
+  console.log(
+    `[GlobalSetup] Environment: ${(process.env.ENV ?? "test").toUpperCase()}`,
+  );
+
+  const browser = await chromium.launch({
+    headless: process.env.HEADLESS !== "false",
+  });
+
+  for (const role of configuredRoles) {
+    // Resolvemos la configuración específica del rol en cada iteración:
+    // URL, patrón de dashboard, credenciales y destino del storage.
+    const roleConfig = getRoleRuntimeConfig(role);
+    const credentials = resolveRoleCredentials(role);
+    const page = await browser.newPage();
+    const loginPage = new LoginPage(page, role, roleConfig.baseURL);
+    const dashboardPage = new DashboardPage(page);
+
+    console.log(
+      `[GlobalSetup][${role}] Navigating to ${roleConfig.baseURL}${roleConfig.loginPath}`,
+    );
+    await loginPage.goto();
+    await loginPage.login(credentials.username, credentials.password);
+
+    await dashboardPage.ensureDashboardLoaded();
+
+    // Cada rol guarda su propio estado para que las specs puedan reutilizarlo
+    // sin mezclarse entre sí.
+    await page.context().storageState({ path: roleConfig.storageStatePath });
+    console.log(
+      `[GlobalSetup][${role}] Storage state saved to ${roleConfig.storageStatePath}`,
+    );
+    await page.close();
+  }
+
+  await browser.close();
+}
+
+export default globalSetup;

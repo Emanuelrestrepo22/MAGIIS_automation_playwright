@@ -1,0 +1,41 @@
+{
+  "name": "magiis-playwright-explorer",
+  "version": "0.1.0",
+  "description": "Project-local Codex plugin for exploratory Playwright automation in MAGIIS.",
+  "author": {
+    "name": "MAGIIS QA Team",
+    "email": "qa@magiis.local",
+    "url": "https://github.com/Emanuelrestrepo22/MAGIIS_automation_playwright"
+  },
+  "homepage": "https://github.com/Emanuelrestrepo22/MAGIIS_automation_playwright",
+  "repository": "https://github.com/Emanuelrestrepo22/MAGIIS_automation_playwright",
+  "license": "ISC",
+  "keywords": [
+    "playwright",
+    "magiis",
+    "browser-automation",
+    "qa",
+    "exploration"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "MAGIIS Playwright Explorer",
+    "shortDescription": "Exploratory browser automation for MAGIIS using Playwright.",
+    "longDescription": "Project-local plugin for rapid Playwright exploration, selector discovery, screenshots, debugging, and flow prototyping in MAGIIS without replacing the formal test framework.",
+    "developerName": "MAGIIS QA Team",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/Emanuelrestrepo22/MAGIIS_automation_playwright",
+    "privacyPolicyURL": "https://github.com/Emanuelrestrepo22/MAGIIS_automation_playwright",
+    "termsOfServiceURL": "https://github.com/Emanuelrestrepo22/MAGIIS_automation_playwright",
+    "defaultPrompt": [
+      "Inspect the carrier portal and capture stable selectors.",
+      "Prototype a Playwright flow for a MAGIIS payment screen.",
+      "Open a MAGIIS portal and take debug screenshots."
+    ],
+    "brandColor": "#0F766E"
+  }
+}

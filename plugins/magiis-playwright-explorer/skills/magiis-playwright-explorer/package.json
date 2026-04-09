@@ -1,0 +1,10 @@
+{
+  "name": "magiis-playwright-explorer-skill",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Exploratory Playwright executor for MAGIIS.",
+  "type": "commonjs",
+  "scripts": {
+    "setup": "node -e \"console.log('This plugin reuses the project root Playwright dependency when available.')\""
+  }
+}
