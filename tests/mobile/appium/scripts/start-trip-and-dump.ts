@@ -27,7 +27,12 @@ async function switchToWebView(driver: WebdriverIO.Browser): Promise<boolean> {
 }
 
 async function tapButtonByText(driver: WebdriverIO.Browser, text: string): Promise<boolean> {
-	const allBtns = await driver.$$('button.btn.primary').catch(() => []);
+	let allBtns: any[] = [];
+	try {
+		allBtns = (await driver.$$('button.btn.primary')) as unknown as any[];
+	} catch {
+		allBtns = [];
+	}
 	for (const btn of allBtns) {
 		const btnText  = (await btn.getText().catch(() => '')).trim();
 		const visible  = await btn.isDisplayed().catch(() => false);

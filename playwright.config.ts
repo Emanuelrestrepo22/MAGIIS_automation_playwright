@@ -22,7 +22,7 @@ const defaultRole = getDefaultRole();
 
 export default defineConfig({
   // Carpeta raíz donde vive la mayoría de las specs del proyecto.
-  testDir: "./tests/specs",
+  testDir: "./tests",
 
   // Timeouts globales que equilibran estabilidad y velocidad de feedback.
   timeout: 60 * 1000,

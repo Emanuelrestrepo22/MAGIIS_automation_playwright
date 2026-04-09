@@ -6,8 +6,8 @@ import {
   getRoleRuntimeConfig,
   resolveRoleCredentials,
 } from "./tests/config/runtime";
-import { DashboardPage } from "./tests/pages/DashboardPage";
-import { LoginPage } from "./tests/pages/LoginPage";
+import { DashboardPage } from "./tests/pages/carrier";
+import { LoginPage } from "./tests/pages/shared";
 
 async function globalSetup(): Promise<void> {
   // Este setup autentica todos los roles configurados en el .env
