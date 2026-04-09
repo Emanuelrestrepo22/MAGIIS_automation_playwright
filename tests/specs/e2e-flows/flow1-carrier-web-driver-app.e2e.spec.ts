@@ -30,9 +30,16 @@
  */
 
 import { test, expect } from '../../TestBase';
+import { findLatestJourneyContextId } from '../../shared/context/journeyContextStore';
+import type { GatewayPgJourneyContext } from '../../shared/contracts/gateway-pg';
 import { loginAsDispatcher } from '../../fixtures/gateway.fixtures';
 import { NewTravelPage }    from '../../pages/NewTravelPage';
 import { TravelDetailPage } from '../../pages/TravelDetailPage';
+import { getDriverAppConfig } from '../../mobile/appium/config/appiumRuntime';
+import { DriverHomeScreen } from '../../mobile/appium/driver/DriverHomeScreen';
+import { DriverTripCompletionScreen } from '../../mobile/appium/driver/DriverTripCompletionScreen';
+import { DriverTripNavigationScreen } from '../../mobile/appium/driver/DriverTripNavigationScreen';
+import { DriverTripRequestScreen } from '../../mobile/appium/driver/DriverTripRequestScreen';
 import { GatewayPgJourneyOrchestrator } from '../../shared/orchestration/GatewayPgJourneyOrchestrator';
 import { TEST_DATA } from '../../shared/gateway-pg/stripeTestData';
 import { STRIPE_TEST_CARDS } from '../../data/stripe-cards';
@@ -40,8 +47,6 @@ import { STRIPE_TEST_CARDS } from '../../data/stripe-cards';
 const orchestrator = new GatewayPgJourneyOrchestrator();
 
 test.describe('[E2E-FLOW-1] Carrier Web → Driver App @regression @stripe @hybrid-e2e', () => {
-  test.fixme(true, 'BLOQUEADO: requiere Appium Server + emulador Android activo. Fase mobile no implementada.');
-
   test.use({ role: 'carrier', storageState: undefined });
 
   test.beforeEach(async ({ page }) => {
@@ -130,5 +135,120 @@ test.describe('[E2E-FLOW-1] Carrier Web → Driver App @regression @stripe @hybr
     //          EXPECTED: 'SEARCHING_DRIVER'
     // DB TODO: SELECT status FROM payments WHERE travel_id = journey.tripId
     //          EXPECTED: 'AUTHORIZED' o 'PENDING_CAPTURE'
+  });
+});
+
+test.describe('[E2E-FLOW-1] Driver App @regression @stripe @hybrid-e2e', () => {
+  test('FLOW1-TC01-driver-app-mobile-handoff', async () => {
+    test.fixme(
+      true,
+      'PENDIENTE: validar selectores reales del Driver App en Appium Inspector y emulador TEST antes de activar la fase mobile.'
+    );
+
+    let journey: GatewayPgJourneyContext | null = null;
+    let homeScreen: DriverHomeScreen | null = null;
+
+    const ensureJourney = (): GatewayPgJourneyContext => {
+      if (!journey) {
+        throw new Error('Journey context not loaded');
+      }
+
+      return journey;
+    };
+
+    try {
+      const journeyId = process.env.JOURNEY_ID ?? await findLatestJourneyContextId();
+      if (!journeyId) {
+        throw new Error('No journey context found in evidence/journey-context/');
+      }
+
+      journey = await orchestrator.load(journeyId);
+
+      if (!journey.tripId) {
+        throw new Error(`Journey ${journey.journeyId} is missing tripId`);
+      }
+
+      const driverConfig = getDriverAppConfig();
+      homeScreen = new DriverHomeScreen(driverConfig);
+
+      await test.step('[FLOW1-TC01][MOBILE][STEP-01] Start Driver App session', async () => {
+        await homeScreen?.startSession();
+      });
+
+      const requestScreen = new DriverTripRequestScreen(driverConfig, homeScreen.getDriver());
+      const navigationScreen = new DriverTripNavigationScreen(driverConfig, homeScreen.getDriver());
+      const completionScreen = new DriverTripCompletionScreen(driverConfig, homeScreen.getDriver());
+
+      await test.step('[FLOW1-TC01][MOBILE][STEP-02] Ensure driver is online', async () => {
+        if (!(await homeScreen!.isDriverOnline())) {
+          await homeScreen!.goOnline();
+        }
+      });
+
+      await test.step('[FLOW1-TC01][MOBILE][STEP-03] Wait for trip request and validate tripId', async () => {
+        await homeScreen!.waitForTripRequest(ensureJourney().tripId!, 60_000);
+        expect(await homeScreen!.verifyTripId(ensureJourney().tripId!)).toBe(true);
+        await homeScreen!.openTripRequest();
+      });
+
+      await test.step('[FLOW1-TC01][MOBILE][STEP-04] Validate trip details and accept', async () => {
+        await requestScreen.verifyTripDetails({
+          origin: TEST_DATA.origin,
+          destination: TEST_DATA.destination,
+        });
+        expect(await requestScreen.getTripId()).toContain(ensureJourney().tripId!);
+        await requestScreen.acceptTrip();
+        journey = orchestrator.updatePhase(
+          ensureJourney(),
+          'driver_trip_acceptance',
+          'driver-accepted',
+          'Driver accepted the trip from the mobile app'
+        );
+      });
+
+      await test.step('[FLOW1-TC01][MOBILE][STEP-05] Start trip', async () => {
+        await navigationScreen.startTrip();
+        journey = orchestrator.updatePhase(
+          ensureJourney(),
+          'driver_route_simulation',
+          'driver-en-route',
+          'Driver started the trip from the mobile app'
+        );
+      });
+
+      await test.step('[FLOW1-TC01][MOBILE][STEP-06] Finish trip, confirm charge and close', async () => {
+        await navigationScreen.endTrip();
+        await navigationScreen.confirmEndTripPopup();
+        await navigationScreen.verifyTripCompleted();
+
+        const chargedAmount = await completionScreen.getChargedAmount();
+        expect(chargedAmount).toBeTruthy();
+
+        await navigationScreen.closeTrip();
+        expect(await homeScreen!.isDriverOnline()).toBe(true);
+
+        journey = orchestrator.completeMobilePhase(
+          ensureJourney(),
+          'Driver completed the trip in the mobile app'
+        );
+        journey = orchestrator.completeValidation(
+          ensureJourney(),
+          'Driver app trip completed and payment validated'
+        );
+        await orchestrator.persist(ensureJourney());
+        expect(ensureJourney().status).toBe('payment-validated');
+      });
+    } catch (error) {
+      if (journey) {
+        journey = orchestrator.fail(
+          journey,
+          error instanceof Error ? error.message : 'Driver app flow failed'
+        );
+        await orchestrator.persist(journey);
+      }
+      throw error;
+    } finally {
+      await homeScreen?.endSession();
+    }
   });
 });

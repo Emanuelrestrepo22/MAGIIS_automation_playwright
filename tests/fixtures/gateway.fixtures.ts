@@ -9,6 +9,7 @@ import { NewTravelPage, ThreeDSModal, ThreeDSErrorPopup, TravelDetailPage, Trave
 // Reexportamos estos datos para que las specs de gateway importen todo
 // desde una sola entrada y no tengan que conocer la estructura interna del módulo.
 export { STRIPE_CVC, STRIPE_EXPIRY, STRIPE_TEST_CARDS, TEST_DATA, getPortalUrl };
+const THREE_DS_MODAL_SELECTOR = 'iframe[src*="three-ds-2-challenge"]';
 
 export async function loginAsDispatcher(page: Page): Promise<void> {
 	// Login rápido del portal carrier para journeys disparados por dispatcher.
@@ -31,7 +32,7 @@ export async function loginAsPax(page: Page): Promise<void> {
 
 export async function expectNoThreeDSModal(page: Page): Promise<void> {
 	// Helper explícito para casos donde el flujo NO debería disparar autenticación 3DS.
-	await expect(page.getByTestId('3ds-modal-overlay')).toBeHidden({ timeout: 5_000 });
+	await expect(page.locator(THREE_DS_MODAL_SELECTOR)).toBeHidden({ timeout: 5_000 });
 }
 
 // Reexportamos helpers y page objects para que una spec de gateway pueda armar

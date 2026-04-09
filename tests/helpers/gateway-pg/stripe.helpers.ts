@@ -4,6 +4,7 @@ import {
 	ThreeDSModal,
 	ThreeDSErrorPopup
 } from '../../pages/gateway-pg';
+import { OperationalPreferencesPage } from '../../pages/OperationalPreferencesPage';
 import { STRIPE_TEST_CARDS } from '../../shared/gateway-pg/stripeTestData';
 
 export async function extractTravelIdFromUrl(page: Page): Promise<string> {
@@ -18,12 +19,15 @@ export async function extractTravelIdFromUrl(page: Page): Promise<string> {
 
 export async function setupTravelWithFailed3DS(
 	page: Page,
-	opts: { passenger: string; origin: string; destination: string }
+	opts: { client?: string; passenger: string; origin: string; destination: string }
 ): Promise<string> {
+	const preferences = new OperationalPreferencesPage(page);
 	const travel = new NewTravelPage(page);
 	const threeDS = new ThreeDSModal(page);
 	const popup = new ThreeDSErrorPopup(page);
 
+	await preferences.goto();
+	await preferences.ensureHoldEnabled();
 	await travel.goto();
 	await travel.fillMinimum({
 		...opts,

@@ -1,63 +1,105 @@
-/**
- * ThreeDSModal — Componente compartido
- * Maneja el modal de autenticación 3D Secure de Stripe.
- *
- * El modal renderiza un iframe del banco. En Stripe Test Mode ese iframe
- * expone botones "Complete" y "Fail" para simular el resultado.
- *
- * Componente MAGIIS: ModalThreeDSComponent
- *
- * NOTA: El selector del iframe (data-testid="3ds-iframe") debe validarse
- * contra el DOM real. En Stripe Test Mode el selector puede variar.
- */
-
-import type { Page, Locator, FrameLocator } from '@playwright/test';
+import type { Frame, FrameLocator, Locator, Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 
+const THREE_DS_MODAL_SELECTOR = 'iframe[src*="three-ds-2-challenge"]';
+const THREE_DS_CHALLENGE_FRAME_SELECTOR = 'iframe[name="stripe-challenge-frame"]';
+const THREE_DS_TIMEOUT = 60_000;
+const THREE_DS_STABILIZATION_DELAY = 10_000;
+
 export class ThreeDSModal {
-  private readonly page: Page;
+  protected readonly page: Page;
   readonly overlay: Locator;
 
   constructor(page: Page) {
     this.page = page;
-    // TODO: confirmar data-testid del overlay del modal 3DS
-    this.overlay = page.getByTestId('3ds-modal-overlay');
+    this.overlay = page.locator(THREE_DS_MODAL_SELECTOR);
   }
 
-  /**
-   * Frame del banco Stripe en test mode.
-   * TODO: confirmar selector del iframe — puede ser un role='dialog' o data-testid.
-   */
-  private getBankFrame(): FrameLocator {
-    // TODO: validar selector del iframe contra DOM real
-    return this.page.frameLocator('[data-testid="3ds-iframe"]');
+  protected getBankFrame(): FrameLocator {
+    return this.page
+      .frameLocator(THREE_DS_MODAL_SELECTOR)
+      .frameLocator(THREE_DS_CHALLENGE_FRAME_SELECTOR);
   }
 
-  async waitForVisible(timeout = 15_000): Promise<void> {
+  private async waitForChallengeFrame(timeout = THREE_DS_TIMEOUT): Promise<Frame> {
+    const deadline = Date.now() + timeout;
+
+    while (Date.now() < deadline) {
+      const frame = this.page.frames().find(
+        (candidate) =>
+          candidate.name() === 'stripe-challenge-frame' ||
+          candidate.url().includes('testmode-acs.stripe.com/3d_secure_2_test')
+      );
+
+      if (frame) {
+        await frame.waitForLoadState('load', { timeout }).catch(() => undefined);
+        return frame;
+      }
+
+      await this.page.waitForTimeout(250);
+    }
+
+    throw new Error('Stripe challenge frame not found');
+  }
+
+  async waitForVisible(timeout = THREE_DS_TIMEOUT): Promise<void> {
+    const challengeFrame = await this.waitForChallengeFrame(timeout);
+    const completeButton = challengeFrame.getByRole('button', { name: /^COMPLETE$/i });
+
     await expect(this.overlay).toBeVisible({ timeout });
+    await expect(completeButton).toBeVisible({ timeout });
   }
 
-  async waitForHidden(timeout = 30_000): Promise<void> {
-    await expect(this.overlay).toBeHidden({ timeout });
+  async waitForOptionalVisible(timeout = THREE_DS_TIMEOUT): Promise<boolean> {
+    const deadline = Date.now() + timeout;
+
+    while (Date.now() < deadline) {
+      if (await this.overlay.isVisible().catch(() => false)) {
+        return true;
+      }
+
+      await this.page.waitForTimeout(500);
+    }
+
+    return false;
   }
 
-  /**
-   * Completa el challenge 3DS con resultado exitoso.
-   * Solo disponible en Stripe Test Mode.
-   */
+  async waitForHidden(timeout = 45_000): Promise<void> {
+    const deadline = Date.now() + timeout;
+    const challengeFrame = await this.waitForChallengeFrame(timeout);
+    const completeButton = challengeFrame.getByRole('button', { name: /^COMPLETE$/i });
+    const vehicleButton = this.page.locator('button:visible').filter({ hasText: /Seleccionar Veh[íi]culo/i }).first();
+
+    while (Date.now() < deadline) {
+      const completeVisible = await completeButton.isVisible().catch(() => false);
+      const vehicleVisible = await vehicleButton.isVisible().catch(() => false);
+      const vehicleEnabled = vehicleVisible ? await vehicleButton.isEnabled().catch(() => false) : false;
+
+      if (!completeVisible && (!vehicleVisible || vehicleEnabled)) {
+        return;
+      }
+
+      await this.page.waitForTimeout(500);
+    }
+
+    throw new Error('Stripe 3DS modal still visible after timeout');
+  }
+
   async completeSuccess(): Promise<void> {
-    const frame = this.getBankFrame();
-    // TODO: confirmar texto exacto del botón en el iframe de Stripe test
-    await frame.getByRole('button', { name: 'Complete' }).click();
+    const challengeFrame = await this.waitForChallengeFrame();
+    const completeButton = challengeFrame.getByRole('button', { name: /^COMPLETE$/i });
+
+    await expect(completeButton).toBeVisible({ timeout: THREE_DS_TIMEOUT });
+    await this.page.waitForTimeout(THREE_DS_STABILIZATION_DELAY);
+    await completeButton.click();
   }
 
-  /**
-   * Completa el challenge 3DS con resultado fallido.
-   * Solo disponible en Stripe Test Mode.
-   */
   async completeFail(): Promise<void> {
-    const frame = this.getBankFrame();
-    // TODO: confirmar texto exacto del botón en el iframe de Stripe test
-    await frame.getByRole('button', { name: 'Fail' }).click();
+    const challengeFrame = await this.waitForChallengeFrame();
+    const failButton = challengeFrame.getByRole('button', { name: /^FAIL$/i });
+
+    await expect(failButton).toBeVisible({ timeout: THREE_DS_TIMEOUT });
+    await this.page.waitForTimeout(THREE_DS_STABILIZATION_DELAY);
+    await failButton.click();
   }
 }

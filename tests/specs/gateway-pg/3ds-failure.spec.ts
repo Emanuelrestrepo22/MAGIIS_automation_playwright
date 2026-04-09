@@ -9,21 +9,17 @@
 
 import { test, expect } from '../../TestBase';
 import type { Page } from '@playwright/test';
-import { loginAsDispatcher } from '../../fixtures/gateway.fixtures';
+import { loginAsDispatcher, TEST_DATA } from '../../fixtures/gateway.fixtures';
 import { NewTravelPage } from '../../pages/NewTravelPage';
 import { TravelDetailPage } from '../../pages/TravelDetailPage';
 import { ThreeDSModal } from '../../pages/ThreeDSModal';
 import { ErrorPopup } from '../../pages/ErrorPopup';
 import { STRIPE_TEST_CARDS } from '../../data/stripe-cards';
 
-// Datos de prueba comunes reutilizados por todo el spec.
-const TEST_PASSENGER = 'Juan Pérez Test';
-const TEST_ORIGIN = 'Av. Corrientes 1234, CABA';
-const TEST_DEST = 'Av. Santa Fe 5678, CABA';
 const FAILED_3DS_FORM = {
-	passenger: TEST_PASSENGER,
-	origin: TEST_ORIGIN,
-	destination: TEST_DEST,
+	passenger: TEST_DATA.passenger,
+	origin: TEST_DATA.origin,
+	destination: TEST_DATA.destination,
 	cardLast4: STRIPE_TEST_CARDS.visa_3ds_fail.last4
 } as const;
 
@@ -35,8 +31,6 @@ async function openFailed3DSForm(page: Page): Promise<NewTravelPage> {
 }
 
 test.describe('[GATEWAY] Flujo 3DS - Fallo y reintento @regression @stripe @3ds', () => {
-	test.fixme(true, 'PENDIENTE: selectores TODO sin validar. Usar stripe/3ds-failure.spec.ts que tiene fixtures reales.');
-
 	test.use({ role: 'carrier', storageState: undefined });
 
 	test.beforeEach(async ({ page }) => {

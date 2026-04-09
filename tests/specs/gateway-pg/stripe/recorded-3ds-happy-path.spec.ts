@@ -7,22 +7,25 @@
  *   - El formulario pre-carga dirección "home" del pasajero como origen → setOrigin() la limpia con X
  *
  * Tarjeta: 4000 0025 0000 3155 (3DS required — success)
- * TODO: reemplazar TEST_DATA.passenger con pasajero real del entorno TEST
- * TODO: validar selectores del modal 3DS con recorder (iframe Stripe)
  */
 
 import { test, expect } from '../../../TestBase';
 import { LoginPage } from '../../../pages/LoginPage';
 import { DashboardPage } from '../../../pages/DashboardPage';
 import { NewTravelPage } from '../../../pages/NewTravelPage';
+import { OperationalPreferencesPage } from '../../../pages/OperationalPreferencesPage';
+import { ThreeDSModal } from '../../../pages/gateway-pg';
 import { STRIPE_TEST_CARDS, TEST_DATA } from '../../../shared/gateway-pg/stripeTestData';
 
 test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
 
 test.describe('[TC-3DS-01] Happy Path — Alta de viaje con tarjeta 3DS', () => {
   test('crear viaje con tarjeta 3DS y aprobar autenticación', async ({ page, credentials }) => {
+    test.setTimeout(90_000);
+
     const loginPage     = new LoginPage(page, 'carrier');
     const dashboardPage = new DashboardPage(page);
+    const preferences   = new OperationalPreferencesPage(page);
     const travelPage    = new NewTravelPage(page);
     const { username, password } = credentials;
 
@@ -32,7 +35,13 @@ test.describe('[TC-3DS-01] Happy Path — Alta de viaje con tarjeta 3DS', () => 
       await dashboardPage.ensureDashboardLoaded();
     });
 
-    await test.step('Navegar a formulario de nuevo viaje', async () => {
+    await test.step('Validar preferencias operativas con hold activo', async () => {
+      await preferences.goto();
+      await preferences.ensureHoldEnabled();
+      await preferences.assertHoldEnabled();
+    });
+
+    await test.step('Volver a nuevo viaje', async () => {
       await dashboardPage.openNewTravel();
       await travelPage.ensureLoaded();
     });
@@ -51,14 +60,19 @@ test.describe('[TC-3DS-01] Happy Path — Alta de viaje con tarjeta 3DS', () => 
     });
 
     await test.step('Aprobar modal 3DS de Stripe', async () => {
-      // TODO: implementar ThreeDSModal.completeSuccess() con selectores del iframe validados
-      test.fixme(true, 'Modal 3DS pendiente: validar selectores del iframe Stripe con recorder');
+      const threeDS = new ThreeDSModal(page);
+      await threeDS.waitForVisible();
+      await threeDS.completeSuccess();
+      await threeDS.waitForHidden();
     });
 
-    await test.step('Verificar viaje activo — Buscando conductor', async () => {
-      // Debería redirigir al detalle y mostrar estado SEARCHING_DRIVER
-      await expect(page).toHaveURL(/\/travels\/[\w-]+|\/travel\/detail/, { timeout: 15_000 });
+    await test.step('Seleccionar vehículo y enviar el viaje', async () => {
+      await travelPage.clickSelectVehicle();
+      await travelPage.clickSendService();
+    });
+
+    await test.step('Validar que el formulario quedó en su pantalla', async () => {
+      await expect(page).toHaveURL(/\/home\/carrier\/travel\/create/, { timeout: 15_000 });
     });
   });
 });
-

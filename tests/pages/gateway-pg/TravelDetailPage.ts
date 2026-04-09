@@ -6,8 +6,8 @@ export class TravelDetailPage {
 	constructor(private readonly page: Page) {}
 
 	async goto(travelId: string): Promise<void> {
-		await this.page.goto(`${getPortalUrl('carrier')}/travels/${travelId}`);
-		await this.page.waitForLoadState('networkidle');
+		await this.page.goto(`${getPortalUrl('carrier')}/#/home/carrier/travels/${travelId}`);
+		await this.page.waitForLoadState('domcontentloaded');
 	}
 
 	statusBadge() {

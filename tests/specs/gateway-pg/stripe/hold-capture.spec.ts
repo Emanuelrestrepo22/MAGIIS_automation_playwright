@@ -15,6 +15,7 @@ import {
 	TravelManagementPage,
 	STRIPE_TEST_CARDS
 } from '../../../fixtures/gateway.fixtures';
+import { OperationalPreferencesPage } from '../../../pages/OperationalPreferencesPage';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -23,6 +24,9 @@ test.describe('[gateway][stripe] Hold y Capture - flujo directo', () => {
 
 	test.beforeEach(async ({ page }) => {
 		await loginAsDispatcher(page);
+		const preferences = new OperationalPreferencesPage(page);
+		await preferences.goto();
+		await preferences.ensureHoldEnabled();
 	});
 
 	test.describe('[TC01] Hold exitoso sin 3DS requerido', () => {

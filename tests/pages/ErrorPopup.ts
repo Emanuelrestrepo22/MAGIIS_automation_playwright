@@ -1,26 +1,19 @@
-/**
- * ErrorPopup — Componente compartido
- * Pop-up de error que aparece tras un fallo de autenticación 3DS u otros errores de pago.
- *
- * NOTA: Selectores con TODO deben validarse contra el DOM real.
- */
-
-import type { Page, Locator } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 
+const ERROR_MESSAGE_SELECTOR = '.error-text:visible';
+const PAYMENT_AUTH_ERROR_SNIPPET = 'No podemos autenticar tu';
+const DISMISS_ERROR_BUTTON = /^(Aceptar|Cerrar|OK)$/i;
+
 export class ErrorPopup {
-  private readonly page: Page;
+  protected readonly page: Page;
   readonly container: Locator;
   private readonly messageText: Locator;
-  private readonly acceptButton: Locator;
 
   constructor(page: Page) {
     this.page = page;
-    // TODO: confirmar data-testid del contenedor del pop-up
-    this.container    = page.getByTestId('3ds-error-popup');
-    this.messageText  = page.getByTestId('3ds-error-popup-message');
-    // TODO: confirmar texto del botón de aceptar (puede ser "Cerrar", "Aceptar", "OK")
-    this.acceptButton = page.getByRole('button', { name: 'Aceptar' });
+    this.container = page.locator(ERROR_MESSAGE_SELECTOR).filter({ hasText: PAYMENT_AUTH_ERROR_SNIPPET }).first();
+    this.messageText = this.container;
   }
 
   async waitForVisible(timeout = 10_000): Promise<void> {
@@ -32,6 +25,16 @@ export class ErrorPopup {
   }
 
   async accept(): Promise<void> {
-    await this.acceptButton.click();
+    const buttons = this.page.getByRole('button', { name: DISMISS_ERROR_BUTTON });
+
+    for (let index = 0; index < await buttons.count(); index += 1) {
+      const button = buttons.nth(index);
+      if (await button.isVisible().catch(() => false)) {
+        await button.click();
+        break;
+      }
+    }
+
+    await this.page.waitForTimeout(250);
   }
 }

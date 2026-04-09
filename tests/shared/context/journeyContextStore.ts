@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { GatewayPgJourneyContext } from '../contracts/gateway-pg';
 
@@ -31,4 +31,29 @@ export async function readJourneyContext(journeyId: string): Promise<GatewayPgJo
 	const filePath = getJourneyContextPath(journeyId);
 	const raw = await readFile(filePath, 'utf-8');
 	return JSON.parse(raw) as GatewayPgJourneyContext;
+}
+
+export async function findLatestJourneyContextId(): Promise<string | null> {
+	await ensureJourneyContextDir();
+
+	const entries = await readdir(CONTEXT_DIR, { withFileTypes: true });
+	const contextFiles = entries.filter(entry => entry.isFile() && entry.name.endsWith('.json'));
+
+	if (!contextFiles.length) {
+		return null;
+	}
+
+	const filesWithMtime = await Promise.all(
+		contextFiles.map(async entry => {
+			const filePath = path.join(CONTEXT_DIR, entry.name);
+			const info = await stat(filePath);
+			return {
+				journeyId: entry.name.replace(/\.json$/, ''),
+				mtimeMs: info.mtimeMs,
+			};
+		})
+	);
+
+	filesWithMtime.sort((a, b) => b.mtimeMs - a.mtimeMs);
+	return filesWithMtime[0]?.journeyId ?? null;
 }
