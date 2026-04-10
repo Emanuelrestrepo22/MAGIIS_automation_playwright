@@ -24,6 +24,21 @@ export class TravelManagementPage {
 		await this.page.waitForLoadState('domcontentloaded');
 	}
 
+	/** Abre la pestaña de viajes programados dentro de gestion de viajes. */
+	async openScheduledTrips(): Promise<void> {
+		const scheduledTripsLink = this.page.getByRole('link', { name: /^Programados \(\d+\)$/i });
+		await expect(scheduledTripsLink).toBeVisible({ timeout: 10_000 });
+		await scheduledTripsLink.click();
+	}
+
+	/** Abre el primer viaje programado visible en la lista. */
+	async openFirstScheduledTripDetail(): Promise<void> {
+		// TODO: el recorder usa nth(3) sobre buttons; reemplazar por un selector estable cuando exista.
+		const openButton = this.page.locator('button').nth(3);
+		await expect(openButton).toBeVisible({ timeout: 10_000 });
+		await openButton.click();
+	}
+
 	private async tripRow(passenger: string, destination?: string) {
 		const rows = this.page.locator('tr');
 		const count = await rows.count();

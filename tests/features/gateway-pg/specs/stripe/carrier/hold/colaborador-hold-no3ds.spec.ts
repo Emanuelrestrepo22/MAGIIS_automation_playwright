@@ -58,6 +58,137 @@ async function restoreHoldAndSave(page: Page, preferences: OperationalPreference
 	await preferences.assertHoldEnabled();
 }
 
+type HoldNo3dsScenario = {
+	client: string;
+	passenger: string;
+	origin: string;
+	destination: string;
+};
+
+async function runHoldOnScenario(page: Page, scenario: HoldNo3dsScenario): Promise<void> {
+	const dashboard = new DashboardPage(page);
+	const preferences = new OperationalPreferencesPage(page);
+	const travel = new NewTravelPage(page);
+	const management = new TravelManagementPage(page);
+	const detail = new TravelDetailPage(page);
+	const _threeDS = new ThreeDSModal(page);
+
+	await test.step('Login carrier', async () => {
+		await loginAsDispatcher(page);
+	});
+
+	await test.step('Validar que el hold este activado en preferencias operativas', async () => {
+		await preferences.goto();
+		await preferences.ensureHoldEnabled();
+		await preferences.assertHoldEnabled();
+	});
+
+	await test.step('Ir al formulario de nuevo viaje', async () => {
+		await dashboard.openNewTravel();
+		await travel.ensureLoaded();
+	});
+
+	await test.step('Completar formulario con tarjeta sin 3DS', async () => {
+		await travel.fillMinimum({
+			client: scenario.client,
+			passenger: scenario.passenger,
+			origin: scenario.origin,
+			destination: scenario.destination,
+			cardLast4: STRIPE_TEST_CARDS.successDirect.slice(-4),
+		});
+	});
+
+	await test.step('Seleccionar vehiculo y enviar el viaje', async () => {
+		await travel.clickSelectVehicle();
+		await travel.clickSendService();
+	});
+
+	await test.step('Verificar que no aparece modal 3DS', async () => {
+		await expectNoThreeDSModal(page);
+	});
+
+	await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
+	const createdTravelId = extractTravelId(page.url());
+
+	await test.step('Validar viaje en gestion - columna Por asignar', async () => {
+		await management.goto();
+		await management.expectPassengerInPorAsignar(scenario.passenger, scenario.destination);
+	});
+
+	await test.step('Abrir detalle del viaje recien creado', async () => {
+		await management.openDetailForPassenger(scenario.passenger, scenario.destination);
+		await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
+		expect(extractTravelId(page.url())).toBe(createdTravelId);
+	});
+
+	await test.step('Validar estado del viaje - Buscando conductor', async () => {
+		await detail.expectStatus('Buscando conductor');
+	});
+}
+
+async function runHoldOffScenario(page: Page, scenario: HoldNo3dsScenario): Promise<void> {
+	const dashboard = new DashboardPage(page);
+	const preferences = new OperationalPreferencesPage(page);
+	const travel = new NewTravelPage(page);
+	const management = new TravelManagementPage(page);
+	const detail = new TravelDetailPage(page);
+	const _threeDS = new ThreeDSModal(page);
+
+	await loginAsDispatcher(page);
+
+	try {
+		await test.step('Desactivar hold en preferencias operativas', async () => {
+			await disableHoldAndSave(preferences);
+		});
+
+		await test.step('Ir al formulario de nuevo viaje', async () => {
+			await dashboard.openNewTravel();
+			await travel.ensureLoaded();
+		});
+
+		await test.step('Completar formulario con tarjeta sin 3DS', async () => {
+			await travel.fillMinimum({
+				client: scenario.client,
+				passenger: scenario.passenger,
+				origin: scenario.origin,
+				destination: scenario.destination,
+				cardLast4: STRIPE_TEST_CARDS.successDirect.slice(-4),
+			});
+		});
+
+		await test.step('Seleccionar vehiculo y enviar el viaje', async () => {
+			await travel.clickSelectVehicle();
+			await travel.clickSendService();
+		});
+
+		await test.step('Verificar que no aparece modal 3DS', async () => {
+			await expectNoThreeDSModal(page);
+		});
+
+		await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
+		const createdTravelId = extractTravelId(page.url());
+
+		await test.step('Validar viaje en gestion - columna Por asignar', async () => {
+			await management.goto();
+			await management.expectPassengerInPorAsignar(scenario.passenger, scenario.destination);
+		});
+
+		await test.step('Abrir detalle del viaje recien creado', async () => {
+			await management.openDetailForPassenger(scenario.passenger, scenario.destination);
+			await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
+			expect(extractTravelId(page.url())).toBe(createdTravelId);
+		});
+
+		await test.step('Validar estado del viaje - Buscando conductor', async () => {
+			await detail.expectStatus('Buscando conductor');
+		});
+	} finally {
+		await test.step('Restaurar hold al final del test', async () => {
+			await restoreHoldAndSave(page, preferences);
+		});
+	}
+}
+
 test.use({ role: 'carrier', storageState: undefined });
 
 test.describe('Gateway PG · Carrier · Colaborador — Hold sin 3DS', () => {
@@ -124,24 +255,49 @@ test.describe('Gateway PG · Carrier · Colaborador — Hold sin 3DS', () => {
 			});
 		});
 
-		test('[TS-STRIPE-TC1027] @regression @hold hold+cobro colaborador sin 3DS variante', async () => {
-			test.fixme(true, 'PENDIENTE: depende de TC1025');
+		test('[TS-STRIPE-TC1027] @regression @hold hold+cobro colaborador sin 3DS variante', async ({ page }) => {
+			await runHoldOnScenario(page, {
+				client: TEST_DATA.contractorClient,
+				passenger: TEST_DATA.contractorPassenger,
+				origin: 'Av. Corrientes 1234, Buenos Aires',
+				destination: 'Av. Santa Fe 2100, Buenos Aires',
+			});
 		});
 
-		test('[TS-STRIPE-TC1029] @regression @hold hold+cobro colaborador sin 3DS (set 2)', async () => {
-			test.fixme(true, 'PENDIENTE: depende de TC1025');
+		test('[TS-STRIPE-TC1029] @regression @hold hold+cobro colaborador sin 3DS (set 2)', async ({ page }) => {
+			await runHoldOnScenario(page, {
+				client: TEST_DATA.contractorClient,
+				passenger: TEST_DATA.contractorPassenger,
+				origin: TEST_DATA.origin,
+				destination: TEST_DATA.destination,
+			});
 		});
 
-		test('[TS-STRIPE-TC1031] @regression @hold hold+cobro colaborador sin 3DS variante 2', async () => {
-			test.fixme(true, 'PENDIENTE: depende de TC1025');
+		test('[TS-STRIPE-TC1031] @regression @hold hold+cobro colaborador sin 3DS variante 2', async ({ page }) => {
+			await runHoldOnScenario(page, {
+				client: TEST_DATA.contractorClient,
+				passenger: TEST_DATA.contractorPassenger,
+				origin: 'Florida 100, CABA',
+				destination: 'Palermo Soho, CABA',
+			});
 		});
 
-		test('[TS-STRIPE-TC1033] @regression @hold hold+cobro colaborador sin 3DS variante 3', async () => {
-			test.fixme(true, 'PENDIENTE: depende de TC1025');
+		test('[TS-STRIPE-TC1033] @regression @hold hold+cobro colaborador sin 3DS variante 3', async ({ page }) => {
+			await runHoldOnScenario(page, {
+				client: TEST_DATA.contractorClient,
+				passenger: TEST_DATA.contractorPassenger,
+				origin: 'Reconquista 661, Buenos Aires, Argentina',
+				destination: 'Cazadores 1987, Buenos Aires, Argentina',
+			});
 		});
 
-		test('[TS-STRIPE-TC1035] @regression @hold hold+cobro colaborador sin 3DS variante 4', async () => {
-			test.fixme(true, 'PENDIENTE: depende de TC1025');
+		test('[TS-STRIPE-TC1035] @regression @hold hold+cobro colaborador sin 3DS variante 4', async ({ page }) => {
+			await runHoldOnScenario(page, {
+				client: TEST_DATA.contractorClient,
+				passenger: TEST_DATA.contractorPassenger,
+				origin: 'Av. Corrientes 1234, Buenos Aires',
+				destination: 'Av. Santa Fe 2100, Buenos Aires',
+			});
 		});
 	});
 
@@ -209,24 +365,49 @@ test.describe('Gateway PG · Carrier · Colaborador — Hold sin 3DS', () => {
 			}
 		});
 
-		test('[TS-STRIPE-TC1028] @regression sin hold colaborador sin 3DS variante', async () => {
-			test.fixme(true, 'PENDIENTE: depende de TC1026');
+		test('[TS-STRIPE-TC1028] @regression sin hold colaborador sin 3DS variante', async ({ page }) => {
+			await runHoldOffScenario(page, {
+				client: TEST_DATA.contractorClient,
+				passenger: TEST_DATA.contractorPassenger,
+				origin: 'Av. Corrientes 1234, Buenos Aires',
+				destination: 'Av. Santa Fe 2100, Buenos Aires',
+			});
 		});
 
-		test('[TS-STRIPE-TC1030] @regression sin hold colaborador sin 3DS (set 2)', async () => {
-			test.fixme(true, 'PENDIENTE: depende de TC1026');
+		test('[TS-STRIPE-TC1030] @regression sin hold colaborador sin 3DS (set 2)', async ({ page }) => {
+			await runHoldOffScenario(page, {
+				client: TEST_DATA.contractorClient,
+				passenger: TEST_DATA.contractorPassenger,
+				origin: TEST_DATA.origin,
+				destination: TEST_DATA.destination,
+			});
 		});
 
-		test('[TS-STRIPE-TC1032] @regression sin hold colaborador sin 3DS variante 2', async () => {
-			test.fixme(true, 'PENDIENTE: depende de TC1026');
+		test('[TS-STRIPE-TC1032] @regression sin hold colaborador sin 3DS variante 2', async ({ page }) => {
+			await runHoldOffScenario(page, {
+				client: TEST_DATA.contractorClient,
+				passenger: TEST_DATA.contractorPassenger,
+				origin: 'Florida 100, CABA',
+				destination: 'Palermo Soho, CABA',
+			});
 		});
 
-		test('[TS-STRIPE-TC1034] @regression sin hold colaborador sin 3DS variante 3', async () => {
-			test.fixme(true, 'PENDIENTE: depende de TC1026');
+		test('[TS-STRIPE-TC1034] @regression sin hold colaborador sin 3DS variante 3', async ({ page }) => {
+			await runHoldOffScenario(page, {
+				client: TEST_DATA.contractorClient,
+				passenger: TEST_DATA.contractorPassenger,
+				origin: 'Reconquista 661, Buenos Aires, Argentina',
+				destination: 'Cazadores 1987, Buenos Aires, Argentina',
+			});
 		});
 
-		test('[TS-STRIPE-TC1036] @regression sin hold colaborador sin 3DS variante 4', async () => {
-			test.fixme(true, 'PENDIENTE: depende de TC1026');
+		test('[TS-STRIPE-TC1036] @regression sin hold colaborador sin 3DS variante 4', async ({ page }) => {
+			await runHoldOffScenario(page, {
+				client: TEST_DATA.contractorClient,
+				passenger: TEST_DATA.contractorPassenger,
+				origin: 'Av. Corrientes 1234, Buenos Aires',
+				destination: 'Av. Santa Fe 2100, Buenos Aires',
+			});
 		});
 	});
 

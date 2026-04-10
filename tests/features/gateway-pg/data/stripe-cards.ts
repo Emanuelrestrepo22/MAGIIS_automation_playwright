@@ -44,6 +44,12 @@ export const STRIPE_TEST_CARDS = {
 	declined_funds: createStripeTestCard('4000000000009995'),
 	/** Declinada generica */
 	declined_generic: createStripeTestCard('4000000000000002'),
+	/** 3DS obligatorio -> challenge */
+	three_ds_required: createStripeTestCard('4000000000003220'),
+	/** 3DS siempre requerido */
+	always_authenticate: createStripeTestCard('4000002760003184'),
+	/** Mastercard debit test card */
+	mastercard_debit: createStripeTestCard('5200828282828210'),
 	/** Tarjeta perdida */
 	lost_card: createStripeTestCard('4000000000009987'),
 	/** Tarjeta robada */

@@ -6,7 +6,11 @@
 import type { GeoPoint } from '../../../shared/contracts/gateway-pg';
 import type { MobileActorConfig } from '../config/appiumRuntime';
 import { AppiumSessionBase, type AppiumDriver } from '../base/AppiumSessionBase';
+import { DRIVER_ACTION_SELECTORS } from './DriverFlowSelectors';
 import { DriverTripCompletionScreen } from './DriverTripCompletionScreen';
+
+const TRIP_IN_PROGRESS_CONTAINER_SELECTOR = 'app-page-travel-in-progress';
+const TRIP_IN_PROGRESS_FINISH_SELECTOR = DRIVER_ACTION_SELECTORS.endTripPrimaryButton;
 
 export class DriverTripNavigationScreen extends AppiumSessionBase {
 	constructor(config: MobileActorConfig, driver?: AppiumDriver) {
@@ -100,28 +104,150 @@ export class DriverTripNavigationScreen extends AppiumSessionBase {
 		}
 	}
 
+	/**
+	 * Verifica que estamos en TravelToStartPage antes de continuar.
+	 * URL confirmada: /navigator/TravelToStartPage;showMapOnlyOnce=null
+	 */
+	async waitForTravelToStartPage(timeout = 15_000): Promise<boolean> {
+		const driver = this.getDriver();
+		const deadline = Date.now() + timeout;
+		while (Date.now() < deadline) {
+			await this.switchToWebView(3_000);
+			const url = await driver.execute<string, []>(() => window.location.href).catch(() => '');
+			if (url.includes('TravelToStartPage')) return true;
+			await driver.pause(500);
+		}
+		return false;
+	}
+
+	/**
+	 * Verifica que la pantalla activa sea el viaje en progreso.
+	 * Selector confirmado del dump: app-page-travel-in-progress + button.btn.finish.
+	 */
+	async waitForTravelInProgressPage(timeout = 15_000): Promise<boolean> {
+		const driver = this.getDriver();
+		const deadline = Date.now() + timeout;
+
+		while (Date.now() < deadline) {
+			await this.switchToWebView(3_000);
+
+			const containerVisible = await driver.$(TRIP_IN_PROGRESS_CONTAINER_SELECTOR).isDisplayed().catch(() => false);
+			const finishVisible = await driver.$(TRIP_IN_PROGRESS_FINISH_SELECTOR).isDisplayed().catch(() => false);
+			const url = await driver.execute<string, []>(() => window.location.href).catch(() => '');
+
+			if ((containerVisible && finishVisible) || /travel-in-progress|travelnavigation/i.test(url)) {
+				return true;
+			}
+
+			await driver.pause(500);
+		}
+
+		return false;
+	}
+
+	/**
+	 * Tap en "Empezar Viaje" en TravelToStartPage.
+	 * Selector confirmado DOM dump 2026-04-09:
+	 *   [BTN] class="btn primary trip-pax-start" text="Empezar Viaje"
+	 *   CONTAINER: button.btn.primary.trip-pax-start  ← selector estable, único en el DOM
+	 */
 	async startTrip(): Promise<void> {
-		// TODO: reemplazar selectores heurísticos por el dump real de TravelConfirmPage.
-		const clicked = await this.clickWebButton([
-			'~start-trip-btn',
-			'//*[@text="Empezar viaje"]',
-			'//*[@text="Iniciar viaje"]',
-			'//*[@text="Recoger pasajero"]',
-			'id:com.magiis.app.test.driver:id/btnStartTrip',
-		]);
+		const onPage = await this.waitForTravelToStartPage();
+		if (!onPage) {
+			console.warn('[DriverTripNavigationScreen] startTrip: no estamos en TravelToStartPage');
+		}
+
+		const webview = await this.switchToWebView();
+		if (!webview) {
+			console.warn('[DriverTripNavigationScreen] startTrip: sin WebView');
+			return;
+		}
+
+		const driver = this.getDriver();
+		let clicked = false;
+
+		try {
+			// Selector estable confirmado: button.btn.primary.trip-pax-start (único en el DOM)
+			const specific = await driver.$(DRIVER_ACTION_SELECTORS.startTripPrimaryButton);
+			if (await specific.isDisplayed().catch(() => false)) {
+				await specific.click();
+				clicked = true;
+			}
+
+			// Fallback: iterar btn.primary filtrando por texto
+			if (!clicked) {
+				const allBtns = await driver.$$('button.btn.primary') as unknown as any[];
+				for (const btn of allBtns) {
+					const text    = (await btn.getText().catch(() => '')).trim();
+					const visible = await btn.isDisplayed().catch(() => false);
+					if (text === 'Empezar Viaje' && visible) {
+						await btn.click();
+						clicked = true;
+						break;
+					}
+				}
+			}
+		} catch (e) {
+			console.warn('[DriverTripNavigationScreen] startTrip web click error:', e);
+		}
 
 		if (!clicked) {
-			const nativeClicked = await this.clickFirstNative([
-				'//*[@text="Empezar viaje"]',
-				'//*[@text="Iniciar viaje"]',
-				'//*[@text="Recoger pasajero"]',
-				'//*[contains(@text, "Empezar")]',
-				'//*[contains(@text, "Iniciar")]',
-			]);
+			console.warn('[DriverTripNavigationScreen] startTrip: botón "Empezar Viaje" no encontrado');
+			return;
+		}
 
-			if (!nativeClicked) {
-				console.warn('[DriverTripNavigationScreen] startTrip button not found');
+		// El sistema muestra modal de confirmación "¿Desea empezar el Viaje?"
+		await driver.pause(1_500);
+		await this.confirmStartTripModal();
+	}
+
+	/**
+	 * Confirma el modal "¿Desea empezar el Viaje?" con el botón "Si".
+	 * Selector confirmado DOM dump 2026-04-09:
+	 *   [id="ion-overlay-14"] tag=ion-modal text="¿Desea empezar el Viaje? Si No"
+	 *   [BTN] class="btn primary" text="Si"
+	 *   [BTN] class="btn-outlined-red" text="No"
+	 * Contenedor: app-confirm-modal
+	 */
+	async confirmStartTripModal(): Promise<void> {
+		const driver = this.getDriver();
+		await this.switchToWebView();
+
+		let clicked = false;
+		try {
+			// Buscar dentro del modal de confirmación primero
+			const allBtns = await driver.$$('app-confirm-modal button.btn.primary, ion-modal button.btn.primary');
+			for (const btn of allBtns) {
+				const text    = (await btn.getText().catch(() => '')).trim();
+				const visible = await btn.isDisplayed().catch(() => false);
+				if (text === 'Si' && visible) {
+					await btn.click();
+					clicked = true;
+					break;
+				}
 			}
+
+			// Fallback: cualquier btn.primary visible con texto "Si"
+			if (!clicked) {
+				const fallbackBtns = await driver.$$('button.btn.primary');
+				for (const btn of fallbackBtns) {
+					const text    = (await btn.getText().catch(() => '')).trim();
+					const visible = await btn.isDisplayed().catch(() => false);
+					if (text === 'Si' && visible) {
+						await btn.click();
+						clicked = true;
+						break;
+					}
+				}
+			}
+		} catch (e) {
+			console.warn('[DriverTripNavigationScreen] confirmStartTripModal error:', e);
+		}
+
+		if (!clicked) {
+			console.warn('[DriverTripNavigationScreen] confirmStartTripModal: botón "Si" no encontrado');
+		} else {
+			await driver.pause(3_000);
 		}
 	}
 
@@ -134,56 +260,113 @@ export class DriverTripNavigationScreen extends AppiumSessionBase {
 		await this.pause(intervalMs * points.length);
 	}
 
+	/**
+	 * Finaliza el viaje en TravelNavigationPage (app-page-travel-in-progress).
+	 * Selector confirmado DOM dump 2026-04-09:
+	 *   [BTN] class="btn finish" text="Finalizar Viaje"
+	 * Contenedor: app-page-travel-in-progress
+	 */
 	async endTrip(): Promise<void> {
-		// TODO: reemplazar selectores heurísticos por el dump real de TravelConfirmPage.
-		const clicked = await this.clickWebButton([
-			'~end-trip-btn',
-			'//*[@text="Finalizar viaje"]',
-			'//*[@text="Cerrar viaje"]',
-			'//*[@text="Terminar viaje"]',
-			'id:com.magiis.app.test.driver:id/btnEndTrip',
-		]);
+		const onPage = await this.waitForTravelInProgressPage();
+		if (!onPage) {
+			console.warn('[DriverTripNavigationScreen] endTrip: no estamos en app-page-travel-in-progress');
+		}
+
+		const webview = await this.switchToWebView();
+		if (!webview) {
+			console.warn('[DriverTripNavigationScreen] endTrip: sin WebView');
+			return;
+		}
+
+		const driver = this.getDriver();
+		let clicked = false;
+
+		try {
+			// Selector estable confirmado: app-page-travel-in-progress button.btn.finish
+			const btn = await driver.$(TRIP_IN_PROGRESS_FINISH_SELECTOR);
+			if (await btn.isDisplayed().catch(() => false)) {
+				const text = (await btn.getText().catch(() => '')).trim();
+				if (text === 'Finalizar Viaje') {
+					await btn.click();
+					clicked = true;
+				}
+			}
+
+			// Fallback: buscar por texto en todos los botones
+			if (!clicked) {
+				const allBtns = await driver.$$('button') as unknown as any[];
+				for (const b of allBtns) {
+					const text    = (await b.getText().catch(() => '')).trim();
+					const visible = await b.isDisplayed().catch(() => false);
+					if (text === 'Finalizar Viaje' && visible) {
+						await b.click();
+						clicked = true;
+						break;
+					}
+				}
+			}
+		} catch (e) {
+			console.warn('[DriverTripNavigationScreen] endTrip error:', e);
+		}
 
 		if (!clicked) {
-			const nativeClicked = await this.clickFirstNative([
-				'//*[@text="Finalizar viaje"]',
-				'//*[@text="Cerrar viaje"]',
-				'//*[@text="Terminar viaje"]',
-				'//*[contains(@text, "Finalizar")]',
-				'//*[contains(@text, "Cerrar")]',
-			]);
-
-			if (!nativeClicked) {
-				console.warn('[DriverTripNavigationScreen] endTrip button not found');
-			}
+			console.warn('[DriverTripNavigationScreen] endTrip: botón "Finalizar Viaje" no encontrado');
+			return;
 		}
 
 		await this.pause(3_000);
 	}
 
+	/**
+	 * Confirma el modal "¿Finalizar Viaje?" con el botón "Si".
+	 * Selector confirmado DOM dump 2026-04-09:
+	 *   [id="ion-overlay-70"] tag=ion-modal text="¿Finalizar Viaje? Si No"
+	 *   [BTN] class="btn primary" text="Si"
+	 *   [BTN] class="btn-outlined-red" text="No"
+	 *   Contenedor: app-confirm-modal
+	 * Mismo patrón que confirmStartTripModal — filtrar btn.primary por texto "Si".
+	 */
 	async confirmEndTripPopup(): Promise<void> {
-		// TODO: reemplazar selectores heurísticos por el dump real del popup de finalización.
-		const clicked = await this.clickWebButton([
-			'~confirm-end-trip-yes',
-			'//*[@text="Sí"]',
-			'//*[@text="Si"]',
-			'//*[@text="Confirmar"]',
-			'id:com.magiis.app.test.driver:id/btnConfirmEndTrip',
-		], 15_000);
+		const driver = this.getDriver();
+		await this.switchToWebView();
+
+		let clicked = false;
+		try {
+			// Buscar dentro del modal de confirmación
+			const modalBtns = await driver.$$('app-confirm-modal button, ion-modal button') as unknown as any[];
+			for (const btn of modalBtns) {
+				const text    = (await btn.getText().catch(() => '')).trim();
+				const visible = await btn.isDisplayed().catch(() => false);
+				if (text === 'Si' && visible) {
+					await btn.click();
+					clicked = true;
+					break;
+				}
+			}
+
+			// Fallback: cualquier btn.primary con texto "Si"
+			if (!clicked) {
+				const allBtns = await driver.$$('button.btn.primary') as unknown as any[];
+				for (const btn of allBtns) {
+					const text    = (await btn.getText().catch(() => '')).trim();
+					const visible = await btn.isDisplayed().catch(() => false);
+					if (text === 'Si' && visible) {
+						await btn.click();
+						clicked = true;
+						break;
+					}
+				}
+			}
+		} catch (e) {
+			console.warn('[DriverTripNavigationScreen] confirmEndTripPopup error:', e);
+		}
 
 		if (!clicked) {
-			const nativeClicked = await this.clickFirstNative([
-				'//*[@text="Sí"]',
-				'//*[@text="Si"]',
-				'//*[@text="Confirmar"]',
-				'//*[contains(@text, "Sí")]',
-				'//*[contains(@text, "Si")]',
-			], 15_000);
-
-			if (!nativeClicked) {
-				console.warn('[DriverTripNavigationScreen] end-trip confirmation button not found');
-			}
+			console.warn('[DriverTripNavigationScreen] confirmEndTripPopup: botón "Si" no encontrado');
+			return;
 		}
+
+		await driver.pause(4_000);
 	}
 
 	async verifyTripCompleted(timeout = 60_000): Promise<void> {

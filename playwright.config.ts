@@ -56,7 +56,8 @@ export default defineConfig({
   },
 
   // Directorio de salida de artefactos por entorno
-  outputDir: `evidence/${env}/artifacts`,
+  // Usamos un nombre separado para evitar choques con carpetas bloqueadas por OneDrive.
+  outputDir: `evidence/${env}/playwright-artifacts`,
 
   // Navegadores soportados para la regresión cross-browser.
   projects: [

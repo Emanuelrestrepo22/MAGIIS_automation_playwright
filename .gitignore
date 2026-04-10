@@ -48,4 +48,5 @@ Thumbs.db
 CLAUDE.md
 ARCHITECTURE.md
 GATEWAY_PG_ARCHITECTURE.md
+!docs/gateway-pg/stripe/ARCHITECTURE.md
 .mcp.json

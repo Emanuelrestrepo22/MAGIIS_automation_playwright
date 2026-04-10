@@ -5,6 +5,7 @@
 
 import type { MobileActorConfig } from '../config/appiumRuntime';
 import { AppiumSessionBase, type AppiumDriver } from '../base/AppiumSessionBase';
+import { DriverHomeScreen } from './DriverHomeScreen';
 
 type CompletionSnapshot = {
 	url: string;
@@ -118,25 +119,30 @@ export class DriverTripCompletionScreen extends AppiumSessionBase {
 
 	async waitForCompletionScreen(timeout = 60_000): Promise<void> {
 		const deadline = Date.now() + timeout;
+		let lastSnapshot: CompletionSnapshot | null = null;
+		let lastSource = '';
 
 		while (Date.now() < deadline) {
-			const snapshot = await this.collectSnapshot();
-			if (snapshot) {
-				const joined = `${snapshot.url} ${snapshot.texts.join(' ')} ${snapshot.matches.join(' ')} ${snapshot.buttons.join(' ')}`;
+			lastSnapshot = await this.collectSnapshot();
+			if (lastSnapshot) {
+				const joined = `${lastSnapshot.url} ${lastSnapshot.texts.join(' ')} ${lastSnapshot.matches.join(' ')} ${lastSnapshot.buttons.join(' ')}`;
 				if (/finalizado|completado|confirmado|pago|charged|amount|summary|resumen/i.test(joined)) {
 					return;
 				}
 			}
 
-			const source = await this.getDriver().getPageSource().catch(() => '');
-			if (/finalizado|completado|confirmado|pago|charged|amount|summary|resumen/i.test(source)) {
+			lastSource = await this.getDriver().getPageSource().catch(() => '');
+			if (/finalizado|completado|confirmado|pago|charged|amount|summary|resumen/i.test(lastSource)) {
 				return;
 			}
 
 			await this.pause(1_000);
 		}
 
-		console.warn('[DriverTripCompletionScreen] Completion screen did not appear within timeout');
+		const details = lastSnapshot
+			? `URL=${lastSnapshot.url} | Textos=${lastSnapshot.texts.join(' || ')} | Botones=${lastSnapshot.buttons.join(' || ')}`
+			: `pageSource=${lastSource.slice(0, 500) || '<empty>'}`;
+		throw new Error(`[DriverTripCompletionScreen] Completion screen did not appear within ${timeout}ms. ${details}`);
 	}
 
 	async getChargedAmount(timeout = 10_000): Promise<string> {
@@ -156,6 +162,7 @@ export class DriverTripCompletionScreen extends AppiumSessionBase {
 	}
 
 	async close(): Promise<void> {
+		const snapshotBefore = await this.collectSnapshot();
 		let clicked = false;
 		try {
 			// TODO: reemplazar heurística del cierre por selector confirmado del dump.
@@ -201,10 +208,22 @@ export class DriverTripCompletionScreen extends AppiumSessionBase {
 		}
 
 		if (!clicked) {
-			console.warn('[DriverTripCompletionScreen] Close button not found');
-			return;
+			const details = snapshotBefore
+				? `URL=${snapshotBefore.url} | Textos=${snapshotBefore.texts.join(' || ')} | Botones=${snapshotBefore.buttons.join(' || ')}`
+				: 'snapshot unavailable';
+			throw new Error(`[DriverTripCompletionScreen] Close button not found. ${details}`);
 		}
 
 		await this.pause(1_000);
+
+		const homeScreen = new DriverHomeScreen(this.config, this.getDriver());
+		const returnedHome = await homeScreen.waitForReturnedHomeAfterTripClosed();
+		if (!returnedHome) {
+			const snapshotAfter = await this.collectSnapshot();
+			const details = snapshotAfter
+				? `URL=${snapshotAfter.url} | Textos=${snapshotAfter.texts.join(' || ')} | Botones=${snapshotAfter.buttons.join(' || ')}`
+				: 'snapshot unavailable';
+			throw new Error(`[DriverTripCompletionScreen] Home screen did not appear after close. ${details}`);
+		}
 	}
 }

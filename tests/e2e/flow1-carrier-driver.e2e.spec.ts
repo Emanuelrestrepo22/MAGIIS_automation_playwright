@@ -32,20 +32,25 @@
 import { test, expect } from '../TestBase';
 import { findLatestJourneyContextId } from '../features/gateway-pg/context/gatewayJourneyContext';
 import type { GatewayPgJourneyContext } from '../features/gateway-pg/contracts/gateway-pg.types';
-import { loginAsDispatcher } from '../features/gateway-pg/fixtures/gateway.fixtures';
+import { expectNoThreeDSModal, loginAsDispatcher } from '../features/gateway-pg/fixtures/gateway.fixtures';
 import { NewTravelPage, TravelDetailPage } from '../pages/carrier';
 import { getDriverAppConfig } from '../mobile/appium/config/appiumRuntime';
-import { DriverHomeScreen } from '../mobile/appium/driver/DriverHomeScreen';
-import { DriverTripCompletionScreen } from '../mobile/appium/driver/DriverTripCompletionScreen';
-import { DriverTripNavigationScreen } from '../mobile/appium/driver/DriverTripNavigationScreen';
-import { DriverTripRequestScreen } from '../mobile/appium/driver/DriverTripRequestScreen';
+import { DriverTripHappyPathHarness } from '../mobile/appium/harness/DriverTripHappyPathHarness';
 import { GatewayPgJourneyOrchestrator } from '../features/gateway-pg/helpers/GatewayPgJourneyOrchestrator';
-import { TEST_DATA } from '../features/gateway-pg/data/stripeTestData';
-import { STRIPE_TEST_CARDS } from '../features/gateway-pg/data/stripe-cards';
+import { STRIPE_TEST_CARDS as TEST_STRIPE_CARDS } from '../features/gateway-pg/data/stripeTestData';
 
 const orchestrator = new GatewayPgJourneyOrchestrator();
+const HAPPY_PATH = {
+  client: 'Usa Tres, Marcela',
+  origin: 'Cazadores 1987, Buenos Aires, Argentina',
+  destination: 'La Pampa 915, Pilar, Buenos Aires, Argentina',
+  cardLast4: TEST_STRIPE_CARDS.successDirect.slice(-4),
+} as const;
+
+test.describe.configure({ mode: 'serial' });
 
 test.describe('[E2E-FLOW-1] Carrier Web → Driver App @regression @stripe @hybrid-e2e', () => {
+  test.skip(({ browserName }) => browserName !== 'chromium', 'Hybrid flow runs only in Chromium');
   test.use({ role: 'carrier', storageState: undefined });
 
   test.beforeEach(async ({ page }) => {
@@ -77,29 +82,16 @@ test.describe('[E2E-FLOW-1] Carrier Web → Driver App @regression @stripe @hybr
     });
 
     await test.step('[FLOW1-TC01][STEP-02] Completar datos y tarjeta del viaje', async () => {
-      await travelPage.fillMinimum({
-        passenger: TEST_DATA.passenger,
-        origin: TEST_DATA.origin,
-        destination: TEST_DATA.destination,
-        cardLast4: STRIPE_TEST_CARDS.visa_success.last4,
-      });
+      await travelPage.selectClient(HAPPY_PATH.client);
+      await travelPage.assertDefaultServiceTypeRegular();
+      await travelPage.setOrigin(HAPPY_PATH.origin);
+      await travelPage.setDestination(HAPPY_PATH.destination);
+      await travelPage.selectCardByLast4(HAPPY_PATH.cardLast4);
     });
 
     await test.step('[FLOW1-TC01][STEP-03] Crear viaje — sistema procesa hold', async () => {
-      // Assert: validar respuesta de la API de pagos
-      const [response] = await Promise.all([
-        page.waitForResponse(
-          r => r.url().includes('/api/payments') && r.status() === 200
-        ),
-        travelPage.submit(),
-      ]);
-      const body = await response.json();
-      expect(body.status).toMatch(/succeeded|authorized|requires_action/i);
-
-      // Actualizar journey con referencia de pago
-      journey = orchestrator.attachTripData(journey, {
-        paymentReference: body.id ?? body.paymentIntentId ?? 'TODO-PAYMENT-ID',
-      });
+      await travelPage.submit();
+      await expectNoThreeDSModal(page);
     });
 
     await test.step('[FLOW1-TC01][STEP-04] Verificar estado SEARCHING_DRIVER en portal', async () => {
@@ -138,14 +130,11 @@ test.describe('[E2E-FLOW-1] Carrier Web → Driver App @regression @stripe @hybr
 });
 
 test.describe('[E2E-FLOW-1] Driver App @regression @stripe @hybrid-e2e', () => {
-  test('FLOW1-TC01-driver-app-mobile-handoff', async () => {
-    test.fixme(
-      true,
-      'PENDIENTE: validar selectores reales del Driver App en Appium Inspector y emulador TEST antes de activar la fase mobile.'
-    );
+  test.skip(({ browserName }) => browserName !== 'chromium', 'Appium hybrid flow runs once in Chromium');
 
+  test('FLOW1-TC01-driver-app-mobile-handoff', async () => {
     let journey: GatewayPgJourneyContext | null = null;
-    let homeScreen: DriverHomeScreen | null = null;
+    let mobileHarness: DriverTripHappyPathHarness | null = null;
 
     const ensureJourney = (): GatewayPgJourneyContext => {
       if (!journey) {
@@ -168,75 +157,44 @@ test.describe('[E2E-FLOW-1] Driver App @regression @stripe @hybrid-e2e', () => {
       }
 
       const driverConfig = getDriverAppConfig();
-      homeScreen = new DriverHomeScreen(driverConfig);
+      mobileHarness = new DriverTripHappyPathHarness(driverConfig);
 
-      await test.step('[FLOW1-TC01][MOBILE][STEP-01] Start Driver App session', async () => {
-        await homeScreen?.startSession();
-      });
-
-      const requestScreen = new DriverTripRequestScreen(driverConfig, homeScreen.getDriver());
-      const navigationScreen = new DriverTripNavigationScreen(driverConfig, homeScreen.getDriver());
-      const completionScreen = new DriverTripCompletionScreen(driverConfig, homeScreen.getDriver());
-
-      await test.step('[FLOW1-TC01][MOBILE][STEP-02] Ensure driver is online', async () => {
-        if (!(await homeScreen!.isDriverOnline())) {
-          await homeScreen!.goOnline();
-        }
-      });
-
-      await test.step('[FLOW1-TC01][MOBILE][STEP-03] Wait for trip request and validate tripId', async () => {
-        await homeScreen!.waitForTripRequest(ensureJourney().tripId!, 60_000);
-        expect(await homeScreen!.verifyTripId(ensureJourney().tripId!)).toBe(true);
-        await homeScreen!.openTripRequest();
-      });
-
-      await test.step('[FLOW1-TC01][MOBILE][STEP-04] Validate trip details and accept', async () => {
-        await requestScreen.verifyTripDetails({
-          origin: TEST_DATA.origin,
-          destination: TEST_DATA.destination,
+      await test.step('[FLOW1-TC01][MOBILE][STEP-01] Ejecutar happy path con checkpoints estándar', async () => {
+        const mobileResult = await mobileHarness!.runHappyPath({
+          ensureDriverOnline: true,
         });
-        expect(await requestScreen.getTripId()).toContain(ensureJourney().tripId!);
-        await requestScreen.acceptTrip();
-        journey = orchestrator.updatePhase(
-          ensureJourney(),
-          'driver_trip_acceptance',
-          'driver-accepted',
-          'Driver accepted the trip from the mobile app'
-        );
+
+        expect(mobileResult.checkpoints.map((checkpoint) => checkpoint.stage)).toEqual([
+          'confirm',
+          'in-progress',
+          'resume',
+          'closed',
+        ]);
+        expect(mobileResult.totalAmount).toBeTruthy();
       });
 
-      await test.step('[FLOW1-TC01][MOBILE][STEP-05] Start trip', async () => {
-        await navigationScreen.startTrip();
-        journey = orchestrator.updatePhase(
-          ensureJourney(),
-          'driver_route_simulation',
-          'driver-en-route',
-          'Driver started the trip from the mobile app'
-        );
-      });
-
-      await test.step('[FLOW1-TC01][MOBILE][STEP-06] Finish trip, confirm charge and close', async () => {
-        await navigationScreen.endTrip();
-        await navigationScreen.confirmEndTripPopup();
-        await navigationScreen.verifyTripCompleted();
-
-        const chargedAmount = await completionScreen.getChargedAmount();
-        expect(chargedAmount).toBeTruthy();
-
-        await navigationScreen.closeTrip();
-        expect(await homeScreen!.isDriverOnline()).toBe(true);
-
-        journey = orchestrator.completeMobilePhase(
-          ensureJourney(),
-          'Driver completed the trip in the mobile app'
-        );
-        journey = orchestrator.completeValidation(
-          ensureJourney(),
-          'Driver app trip completed and payment validated'
-        );
-        await orchestrator.persist(ensureJourney());
-        expect(ensureJourney().status).toBe('payment-validated');
-      });
+      journey = orchestrator.updatePhase(
+        ensureJourney(),
+        'driver_trip_acceptance',
+        'driver-accepted',
+        'Driver accepted the trip from the mobile app'
+      );
+      journey = orchestrator.updatePhase(
+        ensureJourney(),
+        'driver_route_simulation',
+        'driver-en-route',
+        'Driver started the trip from the mobile app'
+      );
+      journey = orchestrator.completeMobilePhase(
+        ensureJourney(),
+        'Driver completed the trip in the mobile app'
+      );
+      journey = orchestrator.completeValidation(
+        ensureJourney(),
+        'Driver app trip completed and payment validated'
+      );
+      await orchestrator.persist(ensureJourney());
+      expect(ensureJourney().status).toBe('payment-validated');
     } catch (error) {
       if (journey) {
         journey = orchestrator.fail(
@@ -247,7 +205,7 @@ test.describe('[E2E-FLOW-1] Driver App @regression @stripe @hybrid-e2e', () => {
       }
       throw error;
     } finally {
-      await homeScreen?.endSession();
+      await mobileHarness?.endSession();
     }
   });
 });

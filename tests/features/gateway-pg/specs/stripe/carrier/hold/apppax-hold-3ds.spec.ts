@@ -66,6 +66,155 @@ async function restoreHoldAndSave(page: Page, preferences: OperationalPreference
 	await preferences.assertHoldEnabled();
 }
 
+type Hold3dsScenario = {
+	client: string;
+	passenger: string;
+	origin: string;
+	destination: string;
+};
+
+async function runHoldOnScenario(page: Page, scenario: Hold3dsScenario): Promise<void> {
+	const dashboard = new DashboardPage(page);
+	const preferences = new OperationalPreferencesPage(page);
+	const travel = new NewTravelPage(page);
+	const management = new TravelManagementPage(page);
+	const detail = new TravelDetailPage(page);
+	const threeDS = new ThreeDSModal(page);
+
+	await test.step('Login carrier', async () => {
+		await loginAsDispatcher(page);
+	});
+
+	await test.step('Validar que el hold este activado en preferencias operativas', async () => {
+		await preferences.goto();
+		await preferences.ensureHoldEnabled();
+		await preferences.assertHoldEnabled();
+	});
+
+	await test.step('Ir al formulario de nuevo viaje', async () => {
+		await dashboard.openNewTravel();
+		await travel.ensureLoaded();
+	});
+
+	await test.step('Completar formulario con tarjeta 3DS', async () => {
+		await travel.fillMinimum({
+			client: scenario.client,
+			passenger: scenario.passenger,
+			origin: scenario.origin,
+			destination: scenario.destination,
+			cardLast4: STRIPE_TEST_CARDS.success3DS.slice(-4),
+		});
+	});
+
+	await test.step('Aprobar modal 3DS de Stripe (validacion inicial)', async () => {
+		await threeDS.waitForVisible();
+		await threeDS.completeSuccess();
+		await threeDS.waitForHidden();
+	});
+
+	await test.step('Seleccionar vehiculo y enviar el viaje', async () => {
+		await travel.clickSelectVehicle();
+		await travel.clickSendService();
+	});
+
+	await test.step('Aprobar 3DS adicional si aparece post-envio', async () => {
+		if (await threeDS.waitForOptionalVisible(60_000)) {
+			await threeDS.completeSuccess();
+			await threeDS.waitForHidden();
+		}
+	});
+
+	await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
+	const createdTravelId = extractTravelId(page.url());
+
+	await test.step('Validar viaje en gestion - columna Por asignar', async () => {
+		await management.goto();
+		await management.expectPassengerInPorAsignar(scenario.passenger, scenario.destination);
+	});
+
+	await test.step('Abrir detalle del viaje recien creado', async () => {
+		await management.openDetailForPassenger(scenario.passenger, scenario.destination);
+		await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
+		expect(extractTravelId(page.url())).toBe(createdTravelId);
+	});
+
+	await test.step('Validar estado del viaje - Buscando conductor', async () => {
+		await detail.expectStatus('Buscando conductor');
+	});
+}
+
+async function runHoldOffScenario(page: Page, scenario: Hold3dsScenario): Promise<void> {
+	const dashboard = new DashboardPage(page);
+	const preferences = new OperationalPreferencesPage(page);
+	const travel = new NewTravelPage(page);
+	const management = new TravelManagementPage(page);
+	const detail = new TravelDetailPage(page);
+	const threeDS = new ThreeDSModal(page);
+
+	await loginAsDispatcher(page);
+
+	try {
+		await test.step('Desactivar hold en preferencias operativas', async () => {
+			await disableHoldAndSave(preferences);
+		});
+
+		await test.step('Ir al formulario de nuevo viaje', async () => {
+			await dashboard.openNewTravel();
+			await travel.ensureLoaded();
+		});
+
+		await test.step('Completar formulario con tarjeta 3DS', async () => {
+			await travel.fillMinimum({
+				client: scenario.client,
+				passenger: scenario.passenger,
+				origin: scenario.origin,
+				destination: scenario.destination,
+				cardLast4: STRIPE_TEST_CARDS.success3DS.slice(-4),
+			});
+		});
+
+		await test.step('Aprobar modal 3DS de Stripe (validacion inicial)', async () => {
+			await threeDS.waitForVisible();
+			await threeDS.completeSuccess();
+			await threeDS.waitForHidden();
+		});
+
+		await test.step('Seleccionar vehiculo y enviar el viaje', async () => {
+			await travel.clickSelectVehicle();
+			await travel.clickSendService();
+		});
+
+		await test.step('Aprobar 3DS adicional si aparece post-envio', async () => {
+			if (await threeDS.waitForOptionalVisible(60_000)) {
+				await threeDS.completeSuccess();
+				await threeDS.waitForHidden();
+			}
+		});
+
+		await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
+		const createdTravelId = extractTravelId(page.url());
+
+		await test.step('Validar viaje en gestion - columna Por asignar', async () => {
+			await management.goto();
+			await management.expectPassengerInPorAsignar(scenario.passenger, scenario.destination);
+		});
+
+		await test.step('Abrir detalle del viaje recien creado', async () => {
+			await management.openDetailForPassenger(scenario.passenger, scenario.destination);
+			await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
+			expect(extractTravelId(page.url())).toBe(createdTravelId);
+		});
+
+		await test.step('Validar estado del viaje - Buscando conductor', async () => {
+			await detail.expectStatus('Buscando conductor');
+		});
+	} finally {
+		await test.step('Restaurar hold al final del test', async () => {
+			await restoreHoldAndSave(page, preferences);
+		});
+	}
+}
+
 test.use({ role: 'carrier', storageState: undefined });
 
 test.describe('Gateway PG · Carrier · App Pax — Hold con 3DS', () => {
@@ -147,16 +296,31 @@ test.describe('Gateway PG · Carrier · App Pax — Hold con 3DS', () => {
 			});
 		});
 
-		test('[TS-STRIPE-TC1055] @regression @3ds @hold hold+cobro app pax 3DS success variante', async () => {
-			test.fixme(true, 'PENDIENTE: segunda ejecución para validar idempotencia del flujo TC1053');
+		test('[TS-STRIPE-TC1055] @regression @3ds @hold hold+cobro app pax 3DS success variante', async ({ page }) => {
+			await runHoldOnScenario(page, {
+				client: TEST_DATA.appPaxPassenger,
+				passenger: TEST_DATA.appPaxPassenger,
+				origin: 'Av. Corrientes 1234, Buenos Aires',
+				destination: 'Av. Santa Fe 2100, Buenos Aires',
+			});
 		});
 
-		test('[TS-STRIPE-TC1061] @regression @3ds @hold hold+cobro app pax 3DS success (set 2)', async () => {
-			test.fixme(true, 'PENDIENTE: variante con datos de origen/destino distintos');
+		test('[TS-STRIPE-TC1061] @regression @3ds @hold hold+cobro app pax 3DS success (set 2)', async ({ page }) => {
+			await runHoldOnScenario(page, {
+				client: TEST_DATA.appPaxPassenger,
+				passenger: TEST_DATA.appPaxPassenger,
+				origin: TEST_DATA.origin,
+				destination: TEST_DATA.destination,
+			});
 		});
 
-		test('[TS-STRIPE-TC1063] @regression @3ds @hold hold+cobro app pax 3DS success variante 2', async () => {
-			test.fixme(true, 'PENDIENTE: depende de TC1053 estable');
+		test('[TS-STRIPE-TC1063] @regression @3ds @hold hold+cobro app pax 3DS success variante 2', async ({ page }) => {
+			await runHoldOnScenario(page, {
+				client: TEST_DATA.appPaxPassenger,
+				passenger: TEST_DATA.appPaxPassenger,
+				origin: 'Florida 100, CABA',
+				destination: 'Palermo Soho, CABA',
+			});
 		});
 
 	});
@@ -235,16 +399,31 @@ test.describe('Gateway PG · Carrier · App Pax — Hold con 3DS', () => {
 			}
 		});
 
-		test('[TS-STRIPE-TC1056] @regression @3ds sin hold app pax 3DS success variante', async () => {
-			test.fixme(true, 'PENDIENTE: depende de TC1054');
+		test('[TS-STRIPE-TC1056] @regression @3ds sin hold app pax 3DS success variante', async ({ page }) => {
+			await runHoldOffScenario(page, {
+				client: TEST_DATA.appPaxPassenger,
+				passenger: TEST_DATA.appPaxPassenger,
+				origin: 'Av. Corrientes 1234, Buenos Aires',
+				destination: 'Av. Santa Fe 2100, Buenos Aires',
+			});
 		});
 
-		test('[TS-STRIPE-TC1062] @regression @3ds sin hold app pax 3DS success (set 2)', async () => {
-			test.fixme(true, 'PENDIENTE: depende de TC1054');
+		test('[TS-STRIPE-TC1062] @regression @3ds sin hold app pax 3DS success (set 2)', async ({ page }) => {
+			await runHoldOffScenario(page, {
+				client: TEST_DATA.appPaxPassenger,
+				passenger: TEST_DATA.appPaxPassenger,
+				origin: TEST_DATA.origin,
+				destination: TEST_DATA.destination,
+			});
 		});
 
-		test('[TS-STRIPE-TC1064] @regression @3ds sin hold app pax 3DS success variante 2', async () => {
-			test.fixme(true, 'PENDIENTE: depende de TC1054');
+		test('[TS-STRIPE-TC1064] @regression @3ds sin hold app pax 3DS success variante 2', async ({ page }) => {
+			await runHoldOffScenario(page, {
+				client: TEST_DATA.appPaxPassenger,
+				passenger: TEST_DATA.appPaxPassenger,
+				origin: 'Florida 100, CABA',
+				destination: 'Palermo Soho, CABA',
+			});
 		});
 
 	});

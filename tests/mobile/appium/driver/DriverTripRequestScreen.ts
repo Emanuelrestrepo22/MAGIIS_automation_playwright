@@ -5,6 +5,10 @@
 
 import type { MobileActorConfig } from '../config/appiumRuntime';
 import { AppiumSessionBase, type AppiumDriver } from '../base/AppiumSessionBase';
+import {
+	DRIVER_ACTION_SELECTORS,
+	DRIVER_CHECKPOINT_SELECTORS,
+} from './DriverFlowSelectors';
 
 type TripRequestSnapshot = {
 	url: string;
@@ -17,6 +21,31 @@ type TripRequestSnapshot = {
 export class DriverTripRequestScreen extends AppiumSessionBase {
 	constructor(config: MobileActorConfig, driver?: AppiumDriver) {
 		super(config, driver);
+	}
+
+	/** Espera el checkpoint confirm (TravelConfirmPage) antes de aceptar el viaje. */
+	async waitForTripConfirmPage(timeout = 15_000): Promise<boolean> {
+		const driver = this.getDriver();
+		const deadline = Date.now() + timeout;
+		const checkpoint = DRIVER_CHECKPOINT_SELECTORS.confirm;
+
+		while (Date.now() < deadline) {
+			await this.switchToWebView(3_000);
+			const url = await driver.execute<string, []>(() => window.location.href).catch(() => '');
+			if (checkpoint.urlTokens.some((token) => url.includes(token))) {
+				return true;
+			}
+
+			for (const selector of checkpoint.webSelectors) {
+				if (await driver.$(selector).isDisplayed().catch(() => false)) {
+					return true;
+				}
+			}
+
+			await driver.pause(500);
+		}
+
+		return false;
 	}
 
 	private async collectSnapshot(): Promise<TripRequestSnapshot | null> {
@@ -145,7 +174,7 @@ export class DriverTripRequestScreen extends AppiumSessionBase {
 			const webview = await this.switchToWebView();
 			if (webview) {
 				const driver = this.getDriver();
-				const allBtns = await driver.$$('button.btn.primary');
+				const allBtns = await driver.$$(DRIVER_ACTION_SELECTORS.acceptTripPrimaryButton);
 				for (const btn of allBtns) {
 					const text     = (await btn.getText().catch(() => '')).trim();
 					const visible  = await btn.isDisplayed().catch(() => false);

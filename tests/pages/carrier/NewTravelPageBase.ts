@@ -27,6 +27,18 @@ const STRIPE_CARD_BY_LAST4: Record<string, string> = {
 	[STRIPE_TEST_CARDS.fail3DS.slice(-4)]: STRIPE_TEST_CARDS.fail3DS,
 	[STRIPE_TEST_CARDS.insufficientFunds.slice(-4)]: STRIPE_TEST_CARDS.insufficientFunds,
 	[STRIPE_TEST_CARDS.declined.slice(-4)]: STRIPE_TEST_CARDS.declined,
+	[STRIPE_TEST_CARDS.threeDSRequired.slice(-4)]: STRIPE_TEST_CARDS.threeDSRequired,
+	[STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4)]: STRIPE_TEST_CARDS.alwaysAuthenticate,
+	[STRIPE_TEST_CARDS.mastercardDebit.slice(-4)]: STRIPE_TEST_CARDS.mastercardDebit,
+	[STRIPE_TEST_CARDS.lostCard.slice(-4)]: STRIPE_TEST_CARDS.lostCard,
+	[STRIPE_TEST_CARDS.stolenCard.slice(-4)]: STRIPE_TEST_CARDS.stolenCard,
+	[STRIPE_TEST_CARDS.incorrectCvc.slice(-4)]: STRIPE_TEST_CARDS.incorrectCvc,
+	[STRIPE_TEST_CARDS.expiredCard.slice(-4)]: STRIPE_TEST_CARDS.expiredCard,
+	[STRIPE_TEST_CARDS.highestRisk.slice(-4)]: STRIPE_TEST_CARDS.highestRisk,
+	[STRIPE_TEST_CARDS.alwaysBlocked.slice(-4)]: STRIPE_TEST_CARDS.alwaysBlocked,
+	[STRIPE_TEST_CARDS.cvcCheckFail.slice(-4)]: STRIPE_TEST_CARDS.cvcCheckFail,
+	[STRIPE_TEST_CARDS.zipFailElevated.slice(-4)]: STRIPE_TEST_CARDS.zipFailElevated,
+	[STRIPE_TEST_CARDS.addressUnavailable.slice(-4)]: STRIPE_TEST_CARDS.addressUnavailable,
 };
 const TRAVEL_SUBMIT_TIMEOUT = 60_000;
 
@@ -64,6 +76,8 @@ export abstract class NewTravelPageBase {
 	protected readonly clientSearchInput: Locator;
 	protected readonly passengerSelect: Locator;
 	protected readonly passengerSearchInput: Locator;
+	protected readonly guestPassengerRadio: Locator;
+	protected readonly guestPassengerNameInput: Locator;
 	protected readonly originSelect: Locator;
 	protected readonly destinationSelect: Locator;
 	protected readonly serviceTypeRow: Locator;
@@ -95,6 +109,8 @@ export abstract class NewTravelPageBase {
 		this.clientSearchInput = page.locator('#clientSelect input[placeholder="Usuario a Buscar"]');
 		this.passengerSelect = page.locator('#passenger');
 		this.passengerSearchInput = page.locator('#passenger input[placeholder="Usuario a Buscar"]');
+		this.guestPassengerRadio = page.getByRole('radio', { name: 'PAX invitado' });
+		this.guestPassengerNameInput = page.getByRole('textbox', { name: 'Nombre*' });
 		this.originSelect = page.locator('app-input-search-place[formcontrolname="origin"]');
 		this.destinationSelect = page.locator('div.form-group-address[formarrayname="destination"] app-input-search-place');
 		this.serviceTypeRow = page.locator('#id_tab_add_travel .row').filter({ hasText: 'Tipo de Servicio' }).first();
@@ -219,16 +235,42 @@ export abstract class NewTravelPageBase {
 		await this.selectAutocompleteOption(this.passengerSelect, this.passengerSearchInput, name, 'passenger');
 	}
 
-	private async openPlaceDropdown(place: Locator): Promise<void> {
-		const dropdown = place.locator('select-dropdown');
-		await place.locator('.toggle').click({ force: true });
-		await this.page.waitForTimeout(500);
-		await dropdown.first().waitFor({ state: 'attached', timeout: 10_000 });
-		await this.page.waitForTimeout(500);
+	/** Selecciona PAX invitado y completa el nombre visible. */
+	async selectGuestPassenger(name: string): Promise<void> {
+		await expect(this.guestPassengerRadio).toBeVisible({ timeout: 10_000 });
+		await this.guestPassengerRadio.click();
+		await expect(this.guestPassengerNameInput).toBeVisible({ timeout: 10_000 });
+		await this.guestPassengerNameInput.fill(name);
 	}
 
-	private async pickFirstPlaceOption(place: Locator, avoidText?: string): Promise<boolean> {
-		const options = place.locator('select-dropdown .options li');
+	private async openPlaceDropdown(place: Locator): Promise<Locator> {
+		const searchInput = place.getByRole('textbox', { name: 'Ingrese una dirección' }).first();
+		const clickTargets = [
+			place.locator('.search-container-input > .bootstrap > .below > .single > .placeholder').first(),
+			place.locator('.search-container-input').first(),
+			place.locator('.placeholder').first(),
+			place.locator('.toggle').first(),
+		];
+
+		for (const target of clickTargets) {
+			if (!(await target.isVisible().catch(() => false))) {
+				continue;
+			}
+
+			await target.click({ force: true });
+			await this.page.waitForTimeout(500);
+
+			if (await searchInput.isVisible().catch(() => false)) {
+				break;
+			}
+		}
+
+		await searchInput.waitFor({ state: 'visible', timeout: 10_000 });
+		return searchInput;
+	}
+
+	private async pickFirstPlaceOption(dropdown: Locator, avoidText?: string): Promise<boolean> {
+		const options = dropdown.locator('.options li');
 		const count = await options.count();
 
 		for (let index = 0; index < count; index += 1) {
@@ -256,18 +298,29 @@ export abstract class NewTravelPageBase {
 	): Promise<void> {
 		const currentText = normalizeText(await place.textContent());
 		const desiredText = normalizeText(address);
+		const queryText = address.split(',')[0].trim() || address;
 
 		if (currentText.includes(desiredText)) {
 			return;
 		}
 
-		await this.openPlaceDropdown(place);
-
-		const searchInput = place.locator('select-dropdown input').first();
-		await searchInput.fill(address);
+		const searchInput = await this.openPlaceDropdown(place);
+		await searchInput.fill(queryText);
 		await this.page.waitForTimeout(1_000);
 
-		if (await this.pickFirstPlaceOption(place, options.avoidText)) {
+		const suggestionText = address.split(',').slice(0, -1).join(',').trim() || address;
+		const suggestion = place.getByText(new RegExp(escapeRegExp(suggestionText), 'i')).first();
+		const fallbackOption = place.getByRole('listitem').filter({ hasText: /\S/ }).first();
+
+		if (await suggestion.isVisible().catch(() => false)) {
+			await suggestion.click();
+			await this.page.waitForTimeout(500);
+			return;
+		}
+
+		if (await fallbackOption.isVisible().catch(() => false)) {
+			await fallbackOption.click();
+			await this.page.waitForTimeout(500);
 			return;
 		}
 
@@ -279,7 +332,18 @@ export abstract class NewTravelPageBase {
 		await searchInput.fill('');
 		await this.page.waitForTimeout(500);
 
-		if (await this.pickFirstPlaceOption(place, options.avoidText)) {
+		await searchInput.fill(queryText);
+		await this.page.waitForTimeout(1_000);
+
+		if (await suggestion.isVisible().catch(() => false)) {
+			await suggestion.click();
+			await this.page.waitForTimeout(500);
+			return;
+		}
+
+		if (await fallbackOption.isVisible().catch(() => false)) {
+			await fallbackOption.click();
+			await this.page.waitForTimeout(500);
 			return;
 		}
 

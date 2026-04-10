@@ -5,6 +5,7 @@
 
 import type { MobileActorConfig } from '../config/appiumRuntime';
 import { AppiumSessionBase, type AppiumDriver } from '../base/AppiumSessionBase';
+import { DRIVER_CHECKPOINT_SELECTORS } from './DriverFlowSelectors';
 
 type HomeWebSnapshot = {
 	url: string;
@@ -283,6 +284,68 @@ export class DriverHomeScreen extends AppiumSessionBase {
 		}
 		if (/disponible|available|online/i.test(pageSource)) {
 			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Espera a que el driver vuelva al home después de cerrar un viaje.
+	 * Selector confirmado del dump: button.driver-home.home-icon-base.
+	 * URL confirmada: /navigator/home;FROM_TRAVEL_CLOSED=true
+	 */
+	async waitForReturnedHomeAfterTripClosed(timeout = 30_000): Promise<boolean> {
+		const driver = this.getDriver();
+		const deadline = Date.now() + timeout;
+
+		while (Date.now() < deadline) {
+			try {
+				await this.switchToWebView(3_000);
+			} catch {
+				// Si el WebView todavía no está listo, seguir esperando.
+			}
+
+			const url = await driver.execute<string, []>(() => window.location.href).catch(() => '');
+			const homeVisible = await driver.$('button.driver-home.home-icon-base').isDisplayed().catch(() => false);
+			const isHomeUrl = /\/navigator\/home(?:[;?].*)?/i.test(url);
+			const closedFlag = /FROM_TRAVEL_CLOSED=true/i.test(url);
+
+			if (homeVisible && (isHomeUrl || closedFlag)) {
+				return true;
+			}
+
+			await driver.pause(500);
+		}
+
+		console.warn('[DriverHomeScreen] Home after trip close did not appear within timeout');
+		return false;
+	}
+
+	/** Espera el checkpoint closed: home normal o nuevo TravelConfirmPage entrante. */
+	async waitForClosedCheckpoint(timeout = 30_000): Promise<boolean> {
+		const driver = this.getDriver();
+		const checkpoint = DRIVER_CHECKPOINT_SELECTORS.closed;
+		const deadline = Date.now() + timeout;
+
+		while (Date.now() < deadline) {
+			try {
+				await this.switchToWebView(3_000);
+			} catch {
+				// Continuar hasta que WebView esté disponible.
+			}
+
+			const url = await driver.execute<string, []>(() => window.location.href).catch(() => '');
+			if (checkpoint.urlTokens.some((token) => url.includes(token))) {
+				return true;
+			}
+
+			for (const selector of checkpoint.webSelectors) {
+				if (await driver.$(selector).isDisplayed().catch(() => false)) {
+					return true;
+				}
+			}
+
+			await driver.pause(500);
 		}
 
 		return false;
