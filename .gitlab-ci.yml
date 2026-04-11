@@ -1,0 +1,40 @@
+stages:
+  - test
+
+variables:
+  # Carpeta local de caché para PNPM
+  PNPM_CACHE_FOLDER: "$CI_PROJECT_DIR/.pnpm-store"
+
+e2e-test-smoke:
+  stage: test
+  image: node:20
+  cache:
+    key:
+      files:
+        - pnpm-lock.yaml
+    paths:
+      - .pnpm-store
+  before_script:
+    - corepack enable
+    - corepack prepare pnpm@latest --activate
+    - pnpm config set store-dir $PNPM_CACHE_FOLDER
+    - pnpm install --frozen-lockfile
+    - npx playwright install --with-deps chromium
+  script:
+    - mkdir -p storage
+    - |
+      # Construyendo variables de entorno al vuelo
+      echo "ENV=test" > .env.test
+      echo "BASE_URL=${BASE_URL}" >> .env.test
+      echo "AUTH_API_URL=${AUTH_API_URL}" >> .env.test
+      echo "LOGIN_PATH=/#/authentication/login/carrier" >> .env.test
+      echo "DASHBOARD_URL_PATTERN=dashboard" >> .env.test
+      echo "USER_CARRIER=${USER_CARRIER}" >> .env.test
+      echo "PASS_CARRIER=${PASS_CARRIER}" >> .env.test
+      echo "HEADLESS=true" >> .env.test
+    - pnpm run test:test:smoke
+  artifacts:
+    when: always
+    paths:
+      - evidence/test/
+    expire_in: 14 days
