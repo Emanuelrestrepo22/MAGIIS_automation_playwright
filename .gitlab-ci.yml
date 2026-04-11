@@ -2,10 +2,9 @@ stages:
   - test
 
 variables:
-  # Carpeta local de caché para PNPM
   PNPM_CACHE_FOLDER: "$CI_PROJECT_DIR/.pnpm-store"
 
-e2e-test-smoke:
+.e2e_template:
   stage: test
   image: node:20
   cache:
@@ -23,12 +22,11 @@ e2e-test-smoke:
   script:
     - mkdir -p storage
     - |
-      # Construyendo variables de entorno al vuelo
-      echo "ENV=test" > .env.test
+      echo "ENV=${ENV}" > .env.test
       echo "BASE_URL=${BASE_URL}" >> .env.test
       echo "AUTH_API_URL=${AUTH_API_URL}" >> .env.test
-      echo "LOGIN_PATH=/#/authentication/login/carrier" >> .env.test
-      echo "DASHBOARD_URL_PATTERN=dashboard" >> .env.test
+      echo "LOGIN_PATH=${LOGIN_PATH}" >> .env.test
+      echo "DASHBOARD_URL_PATTERN=${DASHBOARD_URL_PATTERN}" >> .env.test
       echo "USER_CARRIER=${USER_CARRIER}" >> .env.test
       echo "PASS_CARRIER=${PASS_CARRIER}" >> .env.test
       echo "HEADLESS=true" >> .env.test
@@ -38,3 +36,30 @@ e2e-test-smoke:
     paths:
       - evidence/test/
     expire_in: 14 days
+
+e2e-test:
+  extends: .e2e_template
+  environment:
+    name: test
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+  variables:
+    ENV: test
+
+e2e-uat:
+  extends: .e2e_template
+  environment:
+    name: uat
+  rules:
+    - when: manual
+  variables:
+    ENV: uat
+
+e2e-prod:
+  extends: .e2e_template
+  environment:
+    name: prod
+  rules:
+    - when: manual
+  variables:
+    ENV: prod
