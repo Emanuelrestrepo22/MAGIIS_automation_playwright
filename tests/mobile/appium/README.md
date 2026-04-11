@@ -47,5 +47,17 @@ Generated files are written to:
 - `config/appiumMcp.ts`
 - `base/AppiumSessionBase.ts`
 - `driver/*`
+- `harness/DriverTripHappyPathHarness.ts`
 - `passenger/*`
 - `gateway-pg/*`
+
+## Reusable happy path harness (Carrier -> Driver)
+- Canonical scenario map: `tests/features/gateway-pg/data/driver-happy-path-scenarios.ts`
+- Hybrid web+mobile helper: `tests/features/gateway-pg/helpers/hybridCarrierDriverHappyPathHarness.ts`
+- Data-driven template spec: `tests/features/gateway-pg/specs/stripe/e2e-mobile/carrier-driver-happy-path-template.spec.ts`
+
+To run mapped scenarios when device and Appium are ready:
+
+```bash
+RUN_MOBILE_HAPPY_PATH=true npx playwright test tests/features/gateway-pg/specs/stripe/e2e-mobile/carrier-driver-happy-path-template.spec.ts --project chromium
+```

@@ -6,8 +6,8 @@ import {
   getRoleRuntimeConfig,
   resolveRoleCredentials,
 } from "./tests/config/runtime";
-import { DashboardPage } from "./tests/pages/DashboardPage";
-import { LoginPage } from "./tests/pages/LoginPage";
+import { DashboardPage } from "./tests/pages/carrier";
+import { LoginPage } from "./tests/pages/shared";
 
 async function globalSetup(): Promise<void> {
   // Este setup autentica todos los roles configurados en el .env
@@ -39,24 +39,32 @@ async function globalSetup(): Promise<void> {
     const roleConfig = getRoleRuntimeConfig(role);
     const credentials = resolveRoleCredentials(role);
     const page = await browser.newPage();
-    const loginPage = new LoginPage(page, role, roleConfig.baseURL);
-    const dashboardPage = new DashboardPage(page);
 
-    console.log(
-      `[GlobalSetup][${role}] Navigating to ${roleConfig.baseURL}${roleConfig.loginPath}`,
-    );
-    await loginPage.goto();
-    await loginPage.login(credentials.username, credentials.password);
+    try {
+      const loginPage = new LoginPage(page, role, roleConfig.baseURL);
+      const dashboardPage = new DashboardPage(page);
 
-    await dashboardPage.ensureDashboardLoaded();
+      console.log(
+        `[GlobalSetup][${role}] Navigating to ${roleConfig.baseURL}${roleConfig.loginPath}`,
+      );
+      await loginPage.goto();
+      await loginPage.login(credentials.username, credentials.password);
 
-    // Cada rol guarda su propio estado para que las specs puedan reutilizarlo
-    // sin mezclarse entre sí.
-    await page.context().storageState({ path: roleConfig.storageStatePath });
-    console.log(
-      `[GlobalSetup][${role}] Storage state saved to ${roleConfig.storageStatePath}`,
-    );
-    await page.close();
+      await dashboardPage.ensureDashboardLoaded();
+
+      // Cada rol guarda su propio estado para que las specs puedan reutilizarlo
+      // sin mezclarse entre sí.
+      await page.context().storageState({ path: roleConfig.storageStatePath });
+      console.log(
+        `[GlobalSetup][${role}] Storage state saved to ${roleConfig.storageStatePath}`,
+      );
+    } catch (err) {
+      console.warn(
+        `[GlobalSetup][${role}] ⚠️  Login failed — skipping storage state. Specs using this role will need storageState: { cookies: [], origins: [] }.\n  Reason: ${(err as Error).message}`,
+      );
+    } finally {
+      await page.close();
+    }
   }
 
   await browser.close();

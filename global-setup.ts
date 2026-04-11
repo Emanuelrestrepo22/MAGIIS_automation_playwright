@@ -2,8 +2,8 @@
 import type { FullConfig } from "@playwright/test";
 import { chromium } from "@playwright/test";
 import * as dotenv from "dotenv";
-import { DashboardPage } from "./tests/pages/DashboardPage";
-import { LoginPage } from "./tests/pages/LoginPage";
+import { DashboardPage } from "./tests/pages/carrier";
+import { LoginPage } from "./tests/pages/shared";
 
 async function globalSetup(config: FullConfig) {
   // Este setup "legacy" prepara una sola sesión carrier y guarda su storageState.

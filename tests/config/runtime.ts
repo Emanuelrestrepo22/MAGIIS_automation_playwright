@@ -100,11 +100,22 @@ export function resolveRoleCredentials(role: AppRole): RoleCredentials {
 
 export function resolveLoginPath(role: LoginRole): string {
 	// Permite customizar la ruta por rol sin duplicar lógica en los page objects.
-	if (role === 'pax') {
-		return process.env.PAX_LOGIN_PATH ?? process.env.LOGIN_PATH ?? DEFAULT_LOGIN_PATHS.pax;
+	if (role === 'carrier') {
+		// Carrier sí acepta el fallback global porque este proyecto usa LOGIN_PATH
+		// como atajo para el portal carrier.
+		return process.env.LOGIN_PATH_CARRIER ?? process.env.LOGIN_PATH ?? DEFAULT_LOGIN_PATHS.carrier;
 	}
 
-	return readRoleFirstEnv('LOGIN_PATH', role) ?? DEFAULT_LOGIN_PATHS[role];
+	if (role === 'contractor') {
+		// Evitamos heredar LOGIN_PATH global para no mandar al contractor al login carrier.
+		return process.env.LOGIN_PATH_CONTRACTOR ?? DEFAULT_LOGIN_PATHS.contractor;
+	}
+
+	if (role === 'web') {
+		return process.env.LOGIN_PATH_WEB ?? DEFAULT_LOGIN_PATHS.web;
+	}
+
+	return process.env.PAX_LOGIN_PATH ?? DEFAULT_LOGIN_PATHS.pax;
 }
 
 export function resolveAuthApiUrl(role: AppRole): string | null {

@@ -22,7 +22,7 @@ const defaultRole = getDefaultRole();
 
 export default defineConfig({
   // Carpeta raíz donde vive la mayoría de las specs del proyecto.
-  testDir: "./tests/specs",
+  testDir: "./tests",
 
   // Timeouts globales que equilibran estabilidad y velocidad de feedback.
   timeout: 60 * 1000,
@@ -56,7 +56,8 @@ export default defineConfig({
   },
 
   // Directorio de salida de artefactos por entorno
-  outputDir: `evidence/${env}/artifacts`,
+  // Usamos un nombre separado para evitar choques con carpetas bloqueadas por OneDrive.
+  outputDir: `evidence/${env}/playwright-artifacts`,
 
   // Navegadores soportados para la regresión cross-browser.
   projects: [

@@ -10,8 +10,9 @@
 [![github-actions]][github-actions-docu]
 [![eslint]][eslint-site]
 [![node-logo]][node-site]
+[![appium-logo]][appium-site]
 
-Framework de automatización E2E para la plataforma **MAGIIS**, construido con **Playwright + TypeScript**. Cubre flujos críticos con arquitectura POM, gestión multi-entorno, autenticación vía API y pipelines CI/CD por entorno (TEST / UAT / PROD).
+Framework de automatización web y móvil E2E para la plataforma **MAGIIS**, construido con **Playwright + Appium + TypeScript**. Cubre flujos críticos con arquitectura POM centralizada, pruebas en dispositivos móviles, gestión multi-entorno, autenticación vía API y pipelines CI/CD por entorno (TEST / UAT / PROD).
 
 ---
 
@@ -65,35 +66,30 @@ storage/
 magiiss-playwright/
 ├── .github/
 │   └── workflows/
-│       ├── playwright.yml              # CI — TEST (push/PR a main y develop)
-│       └── playwright-prod-smoke.yml  # CI — PROD smoke (push a main + manual)
+│       ├── playwright.yml             # CI — TEST Web
+│       └── playwright-prod-smoke.yml  # CI — PROD smoke Web
 ├── tests/
-│   ├── pages/                         # Page Objects (POM)
-│   │   ├── LoginPage.ts
-│   │   ├── DashboardPage.ts
-│   │   └── Navbar.ts
-│   ├── selectors/                     # Selectores centralizados por módulo
-│   │   ├── login.ts
-│   │   └── dashboard.ts
-│   ├── specs/
-│   │   ├── auth/                      # Tests de autenticación E2E
-│   │   │   ├── login-success.e2e.test.ts
-│   │   │   └── login-failure.e2e.test.ts
-│   │   ├── api/                       # Tests de capa API
-│   │   │   └── auth-login.api.test.ts
-│   │   └── smoke/                     # Smoke tests (se ejecutan en PROD)
-│   │       └── login.smoke.test.ts
-│   ├── utils/
-│   │   ├── apiClient.ts               # Cliente HTTP reutilizable
-│   │   └── dataGenerator.ts          # Faker — generación de datos de prueba
+│   ├── pages/                         # Page Objects (POM centralizados)
+│   │   ├── shared/                    # Interfaces comunes (Carrier y Contractor compartidos)
+│   │   ├── carrier/                   # Pages específicos del portal Carrier
+│   │   └── contractor/                # Pages específicos de Contractor (futuro)
+│   ├── features/                      # Funcionalidades y módulos divididos por dominio (Specs Web)
+│   │   ├── auth/
+│   │   │   ├── specs/                 # Casos de prueba E2E (auth)
+│   │   │   └── fixtures/              # Datos y configuración local del módulo
+│   │   └── gateway-pg/
+│   │       └── specs/                 # Casos de prueba E2E (pagos)
+│   ├── mobile/                        # Automatización Móvil Appium
+│   │   └── appium/
+│   │       ├── driver/                # Pruebas para MAGIIS Driver App
+│   │       └── passenger/             # Pruebas para MAGIIS Passenger App
+│   ├── utils/                         # Clientes HTTP y generación de datos
 │   └── TestBase.ts                    # Fixtures personalizados (extend test)
 ├── storage/                           # storageState por entorno (gitignored)
 ├── evidence/                          # Artefactos de ejecución (gitignored)
-├── .env.test                          # Variables locales TEST (gitignored)
-├── .env.uat                           # Variables locales UAT  (gitignored)
-├── .env.prod                          # Variables locales PROD (gitignored)
+├── .env.*                             # Variables de entorno
 ├── global-setup.ts                    # Login vía API antes del test run
-├── playwright.config.ts               # Configuración principal Playwright
+├── playwright.config.ts               # Configuración Web Playwright
 ├── tsconfig.json
 └── package.json
 ```
@@ -307,10 +303,10 @@ tests
 
 | Tipo de test   | Entorno     | Trigger                        | Suite                   |
 |----------------|-------------|--------------------------------|-------------------------|
-| E2E Auth       | TEST        | Push / PR a main o develop     | `tests/specs/auth/`     |
+| E2E Auth       | TEST        | Push / PR a main o develop     | `tests/features/auth/specs/` |
 | API Tests      | TEST        | Push / PR a main o develop     | `tests/specs/api/`      |
-| Regresión UAT  | UAT         | Manual                         | Todos los specs         |
-| Smoke PROD     | PROD        | Push a main / manual           | `tests/specs/smoke/`    |
+| Regresión UAT  | UAT         | Manual                         | Todas las features      |
+| Smoke PROD     | PROD        | Push a main / manual           | `tests/features/smoke/` |
 
 **Decisiones de diseño:**
 
@@ -404,3 +400,5 @@ npm run test:test:smoke # smoke local pasa
 [eslint-site]: https://eslint.org/
 [node-logo]: https://img.shields.io/badge/node.js-6DA55F?style=for-the-badge&logo=node.js&logoColor=white
 [node-site]: https://nodejs.org/
+[appium-logo]: https://img.shields.io/badge/Appium-41BDF5?style=for-the-badge&logo=appium&logoColor=white
+[appium-site]: https://appium.io/
