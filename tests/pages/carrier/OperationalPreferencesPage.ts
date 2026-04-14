@@ -44,7 +44,10 @@ export class OperationalPreferencesPage {
 
 	async expandHoldCard(): Promise<void> {
 		if (!(await this.holdToggle.isVisible().catch(() => false))) {
-			await this.holdCardHeader.click();
+			await this.holdCard.scrollIntoViewIfNeeded().catch(() => undefined);
+			await this.holdCardHeader.scrollIntoViewIfNeeded().catch(() => undefined);
+			await expect(this.holdCardHeader).toBeVisible({ timeout: 10_000 });
+			await this.holdCardHeader.click({ force: true });
 		}
 		await expect(this.holdToggle).toBeVisible({ timeout: 10_000 });
 	}
@@ -66,7 +69,11 @@ export class OperationalPreferencesPage {
 
 		const currentState = await this.holdToggle.isChecked();
 		if (currentState !== enabled) {
-			await this.holdToggle.click({ force: true });
+			if (enabled) {
+				await this.holdToggle.check({ force: true });
+			} else {
+				await this.holdToggle.uncheck({ force: true });
+			}
 			if (enabled) {
 				await expect(this.holdToggle).toBeChecked({ timeout: 10_000 });
 			} else {

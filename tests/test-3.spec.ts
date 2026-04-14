@@ -1,0 +1,32 @@
+import { test, expect } from '@playwright/test';
+
+test('test', async ({ page }) => {
+  await page.goto('https://apps-test.magiis.com/#/home/carrier/dashboard');
+  await page.getByRole('banner').getByRole('link', { name: 'Nuevo Viaje' }).click();
+  await page.locator('#clientSelect').getByText('Seleccione Usuario').click();
+  await page.getByRole('textbox', { name: 'Usuario a Buscar' }).fill('ema');
+  await page.locator('.data-with-icon-col').click();
+  await page.getByText('Cazadores 1987, Buenos Aires').click();
+  await page.getByText('Reconquista 661, Buenos Aires').click();
+  await page.locator('.bootstrap.width-combo.input-search.ng-untouched.ng-pristine.ng-valid > .below > .single > .placeholder').click();
+  await page.getByText('Cazadores 1987, Buenos Aires').click();
+  await page.locator('.data-with-icon-col.option-content-container.ng-tns-c27-2').click();
+  await page.locator('.ng-star-inserted.highlighted > .data-with-icon-col').click();
+  await page.locator('iframe[name="__privateStripeFrame6563"]').contentFrame().getByRole('textbox', { name: 'Credit or debit card number' }).click();
+  await page.locator('iframe[name="__privateStripeFrame6563"]').contentFrame().getByRole('textbox', { name: 'Credit or debit card number' }).fill('4000000000000002');
+  await page.locator('.stripe-element-wrapper.stripe-element-small').first().click();
+  await page.locator('iframe[name="__privateStripeFrame6564"]').contentFrame().getByRole('textbox', { name: 'Credit or debit card' }).click();
+  await page.locator('iframe[name="__privateStripeFrame6564"]').contentFrame().getByRole('textbox', { name: 'Credit or debit card' }).fill('12 / 34');
+  await page.locator('iframe[name="__privateStripeFrame6565"]').contentFrame().getByRole('textbox', { name: 'Credit or debit card CVC/CVV' }).click();
+  await page.locator('iframe[name="__privateStripeFrame6565"]').contentFrame().getByRole('textbox', { name: 'Credit or debit card CVC/CVV' }).fill('123');
+  await page.getByRole('textbox').first().click();
+  await page.getByRole('textbox').first().fill('emanuel; restrepo');
+  await page.getByRole('textbox').first().click();
+  await page.getByRole('textbox').first().fill('emanuel restrepo');
+  await page.getByRole('textbox').nth(1).click();
+  await page.getByRole('textbox').nth(1).fill('77465654645');
+  await page.getByRole('button', { name: 'Validar' }).click();
+  await page.getByText('Your card has been declined.').click();
+  await page.getByText('Your card has been declined.').click();
+  await page.getByText('Your card has been declined.').click();
+});

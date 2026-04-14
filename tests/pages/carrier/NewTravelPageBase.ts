@@ -192,27 +192,48 @@ export abstract class NewTravelPageBase {
 
 	private async selectAutocompleteOption(select: Locator, searchInput: Locator, name: string, roleLabel: string): Promise<void> {
 		const searchValue = name.replace(/[,()]/g, ' ').replace(/\s+/g, ' ').trim();
+		const firstToken = searchValue.split(' ').find((token) => token.trim().length > 0) ?? searchValue;
+		const fallbackQueries = Array.from(
+			new Set(
+				[
+					searchValue,
+					firstToken,
+					firstToken.slice(0, 4),
+					firstToken.slice(0, 3),
+					name.trim(),
+				].filter(Boolean)
+			)
+		);
+		const dropdown = select.locator('select-dropdown').first();
+		const options = select.locator('select-dropdown .options li');
 
 		await select.locator('.below').click({ force: true });
 		await this.page.waitForTimeout(400);
-		await select.locator('select-dropdown').first().waitFor({ state: 'attached', timeout: 10_000 });
-		await searchInput.fill(searchValue);
-		await this.page.waitForTimeout(1_000);
+		await dropdown.waitFor({ state: 'attached', timeout: 10_000 });
 
-		const options = select.locator('select-dropdown .options li');
-		const count = await options.count();
+		for (const query of fallbackQueries) {
+			await searchInput.fill(query);
+			await this.page.waitForTimeout(1_000);
 
-		for (let index = 0; index < count; index += 1) {
-			const option = options.nth(index);
-			const text = await option.textContent().catch(() => '');
+			const deadline = Date.now() + 15_000;
+			while (Date.now() < deadline) {
+				const count = await options.count();
 
-			if (!matchesSearchText(text ?? '', name)) {
-				continue;
+				for (let index = 0; index < count; index += 1) {
+					const option = options.nth(index);
+					const text = await option.textContent().catch(() => '');
+
+					if (!matchesSearchText(text ?? '', name)) {
+						continue;
+					}
+
+					await option.click();
+					await this.page.waitForTimeout(500);
+					return;
+				}
+
+				await this.page.waitForTimeout(500);
 			}
-
-			await option.click();
-			await this.page.waitForTimeout(500);
-			return;
 		}
 
 		throw new Error(`No ${roleLabel} option found for "${name}"`);
@@ -619,11 +640,7 @@ export abstract class NewTravelPageBase {
 	}
 
 	async submit(): Promise<void> {
-		if (await this.validateCardButton.isVisible().catch(() => false) && await this.validateCardButton.isEnabled().catch(() => false)) {
-			await this.validateCardButton.click();
-			await this.page.waitForTimeout(1_000);
-			await this.assertPaymentMethodPreauthorizedSelected();
-		}
+		await this.clickValidateCard();
 
 		const deadline = Date.now() + TRAVEL_SUBMIT_TIMEOUT;
 		let vehicleSelectionOpened = false;
@@ -651,6 +668,18 @@ export abstract class NewTravelPageBase {
 		throw new Error('No enabled submit button found on travel form');
 	}
 
+	async clickValidateCard(): Promise<void> {
+		await this.waitForEnabledButton(this.validateCardButton);
+		await this.waitForLoadingOverlayToDisappear();
+		await this.validateCardButton.click({ force: true });
+		await this.page.waitForTimeout(1_000);
+		await this.assertPaymentMethodPreauthorizedSelected();
+	}
+
+	async waitForVehicleSelectionReady(timeout = 45_000): Promise<void> {
+		await this.waitForEnabledButton(this.vehicleButton, timeout);
+	}
+
 	async clickSelectVehicle(): Promise<void> {
 		await this.waitForEnabledButton(this.vehicleButton);
 		await this.waitForLoadingOverlayToDisappear();
@@ -669,10 +698,17 @@ export abstract class NewTravelPageBase {
 		// En carrier, algunos clientes auto-completan el pasajero y otros requieren pax distinto.
 		await this.selectClient(clientName);
 
-		if (normalizeText(opts.passenger) !== normalizeText(clientName)) {
+		const passengerIsDisabled = await this.passengerSelect.getAttribute('ng-reflect-is-disabled')
+			.then((value) => value === 'true')
+			.catch(() => false);
+
+		if (!passengerIsDisabled && normalizeText(opts.passenger) !== normalizeText(clientName)) {
 			await this.selectPassenger(opts.passenger);
 		} else {
-			await expect(this.passengerSelect).toContainText(clientName, { timeout: 10_000 });
+			await expect.poll(
+				async () => matchesSearchText((await this.passengerSelect.textContent().catch(() => '')) ?? '', clientName),
+				{ timeout: 10_000 }
+			).toBe(true);
 		}
 
 		await this.assertDefaultServiceTypeRegular();

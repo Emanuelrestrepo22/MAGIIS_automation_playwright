@@ -82,43 +82,28 @@ async function run(): Promise<void> {
 		return;
 	}
 
-	// ── Tap "Cerrar Viaje" ────────────────────────────────────────────────────
-	log('Buscando "Cerrar Viaje" (button.btn.finish dentro de app-travel-resume)...');
-	let clicked = false;
+	// ── Tap botón de cierre (texto varía según flujo) ────────────────────────
+	// Variantes conocidas:
+	//   "Firmar y Cerrar viaje" → flujo con firma requerida (viajes con pago)
+	//   "Cerrar Viaje"          → flujo estándar sin firma
+	const CLOSE_TEXTS = ['Firmar y Cerrar viaje', 'Cerrar Viaje', 'Finalizar Viaje'];
 
-	try {
-		const btn = await driver.$('app-travel-resume button.btn.finish');
-		if (await btn.isDisplayed().catch(() => false)) {
-			const text = (await btn.getText().catch(() => '')).trim();
-			log(`  Encontrado: "${text}"`);
-			if (text === 'Cerrar Viaje') {
-				await btn.click();
-				clicked = true;
-				log('✓ Tap "Cerrar Viaje"');
-			}
+	const closeBtnText = await driver.execute((candidates: string[]) => {
+		const container = document.querySelector('app-travel-resume');
+		if (!container) return '';
+		const btns = Array.from(container.querySelectorAll('button')) as HTMLButtonElement[];
+		for (const txt of candidates) {
+			const btn = btns.find(b => (b.innerText ?? '').trim() === txt && b.offsetParent !== null);
+			if (btn) { btn.click(); return txt; }
 		}
-	} catch (e) {
-		log(`Error con selector específico: ${e}`);
-	}
+		return '';
+	}, CLOSE_TEXTS) as string;
 
-	// Fallback: iterar button.btn.finish
-	if (!clicked) {
-		const allBtns = await driver.$$('button.btn.finish') as unknown as any[];
-		for (const b of allBtns) {
-			const text    = (await b.getText().catch(() => '')).trim();
-			const visible = await b.isDisplayed().catch(() => false);
-			log(`  btn.finish: "${text}" visible=${visible}`);
-			if (text === 'Cerrar Viaje' && visible) {
-				await b.click();
-				clicked = true;
-				log('✓ Tap "Cerrar Viaje" (fallback)');
-				break;
-			}
-		}
-	}
-
-	if (!clicked) {
-		log('⚠  "Cerrar Viaje" no encontrado — dump diagnóstico');
+	const clicked = !!closeBtnText;
+	if (clicked) {
+		log(`✓ Tap "${closeBtnText}"`);
+	} else {
+		log('⚠  Botón de cierre no encontrado — dump diagnóstico');
 		await dumpWebView(driver, '08-close-trip-failed');
 		await driver.deleteSession();
 		return;

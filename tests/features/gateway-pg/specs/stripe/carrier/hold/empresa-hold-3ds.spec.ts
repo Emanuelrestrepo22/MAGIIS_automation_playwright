@@ -66,6 +66,7 @@ type Hold3dsScenario = {
 	passenger: string;
 	origin: string;
 	destination: string;
+	cardLast4?: string;
 };
 
 async function runHoldOnScenario(page: Page, scenario: Hold3dsScenario): Promise<void> {
@@ -89,7 +90,7 @@ async function runHoldOnScenario(page: Page, scenario: Hold3dsScenario): Promise
 		passenger: scenario.passenger,
 		origin: scenario.origin,
 		destination: scenario.destination,
-		cardLast4: STRIPE_TEST_CARDS.success3DS.slice(-4),
+		cardLast4: scenario.cardLast4 || STRIPE_TEST_CARDS.success3DS.slice(-4),
 	});
 
 	await threeDS.waitForVisible();
@@ -134,7 +135,7 @@ async function runHoldOffScenario(page: Page, scenario: Hold3dsScenario): Promis
 			passenger: scenario.passenger,
 			origin: scenario.origin,
 			destination: scenario.destination,
-			cardLast4: STRIPE_TEST_CARDS.success3DS.slice(-4),
+			cardLast4: scenario.cardLast4 || STRIPE_TEST_CARDS.success3DS.slice(-4),
 		});
 
 		await threeDS.waitForVisible();
@@ -180,6 +181,7 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Hold con 3DS', () 
         passenger: PASSENGERS.empresaIndividuo.name,
         origin: 'Av. Corrientes 1234, Buenos Aires',
         destination: 'Av. Santa Fe 2100, Buenos Aires',
+        cardLast4: STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4),
       });
     });
     test('[TS-STRIPE-TC1077] @regression @3ds @hold hold+cobro empresa 3DS (set 2)', async ({ page }) => {

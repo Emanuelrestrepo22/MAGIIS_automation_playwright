@@ -41,42 +41,72 @@ export class TravelManagementPage {
 
 	private async tripRow(passenger: string, destination?: string) {
 		const rows = this.page.locator('tr');
-		const count = await rows.count();
+		const deadline = Date.now() + 30_000;
 
-		for (let index = 0; index < count; index += 1) {
-			const row = rows.nth(index);
-			const text = normalizeText(await row.textContent().catch(() => ''));
+		while (Date.now() < deadline) {
+			const count = await rows.count();
 
-			if (!matchesSearchText(text, passenger)) {
-				continue;
+			for (let index = 0; index < count; index += 1) {
+				const row = rows.nth(index);
+				const text = normalizeText(await row.textContent().catch(() => ''));
+
+				if (!matchesSearchText(text, passenger)) {
+					continue;
+				}
+
+				if (destination && !matchesSearchText(text, destination)) {
+					continue;
+				}
+
+				return row;
 			}
 
-			if (destination && !matchesSearchText(text, destination)) {
-				continue;
-			}
-
-			return row;
+			await this.page.waitForTimeout(500);
 		}
 
-		return rows.first();
+		throw new Error(`No travel row found for passenger "${passenger}"${destination ? ` and destination "${destination}"` : ''}`);
 	}
 
 	porAsignarColumn() {
 		return this.page.getByTestId('column-por-asignar');
 	}
 
-	async expectPassengerInPorAsignar(passenger: string, destination?: string): Promise<void> {
+	async expectPassengerInPorAsignar(passenger: string, destination?: string, status?: string): Promise<void> {
 		const row = await this.tripRow(passenger, destination);
 		await expect(row).toBeVisible({ timeout: 10_000 });
+		await expect.poll(
+			async () => {
+				const text = normalizeText(await row.textContent().catch(() => ''));
+				return matchesSearchText(text, passenger) && (!destination || matchesSearchText(text, destination));
+			},
+			{ timeout: 10_000 }
+		).toBe(true);
 
-		for (const token of normalizeText(passenger).split(' ').filter(Boolean)) {
-			await expect(row).toContainText(token, { timeout: 10_000 });
+		if (status) {
+			await expect(row).toContainText(status, { timeout: 10_000 });
 		}
 	}
 
 	async openDetailForPassenger(passenger: string, destination?: string): Promise<void> {
 		const row = await this.tripRow(passenger, destination);
 		await expect(row).toBeVisible({ timeout: 10_000 });
+		const detailLink = row.locator('a[href*="/travels/"]').first();
+
+		if (await detailLink.count()) {
+			await expect(detailLink).toBeVisible({ timeout: 10_000 });
+			await detailLink.click();
+			return;
+		}
+
+		const actionButtons = row.getByRole('button');
+
+		if (await actionButtons.count()) {
+			const target = actionButtons.last();
+			await expect(target).toBeVisible({ timeout: 10_000 });
+			await target.click();
+			return;
+		}
+
 		await row.locator('.action-btn.color-gray').first().click();
 	}
 }

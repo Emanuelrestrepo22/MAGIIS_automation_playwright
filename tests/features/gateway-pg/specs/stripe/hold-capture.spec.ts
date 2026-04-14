@@ -7,9 +7,10 @@
 
 import { test, expect } from '../../../../TestBase';
 import { loginAsDispatcher, expectNoThreeDSModal, TEST_DATA, STRIPE_TEST_CARDS } from '../../fixtures/gateway.fixtures';
-import { NewTravelPage, OperationalPreferencesPage, TravelDetailPage, TravelManagementPage } from '../../../../pages/carrier';
+import { NewTravelPage, OperationalPreferencesPage, TravelManagementPage } from '../../../../pages/carrier';
 
 test.describe.configure({ mode: 'serial' });
+test.describe.configure({ timeout: 120_000 });
 
 test.describe('[gateway][stripe] Hold y Capture - flujo directo', () => {
 	test.use({ role: 'carrier', storageState: undefined });
@@ -24,7 +25,7 @@ test.describe('[gateway][stripe] Hold y Capture - flujo directo', () => {
 	test.describe('[TC01] Hold exitoso sin 3DS requerido', () => {
 		test('El viaje pasa a Buscando conductor inmediatamente tras el hold', async ({ page }) => {
 			const travel = new NewTravelPage(page);
-			const detail = new TravelDetailPage(page);
+			const management = new TravelManagementPage(page);
 
 			await travel.goto();
 			await travel.fillMinimum({
@@ -35,8 +36,8 @@ test.describe('[gateway][stripe] Hold y Capture - flujo directo', () => {
 			});
 			await travel.submit();
 
-			await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
-			await detail.expectStatus('Buscando conductor');
+			await management.goto();
+			await management.expectPassengerInPorAsignar(TEST_DATA.passenger, TEST_DATA.destination, 'Buscando chofer');
 		});
 
 		test('No aparece modal 3DS cuando el hold es directo', async ({ page }) => {
@@ -66,7 +67,6 @@ test.describe('[gateway][stripe] Hold y Capture - flujo directo', () => {
 				cardLast4: STRIPE_TEST_CARDS.successDirect.slice(-4)
 			});
 			await travel.submit();
-			await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
 
 			await management.goto();
 			await management.expectPassengerInPorAsignar(TEST_DATA.passenger);

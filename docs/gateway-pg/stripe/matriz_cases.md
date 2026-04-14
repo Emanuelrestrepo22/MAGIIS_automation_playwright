@@ -118,31 +118,42 @@
 
 ## 5. Alta de Viaje desde Carrier – Usuario App Pax
 
+**Nota de trazabilidad y coverage:** los TCs TS-STRIPE-TC1049, TS-STRIPE-TC1050, TS-STRIPE-TC1051, TS-STRIPE-TC1052, TS-STRIPE-TC1057, TS-STRIPE-TC1058, TS-STRIPE-TC1059 y TS-STRIPE-TC1060 corresponden al bloque app pax carrier sin 3DS que hoy esta fallando. Para 3DS, `tests/test-5.spec.ts` se toma como recording de referencia de TS-STRIPE-TC1055, usando la tarjeta Stripe `4000002760003184` (alwaysAuthenticate) para forzar challenge en todas las transacciones. Las filas repetidas en esta seccion se conservan por trazabilidad historica y coverage, aunque varias variantes sean funcionalmente equivalentes.
+
 ### 5.1 Tarjeta Preautorizada – sin validación 3DS
 
 | ID | Descripción |
 |----|-------------|
-| TS-STRIPE-TC1049 | E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada **Hold y Cobro** desde App Driver |
-| TS-STRIPE-TC1050 | E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
-| TS-STRIPE-TC1051 | E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada **Hold y Cobro** desde App Driver |
-| TS-STRIPE-TC1052 | E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
-| TS-STRIPE-TC1057 | E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada **Hold y Cobro** desde App Driver |
-| TS-STRIPE-TC1058 | E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
-| TS-STRIPE-TC1059 | E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada **Hold y Cobro** desde App Driver |
-| TS-STRIPE-TC1060 | E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
+| TS-STRIPE-TC1049 | E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada Hold y Cobro desde App Driver |
+| TS-STRIPE-TC1050 | E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada sin Hold y Cobro desde App Driver |
+| TS-STRIPE-TC1051 | E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada Hold y Cobro desde App Driver |
+| TS-STRIPE-TC1052 | E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada sin Hold y Cobro desde App Driver |
+| TS-STRIPE-TC1057 | E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada Hold y Cobro desde App Driver |
+| TS-STRIPE-TC1058 | E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada sin Hold y Cobro desde App Driver |
+| TS-STRIPE-TC1059 | E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada Hold y Cobro desde App Driver |
+| TS-STRIPE-TC1060 | E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada sin Hold y Cobro desde App Driver |
 
 ### 5.2 Tarjeta Preautorizada – con validación 3DS
 
 | ID | Descripción |
 |----|-------------|
-| TS-STRIPE-TC1053 | E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS |
-| TS-STRIPE-TC1054 | E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
-| TS-STRIPE-TC1055 | E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS |
-| TS-STRIPE-TC1056 | E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
-| TS-STRIPE-TC1061 | E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS |
-| TS-STRIPE-TC1062 | E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
-| TS-STRIPE-TC1063 | E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS |
-| TS-STRIPE-TC1064 | E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
+| TS-STRIPE-TC1053 | E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada Hold y Cobro desde App Driver con validacion 3DS |
+| TS-STRIPE-TC1054 | E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validacion 3DS |
+| TS-STRIPE-TC1055 | E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada Hold y Cobro desde App Driver con validacion 3DS |
+| TS-STRIPE-TC1056 | E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validacion 3DS |
+| TS-STRIPE-TC1061 | E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada Hold y Cobro desde App Driver con validacion 3DS |
+| TS-STRIPE-TC1062 | E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validacion 3DS |
+| TS-STRIPE-TC1063 | E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada Hold y Cobro desde App Driver con validacion 3DS |
+| TS-STRIPE-TC1064 | E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validacion 3DS |
+
+**Agrupacion de variantes para coverage:**
+
+| Grupo canonico | IDs | Estado de coverage | Nota |
+|----|----|----|----|
+| Hold sin 3DS | TS-STRIPE-TC1049, TS-STRIPE-TC1051, TS-STRIPE-TC1057, TS-STRIPE-TC1059 | Fallidos actuales / manual pending | Variantes equivalentes del mismo flujo base |
+| Sin Hold sin 3DS | TS-STRIPE-TC1050, TS-STRIPE-TC1052, TS-STRIPE-TC1058, TS-STRIPE-TC1060 | Fallidos actuales / manual pending | Variantes equivalentes del mismo flujo base |
+| Hold con 3DS | TS-STRIPE-TC1053, TS-STRIPE-TC1055, TS-STRIPE-TC1061, TS-STRIPE-TC1063 | Recording de referencia disponible | `tests/test-5.spec.ts` ancla TC1055 con `4000002760003184` |
+| Sin Hold con 3DS | TS-STRIPE-TC1054, TS-STRIPE-TC1056, TS-STRIPE-TC1062, TS-STRIPE-TC1064 | Pendiente de validar con recording equivalente | Mantener trazabilidad al mismo patron de 3DS |
 
 ---
 

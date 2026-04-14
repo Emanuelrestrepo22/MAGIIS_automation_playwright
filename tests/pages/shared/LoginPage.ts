@@ -45,15 +45,17 @@ export class LoginPage {
 		const loginPath = resolveLoginPath(this.role);
 		console.log(`[LoginPage][${this.role}] goto ${loginPath}`);
 
-		// Limpiamos la sesión antes de navegar para garantizar que realmente
-		// estamos probando el formulario de login y no una sesión previa.
+		// Navegamos a la URL objetivo primero para tener origin seguro y no romper about:blank
+		const targetUrl = this.baseURL ? new URL(loginPath, this.baseURL).toString() : loginPath;
+		await this.page.goto(targetUrl, { waitUntil: 'load' });
+
 		await this.page.context().clearCookies();
-		await this.page.addInitScript(() => {
+		await this.page.evaluate(() => {
 			window.localStorage.clear();
 			window.sessionStorage.clear();
 		});
 
-		const targetUrl = this.baseURL ? new URL(loginPath, this.baseURL).toString() : loginPath;
+		// Volvemos a navegar explicitamente porque reload() puede dejarnos varados en un redirect si la sesion expira sorpresivamente
 		await this.page.goto(targetUrl, { waitUntil: 'load' });
 
 		// Esperamos el campo email como señal de que el formulario quedó listo para interactuar.

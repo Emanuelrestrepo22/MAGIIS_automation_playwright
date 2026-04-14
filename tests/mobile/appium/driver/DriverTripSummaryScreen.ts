@@ -3,14 +3,22 @@
  * Pantalla de resumen post-viaje del Driver Android App.
  * Se muestra después de confirmar "¿Finalizar Viaje?" y antes del cierre final.
  *
- * Selectores confirmados DOM dump 2026-04-09:
+ * Selectores confirmados DOM dump 2026-04-13:
  *   URL: /TravelResumePage
  *   Contenedor activo: app-travel-resume (class="ion-page can-go-back")
- *   Botón cerrar viaje: button.btn.finish  text="Cerrar Viaje"
- *   Botón peaje:        button (sin clase)  text="Peaje"
- *   Botón estac.:       button (sin clase)  text="Estac."
- *   Forma de pago activa: button.payment.active  text="VISA 4242"
- *   Total a cobrar:     span text="Total a Cobrar" + span text="$XX.XX"
+ *
+ * Flujo obligatorio en esta pantalla:
+ *   1. selectPaymentMethod()  → tap en button.payment (últimos 4 dígitos de la tarjeta)
+ *                               El botón muestra clase "payment" / "payment active"
+ *                               Este tap HABILITA el botón de cierre.
+ *   2. confirmAndFinish()     → tap en button.btn.finish
+ *                               Texto varía: "Cerrar Viaje" | "Firmar y Cerrar viaje"
+ *                               Si es "Firmar y Cerrar viaje" → aparece un segundo
+ *                               "Cerrar Viaje" post-firma (llamar confirmAndFinish() de nuevo)
+ *
+ *   Botón peaje:   button (sin clase) text="Peaje"   (extra, antes de cerrar)
+ *   Botón estac.:  button (sin clase) text="Estac."  (extra, antes de cerrar)
+ *   Total a cobrar: span text="$XX.XX"
  */
 
 import type { MobileActorConfig } from '../config/appiumRuntime';
@@ -106,58 +114,86 @@ export class DriverTripSummaryScreen extends AppiumSessionBase {
 	}
 
 	/**
-	 * Tap en "Cerrar Viaje" en la pantalla de resumen.
-	 * Selector confirmado DOM dump 2026-04-09:
-	 *   button.btn.finish  text="Cerrar Viaje"  (dentro de app-travel-resume)
-	 * Nota: el texto es "Cerrar Viaje", distinto al "Finalizar Viaje" de TravelNavigationPage.
+	 * PASO 1 — Seleccionar método de pago.
+	 * El usuario debe tocar el botón que muestra los últimos 4 dígitos de la tarjeta.
+	 * Este tap HABILITA el botón de cierre del viaje.
+	 *
+	 * Comportamiento confirmado 2026-04-13:
+	 *   - button.payment (puede tener clase "payment" o "payment active")
+	 *   - El botón de cierre queda deshabilitado hasta que se selecciona una tarjeta.
+	 *
+	 * @param last4 Últimos 4 dígitos opcionales para validar la tarjeta seleccionada.
+	 */
+	async selectPaymentMethod(last4?: string): Promise<string> {
+		await this.switchToWebView();
+		const driver = this.getDriver();
+
+		const selectedText = await driver.execute((digits?: string) => {
+			const container = document.querySelector('app-travel-resume');
+			if (!container) return '';
+			// Buscar botón de pago por clase o dentro del bloque div.travel-payment
+			const candidates = [
+				...Array.from(container.querySelectorAll('button.payment, button[class*="payment"]')),
+				...Array.from(container.querySelectorAll('div.travel-payment button')),
+			] as HTMLButtonElement[];
+			let target: HTMLButtonElement | undefined;
+			if (digits) {
+				target = candidates.find(b => b.offsetParent !== null && (b.innerText ?? '').includes(digits));
+			}
+			if (!target) {
+				target = candidates.find(b => b.offsetParent !== null);
+			}
+			if (target) { target.click(); return (target.innerText ?? '').trim(); }
+			return '';
+		}, last4);
+
+		if (selectedText) {
+			console.log(`[DriverTripSummaryScreen] ✓ Tarjeta seleccionada: "${selectedText}"`);
+		} else {
+			console.warn('[DriverTripSummaryScreen] selectPaymentMethod: botón de tarjeta no encontrado');
+		}
+
+		await driver.pause(1_000);
+		return selectedText as string;
+	}
+
+	/**
+	 * PASO 2 — Tap en el botón de cierre del viaje.
+	 * Debe llamarse DESPUÉS de selectPaymentMethod() — el botón está deshabilitado hasta entonces.
+	 *
+	 * Variantes de texto confirmadas:
+	 *   "Cerrar Viaje"          → flujo estándar
+	 *   "Firmar y Cerrar viaje" → flujo con firma requerida (requiere un segundo tap post-firma)
 	 */
 	async confirmAndFinish(): Promise<void> {
 		await this.switchToWebView();
 		const driver = this.getDriver();
-		const snapshotBefore = await this.getSnapshot();
-		let clicked = false;
 
-		try {
-			// Selector estable confirmado: app-travel-resume button.btn.finish
-			const btn = await driver.$(DRIVER_ACTION_SELECTORS.closeTripPrimaryButton);
-			if (await btn.isDisplayed().catch(() => false)) {
-				const text = (await btn.getText().catch(() => '')).trim();
-				if (text === 'Cerrar Viaje') {
-					await btn.click();
-					clicked = true;
-					console.log('[DriverTripSummaryScreen] ✓ Tap "Cerrar Viaje"');
-				}
-			}
-		} catch (e) {
-			console.warn('[DriverTripSummaryScreen] selector específico falló:', e);
-		}
+		// Textos posibles del botón de cierre, en orden de prioridad
+		const CLOSE_TEXTS = ['Cerrar Viaje', 'Firmar y Cerrar viaje', 'Finalizar Viaje'];
 
-		// Fallback: iterar button.btn.finish filtrando por texto
-		if (!clicked) {
-			try {
-				const allBtns = await driver.$$('button.btn.finish') as unknown as any[];
-				for (const btn of allBtns) {
-					const text    = (await btn.getText().catch(() => '')).trim();
-					const visible = await btn.isDisplayed().catch(() => false);
-					if (text === 'Cerrar Viaje' && visible) {
-						await btn.click();
-						clicked = true;
-						console.log('[DriverTripSummaryScreen] ✓ Tap "Cerrar Viaje" (fallback)');
-						break;
-					}
-				}
-			} catch (e) {
-				console.warn('[DriverTripSummaryScreen] fallback error:', e);
+		const clicked = await driver.execute((candidates: string[]) => {
+			const container = document.querySelector('app-travel-resume');
+			if (!container) return '';
+			const btns = Array.from(container.querySelectorAll('button')) as HTMLButtonElement[];
+			for (const txt of candidates) {
+				const btn = btns.find(
+					b => (b.innerText ?? '').trim() === txt && b.offsetParent !== null && !b.disabled
+				);
+				if (btn) { btn.click(); return txt; }
 			}
-		}
+			return '';
+		}, CLOSE_TEXTS) as string;
 
 		if (!clicked) {
-			const details = snapshotBefore
-				? `URL=${snapshotBefore.url} | Textos=${snapshotBefore.rawTexts.join(' || ')} | Botones=${snapshotBefore.buttons.join(' || ')}`
+			const snapshot = await this.getSnapshot();
+			const details  = snapshot
+				? `Botones visibles: ${snapshot.buttons.join(' | ')}`
 				: 'snapshot unavailable';
-			throw new Error(`[DriverTripSummaryScreen] confirmAndFinish: botón "Cerrar Viaje" no encontrado. ${details}`);
+			throw new Error(`[DriverTripSummaryScreen] confirmAndFinish: botón de cierre no encontrado o deshabilitado. ${details}\nVerificar que selectPaymentMethod() fue llamado antes.`);
 		}
 
+		console.log(`[DriverTripSummaryScreen] ✓ Tap "${clicked}"`);
 		await driver.pause(4_000);
 	}
 
@@ -218,14 +254,19 @@ export class DriverTripSummaryScreen extends AppiumSessionBase {
 	}
 
 	/**
-	 * Retorna la forma de pago activa visible en pantalla.
-	 * Selector confirmado: button.payment.active  text="VISA 4242"
+	 * Retorna el texto del botón de pago visible en pantalla (ej: "VISA 4242").
+	 * Selector: button.payment o button.payment.active dentro de app-travel-resume.
 	 */
 	async getActivePaymentMethod(): Promise<string> {
 		try {
 			await this.switchToWebView();
-			const btn = await this.getDriver().$('app-travel-resume button.payment.active');
-			return (await btn.getText().catch(() => '')).trim();
+			return await this.getDriver().execute<string, []>(() => {
+				const container = document.querySelector('app-travel-resume');
+				if (!container) return '';
+				const btns = Array.from(container.querySelectorAll('button.payment, button[class*="payment"]')) as HTMLButtonElement[];
+				const visible = btns.find(b => b.offsetParent !== null);
+				return (visible?.innerText ?? '').trim();
+			});
 		} catch {
 			return '';
 		}

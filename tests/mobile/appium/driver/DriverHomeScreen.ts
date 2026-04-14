@@ -184,6 +184,38 @@ export class DriverHomeScreen extends AppiumSessionBase {
 		return pageSource.includes(normalizedTripId);
 	}
 
+	/**
+	 * Tap en el botón amarillo de "viaje calle" del home.
+	 * Selector confirmado DOM dump 2026-04-13:
+	 *   button.driver-home.home-icon-base  (clase completa: "driver-home home-icon-base general-position")
+	 *   text="O X.X mi"  ← distancia al pasajero más cercano disponible
+	 *
+	 * Este botón existe SOLO en el home screen (URL: /navigator/home).
+	 * Al taparlo navega a TravelConfirmPage con el viaje disponible más cercano.
+	 * Precondición: driver en estado "Disponible" con al menos un viaje calle disponible.
+	 */
+	async tapViajeCalleButton(): Promise<boolean> {
+		await this.switchToWebView();
+		const driver = this.getDriver();
+		const clicked = await driver.execute<boolean, []>(() => {
+			// Buscar en la página activa (no ion-page-hidden)
+			const activePage = document.querySelector('page-home:not(.ion-page-hidden), .ion-page:not(.ion-page-hidden)');
+			const scope: Document | Element = activePage ?? document;
+			const btn = scope.querySelector('button.driver-home.home-icon-base') as HTMLButtonElement | null;
+			if (btn && btn.offsetParent !== null) {
+				btn.click();
+				return true;
+			}
+			return false;
+		});
+		if (clicked) {
+			console.log('[DriverHomeScreen] ✓ Tap botón viaje calle (button.driver-home.home-icon-base)');
+		} else {
+			console.warn('[DriverHomeScreen] tapViajeCalleButton: botón no encontrado o no visible');
+		}
+		return clicked as boolean;
+	}
+
 	async openTripRequest(): Promise<void> {
 		const tripId = this.activeTripId?.trim() ?? '';
 		const driver = this.getDriver();

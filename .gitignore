@@ -18,6 +18,7 @@ coverage/
 # ─── Credenciales y variables de entorno ───────────────────
 # NUNCA subir archivos .env al repositorio
 .env
+.env.example
 .env.*
 .env.*.local
 

@@ -16,7 +16,7 @@
 
 ## Rules to avoid ambiguity
 
-1. `docs/codex-prompts/README.md` defines document precedence for Codex/Claude.
+1. `docs/codex-prompts/README.md` and `AGENTS.md` define document precedence for Gemini/Codex/Claude workflows.
 2. If a path in this file conflicts with repository reality, repository reality + `CLAUDE.md` wins.
 3. `tests/specs/gateway-pg/stripe/**` must stay as wrappers (`import ...features...`) and must not contain business logic.
 4. New reusable POMs are added to `tests/pages/**`, not to `tests/features/**/pages`.

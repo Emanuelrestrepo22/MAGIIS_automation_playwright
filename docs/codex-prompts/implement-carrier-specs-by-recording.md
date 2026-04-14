@@ -5,6 +5,8 @@
 Este prompt se ejecuta **en etapas**. Cada etapa corresponde a un archivo `.recorded.ts`.
 Procesar **una etapa a la vez**, en el orden indicado. No avanzar a la siguiente etapa sin haber completado y validado la anterior con `npx tsc --noEmit`.
 
+Si un flujo no tiene contexto suficiente, pedir primero el `.recorded.ts` correspondiente desde VS Code / Playwright Recorder y usarlo como evidencia primaria para reconstruir selectors, secuencia de interaccion y comportamiento observado.
+
 ---
 
 ## Memoria — guardar al iniciar

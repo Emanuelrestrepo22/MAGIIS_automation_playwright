@@ -150,6 +150,58 @@ HEADLESS=true
 
 ---
 
+## Setup local
+
+### Requisitos previos
+
+- **Node.js**: v20 (recomendado)
+- **Android Studio**
+- **Java JDK**
+- **Appium Server**
+
+### Pasos para configurar el entorno
+
+1. Clonar el repositorio
+2. Copiar `.env.example` a `.env` y completar los valores según la máquina local
+3. Descripción de cada variable de entorno:
+   - `ANDROID_HOME`: Ruta a la instalación del SDK de Android (ej: `C:/Users/{usuario}/AppData/Local/Android/Sdk` en Windows o `/Users/{usuario}/Library/Android/sdk` en macOS)
+   - `ANDROID_SDK_ROOT`: Misma ruta que `ANDROID_HOME` (recomendado)
+   - `JAVA_HOME`: Ruta a tu instalación del Java JDK (ej: `C:\Program Files\Java\jdk-xx`)
+   - `APPIUM_SERVER_URL`: URL donde escucha el servidor Appium (usualmente `http://localhost:4723`)
+   - `ANDROID_UDID`: Identificador del dispositivo Android conectado o emulador
+   - `ENV`: Entorno activo para la ejecución (ej: `test`)
+   - `DRIVER_EMAIL`: Correo electrónico del conductor para simulaciones móviles
+   - `DRIVER_PASSWORD`: Contraseña del conductor
+
+### Cómo levantar Appium Server
+
+Antes de correr las pruebas móviles, debes iniciar el servidor Appium en tu entorno local:
+
+```bash
+npx appium
+# O si tienes instalado appium de manera global: appium
+```
+
+### Ejecutar las pruebas
+
+Utiliza los siguientes scripts definidos en `package.json` para ejecutar los tests:
+
+```bash
+# Ejecutar todos los tests E2E en TEST
+npm run test:test
+
+# Ejecutar tests humo en TEST
+npm run test:test:smoke
+
+# Ejecutar un flujo E2E móvil (App Driver)
+npm run test:test:e2e:flow1:mobile
+
+# Abrir el modo UI de Playwright
+npm run test:test:ui
+```
+
+---
+
 ## Variables de entorno
 
 | Variable                | Descripción                                       | Requerida |
