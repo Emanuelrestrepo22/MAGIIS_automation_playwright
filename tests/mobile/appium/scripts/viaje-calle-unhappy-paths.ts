@@ -196,7 +196,7 @@ async function fillInput(driver: WebdriverIO.Browser, selector: string, value: s
 }
 
 /**
- * Dump de iframes para diagnóstico (cuando STRIPE_DEBUG=1).
+ * Dump de iframes para diagnóstico.
  */
 async function dumpIframes(driver: WebdriverIO.Browser, label: string): Promise<void> {
 	const iframeDump = await driver.execute<string, []>(() => {
@@ -208,8 +208,25 @@ async function dumpIframes(driver: WebdriverIO.Browser, label: string): Promise<
 }
 
 /**
+ * Devuelve el índice del iframe Stripe CardElement buscando por patrón de src.
+ * Fallback: índice 0 (confirmado por dump real).
+ */
+async function getStripeCardIframeIndex(driver: WebdriverIO.Browser): Promise<number> {
+	const iframeData = await driver.execute<Array<{idx: number; src: string}>, []>(() => {
+		return Array.from(document.querySelectorAll('iframe')).map((f, i) => ({
+			idx: i, src: (f as HTMLIFrameElement).src || '',
+		}));
+	}).catch(() => [] as Array<{idx: number; src: string}>);
+	for (const { idx, src } of iframeData) {
+		if (src.includes('elements-inner-card')) return idx;
+	}
+	return 0; // fallback confirmado
+}
+
+/**
  * Llena un campo dentro de un iframe Stripe usando setValue nativo de WebdriverIO.
- * Usa JS para identificar el índice del iframe por patrón de src, luego switchToFrame por índice.
+ * Usa JS para identificar el índice del iframe por patrón de src.
+ * Luego usa switchToFrame(number) — classic WebDriver, sin BiDi.
  */
 async function fillStripeIframeField(
 	driver: WebdriverIO.Browser,
@@ -217,8 +234,9 @@ async function fillStripeIframeField(
 	fallbackIndex: number,
 	value: string,
 	fieldLabel: string,
+	inputIndex = 0,   // índice del input dentro del iframe (0=número, 1=expiry, 2=cvc)
 ): Promise<boolean> {
-	// Identificar índice del iframe via JS (evita problemas de tipos con $$)
+	// Identificar índice del iframe via JS
 	const iframeData = await driver.execute<Array<{idx: number; name: string; src: string}>, []>(() => {
 		return Array.from(document.querySelectorAll('iframe')).map((f, i) => ({
 			idx: i,
@@ -228,8 +246,7 @@ async function fillStripeIframeField(
 	}).catch(() => [] as Array<{idx: number; name: string; src: string}>);
 
 	let targetIdx = -1;
-	for (const { idx, src, name } of iframeData) {
-		log(`  iframe[${idx}] name="${name}" src="${src.slice(0, 80)}"`);
+	for (const { idx, src } of iframeData) {
 		if (src.includes(iframeSrcPattern)) { targetIdx = idx; break; }
 	}
 	if (targetIdx === -1 && fallbackIndex < iframeData.length) {
@@ -242,86 +259,149 @@ async function fillStripeIframeField(
 	}
 
 	try {
-		// Seleccionar iframe por CSS nth-of-type (1-indexed)
-		const iframeEl = await driver.$(`iframe:nth-of-type(${targetIdx + 1})`);
+		// switchToFrame con número — usa protocolo WebDriver clásico, no BiDi
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		await driver.switchToFrame(iframeEl as any);
-		const input = await driver.$('input');
-		const exists = await input.isExisting().catch(() => false);
-		if (!exists) {
-			log(`  fillStripeIframeField(${fieldLabel}): iframe[${targetIdx}] sin input visible`);
-			await driver.switchToParentFrame();
+		await (driver as any).switchToFrame(targetIdx);
+
+		// Dump de inputs con posición para diagnóstico
+		const inputInfo = await driver.execute<Array<{idx: number; placeholder: string; name: string; x: number; y: number; vis: boolean}>, []>(() => {
+			return Array.from(document.querySelectorAll('input')).map(function(inp, i) {
+				const rect = inp.getBoundingClientRect();
+				return { idx: i, placeholder: (inp as HTMLInputElement).placeholder, name: (inp as HTMLInputElement).name, x: Math.round(rect.x), y: Math.round(rect.y), vis: inp.offsetParent !== null };
+			});
+		}).catch(() => [] as Array<{idx: number; placeholder: string; name: string; x: number; y: number; vis: boolean}>);
+		log(`  iframe[${targetIdx}] inputs: ${JSON.stringify(inputInfo)}`);
+
+		const count = inputInfo.length;
+		if (count === 0) {
+			log(`  fillStripeIframeField(${fieldLabel}): iframe[${targetIdx}] sin inputs`);
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			await (driver as any).switchToFrame(null);
 			return false;
 		}
-		await input.clearValue().catch(() => {});
-		await input.setValue(value);
-		log(`  fillStripeIframeField(${fieldLabel}): ✓ iframe[${targetIdx}]`);
-		await driver.switchToParentFrame();
+		const actualIndex = Math.min(inputIndex, count - 1);
+		const input = (await driver.$$('input'))[actualIndex];
+
+		// Solo click si el input está en posición positiva (visible en viewport)
+		const inp = inputInfo[actualIndex];
+		if (inp && inp.y >= 0) {
+			await input.click().catch(() => {});
+			await driver.pause(300);
+		} else {
+			log(`  fillStripeIframeField(${fieldLabel}): input[${actualIndex}] at (${inp?.x},${inp?.y}) — usando addValue sin click`);
+		}
+
+		// addValue en lugar de setValue — skip clearValue que falla en inputs Stripe off-screen
+		await input.addValue(value);
+		log(`  fillStripeIframeField(${fieldLabel}): ✓ iframe[${targetIdx}] input[${actualIndex}]`);
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		await (driver as any).switchToFrame(null);
 		await driver.pause(400);
 		return true;
 	} catch (e) {
 		log(`  fillStripeIframeField(${fieldLabel}): error → ${e}`);
-		await driver.switchToParentFrame().catch(() => {});
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		await (driver as any).switchToFrame(null).catch(() => {});
+		await switchWV(driver).catch(() => {});
 		return false;
 	}
 }
 
 /**
  * Rellena el formulario credit-card-payment-data con los datos de tarjeta.
- * Usa iframe switching nativo de WebdriverIO para los campos Stripe.
- * Los campos cardholder/zip son inputs nativos en el documento principal.
+ *
+ * Estructura confirmada del iframe Stripe (dump real, iframe índice 0):
+ *   input[name="cardnumber"]    (x=28, y=0)  — número visible, fillable con addValue
+ *   input[name="cc-exp-month"]  (y=-2)        — mes expiry, fillable con addValue (off-screen pero acepta)
+ *   input[name="cc-exp-year"]   (y=-2)        — año expiry
+ *   input[name="cc-csc"]        (y=-2)        — CVC
+ *
+ * Se llena cada input por nombre, NO en secuencia por el cardnumber.
+ * Cardholder y ZIP son inputs nativos fuera del iframe.
  */
 async function fillCardForm(
 	driver: WebdriverIO.Browser,
 	cardNumber: string,
 ): Promise<'filled' | 'partial' | 'failed'> {
-	// Listar iframes para diagnóstico
-	await dumpIframes(driver, 'card-form');
+	// Descartar cualquier ion-modal de validación antes de interactuar con el formulario
+	await driver.execute<void, []>(() => {
+		const modals = Array.from(document.querySelectorAll('ion-modal')) as HTMLElement[];
+		const vis = modals.find(m => (m as any).offsetParent !== null);
+		if (!vis) return;
+		const btns = Array.from(vis.querySelectorAll('button')) as HTMLButtonElement[];
+		const ok = btns.find(b =>
+			['Aceptar', 'OK', 'Cerrar'].includes((b.innerText ?? '').trim()) &&
+			(b as any).offsetParent !== null
+		);
+		if (ok) ok.click();
+	}).catch(() => {});
+	await driver.pause(600);
 
-	// Campos Stripe en iframes:
-	// Stripe Elements crea un iframe por campo. Los srcs típicos:
-	//   elements-inner-card-number  → número
-	//   elements-inner-card-expiry  → vencimiento
-	//   elements-inner-card-cvc     → CVC
-	// Si el src no coincide, usamos índice de fallback (4,5,6 después de controller/metrics/hcaptcha).
+	const iframeIdx = await getStripeCardIframeIndex(driver);
+	log(`  fillCardForm: usando iframe[${iframeIdx}]`);
 
-	const filledNum = await fillStripeIframeField(
-		driver, 'elements-inner-card-number', 4, cardNumber, 'number'
-	);
-	if (!filledNum) {
-		log('  fillCardForm: número no llenado vía iframe — intentando fallback JS');
-		const ok = await driver.execute(function(val: string) {
-			const inputs = Array.from(document.querySelectorAll('input')) as HTMLInputElement[];
-			const vis = inputs.find(function(i) { return i.offsetParent !== null; });
-			if (vis) { vis.focus(); vis.value = val; vis.dispatchEvent(new Event('input', { bubbles: true })); return true; }
-			return false;
-		}, cardNumber) as boolean;
-		if (!ok) return 'failed';
+	// Parsear expiry MM/AA → month=MM, year=YY
+	const [expMonth, expYear] = EXPIRY.split('/');
+
+	try {
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		await (driver as any).switchToFrame(iframeIdx);
+
+		// 1. Número de tarjeta (click + addValue)
+		const numInput = await driver.$('input[name="cardnumber"]');
+		if (await numInput.isExisting().catch(() => false)) {
+			await numInput.click().catch(() => {});
+			await driver.pause(300);
+			await numInput.addValue(cardNumber.replace(/\s/g, ''));
+			log(`  fillCardForm: ✓ cardnumber`);
+		} else {
+			log('  fillCardForm: input[name="cardnumber"] no encontrado');
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			await (driver as any).switchToFrame(null);
+			return 'failed';
+		}
+		await driver.pause(400);
+
+		// 2. Mes de expiry (off-screen pero addValue funciona)
+		const monthInput = await driver.$('input[name="cc-exp-month"]');
+		if (await monthInput.isExisting().catch(() => false)) {
+			await monthInput.addValue(expMonth);
+			log(`  fillCardForm: ✓ cc-exp-month=${expMonth}`);
+		}
+		await driver.pause(300);
+
+		// 3. Año de expiry
+		const yearInput = await driver.$('input[name="cc-exp-year"]');
+		if (await yearInput.isExisting().catch(() => false)) {
+			await yearInput.addValue(expYear);
+			log(`  fillCardForm: ✓ cc-exp-year=${expYear}`);
+		}
+		await driver.pause(300);
+
+		// 4. CVC/CSC
+		const cvcInput = await driver.$('input[name="cc-csc"]');
+		if (await cvcInput.isExisting().catch(() => false)) {
+			await cvcInput.addValue(CVC);
+			log(`  fillCardForm: ✓ cc-csc=${CVC}`);
+		}
+		await driver.pause(300);
+
+		// Volver al documento principal
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		await (driver as any).switchToFrame(null);
+		await driver.pause(400);
+	} catch (e) {
+		log(`  fillCardForm: error en iframe → ${e}`);
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		await (driver as any).switchToFrame(null).catch(() => {});
+		await switchWV(driver).catch(() => {});
+		return 'failed';
 	}
 
-	const filledExp = await fillStripeIframeField(
-		driver, 'elements-inner-card-expiry', 5, EXPIRY, 'expiry'
-	);
-	if (!filledExp) {
-		log('  fillCardForm: vencimiento no llenado — fallback JS');
-		await driver.execute(function(val: string) {
-			const inputs = Array.from(document.querySelectorAll('input')).filter(function(i) { return i.offsetParent !== null; }) as HTMLInputElement[];
-			if (inputs[1]) { inputs[1].focus(); inputs[1].value = val; inputs[1].dispatchEvent(new Event('input', { bubbles: true })); }
-		}, EXPIRY);
-	}
+	// Cardholder y ZIP son inputs nativos en el documento principal
+	await switchWV(driver).catch(() => {});
+	await driver.pause(300);
 
-	const filledCvc = await fillStripeIframeField(
-		driver, 'elements-inner-card-cvc', 6, CVC, 'cvc'
-	);
-	if (!filledCvc) {
-		log('  fillCardForm: CVC no llenado — fallback JS');
-		await driver.execute(function(val: string) {
-			const inputs = Array.from(document.querySelectorAll('input')).filter(function(i) { return i.offsetParent !== null; }) as HTMLInputElement[];
-			if (inputs[2]) { inputs[2].focus(); inputs[2].value = val; inputs[2].dispatchEvent(new Event('input', { bubbles: true })); }
-		}, CVC);
-	}
-
-	// Cardholder y ZIP son inputs nativos (no en iframe)
 	const holderOk = await fillInput(driver, '#cardholderName input, #cardholderName > input', NAME);
 	log(`  fillCardForm: cardholder=${holderOk}`);
 	await driver.pause(400);
@@ -409,7 +489,8 @@ async function detectErrorMessage(
 	return driver.execute((kws: readonly string[]) => {
 		const errorSelectors = [
 			'[class*="error"]', '[class*="alert"]', '[class*="message"]',
-			'ion-label[color="danger"]', '.error', '.alert', 'p', 'span',
+			'ion-label[color="danger"]', '.error', '.alert',
+			'p', 'span', 'div', 'ion-modal',  // incluir div e ion-modal para errores de Stripe
 		];
 		const allTexts: string[] = [];
 		errorSelectors.forEach(sel => {
@@ -545,7 +626,7 @@ async function dismissTollModal(driver: WebdriverIO.Browser): Promise<boolean> {
 async function resumeLoop(driver: WebdriverIO.Browser, caseId: string): Promise<'card-form' | 'home' | 'timeout'> {
 	const MAX = 8;
 	for (let i = 1; i <= MAX; i++) {
-		await switchWV(driver);
+		await switchWV(driver, 15_000);
 		const url = await getUrl(driver);
 
 		if (url.includes('/navigator/home') || url.includes('FROM_TRAVEL_CLOSED')) return 'home';
@@ -650,33 +731,57 @@ async function resumeLoop(driver: WebdriverIO.Browser, caseId: string): Promise<
  * Si el app quedó trabado en TravelResumePage después de un caso fallido,
  * intenta cerrar el viaje usando el selector confirmado.
  */
-async function dismissCardModal(driver: WebdriverIO.Browser): Promise<boolean> {
-	// Si credit-card-payment-data está abierto, intentar cerrarlo con botón back/close
-	const dismissed = await driver.execute<boolean, []>(() => {
-		const modal = document.querySelector('credit-card-payment-data') as HTMLElement | null;
-		if (!modal || modal.offsetParent === null) return false;
-		// Buscar botón de cerrar/volver en el header
-		const closeBtn = modal.querySelector(
-			'ion-header button, ion-toolbar button, button[class*="back"], button[class*="close"]'
-		) as HTMLButtonElement | null;
-		if (closeBtn) { closeBtn.click(); return true; }
-		// Fallback: primer botón visible en el modal que no sea Cobrar
-		const btns = Array.from(modal.querySelectorAll('button')) as HTMLButtonElement[];
-		const nonCobrar = btns.find(b => {
-			const txt = (b.innerText ?? '').trim().toLowerCase();
-			return b.offsetParent !== null && !txt.includes('cobrar') && !txt.includes('pagar');
-		});
-		if (nonCobrar) { nonCobrar.click(); return true; }
+/**
+ * Cierra el modal credit-card-payment-data usando back() para volver a TravelResumePage,
+ * luego selecciona la tarjeta GUARDADA (no tarjeta a bordo) para cerrar sin necesitar
+ * llenar el formulario Stripe. Más robusto para cleanup entre casos.
+ */
+async function closeCardModalViaBack(driver: WebdriverIO.Browser): Promise<boolean> {
+	log('  closeCardModalViaBack: usando back() para volver a TravelResumePage');
+	// back() navega a TravelInProgressPage (si el modal está en TravelResumePage)
+	// Necesitamos volver a TravelResumePage desde TravelInProgressPage
+	// Pero en realidad, el back() desde credit-card-payment-data puede ir a TravelResumePage directamente
+	// dependiendo del historial. Usamos una estrategia diferente:
+	// Hacer click en el PRIMER botón payment (tarjeta guardada) para cambiar la selección.
+
+	await switchWV(driver).catch(() => {});
+	// Tap el primer button.payment (tarjeta guardada, no tarjeta a bordo)
+	const switched = await driver.execute<boolean, []>(() => {
+		const containers = Array.from(document.querySelectorAll('app-travel-resume')) as HTMLElement[];
+		const active = containers.find(c => c.offsetParent !== null) ?? containers[0];
+		if (!active) return false;
+		// Primer botón payment (NOT the active one = tarjeta a bordo)
+		const payBtns = Array.from(active.querySelectorAll('button.payment')) as HTMLButtonElement[];
+		const first = payBtns.find(b => b.offsetParent !== null);
+		if (first) { first.click(); return true; }
 		return false;
 	}).catch(() => false) as boolean;
+	log(`  closeCardModalViaBack: tap saved card btn=${switched}`);
+	await driver.pause(1_500);
 
-	if (!dismissed) {
-		// Usar botón Android back como fallback
-		try { await driver.back(); } catch { /* ignore */ }
-		await driver.pause(1_000);
-		return true;
+	// Ahora tap "Cerrar Viaje" que debería estar habilitado con la tarjeta guardada
+	for (let i = 0; i < 4; i++) {
+		await switchWV(driver).catch(() => {});
+		const closed = await driver.execute<boolean, []>(() => {
+			const containers = Array.from(document.querySelectorAll('app-travel-resume')) as HTMLElement[];
+			const active = containers.find(c => c.offsetParent !== null) ?? containers[0];
+			if (!active) return false;
+			const footerBtn = active.querySelector('ion-footer ion-toolbar button') as HTMLButtonElement | null;
+			if (footerBtn && !footerBtn.disabled) { footerBtn.click(); return true; }
+			const btns = Array.from(active.querySelectorAll('button')) as HTMLButtonElement[];
+			for (const txt of ['Cerrar Viaje', 'Firmar y Cerrar viaje']) {
+				const b = btns.find(b => (b.innerText ?? '').trim() === txt && b.offsetParent !== null && !b.disabled);
+				if (b) { b.click(); return true; }
+			}
+			return false;
+		}).catch(() => false) as boolean;
+		if (closed) { log(`  closeCardModalViaBack: cerrar viaje iter ${i + 1}`); break; }
+		await driver.pause(800);
 	}
-	return dismissed;
+
+	const reachedHome = await waitForUrl(driver, '/navigator/home', 15_000);
+	log(`  closeCardModalViaBack: home=${reachedHome}`);
+	return reachedHome;
 }
 
 async function cleanupResumePageIfStuck(driver: WebdriverIO.Browser): Promise<void> {
@@ -725,16 +830,24 @@ async function cleanupResumePageIfStuck(driver: WebdriverIO.Browser): Promise<vo
 			await driver.pause(1_000);
 		}
 		await driver.pause(2_000);
-		// Confirmar modal
-		for (let i = 0; i < 4; i++) {
+		// Confirmar modal — varios selectores posibles
+		for (let i = 0; i < 6; i++) {
+			await switchWV(driver).catch(() => {});
 			const confirmed = await driver.execute<boolean, []>(() => {
 				const modals = Array.from(document.querySelectorAll('app-confirm-modal')) as HTMLElement[];
 				const vis = modals.find(m => m.offsetParent !== null);
-				const btn = vis?.querySelector('button.btn.primary') as HTMLButtonElement | null;
-				if (btn && !btn.disabled) { btn.click(); return true; }
+				const primaryBtn = vis?.querySelector('button.btn.primary') as HTMLButtonElement | null;
+				if (primaryBtn && !primaryBtn.disabled) { primaryBtn.click(); return true; }
+				const allBtns = Array.from(document.querySelectorAll('button')) as HTMLButtonElement[];
+				for (const txt of ['Aceptar', 'Confirmar', 'Sí', 'Si', 'OK']) {
+					const b = allBtns.find(b => (b.innerText ?? '').trim() === txt && b.offsetParent !== null && !b.disabled);
+					if (b) { b.click(); return true; }
+				}
+				const redBtn = allBtns.find(b => b.className.includes('btn-outlined-red') && b.offsetParent !== null && !b.disabled);
+				if (redBtn) { redBtn.click(); return true; }
 				return false;
 			}).catch(() => false) as boolean;
-			if (confirmed) break;
+			if (confirmed) { log(`  Cleanup modal confirmado iter ${i + 1}`); break; }
 			await driver.pause(600);
 		}
 		await driver.pause(3_000);
@@ -760,7 +873,7 @@ async function cleanupResumePageIfStuck(driver: WebdriverIO.Browser): Promise<vo
 		}).catch(() => false) as boolean;
 		if (cardModalOpen) {
 			log('  Cleanup: credit-card-payment-data abierto — cerrando');
-			await dismissCardModal(driver);
+			await closeCardModalViaBack(driver);
 			await driver.pause(1_500);
 			await switchWV(driver).catch(() => {});
 		}
@@ -793,17 +906,24 @@ async function cleanupResumePageIfStuck(driver: WebdriverIO.Browser): Promise<vo
 				await driver.pause(1_000);
 			}
 			await driver.pause(2_000);
-			// Confirmar modal
-			for (let i = 0; i < 4; i++) {
+			// Confirmar modal — varios selectores posibles
+			for (let i = 0; i < 6; i++) {
 				await switchWV(driver).catch(() => {});
 				const confirmed = await driver.execute<boolean, []>(() => {
 					const modals = Array.from(document.querySelectorAll('app-confirm-modal')) as HTMLElement[];
 					const vis = modals.find(m => m.offsetParent !== null);
-					const btn = vis?.querySelector('button.btn.primary') as HTMLButtonElement | null;
-					if (btn && !btn.disabled) { btn.click(); return true; }
+					const primaryBtn = vis?.querySelector('button.btn.primary') as HTMLButtonElement | null;
+					if (primaryBtn && !primaryBtn.disabled) { primaryBtn.click(); return true; }
+					const allBtns = Array.from(document.querySelectorAll('button')) as HTMLButtonElement[];
+					for (const txt of ['Aceptar', 'Confirmar', 'Sí', 'Si', 'OK']) {
+						const b = allBtns.find(b => (b.innerText ?? '').trim() === txt && b.offsetParent !== null && !b.disabled);
+						if (b) { b.click(); return true; }
+					}
+					const redBtn = allBtns.find(b => b.className.includes('btn-outlined-red') && b.offsetParent !== null && !b.disabled);
+					if (redBtn) { redBtn.click(); return true; }
 					return false;
 				}).catch(() => false) as boolean;
-				if (confirmed) break;
+				if (confirmed) { log(`  Cleanup post-dismiss modal iter ${i + 1}`); break; }
 				await driver.pause(600);
 			}
 			await driver.pause(3_000);
@@ -836,7 +956,7 @@ async function cleanupResumePageIfStuck(driver: WebdriverIO.Browser): Promise<vo
 			return !!(m && m.offsetParent !== null);
 		}).catch(() => false) as boolean;
 		if (cardOpen) {
-			await dismissCardModal(driver);
+			await closeCardModalViaBack(driver);
 			await driver.pause(1_000);
 			continue;
 		}
@@ -962,7 +1082,43 @@ async function runCase(
 		return { id: c.id, title: c.title, status: 'FAIL', detail: 'Botón Cobrar no habilitado — datos inválidos o incompletos' };
 	}
 	log(`  [${c.id}] ✓ Cobrar tapeado`);
-	await driver.pause(2_000);
+	// Esperar respuesta de la API de Stripe (puede tardar varios segundos)
+	await driver.pause(5_000);
+
+	// Capturar texto del modal/error ANTES de descartarlo
+	const modalErrorText = await driver.execute<string, []>(() => {
+		// Primero buscar en ion-modal visible
+		const modals = Array.from(document.querySelectorAll('ion-modal')) as HTMLElement[];
+		const vis = modals.find(m => (m as any).offsetParent !== null);
+		if (vis) {
+			const text = (vis as HTMLElement).innerText ?? '';
+			if (text.trim().length > 3) return text.trim().toLowerCase();
+		}
+		// Buscar en elementos de error directos
+		const errorSels = ['[class*="error"]', 'ion-label[color="danger"]', '.error'];
+		for (const sel of errorSels) {
+			const el = document.querySelector(sel) as HTMLElement | null;
+			if (el && (el as any).offsetParent !== null) {
+				const t = (el.innerText ?? '').trim();
+				if (t.length > 3) return t.toLowerCase();
+			}
+		}
+		return '';
+	}).catch(() => '') as string;
+
+	if (modalErrorText) {
+		log(`  [${c.id}] Modal error capturado: "${modalErrorText}"`);
+	}
+
+	// Descartar modal de validación si está visible
+	await driver.execute<void, []>(() => {
+		const btns = Array.from(document.querySelectorAll('button')) as HTMLButtonElement[];
+		for (const txt of ['Aceptar', 'OK', 'Cerrar']) {
+			const b = btns.find(b => (b.innerText ?? '').trim() === txt && (b as any).offsetParent !== null && !b.disabled);
+			if (b) { b.click(); return; }
+		}
+	}).catch(() => {});
+	await driver.pause(1_500);
 
 	// P9: manejo 3DS según scenario
 	if (c.scenario === '3ds-fail' || c.scenario === '3ds-success') {
@@ -991,7 +1147,11 @@ async function runCase(
 	}
 
 	// Para casos de fallo: esperamos mensaje de error y que NO naveguemos a home
-	const errorText = await detectErrorMessage(driver, c.errorKeywords);
+	// Combinar: error capturado del modal + búsqueda en DOM actual
+	const errorTextDom = await detectErrorMessage(driver, c.errorKeywords);
+	const errorText = errorTextDom || (
+		c.errorKeywords.some(kw => modalErrorText.includes(kw.toLowerCase())) ? modalErrorText : ''
+	);
 	const isHome = finalUrl.includes('/navigator/home') || finalUrl.includes('FROM_TRAVEL_CLOSED');
 
 	if (c.scenario === 'decline' || c.scenario === '3ds-fail') {
@@ -1049,7 +1209,14 @@ async function run(): Promise<void> {
 		await switchWV(driver);
 
 		for (const c of cases) {
-			const result = await runCase(driver, c);
+			let result: { id: string; title: string; status: StepStatus; detail: string };
+			try {
+				result = await runCase(driver, c);
+			} catch (e) {
+				result = { id: c.id, title: c.title, status: 'FAIL', detail: `Exception: ${e}` };
+				log(`  [${c.id}] Exception: ${e}`);
+				await switchWV(driver, 15_000).catch(() => {});
+			}
 			results.push(result);
 
 			// Entre casos: limpiar estado y esperar home limpio
