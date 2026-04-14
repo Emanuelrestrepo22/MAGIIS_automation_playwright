@@ -1,17 +1,13 @@
 name: Smoke Tests — PROD Environment
 
 on:
-  # Se ejecuta manualmente desde GitHub Actions
+  # Solo ejecución manual — no correr en push a main hasta que los flujos estén en producción
   workflow_dispatch:
     inputs:
       headed:
         description: 'Run with browser visible (headed mode)'
         required: false
         default: 'false'
-
-  # Se ejecuta automáticamente al hacer merge a main
-  push:
-    branches: [ main ]
 
 jobs:
   smoke-prod:
