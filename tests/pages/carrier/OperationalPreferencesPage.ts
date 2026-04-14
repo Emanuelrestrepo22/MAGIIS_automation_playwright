@@ -14,7 +14,7 @@ type ParametersSaveResult = {
 	payload: ParametersSavePayload;
 };
 
-const PARAMETERS_SAVE_URL = /\/magiis-v0\.2\/carriers\/\d+\/parameters$/;
+const PARAMETERS_URL = /\/magiis-v0\.2\/carriers\/\d+\/parameters$/;
 
 export class OperationalPreferencesPage {
 	private readonly page: Page;
@@ -24,6 +24,7 @@ export class OperationalPreferencesPage {
 	private readonly holdPreviousHoursInput: Locator;
 	private readonly holdCoverageInput: Locator;
 	private readonly saveButton: Locator;
+	private _parametersResponse: import('@playwright/test').Response | null = null;
 
 	constructor(page: Page) {
 		this.page = page;
@@ -38,8 +39,30 @@ export class OperationalPreferencesPage {
 	}
 
 	async goto(): Promise<void> {
+		const responsePromise = this.page.waitForResponse(
+			(r) => r.request().method() === 'GET' && PARAMETERS_URL.test(r.url()),
+			{ timeout: 15_000 },
+		).catch(() => null);
+
 		await this.page.goto(`${getPortalUrl('carrier')}/#/home/carrier/settings/parameters`);
 		await expect(this.page.getByRole('heading', { name: 'Configuración Parámetros' })).toBeVisible({ timeout: 15_000 });
+
+		this._parametersResponse = await responsePromise;
+	}
+
+	/**
+	 * Lee `enableCreditCardHold` directamente desde la respuesta GET /parameters.
+	 * Fuente de verdad: API, no el estado del DOM.
+	 * Retorna null si el request no fue capturado (navegar con goto() primero).
+	 */
+	async readHoldStateFromApi(): Promise<boolean | null> {
+		if (!this._parametersResponse) return null;
+		try {
+			const body = await this._parametersResponse.json() as Record<string, unknown>;
+			return body['enableCreditCardHold'] === true;
+		} catch {
+			return null;
+		}
 	}
 
 	async expandHoldCard(): Promise<void> {
@@ -108,7 +131,7 @@ export class OperationalPreferencesPage {
 
 	async saveAndCaptureParametersPayload(timeout = 15_000): Promise<ParametersSaveResult> {
 		const responsePromise = this.page.waitForResponse(
-			(response) => response.request().method() === 'POST' && PARAMETERS_SAVE_URL.test(response.url()),
+			(response) => response.request().method() === 'POST' && PARAMETERS_URL.test(response.url()),
 			{ timeout }
 		);
 
