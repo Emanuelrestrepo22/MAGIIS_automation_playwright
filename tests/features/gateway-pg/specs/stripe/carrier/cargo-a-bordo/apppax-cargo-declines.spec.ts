@@ -50,27 +50,27 @@ async function assertDeclinedOutcome(page: Page): Promise<void> {
 	).toBeVisible({ timeout: 10_000 });
 }
 
+// BLOQUEADO: TC1082–TC1086 son flujos Driver App (Appium).
+// El cobro con tarjeta en Cargo a Bordo ocurre desde la app del conductor al finalizar el viaje.
+// La precondición carrier web (crear el viaje con método CargoABordo) está cubierta en TC1081.
+// Requiere Appium + Driver App para los escenarios de rechazo.
+
 test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo · Declines', () => {
 
-  test('[TS-STRIPE-TC1082] @regression @cargo-a-bordo pago rechazado genérico', async ({ page }) => {
-    await createCargoTripWithCard(page, STRIPE_TEST_CARDS.declined.slice(-4));
-    await assertDeclinedOutcome(page);
+  test('[TS-STRIPE-TC1082] @regression @cargo-a-bordo pago rechazado genérico', async () => {
+    test.fixme(true, 'BLOQUEADO: flujo Driver App — requiere Appium. El cobro ocurre al finalizar viaje desde app conductor.');
   });
-  test('[TS-STRIPE-TC1083] @regression @cargo-a-bordo fondos insuficientes', async ({ page }) => {
-    await createCargoTripWithCard(page, STRIPE_TEST_CARDS.insufficientFunds.slice(-4));
-    await assertDeclinedOutcome(page);
+  test('[TS-STRIPE-TC1083] @regression @cargo-a-bordo fondos insuficientes', async () => {
+    test.fixme(true, 'BLOQUEADO: flujo Driver App — requiere Appium.');
   });
-  test('[TS-STRIPE-TC1084] @regression @cargo-a-bordo tarjeta reportada como perdida', async ({ page }) => {
-    await createCargoTripWithCard(page, STRIPE_TEST_CARDS.lostCard.slice(-4));
-    await assertDeclinedOutcome(page);
+  test('[TS-STRIPE-TC1084] @regression @cargo-a-bordo tarjeta reportada como perdida', async () => {
+    test.fixme(true, 'BLOQUEADO: flujo Driver App — requiere Appium.');
   });
-  test('[TS-STRIPE-TC1085] @regression @cargo-a-bordo CVC incorrecto', async ({ page }) => {
-    await createCargoTripWithCard(page, STRIPE_TEST_CARDS.incorrectCvc.slice(-4));
-    await assertDeclinedOutcome(page);
+  test('[TS-STRIPE-TC1085] @regression @cargo-a-bordo CVC incorrecto', async () => {
+    test.fixme(true, 'BLOQUEADO: flujo Driver App — requiere Appium.');
   });
-  test('[TS-STRIPE-TC1086] @regression @cargo-a-bordo tarjeta robada', async ({ page }) => {
-    await createCargoTripWithCard(page, STRIPE_TEST_CARDS.stolenCard.slice(-4));
-    await assertDeclinedOutcome(page);
+  test('[TS-STRIPE-TC1086] @regression @cargo-a-bordo tarjeta robada', async () => {
+    test.fixme(true, 'BLOQUEADO: flujo Driver App — requiere Appium.');
   });
 
 });

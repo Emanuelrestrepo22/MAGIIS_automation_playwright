@@ -18,7 +18,7 @@ export type NewTravelFormInput = {
 
 type StripeComponentName = 'cardNumber' | 'cardExpiry' | 'cardCvc';
 type TariffType = 'Distancia' | 'ADisposicion';
-type PaymentMethod = 'Preautorizada' | 'CuentaCorriente' | 'Efectivo';
+type PaymentMethod = 'Preautorizada' | 'CuentaCorriente' | 'Efectivo' | 'CargoABordo';
 type TipType = 'SIN_PROPINA' | 'PCT_10' | 'PCT_15' | 'PCT_20' | 'CUSTOM';
 
 const STRIPE_CARD_BY_LAST4: Record<string, string> = {
@@ -407,19 +407,20 @@ export abstract class NewTravelPageBase {
 		await this.rentalHoursInput.fill(String(hours));
 	}
 
-	/** Selecciona Preautorizada, Cuenta Corriente o Efectivo. */
+	/** Selecciona Preautorizada, Cuenta Corriente, Efectivo o CargoABordo. */
 	async selectPaymentMethod(method: PaymentMethod): Promise<void> {
 		const optionText =
-			method === 'Preautorizada'
-				? 'Preautorizada'
-				: method === 'CuentaCorriente'
-					? 'Cuenta Corriente'
-					: 'Efectivo';
+			method === 'Preautorizada'   ? 'Preautorizada'              :
+			method === 'CuentaCorriente' ? 'Cuenta Corriente'           :
+			method === 'CargoABordo'     ? 'Tarjeta de Crédito - Cargo' :
+			                               'Efectivo';
 
 		await this.chooseDropdownOption(this.paymentMethodSelector, optionText);
 
 		if (method === 'Preautorizada') {
 			await expect(this.paymentMethodValue).toContainText(/Preautorizada/i, { timeout: 10_000 });
+		} else if (method === 'CargoABordo') {
+			await expect(this.paymentMethodValue).toContainText(/Cargo a Bordo/i, { timeout: 10_000 });
 		} else {
 			await expect(this.paymentMethodValue).toContainText(optionText, { timeout: 10_000 });
 		}

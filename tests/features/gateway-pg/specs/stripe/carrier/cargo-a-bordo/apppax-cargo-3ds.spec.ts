@@ -53,8 +53,27 @@ async function complete3dsOrFail(threeDS: ThreeDSModal, mode: 'success' | 'fail'
 	await threeDS.waitForHidden();
 }
 
+// BLOQUEADO: TC1092–TC1095 son flujos Driver App (Appium).
+// El cobro con tarjeta en Cargo a Bordo ocurre desde la app del conductor al finalizar el viaje.
+// No hay formulario Stripe ni 3DS desde carrier web para este método de pago.
+// Requiere Appium + Driver App.
+
 test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo · 3DS', () => {
 
+  test('[TS-STRIPE-TC1092] @critical @3ds @cargo-a-bordo pago exitoso con 3DS obligatorio', async () => {
+    test.fixme(true, 'BLOQUEADO: flujo Driver App — requiere Appium. El cobro ocurre al finalizar viaje desde app conductor.');
+  });
+  test('[TS-STRIPE-TC1093] @regression @3ds @cargo-a-bordo pago rechazado con 3DS obligatorio', async () => {
+    test.fixme(true, 'BLOQUEADO: flujo Driver App — requiere Appium.');
+  });
+  test('[TS-STRIPE-TC1094] @regression @3ds @cargo-a-bordo error con 3DS obligatorio', async () => {
+    test.fixme(true, 'BLOQUEADO: flujo Driver App — requiere Appium.');
+  });
+  test('[TS-STRIPE-TC1095] @regression @3ds @cargo-a-bordo falla 3DS', async () => {
+    test.fixme(true, 'BLOQUEADO: flujo Driver App — requiere Appium.');
+  });
+
+  /* Tests originales preservados como referencia para implementación Appium:
   test('[TS-STRIPE-TC1092] @critical @3ds @cargo-a-bordo pago exitoso con 3DS obligatorio', async ({ page }) => {
     const { travel, threeDS } = await openCargoFormWithCard(page, {
       cardLast4: STRIPE_TEST_CARDS.success3DS.slice(-4),
@@ -129,5 +148,6 @@ test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo · 3DS', () =>
     }
     await expect.soft(page.getByText(/declined|rechazada|autenticar|autoriz/i).first()).toBeVisible({ timeout: 10_000 });
   });
+  */ // fin tests preservados como referencia
 
 });

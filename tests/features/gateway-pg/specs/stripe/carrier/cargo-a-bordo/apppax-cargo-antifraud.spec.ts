@@ -50,27 +50,26 @@ async function assertAntifraudOutcome(page: Page): Promise<void> {
 	).toBeVisible({ timeout: 10_000 });
 }
 
+// BLOQUEADO: TC1087–TC1091 son flujos Driver App (Appium).
+// El cobro con tarjeta en Cargo a Bordo ocurre desde la app del conductor al finalizar el viaje.
+// Requiere Appium + Driver App para los escenarios de antifraude.
+
 test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo · Antifraude', () => {
 
-  test('[TS-STRIPE-TC1087] @regression @antifraud falla comprobación CVC', async ({ page }) => {
-    await createCargoTripWithCard(page, STRIPE_TEST_CARDS.cvcCheckFail.slice(-4));
-    await assertAntifraudOutcome(page);
+  test('[TS-STRIPE-TC1087] @regression @antifraud falla comprobación CVC', async () => {
+    test.fixme(true, 'BLOQUEADO: flujo Driver App — requiere Appium.');
   });
-  test('[TS-STRIPE-TC1088] @regression @antifraud riesgo máximo', async ({ page }) => {
-    await createCargoTripWithCard(page, STRIPE_TEST_CARDS.highestRisk.slice(-4));
-    await assertAntifraudOutcome(page);
+  test('[TS-STRIPE-TC1088] @regression @antifraud riesgo máximo', async () => {
+    test.fixme(true, 'BLOQUEADO: flujo Driver App — requiere Appium.');
   });
-  test('[TS-STRIPE-TC1089] @regression @antifraud tarjeta siempre bloqueada', async ({ page }) => {
-    await createCargoTripWithCard(page, STRIPE_TEST_CARDS.alwaysBlocked.slice(-4));
-    await assertAntifraudOutcome(page);
+  test('[TS-STRIPE-TC1089] @regression @antifraud tarjeta siempre bloqueada', async () => {
+    test.fixme(true, 'BLOQUEADO: flujo Driver App — requiere Appium.');
   });
-  test('[TS-STRIPE-TC1090] @regression @antifraud falla código postal con riesgo elevado', async ({ page }) => {
-    await createCargoTripWithCard(page, STRIPE_TEST_CARDS.zipFailElevated.slice(-4));
-    await assertAntifraudOutcome(page);
+  test('[TS-STRIPE-TC1090] @regression @antifraud falla código postal con riesgo elevado', async () => {
+    test.fixme(true, 'BLOQUEADO: flujo Driver App — requiere Appium.');
   });
-  test('[TS-STRIPE-TC1091] @regression @antifraud dirección no disponible', async ({ page }) => {
-    await createCargoTripWithCard(page, STRIPE_TEST_CARDS.addressUnavailable.slice(-4));
-    await assertAntifraudOutcome(page);
+  test('[TS-STRIPE-TC1091] @regression @antifraud dirección no disponible', async () => {
+    test.fixme(true, 'BLOQUEADO: flujo Driver App — requiere Appium.');
   });
 
 });
