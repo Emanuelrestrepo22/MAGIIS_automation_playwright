@@ -24,8 +24,10 @@ export class DashboardPage extends SuperPage {
 
 	async openNewTravel(): Promise<void> {
 		console.log('[DashboardPage.openNewTravel][S00] Navegando al formulario de nuevo viaje...');
+		// El portal contractor usa /home/contractor/travel/create; carrier usa /home/carrier/travel/create.
+		// Ambos comparten el mismo SPA, por lo que el patrón cubre los dos portales.
 		await Promise.all([
-			this.page.waitForURL(/\/home\/carrier\/travel\/create/, { timeout: 15_000 }),
+			this.page.waitForURL(/\/home\/(carrier|contractor)\/travel\/create/, { timeout: 15_000 }),
 			super.openNewTravel()
 		]);
 		console.log('[DashboardPage.openNewTravel][S01] URL de nuevo viaje confirmada');

@@ -26,7 +26,9 @@ const DEFAULT_ROLE: AppRole = 'carrier';
 const DEFAULT_LOGIN_PATHS: Record<LoginRole, string> = {
 	// Carrier migró al login single-page que vive bajo /#/authentication/login/carrier.
 	carrier: '/#/authentication/login/carrier',
-	contractor: '/contractor/#/auth/login',
+	// Evidencia test-19.spec.ts: el portal contractor comparte el mismo SPA que carrier
+	// bajo el mismo origen. La ruta correcta es /#/authentication/login/contractor.
+	contractor: '/#/authentication/login/contractor',
 	web: '/#/authentication/login',
 	pax: '/#/authentication/login'
 };

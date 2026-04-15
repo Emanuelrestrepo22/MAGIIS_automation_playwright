@@ -20,7 +20,13 @@ export class TravelManagementPage {
 	constructor(private readonly page: Page) {}
 
 	async goto(): Promise<void> {
-		await this.page.goto(`${getPortalUrl('carrier')}/#/home/carrier/travel/dashboard`);
+		// Detectamos el portal activo desde la URL actual para que este POM funcione
+		// tanto en sesiones carrier como contractor sin cambiar el API existente.
+		// Si no hay URL cargada aún (about:blank) caemos a carrier como default.
+		const currentUrl = this.page.url();
+		const portal = currentUrl.includes('/contractor') ? 'contractor' : 'carrier';
+		const baseUrl = getPortalUrl('carrier'); // ambos portales comparten el mismo origen
+		await this.page.goto(`${baseUrl}/#/home/${portal}/travel/dashboard`);
 		await this.page.waitForLoadState('domcontentloaded');
 	}
 
