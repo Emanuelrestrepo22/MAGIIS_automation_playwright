@@ -1,7 +1,10 @@
 /**
- * TCs: TC-3DS-02
- * Feature: Vinculacion de tarjeta preautorizada con fallo 3DS
- * Tags: @regression @3ds @web-only
+ * TCs: TS-STRIPE-TC1039
+ * Feature: Carrier · Cliente Contractor + Pasajero App Pax invitado · Hold ON · Fallo 3DS — pop-up de error, viaje no se crea
+ * Tags: @regression @3ds @hold @web-only
+ *
+ * TC1039 – Hold ON + cliente contractor + pasajero app pax invitado + tarjeta threeDSRequired + fallo autenticación:
+ *          pop-up de error visible, URL permanece en formulario de alta sin crear viaje
  */
 import { expect } from '@playwright/test';
 import { test } from '../../../../TestBase';
@@ -10,8 +13,8 @@ import { loginAsDispatcher, STRIPE_TEST_CARDS, TEST_DATA } from '../../fixtures/
 
 test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
 
-test.describe('[TC-3DS-02] Recorded flow - vinculacion preautorizada con 3DS fallido', () => {
-	test('muestra error cuando falla la autenticacion 3DS', async ({ page }) => {
+test.describe('[TS-STRIPE-TC1039] Hold ON + cliente contractor + pasajero app pax invitado + threeDSRequired + fallo 3DS — pop-up de error, URL permanece en formulario', () => {
+	test('muestra pop-up de error de autenticación 3DS y no crea el viaje cuando la autenticación falla', async ({ page }) => {
 		test.setTimeout(90_000);
 
 		const dashboard = new DashboardPage(page);
@@ -24,7 +27,7 @@ test.describe('[TC-3DS-02] Recorded flow - vinculacion preautorizada con 3DS fal
 			await loginAsDispatcher(page);
 		});
 
-		await test.step('Validar hold activo', async () => {
+		await test.step('Validar hold activo en preferencias operativas', async () => {
 			await preferences.goto();
 			await preferences.ensureHoldEnabled();
 			await preferences.assertHoldEnabled();
@@ -35,7 +38,7 @@ test.describe('[TC-3DS-02] Recorded flow - vinculacion preautorizada con 3DS fal
 			await travel.ensureLoaded();
 		});
 
-		await test.step('Completar formulario con PAX invitado y tarjeta 3DS obligatoria', async () => {
+		await test.step('Seleccionar cliente contractor, pasajero app pax invitado y tarjeta threeDSRequired', async () => {
 			await travel.selectClient(TEST_DATA.contractorClient);
 			await travel.selectGuestPassenger(TEST_DATA.appPaxPassenger);
 			await travel.setOrigin(TEST_DATA.origin);
@@ -43,19 +46,21 @@ test.describe('[TC-3DS-02] Recorded flow - vinculacion preautorizada con 3DS fal
 			await travel.selectCardByLast4(STRIPE_TEST_CARDS.threeDSRequired.slice(-4));
 		});
 
-		await test.step('Validar tarjeta y rechazar autenticacion 3DS', async () => {
+		await test.step('Enviar viaje — sistema presenta modal 3DS, completar con fallo', async () => {
 			await travel.submit();
 			await threeDS.waitForVisible();
 			await threeDS.completeFail();
 		});
 
-		await test.step('Validar mensaje de error por autenticacion fallida', async () => {
+		await test.step('Validar pop-up de error por autenticación 3DS fallida', async () => {
 			await popup.waitForVisible();
 			const message = await popup.getMessage();
 			expect(message ?? '').toMatch(/autentic|authenticate|unable to authenticate/i);
 			await popup.accept();
 		});
 
-		await expect(page).toHaveURL(/\/home\/carrier\/travel\/create/, { timeout: 15_000 });
+		await test.step('Validar que la URL permanece en el formulario — viaje no fue creado', async () => {
+			await expect(page).toHaveURL(/\/home\/carrier\/travel\/create/, { timeout: 15_000 });
+		});
 	});
 });

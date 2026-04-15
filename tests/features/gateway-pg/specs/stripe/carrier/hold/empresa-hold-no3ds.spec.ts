@@ -1,11 +1,14 @@
 /**
- * TCs: TS-STRIPE-TC1013–TC1024
+ * TCs: TS-STRIPE-TC1065–TC1076
  * Feature: Alta de Viaje desde Carrier — Usuario Empresa Individuo — sin 3DS
  * Tags: @regression @hold @web-only
+ *
+ * Sin 3DS set 1: TC1065–TC1068
+ * Sin 3DS set 2: TC1073–TC1076
  */
 import { expect, type Page } from '@playwright/test';
 import { test } from '../../../../../../TestBase';
-import { DashboardPage, NewTravelPage, OperationalPreferencesPage, ThreeDSModal, TravelDetailPage, TravelManagementPage } from '../../../../../../pages/carrier';
+import { DashboardPage, NewTravelPage, OperationalPreferencesPage, TravelDetailPage, TravelManagementPage } from '../../../../../../pages/carrier';
 import { expectNoThreeDSModal, loginAsDispatcher, STRIPE_TEST_CARDS, TEST_DATA } from '../../../../fixtures/gateway.fixtures';
 import { PASSENGERS } from '../../../../data/passengers';
 
@@ -72,7 +75,6 @@ async function runHoldOnScenario(page: Page, scenario: HoldNo3dsScenario): Promi
 	const travel = new NewTravelPage(page);
 	const management = new TravelManagementPage(page);
 	const detail = new TravelDetailPage(page);
-	const _threeDS = new ThreeDSModal(page);
 
 	await test.step('Login carrier', async () => {
 		await loginAsDispatcher(page);
@@ -133,7 +135,6 @@ async function runHoldOffScenario(page: Page, scenario: HoldNo3dsScenario): Prom
 	const travel = new NewTravelPage(page);
 	const management = new TravelManagementPage(page);
 	const detail = new TravelDetailPage(page);
-	const _threeDS = new ThreeDSModal(page);
 
 	await loginAsDispatcher(page);
 
@@ -195,13 +196,12 @@ test.use({ role: 'carrier', storageState: undefined });
 test.describe('Gateway PG · Carrier · Empresa Individuo — Hold sin 3DS', () => {
 
 	test.describe('Hold ON', () => {
-		test('[TS-STRIPE-TC1013] @smoke @hold hold+cobro empresa sin 3DS', async ({ page }) => {
+		test('[TS-STRIPE-TC1065] @smoke @hold hold+cobro empresa sin 3DS', async ({ page }) => {
 			const dashboard = new DashboardPage(page);
 			const preferences = new OperationalPreferencesPage(page);
 			const travel = new NewTravelPage(page);
 			const management = new TravelManagementPage(page);
 			const detail = new TravelDetailPage(page);
-			const _threeDS = new ThreeDSModal(page);
 
 			await test.step('Login carrier', async () => {
 				await loginAsDispatcher(page);
@@ -256,7 +256,7 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Hold sin 3DS', () 
 			});
 		});
 
-		test('[TS-STRIPE-TC1015] @regression @hold hold+cobro empresa sin 3DS variante', async ({ page }) => {
+		test('[TS-STRIPE-TC1067] @regression @hold hold+cobro empresa sin 3DS variante', async ({ page }) => {
 			await runHoldOnScenario(page, {
 				client: PASSENGERS.empresaIndividuo.name,
 				passenger: PASSENGERS.empresaIndividuo.name,
@@ -265,16 +265,7 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Hold sin 3DS', () 
 			});
 		});
 
-		test('[TS-STRIPE-TC1017] @regression @hold hold+cobro empresa sin 3DS (set 2)', async ({ page }) => {
-			await runHoldOnScenario(page, {
-				client: PASSENGERS.empresaIndividuo.name,
-				passenger: PASSENGERS.empresaIndividuo.name,
-				origin: TEST_DATA.origin,
-				destination: TEST_DATA.destination,
-			});
-		});
-
-		test('[TS-STRIPE-TC1019] @regression @hold hold+cobro empresa sin 3DS variante 2', async ({ page }) => {
+		test('[TS-STRIPE-TC1073] @regression @hold hold+cobro empresa sin 3DS (set 2)', async ({ page }) => {
 			await runHoldOnScenario(page, {
 				client: PASSENGERS.empresaIndividuo.name,
 				passenger: PASSENGERS.empresaIndividuo.name,
@@ -283,7 +274,7 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Hold sin 3DS', () 
 			});
 		});
 
-		test('[TS-STRIPE-TC1021] @regression @hold hold+cobro empresa sin 3DS variante 3', async ({ page }) => {
+		test('[TS-STRIPE-TC1075] @regression @hold hold+cobro empresa sin 3DS variante set 2', async ({ page }) => {
 			await runHoldOnScenario(page, {
 				client: PASSENGERS.empresaIndividuo.name,
 				passenger: PASSENGERS.empresaIndividuo.name,
@@ -291,25 +282,15 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Hold sin 3DS', () 
 				destination: 'Cazadores 1987, Buenos Aires, Argentina',
 			});
 		});
-
-		test('[TS-STRIPE-TC1023] @regression @hold hold+cobro empresa sin 3DS variante 4', async ({ page }) => {
-			await runHoldOnScenario(page, {
-				client: PASSENGERS.empresaIndividuo.name,
-				passenger: PASSENGERS.empresaIndividuo.name,
-				origin: 'Av. Corrientes 1234, Buenos Aires',
-				destination: 'Av. Santa Fe 2100, Buenos Aires',
-			});
-		});
 	});
 
 	test.describe('Hold OFF', () => {
-		test('[TS-STRIPE-TC1014] @regression sin hold empresa sin 3DS', async ({ page }) => {
+		test('[TS-STRIPE-TC1066] @regression @hold sin hold empresa sin 3DS', async ({ page }) => {
 			const dashboard = new DashboardPage(page);
 			const preferences = new OperationalPreferencesPage(page);
 			const travel = new NewTravelPage(page);
 			const management = new TravelManagementPage(page);
 			const detail = new TravelDetailPage(page);
-			const _threeDS = new ThreeDSModal(page);
 
 			await loginAsDispatcher(page);
 
@@ -366,7 +347,7 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Hold sin 3DS', () 
 			}
 		});
 
-		test('[TS-STRIPE-TC1016] @regression sin hold empresa sin 3DS variante', async ({ page }) => {
+		test('[TS-STRIPE-TC1068] @regression @hold sin hold empresa sin 3DS variante', async ({ page }) => {
 			await runHoldOffScenario(page, {
 				client: PASSENGERS.empresaIndividuo.name,
 				passenger: PASSENGERS.empresaIndividuo.name,
@@ -375,16 +356,7 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Hold sin 3DS', () 
 			});
 		});
 
-		test('[TS-STRIPE-TC1018] @regression sin hold empresa sin 3DS (set 2)', async ({ page }) => {
-			await runHoldOffScenario(page, {
-				client: PASSENGERS.empresaIndividuo.name,
-				passenger: PASSENGERS.empresaIndividuo.name,
-				origin: TEST_DATA.origin,
-				destination: TEST_DATA.destination,
-			});
-		});
-
-		test('[TS-STRIPE-TC1020] @regression sin hold empresa sin 3DS variante 2', async ({ page }) => {
+		test('[TS-STRIPE-TC1074] @regression @hold sin hold empresa sin 3DS (set 2)', async ({ page }) => {
 			await runHoldOffScenario(page, {
 				client: PASSENGERS.empresaIndividuo.name,
 				passenger: PASSENGERS.empresaIndividuo.name,
@@ -393,21 +365,12 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Hold sin 3DS', () 
 			});
 		});
 
-		test('[TS-STRIPE-TC1022] @regression sin hold empresa sin 3DS variante 3', async ({ page }) => {
+		test('[TS-STRIPE-TC1076] @regression @hold sin hold empresa sin 3DS variante set 2', async ({ page }) => {
 			await runHoldOffScenario(page, {
 				client: PASSENGERS.empresaIndividuo.name,
 				passenger: PASSENGERS.empresaIndividuo.name,
 				origin: 'Reconquista 661, Buenos Aires, Argentina',
 				destination: 'Cazadores 1987, Buenos Aires, Argentina',
-			});
-		});
-
-		test('[TS-STRIPE-TC1024] @regression sin hold empresa sin 3DS variante 4', async ({ page }) => {
-			await runHoldOffScenario(page, {
-				client: PASSENGERS.empresaIndividuo.name,
-				passenger: PASSENGERS.empresaIndividuo.name,
-				origin: 'Av. Corrientes 1234, Buenos Aires',
-				destination: 'Av. Santa Fe 2100, Buenos Aires',
 			});
 		});
 	});

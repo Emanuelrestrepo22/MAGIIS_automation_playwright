@@ -1,8 +1,10 @@
 /**
- * MAGIIS - gateway-pg
- * Suite: Hold y Capture
- * TCs: TC01, TC02
- * Flujo: A - Hold directo
+ * TCs: TS-STRIPE-TC1049, TS-STRIPE-TC1059
+ * Feature: Alta de Viaje desde Carrier – Usuario App Pax – Hold y declinación sin 3DS
+ * Tags: @smoke @regression @hold @web-only
+ *
+ * TC1049 – Hold ON exitoso, tarjeta sin 3DS (4242 4242 4242 4242)
+ * TC1059 – Hold ON, tarjeta con fondos insuficientes (4000 0000 0000 9995) — viaje no se crea
  */
 
 import { test, expect } from '../../../../TestBase';
@@ -12,7 +14,7 @@ import { NewTravelPage, OperationalPreferencesPage, TravelManagementPage } from 
 test.describe.configure({ mode: 'serial' });
 test.describe.configure({ timeout: 120_000 });
 
-test.describe('[gateway][stripe] Hold y Capture - flujo directo', () => {
+test.describe('Gateway PG · Carrier · App Pax — Hold sin 3DS', () => {
 	test.use({ role: 'carrier', storageState: undefined });
 
 	test.beforeEach(async ({ page }) => {
@@ -22,8 +24,8 @@ test.describe('[gateway][stripe] Hold y Capture - flujo directo', () => {
 		await preferences.ensureHoldEnabled();
 	});
 
-	test.describe('[TC01] Hold exitoso sin 3DS requerido', () => {
-		test('El viaje pasa a Buscando conductor inmediatamente tras el hold', async ({ page }) => {
+	test.describe('[TS-STRIPE-TC1049] Hold ON exitoso — tarjeta preautorizada sin 3DS (4242 4242 4242 4242)', () => {
+		test('viaje pasa a "Buscando conductor" inmediatamente tras el hold', async ({ page }) => {
 			const travel = new NewTravelPage(page);
 			const management = new TravelManagementPage(page);
 
@@ -32,7 +34,7 @@ test.describe('[gateway][stripe] Hold y Capture - flujo directo', () => {
 				passenger: TEST_DATA.passenger,
 				origin: TEST_DATA.origin,
 				destination: TEST_DATA.destination,
-				cardLast4: STRIPE_TEST_CARDS.successDirect.slice(-4)
+				cardLast4: STRIPE_TEST_CARDS.successDirect.slice(-4), // 4242
 			});
 			await travel.submit();
 
@@ -40,7 +42,7 @@ test.describe('[gateway][stripe] Hold y Capture - flujo directo', () => {
 			await management.expectPassengerInPorAsignar(TEST_DATA.passenger, TEST_DATA.destination, 'Buscando chofer');
 		});
 
-		test('No aparece modal 3DS cuando el hold es directo', async ({ page }) => {
+		test('no aparece modal 3DS cuando el hold es directo', async ({ page }) => {
 			const travel = new NewTravelPage(page);
 
 			await travel.goto();
@@ -48,14 +50,14 @@ test.describe('[gateway][stripe] Hold y Capture - flujo directo', () => {
 				passenger: TEST_DATA.passenger,
 				origin: TEST_DATA.origin,
 				destination: TEST_DATA.destination,
-				cardLast4: STRIPE_TEST_CARDS.successDirect.slice(-4)
+				cardLast4: STRIPE_TEST_CARDS.successDirect.slice(-4), // 4242
 			});
 			await travel.submit();
 
 			await expectNoThreeDSModal(page);
 		});
 
-		test('El viaje aparece en la columna Por asignar de gestion de viajes', async ({ page }) => {
+		test('viaje aparece en columna "Por asignar" de gestión de viajes', async ({ page }) => {
 			const travel = new NewTravelPage(page);
 			const management = new TravelManagementPage(page);
 
@@ -64,7 +66,7 @@ test.describe('[gateway][stripe] Hold y Capture - flujo directo', () => {
 				passenger: TEST_DATA.passenger,
 				origin: TEST_DATA.origin,
 				destination: TEST_DATA.destination,
-				cardLast4: STRIPE_TEST_CARDS.successDirect.slice(-4)
+				cardLast4: STRIPE_TEST_CARDS.successDirect.slice(-4), // 4242
 			});
 			await travel.submit();
 
@@ -73,8 +75,8 @@ test.describe('[gateway][stripe] Hold y Capture - flujo directo', () => {
 		});
 	});
 
-	test.describe('[TC02] Hold declinado - tarjeta rechazada', () => {
-		test('Muestra mensaje de error cuando la tarjeta es declinada', async ({ page }) => {
+	test.describe('[TS-STRIPE-TC1059] Hold ON declinado — tarjeta fondos insuficientes (4000 0000 0000 9995), viaje no se crea', () => {
+		test('muestra error de declinación cuando la tarjeta tiene fondos insuficientes', async ({ page }) => {
 			const travel = new NewTravelPage(page);
 
 			await travel.goto();
@@ -82,14 +84,14 @@ test.describe('[gateway][stripe] Hold y Capture - flujo directo', () => {
 				passenger: TEST_DATA.passenger,
 				origin: TEST_DATA.origin,
 				destination: TEST_DATA.destination,
-				cardLast4: STRIPE_TEST_CARDS.insufficientFunds.slice(-4)
+				cardLast4: STRIPE_TEST_CARDS.insufficientFunds.slice(-4), // 9995
 			});
 			await travel.submit();
 
 			await expect(page.getByText(/declinada|rechazada|fondos/i)).toBeVisible({ timeout: 10_000 });
 		});
 
-		test('El viaje no se crea cuando la tarjeta es declinada', async ({ page }) => {
+		test('el viaje no se crea — URL no redirige a /travels/... cuando la tarjeta es declinada', async ({ page }) => {
 			const travel = new NewTravelPage(page);
 
 			await travel.goto();
@@ -97,7 +99,7 @@ test.describe('[gateway][stripe] Hold y Capture - flujo directo', () => {
 				passenger: TEST_DATA.passenger,
 				origin: TEST_DATA.origin,
 				destination: TEST_DATA.destination,
-				cardLast4: STRIPE_TEST_CARDS.insufficientFunds.slice(-4)
+				cardLast4: STRIPE_TEST_CARDS.insufficientFunds.slice(-4), // 9995
 			});
 			await travel.submit();
 
