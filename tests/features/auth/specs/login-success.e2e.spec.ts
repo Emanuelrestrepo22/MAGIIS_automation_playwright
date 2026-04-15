@@ -2,12 +2,12 @@
 import { test, expect } from '../../../TestBase';
 import { DashboardPage } from '../../../pages/carrier';
 
-test.describe('TS-AUTH-XX Login - Portal Carrier', () => {
+test.describe('[TS-AUTH-TC01] Login exitoso portal carrier — redirección al dashboard y token de sesión persistente', () => {
 	// Forzamos una sesión limpia para validar el flujo completo de login
 	// y no depender del storageState generado por el global setup.
 	test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
 
-	test('TS-AUTH-TC01-validar-login-exitoso-portal-carrier', async ({ page, loginPage, credentials }) => {
+	test('[TS-AUTH-TC01] validar login exitoso portal carrier con credenciales válidas', async ({ page, loginPage, credentials }) => {
 		// Tomamos las credenciales resueltas por el fixture para mantener
 		// el test desacoplado de nombres concretos de variables de entorno.
 		const { username, password } = credentials;

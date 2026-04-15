@@ -12,7 +12,7 @@ const LOGIN_NEGATIVE_FLAGS = {
 	ERROR_TEXT_UNEXPECTED: 'FLAG-TC02-003'
 } as const;
 
-test.describe('TS-AUTH-XX Login negativo', () => {
+test.describe('[TS-AUTH-TC02] Login fallido portal carrier — credenciales inválidas muestran error, URL permanece en login', () => {
 	// Evitamos storageState logueado para garantizar que el test empiece
 	// siempre en la pantalla real de autenticación.
 	test.use({ role: 'carrier', storageState: undefined });
@@ -49,7 +49,7 @@ test.describe('TS-AUTH-XX Login negativo', () => {
 				console.error(`[${LOGIN_NEGATIVE_FLAGS.ERROR_NOT_VISIBLE}] No se mostró el mensaje de error esperado`);
 			}
 
-			await expect(errorVisible).toBeTruthy();
+			expect(errorVisible).toBeTruthy();
 		});
 
 		await test.step('[TS-AUTH-TC02][STEP-04] Validar texto del mensaje de error', async () => {
