@@ -4,8 +4,10 @@
  * Flow:
  * 1. Start from the Passenger home shell.
  * 2. Validate personal mode from the label under the profile toggle.
- * 3. Add / reuse a 3DS-capable wallet card.
- * 4. Create a trip and capture the 3DS challenge if the hold precondition is active.
+ * 3. Clean the wallet so the linked-card journey starts from a controlled state.
+ * 4. Add / reuse a 3DS-capable wallet card.
+ * 5. Select that wallet card as the active card.
+ * 6. Create a trip and capture the 3DS challenge if the hold precondition is active.
  *
  * Usage from repo root:
  *   $env:ANDROID_UDID="R92XB0B8F3J"
@@ -29,22 +31,8 @@ const log = (message: string): void => {
 	console.log(`[passenger-personal-3ds-hold] ${message}`);
 };
 
-async function handleThreeDsPopup(
-	driver: Browser,
-	dumpState: (label: string) => Promise<string>,
-	timeoutMs: number,
-): Promise<'completed' | 'not-present' | 'failed'> {
-	const approveTexts = [
-		'Complete',
-		'Complete authentication',
-		'COMPLETE',
-		'Completar',
-		'Completar autenticación',
-		'Autorizar',
-		'Aprobar',
-		'Confirm',
-		'Submit',
-	];
+async function handleThreeDsPopup(driver: Browser, dumpState: (label: string) => Promise<string>, timeoutMs: number): Promise<'completed' | 'not-present' | 'failed'> {
+	const approveTexts = ['Complete', 'Complete authentication', 'COMPLETE', 'Completar', 'Completar autenticación', 'Autorizar', 'Aprobar', 'Confirm', 'Submit'];
 
 	const deadline = Date.now() + timeoutMs;
 	let lastObservation: 'not-present' | 'failed' = 'not-present';
@@ -59,7 +47,7 @@ async function handleThreeDsPopup(
 			await driver.switchContext(externalCtx);
 			await dumpState('passenger-personal-3ds-external-context');
 
-			const clicked = await driver.execute((texts: string[]) => {
+			const clicked = (await driver.execute((texts: string[]) => {
 				const buttons = Array.from(document.querySelectorAll('button, [role="button"], a')) as HTMLElement[];
 				for (const text of texts) {
 					const button = buttons.find(item => (item.innerText ?? item.textContent ?? '').trim() === text && item.offsetParent !== null);
@@ -70,7 +58,7 @@ async function handleThreeDsPopup(
 				}
 
 				return false;
-			}, approveTexts) as boolean;
+			}, approveTexts)) as boolean;
 
 			if (mainCtx) {
 				await driver.switchContext(mainCtx);
@@ -83,7 +71,7 @@ async function handleThreeDsPopup(
 			await driver.switchContext(mainCtx);
 		}
 
-		const inlineResult = await driver.execute((texts: string[]) => {
+		const inlineResult = (await driver.execute((texts: string[]) => {
 			const iframes = Array.from(document.querySelectorAll('iframe')) as HTMLIFrameElement[];
 			const threeDsFrame = iframes.find(frame => /stripe|hooks|acs|3ds|authenticate|verify/i.test(frame.src ?? frame.name ?? ''));
 			if (!threeDsFrame) {
@@ -109,14 +97,14 @@ async function handleThreeDsPopup(
 			} catch {
 				return 'iframe-cross-origin';
 			}
-		}, approveTexts) as string;
+		}, approveTexts)) as string;
 
 		if (inlineResult === 'completed') {
 			return 'completed';
 		}
 
 		if (inlineResult === 'not-present') {
-			const modalResult = await driver.execute((texts: string[]) => {
+			const modalResult = (await driver.execute((texts: string[]) => {
 				const overlays = Array.from(document.querySelectorAll('ion-modal, [class*="3ds"], [class*="stripe"], app-confirm-modal')) as HTMLElement[];
 				const visible = overlays.filter(element => element.offsetParent !== null);
 				if (!visible.length) {
@@ -135,7 +123,7 @@ async function handleThreeDsPopup(
 				}
 
 				return 'modal-btn-not-found';
-			}, approveTexts) as string;
+			}, approveTexts)) as string;
 
 			if (modalResult === 'completed') {
 				return 'completed';
@@ -161,7 +149,7 @@ async function handleThreeDsPopup(
 
 async function run(): Promise<void> {
 	const harness = new PassengerTripHappyPathHarness(getPassengerAppConfig(), undefined, {
-		profileMode: 'personal',
+		profileMode: 'personal'
 	});
 
 	const card = STRIPE_TEST_CARDS.visa_3ds_success;
@@ -169,7 +157,7 @@ async function run(): Promise<void> {
 		number: card.number,
 		expiry: card.exp,
 		cvc: card.cvc,
-		holderName: card.holderName,
+		holderName: card.holderName
 	};
 	const origin = TEST_DATA.origin;
 	const destination = TEST_DATA.destination;
@@ -180,6 +168,8 @@ async function run(): Promise<void> {
 		const driver = harness.getDriver();
 
 		await dumpAppiumState(driver, 'passenger-personal-home-start');
+		await harness.cleanWallet();
+		await dumpAppiumState(driver, 'passenger-personal-wallet-cleaned');
 		await harness.ensureWalletCard(walletCard);
 		await dumpAppiumState(driver, 'passenger-personal-wallet-after-save');
 		await harness.selectExistingCard(cardLast4);
@@ -194,11 +184,7 @@ async function run(): Promise<void> {
 
 		await dumpAppiumState(driver, 'passenger-personal-trip-before-3ds');
 
-		const threeDsResult = await handleThreeDsPopup(
-			driver,
-			label => dumpAppiumState(driver, label),
-			threeDsTimeoutMs,
-		);
+		const threeDsResult = await handleThreeDsPopup(driver, label => dumpAppiumState(driver, label), threeDsTimeoutMs);
 
 		log(`3DS result: ${threeDsResult}`);
 		if (threeDsResult !== 'completed') {

@@ -34,7 +34,7 @@ const DEFAULT_TIMEOUTS_MS = {
 	trip: 60_000,
 	assigned: 90_000,
 	completed: 120_000,
-	payment: 120_000,
+	payment: 120_000
 } as const;
 
 const DEFAULT_PASSENGER_EMAIL = process.env.PASSENGER_EMAIL ?? 'emanuel.restrepo@yopmail.com';
@@ -50,7 +50,7 @@ export class PassengerTripHappyPathHarness {
 	constructor(
 		private readonly config: MobileActorConfig,
 		driver?: AppiumDriver,
-		options: PassengerTripHappyPathHarnessOptions = {},
+		options: PassengerTripHappyPathHarnessOptions = {}
 	) {
 		this.profileMode = options.profileMode ?? 'personal';
 		this.homeScreen = new PassengerHomeScreen(this.config, driver);
@@ -79,6 +79,10 @@ export class PassengerTripHappyPathHarness {
 		return this.walletScreen.getDriver();
 	}
 
+	getWalletScreen(): PassengerWalletScreen {
+		return this.walletScreen;
+	}
+
 	async ensurePassengerShell(): Promise<void> {
 		await this.startSession();
 		await this.ensureLoggedInIfNeeded();
@@ -100,6 +104,22 @@ export class PassengerTripHappyPathHarness {
 			await this.walletScreen.saveCard();
 			await this.walletScreen.verifyCardAdded(last4);
 			return 'added';
+		});
+	}
+
+	async cleanWallet(maxIterations = 50): Promise<number> {
+		return this.withFailureDump('passenger-wallet-cleanup', async () => {
+			await this.ensurePassengerShell();
+			await this.walletScreen.openWallet();
+			return this.walletScreen.deleteAllVisibleCards(maxIterations);
+		});
+	}
+
+	async deleteWalletCard(last4: string): Promise<void> {
+		await this.withFailureDump('passenger-wallet-delete', async () => {
+			await this.ensurePassengerShell();
+			await this.walletScreen.openWallet();
+			await this.walletScreen.deleteCard(last4);
 		});
 	}
 
@@ -148,23 +168,16 @@ export class PassengerTripHappyPathHarness {
 		});
 	}
 
-	async runHappyPath(
-		card: CardInput,
-		origin: string,
-		destination: string,
-		options: PassengerTripHappyPathOptions = {},
-	): Promise<PassengerTripHappyPathResult> {
+	async runHappyPath(card: CardInput, origin: string, destination: string, options: PassengerTripHappyPathOptions = {}): Promise<PassengerTripHappyPathResult> {
 		return this.withFailureDump('passenger-trip-happy-path', async () => {
 			await this.startSession();
 
 			const timeouts = {
 				...DEFAULT_TIMEOUTS_MS,
-				...(options.timeoutsMs ?? {}),
+				...(options.timeoutsMs ?? {})
 			};
 
-			const walletState = options.ensureWalletCard === false
-				? 'already-present'
-				: await this.ensureWalletCard(card, timeouts.wallet);
+			const walletState = options.ensureWalletCard === false ? 'already-present' : await this.ensureWalletCard(card, timeouts.wallet);
 
 			const cardLast4 = this.getCardLast4(card);
 			const tripId = await this.createTrip(origin, destination, cardLast4);
@@ -194,7 +207,7 @@ export class PassengerTripHappyPathHarness {
 				walletState,
 				driverAssigned,
 				tripCompleted,
-				paymentProcessed,
+				paymentProcessed
 			};
 		});
 	}
@@ -239,57 +252,63 @@ export class PassengerTripHappyPathHarness {
 	}
 
 	private async closeExpiredModalIfPresent(driver: AppiumDriver): Promise<string> {
-		return driver.execute<string, []>(() => {
-			const modal = Array.from(document.querySelectorAll('ion-modal')).find(el =>
-				(el.textContent ?? '').includes('Su sesión ha expirado'),
-			);
-			if (!modal) {
-				return 'no-modal';
-			}
+		return driver
+			.execute<string, []>(() => {
+				const modal = Array.from(document.querySelectorAll('ion-modal')).find(el => (el.textContent ?? '').includes('Su sesión ha expirado'));
+				if (!modal) {
+					return 'no-modal';
+				}
 
-			const buttons = Array.from(document.querySelectorAll('button, ion-button, [role="button"]'));
-			const aceptar = buttons.find(el => el.textContent?.trim() === 'Aceptar') as HTMLElement | undefined;
-			if (aceptar) {
-				aceptar.click();
-				return 'clicked-aceptar';
-			}
+				const buttons = Array.from(document.querySelectorAll('button, ion-button, [role="button"]'));
+				const aceptar = buttons.find(el => el.textContent?.trim() === 'Aceptar') as HTMLElement | undefined;
+				if (aceptar) {
+					aceptar.click();
+					return 'clicked-aceptar';
+				}
 
-			return 'modal-without-aceptar';
-		}).catch(() => 'error');
+				return 'modal-without-aceptar';
+			})
+			.catch(() => 'error');
 	}
 
 	private async fillLoginAndSubmit(driver: AppiumDriver, email: string, password: string): Promise<string> {
-		return driver.execute<string, [string, string]>((loginEmail: string, loginPassword: string): string => {
-			const emailInput = document.querySelector('input[type="email"], input[placeholder="Email"]') as HTMLInputElement | null;
-			const passwordInput = document.querySelector('input[type="password"], input[placeholder="Contraseña"]') as HTMLInputElement | null;
+		return driver
+			.execute<string, [string, string]>(
+				(loginEmail: string, loginPassword: string): string => {
+					const emailInput = document.querySelector('input[type="email"], input[placeholder="Email"]') as HTMLInputElement | null;
+					const passwordInput = document.querySelector('input[type="password"], input[placeholder="Contraseña"]') as HTMLInputElement | null;
 
-			if (!emailInput || !passwordInput) {
-				return 'missing-fields';
-			}
+					if (!emailInput || !passwordInput) {
+						return 'missing-fields';
+					}
 
-			const setValue = (el: HTMLInputElement, value: string): void => {
-				const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
-				setter?.call(el, value);
-				el.dispatchEvent(new Event('input', { bubbles: true }));
-				el.dispatchEvent(new Event('change', { bubbles: true }));
-			};
+					const setValue = (el: HTMLInputElement, value: string): void => {
+						const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+						setter?.call(el, value);
+						el.dispatchEvent(new Event('input', { bubbles: true }));
+						el.dispatchEvent(new Event('change', { bubbles: true }));
+					};
 
-			setValue(emailInput, loginEmail);
-			setValue(passwordInput, loginPassword);
+					setValue(emailInput, loginEmail);
+					setValue(passwordInput, loginPassword);
 
-			const buttons = Array.from(document.querySelectorAll('button, ion-button, [role="button"]'));
-			const submit = buttons.find(el => {
-				const text = el.textContent?.trim();
-				return text === 'Ingresar' || text === 'Entrar' || text === 'Login' || text === 'Iniciar sesión';
-			}) as HTMLElement | undefined;
+					const buttons = Array.from(document.querySelectorAll('button, ion-button, [role="button"]'));
+					const submit = buttons.find(el => {
+						const text = el.textContent?.trim();
+						return text === 'Ingresar' || text === 'Entrar' || text === 'Login' || text === 'Iniciar sesión';
+					}) as HTMLElement | undefined;
 
-			if (submit) {
-				submit.click();
-				return 'clicked-submit';
-			}
+					if (submit) {
+						submit.click();
+						return 'clicked-submit';
+					}
 
-			return 'fields-filled-no-button';
-		}, email, password).catch((error: Error) => `error:${error.message}`);
+					return 'fields-filled-no-button';
+				},
+				email,
+				password
+			)
+			.catch((error: Error) => `error:${error.message}`);
 	}
 
 	private async waitForPassengerHomeUrl(driver: AppiumDriver, timeoutMs = 20_000): Promise<string> {

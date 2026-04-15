@@ -2,7 +2,9 @@ name: Smoke Tests - PROD Environment
 
 # Disabled while the project is TEST-only.
 # Keep this workflow inert until TEST and UAT are approved and PROD is ready.
-on: []
+on:
+  workflow_dispatch: # Keep manual-only to stay inert while project is TEST-only
+
 
 jobs:
   smoke-prod:

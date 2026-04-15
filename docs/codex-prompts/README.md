@@ -1,9 +1,11 @@
 # Prompt Governance
 
 ## Objetivo
+
 Mantener a Antigravity, Gemini, Codex y Claude Code alineados al mismo objetivo del proyecto, sin ambiguedades entre documentos.
 
 ## Orden de precedencia documental
+
 Si hay conflicto entre documentos, aplicar este orden:
 
 1. Instrucciones de sistema y de ejecucion del entorno (runtime).
@@ -14,6 +16,7 @@ Si hay conflicto entre documentos, aplicar este orden:
 6. `GATEWAY_PG_ARCHITECTURE.md` solo como contexto historico/conceptual.
 
 ## Gemini bootstrap
+
 Cuando se use Gemini Chat para una tarea de este repositorio:
 
 1. Leer `AGENTS.md`.
@@ -24,6 +27,7 @@ Cuando se use Gemini Chat para una tarea de este repositorio:
 6. Pasar el resultado normalizado a Codex solo para cambios concretos de codigo.
 
 ## Recorder-driven workflow
+
 Si una implementacion Playwright tiene poco contexto o faltan selectores reales:
 
 1. Pedir el archivo `.recorded.ts` correspondiente desde VS Code / Playwright Recorder.
@@ -41,6 +45,7 @@ Si una implementacion Playwright tiene poco contexto o faltan selectores reales:
 - Appium canonico: `tests/mobile/appium/**`
 
 ## Regla de no ambiguedad
+
 Cada cambio relevante en estructura o flujo debe mantener coherencia entre:
 
 - Prompt de tarea (`docs/codex-prompts`)
@@ -62,12 +67,14 @@ No se considera terminado un cambio si el codigo y los `.md` quedaron desalinead
    - agregar nota de compatibilidad transitoria si aplica
 
 ## Convencion de estado en documentos
+
 Todo documento de arquitectura debe declarar su estado:
 
 - `CANONICAL`: fuente de verdad para implementacion y ejecucion.
 - `LEGACY`: referencia historica; no define rutas ni reglas ejecutables.
 
 ## Ciclo de vida de arquitectura por Feature
+
 Para evitar que los agentes confundan contextos al escalar la aplicacion, se adopta el siguiente ciclo iterativo:
 
 1. **Desarrollo Activo:** El documento de arquitectura del feature en curso (`FEATURE_ARCHITECTURE.md`) vive en la raiz del proyecto (`/`) para dar prelacion a todos los agentes que aterricen en el espacio de trabajo.
@@ -81,9 +88,10 @@ Para evitar que los agentes confundan contextos al escalar la aplicacion, se ado
 - `implement-carrier-negative-specs.md`: cobertura de variantes y casos negativos.
 - `implement-contractor-specs-by-recording.md`: implementacion de specs del portal contractor guiada por grabaciones.
 - `implement-driver-app-flow2.md`: pausado / legado hasta reactivacion explicita.
-- `implement-passenger-app-flow2.md`: lane activo para Passenger App, empezando por wallet, alta de viaje y trip status. Selectors ya validados: `Modo Personal`, `Compañía`, `Mi cuenta`, `Billetera`, `Origen`, `Destino`, `Seleccionar Vehiculo`, `Ahora`, `AGREGAR`, `GUARDAR`, y Stripe iframe `cardnumber`/`cc-exp-month`/`cc-exp-year`/`cc-csc`. Implementacion activa: `tests/mobile/appium/harness/PassengerTripHappyPathHarness.ts`, `tests/features/gateway-pg/data/passenger-personal-no3ds-scenarios.ts`, `tests/features/gateway-pg/data/passenger-flow2-scenarios.ts`, `tests/features/gateway-pg/data/passenger-business-scenarios.ts`, `tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-personal-no3ds.e2e.spec.ts`, `tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-personal-3ds.e2e.spec.ts`, `tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-no3ds.e2e.spec.ts`, `tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-3ds.e2e.spec.ts`, y `docs/test-cases/mobile/TC-PASSENGER-FLOW.md`. Smoke recomendado: `pnpm mobile:passenger:profile-mode-smoke`; flujo completo personal 3DS + hold: `pnpm mobile:passenger:personal-3ds-hold-flow`.
+- `implement-passenger-app-flow2.md`: lane activo para Passenger App, empezando por wallet, alta de viaje y trip status. Selectors ya validados: `Modo Personal`, `Compañía`, `Mi cuenta`, `Billetera`, `Origen`, `Destino`, `Seleccionar Vehiculo`, `Ahora`, `AGREGAR`, `GUARDAR`, y Stripe iframe `cardnumber`/`cc-exp-month`/`cc-exp-year`/`cc-csc`. Implementacion activa: `tests/mobile/appium/harness/PassengerTripHappyPathHarness.ts`, `tests/features/gateway-pg/data/passenger-personal-no3ds-scenarios.ts`, `tests/features/gateway-pg/data/passenger-flow2-scenarios.ts`, `tests/features/gateway-pg/data/passenger-business-scenarios.ts`, `tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-personal-no3ds.e2e.spec.ts`, `tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-personal-3ds.e2e.spec.ts`, `tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-no3ds.e2e.spec.ts`, `tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-3ds.e2e.spec.ts`, y `docs/test-cases/mobile/TC-PASSENGER-FLOW.md`. Smoke recomendado: `pnpm mobile:passenger:profile-mode-smoke`; flujo completo personal 3DS + hold: `pnpm mobile:passenger:personal-3ds-hold-flow` (empieza limpiando la wallet para que la vinculacion de tarjeta sea determinista). Wallet critical path: `pnpm mobile:passenger:wallet-3ds-delete` seeds a single 3DS card, captures add/delete payloads, and then deletes it for `DBTS-STRIPE-TC003` / `TS-STRIPE-TC1122`.
 
 ## Recorder + runtime notes
+
 - When a flow is blocked on login or dashboard bootstrap, verify `tests/config/runtime.ts`, `tests/pages/shared/LoginPage.ts`, and `tests/pages/carrier/DashboardPage.ts` before drafting new specs.
 - For carrier and contractor, the shell check comes from the runtime pattern; do not assume `/dashboard` or `Nuevo Viaje` are valid for every role.
 - For contractor portal web work, use the contractor role and keep the focus on `tests/features/gateway-pg/specs/stripe/contractor/**`.
