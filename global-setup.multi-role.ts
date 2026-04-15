@@ -48,7 +48,10 @@ async function globalSetup(): Promise<void> {
       await loginPage.goto();
       await loginPage.login(credentials.username, credentials.password);
 
-      await page.waitForURL(roleConfig.dashboardPattern, { timeout: 15_000 });
+      await page.waitForURL(
+        (url) => url.href.includes("/home") && url.href.includes("dashboard"),
+        { timeout: 15_000 },
+      );
       console.log(
         `[GlobalSetup][${role}] Dashboard pattern "${roleConfig.dashboardPattern}" confirmed at ${page.url()}`,
       );

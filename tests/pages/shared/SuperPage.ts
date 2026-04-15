@@ -4,21 +4,46 @@ import { expect } from '@playwright/test';
 
 export abstract class SuperPage {
 	protected readonly page: Page;
-	protected readonly newTravelLink: Locator;
+	private readonly bannerNewTravelLink: Locator;
+	private readonly bannerNewTravelText: Locator;
+	private readonly sidebarNewTravelLink: Locator;
 
 	constructor(page: Page) {
 		this.page = page;
-		// Carrier: banner <a> link. Contractor: banner <div> genérico (cursor pointer).
-		// getByText en el banner es role-agnostic y funciona en ambos portales.
-		// Fallback al link del sidebar (siempre presente como <a> real en contractor).
-		this.newTravelLink = page.getByRole('banner').getByText(/Nuevo Viaje|New Trip/i).first()
-			.or(page.getByRole('navigation').getByRole('link', { name: /Nuevo Viaje/i }).first());
+		// Carrier: link en el banner.
+		// Contractor: a veces se pinta como texto/cta en el banner.
+		// Mantenemos candidatos separados para evitar strict mode con locators compuestos.
+		this.bannerNewTravelLink = page
+			.getByRole('banner')
+			.getByRole('link', { name: /Nuevo Viaje|New Trip/i })
+			.first();
+		this.bannerNewTravelText = page
+			.getByRole('banner')
+			.getByText(/Nuevo Viaje|New Trip/i)
+			.first();
+		this.sidebarNewTravelLink = page
+			.getByRole('navigation')
+			.getByRole('link', { name: /Nuevo Viaje/i })
+			.first();
+	}
+
+	private async resolveNewTravelLink(): Promise<Locator> {
+		const candidates = [this.bannerNewTravelLink, this.bannerNewTravelText, this.sidebarNewTravelLink];
+
+		for (const candidate of candidates) {
+			if (await candidate.isVisible().catch(() => false)) {
+				return candidate;
+			}
+		}
+
+		return this.bannerNewTravelLink;
 	}
 
 	async ensureNewTripVisible(): Promise<void> {
-		// Mantenemos el nombre histórico del helper, pero la señal real hoy es el link.
+		// Mantenemos el nombre histÃ³rico del helper, pero la seÃ±al real hoy es el link.
 		console.log('[SuperPage.ensureNewTripVisible][S00] Esperando link "Nuevo Viaje"...');
-		await expect(this.newTravelLink).toBeVisible({ timeout: 10_000 });
+		const newTravelLink = await this.resolveNewTravelLink();
+		await expect(newTravelLink).toBeVisible({ timeout: 10_000 });
 		console.log('[SuperPage.ensureNewTripVisible][S01] Link "Nuevo Viaje" visible');
 	}
 
@@ -28,7 +53,8 @@ export abstract class SuperPage {
 
 	async openNewTravel(): Promise<void> {
 		console.log('[SuperPage.openNewTravel][S00] Abriendo formulario de nuevo viaje...');
-		await this.newTravelLink.click();
+		const newTravelLink = await this.resolveNewTravelLink();
+		await newTravelLink.click();
 		console.log('[SuperPage.openNewTravel][S01] Click en "Nuevo Viaje" realizado');
 	}
 }
