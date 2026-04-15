@@ -22,6 +22,10 @@ variables:
   script:
     - mkdir -p storage
     - |
+      if [ -z "${BASE_URL}" ]; then
+        echo "ERROR: BASE_URL no está definida en GitLab CI/CD Variables. Configúrala en Settings → CI/CD → Variables."
+        exit 1
+      fi
       echo "ENV=${ENV}" > .env.test
       echo "BASE_URL=${BASE_URL}" >> .env.test
       echo "AUTH_API_URL=${AUTH_API_URL}" >> .env.test
@@ -48,18 +52,10 @@ e2e-test:
 
 e2e-uat:
   extends: .e2e_template
-  environment:
-    name: uat
   rules:
     - when: manual
   variables:
     ENV: uat
 
-e2e-prod:
-  extends: .e2e_template
-  environment:
-    name: prod
-  rules:
-    - when: manual
-  variables:
-    ENV: prod
+# e2e-prod: deshabilitado — PROD no está definido aún como scope de pruebas.
+# Habilitarlo solo cuando se defina el alcance de ejecución en PROD.
