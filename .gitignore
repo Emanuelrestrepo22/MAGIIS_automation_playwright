@@ -28,7 +28,7 @@ evidence/
 tests/mobile/appium/.generated/
 
 # Sesiones de autenticación guardadas (contienen cookies/tokens)
-storage/state-carrier-*.json
+storage/state-*.json
 
 # Screenshots de debug generados durante desarrollo
 debug-*.png
