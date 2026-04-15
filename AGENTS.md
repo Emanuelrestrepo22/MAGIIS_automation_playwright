@@ -86,6 +86,9 @@ Contrato compartido del repositorio para agentes e IDEs. Antigravity, Gemini, Co
 - Con cliente `appPax`, el campo `#passenger` recibe `ng-reflect-is-disabled="true"` (auto-asignado). Nunca llamar `selectPassenger` cuando ese atributo está presente. `fillMinimum` ya maneja esto internamente.
 - `playwright.gateway-pg.config.ts` apunta a `tests/features/gateway-pg/specs/stripe` (no `tests/specs/`). Los proxies en `tests/specs/` están obsoletos — no se ejecutan con la config de gateway.
 - Si el backend devuelve `?limitExceeded=false` al crear un viaje, es un problema de datos de entorno (pasajero sin tarjeta Cargo a Bordo activa o límite bloqueado). Usar `Promise.race` para capturarlo con mensaje de precondición en lugar de dejar que el test haga timeout.
+- `DriverTripPaymentScreen` (TC1082–TC1121 fase Driver App) está en `tests/mobile/appium/driver/DriverTripPaymentScreen.ts`. Expone `fillAndSubmit(card)`, `handle3DSChallenge(action)` y `waitForPaymentOutcome()`. Selectores marcados con TODO — confirmar con Appium Inspector en pantalla de cobro Stripe del Driver App.
+- El locator `SuperPage.newTravelLink` no debe usar `.or()` compuesto — Playwright strict mode lo rechaza si ambas ramas resuelven elementos. Usar `resolveNewTravelLink()` con `.isVisible()` por candidato separado y fallback al bannerLink con `.first()`.
+- `global-setup.multi-role.ts` debe validar el dashboard con predicado `url.href.includes("/home") && url.href.includes("dashboard")` (no pattern string) para matchear correctamente `#/home/carrier/dashboard`.
 
 ## Bloqueadores de Ambiente (NO son bugs de código)
 
