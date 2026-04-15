@@ -1,0 +1,4726 @@
+[
+  {
+    "module": "Gateway Stripe",
+    "total": 8,
+    "portals": [
+      "carrier",
+      "app-pax"
+    ],
+    "priorities": {
+      "P2": 5,
+      "unset": 3
+    },
+    "types": {
+      "positivo": 5,
+      "unset": 3
+    },
+    "critical_count": 8,
+    "test_cases": [
+      {
+        "id": "TS-STRIPE-TC1001",
+        "title": "Validar visualizar pasarela Stripe en Magiis App Store y mostrar estado no vinculado antes de configurar credenciales",
+        "portal": "carrier",
+        "priority": "P2",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@gateway-link"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1002",
+        "title": "Validar vincular pasarela Stripe desde Magiis App Store con credenciales válidas y reflejar estado vinculado en UI y DBTS-STRIPE-TC003 – wallet validación -vinculalacion de eliminacion de tarjetas - tarjetas pre autorizadas - desde app pax",
+        "portal": "app-pax",
+        "priority": "P2",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@gateway-link"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1003",
+        "title": "Validar impedir vincular pasarela Stripe desde Magiis App Store con credenciales inválidas y mostrar error controlado sin activar el gateway",
+        "portal": "carrier",
+        "priority": "P2",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@gateway-link"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1004",
+        "title": "Validar solicitar confirmación al desvincular pasarela Stripe y no ejecutar acción al cancelar el popup",
+        "portal": "carrier",
+        "priority": "P2",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@gateway-link"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1005",
+        "title": "Validar desvincular pasarela Stripe y ocultar método tarjeta preautorizada en alta de viaje desde Carrier",
+        "portal": "carrier",
+        "priority": "P2",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@gateway-link"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1006",
+        "title": "Validar exclusividad de pasarela activa e impedir vincular otro gateway mientras Stripe esté activo mostrando mensaje informativo",
+        "portal": "carrier",
+        "priority": null,
+        "type": null,
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@gateway-link"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [],
+        "db_queries": [],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1007",
+        "title": "Validar persistencia de estado vinculado de Stripe tras recargar página y navegar entre secciones de Carrier",
+        "portal": "carrier",
+        "priority": null,
+        "type": null,
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@gateway-link"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [],
+        "db_queries": [],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1008",
+        "title": "Validar que el request link y unlink de Stripe retorne status 200 y registre evento en logs o auditoría si aplica",
+        "portal": "carrier",
+        "priority": null,
+        "type": null,
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@gateway-link"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [],
+        "db_queries": [],
+        "jira_key": null
+      }
+    ]
+  },
+  {
+    "module": "Tarjeta Preautorizada Stripe",
+    "total": 72,
+    "portals": [
+      "app-pax",
+      "carrier",
+      "contractor"
+    ],
+    "priorities": {
+      "P1": 72
+    },
+    "types": {
+      "positivo": 72
+    },
+    "critical_count": 72,
+    "test_cases": [
+      {
+        "id": "TS-STRIPE-TC1009",
+        "title": "E2E Alta de Viaje desde app pax para usuario app pax desde app pax modo personal con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+        "portal": "app-pax",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1010",
+        "title": "E2E Alta de Viaje desde app pax para usuario app pax modo personal con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+        "portal": "app-pax",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1011",
+        "title": "E2E Alta carrier de Viaje para usuario app pax app modo personal con Tarjeta Preautorizada Hold y Cobro desde App Driver.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1012",
+        "title": "E2E Alta carrier de Viaje para usuario app pax app modo personal con Tarjeta Preautorizada sin Hold y Cobro desde App Driver.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1013",
+        "title": "E2E Alta de Viaje para usuario app pax app modo personal desde app pax con Tarjeta Preautorizada Hold y Cobro desde App Driver con validacion 3DS.",
+        "portal": "app-pax",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1014",
+        "title": "E2E Alta de Viaje para usuario app pax app modo personal desde app pax con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validacion 3DS.",
+        "portal": "app-pax",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1015",
+        "title": "E2E Alta de Viaje para usuario app pax app modo personal con Tarjeta Preautorizada Hold y Cobro desde App Driver con validacion 3DS.",
+        "portal": "app-pax",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1016",
+        "title": "E2E Alta carrier de Viaje para usuario app pax app modo personal con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validacion 3DS.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "validación previa que el usuario no tiene wallet:",
+          "SELECT * FROM USER_WALLET uw WHERE uw.EMAIL = 'marce.stripe@yopmail.com';",
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1017",
+        "title": "E2E Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+        "portal": "app-pax",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1018",
+        "title": "E2E Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+        "portal": "app-pax",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1019",
+        "title": "E2E Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold y Cobro desde App Driver.",
+        "portal": "app-pax",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1020",
+        "title": "E2E Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold y Cobro desde App Driver.",
+        "portal": "app-pax",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1021",
+        "title": "E2E Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold y Cobro desde App Driver con validacion 3DS.",
+        "portal": "app-pax",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1022",
+        "title": "E2E Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validacion 3DS.",
+        "portal": "app-pax",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1023",
+        "title": "E2E Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold y Cobro desde App Driver con validacion 3DS.",
+        "portal": "app-pax",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1024",
+        "title": "E2E Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validacion 3DS.",
+        "portal": "app-pax",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1025",
+        "title": "E2E Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+        "portal": "app-pax",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1026",
+        "title": "E2E Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+        "portal": "app-pax",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1027",
+        "title": "E2E Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold y Cobro desde App Driver.",
+        "portal": "app-pax",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1028",
+        "title": "E2E Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold y Cobro desde App Driver.",
+        "portal": "app-pax",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1029",
+        "title": "E2E Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold y Cobro desde App Driver con validacion 3DS.",
+        "portal": "app-pax",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1030",
+        "title": "E2E Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validacion 3DS.",
+        "portal": "app-pax",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1031",
+        "title": "E2E Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold y Cobro desde App Driver con validacion 3DS.",
+        "portal": "app-pax",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1032",
+        "title": "E2E Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validacion 3DS.",
+        "portal": "app-pax",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1033",
+        "title": "E2E Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@contractor",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1034",
+        "title": "E2E Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@contractor",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1035",
+        "title": "E2E Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada Hold y Cobro desde App Driver.",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@contractor",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1036",
+        "title": "E2E Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada sin Hold y Cobro desde App Driver.",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@contractor",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1037",
+        "title": "E2E Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada Hold y Cobro desde App Driver con validacion 3DS.",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@contractor",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1038",
+        "title": "E2E Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validacion 3DS.",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@contractor",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1039",
+        "title": "E2E Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada Hold y Cobro desde App Driver con validacion 3DS.",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@contractor",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1040",
+        "title": "E2E Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validacion 3DS.",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@contractor",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1041",
+        "title": "E2E Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@contractor",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1042",
+        "title": "E2E Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@contractor",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1043",
+        "title": "E2E Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada Hold y Cobro desde App Driver.",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@contractor",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1044",
+        "title": "E2E Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada sin Hold y Cobro desde App Driver.",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@contractor",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1045",
+        "title": "E2E Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada Hold y Cobro desde App Driver con validacion 3DS.",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@contractor",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1046",
+        "title": "E2E Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validacion 3DS.",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@contractor",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1047",
+        "title": "E2E Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada Hold y Cobro desde App Driver con validacion 3DS.",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@contractor",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1048",
+        "title": "E2E Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validacion 3DS.",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@contractor",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1049",
+        "title": "E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1050",
+        "title": "E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1051",
+        "title": "E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada Hold y Cobro desde App Driver.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1052",
+        "title": "E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada sin Hold y Cobro desde App Driver.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1053",
+        "title": "E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada Hold y Cobro desde App Driver con validacion 3DS.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1054",
+        "title": "E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validacion 3DS.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1055",
+        "title": "E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada Hold y Cobro desde App Driver con validacion 3DS.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1056",
+        "title": "E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validacion 3DS.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1057",
+        "title": "E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1058",
+        "title": "E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1059",
+        "title": "E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada Hold y Cobro desde App Driver.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1060",
+        "title": "E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada sin Hold y Cobro desde App Driver.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1061",
+        "title": "E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada Hold y Cobro desde App Driver con validacion 3DS.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1062",
+        "title": "E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validacion 3DS.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1063",
+        "title": "E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada Hold y Cobro desde App Driver con validacion 3DS.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1064",
+        "title": "E2E Alta de Viaje desde carrier para usuario app pax con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validacion 3DS.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1065",
+        "title": "E2E Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1066",
+        "title": "E2E Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1067",
+        "title": "E2E Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1068",
+        "title": "E2E Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1069",
+        "title": "E2E Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver con validacion 3DS.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1070",
+        "title": "E2E Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validacion 3DS.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1071",
+        "title": "E2E Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver con validacion 3DS.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1072",
+        "title": "E2E Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validacion 3DS.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1073",
+        "title": "E2E Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1074",
+        "title": "E2E Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1075",
+        "title": "E2E Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1076",
+        "title": "E2E Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1077",
+        "title": "E2E Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver con validacion 3DS.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1078",
+        "title": "E2E Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validacion 3DS.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1079",
+        "title": "E2E Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver con validacion 3DS.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1080",
+        "title": "E2E Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validacion 3DS.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      }
+    ]
+  },
+  {
+    "module": "E2E Alta de Viaje - Exploratorio",
+    "total": 8,
+    "portals": [
+      "app-pax",
+      "carrier"
+    ],
+    "priorities": {
+      "P3": 8
+    },
+    "types": {
+      "exploratorio": 8
+    },
+    "critical_count": 8,
+    "test_cases": [
+      {
+        "id": "TS-STRIPE-TC-RV001",
+        "title": "E2E Alta de Viaje para usuario app pax modo personal desde app pax con Tarjeta Preautorizada Hold y Cobro desde App Driver [NOTA: variante exploratoria — misma combinación cubierta por TS-STRIPE-TC1017]",
+        "portal": "app-pax",
+        "priority": "P3",
+        "type": "exploratorio",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@exploratorio"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "No aplica"
+        ],
+        "db_queries": [
+          "TODO validar DB"
+        ],
+        "jira_key": "No aplica"
+      },
+      {
+        "id": "TS-STRIPE-TC-RV002",
+        "title": "E2E Alta de Viaje para usuario app pax  desde app pax para usuario app pax modo personal con Tarjeta Preautorizada sin Hold y Cobro desde App Driver [NOTA: variante exploratoria — misma combinación cubierta por TS-STRIPE-TC1018]",
+        "portal": "app-pax",
+        "priority": "P3",
+        "type": "exploratorio",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@exploratorio"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "No aplica"
+        ],
+        "db_queries": [
+          "TODO validar DB"
+        ],
+        "jira_key": "No aplica"
+      },
+      {
+        "id": "TS-STRIPE-TC-RV003",
+        "title": "E2E Alta  de Viaje para usuario app pax app modo personal con Tarjeta Preautorizada Hold y Cobro desde App Driver. [NOTA: variante exploratoria — misma combinación cubierta por TS-STRIPE-TC1011]",
+        "portal": "app-pax",
+        "priority": "P3",
+        "type": "exploratorio",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@exploratorio"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "No aplica"
+        ],
+        "db_queries": [
+          "TODO validar DB"
+        ],
+        "jira_key": "No aplica"
+      },
+      {
+        "id": "TS-STRIPE-TC-RV004",
+        "title": "E2E Alta carrier de Viaje para usuario app pax app modo personal con Tarjeta Preautorizada sin Hold y Cobro desde App Driver. [NOTA: variante exploratoria — misma combinación cubierta por TS-STRIPE-TC1012]",
+        "portal": "carrier",
+        "priority": "P3",
+        "type": "exploratorio",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@exploratorio"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "No aplica"
+        ],
+        "db_queries": [
+          "TODO validar DB"
+        ],
+        "jira_key": "No aplica"
+      },
+      {
+        "id": "TS-STRIPE-TC-RV005",
+        "title": "E2E Alta de Viaje para usuario app pax app modo personal desde app pax con Tarjeta Preautorizada Hold y Cobro desde App Driver con validacion 3DS. [NOTA: variante exploratoria — misma combinación cubierta por TS-STRIPE-TC1013]",
+        "portal": "app-pax",
+        "priority": "P3",
+        "type": "exploratorio",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@3ds",
+          "@exploratorio"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "No aplica"
+        ],
+        "db_queries": [
+          "TODO validar DB"
+        ],
+        "jira_key": "No aplica"
+      },
+      {
+        "id": "TS-STRIPE-TC-RV006",
+        "title": "E2E Alta de Viaje para usuario app pax app modo personal desde app pax con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validacion 3DS. [NOTA: variante exploratoria — misma combinación cubierta por TS-STRIPE-TC1014]",
+        "portal": "app-pax",
+        "priority": "P3",
+        "type": "exploratorio",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@3ds",
+          "@exploratorio"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "No aplica"
+        ],
+        "db_queries": [
+          "TODO validar DB"
+        ],
+        "jira_key": "No aplica"
+      },
+      {
+        "id": "TS-STRIPE-TC-RV007",
+        "title": "E2E Alta de Viaje para usuario app pax app modo personal con Tarjeta Preautorizada Hold y Cobro desde App Driver con validacion 3DS. [NOTA: variante exploratoria — misma combinación cubierta por TS-STRIPE-TC1015]",
+        "portal": "app-pax",
+        "priority": "P3",
+        "type": "exploratorio",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@3ds",
+          "@exploratorio"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "No aplica"
+        ],
+        "db_queries": [
+          "TODO validar DB"
+        ],
+        "jira_key": "No aplica"
+      },
+      {
+        "id": "TS-STRIPE-TC-RV008",
+        "title": "E2E Alta de Viaje para usuario app pax app modo personal con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validacion 3DS. [NOTA: variante exploratoria — misma combinación cubierta por TS-STRIPE-TC1016]",
+        "portal": "app-pax",
+        "priority": "P3",
+        "type": "exploratorio",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@3ds",
+          "@exploratorio"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "No aplica"
+        ],
+        "db_queries": [
+          "TODO validar DB"
+        ],
+        "jira_key": "No aplica"
+      }
+    ]
+  },
+  {
+    "module": "Cargo a Bordo Stripe",
+    "total": 42,
+    "portals": [
+      "carrier",
+      "contractor"
+    ],
+    "priorities": {
+      "P1": 42
+    },
+    "types": {
+      "positivo": 42
+    },
+    "critical_count": 42,
+    "test_cases": [
+      {
+        "id": "TS-STRIPE-TC1081",
+        "title": "E2E Alta de viaje desde carrier para usuario app pax con cobro de tarjeta de crédito - cargo a Bordo con pago exitoso.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@cargo-a-bordo",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1082",
+        "title": "E2E Alta de viaje desde carrier para usuario app pax con cobro de tarjeta de crédito - cargo a Bordo con pago rechazado genérico.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@cargo-a-bordo",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1083",
+        "title": "E2E Alta de viaje desde carrier para usuario app pax con cobro de tarjeta de crédito - cargo a Bordo con Pago rechazado por fondos insuficientes.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@cargo-a-bordo",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1084",
+        "title": "E2E Alta de viaje desde carrier para usuario app pax con cobro de tarjeta de crédito - cargo a Bordo con Pago rechazado por ser una tarjeta reportada como perdida.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@cargo-a-bordo",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1085",
+        "title": "E2E Alta de viaje desde carrier para usuario app pax con cobro de tarjeta de crédito - cargo a Bordo con Pago rechazado por CVC incorrecto.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@cargo-a-bordo",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1086",
+        "title": "E2E Alta de viaje desde carrier para usuario app pax con cobro de tarjeta de crédito - cargo a Bordo con Pago rechazado por por tratarse de una tarjeta robada.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@cargo-a-bordo",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1087",
+        "title": "E2E Alta de viaje desde carrier para usuario app pax con cobro de tarjeta de crédito - cargo a Bordo con Pago rechazado por Falla la comprobación del CVC - Prevención antifraude.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@cargo-a-bordo",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1088",
+        "title": "E2E Alta de viaje desde carrier para usuario app pax con cobro de tarjeta de crédito - cargo a Bordo con Pago rechazado por Riesgo Maximo - prevención antifraude.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@cargo-a-bordo",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1089",
+        "title": "E2E Alta de viaje desde carrier para usuario app pax con cobro de tarjeta de crédito - cargo a Bordo con Pago rechazado por tarjeta siempre bloqueada - prevención antifraude.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@cargo-a-bordo",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1090",
+        "title": "E2E Alta de viaje desde carrier para usuario app pax con cobro de tarjeta de crédito - cargo a Bordo con Pago rechazado por Falla la comprobación del código postal con riesgo elevado - prevención antifraude.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@cargo-a-bordo",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1091",
+        "title": "E2E Alta de viaje desde carrier para usuario app pax con cobro de tarjeta de crédito - cargo a Bordo con Pago rechazado por Falla la comprobación Dirección no disponible - prevención antifraude.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@cargo-a-bordo",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1092",
+        "title": "E2E Alta de viaje desde carrier para usuario app pax con cobro de tarjeta de crédito - cargo a Bordo con Pago exitoso con tarjeta con 3D secure obligatorio.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@cargo-a-bordo",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1093",
+        "title": "E2E Alta de viaje desde carrier para usuario app pax con cobro de tarjeta de crédito - cargo a Bordo con Pago rechazado por Falla Pago rechazado con tarjeta con 3D secure obligatorio.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@cargo-a-bordo",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1094",
+        "title": "E2E Alta de viaje desde carrier para usuario app pax con cobro de tarjeta de crédito - cargo a Bordo con Pago rechazado por Falla Error con tarjeta con 3D secure obligatorio.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@cargo-a-bordo",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1095",
+        "title": "E2E Alta de viaje desde carrier para usuario app pax con cobro de tarjeta de crédito - cargo a Bordo con Pago rechazado por Falla 3D Secure.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@cargo-a-bordo",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1096",
+        "title": "E2E Alta de viaje desde carrier para usuario colaborador o asociado de contractor con cobro de tarjeta de crédito - cargo a Bordo con pago exitoso.",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@cargo-a-bordo",
+          "@contractor",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1097",
+        "title": "E2E Alta de viaje desde carrier para usuario colaborador o asociado de contractor con cobro de tarjeta de crédito - cargo a Bordo con pago rechazado genérico.",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@cargo-a-bordo",
+          "@contractor",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1098",
+        "title": "E2E Alta de viaje desde carrier para usuario colaborador o asociado de contractor con cobro de tarjeta de crédito - cargo a Bordo con Pago rechazado por fondos insuficientes.",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@cargo-a-bordo",
+          "@contractor",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1099",
+        "title": "E2E Alta de viaje desde carrier para usuario colaborador o asociado de contractor con cobro de tarjeta de crédito - cargo a Bordo con Pago rechazado por ser una tarjeta reportada como perdida.",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@cargo-a-bordo",
+          "@contractor",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1100",
+        "title": "E2E Alta de viaje desde carrier para usuario colaborador o asociado de contractor con cobro de tarjeta de crédito - cargo a Bordo con Pago rechazado por CVC incorrecto.",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@cargo-a-bordo",
+          "@contractor",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1101",
+        "title": "E2E Alta de viaje desde carrier para usuario colaborador o asociado de contractor con cobro de tarjeta de crédito - cargo a Bordo con Pago rechazado por por tratarse de una tarjeta robada.",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@cargo-a-bordo",
+          "@contractor",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1102",
+        "title": "E2E Alta de viaje desde carrier para usuario colaborador o asociado de contractor con cobro de tarjeta de crédito - cargo a Bordo con Pago rechazado por Falla la comprobación del CVC - prevención antifraude.",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@cargo-a-bordo",
+          "@contractor",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1103",
+        "title": "E2E Alta de viaje desde carrier para usuario colaborador o asociado de contractor con cobro de tarjeta de crédito - cargo a Bordo con Pago rechazado por Riesgo Maximo - prevención antifraude.",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@cargo-a-bordo",
+          "@contractor",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1104",
+        "title": "E2E Alta de viaje desde carrier para usuario colaborador o asociado de contractor con cobro de tarjeta de crédito - cargo a Bordo con Pago rechazado por tarjeta siempre bloqueada - prevención antifraude.",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@cargo-a-bordo",
+          "@contractor",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1105",
+        "title": "E2E Alta de viaje desde carrier para usuario colaborador o asociado de contractor con cobro de tarjeta de crédito - cargo a Bordo con Pago rechazado por Falla la comprobación del código postal con riesgo elevado - prevención antifraude.",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@cargo-a-bordo",
+          "@contractor",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1106",
+        "title": "E2E Alta de viaje desde carrier para usuario colaborador o asociado de contractor con cobro de tarjeta de crédito - cargo a Bordo con Pago rechazado por Falla la comprobación Dirección no disponible - prevención antifraude.",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@cargo-a-bordo",
+          "@contractor",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1107",
+        "title": "E2E Alta de viaje desde carrier para usuario usuario colaborador o asociado de contractor con cobro de tarjeta de crédito - cargo a Bordo con Pago exitoso con tarjeta con 3D secure obligatorio.",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@cargo-a-bordo",
+          "@contractor",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1108",
+        "title": "E2E Alta de viaje desde carrier para usuario usuario colaborador o asociado de contractor con cobro de tarjeta de crédito - cargo a Bordo con Pago rechazado por Falla Pago rechazado con tarjeta con 3D secure obligatorio.",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@cargo-a-bordo",
+          "@contractor",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1109",
+        "title": "E2E Alta de viaje desde carrier para usuario usuario colaborador o asociado de contractor con cobro de tarjeta de crédito - cargo a Bordo con Pago rechazado por Falla Error con tarjeta con 3D secure obligatorio.",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@cargo-a-bordo",
+          "@contractor",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1110",
+        "title": "E2E Alta de viaje desde carrier para usuario usuario colaborador o asociado de contractor con cobro de tarjeta de crédito - cargo a Bordo con Pago rechazado por Falla 3D Secure.",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@cargo-a-bordo",
+          "@contractor",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1111",
+        "title": "E2E Alta de viaje desde carrier para usuario empresa individuo con cobro de tarjeta de crédito - cargo a Bordo con pago exitoso.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@cargo-a-bordo",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1112",
+        "title": "E2E Alta de viaje desde carrier para usuario empresa individuo con cobro de tarjeta de crédito - cargo a Bordo con pago rechazado genérico.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@cargo-a-bordo",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1113",
+        "title": "E2E Alta de viaje desde carrier para usuario empresa individuo con cobro de tarjeta de crédito - cargo a Bordo con Pago rechazado por fondos insuficientes.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@cargo-a-bordo",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1114",
+        "title": "E2E Alta de viaje desde carrier para usuario empresa individuo con cobro de tarjeta de crédito - cargo a Bordo con Pago rechazado por ser una tarjeta reportada como perdida.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@cargo-a-bordo",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1115",
+        "title": "E2E Alta de viaje desde carrier para usuario empresa individuo con cobro de tarjeta de crédito - cargo a Bordo con Pago rechazado por CVC incorrecto.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@cargo-a-bordo",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1116",
+        "title": "E2E Alta de viaje desde carrier para usuario empresa individuo con cobro de tarjeta de crédito - cargo a Bordo con Pago rechazado por por tratarse de una tarjeta robada.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@cargo-a-bordo",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1117",
+        "title": "E2E Alta de viaje desde carrier para usuario empresa individuo con cobro de tarjeta de crédito - cargo a Bordo con Pago rechazado por Falla la comprobación del CVC - prevención antifraude.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@cargo-a-bordo",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1118",
+        "title": "E2E Alta de viaje desde carrier para usuario empresa individuo con cobro de tarjeta de crédito - cargo a Bordo con Pago rechazado por Riesgo Maximo - prevención antifraude.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@cargo-a-bordo",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1119",
+        "title": "E2E Alta de viaje desde carrier para usuario empresa individuo con cobro de tarjeta de crédito - cargo a Bordo con Pago rechazado por tarjeta siempre bloqueada - prevención antifraude.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@cargo-a-bordo",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1120",
+        "title": "E2E Alta de viaje desde carrier para usuario empresa individuo con cobro de tarjeta de crédito - cargo a Bordo con Pago rechazado por Falla la comprobación del código postal con riesgo elevado - prevención antifraude.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@cargo-a-bordo",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1121",
+        "title": "E2E Alta de viaje desde carrier para usuario empresa individuo con cobro de tarjeta de crédito - cargo a Bordo con Pago rechazado por Falla la comprobación Dirección no disponible - prevención antifraude.",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@cargo-a-bordo",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-TC1122",
+        "title": "E",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@cargo-a-bordo",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId; SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId;"
+        ],
+        "jira_key": null
+      }
+    ]
+  },
+  {
+    "module": "Stripe - Contractor App PAX Business",
+    "total": 6,
+    "portals": [
+      "contractor"
+    ],
+    "priorities": {
+      "P1": 6
+    },
+    "types": {
+      "positivo": 6
+    },
+    "critical_count": 6,
+    "test_cases": [
+      {
+        "id": "TS-STRIPE-P2-TC001",
+        "title": "Validar E2E vinculación de tarjeta y alta de viaje desde App PAX para usuario colaborador de contractor con tarjeta preautorizada hold y cobro desde App Driver",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@contractor",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC002",
+        "title": "Validar E2E vinculación de tarjeta y alta de viaje desde App PAX para usuario colaborador de contractor con tarjeta preautorizada sin hold y cobro desde App Driver",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@contractor",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC003",
+        "title": "Validar E2E selección de tarjeta y alta de viaje desde App PAX para usuario colaborador de contractor con tarjeta preautorizada hold y cobro desde App Driver",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@contractor",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC004",
+        "title": "Validar E2E selección de tarjeta y alta de viaje desde App PAX para usuario colaborador de contractor con tarjeta preautorizada sin hold y cobro desde App Driver",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@contractor",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC005",
+        "title": "Validar E2E vinculación de tarjeta y alta de viaje desde App PAX para usuario colaborador de contractor con tarjeta preautorizada hold y cobro desde App Driver con validación 3DS",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@contractor",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC006",
+        "title": "Validar E2E vinculación de tarjeta y alta de viaje desde App PAX para usuario colaborador de contractor con tarjeta preautorizada sin hold y cobro desde App Driver con validación 3DS",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@contractor",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      }
+    ]
+  },
+  {
+    "module": "Stripe - Quote",
+    "total": 28,
+    "portals": [
+      "app-driver",
+      "app-pax"
+    ],
+    "priorities": {
+      "P1": 28
+    },
+    "types": {
+      "positivo": 28
+    },
+    "critical_count": 28,
+    "test_cases": [
+      {
+        "id": "TS-STRIPE-P2-TC007",
+        "title": "Validar E2E alta de viaje desde Quote para usuario sin datos filiatorios vinculado a pasajero existente con tarjeta preautorizada hold y cobro desde App Driver con validación 3DS",
+        "portal": "app-driver",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@quote",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC008",
+        "title": "Validar E2E alta de viaje desde Quote para usuario sin datos filiatorios vinculado a pasajero existente con tarjeta preautorizada sin hold y cobro desde App Driver con validación 3DS",
+        "portal": "app-driver",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@quote",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC009",
+        "title": "Validar E2E alta de viaje desde Quote para usuario sin datos filiatorios vinculado a pasajero existente con tarjeta preautorizada hold y cobro desde App Driver",
+        "portal": "app-driver",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@quote",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC010",
+        "title": "Validar E2E alta de viaje desde Quote para usuario sin datos filiatorios vinculado a pasajero existente con tarjeta preautorizada sin hold y cobro desde App Driver",
+        "portal": "app-driver",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@quote",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC011",
+        "title": "Validar E2E alta de viaje desde Quote para usuario con número de teléfono vinculado a usuario colaborador existente con tarjeta preautorizada hold y cobro desde App Driver",
+        "portal": "app-driver",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@quote",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC012",
+        "title": "Validar E2E alta de viaje desde Quote para usuario con número de teléfono vinculado a usuario colaborador existente con tarjeta preautorizada sin hold y cobro desde App Driver",
+        "portal": "app-driver",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@quote",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC013",
+        "title": "Validar E2E alta de viaje desde Quote para usuario con mail vinculado a usuario colaborador existente con tarjeta preautorizada hold y cobro desde App Driver",
+        "portal": "app-driver",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@quote",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC014",
+        "title": "Validar E2E alta de viaje desde Quote para usuario con mail vinculado a usuario colaborador existente con tarjeta preautorizada sin hold y cobro desde App Driver",
+        "portal": "app-driver",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@quote",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC015",
+        "title": "Validar E2E alta de viaje desde Quote para usuario con número de teléfono vinculado a usuario colaborador existente con tarjeta preautorizada hold y cobro desde App Driver con validación 3D secure",
+        "portal": "app-driver",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@quote",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC016",
+        "title": "Validar E2E alta de viaje desde Quote para usuario con número de teléfono vinculado a usuario colaborador existente con tarjeta preautorizada sin hold y cobro desde App Driver con validación 3D secure",
+        "portal": "app-driver",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@quote",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC017",
+        "title": "Validar E2E alta de viaje desde Quote para usuario con mail vinculado a usuario colaborador existente con tarjeta preautorizada hold y cobro desde App Driver con validación 3D secure",
+        "portal": "app-driver",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@quote",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC018",
+        "title": "Validar E2E alta de viaje desde Quote para usuario con mail vinculado a usuario colaborador existente con tarjeta preautorizada sin hold y cobro desde App Driver con validación 3D secure",
+        "portal": "app-driver",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@quote",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC019",
+        "title": "Validar E2E alta de viaje desde Quote para usuario con número de teléfono vinculado a usuario app pax existente con tarjeta preautorizada hold y cobro desde App Driver",
+        "portal": "app-pax",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@quote",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC020",
+        "title": "Validar E2E alta de viaje desde Quote para usuario con número de teléfono vinculado a usuario app pax existente con tarjeta preautorizada sin hold y cobro desde App Driver",
+        "portal": "app-pax",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@quote",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC021",
+        "title": "Validar E2E alta de viaje desde Quote para usuario con mail vinculado a usuario app pax existente con tarjeta preautorizada hold y cobro desde App Driver",
+        "portal": "app-pax",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@quote",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC022",
+        "title": "Validar E2E alta de viaje desde Quote para usuario con mail vinculado a usuario app pax existente con tarjeta preautorizada sin hold y cobro desde App Driver",
+        "portal": "app-pax",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@quote",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC023",
+        "title": "Validar E2E alta de viaje desde Quote para usuario con número de teléfono vinculado a usuario app pax existente con tarjeta preautorizada hold y cobro desde App Driver con validación 3D secure",
+        "portal": "app-pax",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@quote",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC024",
+        "title": "Validar E2E alta de viaje desde Quote para usuario con número de teléfono vinculado a usuario app pax existente con tarjeta preautorizada sin hold y cobro desde App Driver con validación 3D secure",
+        "portal": "app-pax",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@quote",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC025",
+        "title": "Validar E2E alta de viaje desde Quote para usuario con mail vinculado a usuario app pax existente con tarjeta preautorizada hold y cobro desde App Driver con validación 3D secure",
+        "portal": "app-pax",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@quote",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC026",
+        "title": "Validar E2E alta de viaje desde Quote para usuario con mail vinculado a usuario app pax existente con tarjeta preautorizada sin hold y cobro desde App Driver con validación 3D secure",
+        "portal": "app-pax",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@quote",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC027",
+        "title": "Validar E2E alta de viaje desde Quote para usuario con número de teléfono vinculado a usuario empresa individuo existente con tarjeta preautorizada hold y cobro desde App Driver",
+        "portal": "app-driver",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@quote",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC028",
+        "title": "Validar E2E alta de viaje desde Quote para usuario con número de teléfono vinculado a usuario empresa individuo existente con tarjeta preautorizada sin hold y cobro desde App Driver",
+        "portal": "app-driver",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@quote",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC029",
+        "title": "Validar E2E alta de viaje desde Quote para usuario con mail vinculado a usuario empresa individuo existente con tarjeta preautorizada hold y cobro desde App Driver",
+        "portal": "app-driver",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@quote",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC030",
+        "title": "Validar E2E alta de viaje desde Quote para usuario con mail vinculado a usuario empresa individuo existente con tarjeta preautorizada sin hold y cobro desde App Driver",
+        "portal": "app-driver",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@quote",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC031",
+        "title": "Validar E2E alta de viaje desde Quote para usuario con número de teléfono vinculado a usuario empresa individuo existente con tarjeta preautorizada hold y cobro desde App Driver con validación 3D secure",
+        "portal": "app-driver",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@quote",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC032",
+        "title": "Validar E2E alta de viaje desde Quote para usuario con número de teléfono vinculado a usuario empresa individuo existente con tarjeta preautorizada sin hold y cobro desde App Driver con validación 3D secure",
+        "portal": "app-driver",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@quote",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC033",
+        "title": "Validar E2E alta de viaje desde Quote para usuario con mail vinculado a usuario empresa individuo existente con tarjeta preautorizada hold y cobro desde App Driver con validación 3D secure",
+        "portal": "app-driver",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@quote",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC034",
+        "title": "Validar E2E alta de viaje desde Quote para usuario con mail vinculado a usuario empresa individuo existente con tarjeta preautorizada sin hold y cobro desde App Driver con validación 3D secure",
+        "portal": "app-driver",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@quote",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      }
+    ]
+  },
+  {
+    "module": "Stripe - Recurrentes Contractor",
+    "total": 6,
+    "portals": [
+      "contractor"
+    ],
+    "priorities": {
+      "P1": 6
+    },
+    "types": {
+      "positivo": 6
+    },
+    "critical_count": 6,
+    "test_cases": [
+      {
+        "id": "TS-STRIPE-P2-TC035",
+        "title": "Validar E2E vinculación de tarjeta y alta de viaje recurrente desde portal Contractor para usuario colaborador de contractor con tarjeta preautorizada hold y cobro desde App Driver",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@contractor",
+          "@recurrentes",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC036",
+        "title": "Validar E2E vinculación de tarjeta y alta de viaje recurrente desde portal Contractor para usuario colaborador de contractor con tarjeta preautorizada sin hold y cobro desde App Driver",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@contractor",
+          "@recurrentes",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC037",
+        "title": "Validar E2E selección de tarjeta y alta de viaje recurrente desde portal Contractor para usuario colaborador de contractor con tarjeta preautorizada hold y cobro desde App Driver",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@contractor",
+          "@recurrentes",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC038",
+        "title": "Validar E2E selección de tarjeta y alta de viaje recurrente desde portal Contractor para usuario colaborador de contractor con tarjeta preautorizada sin hold y cobro desde App Driver",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@contractor",
+          "@recurrentes",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC039",
+        "title": "Validar E2E vinculación de tarjeta y alta de viaje recurrente desde portal Contractor para usuario colaborador de contractor con tarjeta preautorizada hold y cobro desde App Driver con validación 3DS",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@contractor",
+          "@recurrentes",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC040",
+        "title": "Validar E2E vinculación de tarjeta y alta de viaje recurrente desde portal Contractor para usuario colaborador de contractor con tarjeta preautorizada sin hold y cobro desde App Driver con validación 3DS",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@contractor",
+          "@recurrentes",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      }
+    ]
+  },
+  {
+    "module": "Stripe - Recurrentes Carrier Colaborador",
+    "total": 7,
+    "portals": [
+      "contractor"
+    ],
+    "priorities": {
+      "P1": 7
+    },
+    "types": {
+      "positivo": 7
+    },
+    "critical_count": 7,
+    "test_cases": [
+      {
+        "id": "TS-STRIPE-P2-TC041",
+        "title": "Validar E2E vinculación de tarjeta y alta de viaje recurrente desde Carrier para usuario colaborador de contractor con tarjeta preautorizada hold y cobro desde App Driver",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@contractor",
+          "@recurrentes",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC042",
+        "title": "Validar E2E vinculación de tarjeta y alta de viaje recurrente desde Carrier para usuario colaborador de contractor con tarjeta preautorizada sin hold y cobro desde App Driver",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@contractor",
+          "@recurrentes",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC043",
+        "title": "Validar E2E selección de tarjeta y alta de viaje recurrente desde Carrier para usuario colaborador de contractor con tarjeta preautorizada hold y cobro desde App Driver",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@contractor",
+          "@recurrentes",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC044",
+        "title": "Validar E2E selección de tarjeta y alta de viaje recurrente desde Carrier para usuario colaborador de contractor con tarjeta preautorizada sin hold y cobro desde App Driver",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@contractor",
+          "@recurrentes",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC045",
+        "title": "Validar E2E vinculación de tarjeta y alta de viaje recurrente desde Carrier para usuario colaborador de contractor con tarjeta preautorizada hold y cobro desde App Driver con validación 3DS",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@contractor",
+          "@recurrentes",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC046",
+        "title": "Validar E2E vinculación de tarjeta y alta de viaje recurrente desde Carrier para usuario colaborador de contractor con tarjeta preautorizada sin hold y cobro desde App Driver con validación 3DS",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@contractor",
+          "@recurrentes",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC047",
+        "title": "Validar E2E vinculación y alta de viaje recurrente desde Carrier para usuario colaborador de contractor con tarjeta preautorizada y edición de fechas para validar consistencia de datos y finalización desde App Driver",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@contractor",
+          "@recurrentes",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      }
+    ]
+  },
+  {
+    "module": "Stripe - Recurrentes Carrier App PAX",
+    "total": 6,
+    "portals": [
+      "contractor"
+    ],
+    "priorities": {
+      "P1": 6
+    },
+    "types": {
+      "positivo": 6
+    },
+    "critical_count": 6,
+    "test_cases": [
+      {
+        "id": "TS-STRIPE-P2-TC048",
+        "title": "Validar E2E vinculación de tarjeta y alta de viaje recurrente desde Carrier para usuario app pax de contractor con tarjeta preautorizada hold y cobro desde App Driver",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@contractor",
+          "@recurrentes",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC049",
+        "title": "Validar E2E vinculación de tarjeta y alta de viaje recurrente desde Carrier para usuario app pax de contractor con tarjeta preautorizada sin hold y cobro desde App Driver",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@contractor",
+          "@recurrentes",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC050",
+        "title": "Validar E2E selección de tarjeta y alta de viaje recurrente desde Carrier para usuario app pax de contractor con tarjeta preautorizada hold y cobro desde App Driver",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@contractor",
+          "@recurrentes",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC051",
+        "title": "Validar E2E selección de tarjeta y alta de viaje recurrente desde Carrier para usuario app pax de contractor con tarjeta preautorizada sin hold y cobro desde App Driver",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@contractor",
+          "@recurrentes",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC052",
+        "title": "Validar E2E vinculación de tarjeta y alta de viaje recurrente desde Carrier para usuario app pax de contractor con tarjeta preautorizada hold y cobro desde App Driver con validación 3DS",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@contractor",
+          "@recurrentes",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC053",
+        "title": "Validar E2E vinculación de tarjeta y alta de viaje recurrente desde Carrier para usuario app pax de contractor con tarjeta preautorizada sin hold y cobro desde App Driver con validación 3DS",
+        "portal": "contractor",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@contractor",
+          "@recurrentes",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      }
+    ]
+  },
+  {
+    "module": "Stripe - Recurrentes Carrier Empresa Individuo",
+    "total": 6,
+    "portals": [
+      "carrier"
+    ],
+    "priorities": {
+      "P1": 6
+    },
+    "types": {
+      "positivo": 6
+    },
+    "critical_count": 6,
+    "test_cases": [
+      {
+        "id": "TS-STRIPE-P2-TC054",
+        "title": "Validar E2E vinculación de tarjeta y alta de viaje recurrente desde Carrier para usuario empresa individuo con tarjeta preautorizada hold y cobro desde App Driver",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@recurrentes",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC055",
+        "title": "Validar E2E vinculación de tarjeta y alta de viaje recurrente desde Carrier para usuario empresa individuo con tarjeta preautorizada sin hold y cobro desde App Driver",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@recurrentes",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC056",
+        "title": "Validar E2E selección de tarjeta y alta de viaje recurrente desde Carrier para usuario empresa individuo con tarjeta preautorizada hold y cobro desde App Driver",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@recurrentes",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC057",
+        "title": "Validar E2E selección de tarjeta y alta de viaje recurrente desde Carrier para usuario empresa individuo con tarjeta preautorizada sin hold y cobro desde App Driver",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@recurrentes",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC058",
+        "title": "Validar E2E vinculación de tarjeta y alta de viaje recurrente desde Carrier para usuario empresa individuo con tarjeta preautorizada hold y cobro desde App Driver con validación 3DS",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@recurrentes",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      },
+      {
+        "id": "TS-STRIPE-P2-TC059",
+        "title": "Validar E2E vinculación de tarjeta y alta de viaje recurrente desde Carrier para usuario empresa individuo con tarjeta preautorizada sin hold y cobro desde App Driver con validación 3DS",
+        "portal": "carrier",
+        "priority": "P1",
+        "type": "positivo",
+        "critical_flow": true,
+        "tags": [
+          "@stripe",
+          "@gateway-pg",
+          "@hold",
+          "@wallet",
+          "@recurrentes",
+          "@3ds",
+          "@smoke"
+        ],
+        "source_sheet": "TEST_SUITE 2.0",
+        "endpoints": [
+          "/payment-gateways/link | /cards/validate | /travels/create | hold/capture/charge endpoints según implementación Stripe"
+        ],
+        "db_queries": [
+          "SELECT * FROM WALLET WHERE PASSENGER_ID = :passengerId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM WALLET_CARD WHERE WALLET_ID = :walletId ORDER BY CREATION_DATE DESC;",
+          "SELECT * FROM PAYMENT_TRANSACTION WHERE TRAVEL_ID = :travelId ORDER BY CREATED_AT DESC;"
+        ],
+        "jira_key": null
+      }
+    ]
+  }
+]
