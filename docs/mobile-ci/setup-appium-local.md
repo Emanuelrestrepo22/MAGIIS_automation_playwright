@@ -2,6 +2,8 @@
 
 Guía paso a paso para ejecutar scripts de automatización Appium contra el dispositivo físico Samsung Galaxy A05.
 
+> Guia legacy de Driver. Para el orden unificado de terminales, requisitos y flujos Driver/Passenger, usa [tests/mobile/appium/README.md](../../tests/mobile/appium/README.md).
+
 ---
 
 ## PARTE A — Configuración inicial (una sola vez)

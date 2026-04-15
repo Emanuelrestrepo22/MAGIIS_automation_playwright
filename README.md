@@ -182,6 +182,8 @@ npx appium
 # O si tienes instalado appium de manera global: appium
 ```
 
+Para el orden exacto de terminales en Windows para Passenger y Driver mobile flows, usa [tests/mobile/appium/README.md](./tests/mobile/appium/README.md). Esa guia es el onboarding canonico de Appium en este repo.
+
 ### Ejecutar las pruebas
 
 Utiliza los siguientes scripts definidos en `package.json` para ejecutar los tests:

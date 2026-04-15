@@ -23,7 +23,11 @@ Contrato compartido del repositorio para agentes e IDEs. Antigravity, Gemini, Co
 - Gemini API runtime: `tests/config/aiRuntime.ts` resuelve `GEMINI_API_KEY` con fallback a `AI_STUDIO_GEMINI_MAGIIS`, y `tests/shared/utils/geminiClient.ts` centraliza las llamadas REST al modelo.
 
 ## Prioridad actual
-- Foco activo: portal contractor web, empezando por `tests/features/gateway-pg/specs/stripe/contractor/vinculacion-tarjeta.spec.ts`.
+  - Foco activo: portal contractor web, empezando por `tests/features/gateway-pg/specs/stripe/contractor/vinculacion-tarjeta.spec.ts`.
+- El frente `Passenger App` ya tiene lane activo bajo `docs/codex-prompts/implement-passenger-app-flow2.md` y `tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-personal-3ds.e2e.spec.ts`.
+- Antes de cualquier flujo de Passenger, validar el home mode con `pnpm mobile:passenger:profile-mode-smoke`; el label bajo el `ion-toggle` decide si el lane es `personal` o `business`.
+- Para Passenger personal con hold + 3DS, el runner canónico es `pnpm mobile:passenger:personal-3ds-hold-flow`; para Passenger business sin 3DS, usar `pnpm mobile:passenger:business-no3ds-hold-flow`.
+- En wallet de Passenger, la tarjeta principal se cambia desde `button.card-item-opts` y el popover visible expone `Principal` / `Eliminar`; no asumir acciones de star ocultas sin evidencia.
 - El frente `App Driver` queda pausado hasta nueva reactivación explícita.
 - Si una tarea mezcla contractor y driver, implementar primero contractor web y tratar driver como legado temporal.
 
@@ -34,8 +38,8 @@ Contrato compartido del repositorio para agentes e IDEs. Antigravity, Gemini, Co
 | `orquestador` | Gemini 3.1 Pro | Inicia el contexto de la sesión, lee documentos extensos y arma la primera pasada de normalización. |
 | `analista-docs` | Gemini 3.1 Pro | Matrices extensas, extracción de documentos, normalización y entrada dependiente de trazabilidad. |
 | `priorizador-flujos` | Gemini 3.1 Pro | Recibe el input normalizado y clasifica los flujos / elementos del backlog evaluando el contexto general. |
-| `generador-drafts` | Codex GPT-5.x | Borradores Playwright/TypeScript, reuso de POM y generación de código dirigida. |
-| `colaborador-appium` | Codex GPT-5.x | Flujos móviles/Appium y borradores conscientes del handoff web→mobile. |
+| `generador-drafts` | Codex GPT-5.x / Claude Code / Gemini 3.1 Pro | Borradores Playwright/TypeScript, reuso de POM y generación de código dirigida. |
+| `colaborador-appium` | Codex GPT-5.x / Claude Code / Gemini 3.1 Pro | Flujos móviles/Appium y borradores conscientes del handoff web→mobile. |
 
 ## Gemini Runtime
 - Preferir `GEMINI_API_KEY` como variable estándar cuando una herramienta o runner ya lo soporte.
@@ -78,3 +82,21 @@ Contrato compartido del repositorio para agentes e IDEs. Antigravity, Gemini, Co
 - Si el portal contractor abre sobre la sesion cacheada del carrier, el flujo de grabacion debe incluir logout/limpieza antes del login contractor.
 - El mismo recorder contractor muestra `Nuevo Viaje` en el shell post-login, así que el dashboard compartido y el formulario de alta pueden reutilizarse con carrier cuando el runtime lo confirme.
 - Cuando una ejecucion valida una mejor ruta, actualizar `AGENTS.md`, `docs/reference/ai-tools-guide.md` y la skill/prompt que la consume en el mismo ciclo.
+- `NewTravelPageBase.selectCardByLast4()` ahora incluye `clickValidateCard()` al final. Specs que usen ese método NO deben llamarlo por separado; hacerlo duplica el click y puede romper el flujo 3DS.
+- Con cliente `appPax`, el campo `#passenger` recibe `ng-reflect-is-disabled="true"` (auto-asignado). Nunca llamar `selectPassenger` cuando ese atributo está presente. `fillMinimum` ya maneja esto internamente.
+- `playwright.gateway-pg.config.ts` apunta a `tests/features/gateway-pg/specs/stripe` (no `tests/specs/`). Los proxies en `tests/specs/` están obsoletos — no se ejecutan con la config de gateway.
+- Si el backend devuelve `?limitExceeded=false` al crear un viaje, es un problema de datos de entorno (pasajero sin tarjeta Cargo a Bordo activa o límite bloqueado). Usar `Promise.race` para capturarlo con mensaje de precondición en lugar de dejar que el test haga timeout.
+
+## Bloqueadores de Ambiente (NO son bugs de código)
+
+| Bloqueador | Ambiente | Usuario/Cliente | TCs afectados | Causa | Acción requerida |
+| --- | --- | --- | --- | --- | --- |
+| `limitExceeded=false` | TEST | Emanuel Restrepo | TC1013, TC1025 (Passenger App E2E) | Pasajero sin tarjeta Cargo a Bordo activa O excedió límite de crédito en Stripe | Admin debe activar tarjeta de pago del cliente o resetear límite en Stripe test account |
+| `waitForEnabledButton` timeout (45s en vehicleButton) | TEST | Colaborador / Empresa (appPax) | TC1025 (business no-3DS), TC1013 (personal 3DS) | Datos del cliente mal provisioned en TEST, o el pasajero no tiene permisos para crear viajes | Admin debe validar provisioning del passenger en TEST: perfiles habilitados, tarjeta Cargo a Bordo activa, límites configurados |
+
+**Indicadores de diagnóstico:**
+- Revisar la respuesta de `POST /api/v1/journey/create`: si contiene `?limitExceeded=false`, es el bloqueador de límite.
+- Si `waitForEnabledButton` hace timeout, revisar consola/network: `400 Bad Request` en journeys → problema de datos del cliente, no de test/selectores.
+- NO modificar specs ni aumentar timeouts si el bloqueador es de ambiente; crear un issue de ENV / Jira de admin.
+
+**Nota de Emanuel:** LC no debe ser interpretada como bug de tests. Es síntoma de que el cliente no está listo para E2E en TEST. Cada nuevo usuario requiere setup previo.

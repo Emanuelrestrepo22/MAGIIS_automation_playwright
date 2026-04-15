@@ -49,10 +49,17 @@ function getRoleEnvKey(prefix: string, role: AppRole): string {
 	return `${prefix}_${role.toUpperCase()}`;
 }
 
+function normalizeEnvValue(value: string | undefined): string | undefined {
+	// GitLab/GitHub variables pueden existir como string vacía; en ese caso
+	// preferimos tratarlas como ausentes para que aplique el fallback correcto.
+	const trimmed = value?.trim();
+	return trimmed ? trimmed : undefined;
+}
+
 function readRoleFirstEnv(prefix: string, role: AppRole): string | undefined {
 	// Primero intentamos la variable específica por rol y, si no existe,
 	// usamos la variable genérica como fallback.
-	return process.env[getRoleEnvKey(prefix, role)] ?? process.env[prefix];
+	return normalizeEnvValue(process.env[getRoleEnvKey(prefix, role)]) ?? normalizeEnvValue(process.env[prefix]);
 }
 
 export function getCurrentEnv(): string {
@@ -103,24 +110,24 @@ export function resolveLoginPath(role: LoginRole): string {
 	if (role === 'carrier') {
 		// Carrier sí acepta el fallback global porque este proyecto usa LOGIN_PATH
 		// como atajo para el portal carrier.
-		return process.env.LOGIN_PATH_CARRIER ?? process.env.LOGIN_PATH ?? DEFAULT_LOGIN_PATHS.carrier;
+		return normalizeEnvValue(process.env.LOGIN_PATH_CARRIER) ?? normalizeEnvValue(process.env.LOGIN_PATH) ?? DEFAULT_LOGIN_PATHS.carrier;
 	}
 
 	if (role === 'contractor') {
 		// Evitamos heredar LOGIN_PATH global para no mandar al contractor al login carrier.
-		return process.env.LOGIN_PATH_CONTRACTOR ?? DEFAULT_LOGIN_PATHS.contractor;
+		return normalizeEnvValue(process.env.LOGIN_PATH_CONTRACTOR) ?? DEFAULT_LOGIN_PATHS.contractor;
 	}
 
 	if (role === 'web') {
-		return process.env.LOGIN_PATH_WEB ?? DEFAULT_LOGIN_PATHS.web;
+		return normalizeEnvValue(process.env.LOGIN_PATH_WEB) ?? DEFAULT_LOGIN_PATHS.web;
 	}
 
-	return process.env.PAX_LOGIN_PATH ?? DEFAULT_LOGIN_PATHS.pax;
+	return normalizeEnvValue(process.env.PAX_LOGIN_PATH) ?? DEFAULT_LOGIN_PATHS.pax;
 }
 
 export function resolveAuthApiUrl(role: AppRole): string | null {
 	// Algunos portales exponen un endpoint propio; otros reutilizan AUTH_API_URL global.
-	return readRoleFirstEnv('AUTH_API_URL', role) ?? process.env.AUTH_API_URL ?? null;
+	return readRoleFirstEnv('AUTH_API_URL', role) ?? normalizeEnvValue(process.env.AUTH_API_URL) ?? null;
 }
 
 export function resolveDashboardPattern(role: AppRole): string {
@@ -135,7 +142,7 @@ export function getStorageStatePath(role: AppRole, env = getCurrentEnv()): strin
 
 export function getRoleRuntimeConfig(role: AppRole): RoleRuntimeConfig {
 	// Armamos un objeto listo para consumir desde fixtures y setups.
-	const baseURL = process.env.BASE_URL;
+	const baseURL = normalizeEnvValue(process.env.BASE_URL);
 	if (!baseURL) {
 		throw new Error(`Missing BASE_URL in ${getEnvFile()}`);
 	}

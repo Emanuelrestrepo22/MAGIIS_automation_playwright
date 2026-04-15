@@ -1,12 +1,6 @@
 import { expect, type Frame, type Locator, type Page } from '@playwright/test';
 import { getPortalUrl } from '../../config/gatewayPortalRuntime';
-import {
-	STRIPE_BILLING_ZIP,
-	STRIPE_CARD_HOLDER_NAME,
-	STRIPE_CVC,
-	STRIPE_EXPIRY,
-	STRIPE_TEST_CARDS
-} from '../../features/gateway-pg/data/stripeTestData';
+import { STRIPE_BILLING_ZIP, STRIPE_CARD_HOLDER_NAME, STRIPE_CVC, STRIPE_EXPIRY, STRIPE_TEST_CARDS } from '../../features/gateway-pg/data/stripeTestData';
 
 export type NewTravelFormInput = {
 	client?: string;
@@ -38,7 +32,7 @@ const STRIPE_CARD_BY_LAST4: Record<string, string> = {
 	[STRIPE_TEST_CARDS.alwaysBlocked.slice(-4)]: STRIPE_TEST_CARDS.alwaysBlocked,
 	[STRIPE_TEST_CARDS.cvcCheckFail.slice(-4)]: STRIPE_TEST_CARDS.cvcCheckFail,
 	[STRIPE_TEST_CARDS.zipFailElevated.slice(-4)]: STRIPE_TEST_CARDS.zipFailElevated,
-	[STRIPE_TEST_CARDS.addressUnavailable.slice(-4)]: STRIPE_TEST_CARDS.addressUnavailable,
+	[STRIPE_TEST_CARDS.addressUnavailable.slice(-4)]: STRIPE_TEST_CARDS.addressUnavailable
 };
 const TRAVEL_SUBMIT_TIMEOUT = 60_000;
 
@@ -50,10 +44,10 @@ function matchesSearchText(candidate: string, searchText: string): boolean {
 	const candidateText = normalizeText(candidate);
 	const searchTokens = normalizeText(searchText)
 		.split(' ')
-		.map((token) => token.trim())
+		.map(token => token.trim())
 		.filter(Boolean);
 
-	return searchTokens.every((token) => candidateText.includes(token));
+	return searchTokens.every(token => candidateText.includes(token));
 }
 
 function isMeaningfulOptionText(value: string): boolean {
@@ -63,7 +57,6 @@ function isMeaningfulOptionText(value: string): boolean {
 function escapeRegExp(value: string): string {
 	return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
-
 
 /**
  * Base compartida para el formulario de alta de viaje del carrier.
@@ -156,7 +149,10 @@ export abstract class NewTravelPageBase {
 	}
 
 	private async waitForLoadingOverlayToDisappear(timeout = 15_000): Promise<void> {
-		await this.page.locator('.black-overlay').waitFor({ state: 'hidden', timeout }).catch(() => undefined);
+		await this.page
+			.locator('.black-overlay')
+			.waitFor({ state: 'hidden', timeout })
+			.catch(() => undefined);
 	}
 
 	private async openDropdown(select: Locator, timeout = 10_000): Promise<void> {
@@ -192,18 +188,8 @@ export abstract class NewTravelPageBase {
 
 	private async selectAutocompleteOption(select: Locator, searchInput: Locator, name: string, roleLabel: string): Promise<void> {
 		const searchValue = name.replace(/[,()]/g, ' ').replace(/\s+/g, ' ').trim();
-		const firstToken = searchValue.split(' ').find((token) => token.trim().length > 0) ?? searchValue;
-		const fallbackQueries = Array.from(
-			new Set(
-				[
-					searchValue,
-					firstToken,
-					firstToken.slice(0, 4),
-					firstToken.slice(0, 3),
-					name.trim(),
-				].filter(Boolean)
-			)
-		);
+		const firstToken = searchValue.split(' ').find(token => token.trim().length > 0) ?? searchValue;
+		const fallbackQueries = Array.from(new Set([searchValue, firstToken, firstToken.slice(0, 4), firstToken.slice(0, 3), name.trim()].filter(Boolean)));
 		const dropdown = select.locator('select-dropdown').first();
 		const options = select.locator('select-dropdown .options li');
 
@@ -266,12 +252,7 @@ export abstract class NewTravelPageBase {
 
 	private async openPlaceDropdown(place: Locator): Promise<Locator> {
 		const searchInput = place.getByRole('textbox', { name: 'Ingrese una dirección' }).first();
-		const clickTargets = [
-			place.locator('.search-container-input > .bootstrap > .below > .single > .placeholder').first(),
-			place.locator('.search-container-input').first(),
-			place.locator('.placeholder').first(),
-			place.locator('.toggle').first(),
-		];
+		const clickTargets = [place.locator('.search-container-input > .bootstrap > .below > .single > .placeholder').first(), place.locator('.search-container-input').first(), place.locator('.placeholder').first(), place.locator('.toggle').first()];
 
 		for (const target of clickTargets) {
 			if (!(await target.isVisible().catch(() => false))) {
@@ -312,11 +293,7 @@ export abstract class NewTravelPageBase {
 		return false;
 	}
 
-	private async searchPlace(
-		place: Locator,
-		address: string,
-		options: { keepExistingOnNoResults: boolean; avoidText?: string } = { keepExistingOnNoResults: false }
-	): Promise<void> {
+	private async searchPlace(place: Locator, address: string, options: { keepExistingOnNoResults: boolean; avoidText?: string } = { keepExistingOnNoResults: false }): Promise<void> {
 		const currentText = normalizeText(await place.textContent());
 		const desiredText = normalizeText(address);
 		const queryText = address.split(',')[0].trim() || address;
@@ -409,11 +386,7 @@ export abstract class NewTravelPageBase {
 
 	/** Selecciona Preautorizada, Cuenta Corriente, Efectivo o CargoABordo. */
 	async selectPaymentMethod(method: PaymentMethod): Promise<void> {
-		const optionText =
-			method === 'Preautorizada'   ? 'Preautorizada'              :
-			method === 'CuentaCorriente' ? 'Cuenta Corriente'           :
-			method === 'CargoABordo'     ? 'Tarjeta de Crédito - Cargo' :
-			                               'Efectivo';
+		const optionText = method === 'Preautorizada' ? 'Preautorizada' : method === 'CuentaCorriente' ? 'Cuenta Corriente' : method === 'CargoABordo' ? 'Tarjeta de Crédito - Cargo' : 'Efectivo';
 
 		await this.chooseDropdownOption(this.paymentMethodSelector, optionText);
 
@@ -548,7 +521,7 @@ export abstract class NewTravelPageBase {
 			SIN_PROPINA: 'SIN PROPINA',
 			PCT_10: '% 10',
 			PCT_15: '% 15',
-			PCT_20: '% 20',
+			PCT_20: '% 20'
 		};
 
 		if (type === 'CUSTOM') {
@@ -594,7 +567,11 @@ export abstract class NewTravelPageBase {
 		await this.clickSelectVehicle();
 
 		// TODO: el recorder resuelve por texto del card; confirmar si la lista requiere un selector por clase.
-		const card = this.page.locator('li').filter({ hasText: new RegExp(escapeRegExp(type), 'i') }).locator('.vehicle-img').first();
+		const card = this.page
+			.locator('li')
+			.filter({ hasText: new RegExp(escapeRegExp(type), 'i') })
+			.locator('.vehicle-img')
+			.first();
 		await expect(card).toBeVisible({ timeout: 15_000 });
 		await card.click();
 	}
@@ -603,7 +580,7 @@ export abstract class NewTravelPageBase {
 		const deadline = Date.now() + timeoutMs;
 
 		while (Date.now() < deadline) {
-			const frame = this.page.frames().find((candidate) => candidate.url().includes(`componentName=${component}`));
+			const frame = this.page.frames().find(candidate => candidate.url().includes(`componentName=${component}`));
 			if (frame) {
 				return frame;
 			}
@@ -614,16 +591,20 @@ export abstract class NewTravelPageBase {
 		throw new Error(`Stripe frame not found: ${component}`);
 	}
 
-	async selectCardByLast4(last4: string): Promise<void> {
+	/** Completa los datos de la tarjeta preautorizada sin disparar validación. */
+	async fillPreauthorizedCard(last4: string): Promise<void> {
 		const cardNumber = STRIPE_CARD_BY_LAST4[last4];
 		if (!cardNumber) {
 			throw new Error(`Unknown Stripe test card last4: ${last4}`);
 		}
 
 		await this.paymentMethodSelector.click();
-		const preauthOption = this.page.locator('#add_travel_payment_methods select-dropdown .options li').filter({
-			hasText: 'Preautorizada',
-		}).first();
+		const preauthOption = this.page
+			.locator('#add_travel_payment_methods select-dropdown .options li')
+			.filter({
+				hasText: 'Preautorizada'
+			})
+			.first();
 		await preauthOption.waitFor({ state: 'visible', timeout: 10_000 });
 		await preauthOption.click();
 		await this.page.waitForTimeout(2_500);
@@ -640,25 +621,36 @@ export abstract class NewTravelPageBase {
 		await this.assertPaymentMethodPreauthorizedSelected();
 	}
 
-	async submit(): Promise<void> {
+	async selectCardByLast4(last4: string): Promise<void> {
+		await this.fillPreauthorizedCard(last4);
+		// Clickear Validar sigue siendo parte del flujo legado que usa este método.
 		await this.clickValidateCard();
+	}
+
+	async submit(): Promise<void> {
+		await this.clickValidateCardIfAvailable();
 
 		const deadline = Date.now() + TRAVEL_SUBMIT_TIMEOUT;
 		let vehicleSelectionOpened = false;
 
 		while (Date.now() < deadline) {
-			if (await this.page.locator('iframe[src*="three-ds-2-challenge"]').isVisible().catch(() => false)) {
+			if (
+				await this.page
+					.locator('iframe[src*="three-ds-2-challenge"]')
+					.isVisible()
+					.catch(() => false)
+			) {
 				return;
 			}
 
-			if (!vehicleSelectionOpened && await this.vehicleButton.isVisible().catch(() => false) && await this.vehicleButton.isEnabled().catch(() => false)) {
+			if (!vehicleSelectionOpened && (await this.vehicleButton.isVisible().catch(() => false)) && (await this.vehicleButton.isEnabled().catch(() => false))) {
 				await this.vehicleButton.click();
 				vehicleSelectionOpened = true;
 				await this.page.waitForTimeout(1_000);
 				continue;
 			}
 
-			if (await this.submitButton.isVisible().catch(() => false) && await this.submitButton.isEnabled().catch(() => false)) {
+			if ((await this.submitButton.isVisible().catch(() => false)) && (await this.submitButton.isEnabled().catch(() => false))) {
 				await this.submitButton.click();
 				return;
 			}
@@ -667,6 +659,21 @@ export abstract class NewTravelPageBase {
 		}
 
 		throw new Error('No enabled submit button found on travel form');
+	}
+
+	private async clickValidateCardIfAvailable(): Promise<boolean> {
+		const visible = await this.validateCardButton.isVisible().catch(() => false);
+		const enabled = visible ? await this.validateCardButton.isEnabled().catch(() => false) : false;
+
+		if (!visible || !enabled) {
+			return false;
+		}
+
+		await this.waitForLoadingOverlayToDisappear();
+		await this.validateCardButton.click({ force: true });
+		await this.page.waitForTimeout(1_000);
+		await this.assertPaymentMethodPreauthorizedSelected();
+		return true;
 	}
 
 	async clickValidateCard(): Promise<void> {
@@ -699,17 +706,15 @@ export abstract class NewTravelPageBase {
 		// En carrier, algunos clientes auto-completan el pasajero y otros requieren pax distinto.
 		await this.selectClient(clientName);
 
-		const passengerIsDisabled = await this.passengerSelect.getAttribute('ng-reflect-is-disabled')
-			.then((value) => value === 'true')
+		const passengerIsDisabled = await this.passengerSelect
+			.getAttribute('ng-reflect-is-disabled')
+			.then(value => value === 'true')
 			.catch(() => false);
 
 		if (!passengerIsDisabled && normalizeText(opts.passenger) !== normalizeText(clientName)) {
 			await this.selectPassenger(opts.passenger);
 		} else {
-			await expect.poll(
-				async () => matchesSearchText((await this.passengerSelect.textContent().catch(() => '')) ?? '', clientName),
-				{ timeout: 10_000 }
-			).toBe(true);
+			await expect.poll(async () => matchesSearchText((await this.passengerSelect.textContent().catch(() => '')) ?? '', clientName), { timeout: 10_000 }).toBe(true);
 		}
 
 		await this.assertDefaultServiceTypeRegular();

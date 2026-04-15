@@ -93,8 +93,7 @@ async function runHoldOnScenario(page: Page, scenario: HoldNo3dsScenario): Promi
 		});
 	});
 
-	await test.step('Validar tarjeta y enviar el viaje', async () => {
-		await travel.clickValidateCard();
+	await test.step('Seleccionar vehículo y enviar el viaje', async () => {
 		await travel.waitForVehicleSelectionReady();
 		await travel.clickSelectVehicle();
 		await travel.clickSendService();
@@ -139,8 +138,7 @@ async function runHoldOffScenario(page: Page, scenario: HoldNo3dsScenario): Prom
 			});
 		});
 
-		await test.step('Validar tarjeta y enviar el viaje', async () => {
-			await travel.clickValidateCard();
+		await test.step('Seleccionar vehículo y enviar el viaje', async () => {
 			await travel.waitForVehicleSelectionReady();
 			await travel.clickSelectVehicle();
 			await travel.clickSendService();
@@ -199,8 +197,7 @@ test.describe('Gateway PG · Carrier · App Pax — Hold sin 3DS', () => {
 				});
 			});
 
-			await test.step('Validar tarjeta y enviar el viaje', async () => {
-				await travel.clickValidateCard();
+			await test.step('Seleccionar vehículo y enviar el viaje', async () => {
 				await travel.waitForVehicleSelectionReady();
 				await travel.clickSelectVehicle();
 				await travel.clickSendService();
@@ -274,8 +271,7 @@ test.describe('Gateway PG · Carrier · App Pax — Hold sin 3DS', () => {
 					});
 				});
 
-				await test.step('Validar tarjeta y enviar el viaje', async () => {
-					await travel.clickValidateCard();
+				await test.step('Seleccionar vehículo y enviar el viaje', async () => {
 					await travel.waitForVehicleSelectionReady();
 					await travel.clickSelectVehicle();
 					await travel.clickSendService();

@@ -248,12 +248,14 @@ test.describe('Gateway PG · Carrier · App Pax — Hold con 3DS', () => {
 			});
 
 			await test.step('Completar formulario con tarjeta 3DS', async () => {
+				// Evidencia test-18: el entorno TEST usa alwaysAuthenticate (3184) para hold+3DS appPax.
+				// Esta tarjeta dispara 3DS en ambas fases (validación inicial y envío con hold ON).
 				await travel.fillMinimum({
 					client: TEST_DATA.appPaxPassenger,
 					passenger: TEST_DATA.appPaxPassenger,
 					origin:    TEST_DATA.origin,
 					destination: TEST_DATA.destination,
-					cardLast4: STRIPE_TEST_CARDS.success3DS.slice(-4), // 3155
+					cardLast4: STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4), // 3184
 				});
 			});
 
@@ -350,12 +352,14 @@ test.describe('Gateway PG · Carrier · App Pax — Hold con 3DS', () => {
 				});
 
 				await test.step('Completar formulario con tarjeta 3DS', async () => {
+					// Evidencia test-8/test-18: alwaysAuthenticate (3184) dispara 3DS en TEST.
+					// Con hold OFF, solo aparece 3DS en la validación inicial, no al enviar.
 					await travel.fillMinimum({
 						client: TEST_DATA.appPaxPassenger,
 						passenger: TEST_DATA.appPaxPassenger,
 						origin:    TEST_DATA.origin,
 						destination: TEST_DATA.destination,
-						cardLast4: STRIPE_TEST_CARDS.success3DS.slice(-4), // 3155
+						cardLast4: STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4), // 3184
 					});
 				});
 

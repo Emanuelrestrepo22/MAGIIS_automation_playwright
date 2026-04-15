@@ -1,4 +1,14 @@
-import type { E2EFlowType, GatewayPgJourneyContext, GatewayPgJourneyStatus, JourneyActor, JourneyPhase, JourneyPortal, PaymentGateway, PaymentValidationSource } from '../contracts/gateway-pg.types';
+import type {
+	E2EFlowType,
+	GatewayPgJourneyContext,
+	GatewayPgJourneyStatus,
+	JourneyActor,
+	JourneyPhase,
+	JourneyPortal,
+	PassengerProfileMode,
+	PaymentGateway,
+	PaymentValidationSource,
+} from '../contracts/gateway-pg.types';
 import { readJourneyContext, writeJourneyContext } from '../context/gatewayJourneyContext';
 import { getGatewayPgAdapter } from './adapters';
 
@@ -10,6 +20,7 @@ type CreateDraftJourneyInput = {
 	portal?: JourneyPortal;
 	role: string;
 	flowType?: E2EFlowType;
+	passengerProfileMode?: PassengerProfileMode;
 };
 
 // Datos que suelen aparecer recién después de crear o completar el viaje.
@@ -25,6 +36,7 @@ export class GatewayPgJourneyOrchestrator {
 		const flowType = input.flowType ?? 'carrier-web-driver-app';
 		const initialActor: JourneyActor = flowType === 'passenger-app-driver-app' ? 'passenger' : 'carrier-dispatcher';
 		const initialPhase: JourneyPhase = flowType === 'passenger-app-driver-app' ? 'passenger_wallet_setup' : 'web_setup';
+		const passengerProfileMode = flowType === 'passenger-app-driver-app' ? (input.passengerProfileMode ?? 'personal') : undefined;
 
 		return {
 			// El contexto arranca con metadatos suficientes para que web, mobile y validación
@@ -35,6 +47,7 @@ export class GatewayPgJourneyOrchestrator {
 			gateway: input.gateway,
 			portal: input.portal ?? adapter.defaultPortal,
 			role: input.role,
+			passengerProfileMode,
 			currentActor: initialActor,
 			phase: initialPhase,
 			status: 'draft',
@@ -53,7 +66,7 @@ export class GatewayPgJourneyOrchestrator {
 				platform: 'android',
 				status: 'pending',
 				appPathEnv: 'ANDROID_DRIVER_APP_PATH',
-				appiumServerEnv: 'APPIUM_SERVER_URL'
+				appiumServerEnv: 'APPIUM_SERVER_URL',
 			},
 			...(flowType === 'passenger-app-driver-app'
 				? {
@@ -62,11 +75,14 @@ export class GatewayPgJourneyOrchestrator {
 							platform: 'android' as const,
 							status: 'pending' as const,
 							appPathEnv: 'ANDROID_PASSENGER_APP_PATH',
-							appiumServerEnv: 'APPIUM_SERVER_URL'
-						}
+							appiumServerEnv: 'APPIUM_SERVER_URL',
+						},
 					}
 				: {}),
-			notes: [`Draft journey created for ${adapter.displayName} — flow: ${flowType}`]
+			notes: [
+				`Draft journey created for ${adapter.displayName} — flow: ${flowType}`,
+				...(passengerProfileMode ? [`Passenger profile mode: ${passengerProfileMode}`] : []),
+			],
 		};
 	}
 
@@ -77,7 +93,7 @@ export class GatewayPgJourneyOrchestrator {
 			phase,
 			status,
 			updatedAt: new Date().toISOString(),
-			notes: note ? [...context.notes, note] : context.notes
+			notes: note ? [...context.notes, note] : context.notes,
 		};
 	}
 
@@ -86,7 +102,7 @@ export class GatewayPgJourneyOrchestrator {
 		return {
 			...context,
 			...data,
-			updatedAt: new Date().toISOString()
+			updatedAt: new Date().toISOString(),
 		};
 	}
 
@@ -99,7 +115,7 @@ export class GatewayPgJourneyOrchestrator {
 		return {
 			...context,
 			updatedAt: new Date().toISOString(),
-			validationSources: [...context.validationSources, source]
+			validationSources: [...context.validationSources, source],
 		};
 	}
 
@@ -110,7 +126,7 @@ export class GatewayPgJourneyOrchestrator {
 		return {
 			...this.updatePhase(context, phase, 'ready-for-driver', note),
 			currentActor: 'driver',
-			driverHandoff: { ...context.driverHandoff, status: 'ready' }
+			driverHandoff: { ...context.driverHandoff, status: 'ready' },
 		};
 	}
 
@@ -119,7 +135,7 @@ export class GatewayPgJourneyOrchestrator {
 		return {
 			...this.updatePhase(context, 'driver_trip_completion', 'driver-completed', note),
 			currentActor: 'driver',
-			driverHandoff: { ...context.driverHandoff, status: 'completed' }
+			driverHandoff: { ...context.driverHandoff, status: 'completed' },
 		};
 	}
 

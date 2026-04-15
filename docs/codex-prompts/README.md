@@ -79,3 +79,12 @@ Para evitar que los agentes confundan contextos al escalar la aplicacion, se ado
 - `refactor-pom-centralization.md`: centralizacion de POMs.
 - `implement-carrier-specs-by-recording.md`: implementacion de specs guiada por grabaciones.
 - `implement-carrier-negative-specs.md`: cobertura de variantes y casos negativos.
+- `implement-contractor-specs-by-recording.md`: implementacion de specs del portal contractor guiada por grabaciones.
+- `implement-driver-app-flow2.md`: pausado / legado hasta reactivacion explicita.
+- `implement-passenger-app-flow2.md`: lane activo para Passenger App, empezando por wallet, alta de viaje y trip status. Selectors ya validados: `Modo Personal`, `Compañía`, `Mi cuenta`, `Billetera`, `Origen`, `Destino`, `Seleccionar Vehiculo`, `Ahora`, `AGREGAR`, `GUARDAR`, y Stripe iframe `cardnumber`/`cc-exp-month`/`cc-exp-year`/`cc-csc`. Implementacion activa: `tests/mobile/appium/harness/PassengerTripHappyPathHarness.ts`, `tests/features/gateway-pg/data/passenger-personal-no3ds-scenarios.ts`, `tests/features/gateway-pg/data/passenger-flow2-scenarios.ts`, `tests/features/gateway-pg/data/passenger-business-scenarios.ts`, `tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-personal-no3ds.e2e.spec.ts`, `tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-personal-3ds.e2e.spec.ts`, `tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-no3ds.e2e.spec.ts`, `tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-3ds.e2e.spec.ts`, y `docs/test-cases/mobile/TC-PASSENGER-FLOW.md`. Smoke recomendado: `pnpm mobile:passenger:profile-mode-smoke`; flujo completo personal 3DS + hold: `pnpm mobile:passenger:personal-3ds-hold-flow`.
+
+## Recorder + runtime notes
+- When a flow is blocked on login or dashboard bootstrap, verify `tests/config/runtime.ts`, `tests/pages/shared/LoginPage.ts`, and `tests/pages/carrier/DashboardPage.ts` before drafting new specs.
+- For carrier and contractor, the shell check comes from the runtime pattern; do not assume `/dashboard` or `Nuevo Viaje` are valid for every role.
+- For contractor portal web work, use the contractor role and keep the focus on `tests/features/gateway-pg/specs/stripe/contractor/**`.
+- If the recording validates a better wait condition or anchor, refresh the prompt and the agent/skill contract in the same cycle.

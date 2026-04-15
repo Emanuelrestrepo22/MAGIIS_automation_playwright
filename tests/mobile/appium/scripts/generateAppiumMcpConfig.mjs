@@ -25,6 +25,24 @@ const repoRoot = process.cwd();
 const envFile = process.env.APP_ENV_FILE || '.env.test';
 dotenv.config({ path: path.resolve(repoRoot, envFile), override: true });
 
+const APP_PACKAGES = {
+  test: {
+    driver: 'com.magiis.app.test.driver',
+    passenger: 'com.magiis.app.test.passenger',
+  },
+  uat: {
+    driver: 'com.magiis.app.uat.driver',
+    passenger: 'com.magiis.app.uat.passenger',
+  },
+  prod: {
+    driver: 'com.magiis.app.driver',
+    passenger: 'com.magiis.app.passenger',
+  },
+  savio: {
+    passenger: 'com.magiis.app.savio.passenger',
+  },
+};
+
 function requiredEnv(name) {
   const value = process.env[name];
   if (!value) {
@@ -57,10 +75,33 @@ function optionalNumber(name, defaultValue) {
   return parsed;
 }
 
+function resolveEnvironment() {
+  const raw = (optionalEnv('ENV') || 'test').toLowerCase();
+  if (raw === 'test' || raw === 'uat' || raw === 'prod' || raw === 'savio') {
+    return raw;
+  }
+  console.warn(`[generateAppiumMcpConfig] ENV="${raw}" unknown - using "test"`);
+  return 'test';
+}
+
 function actorScopedEnv(baseName) {
   const upperActor = actor.toUpperCase();
   return optionalEnv(`ANDROID_${upperActor}_${baseName}`) || optionalEnv(`ANDROID_${baseName}`);
 }
+
+const environment = resolveEnvironment();
+const appPath = actorScopedEnv('APP_PATH');
+const appPackage = actorScopedEnv('APP_PACKAGE') || APP_PACKAGES[environment][actor] || null;
+const appActivity = actorScopedEnv('ACTIVITY') || '.MainActivity';
+
+if (!appPackage && !appPath) {
+  throw new Error(
+    `Unable to resolve app package or APK for ${actor}. ` +
+    `Set ANDROID_${actor.toUpperCase()}_APP_PACKAGE or ANDROID_${actor.toUpperCase()}_APP_PATH.`
+  );
+}
+
+const usingInstalledApp = appPath === null;
 
 const generatedDir = path.resolve(repoRoot, 'tests', 'mobile', 'appium', '.generated');
 const screenshotsDir = path.resolve(repoRoot, 'evidence', 'appium-mcp', actor);
@@ -70,26 +111,23 @@ fs.mkdirSync(screenshotsDir, { recursive: true });
 const actorConfig = {
   platformName: 'Android',
   'appium:automationName': 'UiAutomator2',
-  'appium:app': requiredEnv(actor === 'driver' ? 'ANDROID_DRIVER_APP_PATH' : 'ANDROID_PASSENGER_APP_PATH'),
   'appium:deviceName': optionalEnv('ANDROID_DEVICE_NAME') || 'Pixel_7',
   'appium:platformVersion': optionalEnv('ANDROID_PLATFORM_VERSION') || '15.0',
   'appium:newCommandTimeout': optionalNumber('APPIUM_NEW_COMMAND_TIMEOUT', 120),
-  'appium:noReset': optionalBoolean('APPIUM_NO_RESET', false),
+  'appium:noReset': optionalBoolean('APPIUM_NO_RESET', usingInstalledApp),
   'appium:fullReset': optionalBoolean('APPIUM_FULL_RESET', false),
 };
 
-const appPackage = actorScopedEnv('APP_PACKAGE') || optionalEnv('ANDROID_APP_PACKAGE');
-const appActivity = optionalEnv(actor === 'driver' ? 'ANDROID_DRIVER_ACTIVITY' : 'ANDROID_PASSENGER_ACTIVITY');
-const udid = actorScopedEnv('UDID');
+if (appPath) {
+  actorConfig['appium:app'] = appPath;
+}
 
 if (appPackage) {
   actorConfig['appium:appPackage'] = appPackage;
-}
-
-if (appActivity) {
   actorConfig['appium:appActivity'] = appActivity;
 }
 
+const udid = actorScopedEnv('UDID');
 if (udid) {
   actorConfig['appium:udid'] = udid;
 }

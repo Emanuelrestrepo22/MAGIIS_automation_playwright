@@ -6,7 +6,6 @@ import {
   getRoleRuntimeConfig,
   resolveRoleCredentials,
 } from "./tests/config/runtime";
-import { DashboardPage } from "./tests/pages/carrier";
 import { LoginPage } from "./tests/pages/shared";
 
 async function globalSetup(): Promise<void> {
@@ -42,7 +41,6 @@ async function globalSetup(): Promise<void> {
 
     try {
       const loginPage = new LoginPage(page, role, roleConfig.baseURL);
-      const dashboardPage = new DashboardPage(page);
 
       console.log(
         `[GlobalSetup][${role}] Navigating to ${roleConfig.baseURL}${roleConfig.loginPath}`,
@@ -50,7 +48,10 @@ async function globalSetup(): Promise<void> {
       await loginPage.goto();
       await loginPage.login(credentials.username, credentials.password);
 
-      await dashboardPage.ensureDashboardLoaded();
+      await page.waitForURL(roleConfig.dashboardPattern, { timeout: 15_000 });
+      console.log(
+        `[GlobalSetup][${role}] Dashboard pattern "${roleConfig.dashboardPattern}" confirmed at ${page.url()}`,
+      );
 
       // Cada rol guarda su propio estado para que las specs puedan reutilizarlo
       // sin mezclarse entre sí.

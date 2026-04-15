@@ -8,8 +8,11 @@ export abstract class SuperPage {
 
 	constructor(page: Page) {
 		this.page = page;
-		// La UI actual expone el acceso a crear viaje como link "Nuevo Viaje".
-		this.newTravelLink = page.getByRole('banner').getByRole('link', { name: /Nuevo Viaje|New Trip/i });
+		// Carrier: banner <a> link. Contractor: banner <div> genérico (cursor pointer).
+		// getByText en el banner es role-agnostic y funciona en ambos portales.
+		// Fallback al link del sidebar (siempre presente como <a> real en contractor).
+		this.newTravelLink = page.getByRole('banner').getByText(/Nuevo Viaje|New Trip/i).first()
+			.or(page.getByRole('navigation').getByRole('link', { name: /Nuevo Viaje/i }).first());
 	}
 
 	async ensureNewTripVisible(): Promise<void> {

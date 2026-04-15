@@ -56,6 +56,9 @@ export const TEST_DATA = {
 	// Casos que requieren cliente y pasajero distintos.
 	contractorClient: 'fast car',
 	contractorPassenger: PASSENGERS.colaborador.name,
+	// Contractor hold: el colaborador del contractor se selecciona buscando por nombre.
+	// Evidencia: test-7.spec.ts — login contractor → buscar 'ema' → 'smith, Emanuel'.
+	contractorColaborador: 'smith, Emanuel',
 	appPaxPassenger: PASSENGERS.appPax.name,
 	origin: 'Reconquista 661, Buenos Aires, Argentina',
 	destination: 'Cazadores 1987, Buenos Aires, Argentina',

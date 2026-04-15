@@ -37,6 +37,13 @@ export type JourneyPhase   = (typeof SUPPORTED_JOURNEY_PHASES)[number];
 export type JourneyPortal = 'web' | 'contractor' | 'carrier' | 'pax';
 
 /**
+ * Modo de perfil dentro de la app passenger.
+ * - personal: perfil del usuario app pax
+ * - business: perfil corporativo / colaborador
+ */
+export type PassengerProfileMode = 'personal' | 'business';
+
+/**
  * Actor que ejecuta la fase actual del journey.
  * - carrier-dispatcher: usuario web en portal Carrier
  * - driver: actor en Android Driver App
@@ -85,6 +92,7 @@ export type GatewayPgJourneyContext = {
 	gateway: PaymentGateway;
 	portal: JourneyPortal;
 	role: string;
+	passengerProfileMode?: PassengerProfileMode;
 	currentActor: JourneyActor;
 	phase: JourneyPhase;
 	status: GatewayPgJourneyStatus;

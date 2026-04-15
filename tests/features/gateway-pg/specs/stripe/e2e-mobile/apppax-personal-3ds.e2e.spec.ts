@@ -1,27 +1,131 @@
 /**
- * TCs: TS-STRIPE-TC1013–TC1016
- * Feature: E2E Alta de Viaje App Pax Personal — Tarjeta Preautorizada con 3DS
- * Runner: Playwright (fase web) + Appium (fase mobile)
- * Tags: @mobile @3ds @hold @critical
+ * Passenger App Flow 2 - Wallet + New Trip Draft
+ *
+ * This suite is the passenger-side entrypoint for the hybrid passenger -> driver lane.
+ * Active coverage today:
+ *   - wallet add card
+ *   - select existing card
+ *   - create trip and persist handoff context
+ *
+ * Draft coverage still pending passenger post-trip evidence / driver handoff:
+ *   - assigned driver
+ *   - trip completed
+ *   - negative wallet validation
  */
-import { test } from '../../../../../TestBase';
 
-test.describe('Gateway PG · E2E Mobile · App Pax Personal — Hold con 3DS', () => {
+import { expect, test } from '../../../../../TestBase';
+import { GatewayPgJourneyOrchestrator } from '../../../helpers/GatewayPgJourneyOrchestrator';
+import { PASSENGER_FLOW2_SCENARIOS } from '../../../data/passenger-flow2-scenarios';
+import { getPassengerAppConfig } from '../../../../../mobile/appium/config/appiumRuntime';
+import { PassengerTripHappyPathHarness } from '../../../../../mobile/appium/harness/PassengerTripHappyPathHarness';
 
-  test.fixme(true, 'BLOQUEADO: requiere Appium Server + App Driver + App Pax instaladas y configuradas');
+const orchestrator = new GatewayPgJourneyOrchestrator();
 
-  test('[TS-STRIPE-TC1013] @critical @mobile @3ds @hold E2E hold+cobro app pax personal 3DS', async () => {
-    // Fase web (Playwright): carrier crea viaje con tarjeta 3DS
-    // Fase mobile (Appium): driver acepta y finaliza el viaje → cobro
-  });
-  test('[TS-STRIPE-TC1014] @regression @mobile @3ds sin hold E2E app pax personal 3DS', async () => {
-    // Hold OFF — viaje finaliza sin cobro
-  });
-  test('[TS-STRIPE-TC1015] @regression @mobile @3ds @hold E2E hold+cobro app pax personal 3DS variante', async () => {
-    // Variante de TC1013
-  });
-  test('[TS-STRIPE-TC1016] @regression @mobile @3ds sin hold E2E app pax personal 3DS variante', async () => {
-    // Variante de TC1014
-  });
+function createJourney(testCaseId: string) {
+	return orchestrator.createDraftJourney({
+		testCaseId,
+		gateway: 'stripe',
+		portal: 'pax',
+		role: 'passenger',
+		flowType: 'passenger-app-driver-app',
+		passengerProfileMode: 'personal',
+	});
+}
 
+test.describe.serial('Gateway PG · E2E Mobile · App Pax Personal', () => {
+	for (const scenario of PASSENGER_FLOW2_SCENARIOS) {
+		test(
+			`[${scenario.testCaseId}] ${scenario.title} (${scenario.sourceCaseIds.join(' / ')})`,
+			async () => {
+				if (!scenario.active) {
+					test.fixme(
+						true,
+						scenario.requiresDriverPhase
+							? 'Passenger wallet and trip setup are ready, but driver handoff/post-trip evidence is still pending.'
+							: 'Passenger negative evidence is still pending validation.'
+					);
+					return;
+				}
+
+				const harness = new PassengerTripHappyPathHarness(getPassengerAppConfig(), undefined, {
+					profileMode: 'personal',
+				});
+				let journey = createJourney(scenario.testCaseId);
+				const card = {
+					number: scenario.card.number,
+					expiry: scenario.card.exp,
+					cvc: scenario.card.cvc,
+					holderName: scenario.card.holderName,
+				};
+
+				try {
+
+					await test.step(`[${scenario.testCaseId}] start passenger session`, async () => {
+						await harness.startSession();
+					});
+
+					const cardLast4 = card.number.replace(/\D/g, '').slice(-4);
+
+					switch (scenario.step) {
+						case 'wallet-add-card':
+							await test.step(`[${scenario.testCaseId}] add card to wallet`, async () => {
+								const walletState = await harness.ensureWalletCard(card);
+								expect(walletState).toMatch(/added|already-present/);
+								journey = orchestrator.updatePhase(
+									journey,
+									'passenger_wallet_setup',
+									'draft',
+									`Passenger wallet card ${walletState}`
+								);
+								await orchestrator.persist(journey);
+							});
+							break;
+
+						case 'wallet-select-card':
+							await test.step(`[${scenario.testCaseId}] select existing wallet card`, async () => {
+								await harness.ensureWalletCard(card);
+								await harness.selectExistingCard(cardLast4);
+								journey = orchestrator.updatePhase(
+									journey,
+									'passenger_wallet_setup',
+									'draft',
+									'Passenger selected an existing wallet card'
+								);
+								await orchestrator.persist(journey);
+							});
+							break;
+
+						case 'trip-create':
+							await test.step(`[${scenario.testCaseId}] create passenger trip`, async () => {
+								await harness.ensureWalletCard(card);
+								const tripId = await harness.createTrip(scenario.origin, scenario.destination, cardLast4);
+								expect(tripId).toBeTruthy();
+
+								journey = orchestrator.attachTripData(journey, {
+									tripId: tripId ?? 'TODO',
+								});
+								journey = orchestrator.prepareMobileHandoff(
+									journey,
+									'Passenger created the trip and handed it to the driver lane'
+								);
+								await orchestrator.persist(journey);
+							});
+							break;
+
+						default:
+							test.fixme(true, 'Unhandled passenger flow step. Update the scenario mapping first.');
+					}
+				} catch (error) {
+					journey = orchestrator.fail(
+						journey,
+						error instanceof Error ? error.message : 'Passenger flow failed'
+					);
+					await orchestrator.persist(journey);
+					throw error;
+				} finally {
+					await harness.endSession();
+				}
+			}
+		);
+	}
 });

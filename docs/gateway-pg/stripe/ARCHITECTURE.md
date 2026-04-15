@@ -144,7 +144,7 @@ test.describe('Gateway PG · Carrier · App Pax — Hold con 3DS', () => {
 | `@smoke` | 1 happy path por feature, cobertura mínima | TC1002, TC1009, TC1033, TC1049, TC1065, TC1081, TC1096, TC1111, P2-TC001 |
 | `@critical` | Flujos con impacto directo en pagos y hold | TC1009, TC1013, TC1033, TC1037, TC1053, TC1092, P2-TC047 |
 | `@regression` | Variantes y flujos alternativos | TC1010–TC1012, TC1034–TC1036, TC1050–TC1052, etc. |
-| `@3ds` | Cualquier flujo que involucre modal 3DS | TC1013–TC1016, TC1021–TC1024, TC1037–TC1040, TC1053–TC1056, etc. |
+| `@3ds` | Cualquier flujo que involucre modal 3DS | TC1013–TC1016, TC1021–TC1024, TC1029–TC1032, TC1037–TC1040, TC1053–TC1056, etc. |
 | `@hold` | Flujos con preautorización Stripe | Todos los TC con "Hold y Cobro" |
 | `@cargo-a-bordo` | Flujos de pago directo sin hold | TC1081–TC1121 |
 | `@antifraud` | Escenarios de tarjetas bloqueadas/antifraude | TC1087–TC1091, TC1102–TC1106, TC1117–TC1121 |
@@ -278,8 +278,10 @@ export const PASSENGERS = {
 | `carrier/operaciones/edicion-conflicto.spec.ts` | P2-TC084–TC089 | P2 | `@regression @3ds` | Playwright | ⬜ pendiente |
 | `contractor/vinculacion-tarjeta.spec.ts` | P2-TC001–TC006 | P2 | `@smoke @contractor` | Playwright | ⬜ pendiente |
 | `quote/quote-colaborador.spec.ts` | P2-TC011–TC018 | P3 | `@quote` | Playwright | ⬜ pendiente |
-| `e2e-mobile/apppax-personal-3ds.e2e.spec.ts` | TC1013–TC1016 | P1 | `@mobile @3ds @hold` | Playwright+Appium | 🔴 bloqueado (Appium) |
-| `e2e-mobile/apppax-business-3ds.e2e.spec.ts` | TC1021–TC1024 | P1 | `@mobile @3ds @hold` | Playwright+Appium | 🔴 bloqueado (Appium) |
+| `e2e-mobile/apppax-personal-no3ds.e2e.spec.ts` | TC1009–TC1012 | P1 | `@mobile @hold` | Playwright+Appium | 🟡 draft active |
+| `e2e-mobile/apppax-personal-3ds.e2e.spec.ts` | TC1013–TC1016 | P1 | `@mobile @3ds @hold` | Playwright+Appium | 🟡 draft active |
+| `e2e-mobile/apppax-business-no3ds.e2e.spec.ts` | TC1017–TC1020, TC1025–TC1028 | P1 | `@mobile @hold` | Playwright+Appium | 🟡 draft active |
+| `e2e-mobile/apppax-business-3ds.e2e.spec.ts` | TC1021–TC1024, TC1029–TC1032 | P1 | `@mobile @3ds @hold` | Playwright+Appium | 🟡 draft active |
 
 **Leyenda:** ✅ verde · 🟡 parcial/draft · ⬜ pendiente · 🔴 bloqueado
 
@@ -298,4 +300,9 @@ export const PASSENGERS = {
 6. Recurrentes + operaciones (requieren Page Objects nuevos)
 
 ### Bloqueados hasta Appium listo
-- Todos los `e2e-mobile/` specs (TC1009–TC1032)
+- Los pasos de driver / post-trip que todavía dependen de evidencia dedicada en passenger.
+## Passenger lane status
+
+- The passenger Appium lane is implemented as a draft active path with `tests/mobile/appium/harness/PassengerTripHappyPathHarness.ts`, `tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-personal-no3ds.e2e.spec.ts`, `tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-personal-3ds.e2e.spec.ts`, `tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-no3ds.e2e.spec.ts`, and `tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-3ds.e2e.spec.ts`.
+- The passenger home shell now exposes a profile toggle, so personal and business collaborator mode share the same screen objects with a different bootstrap state.
+- The historical `TC1009â€“TC1032` rows remain in the architecture table for traceability, but should now be read as passenger-draft rather than fully blocked.

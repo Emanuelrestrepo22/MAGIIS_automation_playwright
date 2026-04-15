@@ -364,3 +364,7 @@ npx playwright test tests/features/gateway-pg/specs/stripe/carrier/ --list
 ```
 
 El `--list` debe mostrar todos los TCs de todos los specs. Los `test.fixme` aparecen como skipped — eso es esperado y correcto para los casos que aún dependen de grabaciones pendientes.
+## Nota de bootstrap role-aware
+- Para carrier y contractor, el bootstrap web debe leerse desde `tests/config/runtime.ts` y no desde un `/dashboard` hardcoded.
+- Si el recorded valida un shell o un wait condition mejor que el actual, actualizar `LoginPage`, `DashboardPage` y el contrato de agentes/prompts en el mismo ciclo.
+- Contractor puede compartir el login pero no siempre comparte el CTA `Nuevo Viaje`; no forzar esa ancla en etapas donde el role no la expone.

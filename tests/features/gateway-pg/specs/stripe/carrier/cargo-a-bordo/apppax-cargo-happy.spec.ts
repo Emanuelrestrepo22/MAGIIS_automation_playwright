@@ -2,15 +2,23 @@
  * TCs: TS-STRIPE-TC1081
  * Feature: Cargo a Bordo — Tarjeta de Crédito — Usuario App Pax — Pago exitoso
  * Tags: @smoke @cargo-a-bordo @web-only
+ *
+ * Precondiciones:
+ * - El pasajero appPax (Emanuel Restrepo) debe tener una tarjeta vinculada y activa
+ *   en el sistema MAGIIS con capacidad para Cargo a Bordo.
+ * - El límite de crédito del pasajero no debe estar bloqueado (limitExceeded=false
+ *   en la URL indica que la creación fue rechazada por el backend — verificar
+ *   configuración del pasajero en el entorno TEST antes de ejecutar).
+ * - Evidencia primaria: recorder test-17.spec.ts
  */
 import { expect } from '@playwright/test';
 import { test } from '../../../../../../TestBase';
 import { DashboardPage, NewTravelPage, TravelDetailPage, TravelManagementPage } from '../../../../../../pages/carrier';
 import { expectNoThreeDSModal, loginAsDispatcher, TEST_DATA } from '../../../../fixtures/gateway.fixtures';
 
-// Evidencia: test-10.spec.ts
 // Flujo: carrier web crea viaje con método "Tarjeta de Crédito - Cargo a Bordo".
 // No hay formulario Stripe ni 3DS desde carrier. El cobro ocurre en Driver App al finalizar.
+// Con cliente appPax el pasajero se auto-asigna (ng-reflect-is-disabled="true") — no llamar selectPassenger.
 
 test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
 
@@ -38,9 +46,8 @@ test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo', () => {
 		});
 
 		await test.step('Completar formulario con método Cargo a Bordo', async () => {
-			// Tipo de servicio auto-asignado por cliente (Regular por defecto)
+			// Con cliente appPax el pasajero se auto-asigna — no llamar selectPassenger
 			await travel.selectClient(TEST_DATA.appPaxPassenger);
-			await travel.selectPassenger(TEST_DATA.appPaxPassenger);
 			await travel.setOrigin(TEST_DATA.origin);
 			await travel.setDestination(TEST_DATA.destination);
 			await travel.selectPaymentMethod('CargoABordo');
@@ -55,7 +62,32 @@ test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo', () => {
 			await expectNoThreeDSModal(page);
 		});
 
-		await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
+		await test.step('Esperar redirección al detalle del viaje creado', async () => {
+			// El backend puede rechazar el viaje con ?limitExceeded=false si el pasajero
+			// no tiene tarjeta Cargo a Bordo activa o hay restricción de límite de crédito.
+			// En ese caso, el test falla con un mensaje de precondición en lugar de un timeout ciego.
+			const result = await Promise.race([
+				page.waitForURL(/\/travels\/[\w-]+$/, { timeout: 15_000 })
+					.then(() => 'success' as const),
+				page.waitForURL(/limitExceeded/, { timeout: 15_000 })
+					.then(() => 'limitExceeded' as const),
+			]).catch(() => 'timeout' as const);
+
+			if (result === 'limitExceeded') {
+				throw new Error(
+					'[TC1081] PRECONDICIÓN NO CUMPLIDA: el backend rechazó la creación del viaje con limitExceeded=false. ' +
+					'Verificar que el pasajero appPax (Emanuel Restrepo) tenga tarjeta activa para Cargo a Bordo en el entorno TEST.'
+				);
+			}
+
+			if (result === 'timeout') {
+				throw new Error(
+					'[TC1081] TIMEOUT: la URL no redirigió al detalle del viaje ni mostró limitExceeded. ' +
+					'Revisar el estado del viaje en el entorno TEST y los logs del servidor.'
+				);
+			}
+		});
+
 		const createdTravelId = extractTravelId(page.url());
 
 		await test.step('Validar viaje en gestion - columna Por asignar', async () => {

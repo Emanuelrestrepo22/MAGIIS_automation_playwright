@@ -12,9 +12,10 @@ export class DashboardPage extends SuperPage {
 	// 1. confirmar que salimos del login por URL
 	// 2. confirmar que el shell principal del portal ya es visible
 	async ensureDashboardLoaded(): Promise<void> {
-		console.log('[DashboardPage.ensureDashboardLoaded][S00] Validando URL /dashboard...');
-		await expect(this.page).toHaveURL(/.*dashboard/, { timeout: 15_000 });
-		console.log('[DashboardPage.ensureDashboardLoaded][S01] URL /dashboard OK');
+		const dashboardUrl = /#\/home\/(?:carrier|contractor)(?:\/dashboard)?(?:[?#].*)?$/;
+		console.log('[DashboardPage.ensureDashboardLoaded][S00] Validando shell /home/carrier o /home/contractor...');
+		await expect(this.page).toHaveURL(dashboardUrl, { timeout: 15_000 });
+		console.log('[DashboardPage.ensureDashboardLoaded][S01] Shell portal OK');
 
 		console.log('[DashboardPage.ensureDashboardLoaded][S02] Validando ancla básica (Nuevo Viaje)...');
 		await this.ensureNewTripVisible();

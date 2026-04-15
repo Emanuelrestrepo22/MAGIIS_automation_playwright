@@ -23,6 +23,8 @@
 
 ## 2. Alta de Viaje desde App Pax – Usuario App Pax (Modo Personal)
 
+**Precondición común de App Pax:** antes de ejecutar cualquier flujo de personal, validar en `home` el label bajo el `ion-toggle`. Si muestra `Modo Personal`, el lane es personal. Si muestra `Compañía: <contractor name>`, el lane no corresponde a esta sección y debe cambiarse antes de continuar.
+
 ### 2.1 Tarjeta Preautorizada – sin validación 3DS
 
 | ID | Descripción |
@@ -54,9 +56,19 @@
 | TS-STRIPE-TC-RV007 | E2E Alta de Viaje para usuario app pax modo personal con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS | TS-STRIPE-TC1015 |
 | TS-STRIPE-TC-RV008 | E2E Alta de Viaje para usuario app pax modo personal con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS | TS-STRIPE-TC1016 |
 
+### 2.4 Wallet - eliminación de tarjeta vinculada con 3D Secure
+
+| ID | Descripción |
+|----|-------------|
+| TS-STRIPE-TC1122 | E2E validar eliminar satisfactoriamente desde wallet tarjeta previamente vinculada con validación 3D Secure desde app pax modo personal |
+
+**Nota de cobertura:** la tarjeta debe estar ya vinculada y visible en la wallet. La eliminación no dispara challenge 3DS; la clasificación se conserva por la precondición de la tarjeta.
+
 ---
 
 ## 3. Alta de Viaje desde App Pax – Usuario App Pax (Modo Business / Colaborador)
+
+**Precondición común de App Pax:** antes de ejecutar cualquier flujo de business / colaborador, validar en `home` el label bajo el `ion-toggle`. Si muestra `Compañía: <contractor name>`, el lane es business. Si muestra `Modo Personal`, el lane no corresponde a esta sección y debe cambiarse antes de continuar.
 
 ### 3.1 Tarjeta Preautorizada – sin validación 3DS
 
@@ -278,7 +290,7 @@
 | TS-STRIPE-TC1120 | E2E Alta de viaje desde carrier para usuario empresa individuo – cargo a bordo – **falla código postal con riesgo elevado** (antifraude) |
 | TS-STRIPE-TC1121 | E2E Alta de viaje desde carrier para usuario empresa individuo – cargo a bordo – **dirección no disponible** (antifraude) |
 
-> **Nota:** El ID TS-STRIPE-TC1122 queda pendiente de completar en el documento fuente.
+> **Nota:** El ID TS-STRIPE-TC1122 queda asignado al caso de eliminación desde wallet de una tarjeta 3D Secure ya vinculada en App Pax modo personal.
 
 ---
 

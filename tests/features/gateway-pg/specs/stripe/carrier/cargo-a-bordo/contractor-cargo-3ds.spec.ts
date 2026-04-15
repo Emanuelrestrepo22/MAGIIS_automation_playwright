@@ -1,133 +1,97 @@
 /**
  * TCs: TS-STRIPE-TC1107–TC1110
- * Feature: Cargo a Bordo — Colaborador/Asociado Contractor — 3D Secure
- * Tags: @critical @3ds @cargo-a-bordo @web-only
+ * Feature: Cargo a Bordo — Colaborador/Contractor — 3DS desde Driver App
+ * Tags: @critical @3ds @cargo-a-bordo
+ *
+ * Arquitectura del flujo:
+ * - WEB (carrier): cliente contractor + Cargo a Bordo → trip creado → "Buscando conductor" ✅
+ * - DRIVER APP (Appium): conductor finaliza viaje e intenta cobrar → tarjeta requiere 3DS
+ *
+ * No hay formulario Stripe ni 3DS desde carrier web para Cargo a Bordo.
+ * Evidencia web: test-13.spec.ts
  */
-import { expect, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
 import { test } from '../../../../../../TestBase';
-import { DashboardPage, NewTravelPage, OperationalPreferencesPage, ThreeDSModal, ThreeDSErrorPopup, TravelDetailPage } from '../../../../../../pages/carrier';
-import { loginAsDispatcher, STRIPE_TEST_CARDS, TEST_DATA } from '../../../../fixtures/gateway.fixtures';
+import { DashboardPage, NewTravelPage, TravelDetailPage, TravelManagementPage } from '../../../../../../pages/carrier';
+import { expectNoThreeDSModal, loginAsDispatcher, TEST_DATA } from '../../../../fixtures/gateway.fixtures';
 
-test.use({ role: 'carrier', storageState: undefined });
+test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
+test.describe.configure({ timeout: 120_000 });
 
-type CargoScenario = {
-	cardLast4: string;
-	origin: string;
-	destination: string;
-};
-
-async function openCargoFormWithCard(page: Page, scenario: CargoScenario): Promise<{
-	travel: NewTravelPage;
-	threeDS: ThreeDSModal;
-	errorPopup: ThreeDSErrorPopup;
-}> {
+async function webPhaseCargoContractor(page: Page): Promise<void> {
 	const dashboard = new DashboardPage(page);
-	const preferences = new OperationalPreferencesPage(page);
 	const travel = new NewTravelPage(page);
-	const threeDS = new ThreeDSModal(page);
-	const errorPopup = new ThreeDSErrorPopup(page);
+	const management = new TravelManagementPage(page);
+	const detail = new TravelDetailPage(page);
 
-	await loginAsDispatcher(page);
-	await preferences.goto();
-	await preferences.ensureHoldEnabled();
+	await test.step('Login carrier', async () => {
+		await loginAsDispatcher(page);
+	});
 
-	await dashboard.openNewTravel();
-	await travel.ensureLoaded();
-	await travel.selectServiceType('cargo');
-	await travel.selectClient(TEST_DATA.contractorClient);
-	await travel.selectPassenger(TEST_DATA.contractorPassenger);
-	await travel.setOrigin(scenario.origin);
-	await travel.setDestination(scenario.destination);
-	await travel.selectCardByLast4(scenario.cardLast4);
+	await test.step('Ir al formulario de nuevo viaje', async () => {
+		await dashboard.openNewTravel();
+		await travel.ensureLoaded();
+	});
 
-	return { travel, threeDS, errorPopup };
+	await test.step('Completar formulario — cliente contractor + método Cargo a Bordo', async () => {
+		await travel.selectClient(TEST_DATA.contractorClient);
+		await travel.selectPassenger(TEST_DATA.contractorPassenger);
+		await travel.setOrigin(TEST_DATA.origin);
+		await travel.setDestination(TEST_DATA.destination);
+		await travel.selectPaymentMethod('CargoABordo');
+	});
+
+	await test.step('Seleccionar vehículo y enviar el viaje', async () => {
+		await travel.clickSelectVehicle();
+		await travel.clickSendService();
+	});
+
+	await test.step('Verificar que no aparece modal 3DS en carrier web', async () => {
+		await expectNoThreeDSModal(page);
+	});
+
+	await test.step('Esperar redirección y validar estado Buscando conductor', async () => {
+		await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
+		await management.goto();
+		await management.expectPassengerInPorAsignar(TEST_DATA.contractorPassenger, TEST_DATA.destination);
+		await management.openDetailForPassenger(TEST_DATA.contractorPassenger, TEST_DATA.destination);
+		await detail.expectStatus('Buscando conductor');
+	});
 }
 
-async function complete3dsOrFail(threeDS: ThreeDSModal, mode: 'success' | 'fail'): Promise<void> {
-	await threeDS.waitForVisible();
-	if (mode === 'success') {
-		await threeDS.completeSuccess();
-	} else {
-		await threeDS.completeFail();
-	}
-	await threeDS.waitForHidden();
-}
+test.describe('Gateway PG · Carrier · Colaborador/Contractor — Cargo a Bordo · 3DS', () => {
 
-test.describe('Gateway PG · Carrier · Colaborador — Cargo a Bordo · 3DS', () => {
+	test('[TS-STRIPE-TC1107] @critical @3ds @cargo-a-bordo pago exitoso con 3DS desde Driver App', async ({ page }) => {
+		await webPhaseCargoContractor(page);
+		await test.step('[DRIVER APP] Conductor cobra → 3DS requerido → pasajero aprueba → cobro exitoso', async () => {
+			// Tarjeta: STRIPE_TEST_CARDS.success3DS (4000002500003155)
+			// Resultado esperado: challenge 3DS completado → viaje "Finalizado".
+			test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium + DriverTripPaymentScreen + manejo de WebView 3DS.');
+		});
+	});
 
-  test('[TS-STRIPE-TC1107] @critical @3ds @cargo-a-bordo pago exitoso con 3DS obligatorio', async ({ page }) => {
-    const { travel, threeDS } = await openCargoFormWithCard(page, {
-      cardLast4: STRIPE_TEST_CARDS.success3DS.slice(-4),
-      origin: TEST_DATA.origin,
-      destination: TEST_DATA.destination,
-    });
+	test('[TS-STRIPE-TC1108] @regression @3ds @cargo-a-bordo 3DS rechazado desde Driver App', async ({ page }) => {
+		await webPhaseCargoContractor(page);
+		await test.step('[DRIVER APP] Conductor cobra → 3DS rechazado → cobro fallido → viaje En conflicto', async () => {
+			// Tarjeta: STRIPE_TEST_CARDS.fail3DS (4000000000009235)
+			test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium.');
+		});
+	});
 
-    await travel.clickSelectVehicle();
-    await travel.clickSendService();
-    await complete3dsOrFail(threeDS, 'success');
+	test('[TS-STRIPE-TC1109] @regression @3ds @cargo-a-bordo error 3DS desde Driver App', async ({ page }) => {
+		await webPhaseCargoContractor(page);
+		await test.step('[DRIVER APP] Conductor cobra → 3DS siempre autentica → error → viaje En conflicto', async () => {
+			// Tarjeta: STRIPE_TEST_CARDS.alwaysAuthenticate (4000002760003184)
+			test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium.');
+		});
+	});
 
-    const detail = new TravelDetailPage(page);
-    await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
-    await detail.expectStatus('Buscando conductor');
-  });
-  test('[TS-STRIPE-TC1108] @regression @3ds @cargo-a-bordo pago rechazado con 3DS', async ({ page }) => {
-    const { travel, threeDS, errorPopup } = await openCargoFormWithCard(page, {
-      cardLast4: STRIPE_TEST_CARDS.fail3DS.slice(-4),
-      origin: TEST_DATA.origin,
-      destination: TEST_DATA.destination,
-    });
-
-    await travel.clickSelectVehicle();
-    await travel.clickSendService();
-    await complete3dsOrFail(threeDS, 'fail');
-
-    const popupVisible = await errorPopup.waitForVisible(10_000).then(() => true).catch(() => false);
-    if (popupVisible) {
-      await errorPopup.accept();
-    }
-
-    const detailUrlPattern = /\/travels\/[\w-]+/;
-    const reachedDetail = detailUrlPattern.test(page.url())
-      || await page.waitForURL(detailUrlPattern, { timeout: 4_000 }).then(() => true).catch(() => false);
-
-    if (reachedDetail) {
-      const detail = new TravelDetailPage(page);
-      await expect(detail.getTravelStatus()).toContainText(/No Autorizado|NO_AUTORIZADO|En conflicto|Conflict/i, { timeout: 15_000 });
-    } else {
-      await expect(page).toHaveURL(/\/travel\/create/, { timeout: 15_000 });
-    }
-  });
-  test('[TS-STRIPE-TC1109] @regression @3ds @cargo-a-bordo error con 3DS', async ({ page }) => {
-    const { travel, threeDS, errorPopup } = await openCargoFormWithCard(page, {
-      cardLast4: STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4),
-      origin: 'Av. Corrientes 1234, Buenos Aires',
-      destination: 'Av. Santa Fe 2100, Buenos Aires',
-    });
-
-    await travel.clickSelectVehicle();
-    await travel.clickSendService();
-    await complete3dsOrFail(threeDS, 'fail');
-
-    await errorPopup.waitForVisible(10_000);
-    await expect.soft(page.getByText(/No podemos autenticar tu|unable to authenticate/i)).toBeVisible({ timeout: 10_000 });
-    await errorPopup.accept();
-  });
-  test('[TS-STRIPE-TC1110] @regression @3ds @cargo-a-bordo falla 3DS', async ({ page }) => {
-    const { travel, threeDS, errorPopup } = await openCargoFormWithCard(page, {
-      cardLast4: STRIPE_TEST_CARDS.fail3DS.slice(-4),
-      origin: 'Florida 100, CABA',
-      destination: 'Palermo Soho, CABA',
-    });
-
-    await travel.clickSelectVehicle();
-    await travel.clickSendService();
-    await complete3dsOrFail(threeDS, 'fail');
-
-    const popupVisible = await errorPopup.waitForVisible(10_000).then(() => true).catch(() => false);
-    if (popupVisible) {
-      await errorPopup.accept();
-    }
-    await expect.soft(page.getByText(/declined|rechazada|autenticar|autoriz/i).first()).toBeVisible({ timeout: 10_000 });
-  });
+	test('[TS-STRIPE-TC1110] @regression @3ds @cargo-a-bordo falla 3DS desde Driver App', async ({ page }) => {
+		await webPhaseCargoContractor(page);
+		await test.step('[DRIVER APP] Conductor cobra → 3DS falla completamente → cobro no procesado', async () => {
+			// Tarjeta: STRIPE_TEST_CARDS.fail3DS (4000000000009235)
+			test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium.');
+		});
+	});
 
 });

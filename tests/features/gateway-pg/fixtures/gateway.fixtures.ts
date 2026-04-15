@@ -1,6 +1,7 @@
 import type { Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 import { getPortalCredentials, getPortalUrl } from '../../../config/gatewayPortalRuntime';
+import { resolveRoleCredentials, resolveLoginPath } from '../../../config/runtime';
 import { DashboardPage } from '../../../pages/carrier';
 import { LoginPage } from '../../../pages/shared';
 import { STRIPE_CVC, STRIPE_EXPIRY, STRIPE_TEST_CARDS, TEST_DATA } from '../data/stripeTestData';
@@ -18,6 +19,18 @@ export async function loginAsDispatcher(page: Page): Promise<void> {
 	const dashboardPage = new DashboardPage(page);
 	await loginPage.goto();
 	await loginPage.login(user, pass);
+	await dashboardPage.ensureDashboardLoaded();
+}
+
+export async function loginAsContractor(page: Page): Promise<void> {
+	// Login del portal contractor. Credenciales vienen de USER_CONTRACTOR / PASS_CONTRACTOR.
+	const { username, password } = resolveRoleCredentials('contractor');
+	const baseUrl = process.env.BASE_URL ?? '';
+	const loginPath = resolveLoginPath('contractor');
+	const loginPage = new LoginPage(page, 'contractor', `${baseUrl}${loginPath}`);
+	const dashboardPage = new DashboardPage(page);
+	await loginPage.goto();
+	await loginPage.login(username, password);
 	await dashboardPage.ensureDashboardLoaded();
 }
 

@@ -1,76 +1,130 @@
 /**
  * TCs: TS-STRIPE-TC1082–TC1086
- * Feature: Cargo a Bordo — Tarjeta de Crédito — Usuario App Pax — Rechazos y errores
- * Tags: @regression @cargo-a-bordo @web-only
+ * Feature: Cargo a Bordo — App Pax — Rechazos desde Driver App
+ * Tags: @regression @cargo-a-bordo
+ *
+ * Arquitectura del flujo:
+ * - WEB (carrier): selecciona Cargo a Bordo → trip creado → "Buscando conductor" ✅ (siempre igual)
+ * - DRIVER APP (Appium): conductor finaliza viaje e intenta cobrar → la tarjeta es rechazada
+ *
+ * La fase web es IDÉNTICA al TC1081 (happy path).
+ * La variación ocurre SOLO en la app del conductor al momento del cobro.
+ *
+ * Precondición: misma que TC1081 — pasajero appPax con tarjeta Cargo a Bordo activa.
+ * Evidencia web: test-17.spec.ts
  */
-import { expect, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
 import { test } from '../../../../../../TestBase';
-import { DashboardPage, NewTravelPage, OperationalPreferencesPage, TravelDetailPage } from '../../../../../../pages/carrier';
-import { expectNoThreeDSModal, loginAsDispatcher, STRIPE_TEST_CARDS, TEST_DATA } from '../../../../fixtures/gateway.fixtures';
+import { DashboardPage, NewTravelPage, TravelDetailPage, TravelManagementPage } from '../../../../../../pages/carrier';
+import { expectNoThreeDSModal, loginAsDispatcher, TEST_DATA } from '../../../../fixtures/gateway.fixtures';
 
-test.use({ role: 'carrier', storageState: undefined });
+test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
+test.describe.configure({ timeout: 120_000 });
 
-async function createCargoTripWithCard(page: Page, cardLast4: string): Promise<void> {
+async function webPhaseCargoAppPax(page: Page): Promise<void> {
 	const dashboard = new DashboardPage(page);
-	const preferences = new OperationalPreferencesPage(page);
 	const travel = new NewTravelPage(page);
+	const management = new TravelManagementPage(page);
+	const detail = new TravelDetailPage(page);
 
-	await loginAsDispatcher(page);
-	await preferences.goto();
-	await preferences.ensureHoldEnabled();
+	await test.step('Login carrier', async () => {
+		await loginAsDispatcher(page);
+	});
 
-	await dashboard.openNewTravel();
-	await travel.ensureLoaded();
-	await travel.selectServiceType('cargo');
-	await travel.selectClient(TEST_DATA.appPaxPassenger);
-	await travel.selectPassenger(TEST_DATA.appPaxPassenger);
-	await travel.setOrigin(TEST_DATA.origin);
-	await travel.setDestination(TEST_DATA.destination);
-	await travel.selectCardByLast4(cardLast4);
-	await travel.clickSelectVehicle();
-	await travel.clickSendService();
+	await test.step('Ir al formulario de nuevo viaje', async () => {
+		await dashboard.openNewTravel();
+		await travel.ensureLoaded();
+	});
+
+	await test.step('Completar formulario — appPax + método Cargo a Bordo', async () => {
+		await travel.selectClient(TEST_DATA.appPaxPassenger);
+		await travel.setOrigin(TEST_DATA.origin);
+		await travel.setDestination(TEST_DATA.destination);
+		await travel.selectPaymentMethod('CargoABordo');
+	});
+
+	await test.step('Seleccionar vehículo y enviar el viaje', async () => {
+		await travel.clickSelectVehicle();
+		await travel.clickSendService();
+	});
+
+	await test.step('Verificar que no aparece modal 3DS', async () => {
+		await expectNoThreeDSModal(page);
+	});
+
+	await test.step('Esperar redirección al detalle del viaje', async () => {
+		const result = await Promise.race([
+			page.waitForURL(/\/travels\/[\w-]+$/, { timeout: 15_000 }).then(() => 'success' as const),
+			page.waitForURL(/limitExceeded/, { timeout: 15_000 }).then(() => 'limitExceeded' as const),
+		]).catch(() => 'timeout' as const);
+
+		if (result === 'limitExceeded') {
+			throw new Error('[Cargo a Bordo] PRECONDICIÓN NO CUMPLIDA: limitExceeded=false. Verificar tarjeta activa del pasajero appPax en TEST.');
+		}
+		if (result === 'timeout') {
+			throw new Error('[Cargo a Bordo] TIMEOUT: URL no redirigió al detalle del viaje.');
+		}
+	});
+
+	await test.step('Validar estado del viaje - Buscando conductor', async () => {
+		await management.goto();
+		await management.expectPassengerInPorAsignar(TEST_DATA.appPaxPassenger, TEST_DATA.destination);
+		await management.openDetailForPassenger(TEST_DATA.appPaxPassenger, TEST_DATA.destination);
+		await detail.expectStatus('Buscando conductor');
+	});
 }
-
-async function assertDeclinedOutcome(page: Page): Promise<void> {
-	await expectNoThreeDSModal(page);
-
-	const detailUrlPattern = /\/travels\/[\w-]+/;
-	const reachedDetail = detailUrlPattern.test(page.url())
-		|| await page.waitForURL(detailUrlPattern, { timeout: 4_000 }).then(() => true).catch(() => false);
-
-	if (reachedDetail) {
-		const detail = new TravelDetailPage(page);
-		await expect(detail.getTravelStatus()).toContainText(/No Autorizado|NO_AUTORIZADO|En conflicto|Conflict/i, { timeout: 15_000 });
-	} else {
-		await expect(page).toHaveURL(/\/travel\/create/, { timeout: 15_000 });
-	}
-
-	await expect.soft(
-		page.getByText(/declined|declinada|rechazada|insuficient|funds|cvc|robada|perdida|autoriz/i).first()
-	).toBeVisible({ timeout: 10_000 });
-}
-
-// BLOQUEADO: TC1082–TC1086 son flujos Driver App (Appium).
-// El cobro con tarjeta en Cargo a Bordo ocurre desde la app del conductor al finalizar el viaje.
-// La precondición carrier web (crear el viaje con método CargoABordo) está cubierta en TC1081.
-// Requiere Appium + Driver App para los escenarios de rechazo.
 
 test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo · Declines', () => {
 
-  test('[TS-STRIPE-TC1082] @regression @cargo-a-bordo pago rechazado genérico', async () => {
-    test.fixme(true, 'BLOQUEADO: flujo Driver App — requiere Appium. El cobro ocurre al finalizar viaje desde app conductor.');
-  });
-  test('[TS-STRIPE-TC1083] @regression @cargo-a-bordo fondos insuficientes', async () => {
-    test.fixme(true, 'BLOQUEADO: flujo Driver App — requiere Appium.');
-  });
-  test('[TS-STRIPE-TC1084] @regression @cargo-a-bordo tarjeta reportada como perdida', async () => {
-    test.fixme(true, 'BLOQUEADO: flujo Driver App — requiere Appium.');
-  });
-  test('[TS-STRIPE-TC1085] @regression @cargo-a-bordo CVC incorrecto', async () => {
-    test.fixme(true, 'BLOQUEADO: flujo Driver App — requiere Appium.');
-  });
-  test('[TS-STRIPE-TC1086] @regression @cargo-a-bordo tarjeta robada', async () => {
-    test.fixme(true, 'BLOQUEADO: flujo Driver App — requiere Appium.');
-  });
+	test('[TS-STRIPE-TC1082] @regression @cargo-a-bordo pago rechazado genérico desde Driver App', async ({ page }) => {
+		await webPhaseCargoAppPax(page);
+
+		await test.step('[DRIVER APP] Conductor finaliza viaje → cobra con tarjeta declinada → pago rechazado genérico', async () => {
+			// Escenario: tarjeta del pasajero es genéricamente declinada al cobrar desde la app del conductor.
+			// Tarjeta: STRIPE_TEST_CARDS.declined (declined_generic)
+			// Resultado esperado: pago rechazado, viaje queda en estado "En conflicto" o "No Autorizado".
+			test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium + DriverTripPaymentScreen implementado.');
+		});
+	});
+
+	test('[TS-STRIPE-TC1083] @regression @cargo-a-bordo fondos insuficientes desde Driver App', async ({ page }) => {
+		await webPhaseCargoAppPax(page);
+
+		await test.step('[DRIVER APP] Conductor finaliza viaje → cobra con tarjeta sin fondos → pago rechazado', async () => {
+			// Tarjeta: STRIPE_TEST_CARDS.insufficientFunds
+			// Resultado esperado: error "fondos insuficientes", viaje "En conflicto".
+			test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium.');
+		});
+	});
+
+	test('[TS-STRIPE-TC1084] @regression @cargo-a-bordo tarjeta perdida desde Driver App', async ({ page }) => {
+		await webPhaseCargoAppPax(page);
+
+		await test.step('[DRIVER APP] Conductor finaliza viaje → cobra con tarjeta reportada como perdida → rechazo', async () => {
+			// Tarjeta: STRIPE_TEST_CARDS.lostCard
+			// Resultado esperado: error "tarjeta perdida/lost_card", viaje "En conflicto".
+			test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium.');
+		});
+	});
+
+	test('[TS-STRIPE-TC1085] @regression @cargo-a-bordo CVC incorrecto desde Driver App', async ({ page }) => {
+		await webPhaseCargoAppPax(page);
+
+		await test.step('[DRIVER APP] Conductor finaliza viaje → cobra con CVC incorrecto → rechazo', async () => {
+			// Tarjeta: STRIPE_TEST_CARDS.incorrectCvc
+			// Resultado esperado: error "CVC incorrecto", viaje "En conflicto".
+			test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium.');
+		});
+	});
+
+	test('[TS-STRIPE-TC1086] @regression @cargo-a-bordo tarjeta robada desde Driver App', async ({ page }) => {
+		await webPhaseCargoAppPax(page);
+
+		await test.step('[DRIVER APP] Conductor finaliza viaje → cobra con tarjeta reportada como robada → rechazo', async () => {
+			// Tarjeta: STRIPE_TEST_CARDS.stolenCard
+			// Resultado esperado: error "tarjeta robada/stolen_card", viaje "En conflicto".
+			test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium.');
+		});
+	});
 
 });

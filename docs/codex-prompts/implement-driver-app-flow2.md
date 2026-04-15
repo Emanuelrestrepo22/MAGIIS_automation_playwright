@@ -1,9 +1,13 @@
 # Codex Prompt — Flow 2: App Driver — Spec E2E y Test Cases
 
+> STATUS: PAUSED
+> Current active focus in the repo: portal contractor web.
+> Keep this prompt as historical reference until App Driver work is reactivated explicitly.
+
 ## Contexto
 Repositorio: `magiis-playwright` (Playwright + TypeScript + Appium/WebdriverIO v9).
 Este prompt cubre la capa **App Driver** del flujo híbrido E2E.
-El pivote actual es **Flow 2: App Passenger → App Driver**.
+El pivote historico es **Flow 2: App Passenger → App Driver**.
 Todos los Screen Objects del Driver están confirmados con dumps reales de DOM.
 Los Screen Objects del Passenger están como esqueletos — se construirán cuando lleguen los dumps.
 

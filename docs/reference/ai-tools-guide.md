@@ -10,7 +10,9 @@ Routing guide for Antigravity-managed agent work in this repo. Use Gemini for co
 - Claude Sonnet 4.6: optional second-pass reasoning for hard tradeoffs.
 - Claude Code: optional fallback for local execution and review.
 - Gemini API runtime: `tests/config/aiRuntime.ts` resolves `GEMINI_API_KEY` from `AI_STUDIO_GEMINI_MAGIIS` when the standard env var is not present, and `tests/shared/utils/geminiClient.ts` consumes the shared key.
-- Current delivery focus: contractor portal web. App Driver flow 2 is paused until it is explicitly reactivated.
+- Current delivery focus: contractor portal web. Passenger App flow 2 is active under its dedicated prompt, and App Driver flow 2 is paused until it is explicitly reactivated.
+- Passenger App flows should gate on the home label under the profile toggle before wallet or trip work; use `pnpm mobile:passenger:profile-mode-smoke` to validate `personal` vs `business` from the home shell, `pnpm mobile:passenger:personal-3ds-hold-flow` for the full personal 3DS + hold journey with dumps, and `pnpm mobile:passenger:business-no3ds-hold-flow` for the business hold journey without 3DS.
+- In Passenger wallet, the stable principal action is the visible `button.card-item-opts` on the target card row followed by the popover action `Principal`; the popover also exposes `Eliminar` for delete flows.
 - Contractor web flows that depend on hold state must be staged in carrier first; contractor does not own the hold toggle.
 - Contractor recorder evidence currently shows that card `4000 0027 6000 3184` triggers 3DS consistently; in contractor and carrier validations, treat that challenge as an operational signal for `hold` being active.
 - The same contractor recorder also shows `Nuevo Viaje` after login, so the shared dashboard shell and `NewTravelPageBase` can be reused when the runtime and recording agree.

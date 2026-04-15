@@ -5,10 +5,10 @@ export default defineConfig({
   // Partimos de la config general y recortamos solo lo necesario para la suite de gateway.
   ...baseConfig,
   // Gateway-pg vive en su propia carpeta porque suele requerir reglas de ejecución más estrictas.
-  testDir: "./tests/specs/gateway-pg/stripe",
+  testDir: "./tests/features/gateway-pg/specs/stripe",
   fullyParallel: false,
   workers: 1,
-  timeout: 60 * 1000,
+  timeout: 120 * 1000,
   use: {
     // Repetimos estos timeouts explícitamente para dejar claro que son críticos en 3DS.
     ...baseConfig.use,

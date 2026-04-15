@@ -1,0 +1,38 @@
+import { test, expect } from '@playwright/test';
+
+test('test', async ({ page }) => {
+  await page.goto('https://apps-test.magiis.com/#/home/carrier');
+  await page.locator('a').filter({ hasText: 'Configuración' }).click();
+  await page.getByRole('link', { name: 'Preferencias Operativas' }).click();
+  await page.getByRole('heading', { name: 'Cobros con Tarjeta ►' }).click();
+  await page.getByText('Habilitar').click();
+  await page.getByText('Aplicar Pre-Autorización').click();
+  await page.getByRole('button', { name: 'Guardar' }).click();
+  await page.getByRole('banner').getByRole('link', { name: 'Nuevo Viaje' }).click();
+  await page.locator('#clientSelect').getByText('Seleccione Usuario').click();
+  await page.getByRole('textbox', { name: 'Usuario a Buscar' }).fill('ema');
+  await page.getByText('Restrepo, Emanuel (+').click();
+  await page.getByText('Cazadores 1987, Buenos Aires').click();
+  await page.getByText('Reconquista 661, Buenos Aires').click();
+  await page.locator('.bootstrap.width-combo.input-search.ng-untouched.ng-pristine.ng-valid > .below > .single > .placeholder').click();
+  await page.getByText('Cazadores 1987, Buenos Aires').click();
+  await page.locator('.data-with-icon-col.option-content-container.ng-tns-c28-2').click();
+  await page.getByText('Tarjeta de Crédito - Preautorizada').click();
+  await page.locator('iframe[name="__privateStripeFrame0613"]').contentFrame().getByRole('textbox', { name: 'Credit or debit card number' }).click();
+  await page.locator('iframe[name="__privateStripeFrame0613"]').contentFrame().getByRole('textbox', { name: 'Credit or debit card number' }).fill('4000002760003184');
+  await page.locator('iframe[name="__privateStripeFrame0614"]').contentFrame().getByRole('textbox', { name: 'Credit or debit card' }).click();
+  await page.locator('iframe[name="__privateStripeFrame0614"]').contentFrame().getByRole('textbox', { name: 'Credit or debit card' }).fill('12 / 34');
+  await page.locator('iframe[name="__privateStripeFrame0615"]').contentFrame().getByRole('textbox', { name: 'Credit or debit card CVC/CVV' }).click();
+  await page.locator('iframe[name="__privateStripeFrame0615"]').contentFrame().getByRole('textbox', { name: 'Credit or debit card CVC/CVV' }).fill('123');
+  await page.getByRole('textbox').first().click();
+  await page.getByRole('textbox').first().fill('emanuel smith');
+  await page.getByRole('textbox').nth(1).click();
+  await page.getByRole('textbox').nth(1).fill('123456');
+  await page.getByRole('button', { name: 'Validar' }).click();
+  await page.locator('iframe[name="__privateStripeFrame06111"]').contentFrame().locator('iframe[name="stripe-challenge-frame"]').contentFrame().getByText('3D Secure 2Test Page Complete').click();
+  await page.locator('iframe[name="__privateStripeFrame06111"]').contentFrame().locator('iframe[name="stripe-challenge-frame"]').contentFrame().getByRole('button', { name: 'Complete' }).click();
+  await page.getByRole('button', { name: 'Seleccionar Vehículo' }).click();
+  await page.getByRole('button', { name: 'Enviar Servicio' }).click();
+  await page.locator('iframe[name="__privateStripeFrame06114"]').contentFrame().locator('iframe[name="stripe-challenge-frame"]').contentFrame().getByText('3D Secure 2Test Page Complete').click();
+  await page.locator('iframe[name="__privateStripeFrame06114"]').contentFrame().locator('iframe[name="stripe-challenge-frame"]').contentFrame().getByRole('button', { name: 'Complete' }).click();
+});
