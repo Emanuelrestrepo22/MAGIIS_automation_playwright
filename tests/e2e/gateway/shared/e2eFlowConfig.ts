@@ -61,6 +61,25 @@ export const GATEWAY_CONFIGS: Record<string, GatewayFlowConfig> = {
 		requires3DS: false,
 		label:       'MercadoPago Hold ON sin 3DS',
 	},
+
+	// ── Flow 3: Contractor (Colaborador) ────────────────────────────────────
+
+	/** Stripe — colaborador sin 3DS, hold habilitado. */
+	'contractor-stripe-hold-no3ds': {
+		gateway:     'stripe',
+		cardLast4:   '4242',
+		holdEnabled: true,
+		requires3DS: false,
+		label:       'Contractor · Stripe Hold ON sin 3DS (4242)',
+	},
+	/** Stripe — colaborador con 3DS, hold habilitado. */
+	'contractor-stripe-hold-3ds': {
+		gateway:     'stripe',
+		cardLast4:   '3155',
+		holdEnabled: true,
+		requires3DS: true,
+		label:       'Contractor · Stripe Hold ON con 3DS (3155)',
+	},
 };
 
 /**

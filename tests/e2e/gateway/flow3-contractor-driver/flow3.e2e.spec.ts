@@ -1,28 +1,33 @@
 /**
- * Flow 1 — E2E Carrier Web + Driver App
+ * Flow 3 — E2E Contractor Web + Driver App
  * Proyecto: e2e
  *
  * TCs cubiertos:
- *   E2E-FLOW1-TC001 — Stripe Hold ON sin 3DS  (tarjeta 4242)
- *   E2E-FLOW1-TC002 — Stripe Hold ON con 3DS  (tarjeta 3155)
+ *   E2E-FLOW3-TC001 — Stripe Hold ON sin 3DS  (colaborador, tarjeta 4242)
+ *   E2E-FLOW3-TC002 — Stripe Hold ON con 3DS  (colaborador, tarjeta 3155)
  *
  * Flujo completo por TC:
- *   [WEB]    Dispatcher crea viaje con la tarjeta del config
+ *   [WEB]    Colaborador login en portal contractor
+ *   [WEB]    Crea viaje con la tarjeta del config
  *   [WEB]    Si requires3DS: completa modal 3DS → success
  *   [WEB]    Sistema aplica hold → redirige al detalle → "Buscando conductor"
  *   [BRIDGE] JourneyContext escrito con status ready-for-driver
  *   [MOBILE] Driver recibe push notification → acepta → ejecuta → cierra viaje
  *   [BRIDGE] JourneyContext final: status driver-completed
  *
+ * Diferencia vs Flow 1:
+ *   - Login: loginAsContractor (portal contractor) en lugar de loginAsDispatcher
+ *   - Fase mobile: idéntica — el driver recibe la misma push sin importar el portal origen
+ *
  * Guard WEB_ONLY:
  *   Si APPIUM_SERVER_URL no está definido o E2E_WEB_ONLY=true,
- *   la fase mobile se omite con test.fixme(). Solo corre la fase web.
- *   Útil para validar el handoff en CI sin dispositivo Android.
+ *   la fase mobile se omite con test.fixme(). Útil para validar solo
+ *   la fase web contractor sin dispositivo Android.
  *
  * Prerequisitos del ambiente (fase mobile):
- *   - APPIUM_SERVER_URL definido en .env.test (ej: http://localhost:4723)
- *   - Android device/emulador con Driver App instalada y sesión activa en TEST
- *   - Carrier dispatcher con hold habilitado
+ *   - APPIUM_SERVER_URL definido en .env.test
+ *   - Android device con Driver App instalada y sesión activa en TEST
+ *   - Colaborador con hold habilitado en portal contractor TEST
  */
 
 import { spawnSync }    from 'node:child_process';
@@ -34,21 +39,16 @@ import { readFinalContext } from '../shared/JourneyBridge';
 import { GATEWAY_CONFIGS }  from '../shared/e2eFlowConfig';
 import type { GatewayFlowConfig, MobilePhaseResult } from '../shared/e2eFlowConfig';
 
-// ─── Constantes ──────────────────────────────────────────────────────────────
+// ─── Constantes ───────────────────────────────────────────────────────────────
 
-// Timeout total: fase web (60s) + push notification (90s) + fase mobile (180s)
 const TOTAL_TIMEOUT = 360_000;
-
-// Guard: si APPIUM_SERVER_URL no está definido, solo corre la fase web.
 const WEB_ONLY = process.env.E2E_WEB_ONLY === 'true' || !process.env.APPIUM_SERVER_URL;
-
-// Ruta al entry point ts-node de la fase mobile.
 const MOBILE_PHASE_SCRIPT = path.resolve(__dirname, 'mobile-phase.ts');
 
 // ─── Helper: lanzar fase mobile como child process ───────────────────────────
 
 function runMobilePhase(journeyId: string, timeoutMs: number): MobilePhaseResult {
-	console.log(`[flow1.spec] Lanzando fase mobile — journeyId: ${journeyId}`);
+	console.log(`[flow3.spec] Lanzando fase mobile — journeyId: ${journeyId}`);
 
 	const result = spawnSync(
 		'npx',
@@ -69,7 +69,7 @@ function runMobilePhase(journeyId: string, timeoutMs: number): MobilePhaseResult
 
 	if (result.status !== 0) {
 		throw new Error(
-			`[flow1.spec] Fase mobile falló con exit code ${result.status ?? 'null'}.\n` +
+			`[flow3.spec] Fase mobile falló con exit code ${result.status ?? 'null'}.\n` +
 			`stderr: ${result.stderr ?? '(vacío)'}`,
 		);
 	}
@@ -81,8 +81,7 @@ function runMobilePhase(journeyId: string, timeoutMs: number): MobilePhaseResult
 
 	if (!resultLine) {
 		throw new Error(
-			`[flow1.spec] No se encontró "${OUTPUT_MARKER}" en stdout de la fase mobile. ` +
-			`Verificar que mobile-phase.ts completó correctamente.`,
+			`[flow3.spec] No se encontró "${OUTPUT_MARKER}" en stdout de la fase mobile.`,
 		);
 	}
 
@@ -90,16 +89,14 @@ function runMobilePhase(journeyId: string, timeoutMs: number): MobilePhaseResult
 }
 
 // ─── Cuerpo reutilizable del flow ─────────────────────────────────────────────
-// Extraído como función para que cada TC lo invoque con su propio config
-// sin duplicar lógica de steps ni assertions.
 
-function runFlow1Test(tcId: string, config: GatewayFlowConfig) {
+function runFlow3Test(tcId: string, config: GatewayFlowConfig) {
 	return async ({ page }: { page: import('@playwright/test').Page }) => {
 		test.setTimeout(TOTAL_TIMEOUT);
 
 		if (WEB_ONLY) {
 			console.warn(
-				`[flow1.spec][${tcId}] APPIUM_SERVER_URL no definido o E2E_WEB_ONLY=true. ` +
+				`[flow3.spec][${tcId}] APPIUM_SERVER_URL no definido o E2E_WEB_ONLY=true. ` +
 				'Ejecutando solo la fase web para validar el handoff.',
 			);
 		}
@@ -108,11 +105,11 @@ function runFlow1Test(tcId: string, config: GatewayFlowConfig) {
 		let tripId    = '';
 
 		// ── FASE WEB ───────────────────────────────────────────────────────────
-		await test.step('[WEB] Crear viaje desde portal carrier', async () => {
+		await test.step('[WEB] Crear viaje desde portal contractor', async () => {
 			const result = await runWebPhase(page, config, tcId);
 			journeyId = result.journeyId;
 			tripId    = result.tripId;
-			console.log(`[flow1.spec][${tcId}] ✓ Fase web completada — tripId: ${tripId}`);
+			console.log(`[flow3.spec][${tcId}] ✓ Fase web completada — tripId: ${tripId}`);
 		});
 
 		await test.step('[WEB] Validar estado del viaje — Buscando conductor', async () => {
@@ -124,13 +121,10 @@ function runFlow1Test(tcId: string, config: GatewayFlowConfig) {
 		// ── BRIDGE: JourneyContext ready-for-driver ────────────────────────────
 		await test.step('[BRIDGE] Verificar JourneyContext ready-for-driver', async () => {
 			const ctx = await readFinalContext(journeyId);
-			// Debería tener el tripId extraído desde la URL.
 			expect(ctx.tripId).toBe(tripId);
-			// Debería estar en espera de que el driver acepte.
 			expect(ctx.status).toBe('ready-for-driver');
-			// El handoff al driver debería estar marcado como listo.
 			expect(ctx.driverHandoff.status).toBe('ready');
-			console.log(`[flow1.spec][${tcId}] ✓ JourneyContext listo — ${ctx.status}`);
+			console.log(`[flow3.spec][${tcId}] ✓ JourneyContext listo — ${ctx.status}`);
 		});
 
 		// ── FASE MOBILE ────────────────────────────────────────────────────────
@@ -146,11 +140,9 @@ function runFlow1Test(tcId: string, config: GatewayFlowConfig) {
 		let mobileResult: MobilePhaseResult;
 
 		await test.step('[MOBILE] Driver acepta, ejecuta y cierra el viaje', async () => {
-			// Fase mobile corre como child process ts-node.
-			// Timeout: 180s para la fase mobile completa (push + 4 pasos del harness).
 			mobileResult = runMobilePhase(journeyId, 180_000);
 			console.log(
-				`[flow1.spec][${tcId}] ✓ Fase mobile completada — ` +
+				`[flow3.spec][${tcId}] ✓ Fase mobile completada — ` +
 				`amount: ${mobileResult.totalAmount} | method: ${mobileResult.paymentMethod}`,
 			);
 		});
@@ -158,39 +150,36 @@ function runFlow1Test(tcId: string, config: GatewayFlowConfig) {
 		// ── VALIDACIÓN FINAL ───────────────────────────────────────────────────
 		await test.step('[VALIDATE] Verificar JourneyContext driver-completed', async () => {
 			const finalCtx = await readFinalContext(journeyId);
-			// Debería haber completado todos los checkpoints del harness.
 			expect(mobileResult!.checkpoints).toContain('confirm');
 			expect(mobileResult!.checkpoints).toContain('in-progress');
 			expect(mobileResult!.checkpoints).toContain('resume');
 			expect(mobileResult!.checkpoints).toContain('closed');
-			// El estado final del journey debería ser driver-completed.
 			expect(finalCtx.status).toBe('driver-completed');
-			// El método de pago y el monto deberían estar informados.
 			expect(mobileResult!.paymentMethod).toBeTruthy();
 			expect(mobileResult!.totalAmount).toBeTruthy();
-			console.log(`[flow1.spec][${tcId}] ✓ Flow 1 PASS — journey ${journeyId} completado.`);
+			console.log(`[flow3.spec][${tcId}] ✓ Flow 3 PASS — journey ${journeyId} completado.`);
 		});
 	};
 }
 
 // ─── Specs ────────────────────────────────────────────────────────────────────
 
-test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
+test.use({ role: 'contractor', storageState: { cookies: [], origins: [] } });
 
-// ── TC001: Stripe Hold ON sin 3DS ─────────────────────────────────────────────
+// ── TC001: Contractor Stripe Hold ON sin 3DS ──────────────────────────────────
 
-test.describe('[E2E-FLOW1-TC001] E2E Flow 1 — Carrier Web + Driver App — Stripe Hold ON sin 3DS', () => {
+test.describe('[E2E-FLOW3-TC001] E2E Flow 3 — Contractor Web + Driver App — Stripe Hold ON sin 3DS', () => {
 	test(
-		'[E2E-FLOW1-TC001] Alta de viaje carrier (4242 sin 3DS) + driver acepta y completa el viaje',
-		runFlow1Test('E2E-FLOW1-TC001', GATEWAY_CONFIGS['stripe-hold-no3ds']),
+		'[E2E-FLOW3-TC001] Alta de viaje contractor (4242 sin 3DS) + driver acepta y completa el viaje',
+		runFlow3Test('E2E-FLOW3-TC001', GATEWAY_CONFIGS['contractor-stripe-hold-no3ds']),
 	);
 });
 
-// ── TC002: Stripe Hold ON con 3DS ─────────────────────────────────────────────
+// ── TC002: Contractor Stripe Hold ON con 3DS ──────────────────────────────────
 
-test.describe('[E2E-FLOW1-TC002] E2E Flow 1 — Carrier Web + Driver App — Stripe Hold ON con 3DS', () => {
+test.describe('[E2E-FLOW3-TC002] E2E Flow 3 — Contractor Web + Driver App — Stripe Hold ON con 3DS', () => {
 	test(
-		'[E2E-FLOW1-TC002] Alta de viaje carrier (3155 con 3DS) + driver acepta y completa el viaje',
-		runFlow1Test('E2E-FLOW1-TC002', GATEWAY_CONFIGS['stripe-hold-3ds']),
+		'[E2E-FLOW3-TC002] Alta de viaje contractor (3155 con 3DS) + driver acepta y completa el viaje',
+		runFlow3Test('E2E-FLOW3-TC002', GATEWAY_CONFIGS['contractor-stripe-hold-3ds']),
 	);
 });
