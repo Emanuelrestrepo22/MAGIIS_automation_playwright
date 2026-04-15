@@ -627,6 +627,31 @@ export abstract class NewTravelPageBase {
 		await this.clickValidateCard();
 	}
 
+	/**
+	 * Selecciona una tarjeta ya guardada desde el dropdown de métodos de pago,
+	 * sin abrir el formulario Stripe ni ingresar datos nuevos.
+	 *
+	 * Evidencia test-20.spec.ts (líneas 26-27):
+	 *   - Abre el dropdown clickeando .value > .data-with-icon-col dentro de #add_travel_payment_methods
+	 *   - Selecciona la tarjeta resaltada (.ng-star-inserted.highlighted > .data-with-icon-col)
+	 *
+	 * Usar cuando el colaborador/pasajero ya tiene una tarjeta guardada y el test
+	 * debe validar selección de tarjeta existente (TC003, TC004 contractor).
+	 */
+	async selectSavedCard(): Promise<void> {
+		const dropdownTrigger = this.paymentMethodSelector.locator('.below > .single > .value > .data-with-icon-col').first();
+		await expect(dropdownTrigger).toBeVisible({ timeout: 10_000 });
+		await dropdownTrigger.click();
+
+		// La tarjeta existente aparece resaltada (.highlighted) en el dropdown.
+		const savedCardOption = this.page.locator('.ng-star-inserted.highlighted > .data-with-icon-col').first();
+		await expect(savedCardOption).toBeVisible({ timeout: 10_000 });
+		await savedCardOption.click();
+
+		// Debería mostrar la tarjeta seleccionada en el campo de pago sin abrir Stripe iframes.
+		await expect(this.paymentMethodValue).toContainText('Tarjeta de Crédito - Preautorizada', { timeout: 10_000 });
+	}
+
 	async submit(): Promise<void> {
 		await this.clickValidateCardIfAvailable();
 
