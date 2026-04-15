@@ -63,7 +63,7 @@ test.describe('Gateway PG · Carrier · Colaborador/Contractor — Cargo a Bordo
 	test('[TS-STRIPE-TC1102] @regression @cargo-a-bordo tarjeta alto riesgo desde Driver App', async ({ page }) => {
 		await webPhaseCargoContractor(page);
 		await test.step('[DRIVER APP] Conductor cobra → tarjeta de alto riesgo → bloqueado', async () => {
-			// Tarjeta: STRIPE_TEST_CARDS.highestRisk
+			// Tarjeta: STRIPE_TEST_CARDS.cvcCheckFail (4000 0000 0000 0101) — Excel TC1102
 			test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium + DriverTripPaymentScreen.');
 		});
 	});
@@ -71,7 +71,7 @@ test.describe('Gateway PG · Carrier · Colaborador/Contractor — Cargo a Bordo
 	test('[TS-STRIPE-TC1103] @regression @cargo-a-bordo tarjeta siempre bloqueada desde Driver App', async ({ page }) => {
 		await webPhaseCargoContractor(page);
 		await test.step('[DRIVER APP] Conductor cobra → always_blocked → bloqueado por antifraud', async () => {
-			// Tarjeta: STRIPE_TEST_CARDS.alwaysBlocked
+			// Tarjeta: STRIPE_TEST_CARDS.highestRisk (4100 0000 0000 0019) — Excel TC1103
 			test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium.');
 		});
 	});
@@ -79,7 +79,7 @@ test.describe('Gateway PG · Carrier · Colaborador/Contractor — Cargo a Bordo
 	test('[TS-STRIPE-TC1104] @regression @cargo-a-bordo CVC check fail elevated desde Driver App', async ({ page }) => {
 		await webPhaseCargoContractor(page);
 		await test.step('[DRIVER APP] Conductor cobra → CVC check fail elevado → bloqueado', async () => {
-			// Tarjeta: STRIPE_TEST_CARDS.cvcCheckFail
+			// Tarjeta: STRIPE_TEST_CARDS.cvcCheckFailElevated (4000 0000 0000 4954) — Excel TC1104
 			test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium.');
 		});
 	});

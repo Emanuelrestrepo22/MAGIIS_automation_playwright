@@ -39,9 +39,16 @@ export const STRIPE_TEST_CARDS = {
 	expiredCard: resolveCardNumber('STRIPE_CARD_EXPIRED', TEST_STRIPE_CARD_FIXTURES.expired_card.number),
 	highestRisk: resolveCardNumber('STRIPE_CARD_HIGHEST_RISK', TEST_STRIPE_CARD_FIXTURES.highest_risk.number),
 	alwaysBlocked: resolveCardNumber('STRIPE_CARD_ALWAYS_BLOCKED', TEST_STRIPE_CARD_FIXTURES.always_blocked.number),
+	/** TC1087 — cvc_check falla post-auth (4000 0000 0000 0101) */
 	cvcCheckFail: resolveCardNumber('STRIPE_CARD_CVC_CHECK_FAIL', TEST_STRIPE_CARD_FIXTURES.cvc_check_fail.number),
+	/** TC1089 — cvc check fail elevated (4000 0000 0000 4954) */
+	cvcCheckFailElevated: resolveCardNumber('STRIPE_CARD_CVC_CHECK_FAIL_ELEVATED', TEST_STRIPE_CARD_FIXTURES.cvc_check_fail_elevated.number),
+	/** TC1090 — zip fail elevated (4000 0000 0000 0036) */
 	zipFailElevated: resolveCardNumber('STRIPE_CARD_ZIP_FAIL_ELEVATED', TEST_STRIPE_CARD_FIXTURES.zip_fail_elevated.number),
+	/** TC1091 — address_line1 check falla (4000 0000 0000 0028) */
 	addressUnavailable: resolveCardNumber('STRIPE_CARD_ADDRESS_UNAVAILABLE', TEST_STRIPE_CARD_FIXTURES.address_unavailable.number),
+	/** TC1094 — error autenticacion 3DS (4000 0084 2000 1629) */
+	error3DS: resolveCardNumber('STRIPE_CARD_ERROR_3DS', TEST_STRIPE_CARD_FIXTURES.error_3ds.number),
 } as const;
 
 export const STRIPE_EXPIRY = isTestEnv ? TEST_STRIPE_CARD_EXPIRY : requireEnv('STRIPE_CARD_EXPIRY');

@@ -80,8 +80,8 @@ test.describe('Gateway PG · Carrier · Colaborador/Contractor — Cargo a Bordo
 
 	test('[TS-STRIPE-TC1109] @regression @3ds @cargo-a-bordo error 3DS desde Driver App', async ({ page }) => {
 		await webPhaseCargoContractor(page);
-		await test.step('[DRIVER APP] Conductor cobra → 3DS siempre autentica → error → viaje En conflicto', async () => {
-			// Tarjeta: STRIPE_TEST_CARDS.alwaysAuthenticate (4000002760003184)
+		await test.step('[DRIVER APP] Conductor cobra → 3DS error de autenticación → viaje En conflicto', async () => {
+			// Tarjeta: STRIPE_TEST_CARDS.error3DS (4000 0084 2000 1629) — Excel TC1109
 			test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium.');
 		});
 	});

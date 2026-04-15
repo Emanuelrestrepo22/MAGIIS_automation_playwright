@@ -97,9 +97,9 @@ test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo · 3DS', () =>
 	test('[TS-STRIPE-TC1094] @regression @3ds @cargo-a-bordo error durante 3DS desde Driver App', async ({ page }) => {
 		await webPhaseCargoAppPax(page);
 
-		await test.step('[DRIVER APP] Conductor finaliza viaje → 3DS siempre autentica → error de autenticación → cobro fallido', async () => {
-			// Tarjeta: STRIPE_TEST_CARDS.alwaysAuthenticate (4000002760003184)
-			// Resultado esperado: 3DS forzado → fallo de autenticación → viaje "En conflicto".
+		await test.step('[DRIVER APP] Conductor finaliza viaje → 3DS con error de autenticación → cobro fallido', async () => {
+			// Tarjeta: STRIPE_TEST_CARDS.error3DS (4000 0084 2000 1629) — Excel TC1094
+			// Resultado esperado: 3DS con error de autenticación → cobro no procesado → viaje "En conflicto".
 			test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium.');
 		});
 	});

@@ -76,8 +76,8 @@ test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo · Antifraud',
 		await webPhaseCargoAppPax(page);
 
 		await test.step('[DRIVER APP] Conductor finaliza viaje → cobra con tarjeta de alto riesgo → bloqueado', async () => {
-			// Tarjeta: STRIPE_TEST_CARDS.highestRisk
-			// Resultado esperado: pago bloqueado por regla antifraud Stripe, viaje "En conflicto".
+			// Tarjeta: STRIPE_TEST_CARDS.cvcCheckFail (4000 0000 0000 0101) — Excel TC1087
+			// Stripe: cvc_check falla post-auth. Resultado esperado: pago bloqueado, viaje "En conflicto".
 			test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium + DriverTripPaymentScreen implementado.');
 		});
 	});
@@ -86,8 +86,8 @@ test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo · Antifraud',
 		await webPhaseCargoAppPax(page);
 
 		await test.step('[DRIVER APP] Conductor finaliza viaje → cobra con tarjeta always_blocked → bloqueado', async () => {
-			// Tarjeta: STRIPE_TEST_CARDS.alwaysBlocked
-			// Resultado esperado: pago bloqueado por política antifraud, viaje "En conflicto".
+			// Tarjeta: STRIPE_TEST_CARDS.highestRisk (4100 0000 0000 0019) — Excel TC1088
+			// Stripe: Radar bloquea por riesgo máximo. Resultado esperado: pago bloqueado, viaje "En conflicto".
 			test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium.');
 		});
 	});
@@ -96,7 +96,7 @@ test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo · Antifraud',
 		await webPhaseCargoAppPax(page);
 
 		await test.step('[DRIVER APP] Conductor finaliza viaje → CVC check fail con riesgo elevado → bloqueado', async () => {
-			// Tarjeta: STRIPE_TEST_CARDS.cvcCheckFail
+			// Tarjeta: STRIPE_TEST_CARDS.cvcCheckFailElevated (4000 0000 0000 4954) — Excel TC1089
 			// Resultado esperado: rechazo por CVC + regla elevada de riesgo, viaje "En conflicto".
 			test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium.');
 		});
