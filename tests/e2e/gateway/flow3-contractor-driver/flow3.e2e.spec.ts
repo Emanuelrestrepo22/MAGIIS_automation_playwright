@@ -30,9 +30,13 @@
  *   - Colaborador con hold habilitado en portal contractor TEST
  */
 
-import { spawnSync }    from 'node:child_process';
-import * as path        from 'node:path';
-import { test, expect } from '../../../TestBase';
+import { spawnSync }      from 'node:child_process';
+import * as path          from 'node:path';
+import { fileURLToPath }  from 'node:url';
+import { test, expect }   from '../../../TestBase';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname  = path.dirname(__filename);
 import { TravelDetailPage } from '../../../pages/carrier';
 import { runWebPhase }      from './web-phase';
 import { readFinalContext } from '../shared/JourneyBridge';
