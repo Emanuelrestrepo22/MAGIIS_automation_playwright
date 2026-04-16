@@ -44,7 +44,10 @@ export class OperationalPreferencesPage {
 			{ timeout: 15_000 },
 		).catch(() => null);
 
-		await this.page.goto(`${getPortalUrl('carrier')}/#/home/carrier/settings/parameters`);
+		const currentUrl = this.page.url();
+		const portal = currentUrl.includes('/contractor') ? 'contractor' : 'carrier';
+		const baseUrl = getPortalUrl('carrier');
+		await this.page.goto(`${baseUrl}/#/home/${portal}/settings/parameters`);
 		await expect(this.page.getByRole('heading', { name: 'Configuración Parámetros' })).toBeVisible({ timeout: 15_000 });
 
 		this._parametersResponse = await responsePromise;
