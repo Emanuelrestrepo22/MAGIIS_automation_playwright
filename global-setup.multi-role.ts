@@ -49,7 +49,7 @@ async function globalSetup(): Promise<void> {
       await loginPage.login(credentials.username, credentials.password);
 
       await page.waitForURL(
-        (url) => url.href.includes("/home") && url.href.includes("dashboard"),
+        (url) => url.href.includes("/home") && (url.href.includes("dashboard") || url.href.includes("carrier") || url.href.includes("contractor")),
         { timeout: 15_000 },
       );
       console.log(

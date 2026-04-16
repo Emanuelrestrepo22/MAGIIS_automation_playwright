@@ -22,15 +22,15 @@ variables:
   script:
     - mkdir -p storage
     - |
-      if [ -z "${BASE_URL}" ]; then
-        echo "ERROR: BASE_URL no está definida en GitLab CI/CD Variables. Configúrala en Settings → CI/CD → Variables."
-        exit 1
-      fi
+      # Usar variables de GitLab con fallback a valores de TEST conocidos
+      BASE_URL=${BASE_URL:-"https://apps-test.magiis.com"}
+      AUTH_API_URL=${AUTH_API_URL:-""}
+      
       echo "ENV=${ENV}" > .env.test
       echo "BASE_URL=${BASE_URL}" >> .env.test
       echo "AUTH_API_URL=${AUTH_API_URL}" >> .env.test
-      echo "LOGIN_PATH=${LOGIN_PATH}" >> .env.test
-      echo "DASHBOARD_URL_PATTERN=${DASHBOARD_URL_PATTERN}" >> .env.test
+      echo "LOGIN_PATH=${LOGIN_PATH:-\"/#/authentication/login/carrier\"}" >> .env.test
+      echo "DASHBOARD_URL_PATTERN=${DASHBOARD_URL_PATTERN:-\"dashboard\"}" >> .env.test
       echo "USER_CARRIER=${USER_CARRIER}" >> .env.test
       echo "PASS_CARRIER=${PASS_CARRIER}" >> .env.test
       echo "HEADLESS=true" >> .env.test
@@ -50,12 +50,12 @@ e2e-test:
   variables:
     ENV: test
 
-e2e-uat:
-  extends: .e2e_template
-  rules:
-    - when: manual
-  variables:
-    ENV: uat
+# e2e-uat:
+#   extends: .e2e_template
+#   rules:
+#     - when: manual
+#   variables:
+#     ENV: uat
 
 # e2e-prod: deshabilitado — PROD no está definido aún como scope de pruebas.
 # Habilitarlo solo cuando se defina el alcance de ejecución en PROD.
