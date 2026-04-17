@@ -56,13 +56,19 @@ jobs:
         DASHBOARD_URL_PATTERN="dashboard"
         USER_CARRIER=${{ secrets.USER_CARRIER }}
         PASS_CARRIER=${{ secrets.PASS_CARRIER }}
+        USER_CONTRACTOR=${{ secrets.USER_CONTRACTOR }}
+        PASS_CONTRACTOR=${{ secrets.PASS_CONTRACTOR }}
         HEADLESS=true
         ENVEOF
-        # Validar que los secrets no estén vacíos
+        # Validar que los secrets críticos no estén vacíos
         if grep -q "^USER_CARRIER=$" .env.test || grep -q "^PASS_CARRIER=$" .env.test; then
           echo "❌ ERROR: USER_CARRIER o PASS_CARRIER vacíos en GitHub Secrets"
           echo "Configurar en: Settings → Secrets and variables → Actions"
           exit 1
+        fi
+        # USER_CONTRACTOR opcional — tests contractor se marcan como skip si no está configurado
+        if grep -q "^USER_CONTRACTOR=$" .env.test; then
+          echo "⚠️  WARN: USER_CONTRACTOR no configurado — tests Portal Contractor pueden fallar"
         fi
 
     - name: Run Stable Smoke Tests (TEST)
