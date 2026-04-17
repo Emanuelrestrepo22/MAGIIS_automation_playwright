@@ -283,9 +283,22 @@ function buildPlanForRow(
   const titleRaw = cols.titleCol ? row.getCell(cols.titleCol).value : undefined;
   const priorityRaw = cols.priorityCol ? row.getCell(cols.priorityCol).value : undefined;
 
-  const id = String(idRaw ?? '').trim();
-  const title = String(titleRaw ?? '').trim();
+  const idRawStr = String(idRaw ?? '').trim();
+  const titleRawStr = String(titleRaw ?? '').trim();
   const priority = String(priorityRaw ?? '').trim();
+
+  // Normalizador: el xlsx puede tener la celda ID con formato
+  // "TS-STRIPE-TC1001 – Validar visualizar..." (ID + " – " + title).
+  // Extraemos el ID canónico y, si el título de la celda contigua está vacío,
+  // usamos la parte post-separador como título.
+  const ID_REGEX = /^(TS-STRIPE-(?:P2-)?TC-?(?:RV)?\d+)\b/;
+  const idMatch = idRawStr.match(ID_REGEX);
+  const id = idMatch ? idMatch[1] : idRawStr;
+  let title = titleRawStr;
+  if (!title && idMatch) {
+    const rest = idRawStr.slice(idMatch[0].length).replace(/^\s*[–-]\s*/, '').trim();
+    if (rest) title = rest;
+  }
 
   // Filas vacías o de separador
   if (!id && !title) return {};
