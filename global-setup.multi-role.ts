@@ -52,12 +52,30 @@ async function globalSetup(): Promise<void> {
       // para soportar carrier/contractor/owner/futuros sin hardcodear nombres.
       // waitUntil: 'commit' evita que el hash-routing de la SPA bloquee la espera
       // aguardando un evento 'load' que nunca dispara en cambios de hash.
-      await page.waitForURL(
-        (url) =>
-          url.href.includes("/home") &&
-          url.href.includes(roleConfig.dashboardPattern),
-        { timeout: 15_000, waitUntil: "commit" },
-      );
+      // Fallback con polling: en hash-routed SPAs, `waitForURL` a veces no dispara
+      // aunque la URL final ya haga match; el polling lee `page.url()` cada 500ms
+      // y resuelve el primero que cumpla el patrón.
+      const matchesDashboard = (href: string) =>
+        href.includes("/home") && href.includes(roleConfig.dashboardPattern);
+
+      await Promise.race([
+        page.waitForURL((url) => matchesDashboard(url.href), {
+          timeout: 30_000,
+          waitUntil: "commit",
+        }),
+        (async () => {
+          const deadline = Date.now() + 30_000;
+          const sleep = (ms: number) =>
+            new Promise<void>((resolve) => setTimeout(resolve, ms));
+          while (Date.now() < deadline) {
+            if (matchesDashboard(page.url())) return;
+            await sleep(500);
+          }
+          throw new Error(
+            `[GlobalSetup][${role}] dashboard pattern "${roleConfig.dashboardPattern}" no alcanzado en 30s (url actual: ${page.url()})`,
+          );
+        })(),
+      ]);
       console.log(
         `[GlobalSetup][${role}] Dashboard pattern "${roleConfig.dashboardPattern}" confirmed at ${page.url()}`,
       );
