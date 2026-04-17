@@ -258,6 +258,7 @@ test.describe('Gateway PG · Carrier · Colaborador — Hold sin 3DS', () => {
 			});
 		});
 
+		// DEPRECATED: ver TC canónico TS-STRIPE-TC1035 (fase 2 — duplicado sin card-flow diferenciado)
 		test('[TS-STRIPE-TC1043] @regression @hold hold+cobro colaborador sin 3DS variante set 2', async ({ page }) => {
 			await runHoldOnScenario(page, {
 				client: TEST_DATA.contractorClient,
@@ -290,6 +291,7 @@ test.describe('Gateway PG · Carrier · Colaborador — Hold sin 3DS', () => {
 			});
 		});
 
+		// DEPRECATED: ver TC canónico TS-STRIPE-TC1034 (fase 2 — duplicado sin card-flow diferenciado)
 		test('[TS-STRIPE-TC1042] @regression @hold sin hold colaborador sin 3DS (set 2)', async ({ page }) => {
 			await runHoldOffScenario(page, {
 				client: TEST_DATA.contractorClient,
@@ -300,6 +302,7 @@ test.describe('Gateway PG · Carrier · Colaborador — Hold sin 3DS', () => {
 			});
 		});
 
+		// DEPRECATED: ver TC canónico TS-STRIPE-TC1034 (fase 2 — duplicado sin card-flow diferenciado)
 		test('[TS-STRIPE-TC1044] @regression @hold sin hold colaborador sin 3DS variante set 2', async ({ page }) => {
 			await runHoldOffScenario(page, {
 				client: TEST_DATA.contractorClient,

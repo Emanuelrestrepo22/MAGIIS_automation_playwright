@@ -190,6 +190,7 @@ test.describe('Gateway PG · Carrier · Colaborador — Hold con 3DS', () => {
         destination: TEST_DATA.destination,
       });
     });
+    // DEPRECATED: ver TC canónico TS-STRIPE-TC1037 (fase 2 — duplicado sin card-flow diferenciado)
     test('[TS-STRIPE-TC1047] @regression @3ds @hold hold+cobro colaborador 3DS variante 2', async ({ page }) => {
       await runHoldOnScenario(page, {
         client: TEST_DATA.contractorClient,
@@ -217,6 +218,7 @@ test.describe('Gateway PG · Carrier · Colaborador — Hold con 3DS', () => {
         destination: 'Av. Santa Fe 2100, Buenos Aires',
       });
     });
+    // DEPRECATED: ver TC canónico TS-STRIPE-TC1038 (fase 2 — duplicado sin card-flow diferenciado)
     test('[TS-STRIPE-TC1046] @regression @3ds sin hold colaborador 3DS (set 2)', async ({ page }) => {
       await runHoldOffScenario(page, {
         client: TEST_DATA.contractorClient,
@@ -225,6 +227,7 @@ test.describe('Gateway PG · Carrier · Colaborador — Hold con 3DS', () => {
         destination: TEST_DATA.destination,
       });
     });
+    // DEPRECATED: ver TC canónico TS-STRIPE-TC1038 (fase 2 — duplicado sin card-flow diferenciado)
     test('[TS-STRIPE-TC1048] @regression @3ds sin hold colaborador 3DS variante 2', async ({ page }) => {
       await runHoldOffScenario(page, {
         client: TEST_DATA.contractorClient,

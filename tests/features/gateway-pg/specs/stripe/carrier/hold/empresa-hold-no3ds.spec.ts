@@ -359,6 +359,7 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Hold sin 3DS', () 
 			});
 		});
 
+		// DEPRECATED: ver TC canónico TS-STRIPE-TC1065 (fase 2 — duplicado sin card-flow diferenciado)
 		test('[TS-STRIPE-TC1073] @regression @hold hold+cobro empresa sin 3DS (set 2)', async ({ page }) => {
 			await runHoldOnScenario(page, {
 				client: PASSENGERS.empresaIndividuo.name,
@@ -369,6 +370,7 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Hold sin 3DS', () 
 			});
 		});
 
+		// DEPRECATED: ver TC canónico TS-STRIPE-TC1065 (fase 2 — duplicado sin card-flow diferenciado)
 		test('[TS-STRIPE-TC1075] @regression @hold hold+cobro empresa sin 3DS variante set 2', async ({ page }) => {
 			await runHoldOnScenario(page, {
 				client: PASSENGERS.empresaIndividuo.name,
@@ -401,6 +403,7 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Hold sin 3DS', () 
 			});
 		});
 
+		// DEPRECATED: ver TC canónico TS-STRIPE-TC1066 (fase 2 — duplicado sin card-flow diferenciado)
 		test('[TS-STRIPE-TC1074] @regression @hold sin hold empresa sin 3DS (set 2)', async ({ page }) => {
 			await runHoldOffScenario(page, {
 				client: PASSENGERS.empresaIndividuo.name,
@@ -411,6 +414,7 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Hold sin 3DS', () 
 			});
 		});
 
+		// DEPRECATED: ver TC canónico TS-STRIPE-TC1066 (fase 2 — duplicado sin card-flow diferenciado)
 		test('[TS-STRIPE-TC1076] @regression @hold sin hold empresa sin 3DS variante set 2', async ({ page }) => {
 			await runHoldOffScenario(page, {
 				client: PASSENGERS.empresaIndividuo.name,

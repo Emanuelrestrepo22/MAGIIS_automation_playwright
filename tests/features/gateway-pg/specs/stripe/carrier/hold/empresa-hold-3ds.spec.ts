@@ -183,6 +183,7 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Hold con 3DS', () 
         cardLast4: STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4),
       });
     });
+    // DEPRECATED: ver TC canónico TS-STRIPE-TC1069 (fase 2 — duplicado sin card-flow diferenciado)
     test('[TS-STRIPE-TC1077] @regression @3ds @hold hold+cobro empresa 3DS (set 2)', async ({ page }) => {
       await runHoldOnScenario(page, {
         client: PASSENGERS.empresaIndividuo.name,
@@ -191,6 +192,7 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Hold con 3DS', () 
         destination: TEST_DATA.destination,
       });
     });
+    // DEPRECATED: ver TC canónico TS-STRIPE-TC1069 (fase 2 — duplicado sin card-flow diferenciado)
     test('[TS-STRIPE-TC1079] @regression @3ds @hold hold+cobro empresa 3DS variante 2', async ({ page }) => {
       await runHoldOnScenario(page, {
         client: PASSENGERS.empresaIndividuo.name,
@@ -218,6 +220,7 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Hold con 3DS', () 
         destination: 'Av. Santa Fe 2100, Buenos Aires',
       });
     });
+    // DEPRECATED: ver TC canónico TS-STRIPE-TC1070 (fase 2 — duplicado sin card-flow diferenciado)
     test('[TS-STRIPE-TC1078] @regression @3ds sin hold empresa 3DS (set 2)', async ({ page }) => {
       await runHoldOffScenario(page, {
         client: PASSENGERS.empresaIndividuo.name,
@@ -226,6 +229,7 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Hold con 3DS', () 
         destination: TEST_DATA.destination,
       });
     });
+    // DEPRECATED: ver TC canónico TS-STRIPE-TC1070 (fase 2 — duplicado sin card-flow diferenciado)
     test('[TS-STRIPE-TC1080] @regression @3ds sin hold empresa 3DS variante 2', async ({ page }) => {
       await runHoldOffScenario(page, {
         client: PASSENGERS.empresaIndividuo.name,
