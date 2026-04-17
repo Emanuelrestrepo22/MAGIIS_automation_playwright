@@ -29,38 +29,38 @@
 
 | ID               | Descripción                                                                                                                        |
 | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| TS-STRIPE-TC1009 | E2E Alta de Viaje desde app pax para usuario app pax modo personal con Tarjeta Preautorizada **Hold y Cobro** desde App Driver     |
-| TS-STRIPE-TC1010 | E2E Alta de Viaje desde app pax para usuario app pax modo personal con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
-| TS-STRIPE-TC1011 | E2E Alta carrier de Viaje para usuario app pax modo personal con Tarjeta Preautorizada **Hold y Cobro** desde App Driver           |
-| TS-STRIPE-TC1012 | E2E Alta carrier de Viaje para usuario app pax modo personal con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver       |
+| TS-STRIPE-TC1009 | Validar Alta de Viaje desde app pax para usuario app pax modo personal con Tarjeta Preautorizada **Hold y Cobro** desde App Driver     |
+| TS-STRIPE-TC1010 | Validar Alta de Viaje desde app pax para usuario app pax modo personal con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
+| TS-STRIPE-TC1011 | Validar Alta carrier de Viaje para usuario app pax modo personal con Tarjeta Preautorizada **Hold y Cobro** desde App Driver           |
+| TS-STRIPE-TC1012 | Validar Alta carrier de Viaje para usuario app pax modo personal con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver       |
 
 ### 2.2 Tarjeta Preautorizada – con validación 3DS
 
 | ID               | Descripción                                                                                                                                           |
 | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| TS-STRIPE-TC1013 | E2E Alta de Viaje para usuario app pax modo personal desde app pax con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS     |
-| TS-STRIPE-TC1014 | E2E Alta de Viaje para usuario app pax modo personal desde app pax con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
-| TS-STRIPE-TC1015 | E2E Alta de Viaje para usuario app pax modo personal con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS                   |
-| TS-STRIPE-TC1016 | E2E Alta carrier de Viaje para usuario app pax modo personal con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS       |
+| TS-STRIPE-TC1013 | Validar Alta de Viaje para usuario app pax modo personal desde app pax con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS     |
+| TS-STRIPE-TC1014 | Validar Alta de Viaje para usuario app pax modo personal desde app pax con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
+| TS-STRIPE-TC1015 | Validar Alta de Viaje para usuario app pax modo personal con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS                   |
+| TS-STRIPE-TC1016 | Validar Alta carrier de Viaje para usuario app pax modo personal con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS       |
 
 ### 2.3 Variantes exploratorias (referenciadas a TC canónicos)
 
 | ID                 | Descripción                                                                                                                                       | TC Canónico      |
 | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
-| TS-STRIPE-TC-RV001 | E2E Alta de Viaje para usuario app pax modo personal desde app pax con Tarjeta Preautorizada Hold y Cobro desde App Driver                        | TS-STRIPE-TC1017 |
-| TS-STRIPE-TC-RV002 | E2E Alta de Viaje para usuario app pax modo personal con Tarjeta Preautorizada sin Hold y Cobro desde App Driver                                  | TS-STRIPE-TC1018 |
-| TS-STRIPE-TC-RV003 | E2E Alta de Viaje para usuario app pax modo personal con Tarjeta Preautorizada Hold y Cobro desde App Driver                                      | TS-STRIPE-TC1011 |
-| TS-STRIPE-TC-RV004 | E2E Alta carrier de Viaje para usuario app pax modo personal con Tarjeta Preautorizada sin Hold y Cobro desde App Driver                          | TS-STRIPE-TC1012 |
-| TS-STRIPE-TC-RV005 | E2E Alta de Viaje para usuario app pax modo personal desde app pax con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS     | TS-STRIPE-TC1013 |
-| TS-STRIPE-TC-RV006 | E2E Alta de Viaje para usuario app pax modo personal desde app pax con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS | TS-STRIPE-TC1014 |
-| TS-STRIPE-TC-RV007 | E2E Alta de Viaje para usuario app pax modo personal con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS                   | TS-STRIPE-TC1015 |
-| TS-STRIPE-TC-RV008 | E2E Alta de Viaje para usuario app pax modo personal con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS               | TS-STRIPE-TC1016 |
+| TS-STRIPE-TC-RV001 | Validar Alta de Viaje para usuario app pax modo personal desde app pax con Tarjeta Preautorizada Hold y Cobro desde App Driver                        | TS-STRIPE-TC1017 |
+| TS-STRIPE-TC-RV002 | Validar Alta de Viaje para usuario app pax modo personal con Tarjeta Preautorizada sin Hold y Cobro desde App Driver                                  | TS-STRIPE-TC1018 |
+| TS-STRIPE-TC-RV003 | Validar Alta de Viaje para usuario app pax modo personal con Tarjeta Preautorizada Hold y Cobro desde App Driver                                      | TS-STRIPE-TC1011 |
+| TS-STRIPE-TC-RV004 | Validar Alta carrier de Viaje para usuario app pax modo personal con Tarjeta Preautorizada sin Hold y Cobro desde App Driver                          | TS-STRIPE-TC1012 |
+| TS-STRIPE-TC-RV005 | Validar Alta de Viaje para usuario app pax modo personal desde app pax con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS     | TS-STRIPE-TC1013 |
+| TS-STRIPE-TC-RV006 | Validar Alta de Viaje para usuario app pax modo personal desde app pax con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS | TS-STRIPE-TC1014 |
+| TS-STRIPE-TC-RV007 | Validar Alta de Viaje para usuario app pax modo personal con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS                   | TS-STRIPE-TC1015 |
+| TS-STRIPE-TC-RV008 | Validar Alta de Viaje para usuario app pax modo personal con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS               | TS-STRIPE-TC1016 |
 
 ### 2.4 Wallet - eliminación de tarjeta vinculada con 3D Secure
 
 | ID               | Descripción                                                                                                                             |
 | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| TS-STRIPE-TC1122 | E2E validar eliminar satisfactoriamente desde wallet tarjeta previamente vinculada con validación 3D Secure desde app pax modo personal |
+| TS-STRIPE-TC1122 | Validar validar eliminar satisfactoriamente desde wallet tarjeta previamente vinculada con validación 3D Secure desde app pax modo personal |
 
 **Nota de cobertura:** la tarjeta debe estar ya vinculada y visible en la wallet. La eliminación no dispara challenge 3DS; la clasificación se conserva por la precondición de la tarjeta.
 
@@ -74,27 +74,27 @@
 
 | ID               | Descripción                                                                                                                        |
 | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| TS-STRIPE-TC1017 | E2E Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **Hold y Cobro** desde App Driver     |
-| TS-STRIPE-TC1018 | E2E Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
-| TS-STRIPE-TC1019 | E2E Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **Hold y Cobro** desde App Driver     |
-| TS-STRIPE-TC1020 | E2E Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
-| TS-STRIPE-TC1025 | E2E Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **Hold y Cobro** desde App Driver     |
-| TS-STRIPE-TC1026 | E2E Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
-| TS-STRIPE-TC1027 | E2E Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **Hold y Cobro** desde App Driver     |
-| TS-STRIPE-TC1028 | E2E Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
+| TS-STRIPE-TC1017 | Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **Hold y Cobro** desde App Driver     |
+| TS-STRIPE-TC1018 | Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
+| TS-STRIPE-TC1019 | Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **Hold y Cobro** desde App Driver     |
+| TS-STRIPE-TC1020 | Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
+| TS-STRIPE-TC1025 | Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **Hold y Cobro** desde App Driver     |
+| TS-STRIPE-TC1026 | Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
+| TS-STRIPE-TC1027 | Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **Hold y Cobro** desde App Driver     |
+| TS-STRIPE-TC1028 | Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
 
 ### 3.2 Tarjeta Preautorizada – con validación 3DS
 
 | ID               | Descripción                                                                                                                                           |
 | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| TS-STRIPE-TC1021 | E2E Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS     |
-| TS-STRIPE-TC1022 | E2E Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
-| TS-STRIPE-TC1023 | E2E Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS     |
-| TS-STRIPE-TC1024 | E2E Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
-| TS-STRIPE-TC1029 | E2E Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS     |
-| TS-STRIPE-TC1030 | E2E Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
-| TS-STRIPE-TC1031 | E2E Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS     |
-| TS-STRIPE-TC1032 | E2E Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
+| TS-STRIPE-TC1021 | Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS     |
+| TS-STRIPE-TC1022 | Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
+| TS-STRIPE-TC1023 | Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS     |
+| TS-STRIPE-TC1024 | Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
+| TS-STRIPE-TC1029 | Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS     |
+| TS-STRIPE-TC1030 | Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
+| TS-STRIPE-TC1031 | Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS     |
+| TS-STRIPE-TC1032 | Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
 
 ---
 
@@ -105,26 +105,26 @@
 | ID               | Descripción                                                                                                                                       |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
 | TS-STRIPE-TC1033 | validar vincular tarjeta y Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **Hold(desde carrier) y Cobro** desde App Driver     |
-| TS-STRIPE-TC1034 | E2E Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
-| TS-STRIPE-TC1035 | E2E Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **Hold y Cobro** desde App Driver     |
-| TS-STRIPE-TC1036 | E2E Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
-| TS-STRIPE-TC1041 | E2E Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **Hold y Cobro** desde App Driver     |
-| TS-STRIPE-TC1042 | E2E Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
-| TS-STRIPE-TC1043 | E2E Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **Hold y Cobro** desde App Driver     |
-| TS-STRIPE-TC1044 | E2E Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
+| TS-STRIPE-TC1034 | Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
+| TS-STRIPE-TC1035 | Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **Hold y Cobro** desde App Driver     |
+| TS-STRIPE-TC1036 | Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
+| TS-STRIPE-TC1041 | Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **Hold y Cobro** desde App Driver     |
+| TS-STRIPE-TC1042 | Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
+| TS-STRIPE-TC1043 | Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **Hold y Cobro** desde App Driver     |
+| TS-STRIPE-TC1044 | Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
 
 ### 4.2 Tarjeta Preautorizada – con validación 3DS
 
 | ID | Descripción |
 | -- | ----------- |
-| TS-STRIPE-TC1037 | E2E Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS |
-| TS-STRIPE-TC1038 | E2E Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
+| TS-STRIPE-TC1037 | Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS |
+| TS-STRIPE-TC1038 | Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
 | TS-STRIPE-TC1039 | Validar que al crear viaje desde carrier con cliente contractor y pasajero app pax invitado usando tarjeta threeDSRequired con Hold ON, al fallar la autenticación 3DS se muestra pop-up de error y la URL permanece en el formulario de alta sin crear el viaje |
-| TS-STRIPE-TC1040 | E2E Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
-| TS-STRIPE-TC1045 | E2E Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS |
-| TS-STRIPE-TC1046 | E2E Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
-| TS-STRIPE-TC1047 | E2E Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS |
-| TS-STRIPE-TC1048 | E2E Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
+| TS-STRIPE-TC1040 | Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
+| TS-STRIPE-TC1045 | Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS |
+| TS-STRIPE-TC1046 | Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
+| TS-STRIPE-TC1047 | Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS |
+| TS-STRIPE-TC1048 | Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
 
 ---
 
@@ -164,27 +164,27 @@
 
 | ID               | Descripción                                                                                                                    |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| TS-STRIPE-TC1065 | E2E Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver     |
-| TS-STRIPE-TC1066 | E2E Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
-| TS-STRIPE-TC1067 | E2E Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver     |
-| TS-STRIPE-TC1068 | E2E Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
-| TS-STRIPE-TC1073 | E2E Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver     |
-| TS-STRIPE-TC1074 | E2E Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
-| TS-STRIPE-TC1075 | E2E Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver     |
-| TS-STRIPE-TC1076 | E2E Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
+| TS-STRIPE-TC1065 | Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver     |
+| TS-STRIPE-TC1066 | Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
+| TS-STRIPE-TC1067 | Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver     |
+| TS-STRIPE-TC1068 | Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
+| TS-STRIPE-TC1073 | Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver     |
+| TS-STRIPE-TC1074 | Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
+| TS-STRIPE-TC1075 | Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver     |
+| TS-STRIPE-TC1076 | Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
 
 ### 6.2 Tarjeta Preautorizada – con validación 3DS
 
 | ID               | Descripción                                                                                                                                       |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| TS-STRIPE-TC1069 | E2E Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS     |
-| TS-STRIPE-TC1070 | E2E Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
-| TS-STRIPE-TC1071 | E2E Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS     |
-| TS-STRIPE-TC1072 | E2E Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
-| TS-STRIPE-TC1077 | E2E Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS     |
-| TS-STRIPE-TC1078 | E2E Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
-| TS-STRIPE-TC1079 | E2E Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS     |
-| TS-STRIPE-TC1080 | E2E Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
+| TS-STRIPE-TC1069 | Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS     |
+| TS-STRIPE-TC1070 | Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
+| TS-STRIPE-TC1071 | Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS     |
+| TS-STRIPE-TC1072 | Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
+| TS-STRIPE-TC1077 | Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS     |
+| TS-STRIPE-TC1078 | Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
+| TS-STRIPE-TC1079 | Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS     |
+| TS-STRIPE-TC1080 | Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
 
 ---
 
@@ -194,31 +194,31 @@
 
 | ID               | Descripción                                                                                               |
 | ---------------- | --------------------------------------------------------------------------------------------------------- |
-| TS-STRIPE-TC1081 | E2E Alta de viaje desde carrier para usuario app pax – cargo a bordo – **pago exitoso**                   |
-| TS-STRIPE-TC1082 | E2E Alta de viaje desde carrier para usuario app pax – cargo a bordo – **pago rechazado genérico**        |
-| TS-STRIPE-TC1083 | E2E Alta de viaje desde carrier para usuario app pax – cargo a bordo – **fondos insuficientes**           |
-| TS-STRIPE-TC1084 | E2E Alta de viaje desde carrier para usuario app pax – cargo a bordo – **tarjeta reportada como perdida** |
-| TS-STRIPE-TC1085 | E2E Alta de viaje desde carrier para usuario app pax – cargo a bordo – **CVC incorrecto**                 |
-| TS-STRIPE-TC1086 | E2E Alta de viaje desde carrier para usuario app pax – cargo a bordo – **tarjeta robada**                 |
+| TS-STRIPE-TC1081 | Validar Alta de viaje desde carrier para usuario app pax – cargo a bordo – **pago exitoso**                   |
+| TS-STRIPE-TC1082 | Validar Alta de viaje desde carrier para usuario app pax – cargo a bordo – **pago rechazado genérico**        |
+| TS-STRIPE-TC1083 | Validar Alta de viaje desde carrier para usuario app pax – cargo a bordo – **fondos insuficientes**           |
+| TS-STRIPE-TC1084 | Validar Alta de viaje desde carrier para usuario app pax – cargo a bordo – **tarjeta reportada como perdida** |
+| TS-STRIPE-TC1085 | Validar Alta de viaje desde carrier para usuario app pax – cargo a bordo – **CVC incorrecto**                 |
+| TS-STRIPE-TC1086 | Validar Alta de viaje desde carrier para usuario app pax – cargo a bordo – **tarjeta robada**                 |
 
 ### 7.2 Antifraude
 
 | ID               | Descripción                                                                                                                    |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| TS-STRIPE-TC1087 | E2E Alta de viaje desde carrier para usuario app pax – cargo a bordo – **falla comprobación CVC** (antifraude)                 |
-| TS-STRIPE-TC1088 | E2E Alta de viaje desde carrier para usuario app pax – cargo a bordo – **riesgo máximo** (antifraude)                          |
-| TS-STRIPE-TC1089 | E2E Alta de viaje desde carrier para usuario app pax – cargo a bordo – **tarjeta siempre bloqueada** (antifraude)              |
-| TS-STRIPE-TC1090 | E2E Alta de viaje desde carrier para usuario app pax – cargo a bordo – **falla código postal con riesgo elevado** (antifraude) |
-| TS-STRIPE-TC1091 | E2E Alta de viaje desde carrier para usuario app pax – cargo a bordo – **dirección no disponible** (antifraude)                |
+| TS-STRIPE-TC1087 | Validar Alta de viaje desde carrier para usuario app pax – cargo a bordo – **falla comprobación CVC** (antifraude)                 |
+| TS-STRIPE-TC1088 | Validar Alta de viaje desde carrier para usuario app pax – cargo a bordo – **riesgo máximo** (antifraude)                          |
+| TS-STRIPE-TC1089 | Validar Alta de viaje desde carrier para usuario app pax – cargo a bordo – **tarjeta siempre bloqueada** (antifraude)              |
+| TS-STRIPE-TC1090 | Validar Alta de viaje desde carrier para usuario app pax – cargo a bordo – **falla código postal con riesgo elevado** (antifraude) |
+| TS-STRIPE-TC1091 | Validar Alta de viaje desde carrier para usuario app pax – cargo a bordo – **dirección no disponible** (antifraude)                |
 
 ### 7.3 Con validación 3D Secure
 
 | ID               | Descripción                                                                                                         |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------- |
-| TS-STRIPE-TC1092 | E2E Alta de viaje desde carrier para usuario app pax – cargo a bordo – **pago exitoso con 3D Secure obligatorio**   |
-| TS-STRIPE-TC1093 | E2E Alta de viaje desde carrier para usuario app pax – cargo a bordo – **pago rechazado con 3D Secure obligatorio** |
-| TS-STRIPE-TC1094 | E2E Alta de viaje desde carrier para usuario app pax – cargo a bordo – **error con 3D Secure obligatorio**          |
-| TS-STRIPE-TC1095 | E2E Alta de viaje desde carrier para usuario app pax – cargo a bordo – **falla 3D Secure**                          |
+| TS-STRIPE-TC1092 | Validar Alta de viaje desde carrier para usuario app pax – cargo a bordo – **pago exitoso con 3D Secure obligatorio**   |
+| TS-STRIPE-TC1093 | Validar Alta de viaje desde carrier para usuario app pax – cargo a bordo – **pago rechazado con 3D Secure obligatorio** |
+| TS-STRIPE-TC1094 | Validar Alta de viaje desde carrier para usuario app pax – cargo a bordo – **error con 3D Secure obligatorio**          |
+| TS-STRIPE-TC1095 | Validar Alta de viaje desde carrier para usuario app pax – cargo a bordo – **falla 3D Secure**                          |
 
 ---
 
@@ -228,31 +228,31 @@
 
 | ID               | Descripción                                                                                                                            |
 | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| TS-STRIPE-TC1096 | E2E Alta de viaje desde carrier para usuario colaborador o asociado de contractor – cargo a bordo – **pago exitoso**                   |
-| TS-STRIPE-TC1097 | E2E Alta de viaje desde carrier para usuario colaborador o asociado de contractor – cargo a bordo – **pago rechazado genérico**        |
-| TS-STRIPE-TC1098 | E2E Alta de viaje desde carrier para usuario colaborador o asociado de contractor – cargo a bordo – **fondos insuficientes**           |
-| TS-STRIPE-TC1099 | E2E Alta de viaje desde carrier para usuario colaborador o asociado de contractor – cargo a bordo – **tarjeta reportada como perdida** |
-| TS-STRIPE-TC1100 | E2E Alta de viaje desde carrier para usuario colaborador o asociado de contractor – cargo a bordo – **CVC incorrecto**                 |
-| TS-STRIPE-TC1101 | E2E Alta de viaje desde carrier para usuario colaborador o asociado de contractor – cargo a bordo – **tarjeta robada**                 |
+| TS-STRIPE-TC1096 | Validar Alta de viaje desde carrier para usuario colaborador o asociado de contractor – cargo a bordo – **pago exitoso**                   |
+| TS-STRIPE-TC1097 | Validar Alta de viaje desde carrier para usuario colaborador o asociado de contractor – cargo a bordo – **pago rechazado genérico**        |
+| TS-STRIPE-TC1098 | Validar Alta de viaje desde carrier para usuario colaborador o asociado de contractor – cargo a bordo – **fondos insuficientes**           |
+| TS-STRIPE-TC1099 | Validar Alta de viaje desde carrier para usuario colaborador o asociado de contractor – cargo a bordo – **tarjeta reportada como perdida** |
+| TS-STRIPE-TC1100 | Validar Alta de viaje desde carrier para usuario colaborador o asociado de contractor – cargo a bordo – **CVC incorrecto**                 |
+| TS-STRIPE-TC1101 | Validar Alta de viaje desde carrier para usuario colaborador o asociado de contractor – cargo a bordo – **tarjeta robada**                 |
 
 ### 8.2 Antifraude
 
 | ID               | Descripción                                                                                                                                                 |
 | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| TS-STRIPE-TC1102 | E2E Alta de viaje desde carrier para usuario colaborador o asociado de contractor – cargo a bordo – **falla comprobación CVC** (antifraude)                 |
-| TS-STRIPE-TC1103 | E2E Alta de viaje desde carrier para usuario colaborador o asociado de contractor – cargo a bordo – **riesgo máximo** (antifraude)                          |
-| TS-STRIPE-TC1104 | E2E Alta de viaje desde carrier para usuario colaborador o asociado de contractor – cargo a bordo – **tarjeta siempre bloqueada** (antifraude)              |
-| TS-STRIPE-TC1105 | E2E Alta de viaje desde carrier para usuario colaborador o asociado de contractor – cargo a bordo – **falla código postal con riesgo elevado** (antifraude) |
-| TS-STRIPE-TC1106 | E2E Alta de viaje desde carrier para usuario colaborador o asociado de contractor – cargo a bordo – **dirección no disponible** (antifraude)                |
+| TS-STRIPE-TC1102 | Validar Alta de viaje desde carrier para usuario colaborador o asociado de contractor – cargo a bordo – **falla comprobación CVC** (antifraude)                 |
+| TS-STRIPE-TC1103 | Validar Alta de viaje desde carrier para usuario colaborador o asociado de contractor – cargo a bordo – **riesgo máximo** (antifraude)                          |
+| TS-STRIPE-TC1104 | Validar Alta de viaje desde carrier para usuario colaborador o asociado de contractor – cargo a bordo – **tarjeta siempre bloqueada** (antifraude)              |
+| TS-STRIPE-TC1105 | Validar Alta de viaje desde carrier para usuario colaborador o asociado de contractor – cargo a bordo – **falla código postal con riesgo elevado** (antifraude) |
+| TS-STRIPE-TC1106 | Validar Alta de viaje desde carrier para usuario colaborador o asociado de contractor – cargo a bordo – **dirección no disponible** (antifraude)                |
 
 ### 8.3 Con validación 3D Secure
 
 | ID               | Descripción                                                                                                                                      |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| TS-STRIPE-TC1107 | E2E Alta de viaje desde carrier para usuario colaborador o asociado de contractor – cargo a bordo – **pago exitoso con 3D Secure obligatorio**   |
-| TS-STRIPE-TC1108 | E2E Alta de viaje desde carrier para usuario colaborador o asociado de contractor – cargo a bordo – **pago rechazado con 3D Secure obligatorio** |
-| TS-STRIPE-TC1109 | E2E Alta de viaje desde carrier para usuario colaborador o asociado de contractor – cargo a bordo – **error con 3D Secure obligatorio**          |
-| TS-STRIPE-TC1110 | E2E Alta de viaje desde carrier para usuario colaborador o asociado de contractor – cargo a bordo – **falla 3D Secure**                          |
+| TS-STRIPE-TC1107 | Validar Alta de viaje desde carrier para usuario colaborador o asociado de contractor – cargo a bordo – **pago exitoso con 3D Secure obligatorio**   |
+| TS-STRIPE-TC1108 | Validar Alta de viaje desde carrier para usuario colaborador o asociado de contractor – cargo a bordo – **pago rechazado con 3D Secure obligatorio** |
+| TS-STRIPE-TC1109 | Validar Alta de viaje desde carrier para usuario colaborador o asociado de contractor – cargo a bordo – **error con 3D Secure obligatorio**          |
+| TS-STRIPE-TC1110 | Validar Alta de viaje desde carrier para usuario colaborador o asociado de contractor – cargo a bordo – **falla 3D Secure**                          |
 
 ---
 
@@ -262,22 +262,22 @@
 
 | ID               | Descripción                                                                                                         |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------- |
-| TS-STRIPE-TC1111 | E2E Alta de viaje desde carrier para usuario empresa individuo – cargo a bordo – **pago exitoso**                   |
-| TS-STRIPE-TC1112 | E2E Alta de viaje desde carrier para usuario empresa individuo – cargo a bordo – **pago rechazado genérico**        |
-| TS-STRIPE-TC1113 | E2E Alta de viaje desde carrier para usuario empresa individuo – cargo a bordo – **fondos insuficientes**           |
-| TS-STRIPE-TC1114 | E2E Alta de viaje desde carrier para usuario empresa individuo – cargo a bordo – **tarjeta reportada como perdida** |
-| TS-STRIPE-TC1115 | E2E Alta de viaje desde carrier para usuario empresa individuo – cargo a bordo – **CVC incorrecto**                 |
-| TS-STRIPE-TC1116 | E2E Alta de viaje desde carrier para usuario empresa individuo – cargo a bordo – **tarjeta robada**                 |
+| TS-STRIPE-TC1111 | Validar Alta de viaje desde carrier para usuario empresa individuo – cargo a bordo – **pago exitoso**                   |
+| TS-STRIPE-TC1112 | Validar Alta de viaje desde carrier para usuario empresa individuo – cargo a bordo – **pago rechazado genérico**        |
+| TS-STRIPE-TC1113 | Validar Alta de viaje desde carrier para usuario empresa individuo – cargo a bordo – **fondos insuficientes**           |
+| TS-STRIPE-TC1114 | Validar Alta de viaje desde carrier para usuario empresa individuo – cargo a bordo – **tarjeta reportada como perdida** |
+| TS-STRIPE-TC1115 | Validar Alta de viaje desde carrier para usuario empresa individuo – cargo a bordo – **CVC incorrecto**                 |
+| TS-STRIPE-TC1116 | Validar Alta de viaje desde carrier para usuario empresa individuo – cargo a bordo – **tarjeta robada**                 |
 
 ### 9.2 Antifraude
 
 | ID               | Descripción                                                                                                                              |
 | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| TS-STRIPE-TC1117 | E2E Alta de viaje desde carrier para usuario empresa individuo – cargo a bordo – **falla comprobación CVC** (antifraude)                 |
-| TS-STRIPE-TC1118 | E2E Alta de viaje desde carrier para usuario empresa individuo – cargo a bordo – **riesgo máximo** (antifraude)                          |
-| TS-STRIPE-TC1119 | E2E Alta de viaje desde carrier para usuario empresa individuo – cargo a bordo – **tarjeta siempre bloqueada** (antifraude)              |
-| TS-STRIPE-TC1120 | E2E Alta de viaje desde carrier para usuario empresa individuo – cargo a bordo – **falla código postal con riesgo elevado** (antifraude) |
-| TS-STRIPE-TC1121 | E2E Alta de viaje desde carrier para usuario empresa individuo – cargo a bordo – **dirección no disponible** (antifraude)                |
+| TS-STRIPE-TC1117 | Validar Alta de viaje desde carrier para usuario empresa individuo – cargo a bordo – **falla comprobación CVC** (antifraude)                 |
+| TS-STRIPE-TC1118 | Validar Alta de viaje desde carrier para usuario empresa individuo – cargo a bordo – **riesgo máximo** (antifraude)                          |
+| TS-STRIPE-TC1119 | Validar Alta de viaje desde carrier para usuario empresa individuo – cargo a bordo – **tarjeta siempre bloqueada** (antifraude)              |
+| TS-STRIPE-TC1120 | Validar Alta de viaje desde carrier para usuario empresa individuo – cargo a bordo – **falla código postal con riesgo elevado** (antifraude) |
+| TS-STRIPE-TC1121 | Validar Alta de viaje desde carrier para usuario empresa individuo – cargo a bordo – **dirección no disponible** (antifraude)                |
 
 > **Nota:** El ID TS-STRIPE-TC1122 queda asignado al caso DBTS-STRIPE-TC003 de eliminacion desde wallet de una tarjeta 3D Secure ya vinculada en App Pax modo personal. Si la wallet arranca vacia, el runner de ejecucion puede sembrar primero una tarjeta `always_authenticate` de prueba y luego eliminarla; la cobertura objetivo sigue siendo la eliminacion de una tarjeta 3DS ya enlazada.
 
