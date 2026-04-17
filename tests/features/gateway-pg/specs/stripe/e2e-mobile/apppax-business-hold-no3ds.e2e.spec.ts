@@ -58,7 +58,7 @@ const SCENARIOS: BusinessHoldScenario[] = [
 	{
 		testCaseId: 'TS-STRIPE-TC1017',
 		title:
-			'Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold y Cobro desde App Driver — Vincular tarjeta nueva',
+			'Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver — Vincular tarjeta nueva',
 		holdMode: 'on',
 		cardFlow: 'new',
 		passengerName: PASSENGERS.colaborador.name,
@@ -70,7 +70,7 @@ const SCENARIOS: BusinessHoldScenario[] = [
 	{
 		testCaseId: 'TS-STRIPE-TC1018',
 		title:
-			'Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold y Cobro desde App Driver — Vincular tarjeta nueva',
+			'Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Vincular tarjeta nueva',
 		holdMode: 'off',
 		cardFlow: 'new',
 		passengerName: PASSENGERS.colaborador.name,
@@ -82,7 +82,7 @@ const SCENARIOS: BusinessHoldScenario[] = [
 	{
 		testCaseId: 'TS-STRIPE-TC1019',
 		title:
-			'Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold y Cobro desde App Driver — Usar tarjeta vinculada existente',
+			'Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver — Usar tarjeta vinculada existente',
 		holdMode: 'on',
 		cardFlow: 'existing',
 		passengerName: PASSENGERS.colaborador.name,
@@ -94,7 +94,7 @@ const SCENARIOS: BusinessHoldScenario[] = [
 	{
 		testCaseId: 'TS-STRIPE-TC1020',
 		title:
-			'Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold y Cobro desde App Driver — Usar tarjeta vinculada existente',
+			'Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Usar tarjeta vinculada existente',
 		holdMode: 'off',
 		cardFlow: 'existing',
 		passengerName: PASSENGERS.colaborador.name,

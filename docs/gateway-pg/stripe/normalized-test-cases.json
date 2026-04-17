@@ -268,7 +268,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1009",
-      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo personal con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo personal con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -302,7 +302,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1010",
-      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo personal con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo personal con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -337,7 +337,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1011",
-      "title": "Validar Alta carrier de Viaje para usuario app pax modo personal con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+      "title": "Validar Alta carrier de Viaje para usuario app pax modo personal con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -372,7 +372,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1012",
-      "title": "Validar Alta carrier de Viaje para usuario app pax modo personal con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "title": "Validar Alta carrier de Viaje para usuario app pax modo personal con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -408,7 +408,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1013",
-      "title": "Validar Alta de Viaje para usuario app pax modo personal desde app pax con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar Alta de Viaje para usuario app pax modo personal desde app pax con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -443,7 +443,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1014",
-      "title": "Validar Alta de Viaje para usuario app pax modo personal desde app pax con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar Alta de Viaje para usuario app pax modo personal desde app pax con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -479,7 +479,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1015",
-      "title": "Validar Alta de Viaje para usuario app pax modo personal con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar Alta de Viaje para usuario app pax modo personal con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -514,7 +514,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1016",
-      "title": "Validar Alta carrier de Viaje para usuario app pax modo personal con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar Alta carrier de Viaje para usuario app pax modo personal con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -551,7 +551,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC-RV001",
-      "title": "Validar Alta de Viaje para usuario app pax modo personal desde app pax con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje para usuario app pax modo personal desde app pax con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -589,7 +589,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC-RV002",
-      "title": "Validar Alta de Viaje para usuario app pax modo personal con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje para usuario app pax modo personal con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -628,7 +628,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC-RV003",
-      "title": "Validar Alta de Viaje para usuario app pax modo personal con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje para usuario app pax modo personal con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -666,7 +666,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC-RV004",
-      "title": "Validar Alta carrier de Viaje para usuario app pax modo personal con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "title": "Validar Alta carrier de Viaje para usuario app pax modo personal con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -706,7 +706,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC-RV005",
-      "title": "Validar Alta de Viaje para usuario app pax modo personal desde app pax con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar Alta de Viaje para usuario app pax modo personal desde app pax con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -745,7 +745,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC-RV006",
-      "title": "Validar Alta de Viaje para usuario app pax modo personal desde app pax con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar Alta de Viaje para usuario app pax modo personal desde app pax con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -785,7 +785,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC-RV007",
-      "title": "Validar Alta de Viaje para usuario app pax modo personal con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar Alta de Viaje para usuario app pax modo personal con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -824,7 +824,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC-RV008",
-      "title": "Validar Alta de Viaje para usuario app pax modo personal con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar Alta de Viaje para usuario app pax modo personal con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -898,7 +898,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1017",
-      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold y Cobro desde App Driver — Vincular tarjeta nueva",
+      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -934,7 +934,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1018",
-      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold y Cobro desde App Driver — Vincular tarjeta nueva",
+      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -971,7 +971,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1019",
-      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold y Cobro desde App Driver — Usar tarjeta vinculada existente",
+      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -1009,7 +1009,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1020",
-      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold y Cobro desde App Driver — Usar tarjeta vinculada existente",
+      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -1048,7 +1048,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1025",
-      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -1085,7 +1085,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1026",
-      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -1123,7 +1123,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1027",
-      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -1160,7 +1160,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1028",
-      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -1198,7 +1198,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1021",
-      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS — Vincular tarjeta nueva",
+      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3DS — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -1235,7 +1235,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1022",
-      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS — Vincular tarjeta nueva",
+      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -1273,7 +1273,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1023",
-      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS — Usar tarjeta vinculada existente",
+      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3DS — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -1312,7 +1312,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1024",
-      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS — Usar tarjeta vinculada existente",
+      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -1352,7 +1352,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1029",
-      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -1390,7 +1390,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1030",
-      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -1429,7 +1429,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1031",
-      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -1467,7 +1467,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1032",
-      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -1541,7 +1541,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1034",
-      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada sin Hold y Cobro desde App Driver — Vincular tarjeta nueva",
+      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
@@ -1579,7 +1579,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1035",
-      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada Hold y Cobro desde App Driver — Vincular tarjeta nueva",
+      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
@@ -1616,7 +1616,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1036",
-      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada sin Hold y Cobro desde App Driver — Usar tarjeta vinculada existente",
+      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
@@ -1656,7 +1656,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1041",
-      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada Hold y Cobro desde App Driver — Usar tarjeta vinculada existente",
+      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
@@ -1695,7 +1695,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1042",
-      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
@@ -1734,7 +1734,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1043",
-      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
@@ -1772,7 +1772,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1044",
-      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
@@ -1811,7 +1811,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1037",
-      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS — Vincular tarjeta nueva",
+      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3DS — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
@@ -1849,7 +1849,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1038",
-      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS — Vincular tarjeta nueva",
+      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
@@ -1924,7 +1924,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1040",
-      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS — Usar tarjeta vinculada existente",
+      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
@@ -1965,7 +1965,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1045",
-      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS — Usar tarjeta vinculada existente",
+      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3DS — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
@@ -2005,7 +2005,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1046",
-      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
@@ -2045,7 +2045,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1047",
-      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
@@ -2084,7 +2084,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1048",
-      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
@@ -2675,7 +2675,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1065",
-      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver — Vincular tarjeta nueva",
+      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
@@ -2712,7 +2712,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1066",
-      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver — Vincular tarjeta nueva",
+      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
@@ -2750,7 +2750,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1067",
-      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver — Usar tarjeta vinculada existente",
+      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
@@ -2789,7 +2789,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1068",
-      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver — Usar tarjeta vinculada existente",
+      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
@@ -2829,7 +2829,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1073",
-      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
@@ -2867,7 +2867,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1074",
-      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
@@ -2906,7 +2906,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1075",
-      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
@@ -2944,7 +2944,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1076",
-      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
@@ -2983,7 +2983,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1069",
-      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS — Vincular tarjeta nueva",
+      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3DS — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
@@ -3021,7 +3021,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1070",
-      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS — Vincular tarjeta nueva",
+      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
@@ -3060,7 +3060,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1071",
-      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS — Usar tarjeta vinculada existente",
+      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3DS — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
@@ -3100,7 +3100,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1072",
-      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS — Usar tarjeta vinculada existente",
+      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
@@ -3141,7 +3141,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1077",
-      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
@@ -3180,7 +3180,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1078",
-      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
@@ -3220,7 +3220,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1079",
-      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
@@ -3259,7 +3259,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1080",
-      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
@@ -4701,7 +4701,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC001",
-      "title": "Validar vinculación de tarjeta y Alta de Viaje desde app pax para usuario colaborador de contractor con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+      "title": "Validar vinculación de tarjeta y Alta de Viaje desde app pax para usuario colaborador de contractor con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
       "module": "gateway-pg-stripe",
       "portal": "contractor",
       "environment": [
@@ -4736,7 +4736,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC002",
-      "title": "Validar vinculación de tarjeta y Alta de Viaje desde app pax para usuario colaborador de contractor con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "title": "Validar vinculación de tarjeta y Alta de Viaje desde app pax para usuario colaborador de contractor con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
       "module": "gateway-pg-stripe",
       "portal": "contractor",
       "environment": [
@@ -4772,7 +4772,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC003",
-      "title": "Validar selección de tarjeta y Alta de Viaje desde app pax para usuario colaborador de contractor con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+      "title": "Validar selección de tarjeta y Alta de Viaje desde app pax para usuario colaborador de contractor con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
       "module": "gateway-pg-stripe",
       "portal": "contractor",
       "environment": [
@@ -4807,7 +4807,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC004",
-      "title": "Validar selección de tarjeta y Alta de Viaje desde app pax para usuario colaborador de contractor con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "title": "Validar selección de tarjeta y Alta de Viaje desde app pax para usuario colaborador de contractor con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
       "module": "gateway-pg-stripe",
       "portal": "contractor",
       "environment": [
@@ -4843,7 +4843,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC005",
-      "title": "Validar vinculación de tarjeta y Alta de Viaje desde app pax para usuario colaborador de contractor con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar vinculación de tarjeta y Alta de Viaje desde app pax para usuario colaborador de contractor con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe",
       "portal": "contractor",
       "environment": [
@@ -4879,7 +4879,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC006",
-      "title": "Validar vinculación de tarjeta y Alta de Viaje desde app pax para usuario colaborador de contractor con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar vinculación de tarjeta y Alta de Viaje desde app pax para usuario colaborador de contractor con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe",
       "portal": "contractor",
       "environment": [
@@ -4916,7 +4916,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC007",
-      "title": "Validar Alta de Viaje desde Quote para usuario sin datos filiatorios vinculado a pasajero existente con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar Alta de Viaje desde Quote para usuario sin datos filiatorios vinculado a pasajero existente con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe/quote",
       "portal": "contractor",
       "environment": [
@@ -4950,7 +4950,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC008",
-      "title": "Validar Alta de Viaje desde Quote para usuario sin datos filiatorios vinculado a pasajero existente con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar Alta de Viaje desde Quote para usuario sin datos filiatorios vinculado a pasajero existente con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe/quote",
       "portal": "contractor",
       "environment": [
@@ -4985,7 +4985,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC009",
-      "title": "Validar Alta de Viaje desde Quote para usuario sin datos filiatorios vinculado a pasajero existente con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde Quote para usuario sin datos filiatorios vinculado a pasajero existente con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
       "module": "gateway-pg-stripe/quote",
       "portal": "contractor",
       "environment": [
@@ -5018,7 +5018,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC010",
-      "title": "Validar Alta de Viaje desde Quote para usuario sin datos filiatorios vinculado a pasajero existente con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde Quote para usuario sin datos filiatorios vinculado a pasajero existente con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
       "module": "gateway-pg-stripe/quote",
       "portal": "contractor",
       "environment": [
@@ -5052,7 +5052,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC011",
-      "title": "Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario colaborador existente con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario colaborador existente con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
       "module": "gateway-pg-stripe/quote",
       "portal": "contractor",
       "environment": [
@@ -5086,7 +5086,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC012",
-      "title": "Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario colaborador existente con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario colaborador existente con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
       "module": "gateway-pg-stripe/quote",
       "portal": "contractor",
       "environment": [
@@ -5121,7 +5121,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC013",
-      "title": "Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario colaborador existente con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario colaborador existente con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
       "module": "gateway-pg-stripe/quote",
       "portal": "contractor",
       "environment": [
@@ -5155,7 +5155,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC014",
-      "title": "Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario colaborador existente con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario colaborador existente con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
       "module": "gateway-pg-stripe/quote",
       "portal": "contractor",
       "environment": [
@@ -5190,7 +5190,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC015",
-      "title": "Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario colaborador existente con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3D Secure",
+      "title": "Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario colaborador existente con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3D Secure",
       "module": "gateway-pg-stripe/quote",
       "portal": "contractor",
       "environment": [
@@ -5225,7 +5225,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC016",
-      "title": "Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario colaborador existente con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3D Secure",
+      "title": "Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario colaborador existente con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3D Secure",
       "module": "gateway-pg-stripe/quote",
       "portal": "contractor",
       "environment": [
@@ -5261,7 +5261,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC017",
-      "title": "Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario colaborador existente con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3D Secure",
+      "title": "Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario colaborador existente con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3D Secure",
       "module": "gateway-pg-stripe/quote",
       "portal": "contractor",
       "environment": [
@@ -5296,7 +5296,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC018",
-      "title": "Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario colaborador existente con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3D Secure",
+      "title": "Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario colaborador existente con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3D Secure",
       "module": "gateway-pg-stripe/quote",
       "portal": "contractor",
       "environment": [
@@ -5332,7 +5332,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC019",
-      "title": "Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario app pax existente con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario app pax existente con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
       "module": "gateway-pg-stripe/quote",
       "portal": "contractor",
       "environment": [
@@ -5366,7 +5366,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC020",
-      "title": "Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario app pax existente con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario app pax existente con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
       "module": "gateway-pg-stripe/quote",
       "portal": "contractor",
       "environment": [
@@ -5401,7 +5401,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC021",
-      "title": "Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario app pax existente con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario app pax existente con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
       "module": "gateway-pg-stripe/quote",
       "portal": "contractor",
       "environment": [
@@ -5435,7 +5435,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC022",
-      "title": "Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario app pax existente con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario app pax existente con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
       "module": "gateway-pg-stripe/quote",
       "portal": "contractor",
       "environment": [
@@ -5470,7 +5470,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC023",
-      "title": "Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario app pax existente con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3D Secure",
+      "title": "Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario app pax existente con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3D Secure",
       "module": "gateway-pg-stripe/quote",
       "portal": "contractor",
       "environment": [
@@ -5505,7 +5505,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC024",
-      "title": "Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario app pax existente con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3D Secure",
+      "title": "Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario app pax existente con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3D Secure",
       "module": "gateway-pg-stripe/quote",
       "portal": "contractor",
       "environment": [
@@ -5541,7 +5541,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC025",
-      "title": "Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario app pax existente con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3D Secure",
+      "title": "Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario app pax existente con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3D Secure",
       "module": "gateway-pg-stripe/quote",
       "portal": "contractor",
       "environment": [
@@ -5576,7 +5576,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC026",
-      "title": "Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario app pax existente con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3D Secure",
+      "title": "Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario app pax existente con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3D Secure",
       "module": "gateway-pg-stripe/quote",
       "portal": "contractor",
       "environment": [
@@ -5612,7 +5612,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC027",
-      "title": "Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario empresa individuo existente con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario empresa individuo existente con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
       "module": "gateway-pg-stripe/quote",
       "portal": "contractor",
       "environment": [
@@ -5646,7 +5646,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC028",
-      "title": "Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario empresa individuo existente con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario empresa individuo existente con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
       "module": "gateway-pg-stripe/quote",
       "portal": "contractor",
       "environment": [
@@ -5681,7 +5681,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC029",
-      "title": "Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario empresa individuo existente con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario empresa individuo existente con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
       "module": "gateway-pg-stripe/quote",
       "portal": "contractor",
       "environment": [
@@ -5715,7 +5715,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC030",
-      "title": "Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario empresa individuo existente con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario empresa individuo existente con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
       "module": "gateway-pg-stripe/quote",
       "portal": "contractor",
       "environment": [
@@ -5750,7 +5750,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC031",
-      "title": "Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario empresa individuo existente con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3D Secure",
+      "title": "Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario empresa individuo existente con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3D Secure",
       "module": "gateway-pg-stripe/quote",
       "portal": "contractor",
       "environment": [
@@ -5785,7 +5785,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC032",
-      "title": "Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario empresa individuo existente con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3D Secure",
+      "title": "Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario empresa individuo existente con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3D Secure",
       "module": "gateway-pg-stripe/quote",
       "portal": "contractor",
       "environment": [
@@ -5821,7 +5821,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC033",
-      "title": "Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario empresa individuo existente con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3D Secure",
+      "title": "Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario empresa individuo existente con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3D Secure",
       "module": "gateway-pg-stripe/quote",
       "portal": "contractor",
       "environment": [
@@ -5856,7 +5856,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC034",
-      "title": "Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario empresa individuo existente con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3D Secure",
+      "title": "Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario empresa individuo existente con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3D Secure",
       "module": "gateway-pg-stripe/quote",
       "portal": "contractor",
       "environment": [
@@ -5892,7 +5892,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC035",
-      "title": "Validar vinculación de tarjeta y Alta de Viaje Recurrente desde portal contractor para usuario colaborador con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+      "title": "Validar vinculación de tarjeta y Alta de Viaje Recurrente desde portal contractor para usuario colaborador con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
       "module": "gateway-pg-stripe/recurring",
       "portal": "contractor",
       "environment": [
@@ -5927,7 +5927,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC036",
-      "title": "Validar vinculación de tarjeta y Alta de Viaje Recurrente desde portal contractor para usuario colaborador con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "title": "Validar vinculación de tarjeta y Alta de Viaje Recurrente desde portal contractor para usuario colaborador con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
       "module": "gateway-pg-stripe/recurring",
       "portal": "contractor",
       "environment": [
@@ -5963,7 +5963,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC037",
-      "title": "Validar selección de tarjeta y Alta de Viaje Recurrente desde portal contractor para usuario colaborador con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+      "title": "Validar selección de tarjeta y Alta de Viaje Recurrente desde portal contractor para usuario colaborador con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
       "module": "gateway-pg-stripe/recurring",
       "portal": "contractor",
       "environment": [
@@ -5998,7 +5998,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC038",
-      "title": "Validar selección de tarjeta y Alta de Viaje Recurrente desde portal contractor para usuario colaborador con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "title": "Validar selección de tarjeta y Alta de Viaje Recurrente desde portal contractor para usuario colaborador con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
       "module": "gateway-pg-stripe/recurring",
       "portal": "contractor",
       "environment": [
@@ -6034,7 +6034,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC039",
-      "title": "Validar vinculación de tarjeta y Alta de Viaje Recurrente desde portal contractor para usuario colaborador con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar vinculación de tarjeta y Alta de Viaje Recurrente desde portal contractor para usuario colaborador con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe/recurring",
       "portal": "contractor",
       "environment": [
@@ -6070,7 +6070,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC040",
-      "title": "Validar vinculación de tarjeta y Alta de Viaje Recurrente desde portal contractor para usuario colaborador con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar vinculación de tarjeta y Alta de Viaje Recurrente desde portal contractor para usuario colaborador con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe/recurring",
       "portal": "contractor",
       "environment": [
@@ -6107,7 +6107,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC041",
-      "title": "Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario colaborador con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+      "title": "Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario colaborador con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
       "module": "gateway-pg-stripe/recurring",
       "portal": "carrier",
       "environment": [
@@ -6143,7 +6143,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC042",
-      "title": "Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario colaborador con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "title": "Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario colaborador con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
       "module": "gateway-pg-stripe/recurring",
       "portal": "carrier",
       "environment": [
@@ -6180,7 +6180,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC043",
-      "title": "Validar selección de tarjeta y Alta de Viaje Recurrente desde carrier para usuario colaborador con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+      "title": "Validar selección de tarjeta y Alta de Viaje Recurrente desde carrier para usuario colaborador con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
       "module": "gateway-pg-stripe/recurring",
       "portal": "carrier",
       "environment": [
@@ -6216,7 +6216,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC044",
-      "title": "Validar selección de tarjeta y Alta de Viaje Recurrente desde carrier para usuario colaborador con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "title": "Validar selección de tarjeta y Alta de Viaje Recurrente desde carrier para usuario colaborador con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
       "module": "gateway-pg-stripe/recurring",
       "portal": "carrier",
       "environment": [
@@ -6253,7 +6253,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC045",
-      "title": "Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario colaborador con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario colaborador con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe/recurring",
       "portal": "carrier",
       "environment": [
@@ -6290,7 +6290,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC046",
-      "title": "Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario colaborador con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario colaborador con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe/recurring",
       "portal": "carrier",
       "environment": [
@@ -6363,7 +6363,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC048",
-      "title": "Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario app pax con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+      "title": "Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario app pax con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
       "module": "gateway-pg-stripe/recurring",
       "portal": "carrier",
       "environment": [
@@ -6399,7 +6399,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC049",
-      "title": "Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario app pax con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "title": "Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario app pax con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
       "module": "gateway-pg-stripe/recurring",
       "portal": "carrier",
       "environment": [
@@ -6436,7 +6436,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC050",
-      "title": "Validar selección de tarjeta y Alta de Viaje Recurrente desde carrier para usuario app pax con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+      "title": "Validar selección de tarjeta y Alta de Viaje Recurrente desde carrier para usuario app pax con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
       "module": "gateway-pg-stripe/recurring",
       "portal": "carrier",
       "environment": [
@@ -6472,7 +6472,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC051",
-      "title": "Validar selección de tarjeta y Alta de Viaje Recurrente desde carrier para usuario app pax con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "title": "Validar selección de tarjeta y Alta de Viaje Recurrente desde carrier para usuario app pax con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
       "module": "gateway-pg-stripe/recurring",
       "portal": "carrier",
       "environment": [
@@ -6509,7 +6509,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC052",
-      "title": "Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario app pax con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario app pax con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe/recurring",
       "portal": "carrier",
       "environment": [
@@ -6546,7 +6546,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC053",
-      "title": "Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario app pax con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario app pax con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe/recurring",
       "portal": "carrier",
       "environment": [
@@ -6584,7 +6584,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC054",
-      "title": "Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+      "title": "Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
       "module": "gateway-pg-stripe/recurring",
       "portal": "carrier",
       "environment": [
@@ -6620,7 +6620,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC055",
-      "title": "Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "title": "Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
       "module": "gateway-pg-stripe/recurring",
       "portal": "carrier",
       "environment": [
@@ -6657,7 +6657,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC056",
-      "title": "Validar selección de tarjeta y Alta de Viaje Recurrente desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+      "title": "Validar selección de tarjeta y Alta de Viaje Recurrente desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
       "module": "gateway-pg-stripe/recurring",
       "portal": "carrier",
       "environment": [
@@ -6693,7 +6693,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC057",
-      "title": "Validar selección de tarjeta y Alta de Viaje Recurrente desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "title": "Validar selección de tarjeta y Alta de Viaje Recurrente desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
       "module": "gateway-pg-stripe/recurring",
       "portal": "carrier",
       "environment": [
@@ -6730,7 +6730,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC058",
-      "title": "Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe/recurring",
       "portal": "carrier",
       "environment": [
@@ -6767,7 +6767,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC059",
-      "title": "Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe/recurring",
       "portal": "carrier",
       "environment": [
@@ -6805,7 +6805,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC060",
-      "title": "Validar Reactivación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver — Vincular tarjeta nueva",
+      "title": "Validar Reactivación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/reactivation",
       "portal": "carrier",
       "environment": [
@@ -6842,7 +6842,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC061",
-      "title": "Validar Reactivación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver — Vincular tarjeta nueva",
+      "title": "Validar Reactivación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/reactivation",
       "portal": "carrier",
       "environment": [
@@ -6880,7 +6880,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC062",
-      "title": "Validar Reactivación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver — Usar tarjeta vinculada existente",
+      "title": "Validar Reactivación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/reactivation",
       "portal": "carrier",
       "environment": [
@@ -6919,7 +6919,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC063",
-      "title": "Validar Reactivación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver — Usar tarjeta vinculada existente",
+      "title": "Validar Reactivación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/reactivation",
       "portal": "carrier",
       "environment": [
@@ -6959,7 +6959,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC064",
-      "title": "Validar Reactivación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar Reactivación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe/reactivation",
       "portal": "carrier",
       "environment": [
@@ -6995,7 +6995,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC065",
-      "title": "Validar Reactivación de viaje cancelado para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar Reactivación de viaje cancelado para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe/reactivation",
       "portal": "carrier",
       "environment": [
@@ -7031,7 +7031,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC066",
-      "title": "Validar Clonación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver — Vincular tarjeta nueva",
+      "title": "Validar Clonación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/clone",
       "portal": "carrier",
       "environment": [
@@ -7068,7 +7068,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC067",
-      "title": "Validar Clonación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver — Vincular tarjeta nueva",
+      "title": "Validar Clonación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/clone",
       "portal": "carrier",
       "environment": [
@@ -7106,7 +7106,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC068",
-      "title": "Validar Clonación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver — Usar tarjeta vinculada existente",
+      "title": "Validar Clonación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/clone",
       "portal": "carrier",
       "environment": [
@@ -7145,7 +7145,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC069",
-      "title": "Validar Clonación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver — Usar tarjeta vinculada existente",
+      "title": "Validar Clonación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/clone",
       "portal": "carrier",
       "environment": [
@@ -7185,7 +7185,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC070",
-      "title": "Validar Clonación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar Clonación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe/clone",
       "portal": "carrier",
       "environment": [
@@ -7221,7 +7221,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC071",
-      "title": "Validar Clonación de viaje cancelado para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar Clonación de viaje cancelado para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe/clone",
       "portal": "carrier",
       "environment": [
@@ -7257,7 +7257,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC072",
-      "title": "Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver — Vincular tarjeta nueva",
+      "title": "Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/clone",
       "portal": "carrier",
       "environment": [
@@ -7294,7 +7294,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC073",
-      "title": "Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver — Vincular tarjeta nueva",
+      "title": "Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/clone",
       "portal": "carrier",
       "environment": [
@@ -7332,7 +7332,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC074",
-      "title": "Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver — Usar tarjeta vinculada existente",
+      "title": "Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/clone",
       "portal": "carrier",
       "environment": [
@@ -7371,7 +7371,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC075",
-      "title": "Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver — Usar tarjeta vinculada existente",
+      "title": "Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/clone",
       "portal": "carrier",
       "environment": [
@@ -7411,7 +7411,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC076",
-      "title": "Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe/clone",
       "portal": "carrier",
       "environment": [
@@ -7447,7 +7447,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC077",
-      "title": "Validar Clonación de viaje finalizado para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar Clonación de viaje finalizado para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe/clone",
       "portal": "carrier",
       "environment": [
@@ -7483,7 +7483,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC078",
-      "title": "Validar Alta de viaje y edición desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver — Vincular tarjeta nueva",
+      "title": "Validar Alta de viaje y edición desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/edit",
       "portal": "carrier",
       "environment": [
@@ -7520,7 +7520,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC079",
-      "title": "Validar Alta de viaje y edición desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver — Vincular tarjeta nueva",
+      "title": "Validar Alta de viaje y edición desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/edit",
       "portal": "carrier",
       "environment": [
@@ -7558,7 +7558,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC080",
-      "title": "Validar Alta de viaje y edición desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver — Usar tarjeta vinculada existente",
+      "title": "Validar Alta de viaje y edición desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/edit",
       "portal": "carrier",
       "environment": [
@@ -7597,7 +7597,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC081",
-      "title": "Validar Alta de viaje y edición desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver — Usar tarjeta vinculada existente",
+      "title": "Validar Alta de viaje y edición desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/edit",
       "portal": "carrier",
       "environment": [
@@ -7637,7 +7637,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC082",
-      "title": "Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe/edit",
       "portal": "carrier",
       "environment": [
@@ -7673,7 +7673,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC083",
-      "title": "Validar Clonación de viaje finalizado para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar Clonación de viaje finalizado para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe/edit",
       "portal": "carrier",
       "environment": [
@@ -7709,7 +7709,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC084",
-      "title": "Validar Alta de viaje y edición en conflicto desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver — Vincular tarjeta nueva",
+      "title": "Validar Alta de viaje y edición en conflicto desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/edit",
       "portal": "carrier",
       "environment": [
@@ -7746,7 +7746,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC085",
-      "title": "Validar Alta de viaje y edición en conflicto desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver — Vincular tarjeta nueva",
+      "title": "Validar Alta de viaje y edición en conflicto desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/edit",
       "portal": "carrier",
       "environment": [
@@ -7784,7 +7784,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC086",
-      "title": "Validar Alta de viaje y edición en conflicto desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver — Usar tarjeta vinculada existente",
+      "title": "Validar Alta de viaje y edición en conflicto desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/edit",
       "portal": "carrier",
       "environment": [
@@ -7823,7 +7823,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC087",
-      "title": "Validar Alta de viaje y edición en conflicto desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver — Usar tarjeta vinculada existente",
+      "title": "Validar Alta de viaje y edición en conflicto desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/edit",
       "portal": "carrier",
       "environment": [
@@ -7863,7 +7863,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC088",
-      "title": "Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe/edit",
       "portal": "carrier",
       "environment": [
@@ -7899,7 +7899,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC089",
-      "title": "Validar Clonación de viaje finalizado para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar Clonación de viaje finalizado para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe/edit",
       "portal": "carrier",
       "environment": [

@@ -57,7 +57,7 @@ const SCENARIOS: BusinessHold3dsScenario[] = [
 	{
 		testCaseId: 'TS-STRIPE-TC1021',
 		title:
-			'Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS — Vincular tarjeta nueva',
+			'Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3DS — Vincular tarjeta nueva',
 		holdMode: 'on',
 		cardFlow: 'new',
 		passengerName: PASSENGERS.colaborador.name,
@@ -69,7 +69,7 @@ const SCENARIOS: BusinessHold3dsScenario[] = [
 	{
 		testCaseId: 'TS-STRIPE-TC1022',
 		title:
-			'Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS — Vincular tarjeta nueva',
+			'Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS — Vincular tarjeta nueva',
 		holdMode: 'off',
 		cardFlow: 'new',
 		passengerName: PASSENGERS.colaborador.name,
@@ -81,7 +81,7 @@ const SCENARIOS: BusinessHold3dsScenario[] = [
 	{
 		testCaseId: 'TS-STRIPE-TC1023',
 		title:
-			'Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS — Usar tarjeta vinculada existente',
+			'Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3DS — Usar tarjeta vinculada existente',
 		holdMode: 'on',
 		cardFlow: 'existing',
 		passengerName: PASSENGERS.colaborador.name,
@@ -93,7 +93,7 @@ const SCENARIOS: BusinessHold3dsScenario[] = [
 	{
 		testCaseId: 'TS-STRIPE-TC1024',
 		title:
-			'Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS — Usar tarjeta vinculada existente',
+			'Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS — Usar tarjeta vinculada existente',
 		holdMode: 'off',
 		cardFlow: 'existing',
 		passengerName: PASSENGERS.colaborador.name,

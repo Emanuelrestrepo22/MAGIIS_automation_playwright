@@ -25,10 +25,10 @@
 
 | Par # | ID canónico | ID derivado | Decisión | Nueva descripción canónico | Nueva descripción derivado | Prioridad |
 |---|---|---|---|---|---|---|
-| 1 | TS-STRIPE-TC1017 | TS-STRIPE-TC1019 | diferenciar-new-existing | Alta de Viaje desde app pax modo business Hold y Cobro — Vincular tarjeta nueva | Alta de Viaje desde app pax modo business Hold y Cobro — Usar tarjeta vinculada existente | P1 / P1 |
+| 1 | TS-STRIPE-TC1017 | TS-STRIPE-TC1019 | diferenciar-new-existing | Alta de Viaje desde app pax modo business con Hold desde Alta y Cobro desde App Driver — Vincular tarjeta nueva | Alta de Viaje desde app pax modo business con Hold desde Alta y Cobro desde App Driver — Usar tarjeta vinculada existente | P1 / P1 |
 | 2 | TS-STRIPE-TC1017 | TS-STRIPE-TC1025 | deprecar-redundante | (sin cambio) | DEPRECADO — duplicado de TC1017 / TC1019 | P3 |
 | 3 | TS-STRIPE-TC1017 | TS-STRIPE-TC1027 | deprecar-redundante | (sin cambio) | DEPRECADO — duplicado de TC1017 / TC1019 | P3 |
-| 4 | TS-STRIPE-TC1018 | TS-STRIPE-TC1020 | diferenciar-new-existing | Alta de Viaje desde app pax modo business sin Hold y Cobro — Vincular tarjeta nueva | Alta de Viaje desde app pax modo business sin Hold y Cobro — Usar tarjeta vinculada existente | P2 / P2 |
+| 4 | TS-STRIPE-TC1018 | TS-STRIPE-TC1020 | diferenciar-new-existing | Alta de Viaje desde app pax modo business sin Hold en Alta, Cobro desde App Driver — Vincular tarjeta nueva | Alta de Viaje desde app pax modo business sin Hold en Alta, Cobro desde App Driver — Usar tarjeta vinculada existente | P2 / P2 |
 | 5 | TS-STRIPE-TC1018 | TS-STRIPE-TC1026 | deprecar-redundante | (sin cambio) | DEPRECADO — duplicado de TC1018 / TC1020 | P3 |
 | 6 | TS-STRIPE-TC1018 | TS-STRIPE-TC1028 | deprecar-redundante | (sin cambio) | DEPRECADO — duplicado de TC1018 / TC1020 | P3 |
 | 7 | TS-STRIPE-TC1021 | TS-STRIPE-TC1023 | diferenciar-new-existing | Alta de Viaje app pax business 3DS Hold — Vincular tarjeta nueva | Alta de Viaje app pax business 3DS Hold — Usar tarjeta vinculada existente | P1 / P1 |
