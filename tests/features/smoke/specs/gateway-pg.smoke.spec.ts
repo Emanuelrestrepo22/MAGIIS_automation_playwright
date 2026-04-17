@@ -283,7 +283,7 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 
 		await test.step('[SMOKE-GW-TC05][STEP-04] Completar formulario — Colaborador + tarjeta sin 3DS (4242)', async () => {
 			await travel.fillMinimum({
-				client:      TEST_DATA.contractorColaborador,
+				client:      TEST_DATA.contractorClient,
 				passenger:   TEST_DATA.contractorColaborador,
 				origin:      TEST_DATA.origin,
 				destination: TEST_DATA.destination,
@@ -332,7 +332,7 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 
 		await test.step('[SMOKE-GW-TC06][STEP-04] Completar formulario — Colaborador + tarjeta con 3DS (3155)', async () => {
 			await travel.fillMinimum({
-				client:      TEST_DATA.contractorColaborador,
+				client:      TEST_DATA.contractorClient,
 				passenger:   TEST_DATA.contractorColaborador,
 				origin:      TEST_DATA.origin,
 				destination: TEST_DATA.destination,
@@ -619,9 +619,11 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Contractor`, 
 			await expectNoThreeDSModal(page);
 		});
 
+		await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 30_000, waitUntil: 'commit' });
+
 		await test.step('[SMOKE-GW-TC11][STEP-06] Validar viaje en gestión — "Buscando chofer"', async () => {
 			await management.goto();
-			await management.expectPassengerInPorAsignar(TEST_DATA.contractorColaborador, undefined, 'Buscando chofer');
+			await management.expectPassengerInPorAsignar(TEST_DATA.contractorColaborador, TEST_DATA.destination, 'Buscando chofer');
 			console.log(`[SMOKE-GW-TC11] Contractor Colaborador Hold ON sin 3DS — SEARCHING_DRIVER en ${env.toUpperCase()} ✅`);
 		});
 	});
@@ -672,9 +674,11 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Contractor`, 
 			console.log('[SMOKE-GW-TC12][3DS-2] Segundo challenge 3DS aprobado ✅');
 		});
 
+		await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 30_000, waitUntil: 'commit' });
+
 		await test.step('[SMOKE-GW-TC12][STEP-07] Validar viaje en gestión — "Buscando chofer"', async () => {
 			await management.goto();
-			await management.expectPassengerInPorAsignar(TEST_DATA.contractorColaborador, undefined, 'Buscando chofer');
+			await management.expectPassengerInPorAsignar(TEST_DATA.contractorColaborador, TEST_DATA.destination, 'Buscando chofer');
 			console.log(`[SMOKE-GW-TC12] Contractor Colaborador Hold ON 3DS éxito — SEARCHING_DRIVER en ${env.toUpperCase()} ✅`);
 		});
 	});
@@ -719,6 +723,8 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Contractor`, 
 		await test.step('[SMOKE-GW-TC13][STEP-05] Verificar que NO aparece modal 3DS', async () => {
 			await expectNoThreeDSModal(page);
 		});
+
+		await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 30_000, waitUntil: 'commit' });
 
 		await test.step('[SMOKE-GW-TC13][STEP-06] Validar viaje en gestión — "Buscando chofer" sin preautorización', async () => {
 			await management.goto();

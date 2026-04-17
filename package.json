@@ -49,6 +49,8 @@
     "---UTILS---": "─── Utilidades ───",
     "pw:install": "npx playwright install --with-deps chromium",
     "validate:terminology": "node scripts/ai/check-doc-terminology.mjs",
+    "cleanup:test:travels": "cross-env ENV=test npx ts-node --esm scripts/cleanup/cleanup-test-travels.ts",
+    "cleanup:test:travels:dry": "cross-env ENV=test npx ts-node --esm scripts/cleanup/cleanup-test-travels.ts --dry-run",
     "test:plan": "npx playwright test --reporter=list --project=chromium --list",
     "test:ui": "npx playwright test --ui",
     "test:trace": "npx playwright show-trace",
