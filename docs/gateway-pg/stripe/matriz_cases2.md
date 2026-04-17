@@ -147,68 +147,78 @@ r# Test Suite – Stripe · Parte 2: Portal Contractor, Quote, Recurrentes y Ope
 
 ## 7. Reactivación de Viajes Cancelados (desde Carrier – Usuario Empresa Individuo)
 
-| ID | Descripción |
-|----|-------------|
-| TS-STRIPE-P2-TC060 | Validar Reactivación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver |
-| TS-STRIPE-P2-TC061 | Validar Reactivación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
-| TS-STRIPE-P2-TC062 | Validar Reactivación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver |
-| TS-STRIPE-P2-TC063 | Validar Reactivación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
-| TS-STRIPE-P2-TC064 | Validar Reactivación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS |
-| TS-STRIPE-P2-TC065 | Validar Reactivación de viaje cancelado para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
+> **Fase 2 — diferenciación aplicada:** pares TC060↔TC062 y TC061↔TC063 resueltos con CARD-NEW / CARD-EXISTING. La reactivación parte de un viaje ya cancelado; la variante distingue si se reutiliza la tarjeta original del viaje o se vincula una nueva al momento de reactivar.
+
+| ID | Descripción | Estado |
+| --- | --- | --- |
+| TS-STRIPE-P2-TC060 | Validar Reactivación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver — **Vincular tarjeta nueva** | activo — P3 |
+| TS-STRIPE-P2-TC062 | Validar Reactivación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver — **Usar tarjeta vinculada existente** (alias TS-STRIPE-P2-TC060-CARD-EXISTING) | activo — P3 |
+| TS-STRIPE-P2-TC061 | Validar Reactivación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver — **Vincular tarjeta nueva** | activo — P3 |
+| TS-STRIPE-P2-TC063 | Validar Reactivación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver — **Usar tarjeta vinculada existente** (alias TS-STRIPE-P2-TC061-CARD-EXISTING) | activo — P3 |
+| TS-STRIPE-P2-TC064 | Validar Reactivación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS | activo — P2 |
+| TS-STRIPE-P2-TC065 | Validar Reactivación de viaje cancelado para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS | activo — P2 |
 
 ---
 
 ## 8. Clonación de Viajes Cancelados (desde Carrier – Usuario Empresa Individuo)
 
-| ID | Descripción |
-|----|-------------|
-| TS-STRIPE-P2-TC066 | Validar Clonación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver |
-| TS-STRIPE-P2-TC067 | Validar Clonación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
-| TS-STRIPE-P2-TC068 | Validar Clonación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver |
-| TS-STRIPE-P2-TC069 | Validar Clonación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
-| TS-STRIPE-P2-TC070 | Validar Clonación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS |
-| TS-STRIPE-P2-TC071 | Validar Clonación de viaje cancelado para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
+> **Fase 2 — diferenciación aplicada:** pares TC066↔TC068 y TC067↔TC069 resueltos con CARD-NEW / CARD-EXISTING.
+
+| ID | Descripción | Estado |
+|----|-------------|--------|
+| TS-STRIPE-P2-TC066 | Validar Clonación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver — **Vincular tarjeta nueva** | activo — P3 |
+| TS-STRIPE-P2-TC068 | Validar Clonación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver — **Usar tarjeta vinculada existente** (alias TS-STRIPE-P2-TC066-CARD-EXISTING) | activo — P3 |
+| TS-STRIPE-P2-TC067 | Validar Clonación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver — **Vincular tarjeta nueva** | activo — P3 |
+| TS-STRIPE-P2-TC069 | Validar Clonación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver — **Usar tarjeta vinculada existente** (alias TS-STRIPE-P2-TC067-CARD-EXISTING) | activo — P3 |
+| TS-STRIPE-P2-TC070 | Validar Clonación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS | activo — P2 |
+| TS-STRIPE-P2-TC071 | Validar Clonación de viaje cancelado para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS | activo — P2 |
 
 ---
 
 ## 9. Clonación de Viajes Finalizados (desde Carrier – Usuario Empresa Individuo)
 
-| ID | Descripción |
-|----|-------------|
-| TS-STRIPE-P2-TC072 | Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver |
-| TS-STRIPE-P2-TC073 | Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
-| TS-STRIPE-P2-TC074 | Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver |
-| TS-STRIPE-P2-TC075 | Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
-| TS-STRIPE-P2-TC076 | Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS |
-| TS-STRIPE-P2-TC077 | Validar Clonación de viaje finalizado para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
+> **Fase 2 — diferenciación aplicada:** pares TC072↔TC074 y TC073↔TC075 resueltos con CARD-NEW / CARD-EXISTING.
+
+| ID | Descripción | Estado |
+|----|-------------|--------|
+| TS-STRIPE-P2-TC072 | Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver — **Vincular tarjeta nueva** | activo — P3 |
+| TS-STRIPE-P2-TC074 | Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver — **Usar tarjeta vinculada existente** (alias TS-STRIPE-P2-TC072-CARD-EXISTING) | activo — P3 |
+| TS-STRIPE-P2-TC073 | Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver — **Vincular tarjeta nueva** | activo — P3 |
+| TS-STRIPE-P2-TC075 | Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver — **Usar tarjeta vinculada existente** (alias TS-STRIPE-P2-TC073-CARD-EXISTING) | activo — P3 |
+| TS-STRIPE-P2-TC076 | Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS | activo — P2 |
+| TS-STRIPE-P2-TC077 | Validar Clonación de viaje finalizado para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS | activo — P2 |
 
 ---
 
 ## 10. Edición de Viajes Programados (desde Carrier – Usuario Empresa Individuo)
 
-| ID | Descripción |
-|----|-------------|
-| TS-STRIPE-P2-TC078 | Validar Alta de viaje y edición desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver |
-| TS-STRIPE-P2-TC079 | Validar Alta de viaje y edición desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
-| TS-STRIPE-P2-TC080 | Validar Alta de viaje y edición desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver |
-| TS-STRIPE-P2-TC081 | Validar Alta de viaje y edición desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
-| TS-STRIPE-P2-TC082 | Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS |
-| TS-STRIPE-P2-TC083 | Validar Clonación de viaje finalizado para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
+> **Fase 2 — diferenciación aplicada:** pares TC078↔TC080 y TC079↔TC081 resueltos con CARD-NEW / CARD-EXISTING. TC082 y TC083 figuran con descripción "Clonación" en la fuente — posible error de redacción reportado a QA (anotado en `duplicados-detectados.md`); se conservan con flag `fuera-de-sección`.
+
+| ID | Descripción | Estado |
+|----|-------------|--------|
+| TS-STRIPE-P2-TC078 | Validar Alta de viaje y edición desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver — **Vincular tarjeta nueva** | activo — P3 |
+| TS-STRIPE-P2-TC080 | Validar Alta de viaje y edición desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver — **Usar tarjeta vinculada existente** (alias TS-STRIPE-P2-TC078-CARD-EXISTING) | activo — P3 |
+| TS-STRIPE-P2-TC079 | Validar Alta de viaje y edición desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver — **Vincular tarjeta nueva** | activo — P3 |
+| TS-STRIPE-P2-TC081 | Validar Alta de viaje y edición desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver — **Usar tarjeta vinculada existente** (alias TS-STRIPE-P2-TC079-CARD-EXISTING) | activo — P3 |
+| TS-STRIPE-P2-TC082 | Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS | activo — P3 · **flag fuera-de-sección** (texto "Clonación" en sección Edición; reportado a QA) |
+| TS-STRIPE-P2-TC083 | Validar Clonación de viaje finalizado para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS | activo — P3 · **flag fuera-de-sección** |
 
 ---
 
 ## 11. Edición en Conflicto (desde Carrier – Usuario Empresa Individuo)
 
 > **Precondiciones:** Fallo de validación 3D Secure u otra variable como saldo insuficiente impiden el hold. Incluye hold con 3D Secure, o tarjeta bloqueada/sin fondos al momento del cobro.
+>
+> **Fase 2 — diferenciación aplicada:** pares TC084↔TC086 y TC085↔TC087 resueltos con CARD-NEW / CARD-EXISTING. TC088 y TC089 figuran con descripción "Clonación" en la fuente — flag `fuera-de-sección`.
 
-| ID | Descripción |
-|----|-------------|
-| TS-STRIPE-P2-TC084 | Validar Alta de viaje y edición en conflicto desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver |
-| TS-STRIPE-P2-TC085 | Validar Alta de viaje y edición en conflicto desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
-| TS-STRIPE-P2-TC086 | Validar Alta de viaje y edición en conflicto desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver |
-| TS-STRIPE-P2-TC087 | Validar Alta de viaje y edición en conflicto desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
-| TS-STRIPE-P2-TC088 | Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS |
-| TS-STRIPE-P2-TC089 | Validar Clonación de viaje finalizado para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
+| ID | Descripción | Estado |
+|----|-------------|--------|
+| TS-STRIPE-P2-TC084 | Validar Alta de viaje y edición en conflicto desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver — **Vincular tarjeta nueva** | activo — P3 |
+| TS-STRIPE-P2-TC086 | Validar Alta de viaje y edición en conflicto desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver — **Usar tarjeta vinculada existente** (alias TS-STRIPE-P2-TC084-CARD-EXISTING) | activo — P3 |
+| TS-STRIPE-P2-TC085 | Validar Alta de viaje y edición en conflicto desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver — **Vincular tarjeta nueva** | activo — P3 |
+| TS-STRIPE-P2-TC087 | Validar Alta de viaje y edición en conflicto desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver — **Usar tarjeta vinculada existente** (alias TS-STRIPE-P2-TC085-CARD-EXISTING) | activo — P3 |
+| TS-STRIPE-P2-TC088 | Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS | activo — P3 · **flag fuera-de-sección** |
+| TS-STRIPE-P2-TC089 | Validar Clonación de viaje finalizado para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS | activo — P3 · **flag fuera-de-sección** |
 
 ---
 

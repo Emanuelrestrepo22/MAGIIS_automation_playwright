@@ -1,6 +1,6 @@
 {
   "generated_at": "2026-04-17T01:47:14.890Z",
-  "generator": "qa-doc-analyst@phase1",
+  "generator": "critical-flow-prioritizer@phase2",
   "source_matrices": [
     "docs/gateway-pg/stripe/matriz_cases.md",
     "docs/gateway-pg/stripe/matriz_cases2.md"
@@ -9,7 +9,11 @@
   "notes": [
     "Generado tras normalización E2E→Validar en las matrices canónicas.",
     "Steps / preconditions / expected_results quedan vacíos: se poblarán en Fase 2 con critical-flow-prioritizer.",
-    "Pares duplicados detectados se enumeran en docs/gateway-pg/stripe/duplicados-detectados.md."
+    "Pares duplicados detectados se enumeran en docs/gateway-pg/stripe/duplicados-detectados.md.",
+    "Fase 2 aplicada: diferenciación card-new / card-existing y deprecación de redundantes.",
+    "Campo \"card_flow\" agregado a todos los casos. Valores: new | existing | n/a.",
+    "Campo \"phase2_status\" indica: active-canonical, active-card-existing, deprecated-redundant, collapsed-alias.",
+    "Alias TC-RV001..RV008 colapsados a sus canónicos via canonical_ref; no ejecutar por separado."
   ],
   "cases": [
     {
@@ -40,7 +44,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1002",
@@ -70,7 +75,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1003",
@@ -100,7 +106,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1004",
@@ -130,7 +137,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1005",
@@ -161,7 +169,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1006",
@@ -191,7 +200,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1007",
@@ -222,7 +232,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1008",
@@ -252,7 +263,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1009",
@@ -285,7 +297,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1010",
@@ -319,7 +332,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1011",
@@ -353,7 +367,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1012",
@@ -388,7 +403,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1013",
@@ -422,7 +438,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1014",
@@ -457,7 +474,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1015",
@@ -491,7 +509,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1016",
@@ -527,7 +546,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC-RV001",
@@ -537,7 +557,7 @@
       "environment": [
         "TEST"
       ],
-      "priority": "P2",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases.md",
       "preconditions": [],
@@ -548,7 +568,8 @@
         "@gateway-pg",
         "@hold",
         "@app-pax",
-        "@app-driver"
+        "@app-driver",
+        "@alias"
       ],
       "critical_flow": false,
       "section": "Alta de Viaje desde App Pax – Usuario App Pax (Modo Personal)",
@@ -561,7 +582,10 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "phase2_status": "collapsed-alias",
+      "canonical_ref": "TS-STRIPE-TC1017",
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC-RV002",
@@ -571,76 +595,7 @@
       "environment": [
         "TEST"
       ],
-      "priority": "P2",
-      "source_type": "md",
-      "source_file": "matriz_cases.md",
-      "preconditions": [],
-      "steps": [],
-      "expected_results": [],
-      "tags": [
-        "@stripe",
-        "@gateway-pg",
-        "@hold",
-        "@no-hold",
-        "@app-pax",
-        "@app-driver"
-      ],
-      "critical_flow": false,
-      "section": "Alta de Viaje desde App Pax – Usuario App Pax (Modo Personal)",
-      "subsection": "Variantes exploratorias (referenciadas a TC canónicos)",
-      "tc_canonical_ref": "TS-STRIPE-TC1018",
-      "playwright_assets": {
-        "spec_file": null,
-        "page_objects": [],
-        "fixtures": [],
-        "data_files": [
-          "tests/features/gateway-pg/data/stripeTestData.ts"
-        ]
-      }
-    },
-    {
-      "test_case_id": "TS-STRIPE-TC-RV003",
-      "title": "Validar Alta de Viaje para usuario app pax modo personal con Tarjeta Preautorizada Hold y Cobro desde App Driver",
-      "module": "gateway-pg-stripe/trip-create",
-      "portal": "app-pax",
-      "environment": [
-        "TEST"
-      ],
-      "priority": "P2",
-      "source_type": "md",
-      "source_file": "matriz_cases.md",
-      "preconditions": [],
-      "steps": [],
-      "expected_results": [],
-      "tags": [
-        "@stripe",
-        "@gateway-pg",
-        "@hold",
-        "@app-pax",
-        "@app-driver"
-      ],
-      "critical_flow": false,
-      "section": "Alta de Viaje desde App Pax – Usuario App Pax (Modo Personal)",
-      "subsection": "Variantes exploratorias (referenciadas a TC canónicos)",
-      "tc_canonical_ref": "TS-STRIPE-TC1011",
-      "playwright_assets": {
-        "spec_file": null,
-        "page_objects": [],
-        "fixtures": [],
-        "data_files": [
-          "tests/features/gateway-pg/data/stripeTestData.ts"
-        ]
-      }
-    },
-    {
-      "test_case_id": "TS-STRIPE-TC-RV004",
-      "title": "Validar Alta carrier de Viaje para usuario app pax modo personal con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
-      "module": "gateway-pg-stripe/trip-create",
-      "portal": "app-pax",
-      "environment": [
-        "TEST"
-      ],
-      "priority": "P2",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases.md",
       "preconditions": [],
@@ -653,7 +608,85 @@
         "@no-hold",
         "@app-pax",
         "@app-driver",
-        "@carrier"
+        "@alias"
+      ],
+      "critical_flow": false,
+      "section": "Alta de Viaje desde App Pax – Usuario App Pax (Modo Personal)",
+      "subsection": "Variantes exploratorias (referenciadas a TC canónicos)",
+      "tc_canonical_ref": "TS-STRIPE-TC1018",
+      "playwright_assets": {
+        "spec_file": null,
+        "page_objects": [],
+        "fixtures": [],
+        "data_files": [
+          "tests/features/gateway-pg/data/stripeTestData.ts"
+        ]
+      },
+      "phase2_status": "collapsed-alias",
+      "canonical_ref": "TS-STRIPE-TC1018",
+      "card_flow": "n/a"
+    },
+    {
+      "test_case_id": "TS-STRIPE-TC-RV003",
+      "title": "Validar Alta de Viaje para usuario app pax modo personal con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+      "module": "gateway-pg-stripe/trip-create",
+      "portal": "app-pax",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P3",
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "preconditions": [],
+      "steps": [],
+      "expected_results": [],
+      "tags": [
+        "@stripe",
+        "@gateway-pg",
+        "@hold",
+        "@app-pax",
+        "@app-driver",
+        "@alias"
+      ],
+      "critical_flow": false,
+      "section": "Alta de Viaje desde App Pax – Usuario App Pax (Modo Personal)",
+      "subsection": "Variantes exploratorias (referenciadas a TC canónicos)",
+      "tc_canonical_ref": "TS-STRIPE-TC1011",
+      "playwright_assets": {
+        "spec_file": null,
+        "page_objects": [],
+        "fixtures": [],
+        "data_files": [
+          "tests/features/gateway-pg/data/stripeTestData.ts"
+        ]
+      },
+      "phase2_status": "collapsed-alias",
+      "canonical_ref": "TS-STRIPE-TC1011",
+      "card_flow": "n/a"
+    },
+    {
+      "test_case_id": "TS-STRIPE-TC-RV004",
+      "title": "Validar Alta carrier de Viaje para usuario app pax modo personal con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "module": "gateway-pg-stripe/trip-create",
+      "portal": "app-pax",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P3",
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "preconditions": [],
+      "steps": [],
+      "expected_results": [],
+      "tags": [
+        "@stripe",
+        "@gateway-pg",
+        "@hold",
+        "@no-hold",
+        "@app-pax",
+        "@app-driver",
+        "@carrier",
+        "@alias"
       ],
       "critical_flow": false,
       "section": "Alta de Viaje desde App Pax – Usuario App Pax (Modo Personal)",
@@ -666,7 +699,10 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "phase2_status": "collapsed-alias",
+      "canonical_ref": "TS-STRIPE-TC1012",
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC-RV005",
@@ -676,7 +712,7 @@
       "environment": [
         "TEST"
       ],
-      "priority": "P2",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases.md",
       "preconditions": [],
@@ -688,7 +724,8 @@
         "@hold",
         "@3ds",
         "@app-pax",
-        "@app-driver"
+        "@app-driver",
+        "@alias"
       ],
       "critical_flow": false,
       "section": "Alta de Viaje desde App Pax – Usuario App Pax (Modo Personal)",
@@ -701,7 +738,10 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "phase2_status": "collapsed-alias",
+      "canonical_ref": "TS-STRIPE-TC1013",
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC-RV006",
@@ -711,7 +751,7 @@
       "environment": [
         "TEST"
       ],
-      "priority": "P2",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases.md",
       "preconditions": [],
@@ -724,7 +764,8 @@
         "@no-hold",
         "@3ds",
         "@app-pax",
-        "@app-driver"
+        "@app-driver",
+        "@alias"
       ],
       "critical_flow": false,
       "section": "Alta de Viaje desde App Pax – Usuario App Pax (Modo Personal)",
@@ -737,7 +778,10 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "phase2_status": "collapsed-alias",
+      "canonical_ref": "TS-STRIPE-TC1014",
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC-RV007",
@@ -747,7 +791,7 @@
       "environment": [
         "TEST"
       ],
-      "priority": "P2",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases.md",
       "preconditions": [],
@@ -759,7 +803,8 @@
         "@hold",
         "@3ds",
         "@app-pax",
-        "@app-driver"
+        "@app-driver",
+        "@alias"
       ],
       "critical_flow": false,
       "section": "Alta de Viaje desde App Pax – Usuario App Pax (Modo Personal)",
@@ -772,7 +817,10 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "phase2_status": "collapsed-alias",
+      "canonical_ref": "TS-STRIPE-TC1015",
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC-RV008",
@@ -782,7 +830,7 @@
       "environment": [
         "TEST"
       ],
-      "priority": "P2",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases.md",
       "preconditions": [],
@@ -795,7 +843,8 @@
         "@no-hold",
         "@3ds",
         "@app-pax",
-        "@app-driver"
+        "@app-driver",
+        "@alias"
       ],
       "critical_flow": false,
       "section": "Alta de Viaje desde App Pax – Usuario App Pax (Modo Personal)",
@@ -808,7 +857,10 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "phase2_status": "collapsed-alias",
+      "canonical_ref": "TS-STRIPE-TC1016",
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1122",
@@ -841,11 +893,12 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1017",
-      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold y Cobro desde App Driver — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -862,7 +915,8 @@
         "@gateway-pg",
         "@hold",
         "@app-pax",
-        "@app-driver"
+        "@app-driver",
+        "@card-new"
       ],
       "critical_flow": true,
       "section": "Alta de Viaje desde App Pax – Usuario App Pax (Modo Business / Colaborador)",
@@ -874,17 +928,19 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "new",
+      "phase2_status": "active-canonical"
     },
     {
       "test_case_id": "TS-STRIPE-TC1018",
-      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold y Cobro desde App Driver — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
         "TEST"
       ],
-      "priority": "P1",
+      "priority": "P2",
       "source_type": "md",
       "source_file": "matriz_cases.md",
       "preconditions": [],
@@ -896,9 +952,10 @@
         "@hold",
         "@no-hold",
         "@app-pax",
-        "@app-driver"
+        "@app-driver",
+        "@card-new"
       ],
-      "critical_flow": true,
+      "critical_flow": false,
       "section": "Alta de Viaje desde App Pax – Usuario App Pax (Modo Business / Colaborador)",
       "subsection": "Tarjeta Preautorizada – sin validación 3DS",
       "playwright_assets": {
@@ -908,11 +965,13 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "new",
+      "phase2_status": "active-canonical"
     },
     {
       "test_case_id": "TS-STRIPE-TC1019",
-      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold y Cobro desde App Driver — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -929,7 +988,8 @@
         "@gateway-pg",
         "@hold",
         "@app-pax",
-        "@app-driver"
+        "@app-driver",
+        "@card-existing"
       ],
       "critical_flow": true,
       "section": "Alta de Viaje desde App Pax – Usuario App Pax (Modo Business / Colaborador)",
@@ -941,17 +1001,21 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "existing",
+      "canonical_ref": "TS-STRIPE-TC1017",
+      "card_existing_alias_id": "TS-STRIPE-TC1017-CARD-EXISTING",
+      "phase2_status": "active-card-existing"
     },
     {
       "test_case_id": "TS-STRIPE-TC1020",
-      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold y Cobro desde App Driver — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
         "TEST"
       ],
-      "priority": "P1",
+      "priority": "P2",
       "source_type": "md",
       "source_file": "matriz_cases.md",
       "preconditions": [],
@@ -963,9 +1027,10 @@
         "@hold",
         "@no-hold",
         "@app-pax",
-        "@app-driver"
+        "@app-driver",
+        "@card-existing"
       ],
-      "critical_flow": true,
+      "critical_flow": false,
       "section": "Alta de Viaje desde App Pax – Usuario App Pax (Modo Business / Colaborador)",
       "subsection": "Tarjeta Preautorizada – sin validación 3DS",
       "playwright_assets": {
@@ -975,7 +1040,11 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "existing",
+      "canonical_ref": "TS-STRIPE-TC1018",
+      "card_existing_alias_id": "TS-STRIPE-TC1018-CARD-EXISTING",
+      "phase2_status": "active-card-existing"
     },
     {
       "test_case_id": "TS-STRIPE-TC1025",
@@ -985,7 +1054,7 @@
       "environment": [
         "TEST"
       ],
-      "priority": "P1",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases.md",
       "preconditions": [],
@@ -996,9 +1065,10 @@
         "@gateway-pg",
         "@hold",
         "@app-pax",
-        "@app-driver"
+        "@app-driver",
+        "@deprecated"
       ],
-      "critical_flow": true,
+      "critical_flow": false,
       "section": "Alta de Viaje desde App Pax – Usuario App Pax (Modo Business / Colaborador)",
       "subsection": "Tarjeta Preautorizada – sin validación 3DS",
       "playwright_assets": {
@@ -1008,7 +1078,10 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "phase2_status": "deprecated-redundant",
+      "canonical_ref": "TS-STRIPE-TC1017",
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1026",
@@ -1018,7 +1091,7 @@
       "environment": [
         "TEST"
       ],
-      "priority": "P1",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases.md",
       "preconditions": [],
@@ -1030,9 +1103,10 @@
         "@hold",
         "@no-hold",
         "@app-pax",
-        "@app-driver"
+        "@app-driver",
+        "@deprecated"
       ],
-      "critical_flow": true,
+      "critical_flow": false,
       "section": "Alta de Viaje desde App Pax – Usuario App Pax (Modo Business / Colaborador)",
       "subsection": "Tarjeta Preautorizada – sin validación 3DS",
       "playwright_assets": {
@@ -1042,7 +1116,10 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "phase2_status": "deprecated-redundant",
+      "canonical_ref": "TS-STRIPE-TC1018",
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1027",
@@ -1052,7 +1129,7 @@
       "environment": [
         "TEST"
       ],
-      "priority": "P1",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases.md",
       "preconditions": [],
@@ -1063,9 +1140,10 @@
         "@gateway-pg",
         "@hold",
         "@app-pax",
-        "@app-driver"
+        "@app-driver",
+        "@deprecated"
       ],
-      "critical_flow": true,
+      "critical_flow": false,
       "section": "Alta de Viaje desde App Pax – Usuario App Pax (Modo Business / Colaborador)",
       "subsection": "Tarjeta Preautorizada – sin validación 3DS",
       "playwright_assets": {
@@ -1075,7 +1153,10 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "phase2_status": "deprecated-redundant",
+      "canonical_ref": "TS-STRIPE-TC1017",
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1028",
@@ -1085,7 +1166,7 @@
       "environment": [
         "TEST"
       ],
-      "priority": "P1",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases.md",
       "preconditions": [],
@@ -1097,9 +1178,10 @@
         "@hold",
         "@no-hold",
         "@app-pax",
-        "@app-driver"
+        "@app-driver",
+        "@deprecated"
       ],
-      "critical_flow": true,
+      "critical_flow": false,
       "section": "Alta de Viaje desde App Pax – Usuario App Pax (Modo Business / Colaborador)",
       "subsection": "Tarjeta Preautorizada – sin validación 3DS",
       "playwright_assets": {
@@ -1109,11 +1191,14 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "phase2_status": "deprecated-redundant",
+      "canonical_ref": "TS-STRIPE-TC1018",
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1021",
-      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -1131,7 +1216,8 @@
         "@hold",
         "@3ds",
         "@app-pax",
-        "@app-driver"
+        "@app-driver",
+        "@card-new"
       ],
       "critical_flow": true,
       "section": "Alta de Viaje desde App Pax – Usuario App Pax (Modo Business / Colaborador)",
@@ -1143,11 +1229,13 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "new",
+      "phase2_status": "active-canonical"
     },
     {
       "test_case_id": "TS-STRIPE-TC1022",
-      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -1166,7 +1254,8 @@
         "@no-hold",
         "@3ds",
         "@app-pax",
-        "@app-driver"
+        "@app-driver",
+        "@card-new"
       ],
       "critical_flow": true,
       "section": "Alta de Viaje desde App Pax – Usuario App Pax (Modo Business / Colaborador)",
@@ -1178,11 +1267,13 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "new",
+      "phase2_status": "active-canonical"
     },
     {
       "test_case_id": "TS-STRIPE-TC1023",
-      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -1200,7 +1291,8 @@
         "@hold",
         "@3ds",
         "@app-pax",
-        "@app-driver"
+        "@app-driver",
+        "@card-existing"
       ],
       "critical_flow": true,
       "section": "Alta de Viaje desde App Pax – Usuario App Pax (Modo Business / Colaborador)",
@@ -1212,11 +1304,15 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "existing",
+      "canonical_ref": "TS-STRIPE-TC1021",
+      "card_existing_alias_id": "TS-STRIPE-TC1021-CARD-EXISTING",
+      "phase2_status": "active-card-existing"
     },
     {
       "test_case_id": "TS-STRIPE-TC1024",
-      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -1235,7 +1331,8 @@
         "@no-hold",
         "@3ds",
         "@app-pax",
-        "@app-driver"
+        "@app-driver",
+        "@card-existing"
       ],
       "critical_flow": true,
       "section": "Alta de Viaje desde App Pax – Usuario App Pax (Modo Business / Colaborador)",
@@ -1247,7 +1344,11 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "existing",
+      "canonical_ref": "TS-STRIPE-TC1022",
+      "card_existing_alias_id": "TS-STRIPE-TC1022-CARD-EXISTING",
+      "phase2_status": "active-card-existing"
     },
     {
       "test_case_id": "TS-STRIPE-TC1029",
@@ -1257,7 +1358,7 @@
       "environment": [
         "TEST"
       ],
-      "priority": "P1",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases.md",
       "preconditions": [],
@@ -1269,9 +1370,10 @@
         "@hold",
         "@3ds",
         "@app-pax",
-        "@app-driver"
+        "@app-driver",
+        "@deprecated"
       ],
-      "critical_flow": true,
+      "critical_flow": false,
       "section": "Alta de Viaje desde App Pax – Usuario App Pax (Modo Business / Colaborador)",
       "subsection": "Tarjeta Preautorizada – con validación 3DS",
       "playwright_assets": {
@@ -1281,7 +1383,10 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "phase2_status": "deprecated-redundant",
+      "canonical_ref": "TS-STRIPE-TC1021",
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1030",
@@ -1291,7 +1396,7 @@
       "environment": [
         "TEST"
       ],
-      "priority": "P1",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases.md",
       "preconditions": [],
@@ -1304,9 +1409,10 @@
         "@no-hold",
         "@3ds",
         "@app-pax",
-        "@app-driver"
+        "@app-driver",
+        "@deprecated"
       ],
-      "critical_flow": true,
+      "critical_flow": false,
       "section": "Alta de Viaje desde App Pax – Usuario App Pax (Modo Business / Colaborador)",
       "subsection": "Tarjeta Preautorizada – con validación 3DS",
       "playwright_assets": {
@@ -1316,7 +1422,10 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "phase2_status": "deprecated-redundant",
+      "canonical_ref": "TS-STRIPE-TC1022",
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1031",
@@ -1326,7 +1435,7 @@
       "environment": [
         "TEST"
       ],
-      "priority": "P1",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases.md",
       "preconditions": [],
@@ -1338,9 +1447,10 @@
         "@hold",
         "@3ds",
         "@app-pax",
-        "@app-driver"
+        "@app-driver",
+        "@deprecated"
       ],
-      "critical_flow": true,
+      "critical_flow": false,
       "section": "Alta de Viaje desde App Pax – Usuario App Pax (Modo Business / Colaborador)",
       "subsection": "Tarjeta Preautorizada – con validación 3DS",
       "playwright_assets": {
@@ -1350,7 +1460,10 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "phase2_status": "deprecated-redundant",
+      "canonical_ref": "TS-STRIPE-TC1021",
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1032",
@@ -1360,7 +1473,7 @@
       "environment": [
         "TEST"
       ],
-      "priority": "P1",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases.md",
       "preconditions": [],
@@ -1373,9 +1486,10 @@
         "@no-hold",
         "@3ds",
         "@app-pax",
-        "@app-driver"
+        "@app-driver",
+        "@deprecated"
       ],
-      "critical_flow": true,
+      "critical_flow": false,
       "section": "Alta de Viaje desde App Pax – Usuario App Pax (Modo Business / Colaborador)",
       "subsection": "Tarjeta Preautorizada – con validación 3DS",
       "playwright_assets": {
@@ -1385,7 +1499,10 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "phase2_status": "deprecated-redundant",
+      "canonical_ref": "TS-STRIPE-TC1022",
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1033",
@@ -1419,17 +1536,18 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1034",
-      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada sin Hold y Cobro desde App Driver — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
         "TEST"
       ],
-      "priority": "P1",
+      "priority": "P2",
       "source_type": "md",
       "source_file": "matriz_cases.md",
       "preconditions": [],
@@ -1442,9 +1560,10 @@
         "@no-hold",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@card-new"
       ],
-      "critical_flow": true,
+      "critical_flow": false,
       "section": "Alta de Viaje desde Carrier – Usuario Colaborador o Asociado de Contractor",
       "subsection": "Tarjeta Preautorizada – sin validación 3DS",
       "playwright_assets": {
@@ -1454,11 +1573,13 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "new",
+      "phase2_status": "active-canonical"
     },
     {
       "test_case_id": "TS-STRIPE-TC1035",
-      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada Hold y Cobro desde App Driver — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
@@ -1476,7 +1597,8 @@
         "@hold",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@card-new"
       ],
       "critical_flow": true,
       "section": "Alta de Viaje desde Carrier – Usuario Colaborador o Asociado de Contractor",
@@ -1488,17 +1610,19 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "new",
+      "phase2_status": "active-canonical"
     },
     {
       "test_case_id": "TS-STRIPE-TC1036",
-      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada sin Hold y Cobro desde App Driver — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
         "TEST"
       ],
-      "priority": "P1",
+      "priority": "P2",
       "source_type": "md",
       "source_file": "matriz_cases.md",
       "preconditions": [],
@@ -1511,9 +1635,10 @@
         "@no-hold",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@card-existing"
       ],
-      "critical_flow": true,
+      "critical_flow": false,
       "section": "Alta de Viaje desde Carrier – Usuario Colaborador o Asociado de Contractor",
       "subsection": "Tarjeta Preautorizada – sin validación 3DS",
       "playwright_assets": {
@@ -1523,11 +1648,15 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "existing",
+      "canonical_ref": "TS-STRIPE-TC1034",
+      "card_existing_alias_id": "TS-STRIPE-TC1034-CARD-EXISTING",
+      "phase2_status": "active-card-existing"
     },
     {
       "test_case_id": "TS-STRIPE-TC1041",
-      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada Hold y Cobro desde App Driver — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
@@ -1545,7 +1674,8 @@
         "@hold",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@card-existing"
       ],
       "critical_flow": true,
       "section": "Alta de Viaje desde Carrier – Usuario Colaborador o Asociado de Contractor",
@@ -1557,7 +1687,11 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "existing",
+      "canonical_ref": "TS-STRIPE-TC1035",
+      "card_existing_alias_id": "TS-STRIPE-TC1035-CARD-EXISTING",
+      "phase2_status": "active-card-existing"
     },
     {
       "test_case_id": "TS-STRIPE-TC1042",
@@ -1567,7 +1701,7 @@
       "environment": [
         "TEST"
       ],
-      "priority": "P1",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases.md",
       "preconditions": [],
@@ -1580,9 +1714,10 @@
         "@no-hold",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@deprecated"
       ],
-      "critical_flow": true,
+      "critical_flow": false,
       "section": "Alta de Viaje desde Carrier – Usuario Colaborador o Asociado de Contractor",
       "subsection": "Tarjeta Preautorizada – sin validación 3DS",
       "playwright_assets": {
@@ -1592,7 +1727,10 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "phase2_status": "deprecated-redundant",
+      "canonical_ref": "TS-STRIPE-TC1034",
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1043",
@@ -1602,7 +1740,7 @@
       "environment": [
         "TEST"
       ],
-      "priority": "P1",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases.md",
       "preconditions": [],
@@ -1614,9 +1752,10 @@
         "@hold",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@deprecated"
       ],
-      "critical_flow": true,
+      "critical_flow": false,
       "section": "Alta de Viaje desde Carrier – Usuario Colaborador o Asociado de Contractor",
       "subsection": "Tarjeta Preautorizada – sin validación 3DS",
       "playwright_assets": {
@@ -1626,7 +1765,10 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "phase2_status": "deprecated-redundant",
+      "canonical_ref": "TS-STRIPE-TC1035",
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1044",
@@ -1636,7 +1778,7 @@
       "environment": [
         "TEST"
       ],
-      "priority": "P1",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases.md",
       "preconditions": [],
@@ -1649,9 +1791,10 @@
         "@no-hold",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@deprecated"
       ],
-      "critical_flow": true,
+      "critical_flow": false,
       "section": "Alta de Viaje desde Carrier – Usuario Colaborador o Asociado de Contractor",
       "subsection": "Tarjeta Preautorizada – sin validación 3DS",
       "playwright_assets": {
@@ -1661,11 +1804,14 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "phase2_status": "deprecated-redundant",
+      "canonical_ref": "TS-STRIPE-TC1034",
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1037",
-      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
@@ -1684,7 +1830,8 @@
         "@3ds",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@card-new"
       ],
       "critical_flow": true,
       "section": "Alta de Viaje desde Carrier – Usuario Colaborador o Asociado de Contractor",
@@ -1696,11 +1843,13 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "new",
+      "phase2_status": "active-canonical"
     },
     {
       "test_case_id": "TS-STRIPE-TC1038",
-      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
@@ -1720,7 +1869,8 @@
         "@3ds",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@card-new"
       ],
       "critical_flow": true,
       "section": "Alta de Viaje desde Carrier – Usuario Colaborador o Asociado de Contractor",
@@ -1732,7 +1882,9 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "new",
+      "phase2_status": "active-canonical"
     },
     {
       "test_case_id": "TS-STRIPE-TC1039",
@@ -1767,11 +1919,12 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1040",
-      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
@@ -1791,7 +1944,8 @@
         "@3ds",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@card-existing"
       ],
       "critical_flow": true,
       "section": "Alta de Viaje desde Carrier – Usuario Colaborador o Asociado de Contractor",
@@ -1803,11 +1957,15 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "existing",
+      "canonical_ref": "TS-STRIPE-TC1038",
+      "card_existing_alias_id": "TS-STRIPE-TC1038-CARD-EXISTING",
+      "phase2_status": "active-card-existing"
     },
     {
       "test_case_id": "TS-STRIPE-TC1045",
-      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
@@ -1826,7 +1984,8 @@
         "@3ds",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@card-existing"
       ],
       "critical_flow": true,
       "section": "Alta de Viaje desde Carrier – Usuario Colaborador o Asociado de Contractor",
@@ -1838,7 +1997,11 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "existing",
+      "canonical_ref": "TS-STRIPE-TC1037",
+      "card_existing_alias_id": "TS-STRIPE-TC1037-CARD-EXISTING",
+      "phase2_status": "active-card-existing"
     },
     {
       "test_case_id": "TS-STRIPE-TC1046",
@@ -1848,7 +2011,7 @@
       "environment": [
         "TEST"
       ],
-      "priority": "P1",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases.md",
       "preconditions": [],
@@ -1862,9 +2025,10 @@
         "@3ds",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@deprecated"
       ],
-      "critical_flow": true,
+      "critical_flow": false,
       "section": "Alta de Viaje desde Carrier – Usuario Colaborador o Asociado de Contractor",
       "subsection": "Tarjeta Preautorizada – con validación 3DS",
       "playwright_assets": {
@@ -1874,7 +2038,10 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "phase2_status": "deprecated-redundant",
+      "canonical_ref": "TS-STRIPE-TC1038",
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1047",
@@ -1884,7 +2051,7 @@
       "environment": [
         "TEST"
       ],
-      "priority": "P1",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases.md",
       "preconditions": [],
@@ -1897,9 +2064,10 @@
         "@3ds",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@deprecated"
       ],
-      "critical_flow": true,
+      "critical_flow": false,
       "section": "Alta de Viaje desde Carrier – Usuario Colaborador o Asociado de Contractor",
       "subsection": "Tarjeta Preautorizada – con validación 3DS",
       "playwright_assets": {
@@ -1909,7 +2077,10 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "phase2_status": "deprecated-redundant",
+      "canonical_ref": "TS-STRIPE-TC1037",
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1048",
@@ -1919,7 +2090,7 @@
       "environment": [
         "TEST"
       ],
-      "priority": "P1",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases.md",
       "preconditions": [],
@@ -1933,9 +2104,10 @@
         "@3ds",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@deprecated"
       ],
-      "critical_flow": true,
+      "critical_flow": false,
       "section": "Alta de Viaje desde Carrier – Usuario Colaborador o Asociado de Contractor",
       "subsection": "Tarjeta Preautorizada – con validación 3DS",
       "playwright_assets": {
@@ -1945,7 +2117,10 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "phase2_status": "deprecated-redundant",
+      "canonical_ref": "TS-STRIPE-TC1038",
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1049",
@@ -1979,7 +2154,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1050",
@@ -2012,7 +2188,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1051",
@@ -2045,7 +2222,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1052",
@@ -2078,7 +2256,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1057",
@@ -2112,7 +2291,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1058",
@@ -2145,7 +2325,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1059",
@@ -2178,7 +2359,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1060",
@@ -2211,7 +2393,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1053",
@@ -2245,7 +2428,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1054",
@@ -2279,7 +2463,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1055",
@@ -2313,7 +2498,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1056",
@@ -2348,7 +2534,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1061",
@@ -2381,7 +2568,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1062",
@@ -2414,7 +2602,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1063",
@@ -2447,7 +2636,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1064",
@@ -2480,17 +2670,18 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1065",
-      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
         "TEST"
       ],
-      "priority": "P1",
+      "priority": "P2",
       "source_type": "md",
       "source_file": "matriz_cases.md",
       "preconditions": [],
@@ -2502,9 +2693,10 @@
         "@hold",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@card-new"
       ],
-      "critical_flow": true,
+      "critical_flow": false,
       "section": "Alta de Viaje desde Carrier – Usuario Empresa Individuo",
       "subsection": "Tarjeta Preautorizada – sin validación 3DS",
       "playwright_assets": {
@@ -2514,17 +2706,19 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "new",
+      "phase2_status": "active-canonical"
     },
     {
       "test_case_id": "TS-STRIPE-TC1066",
-      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
         "TEST"
       ],
-      "priority": "P1",
+      "priority": "P2",
       "source_type": "md",
       "source_file": "matriz_cases.md",
       "preconditions": [],
@@ -2537,9 +2731,10 @@
         "@no-hold",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@card-new"
       ],
-      "critical_flow": true,
+      "critical_flow": false,
       "section": "Alta de Viaje desde Carrier – Usuario Empresa Individuo",
       "subsection": "Tarjeta Preautorizada – sin validación 3DS",
       "playwright_assets": {
@@ -2549,17 +2744,19 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "new",
+      "phase2_status": "active-canonical"
     },
     {
       "test_case_id": "TS-STRIPE-TC1067",
-      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
         "TEST"
       ],
-      "priority": "P1",
+      "priority": "P2",
       "source_type": "md",
       "source_file": "matriz_cases.md",
       "preconditions": [],
@@ -2571,9 +2768,10 @@
         "@hold",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@card-existing"
       ],
-      "critical_flow": true,
+      "critical_flow": false,
       "section": "Alta de Viaje desde Carrier – Usuario Empresa Individuo",
       "subsection": "Tarjeta Preautorizada – sin validación 3DS",
       "playwright_assets": {
@@ -2583,17 +2781,21 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "existing",
+      "canonical_ref": "TS-STRIPE-TC1065",
+      "card_existing_alias_id": "TS-STRIPE-TC1065-CARD-EXISTING",
+      "phase2_status": "active-card-existing"
     },
     {
       "test_case_id": "TS-STRIPE-TC1068",
-      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
         "TEST"
       ],
-      "priority": "P1",
+      "priority": "P2",
       "source_type": "md",
       "source_file": "matriz_cases.md",
       "preconditions": [],
@@ -2606,9 +2808,10 @@
         "@no-hold",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@card-existing"
       ],
-      "critical_flow": true,
+      "critical_flow": false,
       "section": "Alta de Viaje desde Carrier – Usuario Empresa Individuo",
       "subsection": "Tarjeta Preautorizada – sin validación 3DS",
       "playwright_assets": {
@@ -2618,7 +2821,11 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "existing",
+      "canonical_ref": "TS-STRIPE-TC1066",
+      "card_existing_alias_id": "TS-STRIPE-TC1066-CARD-EXISTING",
+      "phase2_status": "active-card-existing"
     },
     {
       "test_case_id": "TS-STRIPE-TC1073",
@@ -2628,7 +2835,7 @@
       "environment": [
         "TEST"
       ],
-      "priority": "P1",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases.md",
       "preconditions": [],
@@ -2640,9 +2847,10 @@
         "@hold",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@deprecated"
       ],
-      "critical_flow": true,
+      "critical_flow": false,
       "section": "Alta de Viaje desde Carrier – Usuario Empresa Individuo",
       "subsection": "Tarjeta Preautorizada – sin validación 3DS",
       "playwright_assets": {
@@ -2652,7 +2860,10 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "phase2_status": "deprecated-redundant",
+      "canonical_ref": "TS-STRIPE-TC1065",
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1074",
@@ -2662,7 +2873,7 @@
       "environment": [
         "TEST"
       ],
-      "priority": "P1",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases.md",
       "preconditions": [],
@@ -2675,9 +2886,10 @@
         "@no-hold",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@deprecated"
       ],
-      "critical_flow": true,
+      "critical_flow": false,
       "section": "Alta de Viaje desde Carrier – Usuario Empresa Individuo",
       "subsection": "Tarjeta Preautorizada – sin validación 3DS",
       "playwright_assets": {
@@ -2687,7 +2899,10 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "phase2_status": "deprecated-redundant",
+      "canonical_ref": "TS-STRIPE-TC1066",
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1075",
@@ -2697,7 +2912,7 @@
       "environment": [
         "TEST"
       ],
-      "priority": "P1",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases.md",
       "preconditions": [],
@@ -2709,9 +2924,10 @@
         "@hold",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@deprecated"
       ],
-      "critical_flow": true,
+      "critical_flow": false,
       "section": "Alta de Viaje desde Carrier – Usuario Empresa Individuo",
       "subsection": "Tarjeta Preautorizada – sin validación 3DS",
       "playwright_assets": {
@@ -2721,7 +2937,10 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "phase2_status": "deprecated-redundant",
+      "canonical_ref": "TS-STRIPE-TC1065",
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1076",
@@ -2731,7 +2950,7 @@
       "environment": [
         "TEST"
       ],
-      "priority": "P1",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases.md",
       "preconditions": [],
@@ -2744,9 +2963,10 @@
         "@no-hold",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@deprecated"
       ],
-      "critical_flow": true,
+      "critical_flow": false,
       "section": "Alta de Viaje desde Carrier – Usuario Empresa Individuo",
       "subsection": "Tarjeta Preautorizada – sin validación 3DS",
       "playwright_assets": {
@@ -2756,17 +2976,20 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "phase2_status": "deprecated-redundant",
+      "canonical_ref": "TS-STRIPE-TC1066",
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1069",
-      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
         "TEST"
       ],
-      "priority": "P1",
+      "priority": "P2",
       "source_type": "md",
       "source_file": "matriz_cases.md",
       "preconditions": [],
@@ -2779,9 +3002,10 @@
         "@3ds",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@card-new"
       ],
-      "critical_flow": true,
+      "critical_flow": false,
       "section": "Alta de Viaje desde Carrier – Usuario Empresa Individuo",
       "subsection": "Tarjeta Preautorizada – con validación 3DS",
       "playwright_assets": {
@@ -2791,17 +3015,19 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "new",
+      "phase2_status": "active-canonical"
     },
     {
       "test_case_id": "TS-STRIPE-TC1070",
-      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
         "TEST"
       ],
-      "priority": "P1",
+      "priority": "P2",
       "source_type": "md",
       "source_file": "matriz_cases.md",
       "preconditions": [],
@@ -2815,9 +3041,10 @@
         "@3ds",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@card-new"
       ],
-      "critical_flow": true,
+      "critical_flow": false,
       "section": "Alta de Viaje desde Carrier – Usuario Empresa Individuo",
       "subsection": "Tarjeta Preautorizada – con validación 3DS",
       "playwright_assets": {
@@ -2827,17 +3054,19 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "new",
+      "phase2_status": "active-canonical"
     },
     {
       "test_case_id": "TS-STRIPE-TC1071",
-      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
         "TEST"
       ],
-      "priority": "P1",
+      "priority": "P2",
       "source_type": "md",
       "source_file": "matriz_cases.md",
       "preconditions": [],
@@ -2850,9 +3079,10 @@
         "@3ds",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@card-existing"
       ],
-      "critical_flow": true,
+      "critical_flow": false,
       "section": "Alta de Viaje desde Carrier – Usuario Empresa Individuo",
       "subsection": "Tarjeta Preautorizada – con validación 3DS",
       "playwright_assets": {
@@ -2862,17 +3092,21 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "existing",
+      "canonical_ref": "TS-STRIPE-TC1069",
+      "card_existing_alias_id": "TS-STRIPE-TC1069-CARD-EXISTING",
+      "phase2_status": "active-card-existing"
     },
     {
       "test_case_id": "TS-STRIPE-TC1072",
-      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS",
+      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "carrier",
       "environment": [
         "TEST"
       ],
-      "priority": "P1",
+      "priority": "P2",
       "source_type": "md",
       "source_file": "matriz_cases.md",
       "preconditions": [],
@@ -2886,9 +3120,10 @@
         "@3ds",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@card-existing"
       ],
-      "critical_flow": true,
+      "critical_flow": false,
       "section": "Alta de Viaje desde Carrier – Usuario Empresa Individuo",
       "subsection": "Tarjeta Preautorizada – con validación 3DS",
       "playwright_assets": {
@@ -2898,7 +3133,11 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "existing",
+      "canonical_ref": "TS-STRIPE-TC1070",
+      "card_existing_alias_id": "TS-STRIPE-TC1070-CARD-EXISTING",
+      "phase2_status": "active-card-existing"
     },
     {
       "test_case_id": "TS-STRIPE-TC1077",
@@ -2908,7 +3147,7 @@
       "environment": [
         "TEST"
       ],
-      "priority": "P1",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases.md",
       "preconditions": [],
@@ -2921,9 +3160,10 @@
         "@3ds",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@deprecated"
       ],
-      "critical_flow": true,
+      "critical_flow": false,
       "section": "Alta de Viaje desde Carrier – Usuario Empresa Individuo",
       "subsection": "Tarjeta Preautorizada – con validación 3DS",
       "playwright_assets": {
@@ -2933,7 +3173,10 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "phase2_status": "deprecated-redundant",
+      "canonical_ref": "TS-STRIPE-TC1069",
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1078",
@@ -2943,7 +3186,7 @@
       "environment": [
         "TEST"
       ],
-      "priority": "P1",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases.md",
       "preconditions": [],
@@ -2957,9 +3200,10 @@
         "@3ds",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@deprecated"
       ],
-      "critical_flow": true,
+      "critical_flow": false,
       "section": "Alta de Viaje desde Carrier – Usuario Empresa Individuo",
       "subsection": "Tarjeta Preautorizada – con validación 3DS",
       "playwright_assets": {
@@ -2969,7 +3213,10 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "phase2_status": "deprecated-redundant",
+      "canonical_ref": "TS-STRIPE-TC1070",
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1079",
@@ -2979,7 +3226,7 @@
       "environment": [
         "TEST"
       ],
-      "priority": "P1",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases.md",
       "preconditions": [],
@@ -2992,9 +3239,10 @@
         "@3ds",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@deprecated"
       ],
-      "critical_flow": true,
+      "critical_flow": false,
       "section": "Alta de Viaje desde Carrier – Usuario Empresa Individuo",
       "subsection": "Tarjeta Preautorizada – con validación 3DS",
       "playwright_assets": {
@@ -3004,7 +3252,10 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "phase2_status": "deprecated-redundant",
+      "canonical_ref": "TS-STRIPE-TC1069",
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1080",
@@ -3014,7 +3265,7 @@
       "environment": [
         "TEST"
       ],
-      "priority": "P1",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases.md",
       "preconditions": [],
@@ -3028,9 +3279,10 @@
         "@3ds",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@deprecated"
       ],
-      "critical_flow": true,
+      "critical_flow": false,
       "section": "Alta de Viaje desde Carrier – Usuario Empresa Individuo",
       "subsection": "Tarjeta Preautorizada – con validación 3DS",
       "playwright_assets": {
@@ -3040,7 +3292,10 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "phase2_status": "deprecated-redundant",
+      "canonical_ref": "TS-STRIPE-TC1070",
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1081",
@@ -3073,7 +3328,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1082",
@@ -3106,7 +3362,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1083",
@@ -3139,7 +3396,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1084",
@@ -3172,7 +3430,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1085",
@@ -3205,7 +3464,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1086",
@@ -3238,7 +3498,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1087",
@@ -3271,7 +3532,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1088",
@@ -3304,7 +3566,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1089",
@@ -3337,7 +3600,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1090",
@@ -3370,7 +3634,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1091",
@@ -3403,7 +3668,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1092",
@@ -3437,7 +3703,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1093",
@@ -3471,7 +3738,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1094",
@@ -3505,7 +3773,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1095",
@@ -3539,7 +3808,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1096",
@@ -3572,7 +3842,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1097",
@@ -3605,7 +3876,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1098",
@@ -3638,7 +3910,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1099",
@@ -3671,7 +3944,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1100",
@@ -3704,7 +3978,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1101",
@@ -3737,7 +4012,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1102",
@@ -3770,7 +4046,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1103",
@@ -3803,7 +4080,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1104",
@@ -3836,7 +4114,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1105",
@@ -3869,7 +4148,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1106",
@@ -3902,7 +4182,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1107",
@@ -3936,7 +4217,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1108",
@@ -3970,7 +4252,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1109",
@@ -4004,7 +4287,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1110",
@@ -4038,7 +4322,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1111",
@@ -4071,7 +4356,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1112",
@@ -4104,7 +4390,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1113",
@@ -4137,7 +4424,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1114",
@@ -4170,7 +4458,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1115",
@@ -4203,7 +4492,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1116",
@@ -4236,7 +4526,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1117",
@@ -4269,7 +4560,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1118",
@@ -4302,7 +4594,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1119",
@@ -4335,7 +4628,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1120",
@@ -4368,7 +4662,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-TC1121",
@@ -4401,7 +4696,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC001",
@@ -4435,7 +4731,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC002",
@@ -4470,7 +4767,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC003",
@@ -4504,7 +4802,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC004",
@@ -4539,7 +4838,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC005",
@@ -4574,7 +4874,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC006",
@@ -4610,7 +4911,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC007",
@@ -4643,7 +4945,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC008",
@@ -4677,7 +4980,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC009",
@@ -4709,7 +5013,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC010",
@@ -4742,7 +5047,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC011",
@@ -4775,7 +5081,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC012",
@@ -4809,7 +5116,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC013",
@@ -4842,7 +5150,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC014",
@@ -4876,7 +5185,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC015",
@@ -4910,7 +5220,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC016",
@@ -4945,7 +5256,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC017",
@@ -4979,7 +5291,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC018",
@@ -5014,7 +5327,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC019",
@@ -5047,7 +5361,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC020",
@@ -5081,7 +5396,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC021",
@@ -5114,7 +5430,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC022",
@@ -5148,7 +5465,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC023",
@@ -5182,7 +5500,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC024",
@@ -5217,7 +5536,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC025",
@@ -5251,7 +5571,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC026",
@@ -5286,7 +5607,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC027",
@@ -5319,7 +5641,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC028",
@@ -5353,7 +5676,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC029",
@@ -5386,7 +5710,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC030",
@@ -5420,7 +5745,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC031",
@@ -5454,7 +5780,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC032",
@@ -5489,7 +5816,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC033",
@@ -5523,7 +5851,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC034",
@@ -5558,7 +5887,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC035",
@@ -5592,7 +5922,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC036",
@@ -5627,7 +5958,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC037",
@@ -5661,7 +5993,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC038",
@@ -5696,7 +6029,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC039",
@@ -5731,7 +6065,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC040",
@@ -5767,7 +6102,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC041",
@@ -5802,7 +6138,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC042",
@@ -5838,7 +6175,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC043",
@@ -5873,7 +6211,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC044",
@@ -5909,7 +6248,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC045",
@@ -5945,7 +6285,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC046",
@@ -5982,7 +6323,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC047",
@@ -6016,7 +6358,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC048",
@@ -6051,7 +6394,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC049",
@@ -6087,7 +6431,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC050",
@@ -6122,7 +6467,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC051",
@@ -6158,7 +6504,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC052",
@@ -6194,7 +6541,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC053",
@@ -6231,7 +6579,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC054",
@@ -6266,7 +6615,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC055",
@@ -6302,7 +6652,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC056",
@@ -6337,7 +6688,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC057",
@@ -6373,7 +6725,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC058",
@@ -6409,7 +6762,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC059",
@@ -6446,17 +6800,18 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC060",
-      "title": "Validar Reactivación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+      "title": "Validar Reactivación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/reactivation",
       "portal": "carrier",
       "environment": [
         "TEST"
       ],
-      "priority": "P2",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases2.md",
       "preconditions": [],
@@ -6468,7 +6823,8 @@
         "@hold",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@card-new"
       ],
       "critical_flow": false,
       "section": "Reactivación de Viajes Cancelados (desde Carrier – Usuario Empresa Individuo)",
@@ -6480,17 +6836,19 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "new",
+      "phase2_status": "active-canonical"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC061",
-      "title": "Validar Reactivación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "title": "Validar Reactivación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/reactivation",
       "portal": "carrier",
       "environment": [
         "TEST"
       ],
-      "priority": "P2",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases2.md",
       "preconditions": [],
@@ -6503,7 +6861,8 @@
         "@no-hold",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@card-new"
       ],
       "critical_flow": false,
       "section": "Reactivación de Viajes Cancelados (desde Carrier – Usuario Empresa Individuo)",
@@ -6515,17 +6874,19 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "new",
+      "phase2_status": "active-canonical"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC062",
-      "title": "Validar Reactivación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+      "title": "Validar Reactivación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/reactivation",
       "portal": "carrier",
       "environment": [
         "TEST"
       ],
-      "priority": "P2",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases2.md",
       "preconditions": [],
@@ -6537,7 +6898,8 @@
         "@hold",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@card-existing"
       ],
       "critical_flow": false,
       "section": "Reactivación de Viajes Cancelados (desde Carrier – Usuario Empresa Individuo)",
@@ -6549,17 +6911,21 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "existing",
+      "canonical_ref": "TS-STRIPE-P2-TC060",
+      "card_existing_alias_id": "TS-STRIPE-P2-TC060-CARD-EXISTING",
+      "phase2_status": "active-card-existing"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC063",
-      "title": "Validar Reactivación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "title": "Validar Reactivación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/reactivation",
       "portal": "carrier",
       "environment": [
         "TEST"
       ],
-      "priority": "P2",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases2.md",
       "preconditions": [],
@@ -6572,7 +6938,8 @@
         "@no-hold",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@card-existing"
       ],
       "critical_flow": false,
       "section": "Reactivación de Viajes Cancelados (desde Carrier – Usuario Empresa Individuo)",
@@ -6584,7 +6951,11 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "existing",
+      "canonical_ref": "TS-STRIPE-P2-TC061",
+      "card_existing_alias_id": "TS-STRIPE-P2-TC061-CARD-EXISTING",
+      "phase2_status": "active-card-existing"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC064",
@@ -6619,7 +6990,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC065",
@@ -6654,17 +7026,18 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC066",
-      "title": "Validar Clonación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+      "title": "Validar Clonación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/clone",
       "portal": "carrier",
       "environment": [
         "TEST"
       ],
-      "priority": "P2",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases2.md",
       "preconditions": [],
@@ -6676,7 +7049,8 @@
         "@hold",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@card-new"
       ],
       "critical_flow": false,
       "section": "Clonación de Viajes Cancelados (desde Carrier – Usuario Empresa Individuo)",
@@ -6688,17 +7062,19 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "new",
+      "phase2_status": "active-canonical"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC067",
-      "title": "Validar Clonación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "title": "Validar Clonación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/clone",
       "portal": "carrier",
       "environment": [
         "TEST"
       ],
-      "priority": "P2",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases2.md",
       "preconditions": [],
@@ -6711,7 +7087,8 @@
         "@no-hold",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@card-new"
       ],
       "critical_flow": false,
       "section": "Clonación de Viajes Cancelados (desde Carrier – Usuario Empresa Individuo)",
@@ -6723,17 +7100,19 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "new",
+      "phase2_status": "active-canonical"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC068",
-      "title": "Validar Clonación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+      "title": "Validar Clonación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/clone",
       "portal": "carrier",
       "environment": [
         "TEST"
       ],
-      "priority": "P2",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases2.md",
       "preconditions": [],
@@ -6745,7 +7124,8 @@
         "@hold",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@card-existing"
       ],
       "critical_flow": false,
       "section": "Clonación de Viajes Cancelados (desde Carrier – Usuario Empresa Individuo)",
@@ -6757,17 +7137,21 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "existing",
+      "canonical_ref": "TS-STRIPE-P2-TC066",
+      "card_existing_alias_id": "TS-STRIPE-P2-TC066-CARD-EXISTING",
+      "phase2_status": "active-card-existing"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC069",
-      "title": "Validar Clonación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "title": "Validar Clonación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/clone",
       "portal": "carrier",
       "environment": [
         "TEST"
       ],
-      "priority": "P2",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases2.md",
       "preconditions": [],
@@ -6780,7 +7164,8 @@
         "@no-hold",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@card-existing"
       ],
       "critical_flow": false,
       "section": "Clonación de Viajes Cancelados (desde Carrier – Usuario Empresa Individuo)",
@@ -6792,7 +7177,11 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "existing",
+      "canonical_ref": "TS-STRIPE-P2-TC067",
+      "card_existing_alias_id": "TS-STRIPE-P2-TC067-CARD-EXISTING",
+      "phase2_status": "active-card-existing"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC070",
@@ -6827,7 +7216,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC071",
@@ -6862,17 +7252,18 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC072",
-      "title": "Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+      "title": "Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/clone",
       "portal": "carrier",
       "environment": [
         "TEST"
       ],
-      "priority": "P2",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases2.md",
       "preconditions": [],
@@ -6884,7 +7275,8 @@
         "@hold",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@card-new"
       ],
       "critical_flow": false,
       "section": "Clonación de Viajes Finalizados (desde Carrier – Usuario Empresa Individuo)",
@@ -6896,17 +7288,19 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "new",
+      "phase2_status": "active-canonical"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC073",
-      "title": "Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "title": "Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/clone",
       "portal": "carrier",
       "environment": [
         "TEST"
       ],
-      "priority": "P2",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases2.md",
       "preconditions": [],
@@ -6919,7 +7313,8 @@
         "@no-hold",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@card-new"
       ],
       "critical_flow": false,
       "section": "Clonación de Viajes Finalizados (desde Carrier – Usuario Empresa Individuo)",
@@ -6931,17 +7326,19 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "new",
+      "phase2_status": "active-canonical"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC074",
-      "title": "Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+      "title": "Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/clone",
       "portal": "carrier",
       "environment": [
         "TEST"
       ],
-      "priority": "P2",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases2.md",
       "preconditions": [],
@@ -6953,7 +7350,8 @@
         "@hold",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@card-existing"
       ],
       "critical_flow": false,
       "section": "Clonación de Viajes Finalizados (desde Carrier – Usuario Empresa Individuo)",
@@ -6965,17 +7363,21 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "existing",
+      "canonical_ref": "TS-STRIPE-P2-TC072",
+      "card_existing_alias_id": "TS-STRIPE-P2-TC072-CARD-EXISTING",
+      "phase2_status": "active-card-existing"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC075",
-      "title": "Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "title": "Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/clone",
       "portal": "carrier",
       "environment": [
         "TEST"
       ],
-      "priority": "P2",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases2.md",
       "preconditions": [],
@@ -6988,7 +7390,8 @@
         "@no-hold",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@card-existing"
       ],
       "critical_flow": false,
       "section": "Clonación de Viajes Finalizados (desde Carrier – Usuario Empresa Individuo)",
@@ -7000,7 +7403,11 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "existing",
+      "canonical_ref": "TS-STRIPE-P2-TC073",
+      "card_existing_alias_id": "TS-STRIPE-P2-TC073-CARD-EXISTING",
+      "phase2_status": "active-card-existing"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC076",
@@ -7035,7 +7442,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC077",
@@ -7070,17 +7478,18 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC078",
-      "title": "Validar Alta de viaje y edición desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+      "title": "Validar Alta de viaje y edición desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/edit",
       "portal": "carrier",
       "environment": [
         "TEST"
       ],
-      "priority": "P2",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases2.md",
       "preconditions": [],
@@ -7092,7 +7501,8 @@
         "@hold",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@card-new"
       ],
       "critical_flow": false,
       "section": "Edición de Viajes Programados (desde Carrier – Usuario Empresa Individuo)",
@@ -7104,17 +7514,19 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "new",
+      "phase2_status": "active-canonical"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC079",
-      "title": "Validar Alta de viaje y edición desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "title": "Validar Alta de viaje y edición desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/edit",
       "portal": "carrier",
       "environment": [
         "TEST"
       ],
-      "priority": "P2",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases2.md",
       "preconditions": [],
@@ -7127,7 +7539,8 @@
         "@no-hold",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@card-new"
       ],
       "critical_flow": false,
       "section": "Edición de Viajes Programados (desde Carrier – Usuario Empresa Individuo)",
@@ -7139,17 +7552,19 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "new",
+      "phase2_status": "active-canonical"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC080",
-      "title": "Validar Alta de viaje y edición desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+      "title": "Validar Alta de viaje y edición desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/edit",
       "portal": "carrier",
       "environment": [
         "TEST"
       ],
-      "priority": "P2",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases2.md",
       "preconditions": [],
@@ -7161,7 +7576,8 @@
         "@hold",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@card-existing"
       ],
       "critical_flow": false,
       "section": "Edición de Viajes Programados (desde Carrier – Usuario Empresa Individuo)",
@@ -7173,17 +7589,21 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "existing",
+      "canonical_ref": "TS-STRIPE-P2-TC078",
+      "card_existing_alias_id": "TS-STRIPE-P2-TC078-CARD-EXISTING",
+      "phase2_status": "active-card-existing"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC081",
-      "title": "Validar Alta de viaje y edición desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "title": "Validar Alta de viaje y edición desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/edit",
       "portal": "carrier",
       "environment": [
         "TEST"
       ],
-      "priority": "P2",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases2.md",
       "preconditions": [],
@@ -7196,7 +7616,8 @@
         "@no-hold",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@card-existing"
       ],
       "critical_flow": false,
       "section": "Edición de Viajes Programados (desde Carrier – Usuario Empresa Individuo)",
@@ -7208,7 +7629,11 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "existing",
+      "canonical_ref": "TS-STRIPE-P2-TC079",
+      "card_existing_alias_id": "TS-STRIPE-P2-TC079-CARD-EXISTING",
+      "phase2_status": "active-card-existing"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC082",
@@ -7243,7 +7668,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC083",
@@ -7278,17 +7704,18 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC084",
-      "title": "Validar Alta de viaje y edición en conflicto desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+      "title": "Validar Alta de viaje y edición en conflicto desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/edit",
       "portal": "carrier",
       "environment": [
         "TEST"
       ],
-      "priority": "P2",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases2.md",
       "preconditions": [],
@@ -7300,7 +7727,8 @@
         "@hold",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@card-new"
       ],
       "critical_flow": false,
       "section": "Edición en Conflicto (desde Carrier – Usuario Empresa Individuo)",
@@ -7312,17 +7740,19 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "new",
+      "phase2_status": "active-canonical"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC085",
-      "title": "Validar Alta de viaje y edición en conflicto desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "title": "Validar Alta de viaje y edición en conflicto desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver — Vincular tarjeta nueva",
       "module": "gateway-pg-stripe/edit",
       "portal": "carrier",
       "environment": [
         "TEST"
       ],
-      "priority": "P2",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases2.md",
       "preconditions": [],
@@ -7335,7 +7765,8 @@
         "@no-hold",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@card-new"
       ],
       "critical_flow": false,
       "section": "Edición en Conflicto (desde Carrier – Usuario Empresa Individuo)",
@@ -7347,17 +7778,19 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "new",
+      "phase2_status": "active-canonical"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC086",
-      "title": "Validar Alta de viaje y edición en conflicto desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver",
+      "title": "Validar Alta de viaje y edición en conflicto desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold y Cobro desde App Driver — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/edit",
       "portal": "carrier",
       "environment": [
         "TEST"
       ],
-      "priority": "P2",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases2.md",
       "preconditions": [],
@@ -7369,7 +7802,8 @@
         "@hold",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@card-existing"
       ],
       "critical_flow": false,
       "section": "Edición en Conflicto (desde Carrier – Usuario Empresa Individuo)",
@@ -7381,17 +7815,21 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "existing",
+      "canonical_ref": "TS-STRIPE-P2-TC084",
+      "card_existing_alias_id": "TS-STRIPE-P2-TC084-CARD-EXISTING",
+      "phase2_status": "active-card-existing"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC087",
-      "title": "Validar Alta de viaje y edición en conflicto desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver",
+      "title": "Validar Alta de viaje y edición en conflicto desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold y Cobro desde App Driver — Usar tarjeta vinculada existente",
       "module": "gateway-pg-stripe/edit",
       "portal": "carrier",
       "environment": [
         "TEST"
       ],
-      "priority": "P2",
+      "priority": "P3",
       "source_type": "md",
       "source_file": "matriz_cases2.md",
       "preconditions": [],
@@ -7404,7 +7842,8 @@
         "@no-hold",
         "@app-driver",
         "@carrier",
-        "@business"
+        "@business",
+        "@card-existing"
       ],
       "critical_flow": false,
       "section": "Edición en Conflicto (desde Carrier – Usuario Empresa Individuo)",
@@ -7416,7 +7855,11 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "existing",
+      "canonical_ref": "TS-STRIPE-P2-TC085",
+      "card_existing_alias_id": "TS-STRIPE-P2-TC085-CARD-EXISTING",
+      "phase2_status": "active-card-existing"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC088",
@@ -7451,7 +7894,8 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC089",
@@ -7486,7 +7930,16 @@
         "data_files": [
           "tests/features/gateway-pg/data/stripeTestData.ts"
         ]
-      }
+      },
+      "card_flow": "n/a"
     }
-  ]
+  ],
+  "phase2_applied_at": "2026-04-17T01:56:17.950Z",
+  "phase2_summary": {
+    "canonical-new": 22,
+    "existing-alias": 22,
+    "deprecate": 22,
+    "collapse-alias": 8,
+    "untouched": 145
+  }
 }

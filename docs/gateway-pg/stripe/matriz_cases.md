@@ -43,18 +43,20 @@
 | TS-STRIPE-TC1015 | Validar Alta de Viaje para usuario app pax modo personal con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS                   |
 | TS-STRIPE-TC1016 | Validar Alta carrier de Viaje para usuario app pax modo personal con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS       |
 
-### 2.3 Variantes exploratorias (referenciadas a TC canónicos)
+### 2.3 Variantes exploratorias (alias colapsados a TC canónicos)
 
-| ID                 | Descripción                                                                                                                                       | TC Canónico      |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
-| TS-STRIPE-TC-RV001 | Validar Alta de Viaje para usuario app pax modo personal desde app pax con Tarjeta Preautorizada Hold y Cobro desde App Driver                        | TS-STRIPE-TC1017 |
-| TS-STRIPE-TC-RV002 | Validar Alta de Viaje para usuario app pax modo personal con Tarjeta Preautorizada sin Hold y Cobro desde App Driver                                  | TS-STRIPE-TC1018 |
-| TS-STRIPE-TC-RV003 | Validar Alta de Viaje para usuario app pax modo personal con Tarjeta Preautorizada Hold y Cobro desde App Driver                                      | TS-STRIPE-TC1011 |
-| TS-STRIPE-TC-RV004 | Validar Alta carrier de Viaje para usuario app pax modo personal con Tarjeta Preautorizada sin Hold y Cobro desde App Driver                          | TS-STRIPE-TC1012 |
-| TS-STRIPE-TC-RV005 | Validar Alta de Viaje para usuario app pax modo personal desde app pax con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS     | TS-STRIPE-TC1013 |
-| TS-STRIPE-TC-RV006 | Validar Alta de Viaje para usuario app pax modo personal desde app pax con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS | TS-STRIPE-TC1014 |
-| TS-STRIPE-TC-RV007 | Validar Alta de Viaje para usuario app pax modo personal con Tarjeta Preautorizada Hold y Cobro desde App Driver con validación 3DS                   | TS-STRIPE-TC1015 |
-| TS-STRIPE-TC-RV008 | Validar Alta de Viaje para usuario app pax modo personal con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validación 3DS               | TS-STRIPE-TC1016 |
+> **Fase 2 (2026-04-16):** las entradas RV no se consideran TCs independientes. Se colapsan como **alias de trazabilidad** al canónico correspondiente. No se ejecutan por separado — la cobertura vive en el canónico. Si el canónico evoluciona, este alias permanece solo como referencia cruzada para auditoría.
+
+| ID (alias) | Alias de | Nota |
+| --- | --- | --- |
+| TS-STRIPE-TC-RV001 | TS-STRIPE-TC1017 | Alias — colapsado. No ejecutar; usar TC1017 (modo business — Vincular tarjeta nueva). |
+| TS-STRIPE-TC-RV002 | TS-STRIPE-TC1018 | Alias — colapsado. No ejecutar; usar TC1018 (modo business — Vincular tarjeta nueva sin Hold). |
+| TS-STRIPE-TC-RV003 | TS-STRIPE-TC1011 | Alias — colapsado. No ejecutar; usar TC1011. |
+| TS-STRIPE-TC-RV004 | TS-STRIPE-TC1012 | Alias — colapsado. No ejecutar; usar TC1012. |
+| TS-STRIPE-TC-RV005 | TS-STRIPE-TC1013 | Alias — colapsado. No ejecutar; usar TC1013. |
+| TS-STRIPE-TC-RV006 | TS-STRIPE-TC1014 | Alias — colapsado. No ejecutar; usar TC1014. |
+| TS-STRIPE-TC-RV007 | TS-STRIPE-TC1015 | Alias — colapsado. No ejecutar; usar TC1015. |
+| TS-STRIPE-TC-RV008 | TS-STRIPE-TC1016 | Alias — colapsado. No ejecutar; usar TC1016. |
 
 ### 2.4 Wallet - eliminación de tarjeta vinculada con 3D Secure
 
@@ -72,29 +74,33 @@
 
 ### 3.1 Tarjeta Preautorizada – sin validación 3DS
 
-| ID               | Descripción                                                                                                                        |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| TS-STRIPE-TC1017 | Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **Hold y Cobro** desde App Driver     |
-| TS-STRIPE-TC1018 | Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
-| TS-STRIPE-TC1019 | Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **Hold y Cobro** desde App Driver     |
-| TS-STRIPE-TC1020 | Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
-| TS-STRIPE-TC1025 | Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **Hold y Cobro** desde App Driver     |
-| TS-STRIPE-TC1026 | Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
-| TS-STRIPE-TC1027 | Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **Hold y Cobro** desde App Driver     |
-| TS-STRIPE-TC1028 | Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
+> **Fase 2 — diferenciación aplicada:** los tripletes originales (TC1017/1019/1025/1027 y TC1018/1020/1026/1028) se resuelven distinguiendo entre **Vincular tarjeta nueva** y **Usar tarjeta vinculada existente**. Las copias redundantes del triplete se marcan como deprecadas.
+
+| ID | Descripción | Estado |
+| --- | --- | --- |
+| TS-STRIPE-TC1017 | Validar Alta de Viaje desde app pax modo business con Tarjeta Preautorizada **Hold y Cobro** desde App Driver — **Vincular tarjeta nueva** | activo — P1 |
+| TS-STRIPE-TC1019 | Validar Alta de Viaje desde app pax modo business con Tarjeta Preautorizada **Hold y Cobro** desde App Driver — **Usar tarjeta vinculada existente** (ID referenciable también como TS-STRIPE-TC1017-CARD-EXISTING) | activo — P1 |
+| TS-STRIPE-TC1025 | DEPRECADO — duplicado redundante de TS-STRIPE-TC1017 / TS-STRIPE-TC1019 | deprecated-redundant |
+| TS-STRIPE-TC1027 | DEPRECADO — duplicado redundante de TS-STRIPE-TC1017 / TS-STRIPE-TC1019 | deprecated-redundant |
+| TS-STRIPE-TC1018 | Validar Alta de Viaje desde app pax modo business con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver — **Vincular tarjeta nueva** | activo — P2 |
+| TS-STRIPE-TC1020 | Validar Alta de Viaje desde app pax modo business con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver — **Usar tarjeta vinculada existente** (ID referenciable también como TS-STRIPE-TC1018-CARD-EXISTING) | activo — P2 |
+| TS-STRIPE-TC1026 | DEPRECADO — duplicado redundante de TS-STRIPE-TC1018 / TS-STRIPE-TC1020 | deprecated-redundant |
+| TS-STRIPE-TC1028 | DEPRECADO — duplicado redundante de TS-STRIPE-TC1018 / TS-STRIPE-TC1020 | deprecated-redundant |
 
 ### 3.2 Tarjeta Preautorizada – con validación 3DS
 
-| ID               | Descripción                                                                                                                                           |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| TS-STRIPE-TC1021 | Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS     |
-| TS-STRIPE-TC1022 | Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
-| TS-STRIPE-TC1023 | Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS     |
-| TS-STRIPE-TC1024 | Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
-| TS-STRIPE-TC1029 | Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS     |
-| TS-STRIPE-TC1030 | Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
-| TS-STRIPE-TC1031 | Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS     |
-| TS-STRIPE-TC1032 | Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
+> **Fase 2 — diferenciación aplicada:** los tripletes originales (TC1021/1023/1029/1031 y TC1022/1024/1030/1032) se resuelven distinguiendo entre **Vincular tarjeta nueva** y **Usar tarjeta vinculada existente**. Las copias redundantes del triplete se marcan como deprecadas.
+
+| ID | Descripción | Estado |
+| --- | --- | --- |
+| TS-STRIPE-TC1021 | Validar Alta de Viaje desde app pax modo business con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS — **Vincular tarjeta nueva** | activo — P1 |
+| TS-STRIPE-TC1023 | Validar Alta de Viaje desde app pax modo business con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS — **Usar tarjeta vinculada existente** (alias TS-STRIPE-TC1021-CARD-EXISTING) | activo — P1 |
+| TS-STRIPE-TC1029 | DEPRECADO — duplicado redundante de TS-STRIPE-TC1021 / TS-STRIPE-TC1023 | deprecated-redundant |
+| TS-STRIPE-TC1031 | DEPRECADO — duplicado redundante de TS-STRIPE-TC1021 / TS-STRIPE-TC1023 | deprecated-redundant |
+| TS-STRIPE-TC1022 | Validar Alta de Viaje desde app pax modo business con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS — **Vincular tarjeta nueva** | activo — P1 |
+| TS-STRIPE-TC1024 | Validar Alta de Viaje desde app pax modo business con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS — **Usar tarjeta vinculada existente** (alias TS-STRIPE-TC1022-CARD-EXISTING) | activo — P1 |
+| TS-STRIPE-TC1030 | DEPRECADO — duplicado redundante de TS-STRIPE-TC1022 / TS-STRIPE-TC1024 | deprecated-redundant |
+| TS-STRIPE-TC1032 | DEPRECADO — duplicado redundante de TS-STRIPE-TC1022 / TS-STRIPE-TC1024 | deprecated-redundant |
 
 ---
 
@@ -102,29 +108,33 @@
 
 ### 4.1 Tarjeta Preautorizada – sin validación 3DS
 
-| ID               | Descripción                                                                                                                                       |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| TS-STRIPE-TC1033 | validar vincular tarjeta y Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **Hold(desde carrier) y Cobro** desde App Driver     |
-| TS-STRIPE-TC1034 | Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
-| TS-STRIPE-TC1035 | Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **Hold y Cobro** desde App Driver     |
-| TS-STRIPE-TC1036 | Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
-| TS-STRIPE-TC1041 | Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **Hold y Cobro** desde App Driver     |
-| TS-STRIPE-TC1042 | Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
-| TS-STRIPE-TC1043 | Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **Hold y Cobro** desde App Driver     |
-| TS-STRIPE-TC1044 | Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
+> **Fase 2 — diferenciación aplicada:** los tripletes originales sobre Hold (TC1035/1041/1043) y sobre No-Hold (TC1034/1036/1042/1044) se resuelven distinguiendo **Vincular tarjeta nueva** vs **Usar tarjeta vinculada existente**. TC1033 es un caso seed de vinculación explícito y se conserva.
+
+| ID | Descripción | Estado |
+| --- | --- | --- |
+| TS-STRIPE-TC1033 | Validar vincular tarjeta y Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **Hold (desde carrier) y Cobro** desde App Driver — **Vincular tarjeta nueva (seed)** | activo — P1 |
+| TS-STRIPE-TC1035 | Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **Hold y Cobro** desde App Driver — **Vincular tarjeta nueva** | activo — P1 |
+| TS-STRIPE-TC1041 | Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **Hold y Cobro** desde App Driver — **Usar tarjeta vinculada existente** (alias TS-STRIPE-TC1035-CARD-EXISTING) | activo — P1 |
+| TS-STRIPE-TC1043 | DEPRECADO — duplicado redundante de TS-STRIPE-TC1035 / TS-STRIPE-TC1041 | deprecated-redundant |
+| TS-STRIPE-TC1034 | Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver — **Vincular tarjeta nueva** | activo — P2 |
+| TS-STRIPE-TC1036 | Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver — **Usar tarjeta vinculada existente** (alias TS-STRIPE-TC1034-CARD-EXISTING) | activo — P2 |
+| TS-STRIPE-TC1042 | DEPRECADO — duplicado redundante de TS-STRIPE-TC1034 / TS-STRIPE-TC1036 | deprecated-redundant |
+| TS-STRIPE-TC1044 | DEPRECADO — duplicado redundante de TS-STRIPE-TC1034 / TS-STRIPE-TC1036 | deprecated-redundant |
 
 ### 4.2 Tarjeta Preautorizada – con validación 3DS
 
-| ID | Descripción |
-| -- | ----------- |
-| TS-STRIPE-TC1037 | Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS |
-| TS-STRIPE-TC1038 | Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
-| TS-STRIPE-TC1039 | Validar que al crear viaje desde carrier con cliente contractor y pasajero app pax invitado usando tarjeta threeDSRequired con Hold ON, al fallar la autenticación 3DS se muestra pop-up de error y la URL permanece en el formulario de alta sin crear el viaje |
-| TS-STRIPE-TC1040 | Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
-| TS-STRIPE-TC1045 | Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS |
-| TS-STRIPE-TC1046 | Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
-| TS-STRIPE-TC1047 | Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS |
-| TS-STRIPE-TC1048 | Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
+> **Fase 2 — diferenciación aplicada:** TC1039 es un caso negativo distinto (fallo de autenticación 3DS) y se **conserva sin diferenciar**. Los tripletes TC1037/1045/1047 y TC1038/1040/1046/1048 se resuelven vía CARD-EXISTING.
+
+| ID | Descripción | Estado |
+| --- | --- | --- |
+| TS-STRIPE-TC1037 | Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS — **Vincular tarjeta nueva** | activo — P1 |
+| TS-STRIPE-TC1045 | Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS — **Usar tarjeta vinculada existente** (alias TS-STRIPE-TC1037-CARD-EXISTING) | activo — P1 |
+| TS-STRIPE-TC1047 | DEPRECADO — duplicado redundante de TS-STRIPE-TC1037 / TS-STRIPE-TC1045 | deprecated-redundant |
+| TS-STRIPE-TC1039 | Validar que al crear viaje desde carrier con cliente contractor y pasajero app pax invitado usando tarjeta threeDSRequired con Hold ON, al fallar la autenticación 3DS se muestra pop-up de error y la URL permanece en el formulario de alta sin crear el viaje | activo — P1 (caso negativo — no aplica CARD-NEW/EXISTING) |
+| TS-STRIPE-TC1038 | Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS — **Vincular tarjeta nueva** | activo — P1 |
+| TS-STRIPE-TC1040 | Validar Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS — **Usar tarjeta vinculada existente** (alias TS-STRIPE-TC1038-CARD-EXISTING) | activo — P1 |
+| TS-STRIPE-TC1046 | DEPRECADO — duplicado redundante de TS-STRIPE-TC1038 / TS-STRIPE-TC1040 | deprecated-redundant |
+| TS-STRIPE-TC1048 | DEPRECADO — duplicado redundante de TS-STRIPE-TC1038 / TS-STRIPE-TC1040 | deprecated-redundant |
 
 ---
 
@@ -162,29 +172,33 @@
 
 ### 6.1 Tarjeta Preautorizada – sin validación 3DS
 
-| ID               | Descripción                                                                                                                    |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| TS-STRIPE-TC1065 | Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver     |
-| TS-STRIPE-TC1066 | Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
-| TS-STRIPE-TC1067 | Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver     |
-| TS-STRIPE-TC1068 | Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
-| TS-STRIPE-TC1073 | Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver     |
-| TS-STRIPE-TC1074 | Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
-| TS-STRIPE-TC1075 | Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver     |
-| TS-STRIPE-TC1076 | Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
+> **Fase 2 — diferenciación aplicada:** tripletes TC1065/1067/1073/1075 (Hold) y TC1066/1068/1074/1076 (No-Hold) resueltos con CARD-NEW / CARD-EXISTING y deprecación de redundantes.
+
+| ID | Descripción | Estado |
+| --- | --- | --- |
+| TS-STRIPE-TC1065 | Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver — **Vincular tarjeta nueva** | activo — P2 |
+| TS-STRIPE-TC1067 | Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver — **Usar tarjeta vinculada existente** (alias TS-STRIPE-TC1065-CARD-EXISTING) | activo — P2 |
+| TS-STRIPE-TC1073 | DEPRECADO — duplicado redundante de TS-STRIPE-TC1065 / TS-STRIPE-TC1067 | deprecated-redundant |
+| TS-STRIPE-TC1075 | DEPRECADO — duplicado redundante de TS-STRIPE-TC1065 / TS-STRIPE-TC1067 | deprecated-redundant |
+| TS-STRIPE-TC1066 | Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver — **Vincular tarjeta nueva** | activo — P2 |
+| TS-STRIPE-TC1068 | Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver — **Usar tarjeta vinculada existente** (alias TS-STRIPE-TC1066-CARD-EXISTING) | activo — P2 |
+| TS-STRIPE-TC1074 | DEPRECADO — duplicado redundante de TS-STRIPE-TC1066 / TS-STRIPE-TC1068 | deprecated-redundant |
+| TS-STRIPE-TC1076 | DEPRECADO — duplicado redundante de TS-STRIPE-TC1066 / TS-STRIPE-TC1068 | deprecated-redundant |
 
 ### 6.2 Tarjeta Preautorizada – con validación 3DS
 
-| ID               | Descripción                                                                                                                                       |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| TS-STRIPE-TC1069 | Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS     |
-| TS-STRIPE-TC1070 | Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
-| TS-STRIPE-TC1071 | Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS     |
-| TS-STRIPE-TC1072 | Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
-| TS-STRIPE-TC1077 | Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS     |
-| TS-STRIPE-TC1078 | Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
-| TS-STRIPE-TC1079 | Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS     |
-| TS-STRIPE-TC1080 | Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS |
+> **Fase 2 — diferenciación aplicada:** tripletes TC1069/1071/1077/1079 (Hold) y TC1070/1072/1078/1080 (No-Hold) resueltos con CARD-NEW / CARD-EXISTING y deprecación de redundantes.
+
+| ID | Descripción | Estado |
+| --- | --- | --- |
+| TS-STRIPE-TC1069 | Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS — **Vincular tarjeta nueva** | activo — P2 |
+| TS-STRIPE-TC1071 | Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold y Cobro** desde App Driver con validación 3DS — **Usar tarjeta vinculada existente** (alias TS-STRIPE-TC1069-CARD-EXISTING) | activo — P2 |
+| TS-STRIPE-TC1077 | DEPRECADO — duplicado redundante de TS-STRIPE-TC1069 / TS-STRIPE-TC1071 | deprecated-redundant |
+| TS-STRIPE-TC1079 | DEPRECADO — duplicado redundante de TS-STRIPE-TC1069 / TS-STRIPE-TC1071 | deprecated-redundant |
+| TS-STRIPE-TC1070 | Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS — **Vincular tarjeta nueva** | activo — P2 |
+| TS-STRIPE-TC1072 | Validar Alta de Viaje desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver con validación 3DS — **Usar tarjeta vinculada existente** (alias TS-STRIPE-TC1070-CARD-EXISTING) | activo — P2 |
+| TS-STRIPE-TC1078 | DEPRECADO — duplicado redundante de TS-STRIPE-TC1070 / TS-STRIPE-TC1072 | deprecated-redundant |
+| TS-STRIPE-TC1080 | DEPRECADO — duplicado redundante de TS-STRIPE-TC1070 / TS-STRIPE-TC1072 | deprecated-redundant |
 
 ---
 
