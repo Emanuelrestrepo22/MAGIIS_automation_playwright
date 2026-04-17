@@ -55,7 +55,7 @@ Target specs:
 ## Notes
 
 - Passenger home mode is a precondition for every flow: read the header label under the `ion-toggle` on `home` before continuing. `Modo Personal` means personal lane; `Compañía: <contractor name>` means business / collaborator lane.
-- TC-PAX-01 to TC-PAX-03 and TC-PAX-07 to TC-PAX-09 are the active passenger coverage slices.
+- TC-PAX-01 to TC-PAX-03 and TC-PAX-11 are the active passenger coverage slices.
 - TC-PAX-04 to TC-PAX-06 and TC-PAX-10 remain draft / `fixme` until the driver handoff and negative evidence are stable.
 - TC-PAX-11 is the critical wallet-delete case for a linked 3DS card (DBTS-STRIPE-TC003 / TS-STRIPE-TC1122). The execution runner can seed the card first when the wallet starts empty, but the coverage target stays the delete of a linked 3DS card.
 - TC-PAX-BIZ-04 and TC-PAX-BIZ-08 remain draft / `fixme` until passenger post-trip evidence is captured.

@@ -104,7 +104,7 @@
 
 | ID               | Descripción                                                                                                                                       |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| TS-STRIPE-TC1033 | E2E Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **Hold y Cobro** desde App Driver     |
+| TS-STRIPE-TC1033 | validar vincular tarjeta y Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **Hold(desde carrier) y Cobro** desde App Driver     |
 | TS-STRIPE-TC1034 | E2E Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |
 | TS-STRIPE-TC1035 | E2E Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **Hold y Cobro** desde App Driver     |
 | TS-STRIPE-TC1036 | E2E Alta de Viaje desde carrier para usuario colaborador o asociado de contractor con Tarjeta Preautorizada **sin Hold y Cobro** desde App Driver |

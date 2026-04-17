@@ -8,6 +8,8 @@ export type NewTravelFormInput = {
 	origin: string;
 	destination: string;
 	cardLast4: string;
+	/** Si true, intenta seleccionar una tarjeta guardada del dropdown antes de vincular nueva */
+	preferSavedCard?: boolean;
 };
 
 type StripeComponentName = 'cardNumber' | 'cardExpiry' | 'cardCvc';
@@ -182,8 +184,8 @@ export abstract class NewTravelPageBase {
 		await this.ensureLoaded();
 	}
 
-	async ensureLoaded(): Promise<void> {
-		await this.clientSelect.waitFor({ state: 'visible', timeout: 15_000 });
+	async ensureLoaded(timeout = 15_000): Promise<void> {
+		await this.clientSelect.waitFor({ state: 'visible', timeout });
 	}
 
 	private async selectAutocompleteOption(select: Locator, searchInput: Locator, name: string, roleLabel: string): Promise<void> {
@@ -652,6 +654,79 @@ export abstract class NewTravelPageBase {
 		await expect(this.paymentMethodValue).toContainText('Tarjeta de Crédito - Preautorizada', { timeout: 10_000 });
 	}
 
+	/**
+	 * Selecciona una tarjeta guardada que contenga los últimos 4 dígitos indicados.
+	 *
+	 * Flujo (evidencia test-22.spec.ts + selectores del user):
+	 *   1. Click en el trigger del dropdown de pago para abrir las opciones
+	 *   2. Buscar dentro de las opciones (li) la que contenga el texto con last4
+	 *   3. Click en esa opción
+	 *
+	 * Selectores confirmados por el user:
+	 *   - Trigger: #add_travel_payment_methods > div > div > div.value.ng-star-inserted > div
+	 *   - Opciones: #add_travel_payment_methods > select-dropdown > div > div.options > ul > li
+	 *   - Cada li contiene texto con los últimos 4 dígitos de la tarjeta
+	 *
+	 * @returns true si encontró y seleccionó la tarjeta; false si no existe en el dropdown
+	 */
+	async selectSavedCardByLast4(last4: string): Promise<boolean> {
+		// Abrir el dropdown de métodos de pago.
+		// Intentar el trigger del recording primero, luego fallback.
+		const valueTrigger = this.paymentMethodSelector.locator(
+			'div > div > div.value.ng-star-inserted > div',
+		).first();
+		const iconTrigger = this.paymentMethodSelector.locator(
+			'.below > .single > .value > .data-with-icon-col',
+		).first();
+
+		if (await valueTrigger.isVisible().catch(() => false)) {
+			await valueTrigger.click();
+		} else if (await iconTrigger.isVisible().catch(() => false)) {
+			await iconTrigger.click();
+		} else {
+			// Último recurso: click directo en el selector
+			await this.paymentMethodSelector.click();
+		}
+
+		await this.page.waitForTimeout(500);
+
+		// Buscar la opción con los últimos 4 dígitos dentro del dropdown de opciones
+		const optionsList = this.paymentMethodSelector.locator(
+			'select-dropdown div.options ul li',
+		);
+		await optionsList.first().waitFor({ state: 'visible', timeout: 10_000 });
+
+		const count = await optionsList.count();
+		for (let i = 0; i < count; i++) {
+			const optionText = (await optionsList.nth(i).textContent()) ?? '';
+			if (optionText.includes(last4)) {
+				await optionsList.nth(i).click();
+				await this.page.waitForTimeout(300);
+				return true;
+			}
+		}
+
+		// No se encontró la tarjeta — cerrar dropdown haciendo click fuera
+		await this.page.keyboard.press('Escape');
+		return false;
+	}
+
+	/**
+	 * Selección inteligente de tarjeta: usa tarjeta guardada si existe,
+	 * o vincula una nueva vía Stripe iframe si no.
+	 *
+	 * @param last4 Últimos 4 dígitos de la tarjeta requerida
+	 * @param preferSaved Si true (default), intenta primero la tarjeta guardada
+	 */
+	async selectCardSmart(last4: string, preferSaved = true): Promise<void> {
+		if (preferSaved) {
+			const selected = await this.selectSavedCardByLast4(last4);
+			if (selected) return;
+		}
+		// Fallback: vincular nueva tarjeta vía Stripe iframe
+		await this.selectCardByLast4(last4);
+	}
+
 	async submit(): Promise<void> {
 		await this.clickValidateCardIfAvailable();
 
@@ -745,7 +820,12 @@ export abstract class NewTravelPageBase {
 		await this.assertDefaultServiceTypeRegular();
 		await this.setOrigin(opts.origin);
 		await this.setDestination(opts.destination);
-		await this.selectCardByLast4(opts.cardLast4);
+
+		if (opts.preferSavedCard) {
+			await this.selectCardSmart(opts.cardLast4);
+		} else {
+			await this.selectCardByLast4(opts.cardLast4);
+		}
 	}
 
 	async assertDefaultServiceTypeRegular(): Promise<void> {

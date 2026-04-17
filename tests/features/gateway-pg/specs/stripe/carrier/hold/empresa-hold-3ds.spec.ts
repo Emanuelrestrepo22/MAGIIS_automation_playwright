@@ -7,6 +7,7 @@ import { expect, type Page } from '@playwright/test';
 import { test } from '../../../../../../TestBase';
 import { DashboardPage, NewTravelPage, OperationalPreferencesPage, ThreeDSModal, TravelDetailPage, TravelManagementPage } from '../../../../../../pages/carrier';
 import { loginAsDispatcher, STRIPE_TEST_CARDS, TEST_DATA } from '../../../../fixtures/gateway.fixtures';
+import { waitForTravelCreation } from '../../../../helpers/stripe.helpers';
 import { PASSENGERS } from '../../../../data/passengers';
 
 test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
@@ -100,13 +101,12 @@ async function runHoldOnScenario(page: Page, scenario: Hold3dsScenario): Promise
 	await travel.clickSelectVehicle();
 	await travel.clickSendService();
 
-	if (await threeDS.waitForOptionalVisible(60_000)) {
+	if (await threeDS.waitForOptionalVisible(5_000)) {
 		await threeDS.completeSuccess();
 		await threeDS.waitForHidden();
 	}
 
-	await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
-	const createdTravelId = extractTravelId(page.url());
+	const createdTravelId = await waitForTravelCreation(page);
 
 	await management.goto();
 	await management.expectPassengerInPorAsignar(scenario.passenger, scenario.destination);
@@ -145,13 +145,12 @@ async function runHoldOffScenario(page: Page, scenario: Hold3dsScenario): Promis
 		await travel.clickSelectVehicle();
 		await travel.clickSendService();
 
-		if (await threeDS.waitForOptionalVisible(60_000)) {
+		if (await threeDS.waitForOptionalVisible(5_000)) {
 			await threeDS.completeSuccess();
 			await threeDS.waitForHidden();
 		}
 
-		await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
-		const createdTravelId = extractTravelId(page.url());
+		const createdTravelId = await waitForTravelCreation(page);
 
 		await management.goto();
 		await management.expectPassengerInPorAsignar(scenario.passenger, scenario.destination);

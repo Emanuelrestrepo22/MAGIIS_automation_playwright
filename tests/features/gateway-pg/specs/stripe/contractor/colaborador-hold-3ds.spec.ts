@@ -20,7 +20,8 @@
  */
 import { expect } from '@playwright/test';
 import { test } from '../../../../../TestBase';
-import { DashboardPage, NewTravelPage, TravelDetailPage, TravelManagementPage, ThreeDSModal } from '../../../../../pages/carrier';
+import { DashboardPage, TravelDetailPage, TravelManagementPage, ThreeDSModal } from '../../../../../pages/carrier';
+import { ContractorNewTravelPage } from '../../../../../pages/contractor/NewTravelPage';
 import {
 	loginAsContractor,
 	TEST_DATA,
@@ -41,7 +42,7 @@ test.describe('Gateway PG · Contractor · Colaborador — Hold + 3DS (tarjeta 4
 	test('[TS-STRIPE-P2-TC005] @regression @contractor @hold @3ds Hold ON + tarjeta 3DS 3155 + aprobación → viaje a "Buscando conductor"', async ({ page }) => {
 		// Precondición: enableCreditCardHold=true en parámetros carrier.
 		const dashboard = new DashboardPage(page);
-		const travel = new NewTravelPage(page);
+		const travel = new ContractorNewTravelPage(page);
 		const detail = new TravelDetailPage(page);
 		const management = new TravelManagementPage(page);
 		const threeDS = new ThreeDSModal(page);
@@ -111,7 +112,7 @@ test.describe('Gateway PG · Contractor · Colaborador — Hold + 3DS (tarjeta 4
 	test('[TS-STRIPE-P2-TC006] @regression @contractor @3ds Hold OFF + tarjeta 3DS 3155 + aprobación → viaje a "Buscando conductor" sin hold', async ({ page }) => {
 		// Precondición: enableCreditCardHold=false en parámetros carrier.
 		const dashboard = new DashboardPage(page);
-		const travel = new NewTravelPage(page);
+		const travel = new ContractorNewTravelPage(page);
 		const detail = new TravelDetailPage(page);
 		const management = new TravelManagementPage(page);
 		const threeDS = new ThreeDSModal(page);

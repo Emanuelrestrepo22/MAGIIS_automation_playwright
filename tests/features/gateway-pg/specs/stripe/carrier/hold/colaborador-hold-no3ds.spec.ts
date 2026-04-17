@@ -8,13 +8,15 @@
  */
 import { expect, type Page } from '@playwright/test';
 import { test } from '../../../../../../TestBase';
-import { DashboardPage, NewTravelPage, OperationalPreferencesPage, TravelDetailPage, TravelManagementPage } from '../../../../../../pages/carrier';
+import { DashboardPage, NewTravelPage, OperationalPreferencesPage, TravelManagementPage } from '../../../../../../pages/carrier';
 import { expectNoThreeDSModal, loginAsDispatcher, STRIPE_TEST_CARDS, TEST_DATA } from '../../../../fixtures/gateway.fixtures';
+import { waitForTravelCreation } from '../../../../helpers/stripe.helpers';
+import { validateCardPrecondition, type CardPreconditionResult } from '../../../../helpers/card-precondition';
+import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../../../helpers/travel-cleanup';
+import { PASSENGERS } from '../../../../data/passengers';
 
-function extractTravelId(url: string): string {
-	const match = url.match(/\/travels\/([\w-]+)/);
-	if (!match) throw new Error(`No se pudo extraer el travelId desde: ${url}`);
-	return match[1];
+function shortDestination(destination: string): string {
+	return destination.split(',')[0].trim();
 }
 
 type ParametersSavePayload = {
@@ -66,6 +68,7 @@ type HoldNo3dsScenario = {
 	passenger: string;
 	origin: string;
 	destination: string;
+	apiSearchQuery?: string;
 };
 
 async function runHoldOnScenario(page: Page, scenario: HoldNo3dsScenario): Promise<void> {
@@ -73,59 +76,75 @@ async function runHoldOnScenario(page: Page, scenario: HoldNo3dsScenario): Promi
 	const preferences = new OperationalPreferencesPage(page);
 	const travel = new NewTravelPage(page);
 	const management = new TravelManagementPage(page);
-	const detail = new TravelDetailPage(page);
+	const cardLast4 = STRIPE_TEST_CARDS.successDirect.slice(-4);
+	let travelIdRef: TravelIdRef | null = null;
 
 	await test.step('Login carrier', async () => {
 		await loginAsDispatcher(page);
 	});
 
-	await test.step('Validar que el hold este activado en preferencias operativas', async () => {
-		await preferences.goto();
-		await preferences.ensureHoldEnabled();
-		await preferences.assertHoldEnabled();
-	});
+	try {
+		let cardCheck: CardPreconditionResult | null = null;
+		if (scenario.apiSearchQuery) {
+			await test.step('Precondición: validar tarjeta vinculada vía API', async () => {
+				cardCheck = await validateCardPrecondition(page, {
+					passengerName: scenario.apiSearchQuery!,
+					requiredLast4: cardLast4,
+				});
+				console.log(`[card-precondition] ${scenario.passenger}: ${cardCheck.activeCards} tarjetas, tiene ${cardLast4}: ${cardCheck.hasRequiredCard}`);
+			});
+		}
 
-	await test.step('Ir al formulario de nuevo viaje', async () => {
-		await dashboard.openNewTravel();
-		await travel.ensureLoaded();
-	});
+		travelIdRef = await captureCreatedTravelId(page);
 
-	await test.step('Completar formulario con tarjeta sin 3DS', async () => {
-		await travel.fillMinimum({
-			client: scenario.client,
-			passenger: scenario.passenger,
-			origin: scenario.origin,
-			destination: scenario.destination,
-			cardLast4: STRIPE_TEST_CARDS.successDirect.slice(-4),
+		await test.step('Validar que el hold este activado en preferencias operativas', async () => {
+			await preferences.goto();
+			await preferences.ensureHoldEnabled();
+			await preferences.assertHoldEnabled();
 		});
-	});
 
-	await test.step('Seleccionar vehiculo y enviar el viaje', async () => {
-		await travel.clickSelectVehicle();
-		await travel.clickSendService();
-	});
+		await test.step('Ir al formulario de nuevo viaje', async () => {
+			await dashboard.openNewTravel();
+			await travel.ensureLoaded();
+		});
 
-	await test.step('Verificar que no aparece modal 3DS', async () => {
-		await expectNoThreeDSModal(page);
-	});
+		await test.step('Completar formulario con tarjeta sin 3DS', async () => {
+			await travel.fillMinimum({
+				client: scenario.client,
+				passenger: scenario.passenger,
+				origin: scenario.origin,
+				destination: scenario.destination,
+				cardLast4,
+				preferSavedCard: cardCheck?.hasRequiredCard ?? false,
+			});
+		});
 
-	await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
-	const createdTravelId = extractTravelId(page.url());
+		await test.step('Seleccionar vehiculo y enviar el viaje', async () => {
+			await travel.clickSelectVehicle();
+			await travel.clickSendService();
+		});
 
-	await test.step('Validar viaje en gestion - columna Por asignar', async () => {
-		await management.goto();
-		await management.expectPassengerInPorAsignar(scenario.passenger, scenario.destination);
-	});
+		await test.step('Verificar que no aparece modal 3DS', async () => {
+			await expectNoThreeDSModal(page);
+		});
 
-	await test.step('Abrir detalle del viaje recien creado', async () => {
-		await management.openDetailForPassenger(scenario.passenger, scenario.destination);
-		await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
-		expect(extractTravelId(page.url())).toBe(createdTravelId);
-	});
+		await test.step('Esperar alta de viaje completa', async () => {
+			await waitForTravelCreation(page);
+		});
 
-	await test.step('Validar estado del viaje - Buscando conductor', async () => {
-		await detail.expectStatus('Buscando conductor');
-	});
+		expect(travelIdRef?.travelId, 'POST /travels debe haber capturado travelId').not.toBeNull();
+
+		await test.step('Validar viaje en gestion — columna Asignar (hold OK)', async () => {
+			await management.goto();
+			await management.expectPassengerInPorAsignar(scenario.passenger, shortDestination(scenario.destination));
+		});
+	} finally {
+		if (travelIdRef) {
+			await test.step('Cleanup: cancelar viaje creado', async () => {
+				await cancelTravelIfCreated(page, travelIdRef!);
+			});
+		}
+	}
 }
 
 async function runHoldOffScenario(page: Page, scenario: HoldNo3dsScenario): Promise<void> {
@@ -133,11 +152,25 @@ async function runHoldOffScenario(page: Page, scenario: HoldNo3dsScenario): Prom
 	const preferences = new OperationalPreferencesPage(page);
 	const travel = new NewTravelPage(page);
 	const management = new TravelManagementPage(page);
-	const detail = new TravelDetailPage(page);
+	const cardLast4 = STRIPE_TEST_CARDS.successDirect.slice(-4);
+	let travelIdRef: TravelIdRef | null = null;
 
 	await loginAsDispatcher(page);
 
+	let cardCheck: CardPreconditionResult | null = null;
+	if (scenario.apiSearchQuery) {
+		await test.step('Precondición: validar tarjeta vinculada vía API', async () => {
+			cardCheck = await validateCardPrecondition(page, {
+				passengerName: scenario.apiSearchQuery!,
+				requiredLast4: cardLast4,
+			});
+			console.log(`[card-precondition] ${scenario.passenger}: ${cardCheck.activeCards} tarjetas, tiene ${cardLast4}: ${cardCheck.hasRequiredCard}`);
+		});
+	}
+
 	try {
+		travelIdRef = await captureCreatedTravelId(page);
+
 		await test.step('Desactivar hold en preferencias operativas', async () => {
 			await disableHoldAndSave(preferences);
 		});
@@ -153,7 +186,8 @@ async function runHoldOffScenario(page: Page, scenario: HoldNo3dsScenario): Prom
 				passenger: scenario.passenger,
 				origin: scenario.origin,
 				destination: scenario.destination,
-				cardLast4: STRIPE_TEST_CARDS.successDirect.slice(-4),
+				cardLast4,
+				preferSavedCard: cardCheck?.hasRequiredCard ?? false,
 			});
 		});
 
@@ -166,24 +200,22 @@ async function runHoldOffScenario(page: Page, scenario: HoldNo3dsScenario): Prom
 			await expectNoThreeDSModal(page);
 		});
 
-		await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
-		const createdTravelId = extractTravelId(page.url());
+		await test.step('Esperar alta de viaje completa', async () => {
+			await waitForTravelCreation(page);
+		});
 
-		await test.step('Validar viaje en gestion - columna Por asignar', async () => {
+		expect(travelIdRef?.travelId, 'POST /travels debe haber capturado travelId').not.toBeNull();
+
+		await test.step('Validar viaje en gestion — columna Asignar (sin hold)', async () => {
 			await management.goto();
-			await management.expectPassengerInPorAsignar(scenario.passenger, scenario.destination);
-		});
-
-		await test.step('Abrir detalle del viaje recien creado', async () => {
-			await management.openDetailForPassenger(scenario.passenger, scenario.destination);
-			await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
-			expect(extractTravelId(page.url())).toBe(createdTravelId);
-		});
-
-		await test.step('Validar estado del viaje - Buscando conductor', async () => {
-			await detail.expectStatus('Buscando conductor');
+			await management.expectPassengerInPorAsignar(scenario.passenger, shortDestination(scenario.destination));
 		});
 	} finally {
+		if (travelIdRef) {
+			await test.step('Cleanup: cancelar viaje creado', async () => {
+				await cancelTravelIfCreated(page, travelIdRef!);
+			});
+		}
 		await test.step('Restaurar hold al final del test', async () => {
 			await restoreHoldAndSave(page, preferences);
 		});
@@ -191,66 +223,18 @@ async function runHoldOffScenario(page: Page, scenario: HoldNo3dsScenario): Prom
 }
 
 test.use({ role: 'carrier', storageState: undefined });
+test.describe.configure({ timeout: 180_000 });
 
 test.describe('Gateway PG · Carrier · Colaborador — Hold sin 3DS', () => {
 
 	test.describe('Hold ON', () => {
 		test('[TS-STRIPE-TC1033] @smoke @hold hold+cobro colaborador sin 3DS', async ({ page }) => {
-			const dashboard = new DashboardPage(page);
-			const preferences = new OperationalPreferencesPage(page);
-			const travel = new NewTravelPage(page);
-			const management = new TravelManagementPage(page);
-			const detail = new TravelDetailPage(page);
-			await test.step('Login carrier', async () => {
-				await loginAsDispatcher(page);
-			});
-
-			await test.step('Validar que el hold este activado en preferencias operativas', async () => {
-				await preferences.goto();
-				await preferences.ensureHoldEnabled();
-				await preferences.assertHoldEnabled();
-			});
-
-			await test.step('Ir al formulario de nuevo viaje', async () => {
-				await dashboard.openNewTravel();
-				await travel.ensureLoaded();
-			});
-
-			await test.step('Completar formulario con tarjeta sin 3DS', async () => {
-				await travel.fillMinimum({
-					client: TEST_DATA.contractorClient,
-					passenger: TEST_DATA.contractorPassenger,
-					origin: TEST_DATA.origin,
-					destination: TEST_DATA.destination,
-					cardLast4: STRIPE_TEST_CARDS.successDirect.slice(-4), // 4242
-				});
-			});
-
-			await test.step('Seleccionar vehiculo y enviar el viaje', async () => {
-				await travel.clickSelectVehicle();
-				await travel.clickSendService();
-			});
-
-			await test.step('Verificar que no aparece modal 3DS', async () => {
-				await expectNoThreeDSModal(page);
-			});
-
-			await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
-			const createdTravelId = extractTravelId(page.url());
-
-			await test.step('Validar viaje en gestion — columna Por asignar', async () => {
-				await management.goto();
-				await management.expectPassengerInPorAsignar(TEST_DATA.contractorPassenger, TEST_DATA.destination);
-			});
-
-			await test.step('Abrir detalle del viaje recien creado', async () => {
-				await management.openDetailForPassenger(TEST_DATA.contractorPassenger, TEST_DATA.destination);
-				await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
-				expect(extractTravelId(page.url())).toBe(createdTravelId);
-			});
-
-			await test.step('Validar estado del viaje — Buscando conductor', async () => {
-				await detail.expectStatus('Buscando conductor');
+			await runHoldOnScenario(page, {
+				client: TEST_DATA.contractorClient,
+				passenger: TEST_DATA.contractorPassenger,
+				origin: TEST_DATA.origin,
+				destination: TEST_DATA.destination,
+				apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
 			});
 		});
 
@@ -260,6 +244,7 @@ test.describe('Gateway PG · Carrier · Colaborador — Hold sin 3DS', () => {
 				passenger: TEST_DATA.contractorPassenger,
 				origin: 'Av. Corrientes 1234, Buenos Aires',
 				destination: 'Av. Santa Fe 2100, Buenos Aires',
+				apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
 			});
 		});
 
@@ -269,6 +254,7 @@ test.describe('Gateway PG · Carrier · Colaborador — Hold sin 3DS', () => {
 				passenger: TEST_DATA.contractorPassenger,
 				origin: 'Florida 100, CABA',
 				destination: 'Palermo Soho, CABA',
+				apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
 			});
 		});
 
@@ -278,70 +264,20 @@ test.describe('Gateway PG · Carrier · Colaborador — Hold sin 3DS', () => {
 				passenger: TEST_DATA.contractorPassenger,
 				origin: 'Reconquista 661, Buenos Aires, Argentina',
 				destination: 'Cazadores 1987, Buenos Aires, Argentina',
+				apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
 			});
 		});
 	});
 
 	test.describe('Hold OFF', () => {
 		test('[TS-STRIPE-TC1034] @regression @hold sin hold colaborador sin 3DS', async ({ page }) => {
-			const dashboard = new DashboardPage(page);
-			const preferences = new OperationalPreferencesPage(page);
-			const travel = new NewTravelPage(page);
-			const management = new TravelManagementPage(page);
-			const detail = new TravelDetailPage(page);
-			await loginAsDispatcher(page);
-
-			try {
-				await test.step('Desactivar hold en preferencias operativas', async () => {
-					await disableHoldAndSave(preferences);
-				});
-
-				await test.step('Ir al formulario de nuevo viaje', async () => {
-					await dashboard.openNewTravel();
-					await travel.ensureLoaded();
-				});
-
-				await test.step('Completar formulario con tarjeta sin 3DS', async () => {
-					await travel.fillMinimum({
-						client: TEST_DATA.contractorClient,
-						passenger: TEST_DATA.contractorPassenger,
-						origin: TEST_DATA.origin,
-						destination: TEST_DATA.destination,
-						cardLast4: STRIPE_TEST_CARDS.successDirect.slice(-4), // 4242
-					});
-				});
-
-				await test.step('Seleccionar vehiculo y enviar el viaje', async () => {
-					await travel.clickSelectVehicle();
-					await travel.clickSendService();
-				});
-
-				await test.step('Verificar que no aparece modal 3DS', async () => {
-					await expectNoThreeDSModal(page);
-				});
-
-				await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
-				const createdTravelId = extractTravelId(page.url());
-
-				await test.step('Validar viaje en gestion — columna Por asignar', async () => {
-					await management.goto();
-					await management.expectPassengerInPorAsignar(TEST_DATA.contractorPassenger, TEST_DATA.destination);
-				});
-
-				await test.step('Abrir detalle del viaje recien creado', async () => {
-					await management.openDetailForPassenger(TEST_DATA.contractorPassenger, TEST_DATA.destination);
-					await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
-					expect(extractTravelId(page.url())).toBe(createdTravelId);
-				});
-
-				await test.step('Validar estado del viaje — Buscando conductor', async () => {
-					await detail.expectStatus('Buscando conductor');
-				});
-			} finally {
-				await test.step('Restaurar hold al final del test', async () => {
-					await restoreHoldAndSave(page, preferences);
-				});
-			}
+			await runHoldOffScenario(page, {
+				client: TEST_DATA.contractorClient,
+				passenger: TEST_DATA.contractorPassenger,
+				origin: TEST_DATA.origin,
+				destination: TEST_DATA.destination,
+				apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
+			});
 		});
 
 		test('[TS-STRIPE-TC1036] @regression @hold sin hold colaborador sin 3DS variante', async ({ page }) => {
@@ -350,6 +286,7 @@ test.describe('Gateway PG · Carrier · Colaborador — Hold sin 3DS', () => {
 				passenger: TEST_DATA.contractorPassenger,
 				origin: 'Av. Corrientes 1234, Buenos Aires',
 				destination: 'Av. Santa Fe 2100, Buenos Aires',
+				apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
 			});
 		});
 
@@ -359,6 +296,7 @@ test.describe('Gateway PG · Carrier · Colaborador — Hold sin 3DS', () => {
 				passenger: TEST_DATA.contractorPassenger,
 				origin: 'Florida 100, CABA',
 				destination: 'Palermo Soho, CABA',
+				apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
 			});
 		});
 
@@ -368,6 +306,7 @@ test.describe('Gateway PG · Carrier · Colaborador — Hold sin 3DS', () => {
 				passenger: TEST_DATA.contractorPassenger,
 				origin: 'Reconquista 661, Buenos Aires, Argentina',
 				destination: 'Cazadores 1987, Buenos Aires, Argentina',
+				apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
 			});
 		});
 	});

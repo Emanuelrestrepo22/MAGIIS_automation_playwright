@@ -20,7 +20,8 @@
  */
 import { expect } from '@playwright/test';
 import { test } from '../../../../../TestBase';
-import { DashboardPage, NewTravelPage, TravelDetailPage, TravelManagementPage } from '../../../../../pages/carrier';
+import { DashboardPage, TravelDetailPage, TravelManagementPage } from '../../../../../pages/carrier';
+import { ContractorNewTravelPage } from '../../../../../pages/contractor/NewTravelPage';
 import {
 	loginAsContractor,
 	expectNoThreeDSModal,
@@ -43,7 +44,7 @@ test.describe('Gateway PG · Contractor · Colaborador — Hold sin 3DS (tarjeta
 
 		test('[TS-STRIPE-P2-TC001] @smoke @contractor @hold Hold ON + nueva vinculación tarjeta 4242 + alta colaborador → viaje a "Buscando conductor"', async ({ page }) => {
 			const dashboard = new DashboardPage(page);
-			const travel = new NewTravelPage(page);
+			const travel = new ContractorNewTravelPage(page);
 			const detail = new TravelDetailPage(page);
 			const management = new TravelManagementPage(page);
 
@@ -103,7 +104,7 @@ test.describe('Gateway PG · Contractor · Colaborador — Hold sin 3DS (tarjeta
 			// Flujo diferenciador vs TC001: NO se ingresan datos Stripe nuevos.
 			// Se abre el dropdown de pago y se selecciona la tarjeta resaltada (.highlighted).
 			const dashboard = new DashboardPage(page);
-			const travel = new NewTravelPage(page);
+			const travel = new ContractorNewTravelPage(page);
 			const detail = new TravelDetailPage(page);
 			const management = new TravelManagementPage(page);
 
@@ -164,7 +165,7 @@ test.describe('Gateway PG · Contractor · Colaborador — Hold sin 3DS (tarjeta
 		test('[TS-STRIPE-P2-TC002] @regression @contractor @hold Hold OFF + nueva vinculación tarjeta 4242 + alta colaborador → viaje a "Buscando conductor" sin hold', async ({ page }) => {
 			// Precondición: enableCreditCardHold=false en parámetros del carrier (portal carrier → Preferencias Operativas).
 			const dashboard = new DashboardPage(page);
-			const travel = new NewTravelPage(page);
+			const travel = new ContractorNewTravelPage(page);
 			const detail = new TravelDetailPage(page);
 			const management = new TravelManagementPage(page);
 
@@ -222,7 +223,7 @@ test.describe('Gateway PG · Contractor · Colaborador — Hold sin 3DS (tarjeta
 			// Evidencia test-20.spec.ts: mismo flujo de selección de tarjeta existente que TC003,
 			// pero con Hold OFF activado en preferencias carrier. Sin hold no se ejecuta reserva Stripe.
 			const dashboard = new DashboardPage(page);
-			const travel = new NewTravelPage(page);
+			const travel = new ContractorNewTravelPage(page);
 			const detail = new TravelDetailPage(page);
 			const management = new TravelManagementPage(page);
 

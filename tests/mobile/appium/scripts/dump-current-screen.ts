@@ -122,9 +122,10 @@ async function run(): Promise<void> {
 	}
 
 	// ── Guardar ───────────────────────────────────────────────────────────────
-	mkdirSync('evidence/dom-dump', { recursive: true });
+	const DUMP_DIR = process.env.DUMP_DIR ?? 'evidence/dom-dump';
+	mkdirSync(DUMP_DIR, { recursive: true });
 	const ts  = new Date().toISOString().replace(/[:.]/g, '-');
-	const out = join('evidence/dom-dump', `${LABEL}-${ts}.txt`);
+	const out = join(DUMP_DIR, `${LABEL}-${ts}.txt`);
 	writeFileSync(out, lines.join('\n'), 'utf-8');
 	log(`\n✓ Guardado: ${out}`);
 

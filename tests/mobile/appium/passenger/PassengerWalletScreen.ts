@@ -1197,7 +1197,7 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 	 * Confirms the card save action.
 	 */
 	async saveCard(): Promise<void> {
-		const tapped = await this.executeInWebView(async (target: string) => {
+		const result = await this.executeInWebView((target: string) => {
 			const normalize = (value: unknown): string =>
 				String(value ?? '')
 					.replace(/\s+/g, ' ')
@@ -1228,20 +1228,22 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 				return element;
 			};
 
+			const host = document.querySelector('app-credit-card-payment-data') as HTMLElement | null;
+			const scope: ParentNode = host ?? document;
+
+			const buttonCandidates = Array.from(scope.querySelectorAll('button, ion-button')) as HTMLElement[];
 			const targetText = normalize(target);
-			const candidates = Array.from(document.querySelectorAll('button, ion-button, a, [role="button"], span, div')) as HTMLElement[];
-			const match = candidates.find(element => {
+			const match = buttonCandidates.find(element => {
 				if (!isVisible(element)) {
 					return false;
 				}
 
 				const values = [normalize(element.innerText || element.textContent), normalize(element.getAttribute('aria-label')), normalize(element.getAttribute('content-desc')), normalize(element.getAttribute('title'))];
-
-				return values.some(value => value === targetText);
+				return values.some(value => value === targetText || value.includes(targetText));
 			});
 
 			if (!match) {
-				return 'not-found';
+				return { status: 'not-found', strategy: 'none', buttonRect: null, ngKeys: [] };
 			}
 
 			const clickable = findClickableAncestor(match);
@@ -1252,71 +1254,261 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 					(clickable as any).disabled === true
 			);
 			if (disabled) {
-				return 'disabled';
+				return { status: 'disabled', strategy: 'none', buttonRect: null, ngKeys: [] };
 			}
 
-			const ng = (window as any).ng;
-			if (typeof ng?.getComponent === 'function') {
-				const host = document.querySelector('app-credit-card-payment-data');
-				if (host instanceof HTMLElement) {
-					const component = ng.getComponent(host);
-					if (component && typeof component.submit === 'function') {
-						try {
-							const result = component.submit();
-							if (result && typeof result.then === 'function') {
-								await result;
-							}
-							return 'submitted';
-						} catch (error) {
-							const message = error instanceof Error ? error.message : String(error);
-							if (message.includes('in-flight confirmCardSetup')) {
-								return 'submitted';
-							}
+			const rect = clickable.getBoundingClientRect();
+			const buttonRect = { x: Math.round(rect.left + rect.width / 2), y: Math.round(rect.top + rect.height / 2), w: Math.round(rect.width), h: Math.round(rect.height) };
 
-							throw error;
-						}
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			const ng = (window as any).ng;
+			let ngKeys: string[] = [];
+			if (host && typeof ng?.getComponent === 'function') {
+				try {
+					const component = ng.getComponent(host);
+					if (component && typeof component === 'object') {
+						ngKeys = Object.getOwnPropertyNames(Object.getPrototypeOf(component))
+							.concat(Object.keys(component))
+							.filter((name, index, arr) => arr.indexOf(name) === index)
+							.slice(0, 40);
 					}
+				} catch {
+					// Continue; we'll still try requestSubmit + click fallbacks.
 				}
 			}
 
+			// Primary strategy: invoke the Angular component method that performs
+			// stripe.confirmCardSetup(). The public `submit()` wrapper exists but
+			// appears to no-op on this build — doConfirmCardSetup() is the one that
+			// actually reaches Stripe (seen via ngKeys introspection).
+			// We fire-and-forget: waitForPaymentModalSubmitOutcome polls for 3DS / modal close.
+			if (host && typeof ng?.getComponent === 'function') {
+				try {
+					const component = ng.getComponent(host);
+					if (component && typeof component === 'object') {
+						const fire = (name: string): boolean => {
+							// eslint-disable-next-line @typescript-eslint/no-explicit-any
+							const method = (component as any)[name];
+							if (typeof method !== 'function') {
+								return false;
+							}
+							try {
+								method.call(component);
+								return true;
+							} catch (error) {
+								const message = error instanceof Error ? error.message : String(error);
+								return message.includes('in-flight confirmCardSetup');
+							}
+						};
+
+						if (fire('doConfirmCardSetup')) {
+							return { status: 'submitted', strategy: 'ng.doConfirmCardSetup', buttonRect, ngKeys };
+						}
+
+						if (fire('verifyCreditCard')) {
+							return { status: 'submitted', strategy: 'ng.verifyCreditCard', buttonRect, ngKeys };
+						}
+
+						if (fire('submit')) {
+							return { status: 'submitted', strategy: 'ng.submit', buttonRect, ngKeys };
+						}
+					}
+				} catch {
+					// Fall through to requestSubmit / click fallbacks.
+				}
+			}
+
+			// Secondary strategy: let the form fire its (ngSubmit) through its
+			// default submit button. This is the closest thing to a real user tap.
+			const form = (host?.querySelector('form') ?? clickable.closest('form')) as HTMLFormElement | null;
+			if (form && typeof (form as HTMLFormElement & { requestSubmit?: () => void }).requestSubmit === 'function') {
+				try {
+					(form as HTMLFormElement & { requestSubmit: () => void }).requestSubmit();
+					return { status: 'submitted', strategy: 'form.requestSubmit', buttonRect, ngKeys };
+				} catch {
+					// Fall through to the click fallbacks.
+				}
+			}
+
+			// Secondary: native .click() on the GUARDAR button — the Angular (click)
+			// handler should fire the same path as a real tap.
 			try {
 				clickable.scrollIntoView({ block: 'center', inline: 'center' });
 				clickable.click();
-				return 'submitted';
+				return { status: 'submitted', strategy: 'button.click', buttonRect, ngKeys };
 			} catch {
-				// Fall through to the synthetic click path below.
+				// Fall through to synthetic dispatch below.
 			}
 
-			try {
-				clickable.click();
-				return 'submitted';
-			} catch {
-				// Fall through to the synthetic click path below.
-			}
-
+			// Tertiary: synthetic pointer/mouse sequence.
 			try {
 				clickable.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, cancelable: true, composed: true, view: window }));
 				clickable.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, composed: true, view: window }));
 				clickable.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, composed: true, view: window }));
 				clickable.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, composed: true, view: window }));
+				return { status: 'submitted', strategy: 'synthetic-mouse', buttonRect, ngKeys };
 			} catch {
-				// Ignore and keep the action as a one-shot submit attempt.
+				return { status: 'submit-failed', strategy: 'none', buttonRect, ngKeys };
 			}
+		}, 'GUARDAR').catch(() => ({ status: 'not-found', strategy: 'none', buttonRect: null, ngKeys: [] }));
 
-			return 'submitted';
-		}, 'GUARDAR').catch(() => 'not-found');
+		const status = (result as { status: string }).status;
+		const strategy = (result as { strategy: string }).strategy;
+		const buttonRect = (result as { buttonRect: { x: number; y: number; w: number; h: number } | null }).buttonRect;
+		const ngKeys = (result as { ngKeys: string[] }).ngKeys;
 
-		console.log(`[PassengerWalletScreen] saveCard() submit strategy=${tapped}`);
+		console.log(`[PassengerWalletScreen] saveCard() strategy=${strategy} status=${status} rect=${JSON.stringify(buttonRect)} ngKeys=${JSON.stringify(ngKeys)}`);
 
-		if (tapped === 'disabled') {
+		if (status === 'disabled') {
 			throw new Error('PassengerWalletScreen.saveCard() - "GUARDAR" is disabled; holder name or required fields are missing');
 		}
 
-		if (tapped !== 'clicked' && tapped !== 'submitted') {
-			throw new Error('PassengerWalletScreen.saveCard() - "GUARDAR" not found');
+		if (status !== 'submitted') {
+			throw new Error(`PassengerWalletScreen.saveCard() - "GUARDAR" not actioned (status=${status})`);
 		}
 
 		await this.pause(500);
+
+		// If the primary form.requestSubmit strategy did not move the modal within
+		// a short window, fall back to a WebDriver-trusted click. `driver.$().click()`
+		// sends a real WebDriver click (ElementClick command) which Angular/Stripe
+		// trust more than in-page `.click()` or dispatched MouseEvents.
+		const modalAfter = await this.getVisibleCreditCardPaymentModal().catch(() => null);
+		if (modalAfter) {
+			const trustedClicked = await this.webDriverClickSaveButton().catch(() => false);
+			if (trustedClicked) {
+				console.log('[PassengerWalletScreen] saveCard() - WebDriver trusted click dispatched on GUARDAR');
+			} else {
+				console.warn('[PassengerWalletScreen] saveCard() - WebDriver trusted click fallback could not target GUARDAR');
+			}
+		}
+
+		// buttonRect is captured for future native-tap fallbacks via Appium Actions.
+		void buttonRect;
+		void ngKeys;
+
+		// After the submit, Stripe still needs to confirm the SetupIntent before
+		// app-credit-card-payment-data unmounts. Wait passively — firing a second
+		// submit races with the in-flight confirmCardSetup and kills the 3DS step.
+		// We return as soon as any terminal signal shows up (modal gone, 3DS
+		// challenge frame, or backend error text); otherwise the caller still has
+		// the 3DS helper + verifyCardAdded to take over.
+		await this.waitForPaymentModalSubmitOutcome(20_000);
+	}
+
+	/**
+	 * Sends a WebDriver-trusted click to the GUARDAR button inside the visible
+	 * payment modal. This differs from a JS `.click()` in that it traverses the
+	 * WebDriver ElementClick command, which Angular and Stripe treat as a real
+	 * user interaction and is the most reliable way to trigger (ngSubmit).
+	 */
+	private async webDriverClickSaveButton(): Promise<boolean> {
+		const modal = await this.getVisibleCreditCardPaymentModal().catch(() => null);
+		if (!modal) {
+			return false;
+		}
+
+		// The Angular template renders `<button class="btn primary"><span>GUARDAR</span></button>`.
+		// WebDriver clicks on the button are rejected because elementFromPoint returns the child
+		// span; clicking the span directly instead triggers a real user tap that bubbles to the
+		// button and fires Angular's (click) → submit() → stripe.confirmCardSetup chain.
+		const selectorPairs: Array<[string, string]> = [
+			['button.btn.primary', 'button.btn.primary span'],
+			['button[ion-button].btn.primary', 'button[ion-button].btn.primary span'],
+			['form button.primary', 'form button.primary span'],
+			['form button', 'form button span']
+		];
+
+		for (const [buttonSelector, spanSelector] of selectorPairs) {
+			const spans = await modal.$$(spanSelector).catch(() => [] as any[]);
+			for (const span of spans) {
+				if (!(await span.isDisplayed().catch(() => false))) {
+					continue;
+				}
+
+				const text = String(await span.getText().catch(() => '')).trim().toUpperCase();
+				if (text && !text.includes('GUARDAR')) {
+					continue;
+				}
+
+				try {
+					await span.click();
+					return true;
+				} catch {
+					// Span click also failed; try the button as fallback.
+				}
+			}
+
+			const buttons = await modal.$$(buttonSelector).catch(() => [] as any[]);
+			for (const button of buttons) {
+				if (!(await button.isDisplayed().catch(() => false))) {
+					continue;
+				}
+
+				try {
+					await button.click();
+					return true;
+				} catch {
+					// Move on to the next selector pair.
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Observes what happens after the GUARDAR submit without firing any extra
+	 * submit, so the in-flight stripe.confirmCardSetup() call can reach the 3DS
+	 * challenge. Returns when the modal closes, a 3DS frame appears, or a form
+	 * error becomes visible inside the modal.
+	 */
+	private async waitForPaymentModalSubmitOutcome(timeout = 20_000): Promise<'modal-closed' | '3ds-visible' | 'modal-error' | 'timeout'> {
+		const driver = this.getDriver();
+		const deadline = Date.now() + timeout;
+
+		while (Date.now() < deadline) {
+			const modal = await this.getVisibleCreditCardPaymentModal().catch(() => null);
+			if (!modal) {
+				console.log('[PassengerWalletScreen] saveCard() - payment modal dismissed');
+				return 'modal-closed';
+			}
+
+			const outcome = await this.executeInWebView(() => {
+				const challengeFrames = Array.from(document.querySelectorAll('iframe')).filter(frame => {
+					const signature = `${(frame as HTMLIFrameElement).name ?? ''} ${(frame as HTMLIFrameElement).src ?? ''}`;
+					return /three-ds-2-challenge|stripe-challenge-frame|3d_secure_2|acs|authenticate|verify|challenge/i.test(signature) && !/elements-inner-card|cardnumber|cardexpiry|cardcvc|controller|metrics|hcaptcha/i.test(signature);
+				});
+
+				if (challengeFrames.length) {
+					return '3ds-visible';
+				}
+
+				const host = document.querySelector('app-credit-card-payment-data') as HTMLElement | null;
+				const errorBlock = host?.querySelector('.error, .form-error, [class*="error"]:not([class*="invalid"])') as HTMLElement | null;
+				const errorText = errorBlock?.innerText?.trim() ?? '';
+				if (errorText && errorText.length > 0) {
+					return `modal-error:${errorText.slice(0, 160)}`;
+				}
+
+				return '';
+			}).catch(() => '');
+
+			if (outcome === '3ds-visible') {
+				console.log('[PassengerWalletScreen] saveCard() - 3DS challenge frame detected, handing off');
+				return '3ds-visible';
+			}
+
+			if (typeof outcome === 'string' && outcome.startsWith('modal-error:')) {
+				console.warn(`[PassengerWalletScreen] saveCard() - ${outcome}`);
+				return 'modal-error';
+			}
+
+			await driver.pause(300);
+		}
+
+		console.warn('[PassengerWalletScreen] saveCard() - payment modal still visible after submit; caller will validate 3DS / wallet list');
+		return 'timeout';
 	}
 
 	/**
