@@ -735,10 +735,10 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Contractor`, 
 		});
 
 		await test.step('[SMOKE-GW-TC14][STEP-04] Intentar seleccionar vehículo y enviar servicio', async () => {
-			// Card 9995 (fondos insuficientes) puede ser rechazada por Stripe durante la vinculación
-			// del form (antes de que el botón de vehículo habilite). Si el botón no está disponible,
-			// la declinación ya ocurrió — se continúa al STEP-05 para validar el error.
-			const isReady = await travel.waitForVehicleSelectionReady().then(() => true).catch(() => false);
+			// Card 9995 (fondos insuficientes) es rechazada por Stripe durante la vinculación del form
+			// — el botón de vehículo nunca habilita. Timeout corto (8s) para fail-fast y continuar
+			// al STEP-05 donde se valida el mensaje de error ya visible en el formulario.
+			const isReady = await travel.waitForVehicleSelectionReady(8_000).then(() => true).catch(() => false);
 			if (isReady) {
 				await travel.clickSelectVehicle();
 				await travel.clickSendService();
