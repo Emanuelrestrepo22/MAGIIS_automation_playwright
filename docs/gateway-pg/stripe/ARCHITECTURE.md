@@ -4,6 +4,7 @@
 > **Effective date:** 2026-04-09
 > **Source matrix:** `docs/gateway-pg/stripe/matriz_cases.md` + `docs/gateway-pg/stripe/matriz_cases2.md`
 > **Stack:** Playwright + TypeScript (web) + Appium + WebdriverIO (mobile)
+> **Trazabilidad y propagación de cambios:** [`TRACEABILITY.md`](./TRACEABILITY.md) — obligatorio leer antes de editar matrices.
 
 ## Canonical map (enforced)
 
