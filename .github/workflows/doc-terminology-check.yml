@@ -1,0 +1,33 @@
+name: Doc Terminology Check
+
+# Valida que la terminología canónica post-desambiguación (Fase 1-7) esté
+# sincronizada en docs, specs y cobertura. Ver:
+#   docs/gateway-pg/stripe/TRACEABILITY.md §5
+
+on:
+  pull_request:
+    paths:
+      - 'docs/gateway-pg/stripe/**'
+      - 'tests/features/gateway-pg/**'
+      - 'tests/coverage/**'
+      - 'scripts/ai/check-doc-terminology.mjs'
+      - 'scripts/ai/phase*-sync-*.mjs'
+  push:
+    branches: [main]
+
+jobs:
+  terminology:
+    name: E2E / Hold-Cobro terminology
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run terminology check
+        run: node scripts/ai/check-doc-terminology.mjs

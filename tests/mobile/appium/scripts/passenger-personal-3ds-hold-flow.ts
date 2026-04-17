@@ -105,8 +105,9 @@ async function handleThreeDsPopup(driver: Browser, dumpState: (label: string) =>
 
 		if (inlineResult === 'not-present') {
 			const modalResult = (await driver.execute((texts: string[]) => {
-				const overlays = Array.from(document.querySelectorAll('ion-modal, [class*="3ds"], [class*="stripe"], app-confirm-modal')) as HTMLElement[];
-				const visible = overlays.filter(element => element.offsetParent !== null);
+				const isPaymentFormOverlay = (element: HTMLElement): boolean => Boolean(element.querySelector('app-credit-card-payment-data, app-credit-card-dialog'));
+				const overlays = Array.from(document.querySelectorAll('ion-modal, [class*="3ds"], [class*="stripe"], app-confirm-modal, [data-react-aria-top-layer]')) as HTMLElement[];
+				const visible = overlays.filter(element => element.offsetParent !== null && !isPaymentFormOverlay(element));
 				if (!visible.length) {
 					return 'not-present';
 				}

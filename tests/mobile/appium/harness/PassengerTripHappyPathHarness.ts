@@ -6,6 +6,7 @@ import { PassengerNewTripScreen } from '../passenger/PassengerNewTripScreen';
 import { PassengerTripStatusScreen } from '../passenger/PassengerTripStatusScreen';
 import { PassengerWalletScreen, type CardInput } from '../passenger/PassengerWalletScreen';
 import { dumpAppiumState } from '../helpers/appiumDebug';
+import { handleThreeDsPopup } from '../helpers/threeDsChallenge';
 
 export type PassengerTripHappyPathResult = {
 	cardLast4: string;
@@ -83,10 +84,15 @@ export class PassengerTripHappyPathHarness {
 		return this.walletScreen;
 	}
 
+	async ensureProfileMode(mode: PassengerProfileMode): Promise<void> {
+		await this.startSession();
+		await this.homeScreen.ensureProfileMode(mode);
+	}
+
 	async ensurePassengerShell(): Promise<void> {
 		await this.startSession();
 		await this.ensureLoggedInIfNeeded();
-		await this.homeScreen.ensureProfileMode(this.profileMode);
+		await this.ensureProfileMode(this.profileMode);
 	}
 
 	async ensureWalletCard(card: CardInput, timeoutMs: number = DEFAULT_TIMEOUTS_MS.wallet): Promise<'added' | 'already-present'> {
@@ -95,17 +101,32 @@ export class PassengerTripHappyPathHarness {
 			await this.walletScreen.openWallet();
 
 			const last4 = this.getCardLast4(card);
-			if (await this.walletScreen.hasCard(last4, timeoutMs)) {
+			// Use a generous look-ahead so a slow WebView load does not produce a false negative.
+			const existsBeforeAdd = await this.walletScreen.hasCard(last4, Math.max(timeoutMs, 8_000));
+			if (existsBeforeAdd) {
 				return 'already-present';
 			}
 
 			await this.walletScreen.tapAddCard();
 			await this.walletScreen.fillCardForm(card);
 			await this.walletScreen.saveCard();
-			await this.walletScreen.verifyCardAdded(last4);
+			const threeDsResult = await handleThreeDsPopup(this.getDriver(), label => dumpAppiumState(this.getDriver(), label), timeoutMs, 'passenger-wallet-setup');
+			if (threeDsResult === 'failed') {
+				throw new Error(`PassengerTripHappyPathHarness.ensureWalletCard() - 3DS challenge was not completed: ${threeDsResult}`);
+			}
+
+			// Guard: re-check before verifyCardAdded — Stripe may have already persisted the card
+			// even if the 3DS modal closed before the wallet list refreshed.
+			const appearedAfter3ds = await this.walletScreen.hasCard(last4, 5_000);
+			if (appearedAfter3ds) {
+				return 'added';
+			}
+
+			await this.walletScreen.verifyCardAdded(last4, timeoutMs);
 			return 'added';
 		});
 	}
+
 
 	async cleanWallet(maxIterations = 50): Promise<number> {
 		return this.withFailureDump('passenger-wallet-cleanup', async () => {
@@ -113,6 +134,46 @@ export class PassengerTripHappyPathHarness {
 			await this.walletScreen.openWallet();
 			return this.walletScreen.deleteAllVisibleCards(maxIterations);
 		});
+	}
+
+	async restartApp(): Promise<void> {
+		await this.startSession();
+
+		const appPackage = this.config.appPackage?.trim();
+		if (!appPackage) {
+			return;
+		}
+
+		const driver = this.getDriver() as AppiumDriver & {
+			terminateApp?: (appId: string) => Promise<void>;
+			activateApp?: (appId: string) => Promise<void>;
+			closeApp?: () => Promise<void>;
+			launchApp?: () => Promise<void>;
+		};
+
+		try {
+			if (typeof driver.terminateApp === 'function') {
+				await driver.terminateApp(appPackage);
+			} else if (typeof driver.closeApp === 'function') {
+				await driver.closeApp();
+			}
+		} catch {
+			// If the app was already closed or termination is unsupported, keep going.
+		}
+
+		await driver.pause(1_500);
+
+		try {
+			if (typeof driver.activateApp === 'function') {
+				await driver.activateApp(appPackage);
+			} else if (typeof driver.launchApp === 'function') {
+				await driver.launchApp();
+			}
+		} catch {
+			throw new Error(`Passenger app restart failed for package ${appPackage}`);
+		}
+
+		await driver.pause(2_000);
 	}
 
 	async deleteWalletCard(last4: string): Promise<void> {

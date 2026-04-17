@@ -100,6 +100,13 @@ export const STRIPE_TEST_CARDS = {
 	 * Nota: no documentada en Stripe docs públicos.
 	 */
 	error_3ds: createStripeTestCard('4000008420001629'),
+	/**
+	 * 3DS obligatorio + pago rechazado post-autenticación (card_declined) — (4000 0084 0000 1629)
+	 * Radar solicita 3DS obligatoriamente; la autenticación completa con éxito pero
+	 * el cargo es rechazado con card_declined después de la autenticación.
+	 * Fuente: Stripe docs — https://stripe.com/docs/testing#cards
+	 */
+	declined_after_3ds: createStripeTestCard('4000008400001629'),
 } as const satisfies Record<string, StripeTestCard>;
 
 export function getStripeCardLast4(cardNumber: string): string {

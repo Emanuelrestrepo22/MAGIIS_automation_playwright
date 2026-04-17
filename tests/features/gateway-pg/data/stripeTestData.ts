@@ -49,6 +49,8 @@ export const STRIPE_TEST_CARDS = {
 	addressUnavailable: resolveCardNumber('STRIPE_CARD_ADDRESS_UNAVAILABLE', TEST_STRIPE_CARD_FIXTURES.address_unavailable.number),
 	/** TC1094 — error autenticacion 3DS (4000 0084 2000 1629) */
 	error3DS: resolveCardNumber('STRIPE_CARD_ERROR_3DS', TEST_STRIPE_CARD_FIXTURES.error_3ds.number),
+	/** 3DS obligatorio → pago rechazado post-autenticación card_declined (4000 0084 0000 1629) */
+	declinedAfter3DS: resolveCardNumber('STRIPE_CARD_DECLINED_AFTER_3DS', TEST_STRIPE_CARD_FIXTURES.declined_after_3ds.number),
 } as const;
 
 export const STRIPE_EXPIRY = isTestEnv ? TEST_STRIPE_CARD_EXPIRY : requireEnv('STRIPE_CARD_EXPIRY');
@@ -60,12 +62,14 @@ export const TEST_DATA = {
 	// Default carrier flow: el cliente auto-completa el pasajero y deja "Regular" listo.
 	client: PASSENGERS.empresaIndividuo.name,
 	passenger: PASSENGERS.appPax.name,
-	// Casos que requieren cliente y pasajero distintos.
+	// Contractor: cliente 'fast car', pasajero = colaborador CON tarjeta 4242 activa.
+	// PASSENGERS.colaborador = 'smith, Emanuel' (Emanuel Smith — tarjeta 4242 ✅)
 	contractorClient: 'fast car',
-	contractorPassenger: PASSENGERS.colaborador.name,
-	// Contractor hold: el colaborador del contractor se selecciona buscando por nombre.
-	// Evidencia: test-7.spec.ts — login contractor → buscar 'ema' → 'smith, Emanuel'.
-	contractorColaborador: 'smith, Emanuel',
+	contractorPassenger: PASSENGERS.colaborador.name, // 'smith, Emanuel' — tiene tarjeta 4242
+	// Alias explícito para el colaborador con tarjeta (mismo valor que contractorPassenger).
+	contractorColaborador: PASSENGERS.colaborador.name, // 'smith, Emanuel'
+	// Colaborador sin tarjeta activa — no usar en tests hold hasta que Admin vincule tarjeta.
+	contractorPassengerSinTarjeta: PASSENGERS.colaboradorSinTarjeta.name, // 'Nayla Smith'
 	appPaxPassenger: PASSENGERS.appPax.name,
 	origin: 'Reconquista 661, Buenos Aires, Argentina',
 	destination: 'Cazadores 1987, Buenos Aires, Argentina',

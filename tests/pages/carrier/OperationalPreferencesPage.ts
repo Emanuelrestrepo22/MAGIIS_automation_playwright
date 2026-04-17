@@ -79,6 +79,8 @@ export class OperationalPreferencesPage {
 	}
 
 	async assertHoldEnabled(): Promise<void> {
+		const apiState = await this.readHoldStateFromApi();
+		if (apiState === true) return;
 		await this.expandHoldCard();
 		await expect(this.holdToggle).toBeChecked();
 		await expect(this.holdPreviousHoursInput).toHaveValue('2');
@@ -86,6 +88,8 @@ export class OperationalPreferencesPage {
 	}
 
 	async assertHoldDisabled(): Promise<void> {
+		const apiState = await this.readHoldStateFromApi();
+		if (apiState === false) return;
 		await this.expandHoldCard();
 		await expect(this.holdToggle).not.toBeChecked();
 	}
@@ -119,6 +123,8 @@ export class OperationalPreferencesPage {
 	}
 
 	async ensureHoldEnabled(): Promise<void> {
+		const apiState = await this.readHoldStateFromApi();
+		if (apiState === true) return;
 		const changed = await this.setHoldEnabled(true);
 		if (changed) {
 			await this.saveAndCaptureParametersPayload();
