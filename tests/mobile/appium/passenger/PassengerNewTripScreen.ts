@@ -272,6 +272,88 @@ export class PassengerNewTripScreen extends AppiumSessionBase {
 
 		await this.pause(1_000);
 
+		await this.throwIfCreditLimitExceeded(4_000);
+
 		return this.extractTripCode();
+	}
+
+	/**
+	 * Inspects the DOM for the credit-limit blocker that the backend raises when
+	 * the test passenger has no available balance. We surface it as ENV_BLOCKER so
+	 * pipelines can split data-related failures from real code regressions.
+	 */
+	private async throwIfCreditLimitExceeded(timeoutMs: number): Promise<void> {
+		const driver = this.getDriver();
+		const deadline = Date.now() + timeoutMs;
+
+		while (Date.now() < deadline) {
+			const signal = await this.executeInWebView(() => {
+				const normalize = (value: unknown): string =>
+					String(value ?? '')
+						.replace(/\s+/g, ' ')
+						.trim()
+						.toLowerCase()
+						.normalize('NFD')
+						.replace(/[\u0300-\u036f]/g, '');
+
+				const isVisible = (element: Element): boolean => {
+					const html = element as HTMLElement;
+					if (html.offsetParent === null) {
+						return false;
+					}
+
+					const rect = html.getBoundingClientRect();
+					const style = window.getComputedStyle(html);
+					return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+				};
+
+				const overlays = Array.from(
+					document.querySelectorAll('ion-alert, ion-modal, ion-toast, app-confirm-modal, .alert-wrapper, .toast-wrapper')
+				) as HTMLElement[];
+
+				const patterns = [
+					/limit.*exceed/,
+					/limite.*excedid/,
+					/limite.*de.*credito/,
+					/credit.*limit/,
+					/saldo.*insuficient/,
+					/supero.*limite/,
+					/excede.*limite/,
+				];
+
+				for (const overlay of overlays) {
+					if (!isVisible(overlay)) {
+						continue;
+					}
+
+					const text = normalize(overlay.innerText ?? overlay.textContent);
+					if (patterns.some(pattern => pattern.test(text))) {
+						return text.slice(0, 200);
+					}
+				}
+
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				const globals = window as any;
+				const lastResponse = globals.__lastTripResponse ?? globals.__lastTravelResponse ?? null;
+				if (lastResponse && typeof lastResponse === 'object') {
+					if (lastResponse.limitExceeded === true || lastResponse.limitExceeded === 'true') {
+						return 'limitExceeded=true';
+					}
+
+					if (lastResponse.limitExceeded === false && lastResponse.success === false) {
+						return 'limitExceeded=false (blocked)';
+					}
+				}
+
+				return '';
+			}).catch(() => '');
+
+			if (signal) {
+				const email = process.env.PASSENGER_EMAIL?.trim() || 'unknown-passenger';
+				throw new Error(`ENV_BLOCKER: Credit limit exceeded for test user ${email} (signal="${signal}")`);
+			}
+
+			await driver.pause(500);
+		}
 	}
 }

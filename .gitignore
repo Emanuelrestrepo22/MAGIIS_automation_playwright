@@ -33,6 +33,15 @@ storage/state-*.json
 # Screenshots de debug generados durante desarrollo
 debug-*.png
 
+# Scratch specs (Codegen recorder, atajos locales de navegación)
+tests/test-*.spec.ts
+
+# Binarios de aplicación (APKs de prueba) — nunca en git
+*.apk
+
+# Backups generados por scripts de sincronización (update-matriz-xlsx, etc.)
+*.bak
+
 # ─── IDE/OS ────────────────────────────────────────────────
 .vscode/
 .idea/

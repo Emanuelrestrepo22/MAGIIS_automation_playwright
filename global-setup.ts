@@ -1,4 +1,17 @@
-//global-setup.ts
+// global-setup.ts
+//
+// ⚠️  DEPRECATED — NO USAR.
+// Este archivo quedó como referencia histórica del flujo de autenticación
+// "single-role" basado en LOGIN_PATH fijo `/carrier/#/auth/login`.
+//
+// La configuración activa (`playwright.config.ts`) usa
+// `./global-setup.multi-role.ts`, que autentica todos los roles configurados
+// en el .env (carrier, contractor, y futuros) resolviendo rutas desde
+// `tests/config/runtime.ts`.
+//
+// Mantener por ahora para no romper scripts externos que lo referencien.
+// Si detectás que nadie lo usa, eliminalo junto con su entrada en tsconfig.json
+// y las menciones en README.md.
 import type { FullConfig } from "@playwright/test";
 import { chromium } from "@playwright/test";
 import * as dotenv from "dotenv";
@@ -8,6 +21,10 @@ import { LoginPage } from "./tests/pages/shared";
 async function globalSetup(config: FullConfig) {
   // Este setup "legacy" prepara una sola sesión carrier y guarda su storageState.
   // Sigue siendo útil para entender el flujo base de autenticación sin la capa multi-role.
+  console.warn(
+    "[global-setup.ts] ⚠️  DEPRECATED: este setup solo autentica carrier con rutas hardcodeadas. " +
+      "Migrar a global-setup.multi-role.ts (la config activa ya lo usa).",
+  );
 
   // Carga el .env correcto según ENV_FILE o el entorno (ENV)
   const envFile = process.env.ENV_FILE ?? `.env.${process.env.ENV ?? "test"}`;

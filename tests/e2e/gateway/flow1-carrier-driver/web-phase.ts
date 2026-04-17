@@ -22,6 +22,7 @@ import {
 	ThreeDSModal,
 } from '../../../pages/carrier';
 import { loginAsDispatcher, STRIPE_TEST_CARDS, TEST_DATA } from '../../../features/gateway-pg/fixtures/gateway.fixtures';
+import { waitForTravelCreation } from '../../../features/gateway-pg/helpers/stripe.helpers';
 import { initJourneyContext, markReadyForDriver } from '../shared/JourneyBridge';
 import type { GatewayFlowConfig } from '../shared/e2eFlowConfig';
 
@@ -30,13 +31,6 @@ export type WebPhaseResult = {
 	tripId:    string;
 };
 
-function extractTripId(url: string): string {
-	const match = url.match(/\/travels\/([\w-]+)/);
-	if (!match) {
-		throw new Error(`[web-phase] No se pudo extraer el tripId desde URL: ${url}`);
-	}
-	return match[1];
-}
 
 /**
  * Ejecuta la fase web completa del Flow 1.
@@ -110,8 +104,7 @@ export async function runWebPhase(
 
 	// ── Paso 7: Extraer tripId desde URL ─────────────────────────────────────
 	console.log('[web-phase] Paso 7: Esperar redirección y extraer tripId');
-	await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 30_000 });
-	const tripId = extractTripId(page.url());
+	const tripId = await waitForTravelCreation(page, 30_000);
 	console.log(`[web-phase] tripId: ${tripId}`);
 
 	// ── Paso 8: Actualizar JourneyContext → ready-for-driver ─────────────────
