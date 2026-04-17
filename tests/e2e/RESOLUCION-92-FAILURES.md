@@ -31,14 +31,33 @@ Todos los tests "fallidos" previos en realidad creaban viajes exitosos que queda
 | TS-STRIPE-TC1076 | empresa-hold-no3ds Hold OFF set 2 | Marcelle Stripe | ✅ PASS |
 | TS-STRIPE-TC1033 | colaborador-hold-no3ds @smoke | Emanuel Smith | ✅ PASS |
 
+**Patrón aplicado (código listo, bloqueado por backend):**
+
+| Suite | TCs | Cambios aplicados |
+|---|---|---|
+| apppax-hold-3ds | TC1053-TC1064 | captureCreatedTravelId + cancelTravelIfCreated + waitForOptionalVisible 5s |
+| empresa-hold-3ds | TC1069-TC1080 | ídem + fix extractTravelId broken + shortDestination |
+| colaborador-hold-3ds | TC1037-TC1048 | ídem |
+| apppax-cargo-happy | TC1081 | captureCreatedTravelId + cancelTravelIfCreated |
+| apppax-cargo-declines | TC1082-TC1086 | webPhase retorna TravelIdRef + cleanup en cada test |
+| apppax-cargo-antifraud | TC1087-TC1091 | ídem |
+| apppax-cargo-3ds | TC1092-TC1095 | ídem |
+| contractor-cargo-happy | TC1096 | captureCreatedTravelId + limitExceeded handling |
+| contractor-cargo-declines | TC1097-TC1101 | webPhase retorna TravelIdRef + limitExceeded + cleanup |
+| contractor-cargo-antifraud | TC1102-TC1106 | ídem |
+| contractor-cargo-3ds | TC1107-TC1110 | ídem |
+| empresa-cargo-happy | TC1111 | captureCreatedTravelId + limitExceeded handling |
+| empresa-cargo-declines | TC1112-TC1116 | webPhase retorna TravelIdRef + limitExceeded + cleanup |
+| empresa-cargo-antifraud | TC1117-TC1121 | ídem |
+
 **Pendientes del sprint actual:**
 
 | Categoría | TCs | Causa |
 |---|---|---|
 | Regression con direcciones alternativas | TC1067, TC1068, TC1073, TC1074, TC1075, TC1035, TC1036, TC1041-44 | Direcciones (Av. Corrientes, Florida, Palermo) no se geocodifican correctamente en TEST |
 | Tests 3DS (apppax-hold-3ds) | TC1053-TC1064 | Hold 3DS backend para Emanuel queda en "En Conflicto" — issue ambiente TEST |
-| Tests 3DS (empresa, colaborador) | TC1037-48, TC1069-80 | Mismo patrón que apppax-3ds |
-| Cargo a bordo | TC1081-TC1121 | Pendiente aplicar patrón |
+| Tests 3DS (empresa, colaborador) | TC1037-48, TC1069-80 | Mismo patrón que apppax-3ds — bloqueado backend |
+| Cargo a bordo | TC1081-TC1121 | Código listo — bloqueado por datos backend (limitExceeded para pasajeros) |
 
 ---
 
@@ -198,10 +217,10 @@ Todos los tests "fallidos" previos en realidad creaban viajes exitosos que queda
 | Sprint 1 — OperationalPreferencesPage | 8 | 8 | ✅ fix aplicado y verificado |
 | Sprint 2 — waitForURL post-submit | 38 | 38 | ✅ waitForTravelCreation en 5 specs + waitForOptionalVisible 60→5s |
 | Sprint 3 — datos ambiente (apppax-no3ds) | 8 | 8 | ✅ pasan en aislamiento |
-| Sprint 3 — datos ambiente (apppax-3ds) | 8 | 0 | 🔒 backend: limitExceeded para 3DS hold |
-| Sprint 3 — datos ambiente (colaborador) | 16 | 0 | 🔒 tarjeta cross-portal inaccesible |
-| Sprint 3 — datos ambiente (empresa) | 16 | 0 | 🔒 Marcelle Stripe sin tarjeta en TEST |
-| Sprint 3 — datos ambiente (cargo-a-bordo) | ~41 | 0 | 🔒 bloqueado backend |
+| Sprint 3 — datos ambiente (apppax-3ds) | 8 | 0 | 🔒 backend: limitExceeded para 3DS hold — código listo |
+| Sprint 3 — datos ambiente (colaborador) | 16 | 0 | 🔒 tarjeta cross-portal inaccesible — código listo |
+| Sprint 3 — datos ambiente (empresa) | 16 | 0 | 🔒 Marcelle Stripe sin tarjeta en TEST — código listo |
+| Sprint 3 — datos ambiente (cargo-a-bordo) | ~41 | 0 | 🔒 bloqueado backend — código listo, cleanup aplicado |
 | Sprint 4 — TC078 + run final | 1 | 0 | ⏳ pendiente |
 | **Total código resuelto** | **54** | **54** | ✅ |
 | **Total bloqueado backend** | **81** | **0** | 🔒 escalar a dev/backend |

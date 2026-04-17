@@ -14,11 +14,12 @@ import type { Page } from '@playwright/test';
 import { test } from '../../../../../../TestBase';
 import { DashboardPage, NewTravelPage, TravelDetailPage, TravelManagementPage } from '../../../../../../pages/carrier';
 import { expectNoThreeDSModal, loginAsDispatcher, TEST_DATA } from '../../../../fixtures/gateway.fixtures';
+import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../../../helpers/travel-cleanup';
 
-test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
+test.use({ role: 'carrier', storageState: undefined });
 test.describe.configure({ timeout: 120_000 });
 
-async function webPhaseCargoContractor(page: Page): Promise<void> {
+async function webPhaseCargoContractor(page: Page): Promise<TravelIdRef> {
 	const dashboard = new DashboardPage(page);
 	const travel = new NewTravelPage(page);
 	const management = new TravelManagementPage(page);
@@ -27,6 +28,8 @@ async function webPhaseCargoContractor(page: Page): Promise<void> {
 	await test.step('Login carrier', async () => {
 		await loginAsDispatcher(page);
 	});
+
+	const travelIdRef = await captureCreatedTravelId(page);
 
 	await test.step('Ir al formulario de nuevo viaje', async () => {
 		await dashboard.openNewTravel();
@@ -51,47 +54,75 @@ async function webPhaseCargoContractor(page: Page): Promise<void> {
 	});
 
 	await test.step('Esperar redirección y validar estado Buscando conductor', async () => {
-		await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 30_000, waitUntil: 'commit' });
+		const result = await Promise.race([
+			page.waitForURL(/\/travels\/[\w-]+$/, { timeout: 30_000, waitUntil: 'commit' }).then(() => 'success' as const),
+			page.waitForURL(/limitExceeded/, { timeout: 30_000, waitUntil: 'commit' }).then(() => 'limitExceeded' as const),
+		]).catch(() => 'timeout' as const);
+
+		if (result === 'limitExceeded') {
+			throw new Error('[Cargo a Bordo contractor] PRECONDICIÓN NO CUMPLIDA: limitExceeded=false. Verificar tarjeta Cargo a Bordo del pasajero contractor en TEST.');
+		}
+		if (result === 'timeout') {
+			throw new Error('[Cargo a Bordo contractor] TIMEOUT: URL no redirigió al detalle del viaje.');
+		}
+
 		await management.goto();
 		await management.expectPassengerInPorAsignar(TEST_DATA.contractorPassenger, TEST_DATA.destination);
 		await management.openDetailForPassenger(TEST_DATA.contractorPassenger, TEST_DATA.destination);
 		await detail.expectStatus('Buscando conductor');
 	});
+
+	return travelIdRef;
 }
 
 test.describe('Gateway PG · Carrier · Colaborador/Contractor — Cargo a Bordo · 3DS', () => {
 
 	test('[TS-STRIPE-TC1107] @critical @3ds @cargo-a-bordo pago exitoso con 3DS desde Driver App', async ({ page }) => {
-		await webPhaseCargoContractor(page);
-		await test.step('[DRIVER APP] Conductor cobra → 3DS requerido → pasajero aprueba → cobro exitoso', async () => {
-			// Tarjeta: STRIPE_TEST_CARDS.success3DS (4000002500003155)
-			// Resultado esperado: challenge 3DS completado → viaje "Finalizado".
-			test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium + DriverTripPaymentScreen + manejo de WebView 3DS.');
-		});
+		let travelIdRef: TravelIdRef | null = null;
+		try {
+			travelIdRef = await webPhaseCargoContractor(page);
+			await test.step('[DRIVER APP] Conductor cobra → 3DS requerido → pasajero aprueba → cobro exitoso', async () => {
+				test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium + DriverTripPaymentScreen + manejo de WebView 3DS.');
+			});
+		} finally {
+			if (travelIdRef) await cancelTravelIfCreated(page, travelIdRef);
+		}
 	});
 
 	test('[TS-STRIPE-TC1108] @regression @3ds @cargo-a-bordo 3DS rechazado desde Driver App', async ({ page }) => {
-		await webPhaseCargoContractor(page);
-		await test.step('[DRIVER APP] Conductor cobra → 3DS rechazado → cobro fallido → viaje En conflicto', async () => {
-			// Tarjeta: STRIPE_TEST_CARDS.fail3DS (4000000000009235)
-			test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium.');
-		});
+		let travelIdRef: TravelIdRef | null = null;
+		try {
+			travelIdRef = await webPhaseCargoContractor(page);
+			await test.step('[DRIVER APP] Conductor cobra → 3DS rechazado → cobro fallido → viaje En conflicto', async () => {
+				test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium.');
+			});
+		} finally {
+			if (travelIdRef) await cancelTravelIfCreated(page, travelIdRef);
+		}
 	});
 
 	test('[TS-STRIPE-TC1109] @regression @3ds @cargo-a-bordo error 3DS desde Driver App', async ({ page }) => {
-		await webPhaseCargoContractor(page);
-		await test.step('[DRIVER APP] Conductor cobra → 3DS error de autenticación → viaje En conflicto', async () => {
-			// Tarjeta: STRIPE_TEST_CARDS.error3DS (4000 0084 2000 1629) — Excel TC1109
-			test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium.');
-		});
+		let travelIdRef: TravelIdRef | null = null;
+		try {
+			travelIdRef = await webPhaseCargoContractor(page);
+			await test.step('[DRIVER APP] Conductor cobra → 3DS error de autenticación → viaje En conflicto', async () => {
+				test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium.');
+			});
+		} finally {
+			if (travelIdRef) await cancelTravelIfCreated(page, travelIdRef);
+		}
 	});
 
 	test('[TS-STRIPE-TC1110] @regression @3ds @cargo-a-bordo falla 3DS desde Driver App', async ({ page }) => {
-		await webPhaseCargoContractor(page);
-		await test.step('[DRIVER APP] Conductor cobra → 3DS falla completamente → cobro no procesado', async () => {
-			// Tarjeta: STRIPE_TEST_CARDS.fail3DS (4000000000009235)
-			test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium.');
-		});
+		let travelIdRef: TravelIdRef | null = null;
+		try {
+			travelIdRef = await webPhaseCargoContractor(page);
+			await test.step('[DRIVER APP] Conductor cobra → 3DS falla completamente → cobro no procesado', async () => {
+				test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium.');
+			});
+		} finally {
+			if (travelIdRef) await cancelTravelIfCreated(page, travelIdRef);
+		}
 	});
 
 });
