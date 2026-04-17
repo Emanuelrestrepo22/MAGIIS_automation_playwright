@@ -922,7 +922,7 @@
       "section": "Alta de Viaje desde App Pax – Usuario App Pax (Modo Business / Colaborador)",
       "subsection": "Tarjeta Preautorizada – sin validación 3DS",
       "playwright_assets": {
-        "spec_file": null,
+        "spec_file": "tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-no3ds.e2e.spec.ts",
         "page_objects": [],
         "fixtures": [],
         "data_files": [
@@ -959,7 +959,7 @@
       "section": "Alta de Viaje desde App Pax – Usuario App Pax (Modo Business / Colaborador)",
       "subsection": "Tarjeta Preautorizada – sin validación 3DS",
       "playwright_assets": {
-        "spec_file": null,
+        "spec_file": "tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-no3ds.e2e.spec.ts",
         "page_objects": [],
         "fixtures": [],
         "data_files": [
@@ -995,7 +995,7 @@
       "section": "Alta de Viaje desde App Pax – Usuario App Pax (Modo Business / Colaborador)",
       "subsection": "Tarjeta Preautorizada – sin validación 3DS",
       "playwright_assets": {
-        "spec_file": null,
+        "spec_file": "tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-no3ds.e2e.spec.ts",
         "page_objects": [],
         "fixtures": [],
         "data_files": [
@@ -1034,7 +1034,7 @@
       "section": "Alta de Viaje desde App Pax – Usuario App Pax (Modo Business / Colaborador)",
       "subsection": "Tarjeta Preautorizada – sin validación 3DS",
       "playwright_assets": {
-        "spec_file": null,
+        "spec_file": "tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-no3ds.e2e.spec.ts",
         "page_objects": [],
         "fixtures": [],
         "data_files": [
@@ -1223,7 +1223,7 @@
       "section": "Alta de Viaje desde App Pax – Usuario App Pax (Modo Business / Colaborador)",
       "subsection": "Tarjeta Preautorizada – con validación 3DS",
       "playwright_assets": {
-        "spec_file": null,
+        "spec_file": "tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-3ds.e2e.spec.ts",
         "page_objects": [],
         "fixtures": [],
         "data_files": [
@@ -1261,7 +1261,7 @@
       "section": "Alta de Viaje desde App Pax – Usuario App Pax (Modo Business / Colaborador)",
       "subsection": "Tarjeta Preautorizada – con validación 3DS",
       "playwright_assets": {
-        "spec_file": null,
+        "spec_file": "tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-3ds.e2e.spec.ts",
         "page_objects": [],
         "fixtures": [],
         "data_files": [
@@ -1298,7 +1298,7 @@
       "section": "Alta de Viaje desde App Pax – Usuario App Pax (Modo Business / Colaborador)",
       "subsection": "Tarjeta Preautorizada – con validación 3DS",
       "playwright_assets": {
-        "spec_file": null,
+        "spec_file": "tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-3ds.e2e.spec.ts",
         "page_objects": [],
         "fixtures": [],
         "data_files": [
@@ -1338,7 +1338,7 @@
       "section": "Alta de Viaje desde App Pax – Usuario App Pax (Modo Business / Colaborador)",
       "subsection": "Tarjeta Preautorizada – con validación 3DS",
       "playwright_assets": {
-        "spec_file": null,
+        "spec_file": "tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-3ds.e2e.spec.ts",
         "page_objects": [],
         "fixtures": [],
         "data_files": [
