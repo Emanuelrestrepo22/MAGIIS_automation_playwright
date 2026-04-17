@@ -8,6 +8,8 @@ import { test } from '../../../../../../TestBase';
 import { DashboardPage, NewTravelPage, OperationalPreferencesPage, ThreeDSModal, TravelDetailPage, TravelManagementPage } from '../../../../../../pages/carrier';
 import { loginAsDispatcher, STRIPE_TEST_CARDS, TEST_DATA } from '../../../../fixtures/gateway.fixtures';
 import { waitForTravelCreation } from '../../../../helpers/stripe.helpers';
+import { validateCardPrecondition, type CardPreconditionResult } from '../../../../helpers/card-precondition';
+import { PASSENGERS } from '../../../../data/passengers';
 
 test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
 
@@ -15,6 +17,13 @@ function extractTravelId(url: string): string {
 	const match = url.match(/\/travels\/([\w-]+)/);
 	if (!match) throw new Error(`No se pudo extraer el travelId desde: ${url}`);
 	return match[1];
+}
+
+// El listado de viajes muestra la dirección normalizada por Google Places (ej.
+// "Cazadores 1987, Ciudad Autónoma de Buenos Aires") mientras el input usa
+// formato largo con "Argentina". Para la búsqueda textual basta la calle+número.
+function shortDestination(destination: string): string {
+	return destination.split(',')[0].trim();
 }
 
 type ParametersSavePayload = {
@@ -61,13 +70,51 @@ async function restoreHoldAndSave(page: Page, preferences: OperationalPreference
 	await preferences.assertHoldEnabled();
 }
 
+type CardFlow = 'new' | 'existing';
+
 type Hold3dsScenario = {
 	client: string;
 	passenger: string;
 	origin: string;
 	destination: string;
 	cardLast4?: string;
+	apiSearchQuery?: string;
+	/**
+	 * Define el preludio de tarjeta del test:
+	 *  - 'new': vincula tarjeta nueva (preferSavedCard=false)
+	 *  - 'existing': requiere tarjeta ya vinculada; si no existe, test.skip()
+	 * Gap conocido: no existe ensureCardAbsent; card-new puede ejecutarse con
+	 * tarjeta previa pero el flujo siempre crea una tarjeta nueva en el iframe.
+	 */
+	cardFlow?: CardFlow;
 };
+
+async function resolveCardFlow3ds(
+	page: Page,
+	scenario: Hold3dsScenario,
+	cardLast4: string,
+): Promise<{ cardCheck: CardPreconditionResult | null; preferSavedCard: boolean }> {
+	const cardFlow: CardFlow = scenario.cardFlow ?? 'new';
+	let cardCheck: CardPreconditionResult | null = null;
+
+	if (scenario.apiSearchQuery) {
+		cardCheck = await validateCardPrecondition(page, {
+			passengerName: scenario.apiSearchQuery,
+			requiredLast4: cardLast4,
+		});
+		console.log(`[card-precondition 3ds] ${scenario.passenger} (cardFlow=${cardFlow}): ${cardCheck.activeCards} tarjetas, tiene ${cardLast4}: ${cardCheck.hasRequiredCard}`);
+	}
+
+	if (cardFlow === 'existing') {
+		test.skip(
+			!cardCheck?.hasRequiredCard,
+			`[card-existing 3ds] Precondición: pasajero ${scenario.passenger} debe tener tarjeta ${cardLast4} vinculada.`,
+		);
+		return { cardCheck, preferSavedCard: true };
+	}
+
+	return { cardCheck, preferSavedCard: false };
+}
 
 async function runHoldOnScenario(page: Page, scenario: Hold3dsScenario): Promise<void> {
 	const dashboard = new DashboardPage(page);
@@ -77,7 +124,11 @@ async function runHoldOnScenario(page: Page, scenario: Hold3dsScenario): Promise
 	const detail = new TravelDetailPage(page);
 	const threeDS = new ThreeDSModal(page);
 
+	const cardLast4 = scenario.cardLast4 || STRIPE_TEST_CARDS.success3DS.slice(-4);
+
 	await loginAsDispatcher(page);
+
+	const { preferSavedCard } = await resolveCardFlow3ds(page, scenario, cardLast4);
 
 	await preferences.goto();
 	await preferences.ensureHoldEnabled();
@@ -90,12 +141,16 @@ async function runHoldOnScenario(page: Page, scenario: Hold3dsScenario): Promise
 		passenger: scenario.passenger,
 		origin: scenario.origin,
 		destination: scenario.destination,
-		cardLast4: scenario.cardLast4 || STRIPE_TEST_CARDS.success3DS.slice(-4),
+		cardLast4,
+		preferSavedCard,
 	});
 
-	await threeDS.waitForVisible();
-	await threeDS.completeSuccess();
-	await threeDS.waitForHidden();
+	// Con card-new aparece el modal 3DS tras vincular; con card-existing puede omitirse
+	// (se dispara recién en el submit). Se usa waitForOptionalVisible para cubrir ambos.
+	if (await threeDS.waitForOptionalVisible(10_000)) {
+		await threeDS.completeSuccess();
+		await threeDS.waitForHidden();
+	}
 
 	await travel.clickSelectVehicle();
 	await travel.clickSendService();
@@ -108,8 +163,8 @@ async function runHoldOnScenario(page: Page, scenario: Hold3dsScenario): Promise
 	const createdTravelId = await waitForTravelCreation(page);
 
 	await management.goto();
-	await management.expectPassengerInPorAsignar(scenario.passenger, scenario.destination);
-	await management.openDetailForPassenger(scenario.passenger, scenario.destination);
+	await management.expectPassengerInPorAsignar(scenario.passenger, shortDestination(scenario.destination));
+	await management.openDetailForPassenger(scenario.passenger, shortDestination(scenario.destination));
 	await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
 	expect(extractTravelId(page.url())).toBe(createdTravelId);
 	await detail.expectStatus('Buscando conductor');
@@ -123,7 +178,11 @@ async function runHoldOffScenario(page: Page, scenario: Hold3dsScenario): Promis
 	const detail = new TravelDetailPage(page);
 	const threeDS = new ThreeDSModal(page);
 
+	const cardLast4 = scenario.cardLast4 || STRIPE_TEST_CARDS.success3DS.slice(-4);
+
 	await loginAsDispatcher(page);
+
+	const { preferSavedCard } = await resolveCardFlow3ds(page, scenario, cardLast4);
 
 	try {
 		await disableHoldAndSave(preferences);
@@ -134,12 +193,14 @@ async function runHoldOffScenario(page: Page, scenario: Hold3dsScenario): Promis
 			passenger: scenario.passenger,
 			origin: scenario.origin,
 			destination: scenario.destination,
-			cardLast4: scenario.cardLast4 || STRIPE_TEST_CARDS.success3DS.slice(-4),
+			cardLast4,
+			preferSavedCard,
 		});
 
-		await threeDS.waitForVisible();
-		await threeDS.completeSuccess();
-		await threeDS.waitForHidden();
+		if (await threeDS.waitForOptionalVisible(10_000)) {
+			await threeDS.completeSuccess();
+			await threeDS.waitForHidden();
+		}
 
 		await travel.clickSelectVehicle();
 		await travel.clickSendService();
@@ -165,14 +226,18 @@ async function runHoldOffScenario(page: Page, scenario: Hold3dsScenario): Promis
 test.describe('Gateway PG · Carrier · Colaborador — Hold con 3DS', () => {
 
   test.describe('Hold ON', () => {
-    test('[TS-STRIPE-TC1037] @critical @3ds @hold hold+cobro colaborador 3DS success', async ({ page }) => {
+    test('[TS-STRIPE-TC1037] @critical @3ds @hold @card-new hold+cobro colaborador 3DS — Vincular tarjeta nueva', async ({ page }) => {
       await runHoldOnScenario(page, {
         client: TEST_DATA.contractorClient,
         passenger: TEST_DATA.contractorPassenger,
         origin: TEST_DATA.origin,
         destination: TEST_DATA.destination,
+        apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
+        cardFlow: 'new',
       });
     });
+    // TC1039 en el JSON es un escenario negativo (fallo 3DS); en este spec se mantiene
+    // la cobertura histórica con alwaysAuthenticate. No tiene par -CARD-EXISTING.
     test('[TS-STRIPE-TC1039] @regression @3ds @hold hold+cobro colaborador 3DS variante', async ({ page }) => {
       await runHoldOnScenario(page, {
         client: TEST_DATA.contractorClient,
@@ -180,14 +245,19 @@ test.describe('Gateway PG · Carrier · Colaborador — Hold con 3DS', () => {
         origin: 'Av. Corrientes 1234, Buenos Aires',
         destination: 'Av. Santa Fe 2100, Buenos Aires',
         cardLast4: STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4),
+        apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
+        cardFlow: 'new',
       });
     });
-    test('[TS-STRIPE-TC1045] @regression @3ds @hold hold+cobro colaborador 3DS (set 2)', async ({ page }) => {
+    // Par card-existing de TC1037 — canonical_ref TS-STRIPE-TC1037 en normalized-test-cases.json
+    test('[TS-STRIPE-TC1045] @regression @3ds @hold @card-existing hold+cobro colaborador 3DS — Usar tarjeta vinculada existente', async ({ page }) => {
       await runHoldOnScenario(page, {
         client: TEST_DATA.contractorClient,
         passenger: TEST_DATA.contractorPassenger,
         origin: TEST_DATA.origin,
         destination: TEST_DATA.destination,
+        apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
+        cardFlow: 'existing',
       });
     });
     // DEPRECATED: ver TC canónico TS-STRIPE-TC1037 (fase 2 — duplicado sin card-flow diferenciado)
@@ -197,25 +267,32 @@ test.describe('Gateway PG · Carrier · Colaborador — Hold con 3DS', () => {
         passenger: TEST_DATA.contractorPassenger,
         origin: 'Florida 100, CABA',
         destination: 'Palermo Soho, CABA',
+        apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
+        cardFlow: 'new',
       });
     });
   });
 
   test.describe('Hold OFF', () => {
-    test('[TS-STRIPE-TC1038] @regression @3ds sin hold colaborador 3DS', async ({ page }) => {
+    test('[TS-STRIPE-TC1038] @regression @3ds @card-new sin hold colaborador 3DS — Vincular tarjeta nueva', async ({ page }) => {
       await runHoldOffScenario(page, {
         client: TEST_DATA.contractorClient,
         passenger: TEST_DATA.contractorPassenger,
         origin: TEST_DATA.origin,
         destination: TEST_DATA.destination,
+        apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
+        cardFlow: 'new',
       });
     });
-    test('[TS-STRIPE-TC1040] @regression @3ds sin hold colaborador 3DS variante', async ({ page }) => {
+    // Par card-existing de TC1038 — canonical_ref TS-STRIPE-TC1038 en normalized-test-cases.json
+    test('[TS-STRIPE-TC1040] @regression @3ds @card-existing sin hold colaborador 3DS — Usar tarjeta vinculada existente', async ({ page }) => {
       await runHoldOffScenario(page, {
         client: TEST_DATA.contractorClient,
         passenger: TEST_DATA.contractorPassenger,
         origin: 'Av. Corrientes 1234, Buenos Aires',
         destination: 'Av. Santa Fe 2100, Buenos Aires',
+        apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
+        cardFlow: 'existing',
       });
     });
     // DEPRECATED: ver TC canónico TS-STRIPE-TC1038 (fase 2 — duplicado sin card-flow diferenciado)
@@ -225,6 +302,8 @@ test.describe('Gateway PG · Carrier · Colaborador — Hold con 3DS', () => {
         passenger: TEST_DATA.contractorPassenger,
         origin: TEST_DATA.origin,
         destination: TEST_DATA.destination,
+        apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
+        cardFlow: 'new',
       });
     });
     // DEPRECATED: ver TC canónico TS-STRIPE-TC1038 (fase 2 — duplicado sin card-flow diferenciado)
@@ -234,6 +313,8 @@ test.describe('Gateway PG · Carrier · Colaborador — Hold con 3DS', () => {
         passenger: TEST_DATA.contractorPassenger,
         origin: 'Florida 100, CABA',
         destination: 'Palermo Soho, CABA',
+        apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
+        cardFlow: 'new',
       });
     });
   });

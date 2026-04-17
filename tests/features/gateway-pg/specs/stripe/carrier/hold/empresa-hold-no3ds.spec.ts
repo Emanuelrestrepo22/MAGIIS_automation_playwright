@@ -71,6 +71,8 @@ async function restoreHoldAndSave(page: Page, preferences: OperationalPreference
 	await preferences.assertHoldEnabled();
 }
 
+type CardFlow = 'new' | 'existing';
+
 type HoldNo3dsScenario = {
 	client: string;
 	passenger: string;
@@ -78,11 +80,44 @@ type HoldNo3dsScenario = {
 	destination: string;
 	/** Query para buscar el passengerId via API (ej: 'marce' para Marcelle Stripe) */
 	apiSearchQuery?: string;
+	/**
+	 * Define el preludio de tarjeta del test:
+	 *  - 'new': fuerza vinculación nueva (preferSavedCard=false)
+	 *  - 'existing': exige tarjeta ya vinculada; si no existe, test.skip()
+	 */
+	cardFlow?: CardFlow;
 };
 
 /** Extrae el primer segmento del destino (ej: "Cazadores 1987" de "Cazadores 1987, Buenos Aires, Argentina") */
 function shortDestination(destination: string): string {
 	return destination.split(',')[0].trim();
+}
+
+async function resolveCardFlowEmpresa(
+	page: Page,
+	scenario: HoldNo3dsScenario,
+	cardLast4: string,
+): Promise<{ cardCheck: CardPreconditionResult | null; preferSavedCard: boolean }> {
+	const cardFlow: CardFlow = scenario.cardFlow ?? 'new';
+	let cardCheck: CardPreconditionResult | null = null;
+
+	if (scenario.apiSearchQuery) {
+		cardCheck = await validateCardPrecondition(page, {
+			passengerName: scenario.apiSearchQuery,
+			requiredLast4: cardLast4,
+		});
+		console.log(`[card-precondition] ${scenario.passenger} (cardFlow=${cardFlow}): ${cardCheck.activeCards} tarjetas activas, tiene ${cardLast4}: ${cardCheck.hasRequiredCard}`);
+	}
+
+	if (cardFlow === 'existing') {
+		test.skip(
+			!cardCheck?.hasRequiredCard,
+			`[card-existing] Precondición: pasajero ${scenario.passenger} debe tener tarjeta ${cardLast4} vinculada.`,
+		);
+		return { cardCheck, preferSavedCard: true };
+	}
+
+	return { cardCheck, preferSavedCard: false };
 }
 
 async function runHoldOnScenario(page: Page, scenario: HoldNo3dsScenario): Promise<void> {
@@ -97,19 +132,13 @@ async function runHoldOnScenario(page: Page, scenario: HoldNo3dsScenario): Promi
 		await loginAsDispatcher(page);
 	});
 
-	try {
-		// Precondición: validar tarjeta vinculada vía API + cleanup tarjetas excedentes
-		let cardCheck: CardPreconditionResult | null = null;
-		if (scenario.apiSearchQuery) {
-			await test.step('Precondición: validar tarjeta vinculada vía API', async () => {
-				cardCheck = await validateCardPrecondition(page, {
-					passengerName: scenario.apiSearchQuery!,
-					requiredLast4: cardLast4,
-				});
-				console.log(`[card-precondition] ${scenario.passenger}: ${cardCheck.activeCards} tarjetas activas, tiene ${cardLast4}: ${cardCheck.hasRequiredCard}`);
-			});
-		}
+	let preferSavedCard = false;
+	await test.step(`Precondición: resolver flujo de tarjeta (cardFlow=${scenario.cardFlow ?? 'new'})`, async () => {
+		const resolved = await resolveCardFlowEmpresa(page, scenario, cardLast4);
+		preferSavedCard = resolved.preferSavedCard;
+	});
 
+	try {
 		// Interceptor para capturar travelId del POST /travels
 		travelIdRef = await captureCreatedTravelId(page);
 
@@ -131,7 +160,7 @@ async function runHoldOnScenario(page: Page, scenario: HoldNo3dsScenario): Promi
 				origin: scenario.origin,
 				destination: scenario.destination,
 				cardLast4,
-				preferSavedCard: cardCheck?.hasRequiredCard ?? false,
+				preferSavedCard,
 			});
 		});
 
@@ -176,17 +205,11 @@ async function runHoldOffScenario(page: Page, scenario: HoldNo3dsScenario): Prom
 
 	await loginAsDispatcher(page);
 
-	// Precondición: validar tarjeta vinculada vía API + cleanup tarjetas excedentes
-	let cardCheck: CardPreconditionResult | null = null;
-	if (scenario.apiSearchQuery) {
-		await test.step('Precondición: validar tarjeta vinculada vía API', async () => {
-			cardCheck = await validateCardPrecondition(page, {
-				passengerName: scenario.apiSearchQuery!,
-				requiredLast4: cardLast4,
-			});
-			console.log(`[card-precondition] ${scenario.passenger}: ${cardCheck.activeCards} tarjetas activas, tiene ${cardLast4}: ${cardCheck.hasRequiredCard}`);
-		});
-	}
+	let preferSavedCard = false;
+	await test.step(`Precondición: resolver flujo de tarjeta (cardFlow=${scenario.cardFlow ?? 'new'})`, async () => {
+		const resolved = await resolveCardFlowEmpresa(page, scenario, cardLast4);
+		preferSavedCard = resolved.preferSavedCard;
+	});
 
 	try {
 		travelIdRef = await captureCreatedTravelId(page);
@@ -207,7 +230,7 @@ async function runHoldOffScenario(page: Page, scenario: HoldNo3dsScenario): Prom
 				origin: scenario.origin,
 				destination: scenario.destination,
 				cardLast4,
-				preferSavedCard: cardCheck?.hasRequiredCard ?? false,
+				preferSavedCard,
 			});
 		});
 
@@ -248,7 +271,9 @@ test.describe.configure({ timeout: 180_000 });
 test.describe('Gateway PG · Carrier · Empresa Individuo — Hold sin 3DS', () => {
 
 	test.describe('Hold ON', () => {
-		test('[TS-STRIPE-TC1065] @smoke @hold hold+cobro empresa sin 3DS', async ({ page }) => {
+		// TC1065 — canónico card-new. Mantiene lógica inline específica (diagnósticos del dashboard)
+		// para preservar la cobertura histórica del smoke. Ver par card-existing en TC1067.
+		test('[TS-STRIPE-TC1065] @smoke @hold @card-new hold+cobro empresa sin 3DS — Vincular tarjeta nueva', async ({ page }) => {
 			const dashboard = new DashboardPage(page);
 			const preferences = new OperationalPreferencesPage(page);
 			const travel = new NewTravelPage(page);
@@ -261,17 +286,24 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Hold sin 3DS', () 
 				await loginAsDispatcher(page);
 			});
 
-			try {
-				// Precondición: validar tarjeta vinculada vía API + cleanup de tarjetas excedentes
-				const cardCheck = await test.step('Precondición: validar tarjeta vía API', async () => {
-					const result = await validateCardPrecondition(page, {
-						passengerName: PASSENGERS.empresaIndividuo.apiSearchQuery ?? 'marce',
-						requiredLast4: cardLast4,
-					});
-					console.log(`[card-precondition] ${PASSENGERS.empresaIndividuo.name}: ${result.activeCards} tarjetas, tiene ${cardLast4}: ${result.hasRequiredCard}, creditCardEnabled: ${result.creditCardEnabled}`);
-					return result;
-				});
+			let preferSavedCard = false;
+			await test.step('Precondición: resolver flujo de tarjeta (cardFlow=new)', async () => {
+				const resolved = await resolveCardFlowEmpresa(
+					page,
+					{
+						client: PASSENGERS.empresaIndividuo.name,
+						passenger: PASSENGERS.empresaIndividuo.name,
+						origin: TEST_DATA.origin,
+						destination: TEST_DATA.destination,
+						apiSearchQuery: PASSENGERS.empresaIndividuo.apiSearchQuery,
+						cardFlow: 'new',
+					},
+					cardLast4,
+				);
+				preferSavedCard = resolved.preferSavedCard;
+			});
 
+			try {
 				// Instalar interceptor del travelId ANTES del submit — el POST /travels
 				// responde con { travelId } que usaremos en el finally para cancelar.
 				travelIdRef = await captureCreatedTravelId(page);
@@ -294,7 +326,7 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Hold sin 3DS', () 
 						origin: TEST_DATA.origin,
 						destination: TEST_DATA.destination,
 						cardLast4,
-						preferSavedCard: cardCheck.hasRequiredCard,
+						preferSavedCard,
 					});
 				});
 
@@ -349,13 +381,15 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Hold sin 3DS', () 
 			}
 		});
 
-		test('[TS-STRIPE-TC1067] @regression @hold hold+cobro empresa sin 3DS variante', async ({ page }) => {
+		// Par card-existing de TC1065 — canonical_ref TS-STRIPE-TC1065 en normalized-test-cases.json
+		test('[TS-STRIPE-TC1067] @regression @hold @card-existing hold+cobro empresa sin 3DS — Usar tarjeta vinculada existente', async ({ page }) => {
 			await runHoldOnScenario(page, {
 				client: PASSENGERS.empresaIndividuo.name,
 				passenger: PASSENGERS.empresaIndividuo.name,
-				origin: 'Av. Corrientes 1234, Buenos Aires',
-				destination: 'Av. Santa Fe 2100, Buenos Aires',
+				origin: TEST_DATA.origin,
+				destination: TEST_DATA.destination,
 				apiSearchQuery: PASSENGERS.empresaIndividuo.apiSearchQuery,
+				cardFlow: 'existing',
 			});
 		});
 
@@ -367,6 +401,7 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Hold sin 3DS', () 
 				origin: 'Florida 100, CABA',
 				destination: 'Palermo Soho, CABA',
 				apiSearchQuery: PASSENGERS.empresaIndividuo.apiSearchQuery,
+				cardFlow: 'new',
 			});
 		});
 
@@ -378,28 +413,32 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Hold sin 3DS', () 
 				origin: 'Reconquista 661, Buenos Aires, Argentina',
 				destination: 'Cazadores 1987, Buenos Aires, Argentina',
 				apiSearchQuery: PASSENGERS.empresaIndividuo.apiSearchQuery,
+				cardFlow: 'new',
 			});
 		});
 	});
 
 	test.describe('Hold OFF', () => {
-		test('[TS-STRIPE-TC1066] @regression @hold sin hold empresa sin 3DS', async ({ page }) => {
+		test('[TS-STRIPE-TC1066] @regression @hold @card-new sin hold empresa sin 3DS — Vincular tarjeta nueva', async ({ page }) => {
 			await runHoldOffScenario(page, {
 				client: PASSENGERS.empresaIndividuo.name,
 				passenger: PASSENGERS.empresaIndividuo.name,
 				origin: TEST_DATA.origin,
 				destination: TEST_DATA.destination,
 				apiSearchQuery: PASSENGERS.empresaIndividuo.apiSearchQuery,
+				cardFlow: 'new',
 			});
 		});
 
-		test('[TS-STRIPE-TC1068] @regression @hold sin hold empresa sin 3DS variante', async ({ page }) => {
+		// Par card-existing de TC1066 — canonical_ref TS-STRIPE-TC1066 en normalized-test-cases.json
+		test('[TS-STRIPE-TC1068] @regression @hold @card-existing sin hold empresa sin 3DS — Usar tarjeta vinculada existente', async ({ page }) => {
 			await runHoldOffScenario(page, {
 				client: PASSENGERS.empresaIndividuo.name,
 				passenger: PASSENGERS.empresaIndividuo.name,
-				origin: 'Av. Corrientes 1234, Buenos Aires',
-				destination: 'Av. Santa Fe 2100, Buenos Aires',
+				origin: TEST_DATA.origin,
+				destination: TEST_DATA.destination,
 				apiSearchQuery: PASSENGERS.empresaIndividuo.apiSearchQuery,
+				cardFlow: 'existing',
 			});
 		});
 
@@ -411,6 +450,7 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Hold sin 3DS', () 
 				origin: 'Florida 100, CABA',
 				destination: 'Palermo Soho, CABA',
 				apiSearchQuery: PASSENGERS.empresaIndividuo.apiSearchQuery,
+				cardFlow: 'new',
 			});
 		});
 
@@ -422,6 +462,7 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Hold sin 3DS', () 
 				origin: 'Reconquista 661, Buenos Aires, Argentina',
 				destination: 'Cazadores 1987, Buenos Aires, Argentina',
 				apiSearchQuery: PASSENGERS.empresaIndividuo.apiSearchQuery,
+				cardFlow: 'new',
 			});
 		});
 	});

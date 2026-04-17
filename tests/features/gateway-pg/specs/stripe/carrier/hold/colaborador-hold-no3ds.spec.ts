@@ -63,13 +63,56 @@ async function restoreHoldAndSave(page: Page, preferences: OperationalPreference
 	await preferences.assertHoldEnabled();
 }
 
+type CardFlow = 'new' | 'existing';
+
 type HoldNo3dsScenario = {
 	client: string;
 	passenger: string;
 	origin: string;
 	destination: string;
 	apiSearchQuery?: string;
+	/**
+	 * Define el preludio de tarjeta del test:
+	 *  - 'new': el flujo fuerza vincular una tarjeta nueva (preferSavedCard=false)
+	 *  - 'existing': requiere tarjeta ya vinculada; si no existe el test se salta con motivo
+	 */
+	cardFlow?: CardFlow;
 };
+
+/**
+ * Resuelve la precondición de tarjeta según cardFlow.
+ * - 'new': valida (para cleanup) y fuerza preferSavedCard=false en fillMinimum
+ * - 'existing': exige hasRequiredCard=true, sino test.skip() con mensaje claro
+ * Ver gap en reporte fase 3: no existe ensureCardAbsent, se acepta que card-new
+ * pueda ejecutarse con tarjeta previa — lo crítico es que el flujo vincula nueva.
+ */
+async function resolveCardFlow(
+	page: Page,
+	scenario: HoldNo3dsScenario,
+	cardLast4: string,
+): Promise<{ cardCheck: CardPreconditionResult | null; preferSavedCard: boolean }> {
+	const cardFlow: CardFlow = scenario.cardFlow ?? 'new';
+	let cardCheck: CardPreconditionResult | null = null;
+
+	if (scenario.apiSearchQuery) {
+		cardCheck = await validateCardPrecondition(page, {
+			passengerName: scenario.apiSearchQuery,
+			requiredLast4: cardLast4,
+		});
+		console.log(`[card-precondition] ${scenario.passenger} (cardFlow=${cardFlow}): ${cardCheck.activeCards} tarjetas, tiene ${cardLast4}: ${cardCheck.hasRequiredCard}`);
+	}
+
+	if (cardFlow === 'existing') {
+		test.skip(
+			!cardCheck?.hasRequiredCard,
+			`[card-existing] Precondición: pasajero ${scenario.passenger} debe tener tarjeta ${cardLast4} vinculada. Vincular manualmente o correr un test card-new antes.`,
+		);
+		return { cardCheck, preferSavedCard: true };
+	}
+
+	// cardFlow === 'new': forzar vinculación nueva independiente de lo ya existente
+	return { cardCheck, preferSavedCard: false };
+}
 
 async function runHoldOnScenario(page: Page, scenario: HoldNo3dsScenario): Promise<void> {
 	const dashboard = new DashboardPage(page);
@@ -83,18 +126,13 @@ async function runHoldOnScenario(page: Page, scenario: HoldNo3dsScenario): Promi
 		await loginAsDispatcher(page);
 	});
 
-	try {
-		let cardCheck: CardPreconditionResult | null = null;
-		if (scenario.apiSearchQuery) {
-			await test.step('Precondición: validar tarjeta vinculada vía API', async () => {
-				cardCheck = await validateCardPrecondition(page, {
-					passengerName: scenario.apiSearchQuery!,
-					requiredLast4: cardLast4,
-				});
-				console.log(`[card-precondition] ${scenario.passenger}: ${cardCheck.activeCards} tarjetas, tiene ${cardLast4}: ${cardCheck.hasRequiredCard}`);
-			});
-		}
+	let preferSavedCard = false;
+	await test.step(`Precondición: resolver flujo de tarjeta (cardFlow=${scenario.cardFlow ?? 'new'})`, async () => {
+		const resolved = await resolveCardFlow(page, scenario, cardLast4);
+		preferSavedCard = resolved.preferSavedCard;
+	});
 
+	try {
 		travelIdRef = await captureCreatedTravelId(page);
 
 		await test.step('Validar que el hold este activado en preferencias operativas', async () => {
@@ -115,7 +153,7 @@ async function runHoldOnScenario(page: Page, scenario: HoldNo3dsScenario): Promi
 				origin: scenario.origin,
 				destination: scenario.destination,
 				cardLast4,
-				preferSavedCard: cardCheck?.hasRequiredCard ?? false,
+				preferSavedCard,
 			});
 		});
 
@@ -157,16 +195,11 @@ async function runHoldOffScenario(page: Page, scenario: HoldNo3dsScenario): Prom
 
 	await loginAsDispatcher(page);
 
-	let cardCheck: CardPreconditionResult | null = null;
-	if (scenario.apiSearchQuery) {
-		await test.step('Precondición: validar tarjeta vinculada vía API', async () => {
-			cardCheck = await validateCardPrecondition(page, {
-				passengerName: scenario.apiSearchQuery!,
-				requiredLast4: cardLast4,
-			});
-			console.log(`[card-precondition] ${scenario.passenger}: ${cardCheck.activeCards} tarjetas, tiene ${cardLast4}: ${cardCheck.hasRequiredCard}`);
-		});
-	}
+	let preferSavedCard = false;
+	await test.step(`Precondición: resolver flujo de tarjeta (cardFlow=${scenario.cardFlow ?? 'new'})`, async () => {
+		const resolved = await resolveCardFlow(page, scenario, cardLast4);
+		preferSavedCard = resolved.preferSavedCard;
+	});
 
 	try {
 		travelIdRef = await captureCreatedTravelId(page);
@@ -187,7 +220,7 @@ async function runHoldOffScenario(page: Page, scenario: HoldNo3dsScenario): Prom
 				origin: scenario.origin,
 				destination: scenario.destination,
 				cardLast4,
-				preferSavedCard: cardCheck?.hasRequiredCard ?? false,
+				preferSavedCard,
 			});
 		});
 
@@ -228,6 +261,7 @@ test.describe.configure({ timeout: 180_000 });
 test.describe('Gateway PG · Carrier · Colaborador — Hold sin 3DS', () => {
 
 	test.describe('Hold ON', () => {
+		// TC1033 es el smoke legacy pre-fase2; no tiene par -CARD-EXISTING en JSON.
 		test('[TS-STRIPE-TC1033] @smoke @hold hold+cobro colaborador sin 3DS', async ({ page }) => {
 			await runHoldOnScenario(page, {
 				client: TEST_DATA.contractorClient,
@@ -235,26 +269,30 @@ test.describe('Gateway PG · Carrier · Colaborador — Hold sin 3DS', () => {
 				origin: TEST_DATA.origin,
 				destination: TEST_DATA.destination,
 				apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
+				cardFlow: 'new',
 			});
 		});
 
-		test('[TS-STRIPE-TC1035] @regression @hold hold+cobro colaborador sin 3DS variante', async ({ page }) => {
+		test('[TS-STRIPE-TC1035] @regression @hold @card-new hold+cobro colaborador sin 3DS — Vincular tarjeta nueva', async ({ page }) => {
 			await runHoldOnScenario(page, {
 				client: TEST_DATA.contractorClient,
 				passenger: TEST_DATA.contractorPassenger,
 				origin: 'Av. Corrientes 1234, Buenos Aires',
 				destination: 'Av. Santa Fe 2100, Buenos Aires',
 				apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
+				cardFlow: 'new',
 			});
 		});
 
-		test('[TS-STRIPE-TC1041] @regression @hold hold+cobro colaborador sin 3DS (set 2)', async ({ page }) => {
+		// Par card-existing de TC1035 — canonical_ref TS-STRIPE-TC1035 en normalized-test-cases.json
+		test('[TS-STRIPE-TC1041] @regression @hold @card-existing hold+cobro colaborador sin 3DS — Usar tarjeta vinculada existente', async ({ page }) => {
 			await runHoldOnScenario(page, {
 				client: TEST_DATA.contractorClient,
 				passenger: TEST_DATA.contractorPassenger,
-				origin: 'Florida 100, CABA',
-				destination: 'Palermo Soho, CABA',
+				origin: 'Av. Corrientes 1234, Buenos Aires',
+				destination: 'Av. Santa Fe 2100, Buenos Aires',
 				apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
+				cardFlow: 'existing',
 			});
 		});
 
@@ -266,28 +304,32 @@ test.describe('Gateway PG · Carrier · Colaborador — Hold sin 3DS', () => {
 				origin: 'Reconquista 661, Buenos Aires, Argentina',
 				destination: 'Cazadores 1987, Buenos Aires, Argentina',
 				apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
+				cardFlow: 'new',
 			});
 		});
 	});
 
 	test.describe('Hold OFF', () => {
-		test('[TS-STRIPE-TC1034] @regression @hold sin hold colaborador sin 3DS', async ({ page }) => {
+		test('[TS-STRIPE-TC1034] @regression @hold @card-new sin hold colaborador sin 3DS — Vincular tarjeta nueva', async ({ page }) => {
 			await runHoldOffScenario(page, {
 				client: TEST_DATA.contractorClient,
 				passenger: TEST_DATA.contractorPassenger,
 				origin: TEST_DATA.origin,
 				destination: TEST_DATA.destination,
 				apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
+				cardFlow: 'new',
 			});
 		});
 
-		test('[TS-STRIPE-TC1036] @regression @hold sin hold colaborador sin 3DS variante', async ({ page }) => {
+		// Par card-existing de TC1034 — canonical_ref TS-STRIPE-TC1034 en normalized-test-cases.json
+		test('[TS-STRIPE-TC1036] @regression @hold @card-existing sin hold colaborador sin 3DS — Usar tarjeta vinculada existente', async ({ page }) => {
 			await runHoldOffScenario(page, {
 				client: TEST_DATA.contractorClient,
 				passenger: TEST_DATA.contractorPassenger,
-				origin: 'Av. Corrientes 1234, Buenos Aires',
-				destination: 'Av. Santa Fe 2100, Buenos Aires',
+				origin: TEST_DATA.origin,
+				destination: TEST_DATA.destination,
 				apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
+				cardFlow: 'existing',
 			});
 		});
 
@@ -299,6 +341,7 @@ test.describe('Gateway PG · Carrier · Colaborador — Hold sin 3DS', () => {
 				origin: 'Florida 100, CABA',
 				destination: 'Palermo Soho, CABA',
 				apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
+				cardFlow: 'new',
 			});
 		});
 
@@ -310,6 +353,7 @@ test.describe('Gateway PG · Carrier · Colaborador — Hold sin 3DS', () => {
 				origin: 'Reconquista 661, Buenos Aires, Argentina',
 				destination: 'Cazadores 1987, Buenos Aires, Argentina',
 				apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
+				cardFlow: 'new',
 			});
 		});
 	});
