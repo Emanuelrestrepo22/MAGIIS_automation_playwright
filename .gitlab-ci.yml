@@ -37,6 +37,7 @@ variables:
       echo "PASS_CONTRACTOR=${PASS_CONTRACTOR:-\"\"}" >> .env.test
       echo "HEADLESS=true" >> .env.test
     - pnpm run test:test:smoke
+    - pnpm run cleanup:test:travels || true
   artifacts:
     when: always
     paths:

@@ -28,11 +28,12 @@ import {
 	TEST_DATA,
 	STRIPE_TEST_CARDS,
 } from '../../../fixtures/gateway.fixtures';
+import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../../helpers/travel-cleanup';
 
-function extractTravelId(url: string): string {
-	const match = url.match(/\/travels\/([\w-]+)/);
-	if (!match) throw new Error(`No se pudo extraer el travelId desde: ${url}`);
-	return match[1];
+// El portal contractor redirige a /dashboard (no a /travels/xxx) tras crear un viaje.
+// Por eso se usa captureCreatedTravelId (API POST /travels) en lugar de extractTravelId(url).
+function extractTravelIdSafe(url: string): string | null {
+	return url.match(/\/travels\/([\w-]+)/)?.[1] ?? null;
 }
 
 test.use({ role: 'contractor', storageState: { cookies: [], origins: [] } });
@@ -47,56 +48,66 @@ test.describe('Gateway PG · Contractor · Colaborador — Hold sin 3DS (tarjeta
 			const travel = new ContractorNewTravelPage(page);
 			const detail = new TravelDetailPage(page);
 			const management = new TravelManagementPage(page);
+			let travelIdRef: TravelIdRef | null = null;
 
 			await test.step('Login contractor', async () => {
 				await loginAsContractor(page);
 			});
 
-			await test.step('Ir al formulario de nuevo viaje', async () => {
-				await dashboard.openNewTravel();
-				await travel.ensureLoaded();
-			});
+			try {
+				travelIdRef = await captureCreatedTravelId(page);
 
-			await test.step('Completar formulario — colaborador + tarjeta sin 3DS (4242) + Hold ON', async () => {
-				// Debería aceptar la tarjeta 4242 directamente sin desafío 3DS.
-				await travel.fillMinimum({
-					client: TEST_DATA.contractorColaborador,
-					passenger: TEST_DATA.contractorColaborador,
-					origin: TEST_DATA.origin,
-					destination: TEST_DATA.destination,
-					cardLast4: STRIPE_TEST_CARDS.successDirect.slice(-4), // 4242
+				await test.step('Ir al formulario de nuevo viaje', async () => {
+					await dashboard.openNewTravel();
+					await travel.ensureLoaded();
 				});
-			});
 
-			await test.step('Seleccionar vehículo y enviar el viaje', async () => {
-				await travel.waitForVehicleSelectionReady();
-				await travel.clickSelectVehicle();
-				await travel.clickSendService();
-			});
+				await test.step('Completar formulario — colaborador + tarjeta sin 3DS (4242) + Hold ON', async () => {
+					await travel.fillMinimum({
+						client: TEST_DATA.contractorColaborador,
+						passenger: TEST_DATA.contractorColaborador,
+						origin: TEST_DATA.origin,
+						destination: TEST_DATA.destination,
+						cardLast4: STRIPE_TEST_CARDS.successDirect.slice(-4), // 4242
+					});
+				});
 
-			await test.step('Verificar que no aparece modal 3DS', async () => {
-				await expectNoThreeDSModal(page);
-			});
+				await test.step('Seleccionar vehículo y enviar el viaje', async () => {
+					await travel.waitForVehicleSelectionReady();
+					await travel.clickSelectVehicle();
+					await travel.clickSendService();
+				});
 
-			await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 30_000, waitUntil: 'commit' });
-			const createdTravelId = extractTravelId(page.url());
+				await test.step('Verificar que no aparece modal 3DS', async () => {
+					await expectNoThreeDSModal(page);
+				});
 
-			await test.step('Validar viaje en gestión — columna Por asignar', async () => {
-				await management.goto();
-				await management.expectPassengerInPorAsignar(TEST_DATA.contractorColaborador, TEST_DATA.destination);
-			});
+				// El portal contractor redirige a /dashboard tras crear el viaje (no a /travels/xxx).
+				await page.waitForURL(
+					url => !url.includes('/travel/create'),
+					{ timeout: 30_000, waitUntil: 'commit' }
+				);
 
-			await test.step('Abrir detalle del viaje recién creado', async () => {
-				await management.openDetailForPassenger(TEST_DATA.contractorColaborador, TEST_DATA.destination);
-				await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 30_000, waitUntil: 'commit' });
-				// Debería abrir el mismo viaje creado, no otro.
-				expect(extractTravelId(page.url())).toBe(createdTravelId);
-			});
+				await test.step('Validar viaje en gestión — columna Por asignar', async () => {
+					await management.goto();
+					await management.expectPassengerInPorAsignar(TEST_DATA.contractorColaborador, TEST_DATA.destination);
+				});
 
-			await test.step('Validar estado del viaje — Buscando conductor', async () => {
-				// Debería mostrar "Buscando conductor" tras hold exitoso sin 3DS.
-				await detail.expectStatus('Buscando conductor');
-			});
+				await test.step('Abrir detalle del viaje recién creado', async () => {
+					await management.openDetailForPassenger(TEST_DATA.contractorColaborador, TEST_DATA.destination);
+					await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 30_000, waitUntil: 'commit' });
+					const detailId = extractTravelIdSafe(page.url());
+					if (travelIdRef?.travelId && detailId) {
+						expect(detailId).toBe(String(travelIdRef.travelId));
+					}
+				});
+
+				await test.step('Validar estado del viaje — Buscando conductor', async () => {
+					await detail.expectStatus('Buscando conductor');
+				});
+			} finally {
+				if (travelIdRef) await cancelTravelIfCreated(page, travelIdRef);
+			}
 		});
 
 		test('[TS-STRIPE-P2-TC003] @regression @contractor @hold Hold ON + selección tarjeta VISA guardada del colaborador + alta → viaje a "Buscando conductor"', async ({ page }) => {

@@ -74,6 +74,11 @@ jobs:
     - name: Run Stable Smoke Tests (TEST)
       run: pnpm run test:test:smoke
 
+    - name: Cleanup test travels (post-smoke)
+      if: always()
+      continue-on-error: true
+      run: pnpm run cleanup:test:travels
+
     - name: Upload evidence on failure
       if: failure()
       uses: actions/upload-artifact@v4
