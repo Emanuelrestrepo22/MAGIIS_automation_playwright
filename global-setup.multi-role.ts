@@ -48,9 +48,15 @@ async function globalSetup(): Promise<void> {
       await loginPage.goto();
       await loginPage.login(credentials.username, credentials.password);
 
+      // Validamos el dashboard con el patrón declarado por el rol en runtime.ts
+      // para soportar carrier/contractor/owner/futuros sin hardcodear nombres.
+      // waitUntil: 'commit' evita que el hash-routing de la SPA bloquee la espera
+      // aguardando un evento 'load' que nunca dispara en cambios de hash.
       await page.waitForURL(
-        (url) => url.href.includes("/home") && (url.href.includes("dashboard") || url.href.includes("carrier") || url.href.includes("contractor")),
-        { timeout: 15_000 },
+        (url) =>
+          url.href.includes("/home") &&
+          url.href.includes(roleConfig.dashboardPattern),
+        { timeout: 15_000, waitUntil: "commit" },
       );
       console.log(
         `[GlobalSetup][${role}] Dashboard pattern "${roleConfig.dashboardPattern}" confirmed at ${page.url()}`,
