@@ -256,7 +256,7 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 				console.log(`[SMOKE-GW-TC04] AppPax Cargo a Bordo — viaje creado en ${env.toUpperCase()} ✅`);
 			});
 		} finally {
-			await cancelTravelIfCreated(page, travelIdRef);
+			if (travelIdRef) await cancelTravelIfCreated(page, travelIdRef);
 		}
 	});
 
@@ -405,7 +405,7 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 				console.log(`[SMOKE-GW-TC07] Colaborador Cargo a Bordo — viaje creado en ${env.toUpperCase()} ✅`);
 			});
 		} finally {
-			await cancelTravelIfCreated(page, travelIdRef);
+			if (travelIdRef) await cancelTravelIfCreated(page, travelIdRef);
 		}
 	});
 
@@ -506,7 +506,7 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 				console.log(`[SMOKE-GW-TC09] Empresa Cargo a Bordo — viaje creado en ${env.toUpperCase()} ✅`);
 			});
 		} finally {
-			await cancelTravelIfCreated(page, travelIdRef);
+			if (travelIdRef) await cancelTravelIfCreated(page, travelIdRef);
 		}
 	});
 
