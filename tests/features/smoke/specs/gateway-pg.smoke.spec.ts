@@ -549,10 +549,12 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 			console.log('[SMOKE-GW-TC10] Submit completado — viaje creado como NO_AUTORIZADO ✅');
 		});
 
-		await test.step('[SMOKE-GW-TC10][STEP-06] Validar que viaje fallo 3DS NO aparece en "Por Asignar"', async () => {
+		await test.step('[SMOKE-GW-TC10][STEP-06] Validar viaje en "En conflicto" con NO_AUTORIZADO', async () => {
+			// porAsignarColumn() usa data-testid que no renderiza cuando la columna está vacía.
+			// Aserción positiva: el viaje con card 9235 DEBE estar en "En conflicto" como NO_AUTORIZADO.
 			await management.goto();
-			await expect.soft(management.porAsignarColumn()).not.toContainText(TEST_DATA.appPaxPassenger, { timeout: 10_000 });
-			console.log(`[SMOKE-GW-TC10] NO_AUTORIZADO → viaje ausente en Por Asignar en ${env.toUpperCase()} ✅`);
+			await management.expectPassengerInEnConflicto(TEST_DATA.appPaxPassenger);
+			console.log(`[SMOKE-GW-TC10] Card 9235 → viaje en "En conflicto" / NO_AUTORIZADO en ${env.toUpperCase()} ✅`);
 		});
 	});
 });
@@ -732,10 +734,15 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Contractor`, 
 			});
 		});
 
-		await test.step('[SMOKE-GW-TC14][STEP-04] Seleccionar vehículo y enviar servicio', async () => {
-			await travel.waitForVehicleSelectionReady();
-			await travel.clickSelectVehicle();
-			await travel.clickSendService();
+		await test.step('[SMOKE-GW-TC14][STEP-04] Intentar seleccionar vehículo y enviar servicio', async () => {
+			// Card 9995 (fondos insuficientes) puede ser rechazada por Stripe durante la vinculación
+			// del form (antes de que el botón de vehículo habilite). Si el botón no está disponible,
+			// la declinación ya ocurrió — se continúa al STEP-05 para validar el error.
+			const isReady = await travel.waitForVehicleSelectionReady().then(() => true).catch(() => false);
+			if (isReady) {
+				await travel.clickSelectVehicle();
+				await travel.clickSendService();
+			}
 		});
 
 		await test.step('[SMOKE-GW-TC14][STEP-05] Validar error de declinación visible', async () => {
