@@ -3,7 +3,6 @@ import { defineConfig } from "@playwright/test";
 import dotenv from "dotenv";
 import {
   getCurrentEnv,
-  getDefaultRole,
   getEnvFile,
   getStorageStatePath,
 } from "./tests/config/runtime";
@@ -18,7 +17,6 @@ dotenv.config({ path: envFile });
 
 // Calculamos estos valores una sola vez para reutilizarlos en reporters, storage y artefactos.
 const env = getCurrentEnv();
-const defaultRole = getDefaultRole();
 
 export default defineConfig({
   // Carpeta raíz donde vive la mayoría de las specs del proyecto.
@@ -48,7 +46,12 @@ export default defineConfig({
     // Evidencia organizada por entorno
     screenshot: "only-on-failure",
     video: "retain-on-failure",
-    storageState: getStorageStatePath(defaultRole, env),
+
+    // Nota: NO definimos storageState global aquí a propósito.
+    // Motivo: el "Record new" / codegen hereda este `use` y, si cargáramos una
+    // sesión carrier autenticada por defecto, cualquier URL (incluyendo
+    // /contractor o /owner) aterrizaría en el dashboard carrier con login hecho.
+    // Cada spec declara su propio storageState vía test.use({ role, storageState }).
 
     // Timeouts para flujos con 3DS (modales bancarios pueden tardar)
     actionTimeout: 15_000,
@@ -59,10 +62,42 @@ export default defineConfig({
   // Usamos un nombre separado para evitar choques con carpetas bloqueadas por OneDrive.
   outputDir: `evidence/${env}/playwright-artifacts`,
 
-  // Navegadores soportados para la regresión cross-browser.
+  // Proyectos:
+  //  - chromium/firefox/webkit → regresión cross-browser (sesión neutra).
+  //  - carrier/contractor/web  → proyectos por rol con storageState preautenticado;
+  //    útiles para correr una suite completa contra un portal específico.
+  //  - codegen                 → sesión limpia explícita para "Record new".
   projects: [
     { name: "chromium", use: { browserName: "chromium" } },
     { name: "firefox", use: { browserName: "firefox" } },
     { name: "webkit", use: { browserName: "webkit" } },
+    {
+      name: "carrier",
+      use: {
+        browserName: "chromium",
+        storageState: getStorageStatePath("carrier", env),
+      },
+    },
+    {
+      name: "contractor",
+      use: {
+        browserName: "chromium",
+        storageState: getStorageStatePath("contractor", env),
+      },
+    },
+    {
+      name: "web",
+      use: {
+        browserName: "chromium",
+        storageState: getStorageStatePath("web", env),
+      },
+    },
+    {
+      name: "codegen",
+      use: {
+        browserName: "chromium",
+        storageState: { cookies: [], origins: [] },
+      },
+    },
   ],
 });

@@ -4,6 +4,7 @@
 > **Effective date:** 2026-04-09
 > **Source matrix:** `docs/gateway-pg/stripe/matriz_cases.md` + `docs/gateway-pg/stripe/matriz_cases2.md`
 > **Stack:** Playwright + TypeScript (web) + Appium + WebdriverIO (mobile)
+> **Trazabilidad y propagación de cambios:** [`TRACEABILITY.md`](./TRACEABILITY.md) — obligatorio leer antes de editar matrices.
 
 ## Canonical map (enforced)
 
@@ -145,7 +146,7 @@ test.describe('Gateway PG · Carrier · App Pax — Hold con 3DS', () => {
 | `@critical` | Flujos con impacto directo en pagos y hold | TC1009, TC1013, TC1033, TC1037, TC1053, TC1092, P2-TC047 |
 | `@regression` | Variantes y flujos alternativos | TC1010–TC1012, TC1034–TC1036, TC1050–TC1052, etc. |
 | `@3ds` | Cualquier flujo que involucre modal 3DS | TC1013–TC1016, TC1021–TC1024, TC1029–TC1032, TC1037–TC1040, TC1053–TC1056, etc. |
-| `@hold` | Flujos con preautorización Stripe | Todos los TC con "Hold y Cobro" |
+| `@hold` | Flujos con preautorización Stripe | Todos los TC con "Hold desde Alta de Viaje y Cobro desde App Driver" |
 | `@cargo-a-bordo` | Flujos de pago directo sin hold | TC1081–TC1121 |
 | `@antifraud` | Escenarios de tarjetas bloqueadas/antifraude | TC1087–TC1091, TC1102–TC1106, TC1117–TC1121 |
 | `@mobile` | Requiere Appium (fase mobile) | TC1009–TC1032, todos E2E híbridos |

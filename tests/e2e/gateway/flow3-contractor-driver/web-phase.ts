@@ -22,15 +22,15 @@
 import type { Page } from '@playwright/test';
 import {
 	DashboardPage,
-	NewTravelPage,
-	OperationalPreferencesPage,
 	ThreeDSModal,
 } from '../../../pages/carrier';
+import { ContractorNewTravelPage } from '../../../pages/contractor/NewTravelPage';
 import {
 	loginAsContractor,
 	STRIPE_TEST_CARDS,
 	TEST_DATA,
 } from '../../../features/gateway-pg/fixtures/gateway.fixtures';
+import { waitForTravelCreation } from '../../../features/gateway-pg/helpers/stripe.helpers';
 import { initJourneyContext, markReadyForDriver } from '../shared/JourneyBridge';
 import type { GatewayFlowConfig } from '../shared/e2eFlowConfig';
 
@@ -39,13 +39,6 @@ export type WebPhaseResult = {
 	tripId:    string;
 };
 
-function extractTripId(url: string): string {
-	const match = url.match(/\/travels\/([\w-]+)/);
-	if (!match) {
-		throw new Error(`[flow3/web-phase] No se pudo extraer el tripId desde URL: ${url}`);
-	}
-	return match[1];
-}
 
 /**
  * Ejecuta la fase web completa del Flow 3.
@@ -60,9 +53,8 @@ export async function runWebPhase(
 	config: GatewayFlowConfig,
 	tcId:   string,
 ): Promise<WebPhaseResult> {
-	const dashboard   = new DashboardPage(page);
-	const preferences = new OperationalPreferencesPage(page);
-	const travel      = new NewTravelPage(page);
+	const dashboard = new DashboardPage(page);
+	const travel    = new ContractorNewTravelPage(page);
 
 	// ── Paso 1: Login contractor ──────────────────────────────────────────────
 	console.log('[flow3/web-phase] Paso 1: Login contractor (colaborador)');
@@ -74,16 +66,11 @@ export async function runWebPhase(
 	const { journeyId } = ctx;
 	console.log(`[flow3/web-phase] journeyId: ${journeyId}`);
 
-	// ── Paso 3: Verificar estado de hold ──────────────────────────────────────
-	console.log(`[flow3/web-phase] Paso 3: Verificar hold ${config.holdEnabled ? 'ON' : 'OFF'}`);
-	await preferences.goto();
-	if (config.holdEnabled) {
-		await preferences.ensureHoldEnabled();
-		await preferences.assertHoldEnabled();
-	} else {
-		await preferences.ensureHoldDisabled();
-		await preferences.assertHoldDisabled();
-	}
+	// ── Paso 3: Hold config ───────────────────────────────────────────────────
+	// El hold es una configuración del portal carrier, no del contractor.
+	// El contractor no tiene acceso a /settings/parameters.
+	// Precondición: el carrier debe tener hold habilitado antes de correr este flow.
+	console.log(`[flow3/web-phase] Paso 3: Hold es config carrier (skipped en contractor) — esperado: hold=${config.holdEnabled}`);
 
 	// ── Paso 4: Abrir formulario de nuevo viaje ───────────────────────────────
 	console.log('[flow3/web-phase] Paso 4: Abrir formulario de nuevo viaje');
@@ -92,8 +79,11 @@ export async function runWebPhase(
 
 	// ── Paso 5: Completar formulario con tarjeta ──────────────────────────────
 	console.log(`[flow3/web-phase] Paso 5: Completar formulario — tarjeta ${config.cardLast4}`);
+	// Contractor: en el portal contractor el cliente Y pasajero es el colaborador.
+	// Evidencia: colaborador-hold-no3ds.spec.ts usa client=contractorColaborador.
 	await travel.fillMinimum({
-		passenger:   TEST_DATA.appPaxPassenger,
+		client:      TEST_DATA.contractorColaborador,
+		passenger:   TEST_DATA.contractorColaborador,
 		origin:      TEST_DATA.origin,
 		destination: TEST_DATA.destination,
 		cardLast4:   config.cardLast4,
@@ -115,8 +105,7 @@ export async function runWebPhase(
 
 	// ── Paso 7: Extraer tripId desde URL ─────────────────────────────────────
 	console.log('[flow3/web-phase] Paso 7: Esperar redirección y extraer tripId');
-	await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 30_000 });
-	const tripId = extractTripId(page.url());
+	const tripId = await waitForTravelCreation(page, 30_000);
 	console.log(`[flow3/web-phase] tripId: ${tripId}`);
 
 	// ── Paso 8: Actualizar JourneyContext → ready-for-driver ──────────────────

@@ -2,13 +2,7 @@ import { PASSENGERS } from './passengers';
 import { STRIPE_TEST_CARDS, type StripeTestCard } from './stripe-cards';
 import { TEST_DATA } from './stripeTestData';
 
-export type PassengerFlow2Step =
-	| 'wallet-add-card'
-	| 'wallet-select-card'
-	| 'trip-create'
-	| 'trip-assigned'
-	| 'trip-completed'
-	| 'wallet-negative';
+export type PassengerFlow2Step = 'wallet-add-card' | 'wallet-select-card' | 'wallet-delete-linked-card' | 'trip-create' | 'trip-assigned' | 'trip-completed' | 'wallet-negative';
 
 export type PassengerFlow2Scenario = {
 	testCaseId: string;
@@ -41,17 +35,23 @@ export const PASSENGER_FLOW2_SCENARIOS: PassengerFlow2Scenario[] = [
 		destination: TEST_DATA.destination,
 		requiresDriverPhase: false,
 		targetSpecPath: TARGET_SPEC_PATH,
-		requiredScreenObjects: [
-			'Mi cuenta',
-			'Billetera',
-			'AGREGAR',
-			'GUARDAR',
-			'Stripe iframe cardnumber / cc-exp-month / cc-exp-year / cc-csc',
-		],
-		technicalRisks: [
-			'Wallet state can persist across runs when APPIUM_NO_RESET=true.',
-			'Stripe iframe may render with a different internal name while keeping the same inputs.',
-		],
+		requiredScreenObjects: ['Mi cuenta', 'Billetera', 'AGREGAR', 'GUARDAR', 'Stripe iframe cardnumber / cc-exp-month / cc-exp-year / cc-csc'],
+		technicalRisks: ['Wallet state can persist across runs when APPIUM_NO_RESET=true.', 'Stripe iframe may render with a different internal name while keeping the same inputs.']
+	},
+	{
+		testCaseId: 'TC-PAX-11',
+		sourceCaseIds: ['DBTS-STRIPE-TC003', 'TS-STRIPE-TC1122'],
+		title: 'Delete linked 3DS card from passenger wallet',
+		active: true,
+		step: 'wallet-delete-linked-card',
+		card: STRIPE_TEST_CARDS.visa_3ds_success,
+		passenger: PASSENGERS.appPax.name,
+		origin: TEST_DATA.origin,
+		destination: TEST_DATA.destination,
+		requiresDriverPhase: false,
+		targetSpecPath: TARGET_SPEC_PATH,
+		requiredScreenObjects: ['Mi cuenta', 'Billetera', 'Saved 3DS card label ending in the last 4 digits', 'delete action / menu / trash', 'principal fallback if needed'],
+		technicalRisks: ['Wallet state can persist across runs when APPIUM_NO_RESET=true.', 'The delete action may first need to open the card row options popover.', 'If the wallet starts empty, the test reseeds the linked 3DS card before deleting it.']
 	},
 	{
 		testCaseId: 'TC-PAX-02',
@@ -65,15 +65,8 @@ export const PASSENGER_FLOW2_SCENARIOS: PassengerFlow2Scenario[] = [
 		destination: TEST_DATA.destination,
 		requiresDriverPhase: false,
 		targetSpecPath: TARGET_SPEC_PATH,
-		requiredScreenObjects: [
-			'Mi cuenta',
-			'Billetera',
-			'Saved card label ending in the last 4 digits',
-		],
-		technicalRisks: [
-			'The card may already be selected as default, so the action can become a no-op.',
-			'Card label formatting can vary slightly across app versions.',
-		],
+		requiredScreenObjects: ['Mi cuenta', 'Billetera', 'Saved card label ending in the last 4 digits'],
+		technicalRisks: ['The card may already be selected as default, so the action can become a no-op.', 'Card label formatting can vary slightly across app versions.']
 	},
 	{
 		testCaseId: 'TC-PAX-03',
@@ -87,16 +80,8 @@ export const PASSENGER_FLOW2_SCENARIOS: PassengerFlow2Scenario[] = [
 		destination: TEST_DATA.destination,
 		requiresDriverPhase: false,
 		targetSpecPath: TARGET_SPEC_PATH,
-		requiredScreenObjects: [
-			'Origen',
-			'Destino',
-			'Seleccionar Vehiculo',
-			'Ahora',
-		],
-		technicalRisks: [
-			'Trip confirmation can return without a stable trip id on some builds.',
-			'Trip submit may still open a hold/3DS branch depending on backend config.',
-		],
+		requiredScreenObjects: ['Origen', 'Destino', 'Seleccionar Vehiculo', 'Ahora'],
+		technicalRisks: ['Trip confirmation can return without a stable trip id on some builds.', 'Trip submit may still open a hold/3DS branch depending on backend config.']
 	},
 	{
 		testCaseId: 'TC-PAX-04',
@@ -110,16 +95,8 @@ export const PASSENGER_FLOW2_SCENARIOS: PassengerFlow2Scenario[] = [
 		destination: TEST_DATA.destination,
 		requiresDriverPhase: true,
 		targetSpecPath: TARGET_SPEC_PATH,
-		requiredScreenObjects: [
-			'assigned driver keywords',
-			'conductor',
-			'driver',
-			'en camino',
-		],
-		technicalRisks: [
-			'Driver handoff is not wired in this lane yet.',
-			'The current status screen uses keyword heuristics until a dedicated dump is captured.',
-		],
+		requiredScreenObjects: ['assigned driver keywords', 'conductor', 'driver', 'en camino'],
+		technicalRisks: ['Driver handoff is not wired in this lane yet.', 'The current status screen uses keyword heuristics until a dedicated dump is captured.']
 	},
 	{
 		testCaseId: 'TC-PAX-05',
@@ -133,17 +110,8 @@ export const PASSENGER_FLOW2_SCENARIOS: PassengerFlow2Scenario[] = [
 		destination: TEST_DATA.destination,
 		requiresDriverPhase: true,
 		targetSpecPath: TARGET_SPEC_PATH,
-		requiredScreenObjects: [
-			'completado',
-			'finalizado',
-			'cobro',
-			'pago',
-			'captured',
-		],
-		technicalRisks: [
-			'This case depends on the driver app finishing the ride first.',
-			'Payment confirmation is currently heuristic until a passenger post-trip dump is added.',
-		],
+		requiredScreenObjects: ['completado', 'finalizado', 'cobro', 'pago', 'captured'],
+		technicalRisks: ['This case depends on the driver app finishing the ride first.', 'Payment confirmation is currently heuristic until a passenger post-trip dump is added.']
 	},
 	{
 		testCaseId: 'TC-PAX-06',
@@ -157,13 +125,7 @@ export const PASSENGER_FLOW2_SCENARIOS: PassengerFlow2Scenario[] = [
 		destination: TEST_DATA.destination,
 		requiresDriverPhase: false,
 		targetSpecPath: TARGET_SPEC_PATH,
-		requiredScreenObjects: [
-			'Stripe error copy',
-			'card validation feedback',
-		],
-		technicalRisks: [
-			'The exact error copy can vary depending on the Stripe test card branch.',
-			'Negative save flow may close the iframe before the error is rendered.',
-		],
-	},
+		requiredScreenObjects: ['Stripe error copy', 'card validation feedback'],
+		technicalRisks: ['The exact error copy can vary depending on the Stripe test card branch.', 'Negative save flow may close the iframe before the error is rendered.']
+	}
 ];

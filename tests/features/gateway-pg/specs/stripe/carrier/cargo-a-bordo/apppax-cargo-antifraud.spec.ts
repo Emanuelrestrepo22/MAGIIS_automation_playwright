@@ -13,11 +13,12 @@ import type { Page } from '@playwright/test';
 import { test } from '../../../../../../TestBase';
 import { DashboardPage, NewTravelPage, TravelDetailPage, TravelManagementPage } from '../../../../../../pages/carrier';
 import { expectNoThreeDSModal, loginAsDispatcher, TEST_DATA } from '../../../../fixtures/gateway.fixtures';
+import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../../../helpers/travel-cleanup';
 
-test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
+test.use({ role: 'carrier', storageState: undefined });
 test.describe.configure({ timeout: 120_000 });
 
-async function webPhaseCargoAppPax(page: Page): Promise<void> {
+async function webPhaseCargoAppPax(page: Page): Promise<TravelIdRef> {
 	const dashboard = new DashboardPage(page);
 	const travel = new NewTravelPage(page);
 	const management = new TravelManagementPage(page);
@@ -26,6 +27,8 @@ async function webPhaseCargoAppPax(page: Page): Promise<void> {
 	await test.step('Login carrier', async () => {
 		await loginAsDispatcher(page);
 	});
+
+	const travelIdRef = await captureCreatedTravelId(page);
 
 	await test.step('Ir al formulario de nuevo viaje', async () => {
 		await dashboard.openNewTravel();
@@ -68,58 +71,70 @@ async function webPhaseCargoAppPax(page: Page): Promise<void> {
 		await management.openDetailForPassenger(TEST_DATA.appPaxPassenger, TEST_DATA.destination);
 		await detail.expectStatus('Buscando conductor');
 	});
+
+	return travelIdRef;
 }
 
 test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo · Antifraud', () => {
 
 	test('[TS-STRIPE-TC1087] @regression @cargo-a-bordo tarjeta alto riesgo desde Driver App', async ({ page }) => {
-		await webPhaseCargoAppPax(page);
-
-		await test.step('[DRIVER APP] Conductor finaliza viaje → cobra con tarjeta de alto riesgo → bloqueado', async () => {
-			// Tarjeta: STRIPE_TEST_CARDS.cvcCheckFail (4000 0000 0000 0101) — Excel TC1087
-			// Stripe: cvc_check falla post-auth. Resultado esperado: pago bloqueado, viaje "En conflicto".
-			test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium + DriverTripPaymentScreen implementado.');
-		});
+		let travelIdRef: TravelIdRef | null = null;
+		try {
+			travelIdRef = await webPhaseCargoAppPax(page);
+			await test.step('[DRIVER APP] Conductor finaliza viaje → cobra con tarjeta de alto riesgo → bloqueado', async () => {
+				test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium + DriverTripPaymentScreen implementado.');
+			});
+		} finally {
+			if (travelIdRef) await cancelTravelIfCreated(page, travelIdRef);
+		}
 	});
 
 	test('[TS-STRIPE-TC1088] @regression @cargo-a-bordo tarjeta siempre bloqueada desde Driver App', async ({ page }) => {
-		await webPhaseCargoAppPax(page);
-
-		await test.step('[DRIVER APP] Conductor finaliza viaje → cobra con tarjeta always_blocked → bloqueado', async () => {
-			// Tarjeta: STRIPE_TEST_CARDS.highestRisk (4100 0000 0000 0019) — Excel TC1088
-			// Stripe: Radar bloquea por riesgo máximo. Resultado esperado: pago bloqueado, viaje "En conflicto".
-			test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium.');
-		});
+		let travelIdRef: TravelIdRef | null = null;
+		try {
+			travelIdRef = await webPhaseCargoAppPax(page);
+			await test.step('[DRIVER APP] Conductor finaliza viaje → cobra con tarjeta always_blocked → bloqueado', async () => {
+				test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium.');
+			});
+		} finally {
+			if (travelIdRef) await cancelTravelIfCreated(page, travelIdRef);
+		}
 	});
 
 	test('[TS-STRIPE-TC1089] @regression @cargo-a-bordo CVC check fail elevated desde Driver App', async ({ page }) => {
-		await webPhaseCargoAppPax(page);
-
-		await test.step('[DRIVER APP] Conductor finaliza viaje → CVC check fail con riesgo elevado → bloqueado', async () => {
-			// Tarjeta: STRIPE_TEST_CARDS.cvcCheckFailElevated (4000 0000 0000 4954) — Excel TC1089
-			// Resultado esperado: rechazo por CVC + regla elevada de riesgo, viaje "En conflicto".
-			test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium.');
-		});
+		let travelIdRef: TravelIdRef | null = null;
+		try {
+			travelIdRef = await webPhaseCargoAppPax(page);
+			await test.step('[DRIVER APP] Conductor finaliza viaje → CVC check fail con riesgo elevado → bloqueado', async () => {
+				test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium.');
+			});
+		} finally {
+			if (travelIdRef) await cancelTravelIfCreated(page, travelIdRef);
+		}
 	});
 
 	test('[TS-STRIPE-TC1090] @regression @cargo-a-bordo ZIP fail elevated desde Driver App', async ({ page }) => {
-		await webPhaseCargoAppPax(page);
-
-		await test.step('[DRIVER APP] Conductor finaliza viaje → ZIP check fail con riesgo elevado → bloqueado', async () => {
-			// Tarjeta: STRIPE_TEST_CARDS.zipFailElevated
-			// Resultado esperado: rechazo por AVS ZIP + regla elevada, viaje "En conflicto".
-			test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium.');
-		});
+		let travelIdRef: TravelIdRef | null = null;
+		try {
+			travelIdRef = await webPhaseCargoAppPax(page);
+			await test.step('[DRIVER APP] Conductor finaliza viaje → ZIP check fail con riesgo elevado → bloqueado', async () => {
+				test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium.');
+			});
+		} finally {
+			if (travelIdRef) await cancelTravelIfCreated(page, travelIdRef);
+		}
 	});
 
 	test('[TS-STRIPE-TC1091] @regression @cargo-a-bordo address unavailable desde Driver App', async ({ page }) => {
-		await webPhaseCargoAppPax(page);
-
-		await test.step('[DRIVER APP] Conductor finaliza viaje → dirección no disponible → bloqueado por antifraud', async () => {
-			// Tarjeta: STRIPE_TEST_CARDS.addressUnavailable
-			// Resultado esperado: rechazo por AVS sin dirección disponible, viaje "En conflicto".
-			test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium.');
-		});
+		let travelIdRef: TravelIdRef | null = null;
+		try {
+			travelIdRef = await webPhaseCargoAppPax(page);
+			await test.step('[DRIVER APP] Conductor finaliza viaje → dirección no disponible → bloqueado por antifraud', async () => {
+				test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium.');
+			});
+		} finally {
+			if (travelIdRef) await cancelTravelIfCreated(page, travelIdRef);
+		}
 	});
 
 });

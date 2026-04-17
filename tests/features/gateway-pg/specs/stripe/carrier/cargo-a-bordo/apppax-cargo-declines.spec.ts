@@ -17,11 +17,12 @@ import type { Page } from '@playwright/test';
 import { test } from '../../../../../../TestBase';
 import { DashboardPage, NewTravelPage, TravelDetailPage, TravelManagementPage } from '../../../../../../pages/carrier';
 import { expectNoThreeDSModal, loginAsDispatcher, TEST_DATA } from '../../../../fixtures/gateway.fixtures';
+import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../../../helpers/travel-cleanup';
 
-test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
+test.use({ role: 'carrier', storageState: undefined });
 test.describe.configure({ timeout: 120_000 });
 
-async function webPhaseCargoAppPax(page: Page): Promise<void> {
+async function webPhaseCargoAppPax(page: Page): Promise<TravelIdRef> {
 	const dashboard = new DashboardPage(page);
 	const travel = new NewTravelPage(page);
 	const management = new TravelManagementPage(page);
@@ -30,6 +31,8 @@ async function webPhaseCargoAppPax(page: Page): Promise<void> {
 	await test.step('Login carrier', async () => {
 		await loginAsDispatcher(page);
 	});
+
+	const travelIdRef = await captureCreatedTravelId(page);
 
 	await test.step('Ir al formulario de nuevo viaje', async () => {
 		await dashboard.openNewTravel();
@@ -72,59 +75,70 @@ async function webPhaseCargoAppPax(page: Page): Promise<void> {
 		await management.openDetailForPassenger(TEST_DATA.appPaxPassenger, TEST_DATA.destination);
 		await detail.expectStatus('Buscando conductor');
 	});
+
+	return travelIdRef;
 }
 
 test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo · Declines', () => {
 
 	test('[TS-STRIPE-TC1082] @regression @cargo-a-bordo pago rechazado genérico desde Driver App', async ({ page }) => {
-		await webPhaseCargoAppPax(page);
-
-		await test.step('[DRIVER APP] Conductor finaliza viaje → cobra con tarjeta declinada → pago rechazado genérico', async () => {
-			// Escenario: tarjeta del pasajero es genéricamente declinada al cobrar desde la app del conductor.
-			// Tarjeta: STRIPE_TEST_CARDS.declined (declined_generic)
-			// Resultado esperado: pago rechazado, viaje queda en estado "En conflicto" o "No Autorizado".
-			test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium + DriverTripPaymentScreen implementado.');
-		});
+		let travelIdRef: TravelIdRef | null = null;
+		try {
+			travelIdRef = await webPhaseCargoAppPax(page);
+			await test.step('[DRIVER APP] Conductor finaliza viaje → cobra con tarjeta declinada → pago rechazado genérico', async () => {
+				test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium + DriverTripPaymentScreen implementado.');
+			});
+		} finally {
+			if (travelIdRef) await cancelTravelIfCreated(page, travelIdRef);
+		}
 	});
 
 	test('[TS-STRIPE-TC1083] @regression @cargo-a-bordo fondos insuficientes desde Driver App', async ({ page }) => {
-		await webPhaseCargoAppPax(page);
-
-		await test.step('[DRIVER APP] Conductor finaliza viaje → cobra con tarjeta sin fondos → pago rechazado', async () => {
-			// Tarjeta: STRIPE_TEST_CARDS.insufficientFunds
-			// Resultado esperado: error "fondos insuficientes", viaje "En conflicto".
-			test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium.');
-		});
+		let travelIdRef: TravelIdRef | null = null;
+		try {
+			travelIdRef = await webPhaseCargoAppPax(page);
+			await test.step('[DRIVER APP] Conductor finaliza viaje → cobra con tarjeta sin fondos → pago rechazado', async () => {
+				test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium.');
+			});
+		} finally {
+			if (travelIdRef) await cancelTravelIfCreated(page, travelIdRef);
+		}
 	});
 
 	test('[TS-STRIPE-TC1084] @regression @cargo-a-bordo tarjeta perdida desde Driver App', async ({ page }) => {
-		await webPhaseCargoAppPax(page);
-
-		await test.step('[DRIVER APP] Conductor finaliza viaje → cobra con tarjeta reportada como perdida → rechazo', async () => {
-			// Tarjeta: STRIPE_TEST_CARDS.lostCard
-			// Resultado esperado: error "tarjeta perdida/lost_card", viaje "En conflicto".
-			test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium.');
-		});
+		let travelIdRef: TravelIdRef | null = null;
+		try {
+			travelIdRef = await webPhaseCargoAppPax(page);
+			await test.step('[DRIVER APP] Conductor finaliza viaje → cobra con tarjeta reportada como perdida → rechazo', async () => {
+				test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium.');
+			});
+		} finally {
+			if (travelIdRef) await cancelTravelIfCreated(page, travelIdRef);
+		}
 	});
 
 	test('[TS-STRIPE-TC1085] @regression @cargo-a-bordo CVC incorrecto desde Driver App', async ({ page }) => {
-		await webPhaseCargoAppPax(page);
-
-		await test.step('[DRIVER APP] Conductor finaliza viaje → cobra con CVC incorrecto → rechazo', async () => {
-			// Tarjeta: STRIPE_TEST_CARDS.incorrectCvc
-			// Resultado esperado: error "CVC incorrecto", viaje "En conflicto".
-			test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium.');
-		});
+		let travelIdRef: TravelIdRef | null = null;
+		try {
+			travelIdRef = await webPhaseCargoAppPax(page);
+			await test.step('[DRIVER APP] Conductor finaliza viaje → cobra con CVC incorrecto → rechazo', async () => {
+				test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium.');
+			});
+		} finally {
+			if (travelIdRef) await cancelTravelIfCreated(page, travelIdRef);
+		}
 	});
 
 	test('[TS-STRIPE-TC1086] @regression @cargo-a-bordo tarjeta robada desde Driver App', async ({ page }) => {
-		await webPhaseCargoAppPax(page);
-
-		await test.step('[DRIVER APP] Conductor finaliza viaje → cobra con tarjeta reportada como robada → rechazo', async () => {
-			// Tarjeta: STRIPE_TEST_CARDS.stolenCard
-			// Resultado esperado: error "tarjeta robada/stolen_card", viaje "En conflicto".
-			test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium.');
-		});
+		let travelIdRef: TravelIdRef | null = null;
+		try {
+			travelIdRef = await webPhaseCargoAppPax(page);
+			await test.step('[DRIVER APP] Conductor finaliza viaje → cobra con tarjeta reportada como robada → rechazo', async () => {
+				test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium.');
+			});
+		} finally {
+			if (travelIdRef) await cancelTravelIfCreated(page, travelIdRef);
+		}
 	});
 
 });

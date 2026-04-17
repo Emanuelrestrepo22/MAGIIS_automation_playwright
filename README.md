@@ -88,7 +88,8 @@ magiiss-playwright/
 ├── storage/                           # storageState por entorno (gitignored)
 ├── evidence/                          # Artefactos de ejecución (gitignored)
 ├── .env.*                             # Variables de entorno
-├── global-setup.ts                    # Login vía API antes del test run
+├── global-setup.multi-role.ts         # Login por rol (carrier/contractor/…) + storageState
+├── global-setup.ts                    # ⚠️  DEPRECATED — single-role carrier legacy
 ├── playwright.config.ts               # Configuración Web Playwright
 ├── tsconfig.json
 └── package.json
@@ -364,7 +365,7 @@ tests
 
 **Decisiones de diseño:**
 
-- `global-setup.ts` realiza el login vía API antes de la suite y guarda el `storageState` → los tests individuales no hacen login UI, lo que los hace más rápidos y estables.
+- `global-setup.multi-role.ts` autentica todos los roles configurados en el `.env` (carrier, contractor, etc.) y persiste un `storageState` separado por rol en `storage/state-<role>-<env>.json`. Los tests individuales no hacen login UI salvo que declaren `storageState: { cookies: [], origins: [] }`. (`global-setup.ts` quedó como referencia legacy; no lo usa la config activa.)
 - Los tests de smoke en PROD solo validan flujos críticos (login, dashboard) y no modifican datos.
 - Los artefactos (screenshots, videos, reportes) se organizan por entorno y se retienen más tiempo en PROD que en TEST.
 

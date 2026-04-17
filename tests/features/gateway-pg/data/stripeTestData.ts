@@ -60,12 +60,14 @@ export const TEST_DATA = {
 	// Default carrier flow: el cliente auto-completa el pasajero y deja "Regular" listo.
 	client: PASSENGERS.empresaIndividuo.name,
 	passenger: PASSENGERS.appPax.name,
-	// Casos que requieren cliente y pasajero distintos.
+	// Contractor: cliente 'fast car', pasajero = colaborador CON tarjeta 4242 activa.
+	// PASSENGERS.colaborador = 'smith, Emanuel' (Emanuel Smith — tarjeta 4242 ✅)
 	contractorClient: 'fast car',
-	contractorPassenger: PASSENGERS.colaborador.name,
-	// Contractor hold: el colaborador del contractor se selecciona buscando por nombre.
-	// Evidencia: test-7.spec.ts — login contractor → buscar 'ema' → 'smith, Emanuel'.
-	contractorColaborador: 'smith, Emanuel',
+	contractorPassenger: PASSENGERS.colaborador.name, // 'smith, Emanuel' — tiene tarjeta 4242
+	// Alias explícito para el colaborador con tarjeta (mismo valor que contractorPassenger).
+	contractorColaborador: PASSENGERS.colaborador.name, // 'smith, Emanuel'
+	// Colaborador sin tarjeta activa — no usar en tests hold hasta que Admin vincule tarjeta.
+	contractorPassengerSinTarjeta: PASSENGERS.colaboradorSinTarjeta.name, // 'Nayla Smith'
 	appPaxPassenger: PASSENGERS.appPax.name,
 	origin: 'Reconquista 661, Buenos Aires, Argentina',
 	destination: 'Cazadores 1987, Buenos Aires, Argentina',
