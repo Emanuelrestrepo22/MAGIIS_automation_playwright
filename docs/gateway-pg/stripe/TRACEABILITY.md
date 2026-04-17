@@ -129,6 +129,7 @@ Todo script de sync debe detectar estos patrones en celdas y abortar o reportar 
 - [ ] `node scripts/ai/phase6-sync-coverage.mjs --apply` → 0 `E2E` residual y 0 `Hold y Cobro` residual
 - [ ] `.xlsx.bak` y `.apk` no aparecen en `git status`
 - [ ] Commit por capa (no mezclar L0+L2 en un commit para que el PR sea auditable)
+- [ ] `pnpm run validate:terminology` → 0 violaciones (lo fuerza el workflow `doc-terminology-check.yml` en cada PR)
 
 ---
 

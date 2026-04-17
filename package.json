@@ -44,6 +44,7 @@
     "test:prod:regression": "cross-env ENV=prod npx playwright test --project=chromium",
     "---UTILS---": "─── Utilidades ───",
     "pw:install": "npx playwright install --with-deps chromium",
+    "validate:terminology": "node scripts/ai/check-doc-terminology.mjs",
     "test:plan": "npx playwright test --reporter=list --project=chromium --list",
     "test:ui": "npx playwright test --ui",
     "test:trace": "npx playwright show-trace",
