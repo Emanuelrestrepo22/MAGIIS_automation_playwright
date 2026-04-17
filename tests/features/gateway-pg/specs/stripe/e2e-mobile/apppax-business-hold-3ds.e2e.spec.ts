@@ -110,14 +110,15 @@ test.describe.serial('Gateway PG · E2E Mobile · App Pax Business — Hold con 
 			test(
 				`hold=${scenario.holdMode} · 3ds · card=${scenario.cardFlow}`,
 				async () => {
-					// DRAFT — requiere datos de prueba app-pax-business y validación manual.
-					// TODO(QA): Remover test.fixme una vez que:
-					//   - Se confirme el toggle hold ON/OFF para el carrier business de 'smith, Emanuel'.
-					//   - Se valide que handleThreeDsPopup resuelve el challenge en modo business.
-					//   - PassengerTripHappyPathHarness exponga un hook para forzar hold mode.
-					test.fixme(
-						true,
-						`DRAFT ${scenario.testCaseId} — requiere validacion manual del toggle hold ${scenario.holdMode} + 3DS flow en modo business antes de habilitarse en CI.`,
+					// Test productivo habilitado (fixme levantado Fase P3).
+					// Skip condicional: si no hay servidor Appium disponible el test no
+					// puede ejecutarse (requiere emulador Android + PassengerWalletScreen).
+					// TODO(QA): después de la primera corrida con APPIUM_SERVER_URL seteado,
+					//   validar manualmente que handleThreeDsPopup resuelve el challenge en
+					//   modo business y que PassengerTripHappyPathHarness expone hold toggle.
+					test.skip(
+						!process.env.APPIUM_SERVER_URL,
+						`${scenario.testCaseId} requiere servidor Appium Android activo (APPIUM_SERVER_URL).`,
 					);
 
 					const harness = new PassengerTripHappyPathHarness(getPassengerAppConfig(), undefined, {
