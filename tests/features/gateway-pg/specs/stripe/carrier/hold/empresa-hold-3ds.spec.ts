@@ -298,8 +298,8 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Hold con 3DS', () 
         cardFlow: 'existing',
       });
     });
-    // DEPRECATED: ver TC canónico TS-STRIPE-TC1069 (fase 2 — duplicado sin card-flow diferenciado)
-    test('[TS-STRIPE-TC1077] @regression @3ds @hold hold+cobro empresa 3DS (set 2)', async ({ page }) => {
+    // DEPRECATED: duplicado de TC1069; se mantiene como referencia pero no se ejecuta.
+    test.skip('[TS-STRIPE-TC1077] @regression @3ds @hold hold+cobro empresa 3DS (set 2)', async ({ page }) => {
       await runHoldOnScenario(page, {
         client: PASSENGERS.empresaIndividuo.name,
         passenger: PASSENGERS.empresaIndividuo.name,
@@ -309,8 +309,8 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Hold con 3DS', () 
         cardFlow: 'new',
       });
     });
-    // DEPRECATED: ver TC canónico TS-STRIPE-TC1069 (fase 2 — duplicado sin card-flow diferenciado)
-    test('[TS-STRIPE-TC1079] @regression @3ds @hold hold+cobro empresa 3DS variante 2', async ({ page }) => {
+    // DEPRECATED: duplicado de TC1069; se mantiene como referencia pero no se ejecuta.
+    test.skip('[TS-STRIPE-TC1079] @regression @3ds @hold hold+cobro empresa 3DS variante 2', async ({ page }) => {
       await runHoldOnScenario(page, {
         client: PASSENGERS.empresaIndividuo.name,
         passenger: PASSENGERS.empresaIndividuo.name,
@@ -355,8 +355,8 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Hold con 3DS', () 
         cardFlow: 'new',
       });
     });
-    // DEPRECATED: ver TC canónico TS-STRIPE-TC1070 (fase 2 — duplicado sin card-flow diferenciado)
-    test('[TS-STRIPE-TC1080] @regression @3ds sin hold empresa 3DS variante 2', async ({ page }) => {
+    // DEPRECATED: duplicado de TC1070; se mantiene como referencia pero no se ejecuta.
+    test.skip('[TS-STRIPE-TC1080] @regression @3ds sin hold empresa 3DS variante 2', async ({ page }) => {
       await runHoldOffScenario(page, {
         client: PASSENGERS.empresaIndividuo.name,
         passenger: PASSENGERS.empresaIndividuo.name,
