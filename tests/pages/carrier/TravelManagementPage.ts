@@ -27,7 +27,9 @@ export class TravelManagementPage {
 		const portal = currentUrl.includes('/contractor') ? 'contractor' : 'carrier';
 		const baseUrl = getPortalUrl('carrier'); // ambos portales comparten el mismo origen
 		await this.page.goto(`${baseUrl}/#/home/${portal}/travel/dashboard`);
-		await this.page.waitForLoadState('domcontentloaded');
+		// Esperar a que la tabla de viajes cargue desde la API Angular antes de hacer assertions.
+		// domcontentloaded es insuficiente para SPA — esperar `tbody` visible da más margen.
+		await this.page.waitForSelector('table tbody', { state: 'visible', timeout: 20_000 }).catch(() => {});
 	}
 
 	/** Abre la pestaña de viajes programados dentro de gestion de viajes. */

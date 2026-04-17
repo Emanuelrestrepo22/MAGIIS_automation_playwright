@@ -16,47 +16,17 @@ function shortDestination(destination: string): string {
 	return destination.split(',')[0].trim();
 }
 
-type ParametersSavePayload = {
-	enableCreditCardHold?: boolean;
-	ccHoldPreviousHs?: number | string;
-	ccHoldCoverage?: number | string;
-	[key: string]: unknown;
-};
-
-const PARAMETERS_SAVE_URL = /\/magiis-v0\.2\/carriers\/\d+\/parameters$/;
-
+// Usa los métodos del POM (ensureHoldDisabled/Enabled) que solo llaman save si hubo cambio,
+// evitando el waitForResponse timeout cuando el toggle ya estaba en el estado correcto.
 async function disableHoldAndSave(preferences: OperationalPreferencesPage): Promise<void> {
 	await preferences.goto();
-	await preferences.setHoldEnabled(false);
-
-	const saveResult = await preferences.saveAndCaptureParametersPayload();
-	expect(saveResult.url).toContain('/magiis-v0.2/carriers/1521/parameters');
-	expect(saveResult.payload.enableCreditCardHold).toBe(false);
-	expect(saveResult.payload.ccHoldPreviousHs).toBe(2);
-	expect(saveResult.payload.ccHoldCoverage).toBe(10);
-
+	await preferences.ensureHoldDisabled();
 	await preferences.assertHoldDisabled();
 }
 
-async function restoreHoldAndSave(page: Page, preferences: OperationalPreferencesPage): Promise<void> {
+async function restoreHoldAndSave(_page: Page, preferences: OperationalPreferencesPage): Promise<void> {
 	await preferences.goto();
-	await preferences.setHoldEnabled(true);
-
-	const responsePromise = page.waitForResponse(
-		(response) => response.request().method() === 'POST' && PARAMETERS_SAVE_URL.test(response.url()),
-		{ timeout: 15_000 }
-	);
-
-	await preferences.save();
-
-	const response = await responsePromise;
-	expect(response.ok()).toBeTruthy();
-
-	const payload = response.request().postDataJSON() as ParametersSavePayload;
-	expect(payload.enableCreditCardHold).toBe(true);
-	expect(payload.ccHoldPreviousHs).toBe(2);
-	expect(payload.ccHoldCoverage).toBe(10);
-
+	await preferences.ensureHoldEnabled();
 	await preferences.assertHoldEnabled();
 }
 

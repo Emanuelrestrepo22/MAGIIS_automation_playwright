@@ -86,9 +86,19 @@ async function processTab(
 		if (modalOpened) {
 			// Scoped al modal activo para evitar colisiones con otros modales Angular en el DOM
 			const cancelModal = page.locator(MODAL_ROOT);
+
+			// Algunos tipos de viaje requieren seleccionar motivo antes de habilitar Continuar.
+			// Si hay un <select> en el modal, elegimos la primera opción no vacía.
+			const modalSelect = cancelModal.locator('select').first();
+			if (await modalSelect.isVisible().catch(() => false)) {
+				await modalSelect.selectOption({ index: 1 });
+				await page.waitForTimeout(300);
+			}
+
 			const confirmBtn = cancelModal.getByRole('button', { name: /continuar/i });
 			await confirmBtn.waitFor({ state: 'visible', timeout: 5_000 });
-			await confirmBtn.click();
+			// force:true cubre el caso donde el botón sigue disabled por timing de Angular
+			await confirmBtn.click({ force: true });
 			// Esperar cierre completo — el div.show desaparece cuando la animación termina
 			await modalDialog.waitFor({ state: 'hidden', timeout: 20_000 }).catch(() => {});
 			await page.waitForTimeout(300);

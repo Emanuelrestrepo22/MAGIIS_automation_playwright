@@ -53,8 +53,10 @@ export async function captureCreatedTravelId(
 		},
 	};
 
+	// Acepta tanto /carriers/{id}/travels como /contractors/{id}/travels
+	// para cubrir el portal contractor que puede usar su propio prefijo.
 	const endpointPattern = new RegExp(
-		`/magiis-v0\\.2/carriers/${carrierId}/travels(?:\\?|$)`,
+		`/magiis-v0\\.2/(carriers|contractors)/${carrierId}/travels(?:[/?]|$)`,
 	);
 
 	const handler = async (response: Response) => {
