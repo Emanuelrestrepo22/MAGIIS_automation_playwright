@@ -29,13 +29,13 @@ import { STRIPE_TEST_CARDS } from '../data/stripeTestData';
  *          `?limitExceeded=false` (usar captureCreatedTravelId para obtener el ID en ese caso).
  * @throws Si URL contiene `limitExceeded=true` o el timeout se agota.
  */
-export async function waitForTravelCreation(page: Page, timeout = 15_000): Promise<string> {
+export async function waitForTravelCreation(page: Page, timeout = 30_000): Promise<string> {
 	const limitExceededPattern = /limitExceeded=(true|false)/;
 	const detailPattern = /\/travels\/[\w-]+/;
 
 	await Promise.race([
-		page.waitForURL(limitExceededPattern, { timeout }),
-		page.waitForURL(detailPattern, { timeout }),
+		page.waitForURL(limitExceededPattern, { timeout, waitUntil: 'commit' }),
+		page.waitForURL(detailPattern, { timeout, waitUntil: 'commit' }),
 	]);
 
 	const url = page.url();

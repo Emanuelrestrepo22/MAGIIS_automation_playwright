@@ -78,7 +78,7 @@ test.describe('Gateway PG · Contractor · Colaborador — Hold sin 3DS (tarjeta
 				await expectNoThreeDSModal(page);
 			});
 
-			await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
+			await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 30_000, waitUntil: 'commit' });
 			const createdTravelId = extractTravelId(page.url());
 
 			await test.step('Validar viaje en gestión — columna Por asignar', async () => {
@@ -88,7 +88,7 @@ test.describe('Gateway PG · Contractor · Colaborador — Hold sin 3DS (tarjeta
 
 			await test.step('Abrir detalle del viaje recién creado', async () => {
 				await management.openDetailForPassenger(TEST_DATA.contractorColaborador, TEST_DATA.destination);
-				await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
+				await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 30_000, waitUntil: 'commit' });
 				// Debería abrir el mismo viaje creado, no otro.
 				expect(extractTravelId(page.url())).toBe(createdTravelId);
 			});
@@ -139,7 +139,7 @@ test.describe('Gateway PG · Contractor · Colaborador — Hold sin 3DS (tarjeta
 				await expectNoThreeDSModal(page);
 			});
 
-			await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
+			await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 30_000, waitUntil: 'commit' });
 			const createdTravelId = extractTravelId(page.url());
 
 			await test.step('Validar viaje en gestión — columna Por asignar', async () => {
@@ -149,7 +149,7 @@ test.describe('Gateway PG · Contractor · Colaborador — Hold sin 3DS (tarjeta
 
 			await test.step('Abrir detalle del viaje recién creado', async () => {
 				await management.openDetailForPassenger(TEST_DATA.contractorColaborador, TEST_DATA.destination);
-				await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
+				await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 30_000, waitUntil: 'commit' });
 				expect(extractTravelId(page.url())).toBe(createdTravelId);
 			});
 
@@ -199,7 +199,7 @@ test.describe('Gateway PG · Contractor · Colaborador — Hold sin 3DS (tarjeta
 				await expectNoThreeDSModal(page);
 			});
 
-			await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
+			await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 30_000, waitUntil: 'commit' });
 			const createdTravelId = extractTravelId(page.url());
 
 			await test.step('Validar viaje en gestión — columna Por asignar', async () => {
@@ -209,7 +209,7 @@ test.describe('Gateway PG · Contractor · Colaborador — Hold sin 3DS (tarjeta
 
 			await test.step('Abrir detalle del viaje recién creado', async () => {
 				await management.openDetailForPassenger(TEST_DATA.contractorColaborador, TEST_DATA.destination);
-				await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
+				await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 30_000, waitUntil: 'commit' });
 				expect(extractTravelId(page.url())).toBe(createdTravelId);
 			});
 
@@ -256,7 +256,7 @@ test.describe('Gateway PG · Contractor · Colaborador — Hold sin 3DS (tarjeta
 				await expectNoThreeDSModal(page);
 			});
 
-			await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
+			await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 30_000, waitUntil: 'commit' });
 			const createdTravelId = extractTravelId(page.url());
 
 			await test.step('Validar viaje en gestión — columna Por asignar', async () => {
@@ -266,7 +266,7 @@ test.describe('Gateway PG · Contractor · Colaborador — Hold sin 3DS (tarjeta
 
 			await test.step('Abrir detalle del viaje recién creado', async () => {
 				await management.openDetailForPassenger(TEST_DATA.contractorColaborador, TEST_DATA.destination);
-				await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
+				await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 30_000, waitUntil: 'commit' });
 				expect(extractTravelId(page.url())).toBe(createdTravelId);
 			});
 

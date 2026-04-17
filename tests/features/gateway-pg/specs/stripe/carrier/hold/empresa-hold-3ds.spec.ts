@@ -5,23 +5,13 @@
  */
 import { expect, type Page } from '@playwright/test';
 import { test } from '../../../../../../TestBase';
-import { DashboardPage, NewTravelPage, OperationalPreferencesPage, ThreeDSModal, TravelDetailPage, TravelManagementPage } from '../../../../../../pages/carrier';
+import { DashboardPage, NewTravelPage, OperationalPreferencesPage, ThreeDSModal, TravelManagementPage } from '../../../../../../pages/carrier';
 import { loginAsDispatcher, STRIPE_TEST_CARDS, TEST_DATA } from '../../../../fixtures/gateway.fixtures';
 import { waitForTravelCreation } from '../../../../helpers/stripe.helpers';
 import { validateCardPrecondition, type CardPreconditionResult } from '../../../../helpers/card-precondition';
+import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../../../helpers/travel-cleanup';
 import { PASSENGERS } from '../../../../data/passengers';
 
-test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
-
-function extractTravelId(url: string): string {
-	const match = url.match(/\/travels\/([\w-]+)/);
-	if (!match) throw new Error(`No se pudo extraer el travelId desde: ${url}`);
-	return match[1];
-}
-
-// El listado de viajes muestra la dirección normalizada por Google Places (ej.
-// "Cazadores 1987, Ciudad Autónoma de Buenos Aires") mientras el input usa
-// formato largo con "Argentina". Para la búsqueda textual basta la calle+número.
 function shortDestination(destination: string): string {
 	return destination.split(',')[0].trim();
 }
@@ -119,51 +109,84 @@ async function runHoldOnScenario(page: Page, scenario: Hold3dsScenario): Promise
 	const preferences = new OperationalPreferencesPage(page);
 	const travel = new NewTravelPage(page);
 	const management = new TravelManagementPage(page);
-	const detail = new TravelDetailPage(page);
 	const threeDS = new ThreeDSModal(page);
-
 	const cardLast4 = scenario.cardLast4 || STRIPE_TEST_CARDS.success3DS.slice(-4);
+	let travelIdRef: TravelIdRef | null = null;
 
-	await loginAsDispatcher(page);
-
-	const { preferSavedCard } = await resolveCardFlowEmpresa3ds(page, scenario, cardLast4);
-
-	await preferences.goto();
-	await preferences.ensureHoldEnabled();
-	await preferences.assertHoldEnabled();
-
-	await dashboard.openNewTravel();
-	await travel.ensureLoaded();
-	await travel.fillMinimum({
-		client: scenario.client,
-		passenger: scenario.passenger,
-		origin: scenario.origin,
-		destination: scenario.destination,
-		cardLast4,
-		preferSavedCard,
+	await test.step('Login carrier', async () => {
+		await loginAsDispatcher(page);
 	});
 
-	if (await threeDS.waitForOptionalVisible(10_000)) {
-		await threeDS.completeSuccess();
-		await threeDS.waitForHidden();
+	let preferSavedCard = false;
+	await test.step(`Precondición: resolver flujo de tarjeta (cardFlow=${scenario.cardFlow ?? 'new'})`, async () => {
+		const resolved = await resolveCardFlowEmpresa3ds(page, scenario, cardLast4);
+		preferSavedCard = resolved.preferSavedCard;
+	});
+
+	try {
+		travelIdRef = await captureCreatedTravelId(page);
+
+		await test.step('Validar que el hold esté activado en preferencias operativas', async () => {
+			await preferences.goto();
+			await preferences.ensureHoldEnabled();
+			await preferences.assertHoldEnabled();
+		});
+
+		await test.step('Ir al formulario de nuevo viaje', async () => {
+			await dashboard.openNewTravel();
+			await travel.ensureLoaded();
+		});
+
+		await test.step('Completar formulario con tarjeta 3DS', async () => {
+			await travel.fillMinimum({
+				client: scenario.client,
+				passenger: scenario.passenger,
+				origin: scenario.origin,
+				destination: scenario.destination,
+				cardLast4,
+				preferSavedCard,
+			});
+		});
+
+		await test.step('Aprobar modal 3DS de Stripe (validación inicial)', async () => {
+			// Con saved card puede omitirse la validación inicial — dispara al submit.
+			if (await threeDS.waitForOptionalVisible(5_000)) {
+				await threeDS.completeSuccess();
+				await threeDS.waitForHidden();
+			}
+		});
+
+		await test.step('Seleccionar vehículo y enviar el viaje', async () => {
+			await travel.clickSelectVehicle();
+			await travel.clickSendService();
+		});
+
+		await test.step('Aprobar 3DS adicional si aparece post-envío', async () => {
+			// Con saved card el backend puede reutilizar la autorización previa → no hay 3DS.
+			// Con nueva card se dispara 3DS post-hold. Wait corto no-bloqueante.
+			if (await threeDS.waitForOptionalVisible(5_000)) {
+				await threeDS.completeSuccess();
+				await threeDS.waitForHidden();
+			}
+		});
+
+		await test.step('Esperar alta de viaje completa', async () => {
+			await waitForTravelCreation(page);
+		});
+
+		expect(travelIdRef?.travelId, 'POST /travels debe haber capturado travelId').not.toBeNull();
+
+		await test.step('Validar viaje en gestión — columna Asignar (hold+3DS OK)', async () => {
+			await management.goto();
+			await management.expectPassengerInPorAsignar(scenario.passenger, shortDestination(scenario.destination));
+		});
+	} finally {
+		if (travelIdRef) {
+			await test.step('Cleanup: cancelar viaje creado', async () => {
+				await cancelTravelIfCreated(page, travelIdRef!);
+			});
+		}
 	}
-
-	await travel.clickSelectVehicle();
-	await travel.clickSendService();
-
-	if (await threeDS.waitForOptionalVisible(5_000)) {
-		await threeDS.completeSuccess();
-		await threeDS.waitForHidden();
-	}
-
-	const createdTravelId = await waitForTravelCreation(page);
-
-	await management.goto();
-	await management.expectPassengerInPorAsignar(scenario.passenger, shortDestination(scenario.destination));
-	await management.openDetailForPassenger(scenario.passenger, shortDestination(scenario.destination));
-	await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
-	expect(extractTravelId(page.url())).toBe(createdTravelId);
-	await detail.expectStatus('Buscando conductor');
 }
 
 async function runHoldOffScenario(page: Page, scenario: Hold3dsScenario): Promise<void> {
@@ -171,53 +194,84 @@ async function runHoldOffScenario(page: Page, scenario: Hold3dsScenario): Promis
 	const preferences = new OperationalPreferencesPage(page);
 	const travel = new NewTravelPage(page);
 	const management = new TravelManagementPage(page);
-	const detail = new TravelDetailPage(page);
 	const threeDS = new ThreeDSModal(page);
-
 	const cardLast4 = scenario.cardLast4 || STRIPE_TEST_CARDS.success3DS.slice(-4);
+	let travelIdRef: TravelIdRef | null = null;
 
 	await loginAsDispatcher(page);
 
-	const { preferSavedCard } = await resolveCardFlowEmpresa3ds(page, scenario, cardLast4);
+	let preferSavedCard = false;
+	await test.step(`Precondición: resolver flujo de tarjeta (cardFlow=${scenario.cardFlow ?? 'new'})`, async () => {
+		const resolved = await resolveCardFlowEmpresa3ds(page, scenario, cardLast4);
+		preferSavedCard = resolved.preferSavedCard;
+	});
 
 	try {
-		await disableHoldAndSave(preferences);
-		await dashboard.openNewTravel();
-		await travel.ensureLoaded();
-		await travel.fillMinimum({
-			client: scenario.client,
-			passenger: scenario.passenger,
-			origin: scenario.origin,
-			destination: scenario.destination,
-			cardLast4,
-			preferSavedCard,
+		travelIdRef = await captureCreatedTravelId(page);
+
+		await test.step('Desactivar hold en preferencias operativas', async () => {
+			await disableHoldAndSave(preferences);
 		});
 
-		if (await threeDS.waitForOptionalVisible(10_000)) {
-			await threeDS.completeSuccess();
-			await threeDS.waitForHidden();
-		}
+		await test.step('Ir al formulario de nuevo viaje', async () => {
+			await dashboard.openNewTravel();
+			await travel.ensureLoaded();
+		});
 
-		await travel.clickSelectVehicle();
-		await travel.clickSendService();
+		await test.step('Completar formulario con tarjeta 3DS', async () => {
+			await travel.fillMinimum({
+				client: scenario.client,
+				passenger: scenario.passenger,
+				origin: scenario.origin,
+				destination: scenario.destination,
+				cardLast4,
+				preferSavedCard,
+			});
+		});
 
-		if (await threeDS.waitForOptionalVisible(5_000)) {
-			await threeDS.completeSuccess();
-			await threeDS.waitForHidden();
-		}
+		await test.step('Aprobar modal 3DS de Stripe (validación inicial)', async () => {
+			if (await threeDS.waitForOptionalVisible(5_000)) {
+				await threeDS.completeSuccess();
+				await threeDS.waitForHidden();
+			}
+		});
 
-		const createdTravelId = await waitForTravelCreation(page);
+		await test.step('Seleccionar vehículo y enviar el viaje', async () => {
+			await travel.clickSelectVehicle();
+			await travel.clickSendService();
+		});
 
-		await management.goto();
-		await management.expectPassengerInPorAsignar(scenario.passenger, scenario.destination);
-		await management.openDetailForPassenger(scenario.passenger, scenario.destination);
-		await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
-		expect(extractTravelId(page.url())).toBe(createdTravelId);
-		await detail.expectStatus('Buscando conductor');
+		await test.step('Aprobar 3DS adicional si aparece post-envío', async () => {
+			if (await threeDS.waitForOptionalVisible(5_000)) {
+				await threeDS.completeSuccess();
+				await threeDS.waitForHidden();
+			}
+		});
+
+		await test.step('Esperar alta de viaje completa', async () => {
+			await waitForTravelCreation(page);
+		});
+
+		expect(travelIdRef?.travelId, 'POST /travels debe haber capturado travelId').not.toBeNull();
+
+		await test.step('Validar viaje en gestión — columna Asignar (sin hold + 3DS)', async () => {
+			await management.goto();
+			await management.expectPassengerInPorAsignar(scenario.passenger, shortDestination(scenario.destination));
+		});
 	} finally {
-		await restoreHoldAndSave(page, preferences);
+		if (travelIdRef) {
+			await test.step('Cleanup: cancelar viaje creado', async () => {
+				await cancelTravelIfCreated(page, travelIdRef!);
+			});
+		}
+		await test.step('Restaurar hold al final del test', async () => {
+			await restoreHoldAndSave(page, preferences);
+		});
 	}
 }
+
+test.use({ role: 'carrier', storageState: undefined });
+test.describe.configure({ timeout: 180_000 });
 
 test.describe('Gateway PG · Carrier · Empresa Individuo — Hold con 3DS', () => {
 

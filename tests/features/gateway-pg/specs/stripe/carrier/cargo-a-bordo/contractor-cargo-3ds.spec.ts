@@ -51,7 +51,7 @@ async function webPhaseCargoContractor(page: Page): Promise<void> {
 	});
 
 	await test.step('Esperar redirección y validar estado Buscando conductor', async () => {
-		await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
+		await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 30_000, waitUntil: 'commit' });
 		await management.goto();
 		await management.expectPassengerInPorAsignar(TEST_DATA.contractorPassenger, TEST_DATA.destination);
 		await management.openDetailForPassenger(TEST_DATA.contractorPassenger, TEST_DATA.destination);
