@@ -1,11 +1,11 @@
 import type { Page } from '@playwright/test';
 import {
 	NewTravelPage,
-	ThreeDSModal,
-	ThreeDSErrorPopup,
+	TravelDetailPage,
 	OperationalPreferencesPage
 } from '../../../pages/carrier';
 import { STRIPE_TEST_CARDS } from '../data/stripeTestData';
+import { captureCreatedTravelId } from './travel-cleanup';
 
 /**
  * Espera el URL post-submit del alta de viaje.
@@ -61,22 +61,28 @@ export async function setupTravelWithFailed3DS(
 ): Promise<string> {
 	const preferences = new OperationalPreferencesPage(page);
 	const travel = new NewTravelPage(page);
-	const threeDS = new ThreeDSModal(page);
-	const popup = new ThreeDSErrorPopup(page);
 
 	await preferences.goto();
 	await preferences.ensureHoldEnabled();
 	await travel.goto();
+
+	const travelIdRef = await captureCreatedTravelId(page);
 	await travel.fillMinimum({
 		...opts,
 		cardLast4: STRIPE_TEST_CARDS.fail3DS.slice(-4)
 	});
 	await travel.submit();
 
-	await threeDS.waitForVisible();
-	await threeDS.completeFail();
-	await popup.waitForVisible();
-	await popup.accept();
+	// Card 9235: backend procesa el fallo 3DS sin mostrar challenge frame.
+	// Viaje creado con NO_AUTORIZADO; URL post-submit: ?limitExceeded=false.
+	await waitForTravelCreation(page);
+	await travelIdRef.dispose();
 
-	return extractTravelIdFromUrl(page);
+	const travelId = travelIdRef.travelId;
+	if (travelId) {
+		const detail = new TravelDetailPage(page);
+		await detail.goto(String(travelId));
+		return String(travelId);
+	}
+	return '';
 }

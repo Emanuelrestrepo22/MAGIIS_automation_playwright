@@ -108,6 +108,16 @@ export class TravelManagementPage {
 		}
 	}
 
+	async expectPassengerInEnConflicto(passenger: string, destination?: string): Promise<void> {
+		const enConflictoTab = this.page.locator('tabset ul li a').filter({ hasText: /en conflicto/i }).first();
+		await expect(enConflictoTab).toBeVisible({ timeout: 10_000 });
+		await enConflictoTab.click();
+		await this.page.waitForSelector('table tbody', { state: 'visible', timeout: 15_000 }).catch(() => {});
+		const row = await this.tripRow(passenger, destination);
+		await expect(row).toBeVisible({ timeout: 10_000 });
+		await expect(row).toContainText(/No autorizado|NO_AUTORIZADO/i, { timeout: 10_000 });
+	}
+
 	async openDetailForPassenger(passenger: string, destination?: string): Promise<void> {
 		const row = await this.tripRow(passenger, destination);
 		await expect(row).toBeVisible({ timeout: 10_000 });
