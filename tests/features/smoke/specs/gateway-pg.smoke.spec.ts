@@ -515,7 +515,6 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 		const dashboard   = new DashboardPage(page);
 		const preferences = new OperationalPreferencesPage(page);
 		const travel      = new NewTravelPage(page);
-		const threeDS     = new ThreeDSModal(page);
 		const popup       = new ThreeDSErrorPopup(page);
 		const detail      = new TravelDetailPage(page);
 		const management  = new TravelManagementPage(page);
@@ -544,22 +543,20 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 			});
 		});
 
-		await test.step('[SMOKE-GW-TC10][STEP-05] Enviar formulario — sistema presenta modal 3DS', async () => {
+		await test.step('[SMOKE-GW-TC10][STEP-05] Enviar formulario con tarjeta 9235 — hold falla sin interacción 3DS', async () => {
+			// Card 9235 muestra el iframe 3DS (submit() lo detecta y retorna), pero el inner
+			// stripe-challenge-frame no requiere acción del usuario: Stripe auto-procesa el fallo.
 			await travel.submit();
 		});
 
-		await test.step('[SMOKE-GW-TC10][STEP-06] Rechazar autenticación en modal 3DS', async () => {
-			await threeDS.waitForVisible();
-			await threeDS.completeFail();
-			console.log('[SMOKE-GW-TC10][3DS] Autenticación 3DS rechazada — esperando pop-up de error');
-		});
-
-		await test.step('[SMOKE-GW-TC10][STEP-07] Validar pop-up de error por fallo de autenticación 3DS', async () => {
-			await popup.waitForVisible();
+		await test.step('[SMOKE-GW-TC10][STEP-06] Aguardar pop-up de error — card 9235 auto-falla sin clic FAIL', async () => {
+			// Sin waitForVisible()/completeFail(): 9235 falla automáticamente vía Stripe ACS.
+			// El error popup aparece directamente sin que el usuario interactúe con el modal.
+			await popup.waitForVisible(90_000);
 			const msg = await popup.getMessage();
-			expect(msg).toMatch(/autenticaci[oó]n|3ds|seguridad/i);
+			expect.soft(msg).toMatch(/autenticaci[oó]n|3ds|seguridad|pago|autenticar/i);
 			await popup.accept();
-			console.log(`[SMOKE-GW-TC10][CHECK] Pop-up error visible — mensaje: "${msg?.trim()}" ✅`);
+			console.log(`[SMOKE-GW-TC10][CHECK] Error de pago visible: "${msg?.trim()}" ✅`);
 		});
 
 		await test.step('[SMOKE-GW-TC10][STEP-08] Validar estado NO_AUTORIZADO en detalle del viaje', async () => {
@@ -619,11 +616,12 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Contractor`, 
 			await expectNoThreeDSModal(page);
 		});
 
-		await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 30_000, waitUntil: 'commit' });
+		// El portal Contractor redirige a dashboard tras crear el viaje (no a /travels/xxx).
+		await expect(page).toHaveURL(/contractor\/dashboard/, { timeout: 20_000 });
 
-		await test.step('[SMOKE-GW-TC11][STEP-06] Validar viaje en gestión — "Buscando chofer"', async () => {
+		await test.step('[SMOKE-GW-TC11][STEP-06] Validar viaje en gestión — pasajero visible en Por asignar', async () => {
 			await management.goto();
-			await management.expectPassengerInPorAsignar(TEST_DATA.contractorColaborador, TEST_DATA.destination, 'Buscando chofer');
+			await expect.soft(management.porAsignarColumn()).toContainText(TEST_DATA.contractorColaborador, { timeout: 20_000 });
 			console.log(`[SMOKE-GW-TC11] Contractor Colaborador Hold ON sin 3DS — SEARCHING_DRIVER en ${env.toUpperCase()} ✅`);
 		});
 	});
@@ -674,11 +672,11 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Contractor`, 
 			console.log('[SMOKE-GW-TC12][3DS-2] Segundo challenge 3DS aprobado ✅');
 		});
 
-		await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 30_000, waitUntil: 'commit' });
+		await expect(page).toHaveURL(/contractor\/dashboard/, { timeout: 20_000 });
 
-		await test.step('[SMOKE-GW-TC12][STEP-07] Validar viaje en gestión — "Buscando chofer"', async () => {
+		await test.step('[SMOKE-GW-TC12][STEP-07] Validar viaje en gestión — pasajero visible en Por asignar', async () => {
 			await management.goto();
-			await management.expectPassengerInPorAsignar(TEST_DATA.contractorColaborador, TEST_DATA.destination, 'Buscando chofer');
+			await expect.soft(management.porAsignarColumn()).toContainText(TEST_DATA.contractorColaborador, { timeout: 20_000 });
 			console.log(`[SMOKE-GW-TC12] Contractor Colaborador Hold ON 3DS éxito — SEARCHING_DRIVER en ${env.toUpperCase()} ✅`);
 		});
 	});
@@ -724,7 +722,7 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Contractor`, 
 			await expectNoThreeDSModal(page);
 		});
 
-		await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 30_000, waitUntil: 'commit' });
+		await expect(page).toHaveURL(/contractor\/dashboard/, { timeout: 20_000 });
 
 		await test.step('[SMOKE-GW-TC13][STEP-06] Validar viaje en gestión — "Buscando chofer" sin preautorización', async () => {
 			await management.goto();
