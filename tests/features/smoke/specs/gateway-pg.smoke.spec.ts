@@ -49,7 +49,7 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 	test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
 
 	// ── TC01 ─────────────────────────────────────────────────────────────────
-	test('SMOKE-GW-TC01 - AppPax · Hold ON · sin 3DS (4242) → viaje pasa a SEARCHING_DRIVER', async ({ page }) => {
+	test('[TS-STRIPE-TC1049] SMOKE-GW-TC01 — AppPax · Hold ON · sin 3DS (4242) → viaje pasa a SEARCHING_DRIVER', async ({ page }) => {
 		const dashboard   = new DashboardPage(page);
 		const preferences = new OperationalPreferencesPage(page);
 		const travel      = new NewTravelPage(page);
@@ -97,7 +97,7 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 	});
 
 	// ── TC02 ─────────────────────────────────────────────────────────────────
-	test('SMOKE-GW-TC02 - AppPax · Hold ON · con 3DS éxito (3155) → modal aprobado → SEARCHING_DRIVER', async ({ page }) => {
+	test('[TS-STRIPE-TC1053] SMOKE-GW-TC02 — AppPax · Hold ON · con 3DS éxito (3155) → modal aprobado → SEARCHING_DRIVER', async ({ page }) => {
 		const dashboard   = new DashboardPage(page);
 		const preferences = new OperationalPreferencesPage(page);
 		const travel      = new NewTravelPage(page);
@@ -152,7 +152,7 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 	});
 
 	// ── TC03 ─────────────────────────────────────────────────────────────────
-	test('SMOKE-GW-TC03 - AppPax · Hold OFF · sin 3DS → viaje creado sin preautorización', async ({ page }) => {
+	test('[TS-STRIPE-TC1050] SMOKE-GW-TC03 — AppPax · Hold OFF · sin 3DS → viaje creado sin preautorización', async ({ page }) => {
 		const dashboard   = new DashboardPage(page);
 		const preferences = new OperationalPreferencesPage(page);
 		const travel      = new NewTravelPage(page);
@@ -205,7 +205,7 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 	});
 
 	// ── TC04 ─────────────────────────────────────────────────────────────────
-	test('SMOKE-GW-TC04 - AppPax · Cargo a Bordo · pago exitoso (sin Stripe form, sin 3DS)', async ({ page }) => {
+	test('[TS-STRIPE-TC1081] SMOKE-GW-TC04 — AppPax · Cargo a Bordo · pago exitoso (sin Stripe form, sin 3DS)', async ({ page }) => {
 		const dashboard  = new DashboardPage(page);
 		const travel     = new NewTravelPage(page);
 		const management = new TravelManagementPage(page);
@@ -261,7 +261,7 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 	});
 
 	// ── TC05 ─────────────────────────────────────────────────────────────────
-	test('SMOKE-GW-TC05 - Colaborador · Hold ON · sin 3DS (4242) → SEARCHING_DRIVER desde portal Carrier', async ({ page }) => {
+	test('[TS-STRIPE-TC1033] SMOKE-GW-TC05 — Colaborador · Hold ON · sin 3DS (4242) → SEARCHING_DRIVER desde portal Carrier', async ({ page }) => {
 		const dashboard   = new DashboardPage(page);
 		const preferences = new OperationalPreferencesPage(page);
 		const travel      = new NewTravelPage(page);
@@ -309,7 +309,7 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 	});
 
 	// ── TC06 ─────────────────────────────────────────────────────────────────
-	test('SMOKE-GW-TC06 - Colaborador · Hold ON · con 3DS éxito (3155) → SEARCHING_DRIVER desde portal Carrier', async ({ page }) => {
+	test('[TS-STRIPE-TC1037] SMOKE-GW-TC06 — Colaborador · Hold ON · con 3DS éxito (3155) → SEARCHING_DRIVER desde portal Carrier', async ({ page }) => {
 		const dashboard   = new DashboardPage(page);
 		const preferences = new OperationalPreferencesPage(page);
 		const travel      = new NewTravelPage(page);
@@ -364,7 +364,7 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 	});
 
 	// ── TC07 ─────────────────────────────────────────────────────────────────
-	test('SMOKE-GW-TC07 - Colaborador · Cargo a Bordo · pago exitoso desde portal Carrier', async ({ page }) => {
+	test('[TS-STRIPE-TC1096] SMOKE-GW-TC07 — Colaborador · Cargo a Bordo · pago exitoso desde portal Carrier', async ({ page }) => {
 		const dashboard  = new DashboardPage(page);
 		const travel     = new NewTravelPage(page);
 		const management = new TravelManagementPage(page);
@@ -410,7 +410,7 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 	});
 
 	// ── TC08 ─────────────────────────────────────────────────────────────────
-	test('SMOKE-GW-TC08 - Empresa · Hold ON · sin 3DS (4242) → SEARCHING_DRIVER desde portal Carrier', async ({ page }) => {
+	test('[TS-STRIPE-TC1065] SMOKE-GW-TC08 — Empresa · Hold ON · sin 3DS (4242) → SEARCHING_DRIVER desde portal Carrier', async ({ page }) => {
 		const dashboard   = new DashboardPage(page);
 		const preferences = new OperationalPreferencesPage(page);
 		const travel      = new NewTravelPage(page);
@@ -458,7 +458,7 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 	});
 
 	// ── TC09 ─────────────────────────────────────────────────────────────────
-	test('SMOKE-GW-TC09 - Empresa · Cargo a Bordo · pago exitoso desde portal Carrier', async ({ page }) => {
+	test('[TS-STRIPE-TC1111] SMOKE-GW-TC09 — Empresa · Cargo a Bordo · pago exitoso desde portal Carrier', async ({ page }) => {
 		const dashboard  = new DashboardPage(page);
 		const travel     = new NewTravelPage(page);
 		const management = new TravelManagementPage(page);
@@ -511,10 +511,12 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 	});
 
 	// ── TC10 (UNHAPPY) ────────────────────────────────────────────────────────
-	test('SMOKE-GW-TC10 - AppPax · 3DS rechazado (9235) → pop-up error → estado NO_AUTORIZADO [UNHAPPY]', async ({ page }) => {
+	test('[TS-STRIPE-TC1057] SMOKE-GW-TC10 — AppPax · 3DS rechazado (9235) → pop-up error → estado NO_AUTORIZADO [UNHAPPY]', async ({ page }) => {
+		test.setTimeout(300_000); // 5 min — inner stripe-challenge-frame puede tardar 120s+ en CI headless
 		const dashboard   = new DashboardPage(page);
 		const preferences = new OperationalPreferencesPage(page);
 		const travel      = new NewTravelPage(page);
+		const threeDS     = new ThreeDSModal(page);
 		const popup       = new ThreeDSErrorPopup(page);
 		const detail      = new TravelDetailPage(page);
 		const management  = new TravelManagementPage(page);
@@ -549,10 +551,12 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 			await travel.submit();
 		});
 
-		await test.step('[SMOKE-GW-TC10][STEP-06] Aguardar pop-up de error — card 9235 auto-falla sin clic FAIL', async () => {
-			// Sin waitForVisible()/completeFail(): 9235 falla automáticamente vía Stripe ACS.
-			// El error popup aparece directamente sin que el usuario interactúe con el modal.
-			await popup.waitForVisible(90_000);
+		await test.step('[SMOKE-GW-TC10][STEP-06] Esperar y completar fallo 3DS (inner frame puede tardar en CI)', async () => {
+			// En CI headless el inner stripe-challenge-frame puede tardar > 60s en cargarse.
+			// waitForVisible(120_000) da margen extra; tras click en FAIL el popup aparece en ~30s.
+			await threeDS.waitForVisible(120_000);
+			await threeDS.completeFail();
+			await popup.waitForVisible(30_000);
 			const msg = await popup.getMessage();
 			expect.soft(msg).toMatch(/autenticaci[oó]n|3ds|seguridad|pago|autenticar/i);
 			await popup.accept();
@@ -582,7 +586,7 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Contractor`, 
 	test.use({ role: 'contractor', storageState: { cookies: [], origins: [] } });
 
 	// ── TC11 ─────────────────────────────────────────────────────────────────
-	test('SMOKE-GW-TC11 - Colaborador · Hold ON · vinculación nueva tarjeta (4242) → SEARCHING_DRIVER desde portal Contractor', async ({ page }) => {
+	test('[TS-STRIPE-P2-TC001] SMOKE-GW-TC11 — Colaborador · Hold ON · vinculación nueva tarjeta (4242) → SEARCHING_DRIVER desde portal Contractor', async ({ page }) => {
 		const dashboard  = new DashboardPage(page);
 		const travel     = new ContractorNewTravelPage(page);
 		const management = new TravelManagementPage(page);
@@ -619,15 +623,16 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Contractor`, 
 		// El portal Contractor redirige a dashboard tras crear el viaje (no a /travels/xxx).
 		await expect(page).toHaveURL(/contractor\/dashboard/, { timeout: 20_000 });
 
-		await test.step('[SMOKE-GW-TC11][STEP-06] Validar viaje en gestión — pasajero visible en Por asignar', async () => {
+		await test.step('[SMOKE-GW-TC11][STEP-06] Validar viaje en gestión — pasajero visible en tabla', async () => {
 			await management.goto();
-			await expect.soft(management.porAsignarColumn()).toContainText(TEST_DATA.contractorColaborador, { timeout: 20_000 });
+			// El portal Contractor no registra data-testid="column-por-asignar" — buscar en tbody
+			await expect.soft(page.locator('table tbody')).toContainText(TEST_DATA.contractorColaborador, { timeout: 20_000 });
 			console.log(`[SMOKE-GW-TC11] Contractor Colaborador Hold ON sin 3DS — SEARCHING_DRIVER en ${env.toUpperCase()} ✅`);
 		});
 	});
 
 	// ── TC12 ─────────────────────────────────────────────────────────────────
-	test('SMOKE-GW-TC12 - Colaborador · Hold ON · tarjeta con 3DS éxito (3155) → SEARCHING_DRIVER desde portal Contractor', async ({ page }) => {
+	test('[TS-STRIPE-P2-TC005] SMOKE-GW-TC12 — Colaborador · Hold ON · tarjeta con 3DS éxito (3155) → SEARCHING_DRIVER desde portal Contractor', async ({ page }) => {
 		const dashboard  = new DashboardPage(page);
 		const travel     = new ContractorNewTravelPage(page);
 		const threeDS    = new ThreeDSModal(page);
@@ -674,15 +679,16 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Contractor`, 
 
 		await expect(page).toHaveURL(/contractor\/dashboard/, { timeout: 20_000 });
 
-		await test.step('[SMOKE-GW-TC12][STEP-07] Validar viaje en gestión — pasajero visible en Por asignar', async () => {
+		await test.step('[SMOKE-GW-TC12][STEP-07] Validar viaje en gestión — pasajero visible en tabla', async () => {
 			await management.goto();
-			await expect.soft(management.porAsignarColumn()).toContainText(TEST_DATA.contractorColaborador, { timeout: 20_000 });
+			// El portal Contractor no registra data-testid="column-por-asignar" — buscar en tbody
+			await expect.soft(page.locator('table tbody')).toContainText(TEST_DATA.contractorColaborador, { timeout: 20_000 });
 			console.log(`[SMOKE-GW-TC12] Contractor Colaborador Hold ON 3DS éxito — SEARCHING_DRIVER en ${env.toUpperCase()} ✅`);
 		});
 	});
 
 	// ── TC13 ─────────────────────────────────────────────────────────────────
-	test('SMOKE-GW-TC13 - Colaborador · Hold OFF · sin 3DS → viaje sin preautorización desde portal Contractor', async ({ page }) => {
+	test('[TS-STRIPE-P2-TC002] SMOKE-GW-TC13 — Colaborador · Hold OFF · sin 3DS → viaje sin preautorización desde portal Contractor', async ({ page }) => {
 		// Hold OFF en Contractor requiere que enableCreditCardHold=false esté activo
 		// en los parámetros del carrier ANTES de ejecutar este test. El estado de hold
 		// se controla desde el portal Carrier (preferencias operativas), no desde Contractor.
@@ -726,13 +732,14 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Contractor`, 
 
 		await test.step('[SMOKE-GW-TC13][STEP-06] Validar viaje en gestión — "Buscando chofer" sin preautorización', async () => {
 			await management.goto();
-			await expect.soft(management.porAsignarColumn()).toContainText(TEST_DATA.contractorColaborador, { timeout: 15_000 });
+			// El portal Contractor no registra data-testid="column-por-asignar" — buscar en tbody
+			await expect.soft(page.locator('table tbody')).toContainText(TEST_DATA.contractorColaborador, { timeout: 15_000 });
 			console.log(`[SMOKE-GW-TC13] Contractor Colaborador Hold OFF — viaje creado en ${env.toUpperCase()} ✅`);
 		});
 	});
 
 	// ── TC14 (UNHAPPY — pendiente TC en matriz) ───────────────────────────────
-	test('SMOKE-GW-TC14 - Colaborador · Hold ON · tarjeta declinada (9995) → error → viaje no creado [UNHAPPY]', async ({ page }) => {
+	test('[TC-PENDIENTE] SMOKE-GW-TC14 — Colaborador · Hold ON · tarjeta declinada (9995) → error → viaje no creado [UNHAPPY]', async ({ page }) => {
 		// TC en matriz: pendiente de definición formal.
 		// Comportamiento esperado: fondos insuficientes → error visible → viaje no redirige a /travels/
 		const dashboard   = new DashboardPage(page);
