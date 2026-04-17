@@ -15,6 +15,8 @@ import type { Page } from '@playwright/test';
 import { test } from '../../../../../../TestBase';
 import { DashboardPage, NewTravelPage, TravelDetailPage, TravelManagementPage } from '../../../../../../pages/carrier';
 import { expectNoThreeDSModal, loginAsDispatcher, TEST_DATA } from '../../../../fixtures/gateway.fixtures';
+import { validateCardPrecondition } from '../../../../helpers/card-precondition';
+import { PASSENGERS } from '../../../../data/passengers';
 
 test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
 test.describe.configure({ timeout: 120_000 });
@@ -27,6 +29,19 @@ async function webPhaseCargoAppPax(page: Page): Promise<void> {
 
 	await test.step('Login carrier', async () => {
 		await loginAsDispatcher(page);
+	});
+
+	await test.step('Precondición: validar tarjeta 3DS (3155) vinculada al pasajero appPax', async () => {
+		const check = await validateCardPrecondition(page, {
+			passengerName: PASSENGERS.appPax.apiSearchQuery!,
+			requiredLast4: '3155',
+		});
+		console.log(`[card-precondition] ${PASSENGERS.appPax.name}: ${check.activeCards} tarjetas, tiene 3155: ${check.hasRequiredCard}, limpiadas: ${check.cardsDeleted}`);
+		if (!check.hasRequiredCard) {
+			throw new Error(
+				`[TC1092] PRECONDICIÓN NO CUMPLIDA: pasajero appPax sin tarjeta 3DS 3155 activa (tarjetas activas: ${check.activeCards}). Vincular manualmente en TEST antes de ejecutar.`
+			);
+		}
 	});
 
 	await test.step('Ir al formulario de nuevo viaje', async () => {
