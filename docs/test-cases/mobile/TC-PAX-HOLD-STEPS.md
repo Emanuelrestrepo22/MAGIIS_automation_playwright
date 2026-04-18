@@ -72,24 +72,35 @@
 ## Flujo 2 — Happy path HOLD sin 3DS (4242 4242 4242 4242)
 
 > **Precondiciones:** idéntico a Flujo 1; wallet limpio.
+> Tarjeta `4242 4242 4242 4242` no requiere challenge 3DS — el modal Visa no aparece.
 
 ### Tabla de registro
 
 | # | Acción del usuario | Pantalla resultante | Selector canónico observado | Evidencia (dump / timestamp) | Notas |
 | --- | --- | --- | --- | --- | --- |
-| 1 | Abrir **Billetera** | Billetera vacía | _(pendiente)_ | _(pendiente)_ | |
-| 2 | Tap **AGREGAR** | Modal stripe | _(pendiente)_ | _(pendiente)_ | |
-| 3-6 | Completar tarjeta + holder | Form valido | _(pendiente)_ | _(pendiente)_ | |
-| 7 | Tap **GUARDAR** | Modal cierra, tarjeta en lista (sin challenge) | _(pendiente)_ | _(pendiente)_ | |
-| 8 | Volver a Home | HomePage | _(pendiente)_ | _(pendiente)_ | |
-| 9 | Origen + Destino | Pines fijados | _(pendiente)_ | _(pendiente)_ | |
-| 10 | Seleccionar Vehículo | Lista vehículos | _(pendiente)_ | _(pendiente)_ | |
-| 11 | Método de pago → 4242 | Card principal = 4242 | _(pendiente)_ | _(pendiente)_ | |
-| 12 | Tap **Ahora** | SEARCHING_DRIVER | _(pendiente)_ | _(pendiente)_ | |
+| 1 | Desde Home, abrir menú lateral → **Billetera** | Billetera vacía | URL `https://localhost/cards`; host `app-cards`; empty state `Aún no tienes Tarjetas para este País.` | _(pendiente — reutilizar dump Flujo 1 step-01)_ | Mismo selector que Flujo 1. |
+| 2 | Tap **AGREGAR** | Modal `app-credit-card-payment-data` | Igual que Flujo 1 step-02 | _(pendiente)_ | JS click requerido por overlap con ion-item. |
+| 3 | Número tarjeta `4242 4242 4242 4242` | `StripeElement--complete` en cardNumber | `ion-item.card-number.stripe-item → .stripe-element.StripeElement--complete` | _(pendiente)_ | |
+| 4 | MM/AA `12/34` | `StripeElement--complete` en cardExpiry | `ion-item.stripe-item stripe-element-small → .StripeElement--complete` | _(pendiente)_ | |
+| 5 | CVC `123` | `StripeElement--complete` en cardCvc | Tercer `ion-item.stripe-item` → `StripeElement--complete` | _(pendiente)_ | |
+| 6 | Nombre del Titular | `has-value` en cardholderName | `ion-input[formcontrolname="cardholderName"]` con clase `has-value` | _(pendiente)_ | |
+| 7 | Tap **GUARDAR** | **Sin challenge** — modal cierra directamente; tarjeta `VISA ...4242` en lista | Igual que step-08 Flujo 1 pero sin iframe challenge Visa. `app-credit-card-payment-data` desaparece del árbol. | _(pendiente — capturar)_ | **Diferencia clave vs Flujo 1:** no aparece popup Visa. El modal se cierra apenas Stripe confirma el SetupIntent. |
+| 8 | Volver a **Home** tab | HomePage con campos vacíos | `app-home.ion-page`; tab Inicio en `ion-tabs` | _(pendiente)_ | |
+| 9 | Tap campo **Origen**, tipear, elegir sugerencia | Origen fijado | `input[placeholder="Origen "]` | _(pendiente — reutilizar Flujo 1 step-02 selectores)_ | |
+| 10 | Tap campo **Destino**, tipear, elegir sugerencia | Destino fijado | `input[placeholder="Destino "]` | _(pendiente)_ | |
+| 11 | Tap **Seleccionar Vehículo** | `app-travel-info` con estimación | `app-travel-info.ion-page`; `ion-row.travel-estimate` | _(pendiente)_ | |
+| 12 | Verificar tarjeta `...4242` preseleccionada | Payment info = `...4242` | `ion-row.travel-payment-info`; span `VISA ...4242` | _(pendiente)_ | Si aparece selector de tarjeta, reutilizar `selectPaymentCard()` del Screen. |
+| 13 | Tap **Viajo Ahora Standard** | **Sin popup 3DS** → navega a `app-driver-available` directamente | `button.travel-btn-confirm`; `app-driver-available.ion-page` | _(pendiente — capturar)_ | **Diferencia clave vs Flujo 1:** no hay challenge popup entre tap y SEARCHING. |
+| 14 | Esperar estado SEARCHING | `app-driver-available` con mapa + `Cancelar Viaje` | `a.leaflet-control-zoom-fullscreen`; `button.btn.outline` texto `Cancelar Viaje` | _(pendiente — reutilizar Flujo 1 step-08)_ | |
 
 ### Divergencias observadas vs Flujo 1
 
-- _(pendiente — completar tras ambos dumps)_
+| Paso | Flujo 1 (3DS - tarjeta 3155) | Flujo 2 (sin 3DS - tarjeta 4242) |
+| --- | --- | --- |
+| Paso 7 (GUARDAR) | Popup Visa 3DS con `COMPLETE` / `FAIL` | Modal cierra directamente sin challenge |
+| Paso 13 (Viajo Ahora) | Popup 3DS Visa antes de SEARCHING | Navega directo a `app-driver-available` |
+| Selectores Stripe | Idénticos (mismos iframes cardNumber/Expiry/Cvc) | Idénticos |
+| Estado hold Stripe | `requires_capture` (post-3DS) | `requires_capture` (directo) |
 
 ---
 
@@ -113,7 +124,18 @@
   - `tests/mobile/appium/passenger/PassengerTripStatusScreen.ts`
 - Harness afectado: `tests/mobile/appium/harness/PassengerTripHappyPathHarness.ts`
 
-## TCs derivados (2026-04-16)
+## TCs derivados
 
-- `docs/test-cases/mobile/TC-PAX-WALLET-ADD-3DS-HAPPY.md` — happy path add card con 3DS COMPLETE.
-- `docs/test-cases/mobile/TC-PAX-WALLET-ADD-3DS-FAIL-RETRY.md` — flujo de error 3DS FAIL + Reintentar + nuevo COMPLETE.
+| Fecha | TC | Descripción |
+| --- | --- | --- |
+| 2026-04-16 | `TC-PAX-WALLET-ADD-3DS-HAPPY.md` | Happy path add card con 3DS COMPLETE |
+| 2026-04-16 | `TC-PAX-WALLET-ADD-3DS-FAIL-RETRY.md` | Error 3DS FAIL + Reintentar + nuevo COMPLETE |
+| 2026-04-17 | `TC-PAX-NEW-TRIP-HOLD-3DS.md` | Alta de viaje con hold autorizado vía 3DS — validado manualmente |
+| 2026-04-17 | `TC-PAX-NEW-TRIP-BLOCKED-BY-ACTIVE-OR-CONFLICT.md` | Bloqueo por viaje activo o NO_AUTORIZADO — validado manualmente |
+
+## Screens actualizados en esta rama (mobile/pax-new-trip)
+
+| Screen | Métodos nuevos |
+| --- | --- |
+| `PassengerNewTripScreen.ts` | `detectTripAlreadyCreatedModal()`, `dismissTripAlreadyCreatedModal()` |
+| `PassengerTripHappyPathHarness.ts` | Guard `ENV_BLOCKER` en `createTrip()` si modal de bloqueo detectado |

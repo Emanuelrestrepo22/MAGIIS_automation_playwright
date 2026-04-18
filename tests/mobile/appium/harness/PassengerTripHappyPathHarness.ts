@@ -199,7 +199,23 @@ export class PassengerTripHappyPathHarness {
 			await this.newTripScreen.setOrigin(origin);
 			await this.newTripScreen.setDestination(destination);
 			await this.newTripScreen.selectPaymentCard(cardLast4);
-			return this.newTripScreen.confirmTrip();
+
+			// Guard: si el pax tiene un viaje previo activo o en NO_AUTORIZADO, la app
+			// bloquea la creación con el modal "Ya tiene un viaje creado". Se lanza como
+			// ENV_BLOCKER para que la pipeline distinga entre bug real y datos sucios.
+			const tripConfirmResult = await this.newTripScreen.confirmTrip();
+
+			const blocked = await this.newTripScreen.detectTripAlreadyCreatedModal(3_000);
+			if (blocked) {
+				await this.newTripScreen.dismissTripAlreadyCreatedModal().catch(() => {});
+				const passengerEmail = process.env.PASSENGER_EMAIL?.trim() || 'unknown-passenger';
+				throw new Error(
+					`ENV_BLOCKER: Passenger ${passengerEmail} has an active or NO_AUTORIZADO trip that blocks new trip creation. ` +
+					'Clean up via Carrier portal before re-running.'
+				);
+			}
+
+			return tripConfirmResult;
 		});
 	}
 
