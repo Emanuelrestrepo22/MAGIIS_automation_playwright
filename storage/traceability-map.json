@@ -238,7 +238,7 @@
       },
       {
         "id": "TS-STRIPE-TC1011",
-        "title": "E2E Alta carrier de Viaje para usuario app pax app modo personal con Tarjeta Preautorizada Hold y Cobro desde App Driver.",
+        "title": "E2E Alta de Viaje desde app pax para usuario app pax app modo personal con Tarjeta Preautorizada Hold y Cobro desde App Driver.",
         "portal": "carrier",
         "priority": "P1",
         "type": "positivo",
@@ -261,7 +261,7 @@
       },
       {
         "id": "TS-STRIPE-TC1012",
-        "title": "E2E Alta carrier de Viaje para usuario app pax app modo personal con Tarjeta Preautorizada sin Hold y Cobro desde App Driver.",
+        "title": "E2E Alta de Viaje desde app pax para usuario app pax app modo personal con Tarjeta Preautorizada sin Hold y Cobro desde App Driver.",
         "portal": "carrier",
         "priority": "P1",
         "type": "positivo",
@@ -356,7 +356,7 @@
       },
       {
         "id": "TS-STRIPE-TC1016",
-        "title": "E2E Alta carrier de Viaje para usuario app pax app modo personal con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validacion 3DS.",
+        "title": "E2E Alta de Viaje desde app pax para usuario app pax app modo personal con Tarjeta Preautorizada sin Hold y Cobro desde App Driver con validacion 3DS.",
         "portal": "carrier",
         "priority": "P1",
         "type": "positivo",
@@ -1988,7 +1988,7 @@
       },
       {
         "id": "TS-STRIPE-TC-RV004",
-        "title": "E2E Alta carrier de Viaje para usuario app pax app modo personal con Tarjeta Preautorizada sin Hold y Cobro desde App Driver. [NOTA: variante exploratoria — misma combinación cubierta por TS-STRIPE-TC1012]",
+        "title": "E2E Alta de Viaje desde app pax para usuario app pax app modo personal con Tarjeta Preautorizada sin Hold y Cobro desde App Driver. [NOTA: variante exploratoria — misma combinación cubierta por TS-STRIPE-TC1012]",
         "portal": "carrier",
         "priority": "P3",
         "type": "exploratorio",
