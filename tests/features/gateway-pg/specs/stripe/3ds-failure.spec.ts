@@ -1,33 +1,37 @@
 /**
  * TCs: TS-STRIPE-TC1057, TS-STRIPE-TC1051, TS-STRIPE-TC1061
- * Feature: Carrier · App Pax · Hold ON · Fallo 3DS — pop-up, red flag y reintento
+ * Feature: Carrier · App Pax · Hold ON · Fallo 3DS — estado NO_AUTORIZADO, red flag y reintento
  * Tags: @regression @3ds @hold @web-only
  *
- * TC1057 – Hold ON + fail3DS (4000 0000 0000 9235): pop-up de error inmediato + estado NO_AUTORIZADO + viaje fuera de "Por asignar"
+ * TC1057 – Hold ON + fail3DS (4000 0000 0000 9235): challenge 3DS emerge → test rechaza con FAIL
+ *          → viaje creado en "En conflicto" con NO_AUTORIZADO; no emerge pop-up adicional de MAGIIS
  * TC1051 – mismo flujo: red flag "Validación 3DS pendiente" + botón "Reintentar" en detalle + estado "No autorizado"
  * TC1061 – fallo inicial + reintento exitoso desde detalle: viaje pasa a "Buscando conductor", red flag y botón desaparecen
+ *
+ * Regla de negocio card 9235 + Hold ON: Popup A (Stripe challenge) SÍ aparece → completeFail().
+ * Tras el rechazo, el viaje se crea en NO_AUTORIZADO → "En conflicto".
+ * Popup B (MAGIIS error) NO aparece en este escenario.
  */
 
 import { test, expect } from '../../../../TestBase';
 import { loginAsDispatcher, setupTravelWithFailed3DS, TEST_DATA, STRIPE_TEST_CARDS } from '../../fixtures/gateway.fixtures';
-import { DashboardPage, NewTravelPage, OperationalPreferencesPage, ThreeDSModal, ThreeDSErrorPopup, TravelDetailPage, TravelManagementPage } from '../../../../pages/carrier';
+import { DashboardPage, NewTravelPage, OperationalPreferencesPage, ThreeDSModal, TravelDetailPage, TravelManagementPage } from '../../../../pages/carrier';
 
 test.describe.configure({ mode: 'serial' });
 
-test.describe('Gateway PG · Carrier · App Pax — Fallo 3DS, pop-up, detalle y reintento', () => {
+test.describe('Gateway PG · Carrier · App Pax — Fallo 3DS, red flag y reintento', () => {
 	test.use({ role: 'carrier', storageState: undefined });
 
 	test.beforeEach(async ({ page }) => {
 		await loginAsDispatcher(page);
 	});
 
-	test.describe('[TS-STRIPE-TC1057] Hold ON + fail3DS (4000 0000 0000 9235) — pop-up de error inmediato, estado NO_AUTORIZADO, viaje fuera de "Por asignar"', () => {
-		test('muestra pop-up de error, detalle NO_AUTORIZADO y viaje ausente en "Por asignar" tras fallo 3DS', async ({ page }) => {
+	test.describe('[TS-STRIPE-TC1057] Hold ON + fail3DS (4000 0000 0000 9235) — challenge rechazado → NO_AUTORIZADO en "En conflicto" (sin pop-up MAGIIS post-fallo)', () => {
+		test('tras rechazar challenge 3DS el viaje queda en NO_AUTORIZADO y fuera de "Por asignar"', async ({ page }) => {
 			const dashboard = new DashboardPage(page);
 			const preferences = new OperationalPreferencesPage(page);
 			const travel = new NewTravelPage(page);
 			const threeDS = new ThreeDSModal(page);
-			const popup = new ThreeDSErrorPopup(page);
 			const detail = new TravelDetailPage(page);
 			const management = new TravelManagementPage(page);
 
@@ -53,28 +57,21 @@ test.describe('Gateway PG · Carrier · App Pax — Fallo 3DS, pop-up, detalle y
 				await travel.submit();
 			});
 
-			await test.step('Completar modal 3DS con fallo', async () => {
+			await test.step('Rechazar challenge 3DS (Popup A Stripe/Visa) — no se espera Popup B de MAGIIS', async () => {
 				await threeDS.waitForVisible();
 				await threeDS.completeFail();
-			});
-
-			await test.step('Validar pop-up de error por fallo de autenticación 3DS', async () => {
-				await popup.waitForVisible();
-				const msg = await popup.getMessage();
-				expect(msg).toMatch(/autenticaci[oó]n|3ds|seguridad/i);
-				await popup.accept();
+				await threeDS.waitForHidden();
 			});
 
 			await test.step('Validar estado NO_AUTORIZADO en detalle del viaje', async () => {
 				await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
 				const statusBadge = detail.statusBadge();
 				await expect.soft(statusBadge).not.toContainText('Buscando conductor', { timeout: 10_000 });
-				await expect.soft(statusBadge).toContainText(/No autorizado|NO_AUTORIZADO|Error/i, { timeout: 10_000 });
+				await expect.soft(statusBadge).toContainText(/No autorizado|NO_AUTORIZADO/i, { timeout: 10_000 });
 			});
 
 			await test.step('Validar gestión — viaje no aparece en columna "Por asignar"', async () => {
 				await management.goto();
-				// TODO: agregar expectPassengerInEnConflicto() cuando exista selector estable para esa columna.
 				await expect.soft(management.porAsignarColumn()).not.toContainText(TEST_DATA.appPaxPassenger, { timeout: 10_000 });
 			});
 		});

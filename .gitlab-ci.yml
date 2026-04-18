@@ -28,17 +28,22 @@ variables:
       
       echo "ENV=${ENV}" > .env.test
       echo "BASE_URL=${BASE_URL}" >> .env.test
-      echo "AUTH_API_URL=${AUTH_API_URL}" >> .env.test
+      echo "AUTH_API_URL=${AUTH_API_URL:-\"\"}" >> .env.test
       echo "LOGIN_PATH=${LOGIN_PATH:-\"/#/authentication/login/carrier\"}" >> .env.test
       echo "DASHBOARD_URL_PATTERN=${DASHBOARD_URL_PATTERN:-\"dashboard\"}" >> .env.test
       echo "USER_CARRIER=${USER_CARRIER}" >> .env.test
       echo "PASS_CARRIER=${PASS_CARRIER}" >> .env.test
+      echo "USER_CONTRACTOR=${USER_CONTRACTOR:-\"\"}" >> .env.test
+      echo "PASS_CONTRACTOR=${PASS_CONTRACTOR:-\"\"}" >> .env.test
       echo "HEADLESS=true" >> .env.test
     - pnpm run test:test:smoke
+    - pnpm run cleanup:test:travels || true
   artifacts:
     when: always
     paths:
       - evidence/test/
+    reports:
+      junit: evidence/test/junit.xml
     expire_in: 14 days
 
 e2e-test:

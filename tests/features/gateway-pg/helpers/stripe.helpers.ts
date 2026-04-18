@@ -2,7 +2,6 @@ import type { Page } from '@playwright/test';
 import {
 	NewTravelPage,
 	ThreeDSModal,
-	ThreeDSErrorPopup,
 	OperationalPreferencesPage
 } from '../../../pages/carrier';
 import { STRIPE_TEST_CARDS } from '../data/stripeTestData';
@@ -62,7 +61,6 @@ export async function setupTravelWithFailed3DS(
 	const preferences = new OperationalPreferencesPage(page);
 	const travel = new NewTravelPage(page);
 	const threeDS = new ThreeDSModal(page);
-	const popup = new ThreeDSErrorPopup(page);
 
 	await preferences.goto();
 	await preferences.ensureHoldEnabled();
@@ -75,8 +73,10 @@ export async function setupTravelWithFailed3DS(
 
 	await threeDS.waitForVisible();
 	await threeDS.completeFail();
-	await popup.waitForVisible();
-	await popup.accept();
+	await threeDS.waitForHidden();
 
+	// Regla de negocio card 9235 + Hold ON: tras completeFail, el viaje se crea
+	// directamente en NO_AUTORIZADO (visible en columna "En conflicto"). No aparece
+	// pop-up MAGIIS (Popup B). El retry 3DS se dispara desde el detalle del viaje.
 	return extractTravelIdFromUrl(page);
 }

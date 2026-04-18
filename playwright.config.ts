@@ -30,10 +30,11 @@ export default defineConfig({
   // Ejecuta login y guarda storageState antes de los tests
   globalSetup: "./global-setup.multi-role.ts",
 
-  // Reporters: consola + HTML + custom
+  // Reporters: consola + HTML + JUnit (para GitLab CI pipeline Tests tab) + custom
   reporter: [
     ["list"],
     ["html", { open: "never", outputFolder: `evidence/${env}/report` }],
+    ["junit", { outputFile: `evidence/${env}/junit.xml` }],
     ["./project-root/custom-reporter.ts"],
   ],
 
