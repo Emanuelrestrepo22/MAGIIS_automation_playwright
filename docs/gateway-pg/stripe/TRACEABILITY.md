@@ -173,4 +173,14 @@ Rama `feature/ai-matriz-desambiguacion`:
 | `e4f8197` | L0, L1, L3, L4 | Fase 7 — desambiguar Hold (alta) / Cobro (App Driver) |
 | `ad6e900` | deps, L2 | `pnpm add -D exceljs` + apply xlsx sync |
 
+Rama `feature/ai-matriz-coherencia` (2026-04-18):
+
+| Capa impactada | Descripción |
+| --- | --- |
+| tooling | Auditoría de coherencia sección ↔ descripción — `AUDIT-REPORT.md` (219 TCs: 185 OK, 3 MISMATCH, 30 deprecated, 4 necesita-contexto) |
+| L0 | Fix `TS-STRIPE-TC1011/TC1012/TC1016` en `matriz_cases.md` Sección 2: `Alta carrier de Viaje` → `Alta de Viaje desde app pax` |
+| L1 | Sync `normalized-test-cases.json` — 3 canónicos + 3 aliases RV003/RV004/RV008 |
+| L2 | Sync `STRIPE_Test_Suite_Matriz_Sincronizado.xlsx` — 6 celdas (cols B/C de 3 filas), formato/colores preservados |
+| storage | Sync `storage/normalized-test-cases.json` + `storage/traceability-map.json` — 4 títulos cada uno |
+
 Para cambios futuros: actualizar esta tabla en el mismo PR que los introduce.
