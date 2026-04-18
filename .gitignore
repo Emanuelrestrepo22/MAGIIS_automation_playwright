@@ -49,7 +49,14 @@ tests/test-*.spec.ts
 Thumbs.db
 
 # ─── Claude Code internal ──────────────────────────────────
-.claude/
+# Ignoramos contenido local de .claude/ pero compartimos agentes, docs de política y skills del pipeline MAGIIS
+.claude/*
+!.claude/agents/
+!.claude/agents/**
+!.claude/docs/
+!.claude/docs/**
+!.claude/skills/
+!.claude/skills/**
 .agents/
 
 # ─── Documentos de entorno de trabajo local ────────────────
