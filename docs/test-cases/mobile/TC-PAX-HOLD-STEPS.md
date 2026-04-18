@@ -50,22 +50,23 @@
 | 6 | Completar **Nombre del Títular** | `ion-input[formcontrolname="cardholderName"]` con `has-value` | Input placeholder=`Nombre del Títular` dentro de `ion-input[formcontrolname="cardholderName"]`; el wrapper añade clase `has-value` cuando hay texto. Con los 3 stripe-elements `--complete` el botón GUARDAR queda enabled. | `evidence/manual-capture/pax-hold/3ds/step-06-holder-filled-2026-04-16T20-11-53-725Z.txt` | Dump shorthand no lista el has-value pero el HTML completo en el archivo sí lo tiene. |
 | 7 | Tap en **GUARDAR** | Popup Visa 3DS con botones `COMPLETE` / `FAIL` | `button.btn.primary` con span hijo `GUARDAR` dentro de `app-credit-card-payment-data`. El popup Visa corre en iframe Stripe cross-origin (no legible desde WebView — detectable solo por desaparición del modal). | `evidence/manual-capture/pax-wallet-save-fail/step-08-form-complete-before-save-2026-04-16T23-43-50-498Z.txt` + `step-09-3ds-challenge-visible-2026-04-16T23-46-18-085Z.txt` | El click dispara `stripe.confirmCardSetup`. En WebView el único indicador visible es que el botón queda momentáneamente en loading y aparece el iframe `I0_*` (no el Visa, es otro). El Visa popup es nativo/Stripe-hosted. |
 | 8 | Completar challenge 3DS → **COMPLETE** | Modal cierra, tarjeta `VISA ...3220` en lista wallet | Tras el COMPLETE: DOM muestra `span:"VISA ...3220"` dentro de `app-cards`. Host `app-credit-card-payment-data` desaparece del árbol. | `evidence/manual-capture/pax-wallet-save-fail/step-10-post-3ds-complete-2026-04-16T23-49-02-740Z.txt` | Si el usuario elige **FAIL**: aparece `app-confirm-modal` con span `Información Inválida`, mensaje `No podemos autenticar tu método de pago...` y CTA `button.btn.primary > Reintentar`. Ver TC-PAX-WALLET-ADD-3DS-FAIL-RETRY. |
-| 9 | Volver a Home | HomePage con Origen/Destino | _(pendiente — capturar en próxima sesión)_ | _(pendiente)_ | |
-| 10 | Tap campo **Origen**, tipear, elegir sugerencia | Origen confirmado con pin | _(pendiente)_ | _(pendiente)_ | |
-| 11 | Tap campo **Destino**, tipear, elegir sugerencia | Destino confirmado con pin | _(pendiente)_ | _(pendiente)_ | |
-| 12 | Tap **Seleccionar Vehículo** | Lista vehículos disponibles | _(pendiente)_ | _(pendiente)_ | |
-| 13 | Elegir vehículo | Selección aplicada | _(pendiente)_ | _(pendiente)_ | |
-| 14 | Tap **Método de pago** → elegir tarjeta 3155 | Card principal = 3155 | _(pendiente)_ | _(pendiente)_ | |
-| 15 | Tap **Ahora** (confirmar viaje) | Loading → SEARCHING_DRIVER | _(pendiente)_ | _(pendiente)_ | Si aparece modal de límite, anotar texto literal |
-| 16 | Estado final del viaje | SEARCHING_DRIVER visible, hold confirmado | _(pendiente)_ | _(pendiente)_ | |
+| 9 | Volver a **Home** tab | HomePage con campos Origen/Destino vacíos | `app-home.ion-page`; tab Inicio en bottom nav | `evidence/manual-capture/pax-trip-hold-3ds/trip-step-01-home-2026-04-17T04-09-29-612Z.txt` | Home persiste Origen y Destino si ya había valores previos. Ver observación en TC-PAX-NEW-TRIP-HOLD-3DS. |
+| 10 | Tap campo **Origen**, tipear dirección, elegir sugerencia | Origen fijado con pin en mapa | `input[placeholder="Origen "]` | `evidence/manual-capture/pax-trip-hold-3ds/trip-step-02-origin-set-2026-04-17T04-11-37-230Z.txt` | |
+| 11 | Tap campo **Destino**, tipear dirección, elegir sugerencia | Destino fijado + aparece `input[placeholder="Agregar otro destino "]` | `input[placeholder="Destino "]`; aparece `input[placeholder="Agregar otro destino "]` | `evidence/manual-capture/pax-trip-hold-3ds/trip-step-03-destination-set-2026-04-17T04-13-44-477Z.txt` | |
+| 12 | Tap **Seleccionar Vehículo** / confirmar paso | Entra a `app-travel-info` con estimación y lista de vehículos | `app-travel-info.ion-page`; `ion-row.travel-estimate`; `span.travel-type` | `evidence/manual-capture/pax-trip-hold-3ds/trip-step-04-vehicle-list-2026-04-17T04-15-40-025Z.txt` | |
+| 13 | Verificar vehículo **Standard** preseleccionado | Standard visible y tarjeta `...3155` asignada | `ion-row.travel-payment-info`; span con `VISA ...3155` | _(reutilizar step-04 dump)_ | Selector de vehículo: `button.travel-btn-confirm` con span `travel-type` = `Standard`. |
+| 14 | Tap **Método de pago** → verificar/elegir tarjeta 3155 | Card `...3155` como método default | `ion-col.payment-method` o `ion-col.payment-method-selected`; tarjeta ya preseleccionada si es la default | _(reutilizar step-04 dump)_ | Si la tarjeta ya es default no requiere tap adicional. `selectPaymentCard()` en Screen cubre este paso. |
+| 15 | Tap **Viajo Ahora Standard - $precio** | Popup 3DS Visa con `COMPLETE` / `FAIL` | `button.travel-btn-confirm`; span `travel-type` texto `Standard` | `evidence/manual-capture/pax-trip-hold-3ds/trip-step-07-after-clean-viajo-ahora-2026-04-17T04-44-39-054Z.txt` | Si aparece modal `Ya tiene un viaje creado`, la precondición no se cumplió. Ver `detectTripAlreadyCreatedModal()`. |
+| 16 | En popup Visa tap **COMPLETE** → esperar transición | `app-driver-available` con mapa Leaflet, texto `Buscando servicio... Standard`, botón `Cancelar Viaje` | `app-driver-available.ion-page`; `a.leaflet-control-zoom-fullscreen`; `button.btn.outline` texto `Cancelar Viaje` | `evidence/manual-capture/pax-trip-hold-3ds/trip-step-08-searching-service-2026-04-17T04-50-01-251Z.txt` | Estado hold Stripe: `requires_capture`. Carrier debe ver viaje en **Por asignar**. |
 
 ### Assertions esperadas (resultado del flujo)
 
-- [ ] Modal Stripe cerrado tras 3DS aprobada.
-- [ ] Tarjeta `****3155` visible en lista Billetera.
-- [ ] Viaje creado con ID `NNN-X`.
-- [ ] Estado del viaje: `SEARCHING_DRIVER` o equivalente UI.
-- [ ] Hold Stripe confirmado en `requires_capture`.
+- [x] Modal Stripe cerrado tras 3DS aprobada — `app-credit-card-payment-data` desaparece del árbol.
+- [x] Tarjeta `VISA ...3155` visible en lista Billetera — `span:"VISA ...3155"` dentro de `app-cards`.
+- [x] Viaje creado — `app-driver-available.ion-page` visible tras COMPLETE.
+- [x] Estado del viaje: `Buscando servicio... Standard` en `app-driver-available`.
+- [x] Botón `Cancelar Viaje` visible — `button.btn.outline`.
+- [x] Hold Stripe: `requires_capture` (confirmado en backend, Carrier lo ve en **Por asignar**).
 
 ---
 

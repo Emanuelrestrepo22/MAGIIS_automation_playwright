@@ -49,6 +49,8 @@ export const STRIPE_TEST_CARDS = {
 	addressUnavailable: resolveCardNumber('STRIPE_CARD_ADDRESS_UNAVAILABLE', TEST_STRIPE_CARD_FIXTURES.address_unavailable.number),
 	/** TC1094 — error autenticacion 3DS (4000 0084 2000 1629) */
 	error3DS: resolveCardNumber('STRIPE_CARD_ERROR_3DS', TEST_STRIPE_CARD_FIXTURES.error_3ds.number),
+	/** 3DS obligatorio → pago rechazado post-autenticación card_declined (4000 0084 0000 1629) */
+	declinedAfter3DS: resolveCardNumber('STRIPE_CARD_DECLINED_AFTER_3DS', TEST_STRIPE_CARD_FIXTURES.declined_after_3ds.number),
 } as const;
 
 export const STRIPE_EXPIRY = isTestEnv ? TEST_STRIPE_CARD_EXPIRY : requireEnv('STRIPE_CARD_EXPIRY');

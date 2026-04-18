@@ -7,7 +7,7 @@
 | TC01 | TS-GATEWAY-01 | A - direct hold OK | Positive | `tests/specs/gateway-pg/stripe/hold-capture.spec.ts` | Draft integrated |
 | TC02 | TS-GATEWAY-02 | A - direct hold declined | Negative | `tests/specs/gateway-pg/stripe/hold-capture.spec.ts` | Draft integrated |
 | TC03 | TS-GATEWAY-03 | A2 - 3DS success | Positive | `tests/specs/gateway-pg/stripe/3ds-success.spec.ts` | Pending |
-| TC04 | TS-GATEWAY-04 | B - failure -> popup -> detail | Negative | `tests/specs/gateway-pg/stripe/3ds-failure.spec.ts` | Integrated |
+| TC04 | TS-GATEWAY-04 | B - challenge 3DS rechazado -> NO_AUTORIZADO -> En conflicto (sin pop-up MAGIIS post-fallo) | Negative | `tests/specs/gateway-pg/stripe/3ds-failure.spec.ts` | Integrated |
 | TC05 | TS-GATEWAY-05 | B - red flag and retry button | Negative | `tests/specs/gateway-pg/stripe/3ds-failure.spec.ts` | Integrated |
 | TC06 | TS-GATEWAY-06 | B - successful retry | Negative | `tests/specs/gateway-pg/stripe/3ds-failure.spec.ts` | Integrated |
 | TC07 | TS-GATEWAY-07 | D - change to existing card | Edge | `tests/specs/gateway-pg/stripe/3ds-retry-card-change.spec.ts` | Pending with `test.fail()` |
