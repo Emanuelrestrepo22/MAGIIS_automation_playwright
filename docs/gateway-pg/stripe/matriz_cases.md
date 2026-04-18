@@ -27,12 +27,12 @@
 
 ### 2.1 Tarjeta Preautorizada – sin validación 3DS
 
-| ID               | Descripción                                                                                                                        |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| ID               | Descripción                                                                                                                                                |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | TS-STRIPE-TC1009 | Validar Alta de Viaje desde app pax para usuario app pax modo personal con Tarjeta Preautorizada **Hold desde Alta de Viaje y Cobro desde App Driver**     |
-| TS-STRIPE-TC1010 | Validar Alta de Viaje desde app pax para usuario app pax modo personal con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver** |
-| TS-STRIPE-TC1011 | Validar Alta carrier de Viaje para usuario app pax modo personal con Tarjeta Preautorizada **Hold desde Alta de Viaje y Cobro desde App Driver**           |
-| TS-STRIPE-TC1012 | Validar Alta carrier de Viaje para usuario app pax modo personal con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver**       |
+| TS-STRIPE-TC1010 | Validar Alta de Viaje desde app pax para usuario app pax modo personal con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver**  |
+| TS-STRIPE-TC1011 | Validar Alta de Viaje desde app pax para usuario app pax modo personal con Tarjeta Preautorizada **Hold desde Alta de Viaje y Cobro desde App Driver**     |
+| TS-STRIPE-TC1012 | Validar Alta de Viaje desde app pax para usuario app pax modo personal con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver**  |
 
 ### 2.2 Tarjeta Preautorizada – con validación 3DS
 
@@ -41,7 +41,7 @@
 | TS-STRIPE-TC1013 | Validar Alta de Viaje para usuario app pax modo personal desde app pax con Tarjeta Preautorizada **Hold desde Alta de Viaje y Cobro desde App Driver** con validación 3DS     |
 | TS-STRIPE-TC1014 | Validar Alta de Viaje para usuario app pax modo personal desde app pax con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver** con validación 3DS |
 | TS-STRIPE-TC1015 | Validar Alta de Viaje para usuario app pax modo personal con Tarjeta Preautorizada **Hold desde Alta de Viaje y Cobro desde App Driver** con validación 3DS                   |
-| TS-STRIPE-TC1016 | Validar Alta carrier de Viaje para usuario app pax modo personal con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver** con validación 3DS       |
+| TS-STRIPE-TC1016 | Validar Alta de Viaje desde app pax para usuario app pax modo personal con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver** con validación 3DS |
 
 ### 2.3 Variantes exploratorias (alias colapsados a TC canónicos)
 
