@@ -2,8 +2,8 @@
   "generated_at": "2026-04-18",
   "total": 219,
   "buckets": {
-    "OK": 182,
-    "MISMATCH": 3,
+    "OK": 185,
+    "MISMATCH": 0,
     "AMBIGUO": 0,
     "DEPRECATED-ALIAS": 30,
     "NECESITA-CONTEXTO": 4
@@ -144,26 +144,26 @@
       "section_num": "2",
       "section_title": "Alta de Viaje desde App Pax – Usuario App Pax (Modo Personal)",
       "subsection_title": "Tarjeta Preautorizada – sin validación 3DS",
-      "description": "Validar Alta carrier de Viaje para usuario app pax modo personal con Tarjeta Preautorizada **Hold desde Alta de Viaje y Cobro desde App Driver**",
+      "description": "Validar Alta de Viaje desde app pax para usuario app pax modo personal con Tarjeta Preautorizada **Hold desde Alta de Viaje y Cobro desde App Driver**",
       "estado": null,
       "source_file": "matriz_cases.md",
       "line": 34,
-      "classification": "MISMATCH",
+      "classification": "OK",
       "proposed_description": "Validar Alta de Viaje desde app pax para usuario app pax modo personal con Tarjeta Preautorizada **Hold desde Alta de Viaje y Cobro desde App Driver**",
-      "reason": "Sección dice 'desde App Pax / Modo Personal' pero descripción menciona: carrier"
+      "reason": "Coherente con sección."
     },
     {
       "tc_id": "TS-STRIPE-TC1012",
       "section_num": "2",
       "section_title": "Alta de Viaje desde App Pax – Usuario App Pax (Modo Personal)",
       "subsection_title": "Tarjeta Preautorizada – sin validación 3DS",
-      "description": "Validar Alta carrier de Viaje para usuario app pax modo personal con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver**",
+      "description": "Validar Alta de Viaje desde app pax para usuario app pax modo personal con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver**",
       "estado": null,
       "source_file": "matriz_cases.md",
       "line": 35,
-      "classification": "MISMATCH",
+      "classification": "OK",
       "proposed_description": "Validar Alta de Viaje desde app pax para usuario app pax modo personal con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver**",
-      "reason": "Sección dice 'desde App Pax / Modo Personal' pero descripción menciona: carrier"
+      "reason": "Coherente con sección."
     },
     {
       "tc_id": "TS-STRIPE-TC1013",
@@ -209,13 +209,13 @@
       "section_num": "2",
       "section_title": "Alta de Viaje desde App Pax – Usuario App Pax (Modo Personal)",
       "subsection_title": "Tarjeta Preautorizada – con validación 3DS",
-      "description": "Validar Alta carrier de Viaje para usuario app pax modo personal con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver** con validación 3DS",
+      "description": "Validar Alta de Viaje desde app pax para usuario app pax modo personal con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver** con validación 3DS",
       "estado": null,
       "source_file": "matriz_cases.md",
       "line": 44,
-      "classification": "MISMATCH",
+      "classification": "OK",
       "proposed_description": "Validar Alta de Viaje desde app pax para usuario app pax modo personal con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver** con validación 3DS",
-      "reason": "Sección dice 'desde App Pax / Modo Personal' pero descripción menciona: carrier"
+      "reason": "Coherente con sección."
     },
     {
       "tc_id": "TS-STRIPE-TC-RV001",

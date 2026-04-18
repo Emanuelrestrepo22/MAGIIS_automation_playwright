@@ -11,8 +11,8 @@
 
 | Clasificación | Conteo |
 |---|---|
-| OK | 182 |
-| MISMATCH | 3 |
+| OK | 185 |
+| MISMATCH | 0 |
 | AMBIGUO | 0 |
 | DEPRECATED-ALIAS | 30 |
 | NECESITA-CONTEXTO | 4 |
@@ -41,12 +41,12 @@
 | `TS-STRIPE-TC1008` | 1. Configuración de Pasarela Stripe (Magiis App Store) | — | OK | Sección de configuración de pasarela, descripción conforme. | — |
 | `TS-STRIPE-TC1009` | 2. Alta de Viaje desde App Pax – Usuario App Pax (Modo Personal) | Tarjeta Preautorizada – sin validación 3DS | OK | Coherente con sección. | — |
 | `TS-STRIPE-TC1010` | 2. Alta de Viaje desde App Pax – Usuario App Pax (Modo Personal) | Tarjeta Preautorizada – sin validación 3DS | OK | Coherente con sección. | — |
-| `TS-STRIPE-TC1011` | 2. Alta de Viaje desde App Pax – Usuario App Pax (Modo Personal) | Tarjeta Preautorizada – sin validación 3DS | MISMATCH | Sección dice 'desde App Pax / Modo Personal' pero descripción menciona: carrier | Validar Alta de Viaje desde app pax para usuario app pax modo personal con Tarjeta Preautorizada **Hold desde Alta de Viaje y Cobro desde App Driver** |
-| `TS-STRIPE-TC1012` | 2. Alta de Viaje desde App Pax – Usuario App Pax (Modo Personal) | Tarjeta Preautorizada – sin validación 3DS | MISMATCH | Sección dice 'desde App Pax / Modo Personal' pero descripción menciona: carrier | Validar Alta de Viaje desde app pax para usuario app pax modo personal con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver** |
+| `TS-STRIPE-TC1011` | 2. Alta de Viaje desde App Pax – Usuario App Pax (Modo Personal) | Tarjeta Preautorizada – sin validación 3DS | OK | Coherente con sección. | — |
+| `TS-STRIPE-TC1012` | 2. Alta de Viaje desde App Pax – Usuario App Pax (Modo Personal) | Tarjeta Preautorizada – sin validación 3DS | OK | Coherente con sección. | — |
 | `TS-STRIPE-TC1013` | 2. Alta de Viaje desde App Pax – Usuario App Pax (Modo Personal) | Tarjeta Preautorizada – con validación 3DS | OK | Coherente con sección. | — |
 | `TS-STRIPE-TC1014` | 2. Alta de Viaje desde App Pax – Usuario App Pax (Modo Personal) | Tarjeta Preautorizada – con validación 3DS | OK | Coherente con sección. | — |
 | `TS-STRIPE-TC1015` | 2. Alta de Viaje desde App Pax – Usuario App Pax (Modo Personal) | Tarjeta Preautorizada – con validación 3DS | OK | Coherente con sección. | — |
-| `TS-STRIPE-TC1016` | 2. Alta de Viaje desde App Pax – Usuario App Pax (Modo Personal) | Tarjeta Preautorizada – con validación 3DS | MISMATCH | Sección dice 'desde App Pax / Modo Personal' pero descripción menciona: carrier | Validar Alta de Viaje desde app pax para usuario app pax modo personal con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver** con validación 3DS |
+| `TS-STRIPE-TC1016` | 2. Alta de Viaje desde App Pax – Usuario App Pax (Modo Personal) | Tarjeta Preautorizada – con validación 3DS | OK | Coherente con sección. | — |
 | `TS-STRIPE-TC-RV001` | 2. Alta de Viaje desde App Pax – Usuario App Pax (Modo Personal) | Variantes exploratorias (alias colapsados a TC canónicos) | DEPRECATED-ALIAS | Alias colapsado (RV). Mantener como referencia cruzada. | — |
 | `TS-STRIPE-TC-RV002` | 2. Alta de Viaje desde App Pax – Usuario App Pax (Modo Personal) | Variantes exploratorias (alias colapsados a TC canónicos) | DEPRECATED-ALIAS | Alias colapsado (RV). Mantener como referencia cruzada. | — |
 | `TS-STRIPE-TC-RV003` | 2. Alta de Viaje desde App Pax – Usuario App Pax (Modo Personal) | Variantes exploratorias (alias colapsados a TC canónicos) | DEPRECATED-ALIAS | Alias colapsado (RV). Mantener como referencia cruzada. | — |
