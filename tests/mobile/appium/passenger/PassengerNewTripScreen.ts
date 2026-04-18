@@ -175,6 +175,101 @@ export class PassengerNewTripScreen extends AppiumSessionBase {
 	}
 
 	/**
+	 * Detecta si el modal "Ya tiene un viaje creado" está visible.
+	 * Aparece cuando el pax tiene un viaje activo en SEARCHING_DRIVER, EN_CURSO
+	 * o NO_AUTORIZADO ("En conflicto"). Selector: app-confirm-modal con span
+	 * que contiene "Ya tiene un viaje creado" y CTA "Aceptar".
+	 */
+	async detectTripAlreadyCreatedModal(timeout = 4_000): Promise<boolean> {
+		const driver = this.getDriver();
+		const deadline = Date.now() + timeout;
+
+		while (Date.now() < deadline) {
+			const found = await this.executeInWebView(() => {
+				const normalize = (value: unknown): string =>
+					String(value ?? '')
+						.replace(/\s+/g, ' ')
+						.trim()
+						.toLowerCase()
+						.normalize('NFD')
+						.replace(/[\u0300-\u036f]/g, '');
+
+				const isVisible = (element: Element): boolean => {
+					const html = element as HTMLElement;
+					const rect = html.getBoundingClientRect();
+					const style = window.getComputedStyle(html);
+					return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+				};
+
+				const modals = Array.from(document.querySelectorAll('app-confirm-modal')) as HTMLElement[];
+				return modals.some(modal => {
+					if (!isVisible(modal)) return false;
+					const text = normalize(modal.innerText || modal.textContent);
+					return text.includes('ya tiene un viaje creado') || text.includes('viaje creado');
+				});
+			}).catch(() => false);
+
+			if (found) return true;
+			await driver.pause(250);
+		}
+
+		return false;
+	}
+
+	/**
+	 * Cierra el modal "Ya tiene un viaje creado" tapando el CTA "Aceptar".
+	 * Tras cerrarlo la app vuelve a app-travel-info con los datos intactos.
+	 */
+	async dismissTripAlreadyCreatedModal(timeout = 8_000): Promise<void> {
+		const driver = this.getDriver();
+		const deadline = Date.now() + timeout;
+
+		while (Date.now() < deadline) {
+			const clicked = await this.executeInWebView(() => {
+				const normalize = (value: unknown): string =>
+					String(value ?? '')
+						.replace(/\s+/g, ' ')
+						.trim()
+						.toLowerCase()
+						.normalize('NFD')
+						.replace(/[\u0300-\u036f]/g, '');
+
+				const isVisible = (element: Element): boolean => {
+					const html = element as HTMLElement;
+					const rect = html.getBoundingClientRect();
+					const style = window.getComputedStyle(html);
+					return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+				};
+
+				const modals = Array.from(document.querySelectorAll('app-confirm-modal')) as HTMLElement[];
+				for (const modal of modals) {
+					if (!isVisible(modal)) continue;
+					const text = normalize(modal.innerText || modal.textContent);
+					if (!text.includes('ya tiene un viaje creado') && !text.includes('viaje creado')) continue;
+
+					const buttons = Array.from(modal.querySelectorAll('button.btn.primary, button')) as HTMLElement[];
+					const aceptar = buttons.find(btn => {
+						const label = normalize(btn.innerText || btn.textContent);
+						return label === 'aceptar' || label.includes('aceptar');
+					});
+
+					if (aceptar && isVisible(aceptar)) {
+						aceptar.click();
+						return true;
+					}
+				}
+
+				return false;
+			}).catch(() => false);
+
+			if (clicked) return;
+			await driver.pause(250);
+		}
+
+		throw new Error('PassengerNewTripScreen.dismissTripAlreadyCreatedModal() - modal not found or "Aceptar" not clickable');
+	}
+
+	/**
 	 * Opens or validates the passenger home screen.
 	 */
 	async openNewTrip(): Promise<void> {

@@ -16,16 +16,15 @@
  *   [MOBILE-PAX]  Passenger verifica viaje completado + cobro procesado
  *   [BRIDGE]      JourneyContext final: status driver-completed
  *
- * Estado actual: BLOQUEADO
- * Razón: El dispositivo Android de prueba está siendo usado por otro equipo
- * para desarrollo de la Passenger App. Los selectores de PassengerWalletScreen
- * requieren validación con Appium Inspector en el dispositivo físico.
+ * Estado actual: BLOQUEADO — pendiente validación E2E en dispositivo físico
+ * PassengerWalletScreen + PassengerNewTripScreen + harness están implementados.
  *
  * Desbloqueado cuando:
- *   1. Dispositivo disponible
- *   2. Selectores de PassengerWalletScreen completados (30 TODOs en el screen)
- *   3. PassengerTripHappyPathHarness validado end-to-end
- *   4. getPassengerAppConfig() disponible en appiumRuntime.ts
+ *   1. Dispositivo Android disponible para correr sesión Appium end-to-end
+ *   2. Validar que PASSENGER_EMAIL no tenga viajes activos / NO_AUTORIZADO previos
+ *      (limpiar desde Carrier portal — ver TC-PAX-NEW-TRIP-BLOCKED-BY-ACTIVE-OR-CONFLICT)
+ *   3. Confirmar selectores con dump en vivo en el dispositivo físico (TC-PAX-HOLD-STEPS)
+ *   4. getPassengerAppConfig() retorna config correcta para el dispositivo de CI
  *
  * Estructura de los specs está completa — solo se necesitan los selectores.
  * Ver: tests/mobile/appium/passenger/PassengerWalletScreen.ts
@@ -46,9 +45,9 @@ test.describe('[E2E-FLOW2-TC001] E2E Flow 2 — Passenger App + Driver App — P
 			//   4. Validar JourneyContext final driver-completed
 			test.fixme(
 				true,
-				'[E2E-FLOW2-TC001] Bloqueado: dispositivo de prueba ocupado por otro equipo. ' +
-				'Selectores de PassengerWalletScreen pendientes de validar con Appium Inspector. ' +
-				'Ver tests/mobile/appium/passenger/PassengerWalletScreen.ts (30 TODOs).',
+				'[E2E-FLOW2-TC001] Bloqueado: requiere dispositivo Android disponible para sesión Appium. ' +
+				'Screens implementados — pendiente validación E2E end-to-end. ' +
+				'Precondición: limpiar viajes activos/NO_AUTORIZADO del user en Carrier.',
 			);
 		},
 	);
@@ -66,8 +65,8 @@ test.describe('[E2E-FLOW2-TC002] E2E Flow 2 — Passenger App + Driver App — P
 			//      (WebView con iframe Stripe — ver helpers/threeDsChallenge.ts)
 			test.fixme(
 				true,
-				'[E2E-FLOW2-TC002] Bloqueado: mismo bloqueo que TC001. ' +
-				'Adicionalmente requiere validar 3DS challenge desde WebView en Passenger App.',
+				'[E2E-FLOW2-TC002] Bloqueado: requiere dispositivo Android disponible. ' +
+				'3DS challenge en WebView passenger identificado y documentado en TC-PAX-HOLD-STEPS.',
 			);
 		},
 	);
@@ -81,8 +80,8 @@ test.describe('[E2E-FLOW2-TC003] E2E Flow 2 — Passenger App + Driver App — B
 		async () => {
 			test.fixme(
 				true,
-				'[E2E-FLOW2-TC003] Bloqueado: mismo bloqueo que TC001. ' +
-				'Requiere adicionalmente: switch de modo a "business" en PassengerHomeScreen.',
+				'[E2E-FLOW2-TC003] Bloqueado: requiere dispositivo Android disponible. ' +
+				'PassengerHomeScreen.ensureProfileMode("business") implementado y validado.',
 			);
 		},
 	);
@@ -96,7 +95,8 @@ test.describe('[E2E-FLOW2-TC004] E2E Flow 2 — Passenger App + Driver App — B
 		async () => {
 			test.fixme(
 				true,
-				'[E2E-FLOW2-TC004] Bloqueado: mismo bloqueo que TC001 + TC002 + TC003.',
+				'[E2E-FLOW2-TC004] Bloqueado: requiere dispositivo Android disponible. ' +
+				'Depende de TC001 + TC002 + TC003 desbloqueados.',
 			);
 		},
 	);
