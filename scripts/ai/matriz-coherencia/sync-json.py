@@ -18,10 +18,17 @@ MATRIZ_1 = ROOT / "docs" / "gateway-pg" / "stripe" / "matriz_cases.md"
 MATRIZ_2 = ROOT / "docs" / "gateway-pg" / "stripe" / "matriz_cases2.md"
 
 # Allowlist de TCs a sincronizar - SOLO los MISMATCH corregidos.
+# RV003/RV004/RV008 son aliases colapsados de TC1011/TC1012/TC1016 y heredan
+# el titulo incorrecto; se incluyen para mantener coherencia con el canonico.
 MISMATCH_FIXES = {
     "TS-STRIPE-TC1011",
     "TS-STRIPE-TC1012",
     "TS-STRIPE-TC1016",
+}
+ALIAS_INHERIT = {
+    "TS-STRIPE-TC-RV003": "TS-STRIPE-TC1011",
+    "TS-STRIPE-TC-RV004": "TS-STRIPE-TC1012",
+    "TS-STRIPE-TC-RV008": "TS-STRIPE-TC1016",
 }
 
 
@@ -53,23 +60,42 @@ def main() -> int:
         data = json.load(f)
 
     changed = 0
+    # Primero canonicos (MISMATCH_FIXES)
+    canonical_titles: dict[str, str] = {}
     for case in data["cases"]:
         tid = case["test_case_id"]
-        if tid not in MISMATCH_FIXES:
+        if tid in MISMATCH_FIXES:
+            new_title: str | None = None
+            for matriz in (MATRIZ_1, MATRIZ_2):
+                new_title = extract_title_from_matriz(matriz, tid)
+                if new_title:
+                    break
+            if not new_title:
+                print(f"  [warning] {tid}: no se encontro en ninguna matriz")
+                continue
+            canonical_titles[tid] = new_title
+            old = case["title"]
+            if old.strip() != new_title:
+                case["title"] = new_title
+                changed += 1
+                print(f"  [updated] {tid}")
+                print(f"    old: {old[:130]}")
+                print(f"    new: {new_title[:130]}")
+
+    # Aliases RV que heredan el titulo del canonico
+    for case in data["cases"]:
+        tid = case["test_case_id"]
+        canonical = ALIAS_INHERIT.get(tid)
+        if not canonical:
             continue
-        new_title: str | None = None
-        for matriz in (MATRIZ_1, MATRIZ_2):
-            new_title = extract_title_from_matriz(matriz, tid)
-            if new_title:
-                break
+        new_title = canonical_titles.get(canonical)
         if not new_title:
-            print(f"  [warning] {tid}: no se encontro en ninguna matriz")
             continue
         old = case["title"]
         if old.strip() != new_title:
             case["title"] = new_title
             changed += 1
-            print(f"  [updated] {tid}")
+            print(f"  [updated alias] {tid} (<- {canonical})")
             print(f"    old: {old[:130]}")
             print(f"    new: {new_title[:130]}")
 

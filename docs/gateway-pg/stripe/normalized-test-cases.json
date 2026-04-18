@@ -629,7 +629,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC-RV003",
-      "title": "Validar Alta de Viaje para usuario app pax modo personal con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo personal con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -667,7 +667,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC-RV004",
-      "title": "Validar Alta carrier de Viaje para usuario app pax modo personal con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo personal con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -825,7 +825,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC-RV008",
-      "title": "Validar Alta de Viaje para usuario app pax modo personal con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS",
+      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo personal con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
