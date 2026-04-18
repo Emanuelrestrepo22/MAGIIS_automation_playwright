@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-17T01:47:14.890Z",
+  "generated_at": "2026-04-18T00:00:00.000Z",
   "generator": "critical-flow-prioritizer@phase2",
   "source_matrices": [
     "docs/gateway-pg/stripe/matriz_cases.md",
@@ -13,7 +13,8 @@
     "Fase 2 aplicada: diferenciación card-new / card-existing y deprecación de redundantes.",
     "Campo \"card_flow\" agregado a todos los casos. Valores: new | existing | n/a.",
     "Campo \"phase2_status\" indica: active-canonical, active-card-existing, deprecated-redundant, collapsed-alias.",
-    "Alias TC-RV001..RV008 colapsados a sus canónicos via canonical_ref; no ejecutar por separado."
+    "Alias TC-RV001..RV008 colapsados a sus canónicos via canonical_ref; no ejecutar por separado.",
+    "Sincronizado 2026-04-18: coherencia seccion<->descripcion aplicada (TC1011/TC1012/TC1016 corregidos en Seccion 2)."
   ],
   "cases": [
     {
@@ -337,7 +338,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1011",
-      "title": "Validar Alta carrier de Viaje para usuario app pax modo personal con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo personal con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -372,7 +373,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1012",
-      "title": "Validar Alta carrier de Viaje para usuario app pax modo personal con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo personal con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -514,7 +515,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC1016",
-      "title": "Validar Alta carrier de Viaje para usuario app pax modo personal con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS",
+      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo personal con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -628,7 +629,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC-RV003",
-      "title": "Validar Alta de Viaje para usuario app pax modo personal con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo personal con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -666,7 +667,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC-RV004",
-      "title": "Validar Alta carrier de Viaje para usuario app pax modo personal con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
+      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo personal con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
@@ -824,7 +825,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-TC-RV008",
-      "title": "Validar Alta de Viaje para usuario app pax modo personal con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS",
+      "title": "Validar Alta de Viaje desde app pax para usuario app pax modo personal con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe/trip-create",
       "portal": "app-pax",
       "environment": [
