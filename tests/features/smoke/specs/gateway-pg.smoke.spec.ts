@@ -679,11 +679,10 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Contractor`, 
 			});
 
 			await test.step('[SMOKE-GW-TC12][STEP-06] Aprobar segundo challenge 3DS si aparece (hold del viaje)', async () => {
-				// El portal contractor puede o no presentar un 2do 3DS según el estado del
-				// PaymentMethod guardado. Si el primer 3DS ya autenticó la tarjeta,
-				// algunos flujos skip el segundo challenge. Patrón no-bloqueante:
-				// esperar 5s; si aparece, completar; si no, continuar.
-				if (await threeDS.waitForOptionalVisible(5_000)) {
+				// El portal contractor presenta un 2do 3DS tras el submit del viaje que tarda
+				// 8-15s en renderizarse (observado en pipelines reales). Timeout 18s para dar
+				// margen al backend. Si efectivamente no se requiere, se considera OK.
+				if (await threeDS.waitForOptionalVisible(18_000)) {
 					await threeDS.completeSuccess();
 					await threeDS.waitForHidden();
 					console.log('[SMOKE-GW-TC12][3DS-2] Segundo challenge 3DS aprobado ✅');
