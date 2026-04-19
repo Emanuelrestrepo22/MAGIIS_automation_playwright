@@ -569,9 +569,8 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Contractor`, 
 	test.use({ role: 'contractor', storageState: { cookies: [], origins: [] } });
 
 	// ── TC11 ─────────────────────────────────────────────────────────────────
-	// [SIN-ID-MATRIZ]: Los P2-TC001/005/002 del normalized-test-cases.json son flujos híbridos
-	// mobile (app pax + driver), no tests web del portal contractor. Pendiente asignar ID canónico.
-	test('[SIN-ID-MATRIZ] SMOKE-GW-TC11 — Colaborador · Hold ON · vinculación nueva tarjeta (4242) → SEARCHING_DRIVER desde portal Contractor', async ({ page }) => {
+	// Trazabilidad: TS-STRIPE-P2-TC001 (matriz_cases2.md §1.1 Colaborador Contractor Hold ON)
+	test('[TS-STRIPE-P2-TC001] SMOKE-GW-TC11 — Colaborador · Hold ON · vinculación nueva tarjeta (4242) → SEARCHING_DRIVER desde portal Contractor', async ({ page }) => {
 		const dashboard  = new DashboardPage(page);
 		const travel     = new ContractorNewTravelPage(page);
 
@@ -612,7 +611,7 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Contractor`, 
 	});
 
 	// ── TC12 ─────────────────────────────────────────────────────────────────
-	test('[SIN-ID-MATRIZ] SMOKE-GW-TC12 — Colaborador · Hold ON · tarjeta con 3DS éxito (3155) → SEARCHING_DRIVER desde portal Contractor', async ({ page }) => {
+	test('[TS-STRIPE-P2-TC005] SMOKE-GW-TC12 — Colaborador · Hold ON · tarjeta con 3DS éxito (3155) → SEARCHING_DRIVER desde portal Contractor', async ({ page }) => {
 		const dashboard  = new DashboardPage(page);
 		const travel     = new ContractorNewTravelPage(page);
 		const threeDS    = new ThreeDSModal(page);
@@ -663,7 +662,7 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Contractor`, 
 	});
 
 	// ── TC13 ─────────────────────────────────────────────────────────────────
-	test('[SIN-ID-MATRIZ] SMOKE-GW-TC13 — Colaborador · Hold OFF · sin 3DS → viaje sin preautorización desde portal Contractor', async ({ page }) => {
+	test('[TS-STRIPE-P2-TC002] SMOKE-GW-TC13 — Colaborador · Hold OFF · sin 3DS → viaje sin preautorización desde portal Contractor', async ({ page }) => {
 		// Hold OFF en Contractor requiere que enableCreditCardHold=false esté activo
 		// en los parámetros del carrier ANTES de ejecutar este test. El estado de hold
 		// se controla desde el portal Carrier (preferencias operativas), no desde Contractor.
@@ -709,7 +708,7 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Contractor`, 
 	});
 
 	// ── TC14 (UNHAPPY — pendiente TC en matriz) ───────────────────────────────
-	test('[TC-PENDIENTE] SMOKE-GW-TC14 — Colaborador · Hold ON · tarjeta declinada (9995) → error → viaje no creado [UNHAPPY]', async ({ page }) => {
+	test('[TS-STRIPE-P2-TC090] SMOKE-GW-TC14 — Colaborador · Hold ON · tarjeta declinada (9995) → error → viaje no creado [UNHAPPY]', async ({ page }) => {
 		// TC en matriz: pendiente de definición formal.
 		// Comportamiento esperado: fondos insuficientes → error visible → viaje no redirige a /travels/
 		const dashboard   = new DashboardPage(page);
