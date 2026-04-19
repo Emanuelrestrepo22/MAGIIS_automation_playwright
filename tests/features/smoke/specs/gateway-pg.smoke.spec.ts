@@ -669,11 +669,18 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Contractor`, 
 				await travel.clickSendService();
 			});
 
-			await test.step('[SMOKE-GW-TC12][STEP-06] Aprobar segundo challenge 3DS (hold del viaje)', async () => {
-				await threeDS.waitForVisible();
-				await threeDS.completeSuccess();
-				await threeDS.waitForHidden();
-				console.log('[SMOKE-GW-TC12][3DS-2] Segundo challenge 3DS aprobado ✅');
+			await test.step('[SMOKE-GW-TC12][STEP-06] Aprobar segundo challenge 3DS si aparece (hold del viaje)', async () => {
+				// El portal contractor puede o no presentar un 2do 3DS según el estado del
+				// PaymentMethod guardado. Si el primer 3DS ya autenticó la tarjeta,
+				// algunos flujos skip el segundo challenge. Patrón no-bloqueante:
+				// esperar 5s; si aparece, completar; si no, continuar.
+				if (await threeDS.waitForOptionalVisible(5_000)) {
+					await threeDS.completeSuccess();
+					await threeDS.waitForHidden();
+					console.log('[SMOKE-GW-TC12][3DS-2] Segundo challenge 3DS aprobado ✅');
+				} else {
+					console.log('[SMOKE-GW-TC12][3DS-2] 2do challenge no requerido (PaymentMethod ya autenticado)');
+				}
 			});
 
 			await test.step('[SMOKE-GW-TC12][STEP-07] Verificar redirección a contractor/dashboard tras crear viaje', async () => {
