@@ -2,8 +2,8 @@ import { test as base, expect } from '@playwright/test';
 import type { APIRequestContext, Page } from '@playwright/test';
 import type { AppRole, RoleCredentials, RoleRuntimeConfig } from './config/runtime';
 import { getDefaultRole, getRoleRuntimeConfig, resolveRoleCredentials } from './config/runtime';
-import { LoginPage } from './pages/LoginPage';
-import { ApiClient } from './utils/apiClient';
+import { LoginPage } from './pages/shared/LoginPage';
+import { ApiClient } from './shared/utils/apiClient';
 
 // Estas fixtures representan el "kit base" que casi todos los tests necesitan:
 // contexto del rol, credenciales resueltas y helpers listos para usar.
