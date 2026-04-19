@@ -1,6 +1,15 @@
 stages:
   - test
 
+# Auto-cancel de pipelines redundantes en ramas protegidas (main).
+# Para que `interruptible: true` tenga efecto en branches protegidas hay que
+# declararlo explícitamente a nivel workflow — de lo contrario GitLab mantiene
+# los pipelines "completos" por seguridad, incluso si uno nuevo llega al ref.
+# Ref: https://docs.gitlab.com/ee/ci/yaml/#workflowauto_cancel
+workflow:
+  auto_cancel:
+    on_new_commit: interruptible
+
 variables:
   PNPM_CACHE_FOLDER: "$CI_PROJECT_DIR/.pnpm-store"
 
