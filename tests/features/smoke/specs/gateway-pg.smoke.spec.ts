@@ -573,41 +573,51 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Contractor`, 
 	test('[TS-STRIPE-P2-TC001] SMOKE-GW-TC11 — Colaborador · Hold ON · vinculación nueva tarjeta (4242) → SEARCHING_DRIVER desde portal Contractor', async ({ page }) => {
 		const dashboard  = new DashboardPage(page);
 		const travel     = new ContractorNewTravelPage(page);
+		// Cleanup: viaje de TC11 dejaba estado sucio (SEARCHING_DRIVER activo) que hacía
+		// flaky al TC12 subsiguiente con el mismo colaborador — diagnóstico MR post-merge
+		// del agente qa-doc-analyst 2026-04-19.
+		let travelIdRef: TravelIdRef | null = null;
 
 		await test.step(`[SMOKE-GW-TC11][STEP-01] Login contractor en ${env.toUpperCase()}`, async () => {
 			await loginAsContractor(page);
 		});
 
-		await test.step('[SMOKE-GW-TC11][STEP-02] Abrir formulario de nuevo viaje', async () => {
-			await dashboard.openNewTravel();
-			await travel.ensureLoaded();
-		});
+		try {
+			travelIdRef = await captureCreatedTravelId(page);
 
-		await test.step('[SMOKE-GW-TC11][STEP-03] Completar formulario — colaborador + vinculación tarjeta nueva (4242) + Hold ON', async () => {
-			await travel.fillMinimum({
-				client:      TEST_DATA.contractorColaborador,
-				passenger:   TEST_DATA.contractorColaborador,
-				origin:      TEST_DATA.origin,
-				destination: TEST_DATA.destination,
-				cardLast4:   STRIPE_TEST_CARDS.successDirect.slice(-4),
+			await test.step('[SMOKE-GW-TC11][STEP-02] Abrir formulario de nuevo viaje', async () => {
+				await dashboard.openNewTravel();
+				await travel.ensureLoaded();
 			});
-		});
 
-		await test.step('[SMOKE-GW-TC11][STEP-04] Seleccionar vehículo y enviar servicio', async () => {
-			await travel.waitForVehicleSelectionReady();
-			await travel.clickSelectVehicle();
-			await travel.clickSendService();
-		});
+			await test.step('[SMOKE-GW-TC11][STEP-03] Completar formulario — colaborador + vinculación tarjeta nueva (4242) + Hold ON', async () => {
+				await travel.fillMinimum({
+					client:      TEST_DATA.contractorColaborador,
+					passenger:   TEST_DATA.contractorColaborador,
+					origin:      TEST_DATA.origin,
+					destination: TEST_DATA.destination,
+					cardLast4:   STRIPE_TEST_CARDS.successDirect.slice(-4),
+				});
+			});
 
-		await test.step('[SMOKE-GW-TC11][STEP-05] Verificar que NO aparece modal 3DS', async () => {
-			await expectNoThreeDSModal(page);
-		});
+			await test.step('[SMOKE-GW-TC11][STEP-04] Seleccionar vehículo y enviar servicio', async () => {
+				await travel.waitForVehicleSelectionReady();
+				await travel.clickSelectVehicle();
+				await travel.clickSendService();
+			});
 
-		await test.step('[SMOKE-GW-TC11][STEP-06] Verificar redirección a contractor/dashboard tras crear viaje', async () => {
-			// El portal Contractor redirige a dashboard tras crear el viaje (no a /travels/xxx).
-			await expect(page).toHaveURL(/contractor\/dashboard/, { timeout: 20_000 });
-			console.log(`[SMOKE-GW-TC11] Contractor Colaborador Hold ON sin 3DS — viaje creado en ${env.toUpperCase()} ✅`);
-		});
+			await test.step('[SMOKE-GW-TC11][STEP-05] Verificar que NO aparece modal 3DS', async () => {
+				await expectNoThreeDSModal(page);
+			});
+
+			await test.step('[SMOKE-GW-TC11][STEP-06] Verificar redirección a contractor/dashboard tras crear viaje', async () => {
+				// El portal Contractor redirige a dashboard tras crear el viaje (no a /travels/xxx).
+				await expect(page).toHaveURL(/contractor\/dashboard/, { timeout: 20_000 });
+				console.log(`[SMOKE-GW-TC11] Contractor Colaborador Hold ON sin 3DS — viaje creado en ${env.toUpperCase()} ✅`);
+			});
+		} finally {
+			if (travelIdRef) await cancelTravelIfCreated(page, travelIdRef);
+		}
 	});
 
 	// ── TC12 ─────────────────────────────────────────────────────────────────
@@ -615,50 +625,64 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Contractor`, 
 		const dashboard  = new DashboardPage(page);
 		const travel     = new ContractorNewTravelPage(page);
 		const threeDS    = new ThreeDSModal(page);
+		let travelIdRef: TravelIdRef | null = null;
 
 		await test.step(`[SMOKE-GW-TC12][STEP-01] Login contractor en ${env.toUpperCase()}`, async () => {
 			await loginAsContractor(page);
 		});
 
-		await test.step('[SMOKE-GW-TC12][STEP-02] Abrir formulario de nuevo viaje', async () => {
-			await dashboard.openNewTravel();
-			await travel.ensureLoaded();
-		});
+		try {
+			travelIdRef = await captureCreatedTravelId(page);
 
-		await test.step('[SMOKE-GW-TC12][STEP-03] Completar formulario — colaborador + tarjeta con 3DS (3155) + Hold ON', async () => {
-			await travel.fillMinimum({
-				client:      TEST_DATA.contractorColaborador,
-				passenger:   TEST_DATA.contractorColaborador,
-				origin:      TEST_DATA.origin,
-				destination: TEST_DATA.destination,
-				cardLast4:   STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4),
+			await test.step('[SMOKE-GW-TC12][STEP-02] Abrir formulario de nuevo viaje', async () => {
+				await dashboard.openNewTravel();
+				await travel.ensureLoaded();
 			});
-		});
 
-		await test.step('[SMOKE-GW-TC12][STEP-04] Aprobar primer challenge 3DS (vinculación de tarjeta)', async () => {
-			await threeDS.waitForVisible();
-			await threeDS.completeSuccess();
-			await threeDS.waitForHidden();
-			console.log('[SMOKE-GW-TC12][3DS-1] Primer challenge 3DS aprobado ✅');
-		});
+			await test.step('[SMOKE-GW-TC12][STEP-03] Completar formulario — colaborador + tarjeta con 3DS (3155) + Hold ON', async () => {
+				await travel.fillMinimum({
+					client:      TEST_DATA.contractorColaborador,
+					passenger:   TEST_DATA.contractorColaborador,
+					origin:      TEST_DATA.origin,
+					destination: TEST_DATA.destination,
+					cardLast4:   STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4),
+				});
+			});
 
-		await test.step('[SMOKE-GW-TC12][STEP-05] Seleccionar vehículo y enviar servicio', async () => {
-			await travel.waitForVehicleSelectionReady();
-			await travel.clickSelectVehicle();
-			await travel.clickSendService();
-		});
+			await test.step('[SMOKE-GW-TC12][STEP-04] Aprobar primer challenge 3DS (vinculación de tarjeta)', async () => {
+				await threeDS.waitForVisible();
+				await threeDS.completeSuccess();
+				await threeDS.waitForHidden();
+				console.log('[SMOKE-GW-TC12][3DS-1] Primer challenge 3DS aprobado ✅');
+			});
 
-		await test.step('[SMOKE-GW-TC12][STEP-06] Aprobar segundo challenge 3DS (hold del viaje)', async () => {
-			await threeDS.waitForVisible();
-			await threeDS.completeSuccess();
-			await threeDS.waitForHidden();
-			console.log('[SMOKE-GW-TC12][3DS-2] Segundo challenge 3DS aprobado ✅');
-		});
+			// Defense post-3DS: si el formulario reseteó el método de pago a "Efectivo"
+			// (fenómeno intermitente detectado en diagnóstico flakiness 2026-04-19),
+			// fallar rápido con mensaje diagnóstico claro en lugar del timeout 45s en STEP-05.
+			await test.step('[SMOKE-GW-TC12][STEP-04b] Verificar que "Preautorizada" sigue seleccionada tras 3DS-1', async () => {
+				await expect(page.getByText(/Preautorizad/i).first()).toBeVisible({ timeout: 5_000 });
+			});
 
-		await test.step('[SMOKE-GW-TC12][STEP-07] Verificar redirección a contractor/dashboard tras crear viaje', async () => {
-			await expect(page).toHaveURL(/contractor\/dashboard/, { timeout: 20_000 });
-			console.log(`[SMOKE-GW-TC12] Contractor Colaborador Hold ON 3DS éxito — viaje creado en ${env.toUpperCase()} ✅`);
-		});
+			await test.step('[SMOKE-GW-TC12][STEP-05] Seleccionar vehículo y enviar servicio', async () => {
+				await travel.waitForVehicleSelectionReady();
+				await travel.clickSelectVehicle();
+				await travel.clickSendService();
+			});
+
+			await test.step('[SMOKE-GW-TC12][STEP-06] Aprobar segundo challenge 3DS (hold del viaje)', async () => {
+				await threeDS.waitForVisible();
+				await threeDS.completeSuccess();
+				await threeDS.waitForHidden();
+				console.log('[SMOKE-GW-TC12][3DS-2] Segundo challenge 3DS aprobado ✅');
+			});
+
+			await test.step('[SMOKE-GW-TC12][STEP-07] Verificar redirección a contractor/dashboard tras crear viaje', async () => {
+				await expect(page).toHaveURL(/contractor\/dashboard/, { timeout: 20_000 });
+				console.log(`[SMOKE-GW-TC12] Contractor Colaborador Hold ON 3DS éxito — viaje creado en ${env.toUpperCase()} ✅`);
+			});
+		} finally {
+			if (travelIdRef) await cancelTravelIfCreated(page, travelIdRef);
+		}
 	});
 
 	// ── TC13 ─────────────────────────────────────────────────────────────────
@@ -707,10 +731,13 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Contractor`, 
 		});
 	});
 
-	// ── TC14 (UNHAPPY — pendiente TC en matriz) ───────────────────────────────
+	// ── TC14 (UNHAPPY — tarjeta declinada por fondos insuficientes) ───────────
 	test('[TS-STRIPE-P2-TC090] SMOKE-GW-TC14 — Colaborador · Hold ON · tarjeta declinada (9995) → error → viaje no creado [UNHAPPY]', async ({ page }) => {
-		// TC en matriz: pendiente de definición formal.
-		// Comportamiento esperado: fondos insuficientes → error visible → viaje no redirige a /travels/
+		// Flujo UNHAPPY: card 9995 rechaza el SetupIntent al intentar vincularla.
+		// El botón "Validar" puede:
+		//   (a) nunca habilitarse (Stripe rechaza durante el fill) → timeout corto
+		//   (b) habilitarse, el click dispara el mensaje de error en el form
+		// Ambos casos se manejan con clickValidateCardAllowingReject().
 		const dashboard   = new DashboardPage(page);
 		const travel      = new ContractorNewTravelPage(page);
 
@@ -723,33 +750,25 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Contractor`, 
 			await travel.ensureLoaded();
 		});
 
-		await test.step('[SMOKE-GW-TC14][STEP-03] Completar formulario — colaborador + tarjeta fondos insuficientes (9995)', async () => {
+		await test.step('[SMOKE-GW-TC14][STEP-03] Completar formulario (sin validar tarjeta) — colaborador + 9995', async () => {
 			await travel.fillMinimum({
-				client:      TEST_DATA.contractorColaborador,
-				passenger:   TEST_DATA.contractorColaborador,
-				origin:      TEST_DATA.origin,
-				destination: TEST_DATA.destination,
-				cardLast4:   STRIPE_TEST_CARDS.insufficientFunds.slice(-4),
+				client:              TEST_DATA.contractorColaborador,
+				passenger:           TEST_DATA.contractorColaborador,
+				origin:              TEST_DATA.origin,
+				destination:         TEST_DATA.destination,
+				cardLast4:           STRIPE_TEST_CARDS.insufficientFunds.slice(-4),
+				skipCardValidation:  true, // dejamos que TC14 controle el click Validar
 			});
 		});
 
-		await test.step('[SMOKE-GW-TC14][STEP-04] Intentar seleccionar vehículo y enviar servicio', async () => {
-			// Card 9995 (fondos insuficientes) es rechazada por Stripe durante la vinculación del form
-			// — el botón de vehículo nunca habilita. Timeout corto (8s) para fail-fast y continuar
-			// al STEP-05 donde se valida el mensaje de error ya visible en el formulario.
-			const isReady = await travel.waitForVehicleSelectionReady(8_000).then(() => true).catch(() => false);
-			if (isReady) {
-				await travel.clickSelectVehicle();
-				await travel.clickSendService();
-			}
+		await test.step('[SMOKE-GW-TC14][STEP-04] Click Validar — esperar error de fondos insuficientes', async () => {
+			const result = await travel.clickValidateCardAllowingReject(8_000);
+			expect(result.success).toBe(false);
+			expect(result.errorMessage ?? '').toMatch(/insufficient funds|fondos insuficientes|declinada|rechazada/i);
+			console.log(`[SMOKE-GW-TC14][CHECK] Error visible: "${result.errorMessage}" ✅`);
 		});
 
-		await test.step('[SMOKE-GW-TC14][STEP-05] Validar error de declinación visible', async () => {
-			await expect(page.getByText(/declinada|rechazada|fondos|insufficient/i)).toBeVisible({ timeout: 10_000 });
-			console.log(`[SMOKE-GW-TC14][CHECK] Error de declinación visible ✅`);
-		});
-
-		await test.step('[SMOKE-GW-TC14][STEP-06] Validar que el viaje no fue creado (URL sin /travels/)', async () => {
+		await test.step('[SMOKE-GW-TC14][STEP-05] Validar que el viaje no fue creado (URL sin /travels/)', async () => {
 			await expect(page).not.toHaveURL(/\/travels\/[\w-]+/, { timeout: 5_000 });
 			console.log(`[SMOKE-GW-TC14] Contractor fondos insuficientes → viaje no creado en ${env.toUpperCase()} ✅`);
 		});

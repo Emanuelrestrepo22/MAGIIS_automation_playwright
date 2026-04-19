@@ -85,10 +85,12 @@ test.describe('Gateway PG · Carrier · App Pax — Hold sin 3DS', () => {
 				origin: TEST_DATA.origin,
 				destination: TEST_DATA.destination,
 				cardLast4: STRIPE_TEST_CARDS.insufficientFunds.slice(-4), // 9995
+				skipCardValidation: true, // card 9995 rechaza — controlamos el click Validar
 			});
-			await travel.submit();
 
-			await expect(page.getByText(/declinada|rechazada|fondos/i)).toBeVisible({ timeout: 10_000 });
+			const result = await travel.clickValidateCardAllowingReject(8_000);
+			expect(result.success).toBe(false);
+			expect(result.errorMessage ?? '').toMatch(/insufficient funds|fondos insuficientes|declinada|rechazada/i);
 		});
 
 		test('el viaje no se crea — URL no redirige a /travels/... cuando la tarjeta es declinada', async ({ page }) => {
@@ -100,9 +102,12 @@ test.describe('Gateway PG · Carrier · App Pax — Hold sin 3DS', () => {
 				origin: TEST_DATA.origin,
 				destination: TEST_DATA.destination,
 				cardLast4: STRIPE_TEST_CARDS.insufficientFunds.slice(-4), // 9995
+				skipCardValidation: true,
 			});
-			await travel.submit();
 
+			// La card 9995 rechaza en el paso de validación — nunca se llega a submit.
+			const result = await travel.clickValidateCardAllowingReject(8_000);
+			expect(result.success).toBe(false);
 			await expect(page).not.toHaveURL(/\/travels\/[\w-]+/, { timeout: 5_000 });
 		});
 	});
