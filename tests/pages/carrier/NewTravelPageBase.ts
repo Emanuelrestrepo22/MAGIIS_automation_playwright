@@ -10,6 +10,12 @@ export type NewTravelFormInput = {
 	cardLast4: string;
 	/** Si true, intenta seleccionar una tarjeta guardada del dropdown antes de vincular nueva */
 	preferSavedCard?: boolean;
+	/**
+	 * Si true, llena el formulario Stripe pero NO hace click en "Validar" automáticamente.
+	 * Útil para tests UNHAPPY con cards de rechazo conocidas (9995, 1629, etc) donde
+	 * el caller quiere controlar el flujo de validación con `clickValidateCardAllowingReject()`.
+	 */
+	skipCardValidation?: boolean;
 };
 
 /**
@@ -642,10 +648,14 @@ export abstract class NewTravelPageBase {
 		await this.assertPaymentMethodPreauthorizedSelected();
 	}
 
-	async selectCardByLast4(last4: string): Promise<void> {
+	async selectCardByLast4(last4: string, skipValidate = false): Promise<void> {
 		await this.fillPreauthorizedCard(last4);
 		// Clickear Validar sigue siendo parte del flujo legado que usa este método.
-		await this.clickValidateCard();
+		// Los tests UNHAPPY con cards de rechazo usan skipValidate=true para controlar
+		// la validación con `clickValidateCardAllowingReject()` y capturar el error de Stripe.
+		if (!skipValidate) {
+			await this.clickValidateCard();
+		}
 	}
 
 	/**
@@ -896,7 +906,7 @@ export abstract class NewTravelPageBase {
 		if (opts.preferSavedCard) {
 			await this.selectCardSmart(opts.cardLast4);
 		} else {
-			await this.selectCardByLast4(opts.cardLast4);
+			await this.selectCardByLast4(opts.cardLast4, opts.skipCardValidation ?? false);
 		}
 	}
 
