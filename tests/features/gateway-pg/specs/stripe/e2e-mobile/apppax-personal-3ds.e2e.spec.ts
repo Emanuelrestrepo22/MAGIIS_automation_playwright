@@ -19,6 +19,7 @@ import { GatewayPgJourneyOrchestrator } from '../../../helpers/GatewayPgJourneyO
 import { PASSENGER_FLOW2_SCENARIOS } from '../../../data/passenger-flow2-scenarios';
 import { getPassengerAppConfig } from '../../../../../mobile/appium/config/appiumRuntime';
 import { PassengerTripHappyPathHarness } from '../../../../../mobile/appium/harness/PassengerTripHappyPathHarness';
+import { resolveCard } from '../../../../../fixtures/stripe/card-resolver';
 
 const orchestrator = new GatewayPgJourneyOrchestrator();
 
@@ -45,11 +46,12 @@ test.describe.serial('Gateway PG · E2E Mobile · App Pax Personal', () => {
 				profileMode: 'personal'
 			});
 			let journey = createJourney(scenario.testCaseId);
+			const resolvedCard = resolveCard(scenario.cardId);
 			const card = {
-				number: scenario.card.number,
-				expiry: scenario.card.exp,
-				cvc: scenario.card.cvc,
-				holderName: scenario.card.holderName
+				number: resolvedCard.number,
+				expiry: resolvedCard.exp,
+				cvc: resolvedCard.cvc,
+				holderName: resolvedCard.holderName
 			};
 
 			try {

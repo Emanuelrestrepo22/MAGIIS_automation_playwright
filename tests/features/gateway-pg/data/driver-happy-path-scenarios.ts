@@ -1,4 +1,4 @@
-import { STRIPE_TEST_CARDS } from './stripeTestData';
+import { CARDS } from '../../../fixtures/stripe/card-policy';
 
 export type CarrierDriverHappyPathRules = {
 	holdEnabled: boolean;
@@ -33,7 +33,7 @@ export const CARRIER_DRIVER_HAPPY_PATH_SCENARIOS: CarrierDriverHappyPathScenario
 		passenger: DEFAULT_CLIENT,
 		origin: DEFAULT_ORIGIN,
 		destination: DEFAULT_DESTINATION,
-		cardLast4: STRIPE_TEST_CARDS.successDirect.slice(-4),
+		cardLast4: CARDS.SUCCESS_NO_3DS.slice(-4), // 4242 — migrado desde STRIPE_TEST_CARDS.successDirect
 		rules: {
 			holdEnabled: true,
 			threeDSMode: 'none',
@@ -47,7 +47,7 @@ export const CARRIER_DRIVER_HAPPY_PATH_SCENARIOS: CarrierDriverHappyPathScenario
 		passenger: DEFAULT_CLIENT,
 		origin: DEFAULT_ORIGIN,
 		destination: DEFAULT_DESTINATION,
-		cardLast4: STRIPE_TEST_CARDS.success3DS.slice(-4),
+		cardLast4: CARDS.LEGACY_3DS_SUCCESS.slice(-4), // 3155 legacy — TC valida comportamiento especifico de risk score en hold+3DS
 		rules: {
 			holdEnabled: true,
 			threeDSMode: 'challenge-accept',
@@ -61,7 +61,7 @@ export const CARRIER_DRIVER_HAPPY_PATH_SCENARIOS: CarrierDriverHappyPathScenario
 		passenger: DEFAULT_CLIENT,
 		origin: DEFAULT_ORIGIN,
 		destination: DEFAULT_DESTINATION,
-		cardLast4: STRIPE_TEST_CARDS.success3DS.slice(-4),
+		cardLast4: CARDS.LEGACY_3DS_SUCCESS.slice(-4), // 3155 legacy — TC valida comportamiento especifico de risk score en hold OFF+3DS
 		rules: {
 			holdEnabled: false,
 			threeDSMode: 'challenge-accept',
@@ -69,4 +69,3 @@ export const CARRIER_DRIVER_HAPPY_PATH_SCENARIOS: CarrierDriverHappyPathScenario
 		},
 	},
 ];
-
