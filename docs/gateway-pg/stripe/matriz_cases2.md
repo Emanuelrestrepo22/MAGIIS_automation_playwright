@@ -23,6 +23,12 @@ r# Test Suite – Stripe · Parte 2: Portal Contractor, Quote, Recurrentes y Ope
 | TS-STRIPE-P2-TC005 | Validar vinculación de tarjeta y Alta de Viaje desde portal contractor para usuario colaborador con Tarjeta Preautorizada **Hold desde Alta de Viaje y Cobro desde App Driver** con validación 3DS |
 | TS-STRIPE-P2-TC006 | Validar vinculación de tarjeta y Alta de Viaje desde portal contractor para usuario colaborador con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver** con validación 3DS |
 
+### 1.3 Colaborador de Contractor – Tarjetas con fallo de pago
+
+| ID | Descripción |
+|----|-------------|
+| TS-STRIPE-P2-TC090 | Validar Alta de Viaje desde portal contractor para usuario colaborador con Tarjeta de **fondos insuficientes (4000 0000 0000 9995)** Hold ON — error visible, viaje no creado |
+
 ---
 
 ## 2. Flujo Quote – Alta de Viaje
