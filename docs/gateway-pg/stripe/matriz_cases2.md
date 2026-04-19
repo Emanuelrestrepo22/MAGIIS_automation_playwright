@@ -11,17 +11,17 @@ r# Test Suite – Stripe · Parte 2: Portal Contractor, Quote, Recurrentes y Ope
 
 | ID | Descripción |
 |----|-------------|
-| TS-STRIPE-P2-TC001 | Validar vinculación de tarjeta y Alta de Viaje desde app pax para usuario colaborador de contractor con Tarjeta Preautorizada **Hold desde Alta de Viaje y Cobro desde App Driver** |
-| TS-STRIPE-P2-TC002 | Validar vinculación de tarjeta y Alta de Viaje desde app pax para usuario colaborador de contractor con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver** |
-| TS-STRIPE-P2-TC003 | Validar selección de tarjeta y Alta de Viaje desde app pax para usuario colaborador de contractor con Tarjeta Preautorizada **Hold desde Alta de Viaje y Cobro desde App Driver** |
-| TS-STRIPE-P2-TC004 | Validar selección de tarjeta y Alta de Viaje desde app pax para usuario colaborador de contractor con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver** |
+| TS-STRIPE-P2-TC001 | Validar vinculación de tarjeta y Alta de Viaje desde portal contractor para usuario colaborador con Tarjeta Preautorizada **Hold desde Alta de Viaje y Cobro desde App Driver** |
+| TS-STRIPE-P2-TC002 | Validar vinculación de tarjeta y Alta de Viaje desde portal contractor para usuario colaborador con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver** |
+| TS-STRIPE-P2-TC003 | Validar selección de tarjeta y Alta de Viaje desde portal contractor para usuario colaborador con Tarjeta Preautorizada **Hold desde Alta de Viaje y Cobro desde App Driver** |
+| TS-STRIPE-P2-TC004 | Validar selección de tarjeta y Alta de Viaje desde portal contractor para usuario colaborador con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver** |
 
 ### 1.2 Colaborador de Contractor – Tarjeta Preautorizada con 3DS
 
 | ID | Descripción |
 |----|-------------|
-| TS-STRIPE-P2-TC005 | Validar vinculación de tarjeta y Alta de Viaje desde app pax para usuario colaborador de contractor con Tarjeta Preautorizada **Hold desde Alta de Viaje y Cobro desde App Driver** con validación 3DS |
-| TS-STRIPE-P2-TC006 | Validar vinculación de tarjeta y Alta de Viaje desde app pax para usuario colaborador de contractor con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver** con validación 3DS |
+| TS-STRIPE-P2-TC005 | Validar vinculación de tarjeta y Alta de Viaje desde portal contractor para usuario colaborador con Tarjeta Preautorizada **Hold desde Alta de Viaje y Cobro desde App Driver** con validación 3DS |
+| TS-STRIPE-P2-TC006 | Validar vinculación de tarjeta y Alta de Viaje desde portal contractor para usuario colaborador con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver** con validación 3DS |
 
 ---
 
