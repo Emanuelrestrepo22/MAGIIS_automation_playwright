@@ -36,11 +36,11 @@
 
 ### 2.2 Tarjeta Preautorizada – con validación 3DS
 
-| ID               | Descripción                                                                                                                                           |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| TS-STRIPE-TC1013 | Validar Alta de Viaje para usuario personal desde app pax con Tarjeta Preautorizada **Hold desde Alta de Viaje y Cobro desde App Driver** con validación 3DS     |
-| TS-STRIPE-TC1014 | Validar Alta de Viaje para usuario personal desde app pax con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver** con validación 3DS |
-| TS-STRIPE-TC1015 | Validar Alta de Viaje para usuario personal con Tarjeta Preautorizada **Hold desde Alta de Viaje y Cobro desde App Driver** con validación 3DS                   |
+| ID               | Descripción                                                                                                                                                     |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| TS-STRIPE-TC1013 | Validar Alta de Viaje desde app pax para usuario personal con Tarjeta Preautorizada **Hold desde Alta de Viaje y Cobro desde App Driver** con validación 3DS    |
+| TS-STRIPE-TC1014 | Validar Alta de Viaje desde app pax para usuario personal con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver** con validación 3DS |
+| TS-STRIPE-TC1015 | Validar Alta de Viaje desde app pax para usuario personal con Tarjeta Preautorizada **Hold desde Alta de Viaje y Cobro desde App Driver** con validación 3DS    |
 | TS-STRIPE-TC1016 | Validar Alta de Viaje desde app pax para usuario personal con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver** con validación 3DS |
 
 ### 2.3 Variantes exploratorias (alias colapsados a TC canónicos)
