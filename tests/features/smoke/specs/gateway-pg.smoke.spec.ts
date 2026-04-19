@@ -17,6 +17,7 @@ import {
 	STRIPE_TEST_CARDS,
 	TEST_DATA,
 } from '../../gateway-pg/fixtures/gateway.fixtures';
+import { CARDS } from '../../../fixtures/stripe/card-policy';
 import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../gateway-pg/helpers/travel-cleanup';
 import { waitForTravelCreation } from '../../gateway-pg/helpers/stripe.helpers';
 import { validateCardPrecondition } from '../../gateway-pg/helpers/card-precondition';
@@ -127,13 +128,13 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 			await travel.ensureLoaded();
 		});
 
-		await test.step('[SMOKE-GW-TC02][STEP-04] Completar formulario — AppPax + tarjeta con 3DS (3155)', async () => {
+		await test.step('[SMOKE-GW-TC02][STEP-04] Completar formulario — AppPax + tarjeta con 3DS (3184 always_authenticate)', async () => {
 			await travel.fillMinimum({
 				client:      TEST_DATA.appPaxPassenger,
 				passenger:   TEST_DATA.appPaxPassenger,
 				origin:      TEST_DATA.origin,
 				destination: TEST_DATA.destination,
-				cardLast4:   STRIPE_TEST_CARDS.success3DS.slice(-4),
+				cardLast4:   CARDS.HAPPY_3DS.slice(-4),
 			});
 		});
 
@@ -339,13 +340,13 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 			await travel.ensureLoaded();
 		});
 
-		await test.step('[SMOKE-GW-TC06][STEP-04] Completar formulario — Colaborador + tarjeta con 3DS (3155)', async () => {
+		await test.step('[SMOKE-GW-TC06][STEP-04] Completar formulario — Colaborador + tarjeta con 3DS (3184 always_authenticate)', async () => {
 			await travel.fillMinimum({
 				client:      TEST_DATA.contractorClient,
 				passenger:   TEST_DATA.contractorColaborador,
 				origin:      TEST_DATA.origin,
 				destination: TEST_DATA.destination,
-				cardLast4:   STRIPE_TEST_CARDS.success3DS.slice(-4),
+				cardLast4:   CARDS.HAPPY_3DS.slice(-4),
 			});
 		});
 
@@ -654,7 +655,7 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Contractor`, 
 					passenger:   TEST_DATA.contractorColaborador,
 					origin:      TEST_DATA.origin,
 					destination: TEST_DATA.destination,
-					cardLast4:   STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4),
+					cardLast4:   CARDS.HAPPY_3DS_HOLD_CAPTURE.slice(-4),
 				});
 			});
 

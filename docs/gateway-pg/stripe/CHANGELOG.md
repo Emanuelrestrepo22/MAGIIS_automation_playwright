@@ -7,6 +7,49 @@ IDs canónicos: ver `matriz_cases.md` y `matriz_cases2.md` (fuente de verdad).
 
 ---
 
+## [2026-04-19] feature/cards-policy-full-migration
+
+### Added
+
+- **`tests/fixtures/`** — nueva ubicación canónica para datos de prueba atómicos transversales, alineada con patrón industry-standard (Stripe SDK, Shopify, Adyen, selenium-py-POM referencia).
+  - `fixtures/stripe/cards.ts` — SoT re-export del registry
+  - `fixtures/stripe/card-policy.ts` — namespace `CARDS.*` por intención
+  - `fixtures/users/passengers.ts` — re-export de passengers
+  - `fixtures/README.md` + `fixtures/stripe/README.md` — taxonomía y políticas
+- **`docs/ARCHITECTURE.md`** — documento canónico de arquitectura + comparativa con `selenium-py-POM` + convenciones de evolución.
+
+### Changed
+
+- **Smoke spec migrado a `CARDS.*`:**
+  - TC02 (AppPax · 3DS): `STRIPE_TEST_CARDS.success3DS` (3155 flaky) → `CARDS.HAPPY_3DS` (3184 always_authenticate).
+  - TC06 (Colaborador · 3DS): idem.
+  - TC12 (Contractor · 3DS + hold): `STRIPE_TEST_CARDS.alwaysAuthenticate` → `CARDS.HAPPY_3DS_HOLD_CAPTURE` (alias explícito).
+- **Flows E2E migrados:**
+  - `flow1-carrier-driver/web-phase.ts` `resolveCardLast4ForConfig`: 3155 → `CARDS.HAPPY_3DS` (3184).
+  - `flow3-contractor-driver/web-phase.ts` `resolveCardLast4ForConfig`: 3155 → `CARDS.HAPPY_3DS_HOLD_CAPTURE` (3184).
+
+### Rationale
+
+Card 3155 (`visa_3ds_success`) tiene comportamiento variable en Stripe TEST — Stripe decide si desafía según risk score, generando flakiness intermitente. Card 3184 (`always_authenticate`) siempre pide challenge, elimina esa variabilidad.
+
+La policy `CARDS.*` agrupa cards por **intención** del test en vez de alias técnico, alineado con patrón industry-standard y facilitando:
+- Auto-documentación del intent
+- Centralización (un solo lugar para cambiar defaults)
+- Prevención de uso casual de cards deprecadas
+
+### Deferred (scope futuro)
+
+Los siguientes usos de `STRIPE_TEST_CARDS.visa_3ds_success` (3155) **NO** se migraron en este MR porque usan tipo `StripeTestCard` object (no `string`) — requieren refactor de types:
+
+- `tests/features/gateway-pg/data/passenger-flow2-scenarios.ts`
+- `tests/features/gateway-pg/data/passenger-business-scenarios.ts`
+- `tests/features/gateway-pg/data/driver-happy-path-scenarios.ts`
+- `tests/mobile/appium/scripts/*.ts` (scripts one-shot)
+
+Plan: sprint separada — refactor de tipo para aceptar tanto `CARDS.*` (string) como `StripeTestCard` (object).
+
+---
+
 ## [2026-04-19] contractor/tc14-v3-decline-timeout
 
 ### Changed
