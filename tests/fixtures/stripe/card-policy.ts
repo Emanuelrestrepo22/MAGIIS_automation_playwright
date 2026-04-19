@@ -135,6 +135,14 @@ export const CARDS = {
 	 * Stripe: `4000 0025 0000 3155`, visa_3ds_success.
 	 */
 	LEGACY_3DS_SUCCESS: STRIPE_TEST_CARDS.success3DS,
+
+	/**
+	 * Decline por CVC incorrecto — escenario negativo de guardado de tarjeta.
+	 * Stripe: `4000 0000 0000 0127`, incorrect_cvc.
+	 * Resultado: cargo rechazado con código `incorrect_cvc`.
+	 * Usar en tests de validación de wallet que deben fallar al guardar.
+	 */
+	DECLINE_INVALID_CVC: STRIPE_TEST_CARDS.incorrectCvc,
 } as const;
 
 export type CardPolicyKey = keyof typeof CARDS;

@@ -1,6 +1,6 @@
 import { PASSENGERS } from './passengers';
-import { STRIPE_TEST_CARDS, type StripeTestCard } from './stripe-cards';
 import { TEST_DATA } from './stripeTestData';
+import type { CardId } from '../../../fixtures/stripe/card-resolver';
 
 export type PassengerFlow2Step = 'wallet-add-card' | 'wallet-select-card' | 'wallet-delete-linked-card' | 'trip-create' | 'trip-assigned' | 'trip-completed' | 'wallet-negative';
 
@@ -10,7 +10,8 @@ export type PassengerFlow2Scenario = {
 	title: string;
 	active: boolean;
 	step: PassengerFlow2Step;
-	card: StripeTestCard;
+	/** Identificador de card por intención (keyof CARDS) o número directo */
+	cardId: CardId;
 	passenger: string;
 	origin: string;
 	destination: string;
@@ -29,7 +30,7 @@ export const PASSENGER_FLOW2_SCENARIOS: PassengerFlow2Scenario[] = [
 		title: 'Add card to passenger wallet',
 		active: true,
 		step: 'wallet-add-card',
-		card: STRIPE_TEST_CARDS.visa_3ds_success,
+		cardId: 'HAPPY_3DS', // 3184 determinístico — migrado desde 3155 (visa_3ds_success, comportamiento variable)
 		passenger: PASSENGERS.appPax.name,
 		origin: TEST_DATA.origin,
 		destination: TEST_DATA.destination,
@@ -44,7 +45,7 @@ export const PASSENGER_FLOW2_SCENARIOS: PassengerFlow2Scenario[] = [
 		title: 'Delete linked 3DS card from passenger wallet',
 		active: true,
 		step: 'wallet-delete-linked-card',
-		card: STRIPE_TEST_CARDS.visa_3ds_success,
+		cardId: 'HAPPY_3DS', // 3184 determinístico — migrado desde 3155 (visa_3ds_success, comportamiento variable)
 		passenger: PASSENGERS.appPax.name,
 		origin: TEST_DATA.origin,
 		destination: TEST_DATA.destination,
@@ -59,7 +60,7 @@ export const PASSENGER_FLOW2_SCENARIOS: PassengerFlow2Scenario[] = [
 		title: 'Select an existing card for a trip',
 		active: true,
 		step: 'wallet-select-card',
-		card: STRIPE_TEST_CARDS.visa_3ds_success,
+		cardId: 'HAPPY_3DS', // 3184 determinístico — migrado desde 3155 (visa_3ds_success, comportamiento variable)
 		passenger: PASSENGERS.appPax.name,
 		origin: TEST_DATA.origin,
 		destination: TEST_DATA.destination,
@@ -74,7 +75,7 @@ export const PASSENGER_FLOW2_SCENARIOS: PassengerFlow2Scenario[] = [
 		title: 'Create trip from passenger app',
 		active: true,
 		step: 'trip-create',
-		card: STRIPE_TEST_CARDS.visa_3ds_success,
+		cardId: 'HAPPY_3DS', // 3184 determinístico — migrado desde 3155 (visa_3ds_success, comportamiento variable)
 		passenger: PASSENGERS.appPax.name,
 		origin: TEST_DATA.origin,
 		destination: TEST_DATA.destination,
@@ -89,7 +90,7 @@ export const PASSENGER_FLOW2_SCENARIOS: PassengerFlow2Scenario[] = [
 		title: 'See trip in progress / assigned driver',
 		active: false,
 		step: 'trip-assigned',
-		card: STRIPE_TEST_CARDS.visa_3ds_success,
+		cardId: 'HAPPY_3DS', // 3184 determinístico — migrado desde 3155 (visa_3ds_success, comportamiento variable)
 		passenger: PASSENGERS.appPax.name,
 		origin: TEST_DATA.origin,
 		destination: TEST_DATA.destination,
@@ -104,7 +105,7 @@ export const PASSENGER_FLOW2_SCENARIOS: PassengerFlow2Scenario[] = [
 		title: 'See trip completed and payment processed',
 		active: false,
 		step: 'trip-completed',
-		card: STRIPE_TEST_CARDS.visa_3ds_success,
+		cardId: 'HAPPY_3DS', // 3184 determinístico — migrado desde 3155 (visa_3ds_success, comportamiento variable)
 		passenger: PASSENGERS.appPax.name,
 		origin: TEST_DATA.origin,
 		destination: TEST_DATA.destination,
@@ -119,7 +120,7 @@ export const PASSENGER_FLOW2_SCENARIOS: PassengerFlow2Scenario[] = [
 		title: 'Reject card save / validation failure',
 		active: false,
 		step: 'wallet-negative',
-		card: STRIPE_TEST_CARDS.incorrect_cvc,
+		cardId: 'DECLINE_INVALID_CVC', // 0127 — test valida rechazo por CVC incorrecto en guardado de tarjeta
 		passenger: PASSENGERS.appPax.name,
 		origin: TEST_DATA.origin,
 		destination: TEST_DATA.destination,

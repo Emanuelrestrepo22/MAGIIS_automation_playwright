@@ -1,6 +1,6 @@
 import { PASSENGERS } from './passengers';
-import { STRIPE_TEST_CARDS, type StripeTestCard } from './stripe-cards';
 import { TEST_DATA } from './stripeTestData';
+import type { CardId } from '../../../fixtures/stripe/card-resolver';
 
 export type PassengerBusinessStep =
 	| 'wallet-add-card'
@@ -14,7 +14,8 @@ export type PassengerBusinessScenario = {
 	title: string;
 	active: boolean;
 	step: PassengerBusinessStep;
-	card: StripeTestCard;
+	/** Identificador de card por intención (keyof CARDS) o número directo */
+	cardId: CardId;
 	passenger: string;
 	profileMode: 'business';
 	origin: string;
@@ -35,7 +36,7 @@ export const PASSENGER_BUSINESS_NO3DS_SCENARIOS: PassengerBusinessScenario[] = [
 		title: 'Add card to collaborator wallet',
 		active: true,
 		step: 'wallet-add-card',
-		card: STRIPE_TEST_CARDS.visa_success,
+		cardId: 'SUCCESS_NO_3DS', // 4242 — business no-3DS lane, happy path directo
 		passenger: PASSENGERS.colaborador.name,
 		profileMode: 'business',
 		origin: TEST_DATA.origin,
@@ -61,7 +62,7 @@ export const PASSENGER_BUSINESS_NO3DS_SCENARIOS: PassengerBusinessScenario[] = [
 		title: 'Select an existing card for a business trip',
 		active: true,
 		step: 'wallet-select-card',
-		card: STRIPE_TEST_CARDS.visa_success,
+		cardId: 'SUCCESS_NO_3DS', // 4242 — business no-3DS lane, happy path directo
 		passenger: PASSENGERS.colaborador.name,
 		profileMode: 'business',
 		origin: TEST_DATA.origin,
@@ -85,7 +86,7 @@ export const PASSENGER_BUSINESS_NO3DS_SCENARIOS: PassengerBusinessScenario[] = [
 		title: 'Create business trip from passenger app',
 		active: true,
 		step: 'trip-create',
-		card: STRIPE_TEST_CARDS.visa_success,
+		cardId: 'SUCCESS_NO_3DS', // 4242 — business no-3DS lane, happy path directo
 		passenger: PASSENGERS.colaborador.name,
 		profileMode: 'business',
 		origin: TEST_DATA.origin,
@@ -112,7 +113,7 @@ export const PASSENGER_BUSINESS_NO3DS_SCENARIOS: PassengerBusinessScenario[] = [
 		title: 'See business trip in progress / assigned driver',
 		active: false,
 		step: 'trip-assigned',
-		card: STRIPE_TEST_CARDS.visa_success,
+		cardId: 'SUCCESS_NO_3DS', // 4242 — business no-3DS lane, happy path directo
 		passenger: PASSENGERS.colaborador.name,
 		profileMode: 'business',
 		origin: TEST_DATA.origin,
@@ -140,7 +141,7 @@ export const PASSENGER_BUSINESS_3DS_SCENARIOS: PassengerBusinessScenario[] = [
 		title: 'Add card to collaborator wallet with 3DS card',
 		active: true,
 		step: 'wallet-add-card',
-		card: STRIPE_TEST_CARDS.visa_3ds_success,
+		cardId: 'HAPPY_3DS', // 3184 determinístico — migrado desde 3155 (visa_3ds_success, comportamiento variable)
 		passenger: PASSENGERS.colaborador.name,
 		profileMode: 'business',
 		origin: TEST_DATA.origin,
@@ -166,7 +167,7 @@ export const PASSENGER_BUSINESS_3DS_SCENARIOS: PassengerBusinessScenario[] = [
 		title: 'Select an existing 3DS card for a business trip',
 		active: true,
 		step: 'wallet-select-card',
-		card: STRIPE_TEST_CARDS.visa_3ds_success,
+		cardId: 'HAPPY_3DS', // 3184 determinístico — migrado desde 3155 (visa_3ds_success, comportamiento variable)
 		passenger: PASSENGERS.colaborador.name,
 		profileMode: 'business',
 		origin: TEST_DATA.origin,
@@ -190,7 +191,7 @@ export const PASSENGER_BUSINESS_3DS_SCENARIOS: PassengerBusinessScenario[] = [
 		title: 'Create business trip with 3DS card',
 		active: true,
 		step: 'trip-create',
-		card: STRIPE_TEST_CARDS.visa_3ds_success,
+		cardId: 'HAPPY_3DS', // 3184 determinístico — migrado desde 3155 (visa_3ds_success, comportamiento variable)
 		passenger: PASSENGERS.colaborador.name,
 		profileMode: 'business',
 		origin: TEST_DATA.origin,
@@ -217,7 +218,7 @@ export const PASSENGER_BUSINESS_3DS_SCENARIOS: PassengerBusinessScenario[] = [
 		title: 'See business trip in progress / assigned driver with 3DS',
 		active: false,
 		step: 'trip-assigned',
-		card: STRIPE_TEST_CARDS.visa_3ds_success,
+		cardId: 'HAPPY_3DS', // 3184 determinístico — migrado desde 3155 (visa_3ds_success, comportamiento variable)
 		passenger: PASSENGERS.colaborador.name,
 		profileMode: 'business',
 		origin: TEST_DATA.origin,

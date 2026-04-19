@@ -10,4 +10,5 @@
 
 export * from './stripe/cards';
 export * from './stripe/card-policy';
+export * from './stripe/card-resolver';
 export * from './users/passengers';

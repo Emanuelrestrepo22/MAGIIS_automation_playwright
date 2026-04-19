@@ -16,6 +16,7 @@ import { GatewayPgJourneyOrchestrator } from '../../../helpers/GatewayPgJourneyO
 import { PASSENGER_BUSINESS_NO3DS_SCENARIOS } from '../../../data/passenger-business-scenarios';
 import { getPassengerAppConfig } from '../../../../../mobile/appium/config/appiumRuntime';
 import { PassengerTripHappyPathHarness } from '../../../../../mobile/appium/harness/PassengerTripHappyPathHarness';
+import { resolveCard } from '../../../../../fixtures/stripe/card-resolver';
 
 const orchestrator = new GatewayPgJourneyOrchestrator();
 
@@ -49,11 +50,12 @@ test.describe.serial('Gateway PG · E2E Mobile · App Pax Business / Collaborato
 					profileMode: 'business',
 				});
 				let journey = createJourney(scenario.testCaseId);
+				const resolvedCard = resolveCard(scenario.cardId);
 				const card = {
-					number: scenario.card.number,
-					expiry: scenario.card.exp,
-					cvc: scenario.card.cvc,
-					holderName: scenario.card.holderName,
+					number: resolvedCard.number,
+					expiry: resolvedCard.exp,
+					cvc: resolvedCard.cvc,
+					holderName: resolvedCard.holderName,
 				};
 
 				try {
