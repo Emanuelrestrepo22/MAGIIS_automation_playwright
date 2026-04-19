@@ -1,4 +1,4 @@
-import type { PaymentGateway } from '../../../shared/contracts/gateway-pg';
+import type { PaymentGateway } from '../../../features/gateway-pg/contracts/gateway-pg.types';
 
 export type MobileGatewayCompletionInput = {
 	journeyId: string;
