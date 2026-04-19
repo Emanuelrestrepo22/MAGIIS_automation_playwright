@@ -7,6 +7,20 @@ IDs canónicos: ver `matriz_cases.md` y `matriz_cases2.md` (fuente de verdad).
 
 ---
 
+## [2026-04-19] contractor/tc14-authorize-decline
+
+### Changed
+
+- **TS-STRIPE-P2-TC090:** cambio de card `4000 0000 0000 9995` (insufficient_funds) → `4000 0000 0000 0002` (generic_decline) y descripción reescrita.
+  - **Razón:** Card 9995 pasa el SetupIntent y el hold authorize; solo rechaza en capture (cuando el driver finaliza el viaje). El smoke no alcanza a capture, entonces TC14 con 9995 daba falso positivo (no validaba ningún error). Card 0002 rechaza directamente en authorize, que es el momento correcto para validar el flujo UNHAPPY "viaje no creado".
+  - **Impacto:** smoke `gateway-pg.smoke.spec.ts` TC14 actualizado al nuevo flow (fillMinimum normal + waitForVehicleSelectionReady + clickSelectVehicle + clickSendService + expect NOT redirect a dashboard + expect error visible).
+
+### Infrastructure
+
+- Removida dependencia de `skipCardValidation` / `clickValidateCardAllowingReject` en TC14. Esos assets del POM (Fix F) siguen disponibles para tests futuros que sí rechacen en setup.
+
+---
+
 ## [2026-04-19] docs/matriz-cleanup-final
 
 ### Changed

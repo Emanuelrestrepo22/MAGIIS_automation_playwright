@@ -731,13 +731,15 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Contractor`, 
 		});
 	});
 
-	// ── TC14 (UNHAPPY — tarjeta declinada por fondos insuficientes) ───────────
-	test('[TS-STRIPE-P2-TC090] SMOKE-GW-TC14 — Colaborador · Hold ON · tarjeta declinada (9995) → error → viaje no creado [UNHAPPY]', async ({ page }) => {
-		// Flujo UNHAPPY: card 9995 rechaza el SetupIntent al intentar vincularla.
-		// El botón "Validar" puede:
-		//   (a) nunca habilitarse (Stripe rechaza durante el fill) → timeout corto
-		//   (b) habilitarse, el click dispara el mensaje de error en el form
-		// Ambos casos se manejan con clickValidateCardAllowingReject().
+	// ── TC14 (UNHAPPY — tarjeta declinada genérica por el banco) ──────────────
+	test('[TS-STRIPE-P2-TC090] SMOKE-GW-TC14 — Colaborador · Hold ON · tarjeta declinada (0002) → error → viaje no creado [UNHAPPY]', async ({ page }) => {
+		// Flujo UNHAPPY: card 4000 0000 0000 0002 (generic_decline) pasa el SetupIntent
+		// pero RECHAZA al intentar el hold authorize durante el submit del viaje.
+		//
+		// Nota: se cambió de card 9995 (insufficient_funds) a 0002 (generic_decline) porque
+		// 9995 solo rechaza al capturar (al final del viaje, fuera del alcance del smoke),
+		// mientras que 0002 rechaza en el hold authorize, que es el momento correcto
+		// para validar el flujo "viaje no creado".
 		const dashboard   = new DashboardPage(page);
 		const travel      = new ContractorNewTravelPage(page);
 
@@ -750,27 +752,40 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Contractor`, 
 			await travel.ensureLoaded();
 		});
 
-		await test.step('[SMOKE-GW-TC14][STEP-03] Completar formulario (sin validar tarjeta) — colaborador + 9995', async () => {
+		await test.step('[SMOKE-GW-TC14][STEP-03] Completar formulario — colaborador + tarjeta declinada genérica (0002)', async () => {
 			await travel.fillMinimum({
-				client:              TEST_DATA.contractorColaborador,
-				passenger:           TEST_DATA.contractorColaborador,
-				origin:              TEST_DATA.origin,
-				destination:         TEST_DATA.destination,
-				cardLast4:           STRIPE_TEST_CARDS.insufficientFunds.slice(-4),
-				skipCardValidation:  true, // dejamos que TC14 controle el click Validar
+				client:      TEST_DATA.contractorColaborador,
+				passenger:   TEST_DATA.contractorColaborador,
+				origin:      TEST_DATA.origin,
+				destination: TEST_DATA.destination,
+				cardLast4:   STRIPE_TEST_CARDS.declined.slice(-4), // 0002 — rechaza en authorize
 			});
 		});
 
-		await test.step('[SMOKE-GW-TC14][STEP-04] Click Validar — esperar error de fondos insuficientes', async () => {
-			const result = await travel.clickValidateCardAllowingReject(8_000);
-			expect(result.success).toBe(false);
-			expect(result.errorMessage ?? '').toMatch(/insufficient funds|fondos insuficientes|declinada|rechazada/i);
-			console.log(`[SMOKE-GW-TC14][CHECK] Error visible: "${result.errorMessage}" ✅`);
+		await test.step('[SMOKE-GW-TC14][STEP-04] Seleccionar vehículo y enviar servicio — hold authorize rechaza', async () => {
+			await travel.waitForVehicleSelectionReady();
+			await travel.clickSelectVehicle();
+			await travel.clickSendService();
 		});
 
-		await test.step('[SMOKE-GW-TC14][STEP-05] Validar que el viaje no fue creado (URL sin /travels/)', async () => {
-			await expect(page).not.toHaveURL(/\/travels\/[\w-]+/, { timeout: 5_000 });
-			console.log(`[SMOKE-GW-TC14] Contractor fondos insuficientes → viaje no creado en ${env.toUpperCase()} ✅`);
+		await test.step('[SMOKE-GW-TC14][STEP-05] Validar que el viaje NO fue creado (sin redirect a dashboard)', async () => {
+			// Con card declinada, el hold authorize falla → el portal NO redirige a /contractor/dashboard
+			// (comportamiento opuesto a TC11-13 donde sí redirige tras crear el viaje).
+			// Damos 10s para que el rechazo emerja en la UI.
+			await page.waitForTimeout(10_000);
+			await expect(page).not.toHaveURL(/contractor\/dashboard$/, { timeout: 2_000 });
+			console.log(`[SMOKE-GW-TC14] Contractor tarjeta declinada → viaje NO creado en ${env.toUpperCase()} ✅`);
+		});
+
+		await test.step('[SMOKE-GW-TC14][STEP-06] Validar error de declinación visible en UI', async () => {
+			// El portal muestra el error de Stripe post-submit. Aceptamos variantes comunes.
+			const errorMatches = await page
+				.getByText(/declinada|rechazada|declined|decline|no se pudo|error/i)
+				.first()
+				.isVisible({ timeout: 5_000 })
+				.catch(() => false);
+			expect(errorMatches).toBe(true);
+			console.log(`[SMOKE-GW-TC14][CHECK] Error visible en UI ✅`);
 		});
 	});
 });
