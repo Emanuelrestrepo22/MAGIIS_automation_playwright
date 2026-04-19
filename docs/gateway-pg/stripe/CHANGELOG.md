@@ -7,6 +7,21 @@ IDs canónicos: ver `matriz_cases.md` y `matriz_cases2.md` (fuente de verdad).
 
 ---
 
+## [2026-04-19] contractor/tc14-v3-decline-timeout
+
+### Changed
+
+- **TS-STRIPE-P2-TC090 SMOKE-GW-TC14:** segundo ajuste del flujo tras diagnóstico del pipeline `2463749983` (commit `cc2996a1`).
+  - Card 0002 pasa el SetupIntent, pero el portal contractor NO habilita el botón "Seleccionar Vehículo" post-validación (Stripe rechaza el attach del PaymentMethod al viaje).
+  - El STEP-04 original asumía que el flujo avanzaba hasta submit — ahora refactorizado para **validar que el botón vehículo NO se habilita** con timeout corto (8s). Eso ES el flujo UNHAPPY correcto: card declinada bloquea el avance del formulario.
+  - Removido el STEP-06 de validación de error texto — el portal no muestra mensaje visible; la validación es el botón bloqueado + URL no cambia.
+
+### Rationale
+
+El mensaje de error de Stripe no siempre aparece en UI del contractor con cards declinadas. El indicador confiable del flujo UNHAPPY es que el botón de avance queda inhabilitado → viaje no se crea → URL no cambia. Esto es más robusto que buscar un texto de error.
+
+---
+
 ## [2026-04-19] contractor/tc14-authorize-decline
 
 ### Changed
