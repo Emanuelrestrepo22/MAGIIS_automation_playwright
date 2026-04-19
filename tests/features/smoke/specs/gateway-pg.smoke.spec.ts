@@ -237,14 +237,26 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 			await loginAsDispatcher(page);
 		});
 
-		await test.step('And: precondición verificada — pasajero AppPax tiene tarjeta 4242 activa [SMOKE-GW-TC04]', async () => {
+		await test.step('And: precondición verificada — pasajero AppPax tiene tarjeta 4242 activa y Cargo a Bordo habilitado [SMOKE-GW-TC04]', async () => {
 			const check = await validateCardPrecondition(page, {
 				passengerName:  PASSENGERS.appPax.apiSearchQuery!,
 				requiredLast4:  '4242',
 			});
-			console.log(`[SMOKE-GW-TC04][PRE] AppPax tarjetas activas: ${check.activeCards}, tiene 4242: ${check.hasRequiredCard}`);
+			console.log(`[SMOKE-GW-TC04][PRE] AppPax tarjetas activas: ${check.activeCards}, tiene 4242: ${check.hasRequiredCard}, CargoABordo habilitado: ${check.creditCardEnabled}`);
 			if (!check.hasRequiredCard) {
-				throw new Error(`[SMOKE-GW-TC04] PRECONDICIÓN: AppPax sin tarjeta 4242 activa — vincular manualmente en TEST.`);
+				throw new Error(`[SMOKE-GW-TC04] PRECONDICIÓN FALLA: AppPax sin tarjeta 4242 activa — vincular manualmente en TEST.`);
+			}
+			// Fix TC1081 flakiness: validar que el método "Cargo a Bordo / Tarjeta de Crédito"
+			// esté habilitado para el pasajero. Sin esta validación el submit genera
+			// ?limitExceeded=false en el backend y el test falla tarde con error críptico.
+			// Ref: docs/gateway-pg/stripe/EXTERNAL-BLOCKERS.md §TC1081
+			// Ref: docs/reports/TC1081-FLAKINESS-DIAGNOSIS.md
+			if (!check.creditCardEnabled) {
+				throw new Error(
+					`[SMOKE-GW-TC04] PRECONDICIÓN FALLA: Método "Cargo a Bordo / Tarjeta de Crédito" NO habilitado para AppPax en ${env.toUpperCase()}. ` +
+					`Habilitar desde: Carrier → Configuración → Pasajeros → Emanuel Restrepo → Métodos de pago. ` +
+					`Ref: docs/gateway-pg/stripe/EXTERNAL-BLOCKERS.md §TC1081`,
+				);
 			}
 		});
 
