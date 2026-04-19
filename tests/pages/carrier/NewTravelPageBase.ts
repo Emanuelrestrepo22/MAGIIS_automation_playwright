@@ -12,6 +12,17 @@ export type NewTravelFormInput = {
 	preferSavedCard?: boolean;
 };
 
+/**
+ * Resultado de `clickValidateCardAllowingReject` — contempla escenarios HAPPY y UNHAPPY.
+ * - `success=true`: botón habilitó + click OK + método "Preautorizada" confirmado.
+ * - `success=false`: card rechazada por Stripe (insufficient funds, declined, etc).
+ *   `errorMessage` captura el texto mostrado al usuario (ej. "Your card has insufficient funds. Try a different card.").
+ */
+export type ValidateCardResult = {
+	success: boolean;
+	errorMessage: string | null;
+};
+
 type StripeComponentName = 'cardNumber' | 'cardExpiry' | 'cardCvc';
 type TariffType = 'Distancia' | 'ADisposicion';
 type PaymentMethod = 'Preautorizada' | 'CuentaCorriente' | 'Efectivo' | 'CargoABordo';
@@ -97,6 +108,7 @@ export abstract class NewTravelPageBase {
 	protected readonly validateCardButton: Locator;
 	protected readonly vehicleButton: Locator;
 	protected readonly submitButton: Locator;
+	protected readonly cardValidationErrorText: Locator;
 
 	constructor(page: Page) {
 		this.page = page;
@@ -131,6 +143,13 @@ export abstract class NewTravelPageBase {
 		this.validateCardButton = page.getByRole('button', { name: /^Validar$/i });
 		this.vehicleButton = page.getByRole('button', { name: /^Seleccionar Veh[íi]culo$/i }).first();
 		this.submitButton = page.getByRole('button', { name: /^(Dar de Alta|Enviar Servicio)$/i }).first();
+		// Mensaje de error de Stripe que aparece dentro del contenedor de validación de tarjeta
+		// cuando el SetupIntent es rechazado (ej: card 9995 "insufficient funds", 1629 declined after 3DS).
+		// Selector confirmado en validación manual:
+		//   #id_tab_add_travel > app-credit-card-payment-data-validate > div > div > div.w-100.text-right.error-text.ng-star-inserted
+		this.cardValidationErrorText = page.locator(
+			'app-credit-card-payment-data-validate .error-text.ng-star-inserted',
+		);
 	}
 
 	private async waitForEnabledButton(button: Locator, timeout = 45_000): Promise<void> {
@@ -782,6 +801,59 @@ export abstract class NewTravelPageBase {
 		await this.validateCardButton.click({ force: true });
 		await this.page.waitForTimeout(1_000);
 		await this.assertPaymentMethodPreauthorizedSelected();
+	}
+
+	/**
+	 * Variante de `clickValidateCard` que NO lanza timeout cuando Stripe rechaza la tarjeta.
+	 * Pensada para tests UNHAPPY con cards de rechazo conocidas (9995, 1629, etc).
+	 *
+	 * Maneja tres escenarios observables:
+	 *  1. Botón "Validar" nunca se habilita (Stripe rechaza durante el fill del form)
+	 *     → retorna success=false + errorMessage del `.error-text` si apareció.
+	 *  2. Botón habilita, click OK, pero aparece mensaje de error post-click
+	 *     (ej: "Your card has insufficient funds. Try a different card.")
+	 *     → retorna success=false + errorMessage.
+	 *  3. Flujo normal: botón habilita, click OK, Preautorizada confirmada
+	 *     → retorna success=true + errorMessage=null.
+	 *
+	 * @param timeout Tiempo máximo para esperar que el botón "Validar" se habilite (default 8s — fail-fast).
+	 */
+	async clickValidateCardAllowingReject(timeout = 8_000): Promise<ValidateCardResult> {
+		const deadline = Date.now() + timeout;
+		let enabled = false;
+		while (Date.now() < deadline) {
+			const visible = await this.validateCardButton.isVisible().catch(() => false);
+			enabled = visible && (await this.validateCardButton.isEnabled().catch(() => false));
+			if (enabled) break;
+			const rejectedEarly = await this.cardValidationErrorText.isVisible().catch(() => false);
+			if (rejectedEarly) {
+				const msg = (await this.cardValidationErrorText.textContent().catch(() => null))?.trim() ?? null;
+				return { success: false, errorMessage: msg };
+			}
+			await this.page.waitForTimeout(500);
+		}
+
+		if (!enabled) {
+			// Timeout sin error visible: estado inconsistente — devolver failure para no bloquear al caller.
+			return { success: false, errorMessage: 'Validar button never enabled and no Stripe error surfaced' };
+		}
+
+		await this.waitForLoadingOverlayToDisappear();
+		await this.validateCardButton.click({ force: true });
+		await this.page.waitForTimeout(1_000);
+
+		const errorVisible = await this.cardValidationErrorText.isVisible().catch(() => false);
+		if (errorVisible) {
+			const msg = (await this.cardValidationErrorText.textContent().catch(() => null))?.trim() ?? null;
+			return { success: false, errorMessage: msg };
+		}
+
+		// Sin error: el flujo feliz debería terminar con "Preautorizada" seleccionado.
+		const preauthOk = await this.paymentMethodValue
+			.textContent()
+			.then(text => /preautorizad/i.test(text ?? ''))
+			.catch(() => false);
+		return { success: preauthOk, errorMessage: preauthOk ? null : 'Preautorizada no confirmada tras click Validar' };
 	}
 
 	async waitForVehicleSelectionReady(timeout = 45_000): Promise<void> {
