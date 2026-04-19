@@ -54,23 +54,23 @@ r# Test Suite – Stripe · Parte 2: Portal Contractor, Quote, Recurrentes y Ope
 | TS-STRIPE-P2-TC017 | Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario colaborador existente con Tarjeta Preautorizada **Hold desde Alta de Viaje y Cobro desde App Driver** con validación 3D Secure |
 | TS-STRIPE-P2-TC018 | Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario colaborador existente con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver** con validación 3D Secure |
 
-### 2.4 App Pax – sin 3DS
+### 2.4 Personal – sin 3DS
 
 | ID | Descripción |
 |----|-------------|
-| TS-STRIPE-P2-TC019 | Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario app pax existente con Tarjeta Preautorizada **Hold desde Alta de Viaje y Cobro desde App Driver** |
-| TS-STRIPE-P2-TC020 | Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario app pax existente con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver** |
-| TS-STRIPE-P2-TC021 | Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario app pax existente con Tarjeta Preautorizada **Hold desde Alta de Viaje y Cobro desde App Driver** |
-| TS-STRIPE-P2-TC022 | Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario app pax existente con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver** |
+| TS-STRIPE-P2-TC019 | Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario personal existente con Tarjeta Preautorizada **Hold desde Alta de Viaje y Cobro desde App Driver** |
+| TS-STRIPE-P2-TC020 | Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario personal existente con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver** |
+| TS-STRIPE-P2-TC021 | Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario personal existente con Tarjeta Preautorizada **Hold desde Alta de Viaje y Cobro desde App Driver** |
+| TS-STRIPE-P2-TC022 | Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario personal existente con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver** |
 
-### 2.5 App Pax – con 3DS
+### 2.5 Personal – con 3DS
 
 | ID | Descripción |
 |----|-------------|
-| TS-STRIPE-P2-TC023 | Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario app pax existente con Tarjeta Preautorizada **Hold desde Alta de Viaje y Cobro desde App Driver** con validación 3D Secure |
-| TS-STRIPE-P2-TC024 | Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario app pax existente con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver** con validación 3D Secure |
-| TS-STRIPE-P2-TC025 | Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario app pax existente con Tarjeta Preautorizada **Hold desde Alta de Viaje y Cobro desde App Driver** con validación 3D Secure |
-| TS-STRIPE-P2-TC026 | Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario app pax existente con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver** con validación 3D Secure |
+| TS-STRIPE-P2-TC023 | Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario personal existente con Tarjeta Preautorizada **Hold desde Alta de Viaje y Cobro desde App Driver** con validación 3D Secure |
+| TS-STRIPE-P2-TC024 | Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario personal existente con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver** con validación 3D Secure |
+| TS-STRIPE-P2-TC025 | Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario personal existente con Tarjeta Preautorizada **Hold desde Alta de Viaje y Cobro desde App Driver** con validación 3D Secure |
+| TS-STRIPE-P2-TC026 | Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario personal existente con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver** con validación 3D Secure |
 
 ### 2.6 Empresa Individuo – sin 3DS
 
@@ -119,16 +119,16 @@ r# Test Suite – Stripe · Parte 2: Portal Contractor, Quote, Recurrentes y Ope
 
 ---
 
-## 5. Viajes Recurrentes – Portal Carrier (Usuario App Pax)
+## 5. Viajes Recurrentes – Portal Carrier (Usuario Personal)
 
 | ID | Descripción |
 |----|-------------|
-| TS-STRIPE-P2-TC048 | Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario app pax con Tarjeta Preautorizada **Hold desde Alta de Viaje y Cobro desde App Driver** |
-| TS-STRIPE-P2-TC049 | Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario app pax con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver** |
-| TS-STRIPE-P2-TC050 | Validar selección de tarjeta y Alta de Viaje Recurrente desde carrier para usuario app pax con Tarjeta Preautorizada **Hold desde Alta de Viaje y Cobro desde App Driver** |
-| TS-STRIPE-P2-TC051 | Validar selección de tarjeta y Alta de Viaje Recurrente desde carrier para usuario app pax con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver** |
-| TS-STRIPE-P2-TC052 | Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario app pax con Tarjeta Preautorizada **Hold desde Alta de Viaje y Cobro desde App Driver** con validación 3DS |
-| TS-STRIPE-P2-TC053 | Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario app pax con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver** con validación 3DS |
+| TS-STRIPE-P2-TC048 | Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario personal con Tarjeta Preautorizada **Hold desde Alta de Viaje y Cobro desde App Driver** |
+| TS-STRIPE-P2-TC049 | Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario personal con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver** |
+| TS-STRIPE-P2-TC050 | Validar selección de tarjeta y Alta de Viaje Recurrente desde carrier para usuario personal con Tarjeta Preautorizada **Hold desde Alta de Viaje y Cobro desde App Driver** |
+| TS-STRIPE-P2-TC051 | Validar selección de tarjeta y Alta de Viaje Recurrente desde carrier para usuario personal con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver** |
+| TS-STRIPE-P2-TC052 | Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario personal con Tarjeta Preautorizada **Hold desde Alta de Viaje y Cobro desde App Driver** con validación 3DS |
+| TS-STRIPE-P2-TC053 | Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario personal con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver** con validación 3DS |
 
 ---
 
@@ -192,7 +192,9 @@ r# Test Suite – Stripe · Parte 2: Portal Contractor, Quote, Recurrentes y Ope
 
 ## 10. Edición de Viajes Programados (desde Carrier – Usuario Empresa Individuo)
 
-> **Fase 2 — diferenciación aplicada:** pares TC078↔TC080 y TC079↔TC081 resueltos con CARD-NEW / CARD-EXISTING. TC082 y TC083 figuran con descripción "Clonación" en la fuente — posible error de redacción reportado a QA (anotado en `duplicados-detectados.md`); se conservan con flag `fuera-de-sección`.
+> **Fase 2 — diferenciación aplicada:** pares TC078↔TC080 y TC079↔TC081 resueltos con CARD-NEW / CARD-EXISTING.
+>
+> **2026-04-19:** TC082 y TC083 figuraban con descripción "Clonación" en la fuente original (flag `fuera-de-sección` histórico). Corregido a "Edición de viaje programado" para alinearlos con la sección. Ver `CHANGELOG.md`.
 
 | ID | Descripción | Estado |
 |----|-------------|--------|
@@ -200,8 +202,8 @@ r# Test Suite – Stripe · Parte 2: Portal Contractor, Quote, Recurrentes y Ope
 | TS-STRIPE-P2-TC080 | Validar Alta de viaje y edición desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold desde Alta de Viaje y Cobro desde App Driver** — **Usar tarjeta vinculada existente** (alias TS-STRIPE-P2-TC078-CARD-EXISTING) | activo — P3 |
 | TS-STRIPE-P2-TC079 | Validar Alta de viaje y edición desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver** — **Vincular tarjeta nueva** | activo — P3 |
 | TS-STRIPE-P2-TC081 | Validar Alta de viaje y edición desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver** — **Usar tarjeta vinculada existente** (alias TS-STRIPE-P2-TC079-CARD-EXISTING) | activo — P3 |
-| TS-STRIPE-P2-TC082 | Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold desde Alta de Viaje y Cobro desde App Driver** con validación 3DS | activo — P3 · **flag fuera-de-sección** (texto "Clonación" en sección Edición; reportado a QA) |
-| TS-STRIPE-P2-TC083 | Validar Clonación de viaje finalizado para usuario empresa individuo con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver** con validación 3DS | activo — P3 · **flag fuera-de-sección** |
+| TS-STRIPE-P2-TC082 | Validar Edición de viaje programado desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold desde Alta de Viaje y Cobro desde App Driver** con validación 3DS | activo — P3 |
+| TS-STRIPE-P2-TC083 | Validar Edición de viaje programado para usuario empresa individuo con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver** con validación 3DS | activo — P3 |
 
 ---
 
@@ -209,7 +211,9 @@ r# Test Suite – Stripe · Parte 2: Portal Contractor, Quote, Recurrentes y Ope
 
 > **Precondiciones:** Fallo de validación 3D Secure u otra variable como saldo insuficiente impiden el hold. Incluye hold con 3D Secure, o tarjeta bloqueada/sin fondos al momento del cobro.
 >
-> **Fase 2 — diferenciación aplicada:** pares TC084↔TC086 y TC085↔TC087 resueltos con CARD-NEW / CARD-EXISTING. TC088 y TC089 figuran con descripción "Clonación" en la fuente — flag `fuera-de-sección`.
+> **Fase 2 — diferenciación aplicada:** pares TC084↔TC086 y TC085↔TC087 resueltos con CARD-NEW / CARD-EXISTING.
+>
+> **2026-04-19:** TC088 y TC089 figuraban con descripción "Clonación" en la fuente original (flag `fuera-de-sección` histórico). Corregido a "Edición en conflicto" para alinearlos con la sección. Ver `CHANGELOG.md`.
 
 | ID | Descripción | Estado |
 |----|-------------|--------|
@@ -217,8 +221,8 @@ r# Test Suite – Stripe · Parte 2: Portal Contractor, Quote, Recurrentes y Ope
 | TS-STRIPE-P2-TC086 | Validar Alta de viaje y edición en conflicto desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold desde Alta de Viaje y Cobro desde App Driver** — **Usar tarjeta vinculada existente** (alias TS-STRIPE-P2-TC084-CARD-EXISTING) | activo — P3 |
 | TS-STRIPE-P2-TC085 | Validar Alta de viaje y edición en conflicto desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver** — **Vincular tarjeta nueva** | activo — P3 |
 | TS-STRIPE-P2-TC087 | Validar Alta de viaje y edición en conflicto desde carrier para usuario empresa individuo con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver** — **Usar tarjeta vinculada existente** (alias TS-STRIPE-P2-TC085-CARD-EXISTING) | activo — P3 |
-| TS-STRIPE-P2-TC088 | Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold desde Alta de Viaje y Cobro desde App Driver** con validación 3DS | activo — P3 · **flag fuera-de-sección** |
-| TS-STRIPE-P2-TC089 | Validar Clonación de viaje finalizado para usuario empresa individuo con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver** con validación 3DS | activo — P3 · **flag fuera-de-sección** |
+| TS-STRIPE-P2-TC088 | Validar Edición en conflicto desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold desde Alta de Viaje y Cobro desde App Driver** con validación 3DS | activo — P3 |
+| TS-STRIPE-P2-TC089 | Validar Edición en conflicto para usuario empresa individuo con Tarjeta Preautorizada **sin Hold desde Alta de Viaje, Cobro desde App Driver** con validación 3DS | activo — P3 |
 
 ---
 
