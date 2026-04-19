@@ -27,7 +27,7 @@ r# Test Suite – Stripe · Parte 2: Portal Contractor, Quote, Recurrentes y Ope
 
 | ID | Descripción |
 |----|-------------|
-| TS-STRIPE-P2-TC090 | Validar Alta de Viaje desde portal contractor para usuario colaborador con Tarjeta de **fondos insuficientes (4000 0000 0000 9995)** Hold ON — error visible, viaje no creado |
+| TS-STRIPE-P2-TC090 | Validar Alta de Viaje desde portal contractor para usuario colaborador con **Tarjeta declinada genérica (4000 0000 0000 0002)** Hold ON — hold authorize rechaza, error visible, viaje no creado |
 
 ---
 

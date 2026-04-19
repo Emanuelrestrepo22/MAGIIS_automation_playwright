@@ -4919,7 +4919,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC090",
-      "title": "Validar Alta de Viaje desde portal contractor para usuario colaborador con Tarjeta de fondos insuficientes (4000 0000 0000 9995) Hold ON — error visible, viaje no creado",
+      "title": "Validar Alta de Viaje desde portal contractor para usuario colaborador con Tarjeta declinada genérica (4000 0000 0000 0002) Hold ON — hold authorize rechaza, error visible, viaje no creado",
       "module": "gateway-pg-stripe",
       "portal": "contractor",
       "environment": [
@@ -4937,7 +4937,7 @@
         "@hold",
         "@contractor",
         "@unhappy",
-        "@insufficient-funds",
+        "@card-declined",
         "@business"
       ],
       "critical_flow": true,
