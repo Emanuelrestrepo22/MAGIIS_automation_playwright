@@ -15,7 +15,8 @@
     "Campo \"phase2_status\" indica: active-canonical, active-card-existing, deprecated-redundant, collapsed-alias.",
     "Alias TC-RV001..RV008 colapsados a sus canónicos via canonical_ref; no ejecutar por separado.",
     "Sincronizado 2026-04-18: coherencia seccion<->descripcion aplicada (TC1011/TC1012/TC1016 corregidos en Seccion 2).",
-    "Sincronizado 2026-04-19 (feature/ai-matriz-sources-rename): rename Eje 2 'Usuario App Pax' -> 'Usuario Personal' (preservado 'desde App Pax' como portal Eje 1). Fix TC082/083 Clonación -> Edición de viaje programado. Fix TC088/089 Clonación -> Edición en conflicto."
+    "Sincronizado 2026-04-19 (feature/ai-matriz-sources-rename): rename Eje 2 'Usuario App Pax' -> 'Usuario Personal' (preservado 'desde App Pax' como portal Eje 1). Fix TC082/083 Clonación -> Edición de viaje programado. Fix TC088/089 Clonación -> Edición en conflicto.",
+    "Sincronizado 2026-04-19: P2-TC001..006 descripciones corregidas (desde app pax -> desde portal contractor) + P2-TC090 agregado (fondos insuficientes contractor)."
   ],
   "cases": [
     {
@@ -4703,7 +4704,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC001",
-      "title": "Validar vinculación de tarjeta y Alta de Viaje desde app pax para usuario colaborador de contractor con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
+      "title": "Validar vinculación de tarjeta y Alta de Viaje desde portal contractor para usuario colaborador con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
       "module": "gateway-pg-stripe",
       "portal": "contractor",
       "environment": [
@@ -4738,7 +4739,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC002",
-      "title": "Validar vinculación de tarjeta y Alta de Viaje desde app pax para usuario colaborador de contractor con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
+      "title": "Validar vinculación de tarjeta y Alta de Viaje desde portal contractor para usuario colaborador con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
       "module": "gateway-pg-stripe",
       "portal": "contractor",
       "environment": [
@@ -4774,7 +4775,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC003",
-      "title": "Validar selección de tarjeta y Alta de Viaje desde app pax para usuario colaborador de contractor con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
+      "title": "Validar selección de tarjeta y Alta de Viaje desde portal contractor para usuario colaborador con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
       "module": "gateway-pg-stripe",
       "portal": "contractor",
       "environment": [
@@ -4809,7 +4810,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC004",
-      "title": "Validar selección de tarjeta y Alta de Viaje desde app pax para usuario colaborador de contractor con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
+      "title": "Validar selección de tarjeta y Alta de Viaje desde portal contractor para usuario colaborador con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
       "module": "gateway-pg-stripe",
       "portal": "contractor",
       "environment": [
@@ -4845,7 +4846,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC005",
-      "title": "Validar vinculación de tarjeta y Alta de Viaje desde app pax para usuario colaborador de contractor con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3DS",
+      "title": "Validar vinculación de tarjeta y Alta de Viaje desde portal contractor para usuario colaborador con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe",
       "portal": "contractor",
       "environment": [
@@ -4881,7 +4882,7 @@
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC006",
-      "title": "Validar vinculación de tarjeta y Alta de Viaje desde app pax para usuario colaborador de contractor con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS",
+      "title": "Validar vinculación de tarjeta y Alta de Viaje desde portal contractor para usuario colaborador con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS",
       "module": "gateway-pg-stripe",
       "portal": "contractor",
       "environment": [
@@ -4915,6 +4916,46 @@
         ]
       },
       "card_flow": "n/a"
+    },
+    {
+      "test_case_id": "TS-STRIPE-P2-TC090",
+      "title": "Validar Alta de Viaje desde portal contractor para usuario colaborador con Tarjeta de fondos insuficientes (4000 0000 0000 9995) Hold ON — error visible, viaje no creado",
+      "module": "gateway-pg-stripe",
+      "portal": "contractor",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P1",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "preconditions": [],
+      "steps": [],
+      "expected_results": [],
+      "tags": [
+        "@stripe",
+        "@gateway-pg",
+        "@hold",
+        "@contractor",
+        "@unhappy",
+        "@insufficient-funds",
+        "@business"
+      ],
+      "critical_flow": true,
+      "section": "Portal Contractor – Alta de Tarjetas y Vinculación",
+      "subsection": "Colaborador de Contractor – Tarjetas con fallo de pago",
+      "playwright_assets": {
+        "spec_file": "tests/features/smoke/specs/gateway-pg.smoke.spec.ts",
+        "page_objects": [
+          "ContractorNewTravelPage"
+        ],
+        "fixtures": [
+          "tests/features/gateway-pg/fixtures/gateway.fixtures.ts"
+        ],
+        "data_files": [
+          "tests/features/gateway-pg/data/stripeTestData.ts"
+        ]
+      },
+      "card_flow": "insufficient-funds-9995"
     },
     {
       "test_case_id": "TS-STRIPE-P2-TC007",

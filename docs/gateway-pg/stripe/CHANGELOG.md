@@ -7,6 +7,33 @@ IDs canónicos: ver `matriz_cases.md` y `matriz_cases2.md` (fuente de verdad).
 
 ---
 
+## [2026-04-19] contractor/tc-matrix-ids
+
+### Fixed
+
+- **P2-TC001/TC002/TC003/TC004/TC005/TC006:** descripciones `"desde app pax"` → `"desde portal contractor"` (Regla 2 coherencia sección ↔ descripción). La sección "## 1. Portal Contractor – Alta de Tarjetas y Vinculación" declaraba contexto Portal Contractor pero las 6 filas mencionaban `"app pax"`, generando ambigüedad sobre el portal de origen del alta de viaje. Adicionalmente se eliminó la redundancia `"de contractor"` tras `"colaborador"` porque el nuevo contexto explícito `"desde portal contractor"` ya la cubre.
+
+### Added
+
+- **TS-STRIPE-P2-TC090:** nuevo TC bajo subsección `"### 1.3 Colaborador de Contractor – Tarjetas con fallo de pago"` para cubrir el flujo UNHAPPY de fondos insuficientes (card `4000 0000 0000 9995`) Hold ON desde portal contractor — error visible, viaje no creado. Hasta ahora el caso existía como `SMOKE-GW-TC14` en `tests/features/smoke/specs/gateway-pg.smoke.spec.ts` pero estaba huérfano de ID canónico (etiquetado como `[TC-PENDIENTE]`).
+
+### Changed
+
+- **Smoke spec `tests/features/smoke/specs/gateway-pg.smoke.spec.ts`:** reemplazados 4 placeholders por IDs P2 canónicos:
+  - `SMOKE-GW-TC11`: `[SIN-ID-MATRIZ]` → `[TS-STRIPE-P2-TC001]`
+  - `SMOKE-GW-TC12`: `[SIN-ID-MATRIZ]` → `[TS-STRIPE-P2-TC005]`
+  - `SMOKE-GW-TC13`: `[SIN-ID-MATRIZ]` → `[TS-STRIPE-P2-TC002]`
+  - `SMOKE-GW-TC14`: `[TC-PENDIENTE]` → `[TS-STRIPE-P2-TC090]`
+  - Solo reemplazo textual en strings `test()` + comentario de trazabilidad. Sin cambios de lógica, POMs, fixtures ni helpers.
+- **normalized-test-cases.json:** sincronizado manualmente (el `sync-json.py` tiene allowlist acotada a TC1011/12/16). 6 titles actualizados + 1 entry nueva (TC090) con metadata completa. Total cases: 219 → 220. Nota incorporada en `notes[]`.
+
+### Infrastructure
+
+- **Cumplimiento total de Regla 1** (trazabilidad TC → matriz → spec → CI) en smoke contractor: el pipeline Tests tab ahora muestra los 4 TCs con sus IDs canónicos en lugar de placeholders. Última pieza de cobertura contractor quedó ligada a la matriz.
+- **xlsx sync:** no aplicable en este MR. `STRIPE_Test_Suite_Matriz_Sincronizado.xlsx` solo contiene entries `TS-STRIPE-TC1xxx` (Parte 1); no tiene hojas ni filas para P2-TCxxx. Los cambios P2 viven exclusivamente en `matriz_cases2.md` + `normalized-test-cases.json`.
+
+---
+
 ## [2026-04-19] feature/ai-matriz-sources-rename
 
 ### Changed
