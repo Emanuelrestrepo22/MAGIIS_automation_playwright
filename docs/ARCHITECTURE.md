@@ -188,7 +188,106 @@ Ver `tests/fixtures/stripe/README.md`:
 | Scripts mobile Appium | ⏸️ Pendiente — fuera de alcance del pipeline de smoke |
 | Recorded specs | ⏸️ Pendiente — scripts one-shot, baja prioridad |
 
-## 7. CI/CD
+## 7. Patrones BDD-inspired (sin Gherkin completo)
+
+El proyecto adopta **patrones de BDD** (Given/When/Then, scenarios declarativos, tags) pero **NO el formalismo Gherkin/Cucumber**. Motivación:
+
+- Beneficios de BDD aplicables: legibilidad + trazabilidad + ejecución selectiva
+- Costos de Gherkin evitados: refactor masivo, DSL adicional, herramientas menos maduras, velocidad de desarrollo
+
+### 7.1 Tags en titles de test
+
+Cada `test()` declara tags que permiten ejecución selectiva:
+
+```typescript
+test('@smoke @carrier @hold @3ds @happy [TS-STRIPE-TC1053] AppPax Hold ON 3DS → SEARCHING_DRIVER', async () => {
+  ...
+});
+```
+
+Ejecución selectiva:
+```bash
+pnpm playwright test --grep @3ds              # solo tests 3DS
+pnpm playwright test --grep "@smoke.*@3ds"    # smoke y 3DS
+pnpm playwright test --grep @unhappy          # solo flujos UNHAPPY
+```
+
+Tags canónicos:
+- **Scope**: `@smoke`, `@regression`, `@e2e`, `@recovery`
+- **Portal**: `@carrier`, `@contractor`, `@pax-app`, `@driver-app`
+- **Feature**: `@hold`, `@no-hold`, `@3ds`, `@cargo-a-bordo`, `@auth`
+- **Resultado**: `@happy`, `@unhappy`
+
+### 7.2 Given/When/Then en test.step
+
+Los `test.step` usan prefijos semánticos:
+
+```typescript
+test('[TC1057] fail 3DS → NO_AUTORIZADO', async ({ page }) => {
+  await test.step('Given: dispatcher logueado con hold activado', async () => { ... });
+  await test.step('And: formulario nuevo viaje abierto', async () => { ... });
+  await test.step('When: envía viaje con card 9235 y rechaza 3DS', async () => { ... });
+  await test.step('Then: viaje queda en "En conflicto" con NO_AUTORIZADO', async () => { ... });
+});
+```
+
+Beneficios:
+- Stack traces en failures expresan la intención (`When: submit formulario`)
+- Onboarding: dev nuevo entiende el flujo sin leer la implementación
+- No hace falta comentar cada step
+
+### 7.3 Scenarios declarativos por intención
+
+En lugar de copia-pega de 20 líneas por TC, usar **data-driven scenarios** (equivalente a Gherkin Scenario Outline):
+
+```typescript
+const CARRIER_HOLD_SCENARIOS = [
+  { tcId: 'TC1049', passenger: 'AppPax',      cardId: 'SUCCESS_NO_3DS' },
+  { tcId: 'TC1053', passenger: 'AppPax',      cardId: 'HAPPY_3DS' },
+  { tcId: 'TC1033', passenger: 'Colaborador', cardId: 'SUCCESS_NO_3DS' },
+] as const;
+
+for (const s of CARRIER_HOLD_SCENARIOS) {
+  test(`@smoke [${s.tcId}] ${s.passenger} ${s.cardId} → SEARCHING_DRIVER`, async ({ page }) => {
+    // 1 implementación, N TCs
+  });
+}
+```
+
+### 7.4 Resolver helpers (step definitions equivalent)
+
+En Gherkin, un step recibe un parámetro y un step definition decide qué hacer. Acá: scenarios declaran `cardId`, un helper **resuelve** al objeto técnico:
+
+```typescript
+// fixtures/stripe/card-resolver.ts
+export function resolveCard(cardId: CardId): StripeTestCard { ... }
+
+// uso en spec
+const card = resolveCard(scenario.cardId);
+await fillCardForm(card.number, card.exp, card.cvc);
+```
+
+### 7.5 Expect con mensaje descriptivo
+
+Aserciones críticas llevan mensaje narrativo:
+
+```typescript
+await expect(
+  page,
+  'Tras crear viaje en contractor, URL debe redirigir a /dashboard'
+).toHaveURL(/contractor\/dashboard/, { timeout: 20_000 });
+```
+
+Beneficio: failures muestran qué se esperaba, no solo el diff técnico.
+
+### 7.6 Qué NO adoptamos de Gherkin
+
+- Archivos `.feature` separados — nuestro enfoque es TypeScript directo
+- Step definitions formales — usamos funciones TypeScript normales (`resolveCard`, helpers)
+- Cucumber runner — seguimos con Playwright test runner nativo
+- Escenarios en lenguaje natural con regex — preferimos tipado estático
+
+## 8. CI/CD
 
 - **GitHub Actions**: `.github/workflows/playwright.yml`, `playwright-prod-smoke.yml`
 - **GitLab CI**: `.gitlab-ci.yml` con `workflow.auto_cancel.on_new_commit: interruptible` + `interruptible: true` en jobs
