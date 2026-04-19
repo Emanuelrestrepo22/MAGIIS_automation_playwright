@@ -21,6 +21,43 @@
 		"import"
 	],
 	"rules": {
+		"no-restricted-imports": ["error", {
+			"patterns": [
+				{
+					"group": [
+						"**/tests/specs/gateway-pg/stripe/*",
+						"**/tests/specs/gateway-pg/stripe/**"
+					],
+					"message": "Legacy re-export path. Import directly from tests/features/gateway-pg/specs/stripe/ instead. See docs/ARCHITECTURE.md §2."
+				},
+				{
+					"group": [
+						"**/tests/pages/gateway-pg/*",
+						"**/tests/pages/gateway-pg/**"
+					],
+					"message": "Legacy re-export path. Import directly from tests/pages/carrier/ or tests/pages/shared/ instead. See docs/ARCHITECTURE.md §2."
+				},
+				{
+					"group": [
+						"**/tests/data/gateway-pg/*",
+						"**/tests/data/gateway-pg/**"
+					],
+					"message": "Legacy re-export path. Import directly from tests/features/gateway-pg/data/ instead. See docs/ARCHITECTURE.md §2."
+				},
+				{
+					"group": [
+						"**/tests/pages/LoginPage"
+					],
+					"message": "Deprecated re-export. Import directly from tests/pages/shared/LoginPage instead. See docs/ARCHITECTURE.md §2."
+				},
+				{
+					"group": [
+						"**/tests/utils/apiClient"
+					],
+					"message": "Deprecated re-export. Import from the canonical location in tests/utils/ instead. See docs/ARCHITECTURE.md §2."
+				}
+			]
+		}],
 		"@typescript-eslint/consistent-type-imports": "error",
 		"@typescript-eslint/naming-convention": [
 			"warn"
@@ -117,6 +154,20 @@
 			"env": {
 				"browser": true,
 				"node": true
+			}
+		},
+		{
+			"files": [
+				"tests/specs/gateway-pg/stripe/**/*.ts",
+				"tests/pages/gateway-pg/**/*.ts",
+				"tests/pages/gateway-pg/*.ts",
+				"tests/data/gateway-pg/**/*.ts",
+				"tests/data/gateway-pg/*.ts",
+				"tests/pages/LoginPage.ts",
+				"tests/utils/apiClient.ts"
+			],
+			"rules": {
+				"no-restricted-imports": "off"
 			}
 		}
 	],
