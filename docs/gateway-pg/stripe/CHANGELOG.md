@@ -7,6 +7,24 @@ IDs canónicos: ver `matriz_cases.md` y `matriz_cases2.md` (fuente de verdad).
 
 ---
 
+## [2026-04-19] docs/matriz-cleanup-final
+
+### Changed
+
+- **`matriz_cases.md` sección 2.2 (TC1013-1016):** homogeneizar redacción al patrón canónico `Validar Alta de Viaje desde app pax para usuario personal con Tarjeta Preautorizada [Hold|sin Hold] desde Alta de Viaje y Cobro desde App Driver [con validación 3DS]`. TC1013/1014 reordenados (`"para usuario personal desde app pax"` → `"desde app pax para usuario personal"`). TC1015 incorporó `"desde app pax"` que antes omitía. Alineamiento de pipes de la tabla recalculado.
+- **`normalized-test-cases.json`:** títulos TC1013/1014/1015 sincronizados al nuevo orden canónico del md.
+- **`STRIPE_Test_Suite_Matriz_Sincronizado.xlsx`:** regenerado desde matriz `.md` canónica. 215 filas actualizadas en TEST_SUITE + TEST_SUITE 2.0 (184 con título canónico del md, 31 por normalización mecánica). Removido prefijo `"E2E "` (pre=347 → post=0) y formato corto `"Hold y Cobro desde App Driver"` expandido a `"Hold desde Alta de Viaje y Cobro desde App Driver"` (pre=146 → post=0). Artefacto `"app modo personal"` limpiado; doble `"desde app pax ... desde app pax"` colapsado.
+
+### Added
+
+- **`scripts/ai/matriz-coherencia/sync-xlsx-canonical.py`:** script de sync idempotente que lee `matriz_cases.md` + `matriz_cases2.md` (incluye IDs `TS-STRIPE-P2-TCxxx`), construye mapa ID→título canónico y aplica tanto override con título del md como sustituciones mecánicas (E2E, Hold y Cobro, app modo personal). `openpyxl` preserva estilos/colores.
+
+### Infrastructure
+
+- Cierre de las 2 observaciones fuera-de-scope detectadas en el MR !8 (auditoría coherencia Stripe 2026-04-18).
+
+---
+
 ## [2026-04-19] contractor/tc-matrix-ids
 
 ### Fixed
