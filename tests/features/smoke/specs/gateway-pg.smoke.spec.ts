@@ -34,8 +34,17 @@ async function disableHoldForSmoke(preferences: OperationalPreferencesPage): Pro
 }
 
 async function restoreHoldForSmoke(preferences: OperationalPreferencesPage): Promise<void> {
-	await preferences.goto();
-	await preferences.ensureHoldEnabled();
+	// Cleanup no-fatal: si el backend TEST está lento al persistir preferencias
+	// (observado en pipelines reales con timeout 15s del waitForResponse), logueamos
+	// y seguimos. El próximo test que necesite hold habilitado lo restaurará.
+	// Esto evita que un timeout de cleanup invalide un test cuyo aserto principal pasó.
+	try {
+		await preferences.goto();
+		await preferences.ensureHoldEnabled();
+	} catch (error) {
+		const msg = error instanceof Error ? error.message : String(error);
+		console.warn(`[restoreHoldForSmoke] Cleanup no-fatal — no se pudo restaurar hold (backend slow?): ${msg}`);
+	}
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
