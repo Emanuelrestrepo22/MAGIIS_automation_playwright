@@ -30,6 +30,7 @@ import {
 	STRIPE_TEST_CARDS,
 	TEST_DATA,
 } from '../../../features/gateway-pg/fixtures/gateway.fixtures';
+import { CARDS } from '../../../fixtures/stripe/card-policy';
 import { waitForTravelCreation } from '../../../features/gateway-pg/helpers/stripe.helpers';
 import { initJourneyContext, markReadyForDriver } from '../shared/JourneyBridge';
 import type { GatewayFlowConfig } from '../shared/e2eFlowConfig';
@@ -122,9 +123,9 @@ export async function runWebPhase(
 export function resolveCardLast4ForConfig(config: GatewayFlowConfig): string {
 	if (config.gateway === 'stripe') {
 		if (config.requires3DS) {
-			return STRIPE_TEST_CARDS.success3DS.slice(-4); // 3155
+			return CARDS.HAPPY_3DS_HOLD_CAPTURE.slice(-4); // 3184 — contractor flow usa hold+capture
 		}
-		return STRIPE_TEST_CARDS.successDirect.slice(-4);  // 4242
+		return CARDS.SUCCESS_NO_3DS.slice(-4); // 4242
 	}
 	return config.cardLast4;
 }
