@@ -59,27 +59,27 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 	test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
 
 	// ── TC01 ─────────────────────────────────────────────────────────────────
-	test('[TS-STRIPE-TC1049] SMOKE-GW-TC01 — AppPax · Hold ON · sin 3DS (4242) → viaje pasa a SEARCHING_DRIVER', async ({ page }) => {
+	test('@smoke @carrier @hold @happy [TS-STRIPE-TC1049] SMOKE-GW-TC01 — AppPax · Hold ON · sin 3DS (4242) → viaje pasa a SEARCHING_DRIVER', async ({ page }) => {
 		const dashboard   = new DashboardPage(page);
 		const preferences = new OperationalPreferencesPage(page);
 		const travel      = new NewTravelPage(page);
 		const management  = new TravelManagementPage(page);
 
-		await test.step(`[SMOKE-GW-TC01][STEP-01] Login carrier en ${env.toUpperCase()}`, async () => {
+		await test.step(`Given: dispatcher logueado en carrier [SMOKE-GW-TC01] (${env.toUpperCase()})`, async () => {
 			await loginAsDispatcher(page);
 		});
 
-		await test.step('[SMOKE-GW-TC01][STEP-02] Verificar hold habilitado en preferencias operativas', async () => {
+		await test.step('And: hold habilitado en preferencias operativas [SMOKE-GW-TC01]', async () => {
 			await preferences.goto();
 			await preferences.ensureHoldEnabled();
 		});
 
-		await test.step('[SMOKE-GW-TC01][STEP-03] Abrir formulario de nuevo viaje', async () => {
+		await test.step('When: formulario de nuevo viaje abierto [SMOKE-GW-TC01]', async () => {
 			await dashboard.openNewTravel();
 			await travel.ensureLoaded();
 		});
 
-		await test.step('[SMOKE-GW-TC01][STEP-04] Completar formulario — AppPax + tarjeta sin 3DS (4242)', async () => {
+		await test.step('And: formulario completado — AppPax + tarjeta sin 3DS (4242) [SMOKE-GW-TC01]', async () => {
 			await travel.fillMinimum({
 				client:      TEST_DATA.appPaxPassenger,
 				passenger:   TEST_DATA.appPaxPassenger,
@@ -89,46 +89,50 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 			});
 		});
 
-		await test.step('[SMOKE-GW-TC01][STEP-05] Seleccionar vehículo y enviar servicio', async () => {
+		await test.step('And: vehículo seleccionado y servicio enviado [SMOKE-GW-TC01]', async () => {
 			await travel.waitForVehicleSelectionReady();
 			await travel.clickSelectVehicle();
 			await travel.clickSendService();
 		});
 
-		await test.step('[SMOKE-GW-TC01][STEP-06] Verificar que NO aparece modal 3DS', async () => {
+		await test.step('Then: modal 3DS no debe aparecer (tarjeta sin 3DS) [SMOKE-GW-TC01]', async () => {
 			await expectNoThreeDSModal(page);
 		});
 
-		await test.step('[SMOKE-GW-TC01][STEP-07] Validar viaje en gestión — columna "Por asignar", estado "Buscando chofer"', async () => {
+		await test.step('Then: viaje visible en gestión — columna "Por asignar", estado "Buscando chofer" [SMOKE-GW-TC01]', async () => {
 			await management.goto();
-			await management.expectPassengerInPorAsignar(TEST_DATA.appPaxPassenger, undefined, 'Buscando chofer');
+			await management.expectPassengerInPorAsignar(
+				TEST_DATA.appPaxPassenger,
+				undefined,
+				'Buscando chofer',
+			);
 			console.log(`[SMOKE-GW-TC01] AppPax Hold ON sin 3DS — SEARCHING_DRIVER en ${env.toUpperCase()} ✅`);
 		});
 	});
 
 	// ── TC02 ─────────────────────────────────────────────────────────────────
-	test('[TS-STRIPE-TC1053] SMOKE-GW-TC02 — AppPax · Hold ON · con 3DS éxito (3155) → modal aprobado → SEARCHING_DRIVER', async ({ page }) => {
+	test('@smoke @carrier @hold @3ds @happy [TS-STRIPE-TC1053] SMOKE-GW-TC02 — AppPax · Hold ON · con 3DS éxito (3155) → modal aprobado → SEARCHING_DRIVER', async ({ page }) => {
 		const dashboard   = new DashboardPage(page);
 		const preferences = new OperationalPreferencesPage(page);
 		const travel      = new NewTravelPage(page);
 		const threeDS     = new ThreeDSModal(page);
 		const management  = new TravelManagementPage(page);
 
-		await test.step(`[SMOKE-GW-TC02][STEP-01] Login carrier en ${env.toUpperCase()}`, async () => {
+		await test.step(`Given: dispatcher logueado en carrier [SMOKE-GW-TC02] (${env.toUpperCase()})`, async () => {
 			await loginAsDispatcher(page);
 		});
 
-		await test.step('[SMOKE-GW-TC02][STEP-02] Verificar hold habilitado en preferencias operativas', async () => {
+		await test.step('And: hold habilitado en preferencias operativas [SMOKE-GW-TC02]', async () => {
 			await preferences.goto();
 			await preferences.ensureHoldEnabled();
 		});
 
-		await test.step('[SMOKE-GW-TC02][STEP-03] Abrir formulario de nuevo viaje', async () => {
+		await test.step('When: formulario de nuevo viaje abierto [SMOKE-GW-TC02]', async () => {
 			await dashboard.openNewTravel();
 			await travel.ensureLoaded();
 		});
 
-		await test.step('[SMOKE-GW-TC02][STEP-04] Completar formulario — AppPax + tarjeta con 3DS (3184 always_authenticate)', async () => {
+		await test.step('And: formulario completado — AppPax + tarjeta con 3DS (3184 always_authenticate) [SMOKE-GW-TC02]', async () => {
 			await travel.fillMinimum({
 				client:      TEST_DATA.appPaxPassenger,
 				passenger:   TEST_DATA.appPaxPassenger,
@@ -138,51 +142,55 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 			});
 		});
 
-		await test.step('[SMOKE-GW-TC02][STEP-05] Enviar formulario — sistema ejecuta hold y presenta modal 3DS', async () => {
+		await test.step('And: formulario enviado — sistema ejecuta hold y presenta modal 3DS [SMOKE-GW-TC02]', async () => {
 			await travel.submit();
 		});
 
-		await test.step('[SMOKE-GW-TC02][STEP-06] Aprobar autenticación en modal 3DS', async () => {
+		await test.step('When: autenticación aprobada en modal 3DS [SMOKE-GW-TC02]', async () => {
 			await threeDS.waitForVisible();
 			await threeDS.completeSuccess();
 			await threeDS.waitForHidden();
 			console.log('[SMOKE-GW-TC02][3DS] Modal 3DS aprobado ✅');
 		});
 
-		await test.step('[SMOKE-GW-TC02][STEP-07] Seleccionar vehículo y enviar servicio', async () => {
+		await test.step('And: vehículo seleccionado y servicio enviado [SMOKE-GW-TC02]', async () => {
 			await travel.clickSelectVehicle();
 			await travel.clickSendService();
 		});
 
-		await test.step('[SMOKE-GW-TC02][STEP-08] Validar viaje en gestión — estado "Buscando chofer"', async () => {
+		await test.step('Then: viaje visible en gestión — estado "Buscando chofer" [SMOKE-GW-TC02]', async () => {
 			await management.goto();
-			await management.expectPassengerInPorAsignar(TEST_DATA.appPaxPassenger, undefined, 'Buscando chofer');
+			await management.expectPassengerInPorAsignar(
+				TEST_DATA.appPaxPassenger,
+				undefined,
+				'Buscando chofer',
+			);
 			console.log(`[SMOKE-GW-TC02] AppPax Hold ON 3DS éxito — SEARCHING_DRIVER en ${env.toUpperCase()} ✅`);
 		});
 	});
 
 	// ── TC03 ─────────────────────────────────────────────────────────────────
-	test('[TS-STRIPE-TC1050] SMOKE-GW-TC03 — AppPax · Hold OFF · sin 3DS → viaje creado sin preautorización', async ({ page }) => {
+	test('@smoke @carrier @no-hold @happy [TS-STRIPE-TC1050] SMOKE-GW-TC03 — AppPax · Hold OFF · sin 3DS → viaje creado sin preautorización', async ({ page }) => {
 		const dashboard   = new DashboardPage(page);
 		const preferences = new OperationalPreferencesPage(page);
 		const travel      = new NewTravelPage(page);
 		const management  = new TravelManagementPage(page);
 
-		await test.step(`[SMOKE-GW-TC03][STEP-01] Login carrier en ${env.toUpperCase()}`, async () => {
+		await test.step(`Given: dispatcher logueado en carrier [SMOKE-GW-TC03] (${env.toUpperCase()})`, async () => {
 			await loginAsDispatcher(page);
 		});
 
-		await test.step('[SMOKE-GW-TC03][STEP-02] Deshabilitar hold en preferencias operativas', async () => {
+		await test.step('And: hold deshabilitado en preferencias operativas [SMOKE-GW-TC03]', async () => {
 			await disableHoldForSmoke(preferences);
 		});
 
 		try {
-			await test.step('[SMOKE-GW-TC03][STEP-03] Abrir formulario de nuevo viaje', async () => {
+			await test.step('When: formulario de nuevo viaje abierto [SMOKE-GW-TC03]', async () => {
 				await dashboard.openNewTravel();
 				await travel.ensureLoaded();
 			});
 
-			await test.step('[SMOKE-GW-TC03][STEP-04] Completar formulario — AppPax + tarjeta sin 3DS (4242)', async () => {
+			await test.step('And: formulario completado — AppPax + tarjeta sin 3DS (4242) [SMOKE-GW-TC03]', async () => {
 				await travel.fillMinimum({
 					client:      TEST_DATA.appPaxPassenger,
 					passenger:   TEST_DATA.appPaxPassenger,
@@ -192,40 +200,44 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 				});
 			});
 
-			await test.step('[SMOKE-GW-TC03][STEP-05] Seleccionar vehículo y enviar servicio (sin hold)', async () => {
+			await test.step('And: vehículo seleccionado y servicio enviado (sin hold) [SMOKE-GW-TC03]', async () => {
 				await travel.waitForVehicleSelectionReady();
 				await travel.clickSelectVehicle();
 				await travel.clickSendService();
 			});
 
-			await test.step('[SMOKE-GW-TC03][STEP-06] Verificar que NO aparece modal 3DS', async () => {
+			await test.step('Then: modal 3DS no debe aparecer (hold OFF, sin preautorización) [SMOKE-GW-TC03]', async () => {
 				await expectNoThreeDSModal(page);
 			});
 
-			await test.step('[SMOKE-GW-TC03][STEP-07] Validar viaje en gestión — "Buscando chofer" sin preautorización', async () => {
+			await test.step('Then: viaje visible en gestión — "Buscando chofer" sin preautorización [SMOKE-GW-TC03]', async () => {
 				await management.goto();
-				await management.expectPassengerInPorAsignar(TEST_DATA.appPaxPassenger, undefined, 'Buscando chofer');
+				await management.expectPassengerInPorAsignar(
+					TEST_DATA.appPaxPassenger,
+					undefined,
+					'Buscando chofer',
+				);
 				console.log(`[SMOKE-GW-TC03] AppPax Hold OFF sin 3DS — viaje creado sin preautorización en ${env.toUpperCase()} ✅`);
 			});
 		} finally {
-			await test.step('[SMOKE-GW-TC03][CLEANUP] Restaurar hold en preferencias operativas', async () => {
+			await test.step('And: hold restaurado en preferencias operativas (cleanup) [SMOKE-GW-TC03]', async () => {
 				await restoreHoldForSmoke(preferences);
 			});
 		}
 	});
 
 	// ── TC04 ─────────────────────────────────────────────────────────────────
-	test('[TS-STRIPE-TC1081] SMOKE-GW-TC04 — AppPax · Cargo a Bordo · pago exitoso (sin Stripe form, sin 3DS)', async ({ page }) => {
+	test('@smoke @carrier @cargo-a-bordo @happy [TS-STRIPE-TC1081] SMOKE-GW-TC04 — AppPax · Cargo a Bordo · pago exitoso (sin Stripe form, sin 3DS)', async ({ page }) => {
 		const dashboard  = new DashboardPage(page);
 		const travel     = new NewTravelPage(page);
 		const management = new TravelManagementPage(page);
 		let travelIdRef: TravelIdRef | null = null;
 
-		await test.step(`[SMOKE-GW-TC04][STEP-01] Login carrier en ${env.toUpperCase()}`, async () => {
+		await test.step(`Given: dispatcher logueado en carrier [SMOKE-GW-TC04] (${env.toUpperCase()})`, async () => {
 			await loginAsDispatcher(page);
 		});
 
-		await test.step('[SMOKE-GW-TC04][STEP-02] Verificar precondición — pasajero AppPax tiene tarjeta 4242 activa', async () => {
+		await test.step('And: precondición verificada — pasajero AppPax tiene tarjeta 4242 activa [SMOKE-GW-TC04]', async () => {
 			const check = await validateCardPrecondition(page, {
 				passengerName:  PASSENGERS.appPax.apiSearchQuery!,
 				requiredLast4:  '4242',
@@ -239,30 +251,34 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 		try {
 			travelIdRef = await captureCreatedTravelId(page);
 
-			await test.step('[SMOKE-GW-TC04][STEP-03] Abrir formulario de nuevo viaje', async () => {
+			await test.step('When: formulario de nuevo viaje abierto [SMOKE-GW-TC04]', async () => {
 				await dashboard.openNewTravel();
 				await travel.ensureLoaded();
 			});
 
-			await test.step('[SMOKE-GW-TC04][STEP-04] Completar formulario con método Cargo a Bordo', async () => {
+			await test.step('And: formulario completado con método Cargo a Bordo [SMOKE-GW-TC04]', async () => {
 				await travel.selectClient(TEST_DATA.appPaxPassenger);
 				await travel.setOrigin(TEST_DATA.origin);
 				await travel.setDestination(TEST_DATA.destination);
 				await travel.selectPaymentMethod('CargoABordo');
 			});
 
-			await test.step('[SMOKE-GW-TC04][STEP-05] Seleccionar vehículo y enviar servicio', async () => {
+			await test.step('And: vehículo seleccionado y servicio enviado [SMOKE-GW-TC04]', async () => {
 				await travel.clickSelectVehicle();
 				await travel.clickSendService();
 			});
 
-			await test.step('[SMOKE-GW-TC04][STEP-06] Verificar que NO aparece modal 3DS', async () => {
+			await test.step('Then: modal 3DS no debe aparecer (Cargo a Bordo no requiere Stripe) [SMOKE-GW-TC04]', async () => {
 				await expectNoThreeDSModal(page);
 			});
 
-			await test.step('[SMOKE-GW-TC04][STEP-07] Validar viaje creado en gestión', async () => {
+			await test.step('Then: viaje creado visible en gestión [SMOKE-GW-TC04]', async () => {
 				await management.goto();
-				await management.expectPassengerInPorAsignar(TEST_DATA.appPaxPassenger, undefined, 'Buscando chofer');
+				await management.expectPassengerInPorAsignar(
+					TEST_DATA.appPaxPassenger,
+					undefined,
+					'Buscando chofer',
+				);
 				console.log(`[SMOKE-GW-TC04] AppPax Cargo a Bordo — viaje creado en ${env.toUpperCase()} ✅`);
 			});
 		} finally {
@@ -271,27 +287,27 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 	});
 
 	// ── TC05 ─────────────────────────────────────────────────────────────────
-	test('[TS-STRIPE-TC1033] SMOKE-GW-TC05 — Colaborador · Hold ON · sin 3DS (4242) → SEARCHING_DRIVER desde portal Carrier', async ({ page }) => {
+	test('@smoke @carrier @hold @happy [TS-STRIPE-TC1033] SMOKE-GW-TC05 — Colaborador · Hold ON · sin 3DS (4242) → SEARCHING_DRIVER desde portal Carrier', async ({ page }) => {
 		const dashboard   = new DashboardPage(page);
 		const preferences = new OperationalPreferencesPage(page);
 		const travel      = new NewTravelPage(page);
 		const management  = new TravelManagementPage(page);
 
-		await test.step(`[SMOKE-GW-TC05][STEP-01] Login carrier en ${env.toUpperCase()}`, async () => {
+		await test.step(`Given: dispatcher logueado en carrier [SMOKE-GW-TC05] (${env.toUpperCase()})`, async () => {
 			await loginAsDispatcher(page);
 		});
 
-		await test.step('[SMOKE-GW-TC05][STEP-02] Verificar hold habilitado en preferencias operativas', async () => {
+		await test.step('And: hold habilitado en preferencias operativas [SMOKE-GW-TC05]', async () => {
 			await preferences.goto();
 			await preferences.ensureHoldEnabled();
 		});
 
-		await test.step('[SMOKE-GW-TC05][STEP-03] Abrir formulario de nuevo viaje', async () => {
+		await test.step('When: formulario de nuevo viaje abierto [SMOKE-GW-TC05]', async () => {
 			await dashboard.openNewTravel();
 			await travel.ensureLoaded();
 		});
 
-		await test.step('[SMOKE-GW-TC05][STEP-04] Completar formulario — Colaborador + tarjeta sin 3DS (4242)', async () => {
+		await test.step('And: formulario completado — Colaborador + tarjeta sin 3DS (4242) [SMOKE-GW-TC05]', async () => {
 			await travel.fillMinimum({
 				client:      TEST_DATA.contractorClient,
 				passenger:   TEST_DATA.contractorColaborador,
@@ -301,46 +317,50 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 			});
 		});
 
-		await test.step('[SMOKE-GW-TC05][STEP-05] Seleccionar vehículo y enviar servicio', async () => {
+		await test.step('And: vehículo seleccionado y servicio enviado [SMOKE-GW-TC05]', async () => {
 			await travel.waitForVehicleSelectionReady();
 			await travel.clickSelectVehicle();
 			await travel.clickSendService();
 		});
 
-		await test.step('[SMOKE-GW-TC05][STEP-06] Verificar que NO aparece modal 3DS', async () => {
+		await test.step('Then: modal 3DS no debe aparecer (tarjeta sin 3DS) [SMOKE-GW-TC05]', async () => {
 			await expectNoThreeDSModal(page);
 		});
 
-		await test.step('[SMOKE-GW-TC05][STEP-07] Validar viaje en gestión — "Buscando chofer"', async () => {
+		await test.step('Then: viaje visible en gestión — "Buscando chofer" [SMOKE-GW-TC05]', async () => {
 			await management.goto();
-			await management.expectPassengerInPorAsignar(TEST_DATA.contractorColaborador, undefined, 'Buscando chofer');
+			await management.expectPassengerInPorAsignar(
+				TEST_DATA.contractorColaborador,
+				undefined,
+				'Buscando chofer',
+			);
 			console.log(`[SMOKE-GW-TC05] Colaborador Hold ON sin 3DS — SEARCHING_DRIVER en ${env.toUpperCase()} ✅`);
 		});
 	});
 
 	// ── TC06 ─────────────────────────────────────────────────────────────────
-	test('[TS-STRIPE-TC1037] SMOKE-GW-TC06 — Colaborador · Hold ON · con 3DS éxito (3155) → SEARCHING_DRIVER desde portal Carrier', async ({ page }) => {
+	test('@smoke @carrier @hold @3ds @happy [TS-STRIPE-TC1037] SMOKE-GW-TC06 — Colaborador · Hold ON · con 3DS éxito (3155) → SEARCHING_DRIVER desde portal Carrier', async ({ page }) => {
 		const dashboard   = new DashboardPage(page);
 		const preferences = new OperationalPreferencesPage(page);
 		const travel      = new NewTravelPage(page);
 		const threeDS     = new ThreeDSModal(page);
 		const management  = new TravelManagementPage(page);
 
-		await test.step(`[SMOKE-GW-TC06][STEP-01] Login carrier en ${env.toUpperCase()}`, async () => {
+		await test.step(`Given: dispatcher logueado en carrier [SMOKE-GW-TC06] (${env.toUpperCase()})`, async () => {
 			await loginAsDispatcher(page);
 		});
 
-		await test.step('[SMOKE-GW-TC06][STEP-02] Verificar hold habilitado en preferencias operativas', async () => {
+		await test.step('And: hold habilitado en preferencias operativas [SMOKE-GW-TC06]', async () => {
 			await preferences.goto();
 			await preferences.ensureHoldEnabled();
 		});
 
-		await test.step('[SMOKE-GW-TC06][STEP-03] Abrir formulario de nuevo viaje', async () => {
+		await test.step('When: formulario de nuevo viaje abierto [SMOKE-GW-TC06]', async () => {
 			await dashboard.openNewTravel();
 			await travel.ensureLoaded();
 		});
 
-		await test.step('[SMOKE-GW-TC06][STEP-04] Completar formulario — Colaborador + tarjeta con 3DS (3184 always_authenticate)', async () => {
+		await test.step('And: formulario completado — Colaborador + tarjeta con 3DS (3184 always_authenticate) [SMOKE-GW-TC06]', async () => {
 			await travel.fillMinimum({
 				client:      TEST_DATA.contractorClient,
 				passenger:   TEST_DATA.contractorColaborador,
@@ -350,49 +370,53 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 			});
 		});
 
-		await test.step('[SMOKE-GW-TC06][STEP-05] Enviar formulario — sistema ejecuta hold y presenta modal 3DS', async () => {
+		await test.step('And: formulario enviado — sistema ejecuta hold y presenta modal 3DS [SMOKE-GW-TC06]', async () => {
 			await travel.submit();
 		});
 
-		await test.step('[SMOKE-GW-TC06][STEP-06] Aprobar autenticación en modal 3DS', async () => {
+		await test.step('When: autenticación aprobada en modal 3DS [SMOKE-GW-TC06]', async () => {
 			await threeDS.waitForVisible();
 			await threeDS.completeSuccess();
 			await threeDS.waitForHidden();
 			console.log('[SMOKE-GW-TC06][3DS] Modal 3DS aprobado ✅');
 		});
 
-		await test.step('[SMOKE-GW-TC06][STEP-07] Seleccionar vehículo y enviar servicio', async () => {
+		await test.step('And: vehículo seleccionado y servicio enviado [SMOKE-GW-TC06]', async () => {
 			await travel.clickSelectVehicle();
 			await travel.clickSendService();
 		});
 
-		await test.step('[SMOKE-GW-TC06][STEP-08] Validar viaje en gestión — "Buscando chofer"', async () => {
+		await test.step('Then: viaje visible en gestión — "Buscando chofer" [SMOKE-GW-TC06]', async () => {
 			await management.goto();
-			await management.expectPassengerInPorAsignar(TEST_DATA.contractorColaborador, undefined, 'Buscando chofer');
+			await management.expectPassengerInPorAsignar(
+				TEST_DATA.contractorColaborador,
+				undefined,
+				'Buscando chofer',
+			);
 			console.log(`[SMOKE-GW-TC06] Colaborador Hold ON 3DS éxito — SEARCHING_DRIVER en ${env.toUpperCase()} ✅`);
 		});
 	});
 
 	// ── TC07 ─────────────────────────────────────────────────────────────────
-	test('[TS-STRIPE-TC1096] SMOKE-GW-TC07 — Colaborador · Cargo a Bordo · pago exitoso desde portal Carrier', async ({ page }) => {
+	test('@smoke @carrier @cargo-a-bordo @happy [TS-STRIPE-TC1096] SMOKE-GW-TC07 — Colaborador · Cargo a Bordo · pago exitoso desde portal Carrier', async ({ page }) => {
 		const dashboard  = new DashboardPage(page);
 		const travel     = new NewTravelPage(page);
 		const management = new TravelManagementPage(page);
 		let travelIdRef: TravelIdRef | null = null;
 
-		await test.step(`[SMOKE-GW-TC07][STEP-01] Login carrier en ${env.toUpperCase()}`, async () => {
+		await test.step(`Given: dispatcher logueado en carrier [SMOKE-GW-TC07] (${env.toUpperCase()})`, async () => {
 			await loginAsDispatcher(page);
 		});
 
 		try {
 			travelIdRef = await captureCreatedTravelId(page);
 
-			await test.step('[SMOKE-GW-TC07][STEP-02] Abrir formulario de nuevo viaje', async () => {
+			await test.step('When: formulario de nuevo viaje abierto [SMOKE-GW-TC07]', async () => {
 				await dashboard.openNewTravel();
 				await travel.ensureLoaded();
 			});
 
-			await test.step('[SMOKE-GW-TC07][STEP-03] Completar formulario — cliente Contractor + colaborador + Cargo a Bordo', async () => {
+			await test.step('And: formulario completado — cliente Contractor + colaborador + Cargo a Bordo [SMOKE-GW-TC07]', async () => {
 				await travel.selectClient(TEST_DATA.contractorClient);
 				await travel.selectPassenger(TEST_DATA.contractorPassenger);
 				await travel.setOrigin(TEST_DATA.origin);
@@ -400,18 +424,22 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 				await travel.selectPaymentMethod('CargoABordo');
 			});
 
-			await test.step('[SMOKE-GW-TC07][STEP-04] Seleccionar vehículo y enviar servicio', async () => {
+			await test.step('And: vehículo seleccionado y servicio enviado [SMOKE-GW-TC07]', async () => {
 				await travel.clickSelectVehicle();
 				await travel.clickSendService();
 			});
 
-			await test.step('[SMOKE-GW-TC07][STEP-05] Verificar que NO aparece modal 3DS', async () => {
+			await test.step('Then: modal 3DS no debe aparecer (Cargo a Bordo no requiere Stripe) [SMOKE-GW-TC07]', async () => {
 				await expectNoThreeDSModal(page);
 			});
 
-			await test.step('[SMOKE-GW-TC07][STEP-06] Validar viaje creado en gestión', async () => {
+			await test.step('Then: viaje creado visible en gestión [SMOKE-GW-TC07]', async () => {
 				await management.goto();
-				await management.expectPassengerInPorAsignar(TEST_DATA.contractorPassenger, undefined, 'Buscando chofer');
+				await management.expectPassengerInPorAsignar(
+					TEST_DATA.contractorPassenger,
+					undefined,
+					'Buscando chofer',
+				);
 				console.log(`[SMOKE-GW-TC07] Colaborador Cargo a Bordo — viaje creado en ${env.toUpperCase()} ✅`);
 			});
 		} finally {
@@ -420,27 +448,27 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 	});
 
 	// ── TC08 ─────────────────────────────────────────────────────────────────
-	test('[TS-STRIPE-TC1065] SMOKE-GW-TC08 — Empresa · Hold ON · sin 3DS (4242) → SEARCHING_DRIVER desde portal Carrier', async ({ page }) => {
+	test('@smoke @carrier @hold @happy [TS-STRIPE-TC1065] SMOKE-GW-TC08 — Empresa · Hold ON · sin 3DS (4242) → SEARCHING_DRIVER desde portal Carrier', async ({ page }) => {
 		const dashboard   = new DashboardPage(page);
 		const preferences = new OperationalPreferencesPage(page);
 		const travel      = new NewTravelPage(page);
 		const management  = new TravelManagementPage(page);
 
-		await test.step(`[SMOKE-GW-TC08][STEP-01] Login carrier en ${env.toUpperCase()}`, async () => {
+		await test.step(`Given: dispatcher logueado en carrier [SMOKE-GW-TC08] (${env.toUpperCase()})`, async () => {
 			await loginAsDispatcher(page);
 		});
 
-		await test.step('[SMOKE-GW-TC08][STEP-02] Verificar hold habilitado en preferencias operativas', async () => {
+		await test.step('And: hold habilitado en preferencias operativas [SMOKE-GW-TC08]', async () => {
 			await preferences.goto();
 			await preferences.ensureHoldEnabled();
 		});
 
-		await test.step('[SMOKE-GW-TC08][STEP-03] Abrir formulario de nuevo viaje', async () => {
+		await test.step('When: formulario de nuevo viaje abierto [SMOKE-GW-TC08]', async () => {
 			await dashboard.openNewTravel();
 			await travel.ensureLoaded();
 		});
 
-		await test.step('[SMOKE-GW-TC08][STEP-04] Completar formulario — cliente Empresa + tarjeta sin 3DS (4242)', async () => {
+		await test.step('And: formulario completado — cliente Empresa + tarjeta sin 3DS (4242) [SMOKE-GW-TC08]', async () => {
 			await travel.fillMinimum({
 				client:      TEST_DATA.client,
 				passenger:   TEST_DATA.passenger,
@@ -450,43 +478,47 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 			});
 		});
 
-		await test.step('[SMOKE-GW-TC08][STEP-05] Seleccionar vehículo y enviar servicio', async () => {
+		await test.step('And: vehículo seleccionado y servicio enviado [SMOKE-GW-TC08]', async () => {
 			await travel.waitForVehicleSelectionReady();
 			await travel.clickSelectVehicle();
 			await travel.clickSendService();
 		});
 
-		await test.step('[SMOKE-GW-TC08][STEP-06] Verificar que NO aparece modal 3DS', async () => {
+		await test.step('Then: modal 3DS no debe aparecer (tarjeta sin 3DS) [SMOKE-GW-TC08]', async () => {
 			await expectNoThreeDSModal(page);
 		});
 
-		await test.step('[SMOKE-GW-TC08][STEP-07] Validar viaje en gestión — "Buscando chofer"', async () => {
+		await test.step('Then: viaje visible en gestión — "Buscando chofer" [SMOKE-GW-TC08]', async () => {
 			await management.goto();
-			await management.expectPassengerInPorAsignar(TEST_DATA.passenger, undefined, 'Buscando chofer');
+			await management.expectPassengerInPorAsignar(
+				TEST_DATA.passenger,
+				undefined,
+				'Buscando chofer',
+			);
 			console.log(`[SMOKE-GW-TC08] Empresa Hold ON sin 3DS — SEARCHING_DRIVER en ${env.toUpperCase()} ✅`);
 		});
 	});
 
 	// ── TC09 ─────────────────────────────────────────────────────────────────
-	test('[TS-STRIPE-TC1111] SMOKE-GW-TC09 — Empresa · Cargo a Bordo · pago exitoso desde portal Carrier', async ({ page }) => {
+	test('@smoke @carrier @cargo-a-bordo @happy [TS-STRIPE-TC1111] SMOKE-GW-TC09 — Empresa · Cargo a Bordo · pago exitoso desde portal Carrier', async ({ page }) => {
 		const dashboard  = new DashboardPage(page);
 		const travel     = new NewTravelPage(page);
 		const management = new TravelManagementPage(page);
 		let travelIdRef: TravelIdRef | null = null;
 
-		await test.step(`[SMOKE-GW-TC09][STEP-01] Login carrier en ${env.toUpperCase()}`, async () => {
+		await test.step(`Given: dispatcher logueado en carrier [SMOKE-GW-TC09] (${env.toUpperCase()})`, async () => {
 			await loginAsDispatcher(page);
 		});
 
 		try {
 			travelIdRef = await captureCreatedTravelId(page);
 
-			await test.step('[SMOKE-GW-TC09][STEP-02] Abrir formulario de nuevo viaje', async () => {
+			await test.step('When: formulario de nuevo viaje abierto [SMOKE-GW-TC09]', async () => {
 				await dashboard.openNewTravel();
 				await travel.ensureLoaded();
 			});
 
-			await test.step('[SMOKE-GW-TC09][STEP-03] Completar formulario — cliente Empresa + método Cargo a Bordo', async () => {
+			await test.step('And: formulario completado — cliente Empresa + método Cargo a Bordo [SMOKE-GW-TC09]', async () => {
 				await travel.selectClient(TEST_DATA.client);
 				// Empresa individuo puede auto-asignar el campo #passenger (ng-reflect-is-disabled="true")
 				const passengerDisabled =
@@ -501,18 +533,22 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 				await travel.selectPaymentMethod('CargoABordo');
 			});
 
-			await test.step('[SMOKE-GW-TC09][STEP-04] Seleccionar vehículo y enviar servicio', async () => {
+			await test.step('And: vehículo seleccionado y servicio enviado [SMOKE-GW-TC09]', async () => {
 				await travel.clickSelectVehicle();
 				await travel.clickSendService();
 			});
 
-			await test.step('[SMOKE-GW-TC09][STEP-05] Verificar que NO aparece modal 3DS', async () => {
+			await test.step('Then: modal 3DS no debe aparecer (Cargo a Bordo no requiere Stripe) [SMOKE-GW-TC09]', async () => {
 				await expectNoThreeDSModal(page);
 			});
 
-			await test.step('[SMOKE-GW-TC09][STEP-06] Validar viaje creado en gestión', async () => {
+			await test.step('Then: viaje creado visible en gestión [SMOKE-GW-TC09]', async () => {
 				await management.goto();
-				await management.expectPassengerInPorAsignar(TEST_DATA.passenger, undefined, 'Buscando chofer');
+				await management.expectPassengerInPorAsignar(
+					TEST_DATA.passenger,
+					undefined,
+					'Buscando chofer',
+				);
 				console.log(`[SMOKE-GW-TC09] Empresa Cargo a Bordo — viaje creado en ${env.toUpperCase()} ✅`);
 			});
 		} finally {
@@ -521,27 +557,27 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 	});
 
 	// ── TC10 (UNHAPPY) ────────────────────────────────────────────────────────
-	test('[TS-STRIPE-TC1057] SMOKE-GW-TC10 — AppPax · 3DS rechazado (9235) → hold no completado → ausente en Por Asignar [UNHAPPY]', async ({ page }) => {
+	test('@smoke @carrier @hold @3ds @unhappy [TS-STRIPE-TC1057] SMOKE-GW-TC10 — AppPax · 3DS rechazado (9235) → hold no completado → ausente en Por Asignar [UNHAPPY]', async ({ page }) => {
 		const dashboard   = new DashboardPage(page);
 		const preferences = new OperationalPreferencesPage(page);
 		const travel      = new NewTravelPage(page);
 		const management  = new TravelManagementPage(page);
 
-		await test.step(`[SMOKE-GW-TC10][STEP-01] Login carrier en ${env.toUpperCase()}`, async () => {
+		await test.step(`Given: dispatcher logueado en carrier [SMOKE-GW-TC10] (${env.toUpperCase()})`, async () => {
 			await loginAsDispatcher(page);
 		});
 
-		await test.step('[SMOKE-GW-TC10][STEP-02] Verificar hold habilitado en preferencias operativas', async () => {
+		await test.step('And: hold habilitado en preferencias operativas [SMOKE-GW-TC10]', async () => {
 			await preferences.goto();
 			await preferences.ensureHoldEnabled();
 		});
 
-		await test.step('[SMOKE-GW-TC10][STEP-03] Abrir formulario de nuevo viaje', async () => {
+		await test.step('When: formulario de nuevo viaje abierto [SMOKE-GW-TC10]', async () => {
 			await dashboard.openNewTravel();
 			await travel.ensureLoaded();
 		});
 
-		await test.step('[SMOKE-GW-TC10][STEP-04] Completar formulario — AppPax + tarjeta fail3DS (9235)', async () => {
+		await test.step('And: formulario completado — AppPax + tarjeta fail3DS (9235) [SMOKE-GW-TC10]', async () => {
 			await travel.fillMinimum({
 				client:      TEST_DATA.appPaxPassenger,
 				passenger:   TEST_DATA.appPaxPassenger,
@@ -551,7 +587,7 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 			});
 		});
 
-		await test.step('[SMOKE-GW-TC10][STEP-05] Enviar formulario — card 9235 → backend procesa fallo 3DS silenciosamente → limitExceeded=false', async () => {
+		await test.step('And: formulario enviado — card 9235 → backend procesa fallo 3DS silenciosamente → limitExceeded=false [SMOKE-GW-TC10]', async () => {
 			// Card 9235: NO aparece challenge frame. El backend resuelve el fallo 3DS internamente.
 			// URL post-submit: ?limitExceeded=false. Viaje creado con estado NO_AUTORIZADO → "En conflicto".
 			await travel.submit();
@@ -559,10 +595,12 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 			console.log('[SMOKE-GW-TC10] Submit completado — viaje creado como NO_AUTORIZADO ✅');
 		});
 
-		await test.step('[SMOKE-GW-TC10][STEP-06] Validar viaje en "En conflicto" con NO_AUTORIZADO', async () => {
+		await test.step('Then: viaje presente en "En conflicto" con estado NO_AUTORIZADO [SMOKE-GW-TC10]', async () => {
 			// porAsignarColumn() usa data-testid que no renderiza cuando la columna está vacía.
 			// Aserción positiva: el viaje con card 9235 DEBE estar en "En conflicto" como NO_AUTORIZADO.
 			await management.goto();
+			// expectPassengerInEnConflicto es la aserción crítica: valida que el viaje con 3DS
+			// rechazado queda en "En conflicto" (NO_AUTORIZADO) y no en "Por asignar" (SEARCHING_DRIVER).
 			await management.expectPassengerInEnConflicto(TEST_DATA.appPaxPassenger);
 			console.log(`[SMOKE-GW-TC10] Card 9235 → viaje en "En conflicto" / NO_AUTORIZADO en ${env.toUpperCase()} ✅`);
 		});
@@ -580,7 +618,7 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Contractor`, 
 
 	// ── TC11 ─────────────────────────────────────────────────────────────────
 	// Trazabilidad: TS-STRIPE-P2-TC001 (matriz_cases2.md §1.1 Colaborador Contractor Hold ON)
-	test('[TS-STRIPE-P2-TC001] SMOKE-GW-TC11 — Colaborador · Hold ON · vinculación nueva tarjeta (4242) → SEARCHING_DRIVER desde portal Contractor', async ({ page }) => {
+	test('@smoke @contractor @hold @happy [TS-STRIPE-P2-TC001] SMOKE-GW-TC11 — Colaborador · Hold ON · vinculación nueva tarjeta (4242) → SEARCHING_DRIVER desde portal Contractor', async ({ page }) => {
 		const dashboard  = new DashboardPage(page);
 		const travel     = new ContractorNewTravelPage(page);
 		// Cleanup: viaje de TC11 dejaba estado sucio (SEARCHING_DRIVER activo) que hacía
@@ -588,19 +626,19 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Contractor`, 
 		// del agente qa-doc-analyst 2026-04-19.
 		let travelIdRef: TravelIdRef | null = null;
 
-		await test.step(`[SMOKE-GW-TC11][STEP-01] Login contractor en ${env.toUpperCase()}`, async () => {
+		await test.step(`Given: contractor logueado en portal contractor [SMOKE-GW-TC11] (${env.toUpperCase()})`, async () => {
 			await loginAsContractor(page);
 		});
 
 		try {
 			travelIdRef = await captureCreatedTravelId(page);
 
-			await test.step('[SMOKE-GW-TC11][STEP-02] Abrir formulario de nuevo viaje', async () => {
+			await test.step('When: formulario de nuevo viaje abierto [SMOKE-GW-TC11]', async () => {
 				await dashboard.openNewTravel();
 				await travel.ensureLoaded();
 			});
 
-			await test.step('[SMOKE-GW-TC11][STEP-03] Completar formulario — colaborador + vinculación tarjeta nueva (4242) + Hold ON', async () => {
+			await test.step('And: formulario completado — colaborador + vinculación tarjeta nueva (4242) + Hold ON [SMOKE-GW-TC11]', async () => {
 				await travel.fillMinimum({
 					client:      TEST_DATA.contractorColaborador,
 					passenger:   TEST_DATA.contractorColaborador,
@@ -610,19 +648,22 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Contractor`, 
 				});
 			});
 
-			await test.step('[SMOKE-GW-TC11][STEP-04] Seleccionar vehículo y enviar servicio', async () => {
+			await test.step('And: vehículo seleccionado y servicio enviado [SMOKE-GW-TC11]', async () => {
 				await travel.waitForVehicleSelectionReady();
 				await travel.clickSelectVehicle();
 				await travel.clickSendService();
 			});
 
-			await test.step('[SMOKE-GW-TC11][STEP-05] Verificar que NO aparece modal 3DS', async () => {
+			await test.step('Then: modal 3DS no debe aparecer (tarjeta sin 3DS) [SMOKE-GW-TC11]', async () => {
 				await expectNoThreeDSModal(page);
 			});
 
-			await test.step('[SMOKE-GW-TC11][STEP-06] Verificar redirección a contractor/dashboard tras crear viaje', async () => {
+			await test.step('Then: URL redirige a contractor/dashboard tras crear el viaje [SMOKE-GW-TC11]', async () => {
 				// El portal Contractor redirige a dashboard tras crear el viaje (no a /travels/xxx).
-				await expect(page).toHaveURL(/contractor\/dashboard/, { timeout: 20_000 });
+				await expect(
+					page,
+					'Tras crear el viaje en portal contractor, la URL debe redirigir a /contractor/dashboard',
+				).toHaveURL(/contractor\/dashboard/, { timeout: 20_000 });
 				console.log(`[SMOKE-GW-TC11] Contractor Colaborador Hold ON sin 3DS — viaje creado en ${env.toUpperCase()} ✅`);
 			});
 		} finally {
@@ -631,25 +672,25 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Contractor`, 
 	});
 
 	// ── TC12 ─────────────────────────────────────────────────────────────────
-	test('[TS-STRIPE-P2-TC005] SMOKE-GW-TC12 — Colaborador · Hold ON · tarjeta con 3DS éxito (3155) → SEARCHING_DRIVER desde portal Contractor', async ({ page }) => {
+	test('@smoke @contractor @hold @3ds @happy [TS-STRIPE-P2-TC005] SMOKE-GW-TC12 — Colaborador · Hold ON · tarjeta con 3DS éxito (3155) → SEARCHING_DRIVER desde portal Contractor', async ({ page }) => {
 		const dashboard  = new DashboardPage(page);
 		const travel     = new ContractorNewTravelPage(page);
 		const threeDS    = new ThreeDSModal(page);
 		let travelIdRef: TravelIdRef | null = null;
 
-		await test.step(`[SMOKE-GW-TC12][STEP-01] Login contractor en ${env.toUpperCase()}`, async () => {
+		await test.step(`Given: contractor logueado en portal contractor [SMOKE-GW-TC12] (${env.toUpperCase()})`, async () => {
 			await loginAsContractor(page);
 		});
 
 		try {
 			travelIdRef = await captureCreatedTravelId(page);
 
-			await test.step('[SMOKE-GW-TC12][STEP-02] Abrir formulario de nuevo viaje', async () => {
+			await test.step('When: formulario de nuevo viaje abierto [SMOKE-GW-TC12]', async () => {
 				await dashboard.openNewTravel();
 				await travel.ensureLoaded();
 			});
 
-			await test.step('[SMOKE-GW-TC12][STEP-03] Completar formulario — colaborador + tarjeta con 3DS (3155) + Hold ON', async () => {
+			await test.step('And: formulario completado — colaborador + tarjeta con 3DS (3155) + Hold ON [SMOKE-GW-TC12]', async () => {
 				await travel.fillMinimum({
 					client:      TEST_DATA.contractorColaborador,
 					passenger:   TEST_DATA.contractorColaborador,
@@ -659,7 +700,7 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Contractor`, 
 				});
 			});
 
-			await test.step('[SMOKE-GW-TC12][STEP-04] Aprobar primer challenge 3DS (vinculación de tarjeta)', async () => {
+			await test.step('When: primer challenge 3DS aprobado (vinculación de tarjeta) [SMOKE-GW-TC12]', async () => {
 				await threeDS.waitForVisible();
 				await threeDS.completeSuccess();
 				await threeDS.waitForHidden();
@@ -669,17 +710,20 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Contractor`, 
 			// Defense post-3DS: si el formulario reseteó el método de pago a "Efectivo"
 			// (fenómeno intermitente detectado en diagnóstico flakiness 2026-04-19),
 			// fallar rápido con mensaje diagnóstico claro en lugar del timeout 45s en STEP-05.
-			await test.step('[SMOKE-GW-TC12][STEP-04b] Verificar que "Preautorizada" sigue seleccionada tras 3DS-1', async () => {
-				await expect(page.getByText(/Preautorizad/i).first()).toBeVisible({ timeout: 5_000 });
+			await test.step('Then: "Preautorizada" sigue seleccionada tras el primer challenge 3DS [SMOKE-GW-TC12]', async () => {
+				await expect(
+					page.getByText(/Preautorizad/i).first(),
+					'Tras el primer challenge 3DS, el método de pago debe mantenerse en "Preautorizada" — si aparece "Efectivo" el formulario se reseteó',
+				).toBeVisible({ timeout: 5_000 });
 			});
 
-			await test.step('[SMOKE-GW-TC12][STEP-05] Seleccionar vehículo y enviar servicio', async () => {
+			await test.step('And: vehículo seleccionado y servicio enviado [SMOKE-GW-TC12]', async () => {
 				await travel.waitForVehicleSelectionReady();
 				await travel.clickSelectVehicle();
 				await travel.clickSendService();
 			});
 
-			await test.step('[SMOKE-GW-TC12][STEP-06] Aprobar segundo challenge 3DS si aparece (hold del viaje)', async () => {
+			await test.step('And: segundo challenge 3DS aprobado si aparece (hold del viaje) [SMOKE-GW-TC12]', async () => {
 				// El portal contractor presenta un 2do 3DS tras el submit del viaje que tarda
 				// 8-15s en renderizarse (observado en pipelines reales). Timeout 18s para dar
 				// margen al backend. Si efectivamente no se requiere, se considera OK.
@@ -692,8 +736,11 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Contractor`, 
 				}
 			});
 
-			await test.step('[SMOKE-GW-TC12][STEP-07] Verificar redirección a contractor/dashboard tras crear viaje', async () => {
-				await expect(page).toHaveURL(/contractor\/dashboard/, { timeout: 20_000 });
+			await test.step('Then: URL redirige a contractor/dashboard tras crear el viaje [SMOKE-GW-TC12]', async () => {
+				await expect(
+					page,
+					'Tras crear el viaje con 3DS éxito en portal contractor, la URL debe redirigir a /contractor/dashboard',
+				).toHaveURL(/contractor\/dashboard/, { timeout: 20_000 });
 				console.log(`[SMOKE-GW-TC12] Contractor Colaborador Hold ON 3DS éxito — viaje creado en ${env.toUpperCase()} ✅`);
 			});
 		} finally {
@@ -702,7 +749,7 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Contractor`, 
 	});
 
 	// ── TC13 ─────────────────────────────────────────────────────────────────
-	test('[TS-STRIPE-P2-TC002] SMOKE-GW-TC13 — Colaborador · Hold OFF · sin 3DS → viaje sin preautorización desde portal Contractor', async ({ page }) => {
+	test('@smoke @contractor @no-hold @happy [TS-STRIPE-P2-TC002] SMOKE-GW-TC13 — Colaborador · Hold OFF · sin 3DS → viaje sin preautorización desde portal Contractor', async ({ page }) => {
 		// Hold OFF en Contractor requiere que enableCreditCardHold=false esté activo
 		// en los parámetros del carrier ANTES de ejecutar este test. El estado de hold
 		// se controla desde el portal Carrier (preferencias operativas), no desde Contractor.
@@ -712,16 +759,16 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Contractor`, 
 		const dashboard  = new DashboardPage(page);
 		const travel     = new ContractorNewTravelPage(page);
 
-		await test.step(`[SMOKE-GW-TC13][STEP-01] Login contractor en ${env.toUpperCase()}`, async () => {
+		await test.step(`Given: contractor logueado en portal contractor [SMOKE-GW-TC13] (${env.toUpperCase()})`, async () => {
 			await loginAsContractor(page);
 		});
 
-		await test.step('[SMOKE-GW-TC13][STEP-02] Abrir formulario de nuevo viaje', async () => {
+		await test.step('When: formulario de nuevo viaje abierto [SMOKE-GW-TC13]', async () => {
 			await dashboard.openNewTravel();
 			await travel.ensureLoaded();
 		});
 
-		await test.step('[SMOKE-GW-TC13][STEP-03] Completar formulario — colaborador + vinculación tarjeta nueva (4242) + Hold OFF', async () => {
+		await test.step('And: formulario completado — colaborador + vinculación tarjeta nueva (4242) + Hold OFF [SMOKE-GW-TC13]', async () => {
 			await travel.fillMinimum({
 				client:      TEST_DATA.contractorColaborador,
 				passenger:   TEST_DATA.contractorColaborador,
@@ -731,24 +778,27 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Contractor`, 
 			});
 		});
 
-		await test.step('[SMOKE-GW-TC13][STEP-04] Seleccionar vehículo y enviar servicio', async () => {
+		await test.step('And: vehículo seleccionado y servicio enviado [SMOKE-GW-TC13]', async () => {
 			await travel.waitForVehicleSelectionReady();
 			await travel.clickSelectVehicle();
 			await travel.clickSendService();
 		});
 
-		await test.step('[SMOKE-GW-TC13][STEP-05] Verificar que NO aparece modal 3DS', async () => {
+		await test.step('Then: modal 3DS no debe aparecer (Hold OFF, sin preautorización) [SMOKE-GW-TC13]', async () => {
 			await expectNoThreeDSModal(page);
 		});
 
-		await test.step('[SMOKE-GW-TC13][STEP-06] Verificar redirección a contractor/dashboard tras crear viaje', async () => {
-			await expect(page).toHaveURL(/contractor\/dashboard/, { timeout: 20_000 });
+		await test.step('Then: URL redirige a contractor/dashboard tras crear el viaje [SMOKE-GW-TC13]', async () => {
+			await expect(
+				page,
+				'Con Hold OFF, tras crear el viaje en portal contractor, la URL debe redirigir a /contractor/dashboard',
+			).toHaveURL(/contractor\/dashboard/, { timeout: 20_000 });
 			console.log(`[SMOKE-GW-TC13] Contractor Colaborador Hold OFF — viaje creado en ${env.toUpperCase()} ✅`);
 		});
 	});
 
 	// ── TC14 (UNHAPPY — tarjeta declinada genérica por el banco) ──────────────
-	test('[TS-STRIPE-P2-TC090] SMOKE-GW-TC14 — Colaborador · Hold ON · tarjeta declinada (0002) → error → viaje no creado [UNHAPPY]', async ({ page }) => {
+	test('@smoke @contractor @hold @unhappy [TS-STRIPE-P2-TC090] SMOKE-GW-TC14 — Colaborador · Hold ON · tarjeta declinada (0002) → error → viaje no creado [UNHAPPY]', async ({ page }) => {
 		// Flujo UNHAPPY: card 4000 0000 0000 0002 (generic_decline) pasa el SetupIntent
 		// pero RECHAZA al intentar el hold authorize durante el submit del viaje.
 		//
@@ -759,16 +809,16 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Contractor`, 
 		const dashboard   = new DashboardPage(page);
 		const travel      = new ContractorNewTravelPage(page);
 
-		await test.step(`[SMOKE-GW-TC14][STEP-01] Login contractor en ${env.toUpperCase()}`, async () => {
+		await test.step(`Given: contractor logueado en portal contractor [SMOKE-GW-TC14] (${env.toUpperCase()})`, async () => {
 			await loginAsContractor(page);
 		});
 
-		await test.step('[SMOKE-GW-TC14][STEP-02] Abrir formulario de nuevo viaje', async () => {
+		await test.step('When: formulario de nuevo viaje abierto [SMOKE-GW-TC14]', async () => {
 			await dashboard.openNewTravel();
 			await travel.ensureLoaded();
 		});
 
-		await test.step('[SMOKE-GW-TC14][STEP-03] Completar formulario — colaborador + tarjeta declinada genérica (0002)', async () => {
+		await test.step('And: formulario completado — colaborador + tarjeta declinada genérica (0002) [SMOKE-GW-TC14]', async () => {
 			await travel.fillMinimum({
 				client:      TEST_DATA.contractorColaborador,
 				passenger:   TEST_DATA.contractorColaborador,
@@ -778,7 +828,7 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Contractor`, 
 			});
 		});
 
-		await test.step('[SMOKE-GW-TC14][STEP-04] Verificar que el botón vehículo NO se habilita (card declinada bloquea el flujo)', async () => {
+		await test.step('Then: botón "Seleccionar Vehículo" NO se habilita (card declinada bloquea el flujo) [SMOKE-GW-TC14]', async () => {
 			// Card 0002 (generic_decline) falla al intentar attach del PaymentMethod al viaje
 			// post-validación Stripe. Resultado observado en CI: el botón "Seleccionar Vehículo"
 			// NUNCA se habilita con esta card — eso ES el flujo UNHAPPY que queremos validar.
@@ -788,14 +838,23 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Contractor`, 
 				.then(() => true)
 				.catch(() => false);
 
-			expect(vehicleBtnEnabled, 'Con card declinada (0002) el botón "Seleccionar Vehículo" debería NO habilitarse').toBe(false);
+			expect(
+				vehicleBtnEnabled,
+				'Con card declinada (0002) el botón "Seleccionar Vehículo" debería NO habilitarse — la declinación debe bloquear el flujo antes de llegar a selección de vehículo',
+			).toBe(false);
 			console.log(`[SMOKE-GW-TC14][CHECK] Botón vehículo bloqueado por declinación ✅`);
 		});
 
-		await test.step('[SMOKE-GW-TC14][STEP-05] Validar que el viaje NO fue creado (URL no redirige a dashboard/travels)', async () => {
+		await test.step('Then: URL no redirige a dashboard ni a un viaje creado (viaje no fue creado) [SMOKE-GW-TC14]', async () => {
 			// El portal queda en el formulario — no redirige porque el viaje nunca se creó.
-			await expect(page).not.toHaveURL(/contractor\/dashboard$/, { timeout: 2_000 });
-			await expect(page).not.toHaveURL(/\/travels\/[\w-]+/, { timeout: 2_000 });
+			await expect(
+				page,
+				'Con card declinada (0002), la URL NO debe redirigir a /contractor/dashboard — el portal debe permanecer en el formulario',
+			).not.toHaveURL(/contractor\/dashboard$/, { timeout: 2_000 });
+			await expect(
+				page,
+				'Con card declinada (0002), la URL NO debe redirigir a un detalle de viaje — el viaje no fue creado',
+			).not.toHaveURL(/\/travels\/[\w-]+/, { timeout: 2_000 });
 			console.log(`[SMOKE-GW-TC14] Contractor tarjeta declinada → viaje NO creado en ${env.toUpperCase()} ✅`);
 		});
 	});
