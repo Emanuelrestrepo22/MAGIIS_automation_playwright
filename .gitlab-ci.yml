@@ -7,6 +7,10 @@ variables:
 .e2e_template:
   stage: test
   image: node:20
+  # interruptible: cancela pipelines previos del mismo ref cuando llega uno nuevo.
+  # Evita 3 jobs concurrentes chocando contra estado compartido del entorno TEST
+  # (preferencias operativas, viajes previos, wallet del passenger de prueba).
+  interruptible: true
   cache:
     key:
       files:
