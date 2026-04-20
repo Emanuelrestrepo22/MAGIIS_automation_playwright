@@ -40,18 +40,15 @@
 
 ## Pendientes activos
 
-### BL-001 — Habilitar "Cargo a Bordo" para AppPax en backend TEST
+### BL-001 — ~~Habilitar "Cargo a Bordo" para AppPax en backend TEST~~ — FALSA ALARMA
 
-- **Estado:** 🔴 Pendiente
-- **Prioridad:** P1
-- **Tipo:** Configuración de ambiente (acción humana)
-- **Reportado:** 2026-04-19
-- **Contexto:** TC04 (TS-STRIPE-TC1081) falla intermitentemente con `?limitExceeded=false` cuando el método "Cargo a Bordo / Tarjeta de Crédito" no está habilitado para Emanuel Restrepo (AppPax). **No existe UI ni endpoint público para habilitarlo** — requiere intervención admin de backend.
-- **Próxima acción:** Coordinar con DevOps/backend para habilitar el método para `emanuel.restrepo@yopmail.com` en TEST.
+- **Estado:** 🟢 Hecho (2026-04-20) — era bug del test, no de ambiente
+- **Resolución:** El redirect a `?limitExceeded=false` post-submit de Cargo a Bordo con AppPax es **comportamiento normal del producto**, no un error del backend. El spec tenía un guard misleading que lo interpretaba como fallo. Fix aplicado a los 11 specs de Cargo a Bordo (apppax/contractor/empresa × happy/3ds/antifraud/declines): reemplazar `waitForURL(/limitExceeded/)` por `expect.poll(travelIdRef.travelId)` usando network interception del POST /travels. Confirmado con run focalizado TC1081 ✅ passed (1.9m).
+- **Evidencia:** Recorder `tests/test-4.spec.ts` reproduce el mismo flow manual con idéntica URL final. Regla de negocio: tipo "Regular" es ilimitado; AppPax/empresa-individuo no tienen toggles de limitación (solo colaboradores).
+- **Rama:** `carrier/cargo-a-bordo-tc1081-fix`
 - **Referencias:**
-  - `docs/reports/TC1081-FLAKINESS-DIAGNOSIS.md`
-  - `docs/gateway-pg/stripe/EXTERNAL-BLOCKERS.md` §TC1081
-  - MR !26 (fix precondición rápida)
+  - `docs/gateway-pg/stripe/EXTERNAL-BLOCKERS.md` §TC1081 (actualizado — ya no es blocker)
+  - `docs/reports/TC1081-FLAKINESS-DIAGNOSIS.md` (diagnóstico original identificó guard como misleading — root cause confirmado)
 
 ### BL-002 — Root cause TC1033 auth intermitente
 
