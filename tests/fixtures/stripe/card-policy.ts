@@ -128,8 +128,9 @@ export const CARDS = {
 	// ═══════════════════════════════════════════════════════════════════
 
 	/**
-	 * @deprecated Comportamiento variable en Stripe TEST (Stripe decide si
-	 *   desafía según risk score) → genera flakiness intermitente.
+	 * @deprecated Use CARDS.HAPPY_3DS. ESLint rule bloquea uso nuevo — ver .eslintrc.json.
+	 *   Comportamiento variable en Stripe TEST (Stripe decide si desafía según
+	 *   risk score) → genera flakiness intermitente.
 	 *   Usar `HAPPY_3DS` (3184) o `HAPPY_3DS_SINGLE` (3220) según intención.
 	 *   Esta entrada queda solo para specs legacy hasta completar migración.
 	 * Stripe: `4000 0025 0000 3155`, visa_3ds_success.
