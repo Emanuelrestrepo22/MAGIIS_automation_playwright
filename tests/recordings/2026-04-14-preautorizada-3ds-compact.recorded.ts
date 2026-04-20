@@ -1,3 +1,18 @@
+/**
+ * RECORDING — no ejecutable (*.recorded.ts no matchea Playwright testMatch).
+ *
+ * Fecha captura: 2026-04-14
+ * Flow capturado: Habilitar pago preautorizado + crear viaje + Stripe + 3DS + vehículo + enviar. Versión compacta.
+ * Capturado con: npx playwright codegen https://apps-test.magiis.com/
+ *
+ * Spec productivo equivalente:
+ *   tests/features/gateway-pg/specs/stripe/web/carrier/hold/*.spec.ts
+ *
+ * Por qué se conserva: secuencia limpia para extraer helper de enable-preferences + flow 3DS si se refactora el POM.
+ *
+ * Status: REFERENCIA — similar a preautorizada-3ds-with-prefs pero más compacto.
+ * Ver: tests/recordings/README.md
+ */
 import { test, expect } from '@playwright/test';
 
 test('test', async ({ page }) => {

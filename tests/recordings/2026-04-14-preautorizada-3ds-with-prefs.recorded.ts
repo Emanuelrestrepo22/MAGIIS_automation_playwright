@@ -1,3 +1,19 @@
+/**
+ * RECORDING — no ejecutable (*.recorded.ts no matchea Playwright testMatch).
+ *
+ * Fecha captura: 2026-04-14
+ * Flow capturado: Toggle "Cobros con Tarjeta" en preferencias operativas + guardar + crear viaje + Preautorizada + 3DS
+ * Capturado con: npx playwright codegen https://apps-test.magiis.com/
+ *
+ * Spec productivo equivalente:
+ *   tests/features/gateway-pg/specs/stripe/web/carrier/hold/*.spec.ts
+ *   tests/pages/carrier/OperationalPreferencesPage.ts (setup toggle)
+ *
+ * Por qué se conserva: setup completo de preferencias + pago. Buen candidato para refactor a spec productivo con POM (OperationalPreferencesPage ya existe).
+ *
+ * Status: REFERENCIA — flow E2E completo setup + ejecución.
+ * Ver: tests/recordings/README.md
+ */
 import { test, expect } from '@playwright/test';
 
 test('test', async ({ page }) => {
