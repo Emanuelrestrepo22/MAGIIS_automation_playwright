@@ -1,0 +1,27 @@
+# CODEOWNERS — magiis-playwright
+#
+# Asigna reviewers automaticamente segun archivos tocados en PR.
+# Cuando Erika sea la unica dev, todos apuntan a su user.
+# Cuando se sume dev nuevo, ajustar por seccion.
+#
+# Docs: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Defecto: todo apunta a Emanuel Restrepo
+*   @emanuel.restrepo
+
+# Infra CI especifica — review obligatorio
+/.github/workflows/    @emanuel.restrepo
+/.gitlab-ci.yml        @emanuel.restrepo
+/.husky/               @emanuel.restrepo
+/scripts/ci/           @emanuel.restrepo
+/commitlint.config.js  @emanuel.restrepo
+
+# Docs importantes
+/docs/ci/              @emanuel.restrepo
+/docs/ops/             @emanuel.restrepo
+/CLAUDE.md             @emanuel.restrepo
+
+# Tests criticos
+/tests/features/smoke/  @emanuel.restrepo
+/tests/pages/carrier/   @emanuel.restrepo
+/tests/fixtures/        @emanuel.restrepo

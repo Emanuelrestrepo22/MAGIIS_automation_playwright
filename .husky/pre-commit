@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+# pre-commit hook — magiis-playwright
+# Las validaciones corren en pre-push (pnpm pp).
+# Este hook queda vacio intencionalmente.
