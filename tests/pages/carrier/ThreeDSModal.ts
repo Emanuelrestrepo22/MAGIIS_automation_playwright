@@ -36,6 +36,7 @@ export class ThreeDSModal {
         return frame;
       }
 
+      // NOTE(tier3-kept): polling loop propio con deadline — frame Stripe no emite evento DOM de "appeared"
       await this.page.waitForTimeout(250);
     }
 
@@ -58,6 +59,7 @@ export class ThreeDSModal {
         return true;
       }
 
+      // NOTE(tier3-kept): polling loop propio con deadline — overlay 3DS es iframe Stripe sin evento DOM propio
       await this.page.waitForTimeout(500);
     }
 
@@ -79,6 +81,7 @@ export class ThreeDSModal {
         return;
       }
 
+      // NOTE(tier3-kept): loop con condición compuesta (completeVisible + vehicleEnabled) — no reemplazable con retryAsync
       await this.page.waitForTimeout(500);
     }
 
@@ -90,6 +93,7 @@ export class ThreeDSModal {
     const completeButton = challengeFrame.getByRole('button', { name: /^COMPLETE$/i });
 
     await expect(completeButton).toBeVisible({ timeout: THREE_DS_TIMEOUT });
+    // NOTE(tier3-kept): THREE_DS_STABILIZATION_DELAY=10s — iframe Stripe no expone evento "ready" post-carga; cubre TC03/TC06/TC08
     await this.page.waitForTimeout(THREE_DS_STABILIZATION_DELAY);
     await completeButton.click();
   }
@@ -99,6 +103,7 @@ export class ThreeDSModal {
     const failButton = challengeFrame.getByRole('button', { name: /^FAIL$/i });
 
     await expect(failButton).toBeVisible({ timeout: THREE_DS_TIMEOUT });
+    // NOTE(tier3-kept): THREE_DS_STABILIZATION_DELAY=10s — mismo patrón que completeSuccess; cubre TC10/TC11/TC12 smoke
     await this.page.waitForTimeout(THREE_DS_STABILIZATION_DELAY);
     await failButton.click();
   }
