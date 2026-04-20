@@ -8,6 +8,7 @@ import { test } from '../../../../../../../TestBase';
 import { DashboardPage, NewTravelPage, TravelDetailPage, TravelManagementPage } from '../../../../../../../pages/carrier';
 import { expectNoThreeDSModal, loginAsDispatcher, TEST_DATA } from '../../../../../fixtures/gateway.fixtures';
 import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../../../../helpers/travel-cleanup';
+import { debugLog } from '../../../../../../../helpers';
 
 // Flujo: carrier web crea viaje con cliente empresa individuo y método "Tarjeta de Crédito - Cargo a Bordo".
 // No hay formulario Stripe ni 3DS desde carrier. El cobro ocurre en Driver App al finalizar.
@@ -47,7 +48,7 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Cargo a Bordo', ()
 				const passengerDisabled =
 					(await page.locator('#passenger').getAttribute('ng-reflect-is-disabled')) === 'true';
 				if (passengerDisabled) {
-					console.log('[TC1111] #passenger auto-asignado — validando contenido');
+					debugLog('gateway-pg:carrier', '[TC1111] #passenger auto-asignado — validando contenido');
 					await expect(page.locator('#passenger')).not.toHaveText('', { timeout: 10_000 });
 				} else {
 					await travel.selectPassenger(TEST_DATA.passenger);

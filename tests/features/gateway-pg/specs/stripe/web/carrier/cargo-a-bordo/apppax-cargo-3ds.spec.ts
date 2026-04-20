@@ -18,6 +18,7 @@ import { expectNoThreeDSModal, loginAsDispatcher, TEST_DATA } from '../../../../
 import { validateCardPrecondition } from '../../../../../helpers/card-precondition';
 import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../../../../helpers/travel-cleanup';
 import { PASSENGERS } from '../../../../../data/passengers';
+import { debugLog } from '../../../../../../../helpers';
 
 test.use({ role: 'carrier', storageState: undefined });
 test.describe.configure({ timeout: 120_000 });
@@ -39,7 +40,7 @@ async function webPhaseCargoAppPax(page: Page): Promise<TravelIdRef> {
 			passengerName: PASSENGERS.appPax.apiSearchQuery!,
 			requiredLast4: '3155',
 		});
-		console.log(`[card-precondition] ${PASSENGERS.appPax.name}: ${check.activeCards} tarjetas, tiene 3155: ${check.hasRequiredCard}, limpiadas: ${check.cardsDeleted}`);
+		debugLog('gateway-pg:carrier', `[card-precondition] ${PASSENGERS.appPax.name}: ${check.activeCards} tarjetas, tiene 3155: ${check.hasRequiredCard}, limpiadas: ${check.cardsDeleted}`);
 		if (!check.hasRequiredCard) {
 			throw new Error(
 				`[TC1092] PRECONDICIÓN NO CUMPLIDA: pasajero appPax sin tarjeta 3DS 3155 activa (tarjetas activas: ${check.activeCards}). Vincular manualmente en TEST antes de ejecutar.`

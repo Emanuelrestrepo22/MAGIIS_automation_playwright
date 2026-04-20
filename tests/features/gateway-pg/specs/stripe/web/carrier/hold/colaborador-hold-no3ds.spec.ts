@@ -14,6 +14,7 @@ import { waitForTravelCreation } from '../../../../../helpers/stripe.helpers';
 import { validateCardPrecondition, type CardPreconditionResult } from '../../../../../helpers/card-precondition';
 import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../../../../helpers/travel-cleanup';
 import { PASSENGERS } from '../../../../../data/passengers';
+import { debugLog } from '../../../../../../../helpers';
 
 function shortDestination(destination: string): string {
 	return destination.split(',')[0].trim();
@@ -99,7 +100,7 @@ async function resolveCardFlow(
 			passengerName: scenario.apiSearchQuery,
 			requiredLast4: cardLast4,
 		});
-		console.log(`[card-precondition] ${scenario.passenger} (cardFlow=${cardFlow}): ${cardCheck.activeCards} tarjetas, tiene ${cardLast4}: ${cardCheck.hasRequiredCard}`);
+		debugLog('gateway-pg:carrier', `[card-precondition] ${scenario.passenger} (cardFlow=${cardFlow}): ${cardCheck.activeCards} tarjetas, tiene ${cardLast4}: ${cardCheck.hasRequiredCard}`);
 	}
 
 	if (cardFlow === 'existing') {
