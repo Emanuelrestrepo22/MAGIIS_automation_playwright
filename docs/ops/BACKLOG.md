@@ -3,7 +3,7 @@
 > Fuente única de verdad para tareas pendientes, decisiones en espera y deuda técnica activa.
 > **Regla:** toda sesión de trabajo debe arrancar validando este documento. Si un ítem aparece aquí como pendiente pero ya fue resuelto por otra vía, actualizar su estado en lugar de duplicarlo.
 
-**Última revisión:** 2026-04-20 (Erika + Claude — Fases 2-5 CI Gates aceleradas: husky + commitlint + CODEOWNERS + docs branch protection)
+**Última revisión:** 2026-04-20 (Erika + Claude — BL-018 cerrado: weekly-ci-report.mjs implementado con parser GitLab/GitHub)
 
 ---
 
@@ -225,12 +225,13 @@
 
 ### BL-018 — Completar script weekly-ci-report.mjs
 
-- **Estado:** 🔴 Pendiente (esqueleto creado)
+- **Estado:** 🟢 Hecho (2026-04-20, acelerado)
 - **Prioridad:** P3
 - **Tipo:** Mejora
 - **Reportado:** 2026-04-20
-- **Contexto:** Script esqueleto en `scripts/ci/weekly-ci-report.mjs` para generar reporte semanal de salud CI. Falta implementar parser de API GitLab/GitHub + generación de markdown.
-- **Próxima acción:** Completar implementación cuando haya consumo real acumulado para medir (fin de mes post-adopción).
+- **Resolución:** `scripts/ci/weekly-ci-report.mjs` implementado con parser completo para GitLab y GitHub API. Soporta `--platform`, `--days`, `--output=file`. Genera reporte markdown con métricas ejecutivas (success rate, duration p50/p95, consumo proyectado), breakdown por status y branch, top 5 pipelines más lentos, y observaciones automatizadas con umbrales. Primera corrida real con data 30d reveló success rate 41% (22 fallos) — input útil para retro.
+- **Output:** `docs/reports/CI-WEEKLY-<date>.md` generado correctamente. Primer reporte: `docs/reports/CI-WEEKLY-2026-04-20.md`.
+- **Próxima acción:** opcional — schedulear corrida semanal (cron / GitHub Actions scheduled). Ejecutar manualmente `pnpm ci:report` antes de retros.
 - **Referencias:** `scripts/ci/weekly-ci-report.mjs`
 
 ### BL-019 — Integrar gitleaks al hook pre-push
