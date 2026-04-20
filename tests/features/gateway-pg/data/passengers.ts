@@ -28,6 +28,8 @@ export interface TestPassenger {
   hasActiveCard: boolean;
   /** Cantidad de tarjetas vinculadas (API paymentMethodsByPax). null = no verificado */
   totalCards?: number;
+  /** contractorEmployeeId via API /contractorEmployees/{id} — solo aplica a colaboradores. */
+  contractorEmployeeId?: number;
   notes?: string;
 }
 
@@ -47,7 +49,8 @@ export const PASSENGERS = {
     type: 'colaborador',
     apiSearchQuery: 'smith',
     hasActiveCard: true,
-    notes: 'Colaborador de fast car en TEST — tarjeta 4242 activa. Evidencia: test-7.spec.ts login contractor → buscar "ema" → "smith, Emanuel"',
+    contractorEmployeeId: 1881,
+    notes: 'Colaborador de fast car en TEST — tarjeta 4242 activa. Evidencia: test-7.spec.ts login contractor → buscar "ema" → "smith, Emanuel". contractorEmployeeId=1881 (endpoint DELETE /contractorEmployees/1881/serviceType/:sid/delete para reset uso).',
   },
   /** Colaborador fast car SIN tarjeta ❌ — NO usar en tests hold hasta vincular tarjeta en admin */
   colaboradorSinTarjeta: {

@@ -21,8 +21,10 @@ import {
 import { CARDS } from '../../../fixtures/stripe/card-policy';
 import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../gateway-pg/helpers/travel-cleanup';
 import { waitForTravelCreation } from '../../gateway-pg/helpers/stripe.helpers';
-import { validateCardPrecondition } from '../../gateway-pg/helpers/card-precondition';
+import { validateCardPrecondition, extractAuthToken } from '../../gateway-pg/helpers/card-precondition';
 import { PASSENGERS } from '../../gateway-pg/data/passengers';
+import { resetCollaboratorServiceUsage } from '../../gateway-pg/helpers/reset-collaborator-service-usage';
+import { SERVICE_TYPES } from '../../gateway-pg/data/service-types';
 
 const env = process.env.ENV ?? 'test';
 
@@ -424,6 +426,29 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 
 		await test.step(`Given: dispatcher logueado en carrier [SMOKE-GW-TC07] (${env.toUpperCase()})`, async () => {
 			await loginAsDispatcher(page);
+		});
+
+		await test.step('Pre: reset contador de uso del colaborador (servicio Regular) [SMOKE-GW-TC07]', async () => {
+			const contractorEmployeeId = PASSENGERS.colaborador.contractorEmployeeId;
+			if (!contractorEmployeeId) {
+				debugLog('smoke', '[SMOKE-GW-TC07][PRE] WARN: PASSENGERS.colaborador.contractorEmployeeId no definido, skip reset');
+				return;
+			}
+			// Reutiliza extractAuthToken de card-precondition — intercepta el header Authorization
+			// del SPA Angular (JWT en memoria, no en cookie ni localStorage).
+			// TODO: si el reload de extractAuthToken produce side-effects visibles, reemplazar
+			// por una estrategia de intercepción pasiva durante el loginAsDispatcher.
+			const authHeader = await extractAuthToken(page);
+			if (!authHeader) {
+				debugLog('smoke', '[SMOKE-GW-TC07][PRE] WARN: no se pudo obtener token JWT — skip reset, test continúa');
+				return;
+			}
+			const result = await resetCollaboratorServiceUsage(page.request, {
+				contractorEmployeeId,
+				serviceTypeId: SERVICE_TYPES.REGULAR,
+				authToken: authHeader,
+			});
+			debugLog('smoke', `[SMOKE-GW-TC07][PRE] reset usage colaborador id=${contractorEmployeeId}: ${result}`);
 		});
 
 		try {
