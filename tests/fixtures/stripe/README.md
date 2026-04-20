@@ -2,6 +2,25 @@
 
 Source of truth para tarjetas Stripe en todo el proyecto.
 
+## Regla canónica — la respuesta la define el número de tarjeta
+
+En los tests de gateway MAGIIS **el comportamiento esperado lo determina el número de la tarjeta**, no data generada aleatoriamente. Stripe test mode expone un set cerrado de PANs con outcome fijo y documentado:
+
+| Número | Outcome determinístico |
+|---|---|
+| `4242 4242 4242 4242` | Aprobado directo, sin 3DS |
+| `4000 0027 6000 3184` | 3DS siempre exigido → éxito al autenticar |
+| `4000 0000 0000 9235` | 3DS exigido → falla de autenticación → NO_AUTORIZADO |
+| `4000 0000 0000 9995` | Declinada por fondos insuficientes |
+| `4000 0084 0000 1629` | 3DS OK + `card_declined` post-auth |
+
+Consecuencias arquitectónicas:
+
+- Las tarjetas son SoT **fija** en `tests/fixtures/stripe/cards.ts` + `card-policy.ts` (policy por intención). No se generan con faker.
+- Los campos auxiliares (holderName, cvc, exp, zip) son **inertes al outcome** — Stripe test los ignora para decidir la respuesta. Pueden ser random o fijos sin afectar la aserción.
+- `tests/shared/utils/dataGenerator.ts` solo cubre data de auth (emails/passwords no registrados). No debe tener helpers de Stripe: no hay nada que "generar" — hay que **elegir** la card que expresa la intención del test.
+- Al escribir un test nuevo: primero decidir qué respuesta espera el TC, después buscar el alias de `CARDS` en `card-policy.ts`. Si no existe alias para esa intención, agregarlo con JSDoc que explique el outcome esperado.
+
 ## Estructura
 
 ```
