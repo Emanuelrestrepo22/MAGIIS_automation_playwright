@@ -3,7 +3,7 @@
 > Fuente única de verdad para tareas pendientes, decisiones en espera y deuda técnica activa.
 > **Regla:** toda sesión de trabajo debe arrancar validando este documento. Si un ítem aparece aquí como pendiente pero ya fue resuelto por otra vía, actualizar su estado en lugar de duplicarlo.
 
-**Última revisión:** 2026-04-20 (Erika + Claude — BL-018 cerrado: weekly-ci-report.mjs implementado con parser GitLab/GitHub)
+**Última revisión:** 2026-04-20 (Erika + Claude — BL-019 cancelado con racional: perímetro secrets ya cubierto por .env/Masked vars + 3 capas existentes)
 
 ---
 
@@ -236,13 +236,24 @@
 
 ### BL-019 — Integrar gitleaks al hook pre-push
 
-- **Estado:** 🔴 Pendiente (opcional)
+- **Estado:** ⚫ Cancelado (2026-04-20) — ROI marginal vs capas existentes
 - **Prioridad:** P3
 - **Tipo:** Mejora seguridad
 - **Reportado:** 2026-04-20
-- **Contexto:** Gitleaks es un scanner de secrets más robusto que el check 4 grep. Instalación manual documentada en `docs/ci/CI-USAGE-GUIDELINES.md` sección "Secrets scanning". El script `pre-push.mjs` ya contempla un check 11 opcional que solo corre si gitleaks está en PATH.
-- **Próxima acción:** Instalar gitleaks en máquinas del equipo cuando haya más devs. Por ahora, skip check 11 si no está instalado.
-- **Referencias:** `docs/ci/CI-USAGE-GUIDELINES.md` sección "Secrets scanning"
+- **Contexto original:** Gitleaks es un scanner de secrets más robusto que el check 4 grep. Instalación manual documentada en `docs/ci/CI-USAGE-GUIDELINES.md` sección "Secrets scanning". El script `pre-push.mjs` ya contempla un check 11 opcional que solo corre si gitleaks está en PATH.
+- **Razón de cancelación:** El perímetro de secrets del proyecto está definido por política empresa:
+  - Zero secret keys de producción en el repo (Stripe real, AWS, tokens externos) — prohibido por ley
+  - Todas las credenciales sensibles viven en `.env` local (gitignored)
+  - CI usa Masked + Protected variables (GitLab) / Secrets (GitHub)
+  - 3 capas ya cubren los casos realistas: check 4 (patrones hardcoded) + check 5 (.env staged) + GitHub automatic secret scanning
+  - gitleaks agregaría ceremonia con falsos positivos probables (IDs, hashes, card numbers test Stripe) sin beneficio proporcional
+- **Triggers de reactivación** (re-abrir como 🔴 si aparecen):
+  - Se agrega integración con API externa que requiera secret keys reales en runtime (Stripe SDK con webhook secret, AWS SDK, Sentry/Datadog tokens)
+  - Se suma dev nuevo y se detecta al menos 1 near-miss de leak
+  - Cambia la política empresa sobre manejo de secrets
+  - Aparece necesidad de compliance/audit que lo exija
+- **Infrastructure ya lista si se reactiva:** check 11 del script existe, doc de instalación en guidelines. Tiempo de reactivación: ~15 min instalación + eventual `.gitleaks.toml` para falsos positivos.
+- **Referencias:** `docs/ci/CI-USAGE-GUIDELINES.md` sección "Secrets scanning", conversación de decisión 2026-04-20
 
 ---
 
