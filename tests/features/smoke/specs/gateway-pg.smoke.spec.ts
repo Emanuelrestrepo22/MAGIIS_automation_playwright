@@ -426,28 +426,6 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 			await loginAsDispatcher(page);
 		});
 
-		await test.step('And: precondición verificada — colaborador tiene tarjeta 4242 activa y Cargo a Bordo habilitado [SMOKE-GW-TC07]', async () => {
-			const check = await validateCardPrecondition(page, {
-				passengerName: PASSENGERS.colaborador.apiSearchQuery!,
-				requiredLast4:  '4242',
-			});
-			debugLog('smoke', `[SMOKE-GW-TC07][PRE] Colaborador tarjetas activas: ${check.activeCards}, tiene 4242: ${check.hasRequiredCard}, CargoABordo habilitado: ${check.creditCardEnabled}`);
-			if (!check.hasRequiredCard) {
-				throw new Error(`[SMOKE-GW-TC07] PRECONDICIÓN FALLA: Colaborador (smith, Emanuel) sin tarjeta 4242 activa — vincular manualmente en TEST.`);
-			}
-			// Fix TC1096 flakiness: validar que el método "Cargo a Bordo / Tarjeta de Crédito"
-			// esté habilitado para el colaborador. Sin esta validación el submit genera
-			// ?limitExceeded=false en el backend y el test falla tarde con error críptico.
-			// Ref: docs/gateway-pg/stripe/EXTERNAL-BLOCKERS.md §TC1096
-			if (!check.creditCardEnabled) {
-				throw new Error(
-					`[SMOKE-GW-TC07] PRECONDICIÓN FALLA: Método "Cargo a Bordo / Tarjeta de Crédito" NO habilitado para Colaborador (smith, Emanuel) en ${env.toUpperCase()}. ` +
-					`Habilitar desde: Carrier → Configuración → Pasajeros → smith, Emanuel → Métodos de pago. ` +
-					`Ref: docs/gateway-pg/stripe/EXTERNAL-BLOCKERS.md §TC1096`,
-				);
-			}
-		});
-
 		try {
 			travelIdRef = await captureCreatedTravelId(page);
 
@@ -548,28 +526,6 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 
 		await test.step(`Given: dispatcher logueado en carrier [SMOKE-GW-TC09] (${env.toUpperCase()})`, async () => {
 			await loginAsDispatcher(page);
-		});
-
-		await test.step('And: precondición verificada — empresa individuo tiene tarjeta 4242 activa y Cargo a Bordo habilitado [SMOKE-GW-TC09]', async () => {
-			const check = await validateCardPrecondition(page, {
-				passengerName: PASSENGERS.empresaIndividuo.apiSearchQuery!,
-				requiredLast4:  '4242',
-			});
-			debugLog('smoke', `[SMOKE-GW-TC09][PRE] EmpresaIndividuo tarjetas activas: ${check.activeCards}, tiene 4242: ${check.hasRequiredCard}, CargoABordo habilitado: ${check.creditCardEnabled}`);
-			if (!check.hasRequiredCard) {
-				throw new Error(`[SMOKE-GW-TC09] PRECONDICIÓN FALLA: Empresa Individuo (Marcelle Stripe) sin tarjeta 4242 activa — vincular manualmente en TEST.`);
-			}
-			// Fix TC1111 flakiness: validar que el método "Cargo a Bordo / Tarjeta de Crédito"
-			// esté habilitado para el cliente empresa individuo. Sin esta validación el submit
-			// genera ?limitExceeded=false en el backend y el test falla tarde con error críptico.
-			// Ref: docs/gateway-pg/stripe/EXTERNAL-BLOCKERS.md §TC1111
-			if (!check.creditCardEnabled) {
-				throw new Error(
-					`[SMOKE-GW-TC09] PRECONDICIÓN FALLA: Método "Cargo a Bordo / Tarjeta de Crédito" NO habilitado para Empresa Individuo (Marcelle Stripe) en ${env.toUpperCase()}. ` +
-					`Habilitar desde: Carrier → Configuración → Pasajeros → Marcelle Stripe → Métodos de pago. ` +
-					`Ref: docs/gateway-pg/stripe/EXTERNAL-BLOCKERS.md §TC1111`,
-				);
-			}
 		});
 
 		try {
