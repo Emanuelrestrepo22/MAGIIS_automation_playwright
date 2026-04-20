@@ -169,6 +169,7 @@ export abstract class NewTravelPageBase {
 				return;
 			}
 
+			// NOTE(tier3-kept): polling loop con condición compuesta visible+enabled — retryAsync no modela este patrón de forma más clara
 			await this.page.waitForTimeout(500);
 		}
 
@@ -221,11 +222,12 @@ export abstract class NewTravelPageBase {
 		const options = select.locator('select-dropdown .options li');
 
 		await select.locator('.below').click({ force: true });
-		await this.page.waitForTimeout(400);
+		// Migrado tier3: waitForTimeout(400) eliminado — dropdown.waitFor({ state: 'attached' }) es el criterio determinista
 		await dropdown.waitFor({ state: 'attached', timeout: 10_000 });
 
 		for (const query of fallbackQueries) {
 			await searchInput.fill(query);
+			// NOTE(tier3-kept): debounce Angular — espera que el dropdown filtre opciones tras fill; sin evento observable
 			await this.page.waitForTimeout(1_000);
 
 			const deadline = Date.now() + 15_000;
@@ -241,10 +243,12 @@ export abstract class NewTravelPageBase {
 					}
 
 					await option.click();
+					// NOTE(tier3-kept): post-click Angular state update — no hay elemento verificable en este scope antes del return
 					await this.page.waitForTimeout(500);
 					return;
 				}
 
+				// NOTE(tier3-kept): polling loop con deadline propio — espera que aparezcan más opciones
 				await this.page.waitForTimeout(500);
 			}
 		}
@@ -287,9 +291,8 @@ export abstract class NewTravelPageBase {
 			}
 
 			await target.click({ force: true });
-			await this.page.waitForTimeout(500);
-
-			if (await searchInput.isVisible().catch(() => false)) {
+			// Migrado tier3: waitForTimeout(500) → isVisible con timeout; searchInput.waitFor debajo es el criterio final
+			if (await searchInput.isVisible({ timeout: 500 }).catch(() => false)) {
 				break;
 			}
 		}
@@ -313,6 +316,7 @@ export abstract class NewTravelPageBase {
 			}
 
 			await option.click();
+			// NOTE(tier3-kept): post-click Angular — el campo actualiza async; verificable solo en el caller
 			await this.page.waitForTimeout(500);
 			return true;
 		}
@@ -331,6 +335,7 @@ export abstract class NewTravelPageBase {
 
 		const searchInput = await this.openPlaceDropdown(place);
 		await searchInput.fill(queryText);
+		// NOTE(tier3-kept): debounce Angular autocomplete de direcciones — sin evento observable post-fill
 		await this.page.waitForTimeout(1_000);
 
 		const suggestionText = address.split(',').slice(0, -1).join(',').trim() || address;
@@ -339,12 +344,14 @@ export abstract class NewTravelPageBase {
 
 		if (await suggestion.isVisible().catch(() => false)) {
 			await suggestion.click();
+			// NOTE(tier3-kept): post-click re-render Angular — campo actualiza async; no hay señal DOM inmediata
 			await this.page.waitForTimeout(500);
 			return;
 		}
 
 		if (await fallbackOption.isVisible().catch(() => false)) {
 			await fallbackOption.click();
+			// NOTE(tier3-kept): post-click re-render Angular — mismo patrón que suggestion path
 			await this.page.waitForTimeout(500);
 			return;
 		}
@@ -355,19 +362,23 @@ export abstract class NewTravelPageBase {
 		}
 
 		await searchInput.fill('');
+		// NOTE(tier3-kept): clear field Angular — sin evento de confirmación de "campo vacío"
 		await this.page.waitForTimeout(500);
 
 		await searchInput.fill(queryText);
+		// NOTE(tier3-kept): debounce Angular — retry path; mismo patrón que primera pasada
 		await this.page.waitForTimeout(1_000);
 
 		if (await suggestion.isVisible().catch(() => false)) {
 			await suggestion.click();
+			// NOTE(tier3-kept): post-click re-render Angular — retry path
 			await this.page.waitForTimeout(500);
 			return;
 		}
 
 		if (await fallbackOption.isVisible().catch(() => false)) {
 			await fallbackOption.click();
+			// NOTE(tier3-kept): post-click re-render Angular — retry path fallback
 			await this.page.waitForTimeout(500);
 			return;
 		}
@@ -612,6 +623,7 @@ export abstract class NewTravelPageBase {
 				return frame;
 			}
 
+			// NOTE(tier3-kept): polling loop propio — Stripe iframe no emite evento DOM de aparición
 			await this.page.waitForTimeout(250);
 		}
 
@@ -634,6 +646,7 @@ export abstract class NewTravelPageBase {
 			.first();
 		await preauthOption.waitFor({ state: 'visible', timeout: 10_000 });
 		await preauthOption.click();
+		// NOTE(tier3-kept): Stripe monta 3 iframes (cardNumber/cardExpiry/cardCvc) sin evento DOM de "ready"; reducir causa waitForStripeFrame timeout
 		await this.page.waitForTimeout(2_500);
 
 		const numberFrame = await this.waitForStripeFrame('cardNumber');
@@ -717,7 +730,7 @@ export abstract class NewTravelPageBase {
 			await this.paymentMethodSelector.click();
 		}
 
-		await this.page.waitForTimeout(500);
+		// Migrado tier3: waitForTimeout(500) eliminado — optionsList.first().waitFor es el criterio determinista
 
 		// Buscar la opción con los últimos 4 dígitos dentro del dropdown de opciones
 		const optionsList = this.paymentMethodSelector.locator(
@@ -730,6 +743,7 @@ export abstract class NewTravelPageBase {
 			const optionText = (await optionsList.nth(i).textContent()) ?? '';
 			if (optionText.includes(last4)) {
 				await optionsList.nth(i).click();
+				// NOTE(tier3-kept): breve estabilización post-select Angular — valor de campo actualiza async sin señal observable en este scope
 				await this.page.waitForTimeout(300);
 				return true;
 			}
@@ -775,6 +789,7 @@ export abstract class NewTravelPageBase {
 			if (!vehicleSelectionOpened && (await this.vehicleButton.isVisible().catch(() => false)) && (await this.vehicleButton.isEnabled().catch(() => false))) {
 				await this.vehicleButton.click();
 				vehicleSelectionOpened = true;
+				// NOTE(tier3-kept): dentro de loop submit — espera que submitButton aparezca tras abrir selector vehículo; reemplazar rompería la lógica del loop
 				await this.page.waitForTimeout(1_000);
 				continue;
 			}
@@ -784,6 +799,7 @@ export abstract class NewTravelPageBase {
 				return;
 			}
 
+			// NOTE(tier3-kept): polling loop submit con deadline — espera estado accionable (vehicle o submit); sin señal adicional
 			await this.page.waitForTimeout(1_000);
 		}
 
@@ -800,7 +816,7 @@ export abstract class NewTravelPageBase {
 
 		await this.waitForLoadingOverlayToDisappear();
 		await this.validateCardButton.click({ force: true });
-		await this.page.waitForTimeout(1_000);
+		// Migrado tier3: waitForTimeout(1_000) eliminado — assertPaymentMethodPreauthorizedSelected con timeout:10s cubre la espera
 		await this.assertPaymentMethodPreauthorizedSelected();
 		return true;
 	}
@@ -809,7 +825,7 @@ export abstract class NewTravelPageBase {
 		await this.waitForEnabledButton(this.validateCardButton);
 		await this.waitForLoadingOverlayToDisappear();
 		await this.validateCardButton.click({ force: true });
-		await this.page.waitForTimeout(1_000);
+		// Migrado tier3: waitForTimeout(1_000) eliminado — assertPaymentMethodPreauthorizedSelected con timeout:10s cubre la espera
 		await this.assertPaymentMethodPreauthorizedSelected();
 	}
 
@@ -840,6 +856,7 @@ export abstract class NewTravelPageBase {
 				const msg = (await this.cardValidationErrorText.textContent().catch(() => null))?.trim() ?? null;
 				return { success: false, errorMessage: msg };
 			}
+			// NOTE(tier3-kept): loop con condición compuesta enabled+errorText — no reemplazable con retryAsync
 			await this.page.waitForTimeout(500);
 		}
 
@@ -850,6 +867,7 @@ export abstract class NewTravelPageBase {
 
 		await this.waitForLoadingOverlayToDisappear();
 		await this.validateCardButton.click({ force: true });
+		// NOTE(tier3-kept): margen para que Stripe devuelva error o confirme — cardValidationErrorText puede aparecer tarde
 		await this.page.waitForTimeout(1_000);
 
 		const errorVisible = await this.cardValidationErrorText.isVisible().catch(() => false);
@@ -874,6 +892,7 @@ export abstract class NewTravelPageBase {
 		await this.waitForEnabledButton(this.vehicleButton);
 		await this.waitForLoadingOverlayToDisappear();
 		await this.vehicleButton.click({ force: true });
+		// NOTE(tier3-kept): lista de vehículos carga desde backend sin indicador DOM de "lista lista"; reducir causa flakiness TC01-TC14
 		await this.page.waitForTimeout(5_000);
 	}
 
