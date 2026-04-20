@@ -9,7 +9,7 @@
 ## Canonical map (enforced)
 
 - Test case source of truth: `tests/features/gateway-pg/specs/stripe/**`
-- Execution entrypoint for Gateway config: `tests/specs/gateway-pg/stripe/**` (wrapper specs only)
+- Execution entrypoint for Gateway config: `tests/features/gateway-pg/specs/stripe/**` (canonical path)
 - Canonical web POMs: `tests/pages/shared/**` and `tests/pages/carrier/**`
 - Canonical gateway data: `tests/features/gateway-pg/data/**`
 - Feature-level helpers/fixtures/context: `tests/features/gateway-pg/{helpers,fixtures,context}/**`
@@ -19,7 +19,7 @@
 
 1. `docs/codex-prompts/README.md` and `AGENTS.md` define document precedence for Gemini/Codex/Claude workflows.
 2. If a path in this file conflicts with repository reality, repository reality + `CLAUDE.md` wins.
-3. `tests/specs/gateway-pg/stripe/**` must stay as wrappers (`import ...features...`) and must not contain business logic.
+3. `tests/features/gateway-pg/specs/stripe/**` is the canonical source of all test logic. The legacy `tests/specs/gateway-pg/stripe/**` wrapper layer has been removed (TIER 1.5 Cat-2).
 4. New reusable POMs are added to `tests/pages/**`, not to `tests/features/**/pages`.
 5. Any structural change must update canonical docs in the same PR cycle.
 

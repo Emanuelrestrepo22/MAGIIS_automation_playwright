@@ -38,8 +38,7 @@ Si una implementacion Playwright tiene poco contexto o faltan selectores reales:
 
 ## Mapa canonico del repo (resumen operativo)
 
-- Specs fuente (implementacion): `tests/features/gateway-pg/specs/stripe/**`
-- Specs wrapper (ejecucion config gateway): `tests/specs/gateway-pg/stripe/**`
+- Specs canonicos (implementacion y ejecucion): `tests/features/gateway-pg/specs/stripe/**`
 - POMs web canonicos: `tests/pages/shared/**` y `tests/pages/carrier/**`
 - Data canonica de gateway: `tests/features/gateway-pg/data/**`
 - Appium canonico: `tests/mobile/appium/**`
