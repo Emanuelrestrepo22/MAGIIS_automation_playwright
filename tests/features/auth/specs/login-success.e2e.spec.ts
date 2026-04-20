@@ -1,6 +1,7 @@
 // tests/specs/auth/login-success.e2e.test.ts
 import { test, expect } from '../../../TestBase';
 import { DashboardPage } from '../../../pages/carrier';
+import { debugLog } from '../../../helpers';
 
 test.describe('[TS-AUTH-TC01] Login exitoso portal carrier — redirección al dashboard y token de sesión persistente', () => {
 	// Forzamos una sesión limpia para validar el flujo completo de login
@@ -23,7 +24,7 @@ test.describe('[TS-AUTH-TC01] Login exitoso portal carrier — redirección al d
 
 		await test.step('[TS-AUTH-TC01][STEP-03] Validar dashboard', async () => {
 			await dashboardPage.ensureDashboardLoaded();
-			console.log('[TS-AUTH-TC01] Dashboard cargado y visible');
+			debugLog('auth', '[TS-AUTH-TC01] Dashboard cargado y visible');
 		});
 
 		await test.step('[TS-AUTH-TC01][STEP-04] Validar token de sesión persistente en localStorage', async () => {
@@ -38,7 +39,7 @@ test.describe('[TS-AUTH-TC01] Login exitoso portal carrier — redirección al d
 				return entries;
 			});
 
-			console.log('[TS-AUTH-TC01][STORAGE] Claves en localStorage:', Object.keys(storageSnapshot));
+			debugLog('auth', '[TS-AUTH-TC01][STORAGE] Claves en localStorage:', Object.keys(storageSnapshot));
 
 			// Buscar cualquier clave que contenga "token" o "auth" (case-insensitive)
 			// para ser resiliente al nombre exacto que use la app.
@@ -48,7 +49,7 @@ test.describe('[TS-AUTH-TC01] Login exitoso portal carrier — redirección al d
 
 			if (tokenEntry) {
 				const [tokenKey, tokenValue] = tokenEntry;
-				console.log(`[TS-AUTH-TC01][STORAGE] Token encontrado → key: "${tokenKey}", length: ${tokenValue.length}`);
+				debugLog('auth', `[TS-AUTH-TC01][STORAGE] Token encontrado → key: "${tokenKey}", length: ${tokenValue.length}`);
 				// Debería existir un token con valor no vacío tras el login exitoso
 				expect(tokenValue, `Token en "${tokenKey}" no debe estar vacío`).toBeTruthy();
 			} else {
@@ -58,7 +59,7 @@ test.describe('[TS-AUTH-TC01] Login exitoso portal carrier — redirección al d
 				const cookies = await page.context().cookies();
 				const sessionCookie = cookies.find(c => /token|session|auth/i.test(c.name));
 				if (sessionCookie) {
-					console.log(`[TS-AUTH-TC01][COOKIE] Sesión en cookie → name: "${sessionCookie.name}", domain: ${sessionCookie.domain}`);
+					debugLog('auth', `[TS-AUTH-TC01][COOKIE] Sesión en cookie → name: "${sessionCookie.name}", domain: ${sessionCookie.domain}`);
 					expect(sessionCookie.value, 'Cookie de sesión no debe estar vacía').toBeTruthy();
 				} else {
 					// Falla informativa: adjunta el snapshot completo para diagnóstico
