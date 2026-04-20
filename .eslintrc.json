@@ -191,10 +191,7 @@
 		},
 		{
 			"files": [
-				"tests/e2e/gateway/shared/e2eFlowConfig.ts",
-				"tests/features/gateway-pg/data/driver-happy-path-scenarios.ts",
-				"tests/features/gateway-pg/data/stripe-cards.ts",
-				"tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-3ds.e2e.spec.ts"
+				"tests/features/gateway-pg/data/stripe-cards.ts"
 			],
 			"rules": {
 				"no-restricted-syntax": "off"
