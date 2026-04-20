@@ -58,6 +58,25 @@
 				}
 			]
 		}],
+		"no-restricted-syntax": [
+			"warn",
+			{
+				"selector": "Literal[value=/0025000031550*/]",
+				"message": "Card 3155 (LEGACY_3DS_SUCCESS) is deprecated due to flakiness. Use CARDS.HAPPY_3DS (3184) instead. See tests/fixtures/stripe/card-policy.ts."
+			},
+			{
+				"selector": "TemplateLiteral > TemplateElement[value.raw=/0025000031550*/]",
+				"message": "Card 3155 (LEGACY_3DS_SUCCESS) is deprecated due to flakiness. Use CARDS.HAPPY_3DS (3184) instead. See tests/fixtures/stripe/card-policy.ts."
+			},
+			{
+				"selector": "ImportSpecifier[imported.name='LEGACY_3DS_SUCCESS']",
+				"message": "LEGACY_3DS_SUCCESS (card 3155) is deprecated. Prefer CARDS.HAPPY_3DS (3184). See tests/fixtures/stripe/card-policy.ts."
+			},
+			{
+				"selector": "MemberExpression[object.name='CARDS'][property.name='LEGACY_3DS_SUCCESS']",
+				"message": "CARDS.LEGACY_3DS_SUCCESS (card 3155) is deprecated. Use CARDS.HAPPY_3DS (3184) instead. See tests/fixtures/stripe/card-policy.ts."
+			}
+		],
 		"@typescript-eslint/consistent-type-imports": "error",
 		"@typescript-eslint/naming-convention": [
 			"warn"
@@ -168,6 +187,17 @@
 			],
 			"rules": {
 				"no-restricted-imports": "off"
+			}
+		},
+		{
+			"files": [
+				"tests/e2e/gateway/shared/e2eFlowConfig.ts",
+				"tests/features/gateway-pg/data/driver-happy-path-scenarios.ts",
+				"tests/features/gateway-pg/data/stripe-cards.ts",
+				"tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-3ds.e2e.spec.ts"
+			],
+			"rules": {
+				"no-restricted-syntax": "off"
 			}
 		}
 	],
