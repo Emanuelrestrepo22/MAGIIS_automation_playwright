@@ -318,6 +318,118 @@ Ver `docs/ops/CI-GATES-IMPLEMENTATION-PLAN.md` para el plan completo.
 
 ---
 
+## 🪝 Hook pre-push activo (automatico)
+
+A partir del MR que activo husky, el ritual `pnpm pp` se ejecuta **automaticamente** en cada `git push`.
+
+### Como se instala
+
+Es automatico: al hacer `pnpm install`, el script `prepare` de husky instala el hook en `.git/hooks/pre-push`.
+
+### Cuando corre
+
+Cada vez que ejecutas `git push`. Si algun check FAIL-level falla, el push se bloquea.
+
+### Como saltarlo (casos legitimos)
+
+Solo para WIP intencional, emergencia, o pushes de recuperacion:
+
+```bash
+SKIP_HOOKS=true git push
+```
+
+**Regla:** documentar el bypass en el commit message o MR description.
+
+### Que NO hacer
+
+- `git push --no-verify` — bypasea completamente, pierde logs. Usar `SKIP_HOOKS=true` en su lugar.
+
+### Troubleshooting
+
+- "hook pre-push no se ejecuta" — correr `pnpm install` para reinstalar husky
+- "pre-push muy lento" — revisar output del ritual, posiblemente hay optimizacion pendiente
+- "falso positivo" — abrir item en BACKLOG con el caso exacto
+
+---
+
+## 📝 Commitlint — formato de mensajes obligatorio
+
+A partir del MR que activo commitlint, los mensajes de commit son validados automaticamente.
+
+### Formato esperado
+
+```
+<tipo>(<scope>): [TC-ID?] descripcion corta
+
+Cuerpo opcional.
+```
+
+### Tipos permitidos
+
+`feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `revert`, `perf`, `style`, `ci`, `build`
+
+### Ejemplos validos
+
+```
+feat(smoke): [TS-STRIPE-TC01] validar hold OK
+fix(carrier): [TC14] tolerar declined cards
+docs(ci): [scripts] actualizar guideline uso CI
+chore: bump husky 9.1
+```
+
+### Ejemplos invalidos
+
+```
+Update README                    <- falta tipo
+feat: added stuff                <- mensaje demasiado vago
+FEAT(SMOKE): validar hold        <- OK pero preferir lowercase en tipo
+```
+
+### Como saltarlo (no recomendado)
+
+```bash
+SKIP_HOOKS=true git commit -m "mensaje libre"
+```
+
+---
+
+## 🔐 Secrets scanning (opcional, recomendado)
+
+Gitleaks es un scanner de secrets mas robusto que el check 4 del ritual.
+
+### Instalacion
+
+#### Windows (scoop)
+```powershell
+scoop install gitleaks
+```
+
+#### Mac (brew)
+```bash
+brew install gitleaks
+```
+
+#### Linux (binary)
+```bash
+wget https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks_$(uname -s)_x64.tar.gz
+```
+
+### Uso manual
+
+```bash
+gitleaks detect --source=. --verbose
+```
+
+### Integracion al hook
+
+El check 11 del ritual (`11/opt`) detecta automaticamente si `gitleaks` esta en PATH:
+- Si el binario existe: lo ejecuta como warning-only
+- Si no existe: skip silencioso — no bloquea a quien no lo tenga instalado
+
+Ver BL-019 para plan de adopcion del equipo.
+
+---
+
 ## 📆 Pendientes de este documento
 
 Ver `docs/ops/BACKLOG.md`:

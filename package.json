@@ -79,7 +79,9 @@
     "test:login": "pnpm exec playwright test tests/features/auth/specs/login-success.e2e.spec.ts --project=chromium",
     "test:login:headed": "pnpm exec playwright test tests/features/auth/specs/login-success.e2e.spec.ts --project=chromium --headed",
     "pp": "node scripts/ci/pre-push.mjs",
-    "prepush": "node scripts/ci/pre-push.mjs"
+    "prepush": "node scripts/ci/pre-push.mjs",
+    "prepare": "husky",
+    "ci:report": "node scripts/ci/weekly-ci-report.mjs"
   },
   "keywords": [
     "playwright",
@@ -93,6 +95,8 @@
   "author": "MAGIIS QA Team",
   "license": "ISC",
   "devDependencies": {
+    "@commitlint/cli": "^20.5.0",
+    "@commitlint/config-conventional": "^20.5.0",
     "@faker-js/faker": "^10.1.0",
     "@playwright/test": "^1.56.1",
     "@types/node": "^24.10.1",
@@ -109,6 +113,7 @@
     "eslint-plugin-only-warn": "^1.1.0",
     "eslint-plugin-prettier": "^5.5.4",
     "exceljs": "^4.4.0",
+    "husky": "^9.1.7",
     "prettier": "^3.0.0",
     "prettier-eslint": "^16.3.0",
     "ts-node": "^10.9.2",
