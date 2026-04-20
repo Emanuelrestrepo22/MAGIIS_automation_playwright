@@ -37,6 +37,7 @@ test.describe('[E2E] Create trip for driver notification', () => {
 		});
 
 		await test.step('Give the backend a moment to emit the driver notification', async () => {
+			// TODO(tier3): evaluar waitForStableURL/expectEventuallyVisible (helpers) - see docs/reports/HELPERS-MIGRATION-AUDIT.md
 			await page.waitForTimeout(5_000);
 		});
 	});
