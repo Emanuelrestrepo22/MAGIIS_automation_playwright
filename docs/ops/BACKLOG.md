@@ -3,7 +3,7 @@
 > Fuente única de verdad para tareas pendientes, decisiones en espera y deuda técnica activa.
 > **Regla:** toda sesión de trabajo debe arrancar validando este documento. Si un ítem aparece aquí como pendiente pero ya fue resuelto por otra vía, actualizar su estado en lugar de duplicarlo.
 
-**Última revisión:** 2026-04-20 (Erika + Claude — post PRs GitHub #10 y #11 mergeados: BL-001 cerrado 🟢 (TC1081 era bug de automation, no ambiente) + BL-005 cerrado 🟢 via PR #11 + Quality Gates foundation replicada en GitHub. b-parts siguen bloqueados por cupo y equipo ≥2)
+**Última revisión:** 2026-04-20 (Erika + Claude — sesión priorización: BL-002 instrumentado 🟡, BL-008 guard apiResolved aplicado 🟡, BL-013 dataGenerator desacoplado de Stripe 🟢. Pendiente validación CI post-reset cupo)
 
 ---
 
@@ -56,14 +56,16 @@
 
 ### BL-002 — Root cause TC1033 auth intermitente
 
-- **Estado:** 🔴 Pendiente (mitigación aplicada con `retry(1)`)
+- **Estado:** 🟡 Instrumentación aplicada — pendiente primera corrida CI para clasificar falla
 - **Prioridad:** P2
 - **Tipo:** Investigación
 - **Reportado:** 2026-04-19
 - **Contexto:** Falla intermitente en login dispatcher al inicio de TC05. `retry(1)` enmascara el síntoma pero no resuelve la raíz.
-- **Próxima acción:** Revisar TTL del storageState en `global-setup.multi-role.ts`; correlacionar con logs backend; si retry >20% escalar a bug de infra.
+- **Avance 2026-04-20:** hallazgo de arquitectura — el smoke corre `--project=chromium` y NO consume el storageState preautenticado del `global-setup.multi-role.ts`. Cada test del smoke hace `loginAsDispatcher` completo (clearCookies + re-goto + login + ensureDashboardLoaded). Instrumenté `loginAsDispatcher` y `loginAsContractor` con `runLoginPhase` para taggear la fase exacta que falla (`[login:goto]`, `[login:submit]`, `[login:dashboard]`) y emitir duración vía `debugLog('auth', ...)`. Sin cambio de control flow ni de timeouts.
+- **Próxima acción:** primera corrida CI post-instrumentación → clasificar el bucket dominante de falla → aplicar fix focalizado según qué fase domine. Sin cupo CI activo esperar reset 1 mayo o usar GitHub Actions.
 - **Referencias:**
-  - `docs/reports/TC1033-MITIGATION.md`
+  - `tests/features/gateway-pg/fixtures/gateway.fixtures.ts` (instrumentación)
+  - `docs/reports/TC1033-MITIGATION.md` (§ "Hallazgo de arquitectura 2026-04-20")
   - MR !31 (retry aplicado)
 
 ### BL-003 — Validar empíricamente TC09 (Marcelle) y TC04 (AppPax)
@@ -118,12 +120,15 @@
 
 ### BL-008 — TIER 4.A v2: precondición tolerante a API-fail para TC07/TC09
 
-- **Estado:** 🔴 Pendiente (MR !36 revertido por regresión)
+- **Estado:** 🟡 Guard `apiResolved` aplicado — falta migrar consumers para usar el nuevo campo cuando sea necesario
 - **Prioridad:** P3
 - **Tipo:** Mejora
-- **Contexto:** MR !36 falló porque `validateCardPrecondition` devuelve defaults cuando no encuentra al pasajero vía API, y el check nuevo disparaba throw engañoso.
-- **Próxima acción:** Reimplementar con guard: solo fallar si el helper confirmó API exitosa y `!hasRequiredCard`. En otro caso, solo `debugLog` warning.
-- **Referencias:** MR !39 (revert), MR !40 (TIER 5 aplicado para TC07 vía endpoint DELETE — puede hacer esto obsoleto).
+- **Contexto:** MR !36 falló porque `validateCardPrecondition` devolvía defaults cuando la API fallaba, y el check nuevo disparaba throw engañoso sin poder distinguir "API cayó" vs "API ok pero no hay tarjeta".
+- **Avance 2026-04-20:** agregué campo `apiResolved: boolean` al `CardPreconditionResult` (aditivo, no rompe consumers). Se setea `false` cuando falla `getPassengerId` o `getPassengerCards`, `true` solo si la cadena API completó. El try/catch del segundo endpoint (paymentMethodsByPax) ahora también atrapa fallos en vez de lanzar. Guía de uso en el JSDoc del helper.
+- **Próxima acción:** cuando se reabra el trabajo en TC07/TC09 (cargo-a-bordo / hold), el consumer puede hacer `if (result.apiResolved && !result.hasRequiredCard) throw ...`. No hay migración masiva pendiente — el campo es opt-in.
+- **Referencias:**
+  - `tests/features/gateway-pg/helpers/card-precondition.ts` (JSDoc §"BL-008 — Guard tolerante a API-fail")
+  - MR !39 (revert), MR !40 (TIER 5 para TC07 vía endpoint DELETE — puede hacer esto obsoleto).
 
 ### BL-009 — Poblar `tests/fixtures/users/`
 
@@ -162,12 +167,14 @@
 
 ### BL-013 — Refactor `dataGenerator.ts` — mover lógica Stripe residual
 
-- **Estado:** 🔴 Pendiente
+- **Estado:** 🟢 Hecho (2026-04-20) — confirmado que no hay lógica Stripe que mover
 - **Prioridad:** P3
 - **Tipo:** Deuda técnica
-- **Contexto:** Posible lógica Stripe residual en `tests/shared/utils/dataGenerator.ts` que debería vivir en `fixtures/stripe/`.
-- **Próxima acción:** Auditar exports y mover si aplica.
-- **Referencias:** MR !29 (TIER 2.1)
+- **Resolución:** auditoría del módulo. `dataGenerator.ts` sólo contiene helpers de auth (emails/passwords random con faker). No hay generadores Stripe allí. El TODO histórico "mover faker bruto de stripe-cards.ts → aquí" fue descartado porque contradice la regla canónica del proyecto: **la respuesta esperada de un test de gateway la determina el número de la tarjeta** (`4242` aprobado, `9235` falla 3DS, etc.), no data aleatoria. Las tarjetas son SoT fija en `tests/fixtures/stripe/cards.ts` + `card-policy.ts`; los campos auxiliares (holderName, zip) son inertes al outcome y pueden quedar random sin impacto. Apliqué: `console.log` → `debugLog('datagen', ...)`, removí los TODOs obsoletos, docblock explícito sobre el alcance del módulo, nueva sección "Regla canónica" en `tests/fixtures/stripe/README.md`.
+- **Referencias:**
+  - `tests/shared/utils/dataGenerator.ts` (docblock actualizado)
+  - `tests/fixtures/stripe/README.md` (§"Regla canónica — la respuesta la define el número de tarjeta")
+  - MR !29 (TIER 2.1)
 
 ### BL-014a — Aplicar template GitHub Actions optimizado ✅
 
