@@ -101,17 +101,17 @@ El scope de esta suite responde a los siguientes ejes de cobertura mínima:
 | Propósito | Archivo |
 |---|---|
 | Spec smoke actual (2 TCs base) | `tests/features/smoke/specs/gateway-pg.smoke.spec.ts` |
-| AppPax hold sin 3DS | `tests/features/gateway-pg/specs/stripe/carrier/hold/apppax-hold-no3ds.spec.ts` |
+| AppPax hold sin 3DS | `tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-no3ds.spec.ts` |
 | AppPax hold con 3DS | `tests/features/gateway-pg/specs/stripe/recorded-3ds-happy-path.spec.ts` |
 | 3DS failure + reintento | `tests/features/gateway-pg/specs/stripe/3ds-failure.spec.ts` |
-| Colaborador hold sin 3DS (carrier) | `tests/features/gateway-pg/specs/stripe/carrier/hold/colaborador-hold-no3ds.spec.ts` |
-| Colaborador hold 3DS (carrier) | `tests/features/gateway-pg/specs/stripe/carrier/hold/colaborador-hold-3ds.spec.ts` |
-| Empresa hold sin 3DS (carrier) | `tests/features/gateway-pg/specs/stripe/carrier/hold/empresa-hold-no3ds.spec.ts` |
-| AppPax cargo a bordo happy | `tests/features/gateway-pg/specs/stripe/carrier/cargo-a-bordo/apppax-cargo-happy.spec.ts` |
-| Colaborador cargo a bordo happy | `tests/features/gateway-pg/specs/stripe/carrier/cargo-a-bordo/contractor-cargo-happy.spec.ts` |
-| Empresa cargo a bordo happy | `tests/features/gateway-pg/specs/stripe/carrier/cargo-a-bordo/empresa-cargo-happy.spec.ts` |
-| Contractor colaborador hold sin 3DS | `tests/features/gateway-pg/specs/stripe/contractor/colaborador-hold-no3ds.spec.ts` |
-| Contractor colaborador hold 3DS | `tests/features/gateway-pg/specs/stripe/contractor/colaborador-hold-3ds.spec.ts` |
+| Colaborador hold sin 3DS (carrier) | `tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-no3ds.spec.ts` |
+| Colaborador hold 3DS (carrier) | `tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-3ds.spec.ts` |
+| Empresa hold sin 3DS (carrier) | `tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-no3ds.spec.ts` |
+| AppPax cargo a bordo happy | `tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-happy.spec.ts` |
+| Colaborador cargo a bordo happy | `tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-happy.spec.ts` |
+| Empresa cargo a bordo happy | `tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-happy.spec.ts` |
+| Contractor colaborador hold sin 3DS | `tests/features/gateway-pg/specs/stripe/web/contractor/colaborador-hold-no3ds.spec.ts` |
+| Contractor colaborador hold 3DS | `tests/features/gateway-pg/specs/stripe/web/contractor/colaborador-hold-3ds.spec.ts` |
 | Datos y tarjetas Stripe | `tests/features/gateway-pg/data/stripeTestData.ts` |
 | Fixtures de gateway | `tests/features/gateway-pg/fixtures/gateway.fixtures.ts` |
 | Matriz de TCs fuente | `docs/gateway-pg/stripe/matriz_cases.md` |

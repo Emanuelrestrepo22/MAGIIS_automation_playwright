@@ -52,7 +52,11 @@ tests/
 ```
 tests/features/
 ├── gateway-pg/
-│   ├── specs/stripe/{carrier,contractor,e2e-mobile}/
+│   ├── specs/stripe/
+│   │   ├── web/
+│   │   │   ├── carrier/       specs carrier web (hold, cargo-a-bordo, operaciones, recurrentes)
+│   │   │   └── contractor/    specs contractor web
+│   │   └── e2e-mobile/        specs híbridos web+mobile (sin cambios)
 │   ├── fixtures/
 │   ├── helpers/
 │   ├── data/              scenarios específicos del feature
@@ -120,7 +124,7 @@ tests/features/<x>/data/             ← scenarios específicos del feature
 | `tests/shared/utils/` | Utilidades compartidas (data generator faker) | `dataGenerator.ts` |
 | `tests/utils/` | Utilidades técnicas puras (API clients, etc.) | `apiClient.ts`, `geminiClient.ts`, `scripts/` |
 | `tests/helpers/` | **Helpers globales Playwright** (reservada — por poblar) | (pendiente) |
-| `tests/features/<x>/specs/` | Specs Playwright del feature | `gateway-pg/specs/stripe/carrier/hold/*.spec.ts` |
+| `tests/features/<x>/specs/` | Specs Playwright del feature | `gateway-pg/specs/stripe/web/carrier/hold/*.spec.ts` |
 | `tests/features/<x>/fixtures/` | Fixtures específicas del feature | `gateway.fixtures.ts` |
 | `tests/features/<x>/helpers/` | Helpers específicos del feature | `stripe.helpers.ts`, `travel-cleanup.ts` |
 | `tests/features/<x>/data/` | Scenarios específicos del feature | `cargo-a-bordo-scenarios.ts` |

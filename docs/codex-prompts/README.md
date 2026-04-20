@@ -93,5 +93,5 @@ Para evitar que los agentes confundan contextos al escalar la aplicacion, se ado
 
 - When a flow is blocked on login or dashboard bootstrap, verify `tests/config/runtime.ts`, `tests/pages/shared/LoginPage.ts`, and `tests/pages/carrier/DashboardPage.ts` before drafting new specs.
 - For carrier and contractor, the shell check comes from the runtime pattern; do not assume `/dashboard` or `Nuevo Viaje` are valid for every role.
-- For contractor portal web work, use the contractor role and keep the focus on `tests/features/gateway-pg/specs/stripe/contractor/**`.
+- For contractor portal web work, use the contractor role and keep the focus on `tests/features/gateway-pg/specs/stripe/web/contractor/**`.
 - If the recording validates a better wait condition or anchor, refresh the prompt and the agent/skill contract in the same cycle.

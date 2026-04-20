@@ -160,7 +160,7 @@ Estructura idéntica a TC1053 (hold ON) y TC1054 (hold OFF). Incluye paso de apr
 **Validación etapa 1:**
 ```bash
 npx tsc --noEmit
-npx playwright test tests/features/gateway-pg/specs/stripe/carrier/hold/ --list
+npx playwright test tests/features/gateway-pg/specs/stripe/web/carrier/hold/ --list
 ```
 
 ---
@@ -234,7 +234,7 @@ test('[TS-STRIPE-TC1082] @regression pago rechazado genérico', async ({ page })
 **Validación etapa 2:**
 ```bash
 npx tsc --noEmit
-npx playwright test tests/features/gateway-pg/specs/stripe/carrier/cargo-a-bordo/apppax-cargo-declines.spec.ts --list
+npx playwright test tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-declines.spec.ts --list
 ```
 
 ---
@@ -260,7 +260,7 @@ npx playwright test tests/features/gateway-pg/specs/stripe/carrier/cargo-a-bordo
 **Validación etapa 3:**
 ```bash
 npx tsc --noEmit
-npx playwright test tests/features/gateway-pg/specs/stripe/carrier/cargo-a-bordo/apppax-cargo-antifraud.spec.ts --list
+npx playwright test tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-antifraud.spec.ts --list
 ```
 
 ---
@@ -299,7 +299,7 @@ Para TC1093: mismo flujo pero `fail3DS` y `await threeDS.completeFail()`, luego 
 **Validación etapa 4:**
 ```bash
 npx tsc --noEmit
-npx playwright test tests/features/gateway-pg/specs/stripe/carrier/cargo-a-bordo/apppax-cargo-3ds.spec.ts --list
+npx playwright test tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-3ds.spec.ts --list
 ```
 
 ---
@@ -340,7 +340,7 @@ Este flujo requiere un viaje previo en estado "En conflicto" (hold fallido). No 
 **Validación etapa 5:**
 ```bash
 npx tsc --noEmit
-npx playwright test tests/features/gateway-pg/specs/stripe/carrier/operaciones/ --list
+npx playwright test tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/ --list
 ```
 
 ---
@@ -360,7 +360,7 @@ npx playwright test tests/features/gateway-pg/specs/stripe/carrier/operaciones/ 
 
 ```bash
 npx tsc --noEmit
-npx playwright test tests/features/gateway-pg/specs/stripe/carrier/ --list
+npx playwright test tests/features/gateway-pg/specs/stripe/web/carrier/ --list
 ```
 
 El `--list` debe mostrar todos los TCs de todos los specs. Los `test.fixme` aparecen como skipped — eso es esperado y correcto para los casos que aún dependen de grabaciones pendientes.
