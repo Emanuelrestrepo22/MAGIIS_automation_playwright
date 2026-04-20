@@ -185,6 +185,47 @@ Errores conocidos de la fuente original corregidos directamente:
 
 ---
 
+## [2026-04-19] TIER 1 — Cleanup legacy + guardrails (MRs !25–!28)
+
+### Removed
+
+- **MR !25 (TIER 1.1)** — eliminados 29 archivos re-export legacy + migrados 6 imports a rutas canónicas.
+- **MR !28 (TIER 1.5)** — eliminados 32 wrappers de `tests/specs/gateway-pg/stripe/`; scripts `package.json` y docs migrados a path canónico.
+
+### Added
+
+- **MR !26 (TIER 1.2)** — regla ESLint `no-restricted-imports` para paths legacy; fix TC1081 (`creditCardEnabled` añadido a precondición).
+- **MR !27** — docs: anotación Categoría 2 pendiente registrada en `ARCHITECTURE.md`.
+
+---
+
+## [2026-04-19] TIER 2 — Arquitectura feature-first + helpers (MRs !29–!32)
+
+### Added
+
+- **MR !29 (TIER 2.1)** — creado `tests/helpers/` con módulos `retry`, `assertions`, `browser` y `debug`; refactor `dataGenerator.ts`.
+- **MR !30 (TIER 2.2)** — reorganización de `gateway-pg/specs/stripe/` al patrón feature-first con sub-plataformas `web/{carrier,contractor}`.
+
+### Changed
+
+- **MR !31 (TIER 2.3)** — TC1033: `retry(1)` temporal añadido; regla ESLint anti-card-3155 (card deprecada) activada.
+- **MR !32 (TIER 2.4)** — migrados 35 `console.log` a `debugLog` en 5 specs de alta densidad.
+
+---
+
+## [2026-04-20] TIER 3 — Deuda técnica residual (MRs !33–!34)
+
+### Changed
+
+- **MR !33 (TIER 3.1)** — cerrada migración `console.log` → `debugLog`: 8 ocurrencias restantes en specs de baja densidad.
+- **MR !34 (TIER 3.2)** — análisis semántico `waitForTimeout` en `tests/pages/`: 12/39 ocurrencias migradas a esperas por estado observable; 27 conservadas con `NOTE(tier3-kept)` y justificación técnica por caso. Ver `docs/reports/WAITFORTIMEOUT-MIGRATION.md`.
+
+### Documentation
+
+- Ver `docs/reports/README.md` para el índice completo de reportes generados en TIER 1-3.
+
+---
+
 ## [2026-04-18] feature/ai-matriz-desambiguacion (MR !8 — histórico)
 
 ### Fixed
