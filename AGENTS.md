@@ -23,7 +23,7 @@ Contrato compartido del repositorio para agentes e IDEs. Antigravity, Gemini, Co
 - Gemini API runtime: `tests/config/aiRuntime.ts` resuelve `GEMINI_API_KEY` con fallback a `AI_STUDIO_GEMINI_MAGIIS`, y `tests/shared/utils/geminiClient.ts` centraliza las llamadas REST al modelo.
 
 ## Prioridad actual
-  - Foco activo: portal contractor web, empezando por `tests/features/gateway-pg/specs/stripe/contractor/vinculacion-tarjeta.spec.ts`.
+  - Foco activo: portal contractor web, empezando por `tests/features/gateway-pg/specs/stripe/web/contractor/vinculacion-tarjeta.spec.ts`.
 - El frente `Passenger App` ya tiene lane activo bajo `docs/codex-prompts/implement-passenger-app-flow2.md` y `tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-personal-3ds.e2e.spec.ts`.
 - Antes de cualquier flujo de Passenger, validar el home mode con `pnpm mobile:passenger:profile-mode-smoke`; el label bajo el `ion-toggle` decide si el lane es `personal` o `business`.
 - Para Passenger personal con hold + 3DS, el runner canónico es `pnpm mobile:passenger:personal-3ds-hold-flow`; para Passenger business sin 3DS, usar `pnpm mobile:passenger:business-no3ds-hold-flow`.

@@ -199,7 +199,7 @@ test('[TS-STRIPE-TC1082] @regression @cargo-a-bordo pago rechazado genérico', a
 
 ## Specs a implementar — detalle por archivo
 
-### 1. `tests/features/gateway-pg/specs/stripe/carrier/hold/apppax-hold-no3ds.spec.ts`
+### 1. `tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-no3ds.spec.ts`
 
 Desactivar `test.fixme` e implementar:
 
@@ -214,7 +214,7 @@ Desactivar `test.fixme` e implementar:
 
 Las variantes "set 2" pueden usar `TEST_DATA.colaborador` como pasajero alternativo si está disponible, o una segunda corrida con los mismos datos de TC1049/TC1050.
 
-### 2. `tests/features/gateway-pg/specs/stripe/carrier/hold/apppax-hold-3ds.spec.ts`
+### 2. `tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-3ds.spec.ts`
 
 Desactivar `test.fixme` e implementar:
 
@@ -227,15 +227,15 @@ Desactivar `test.fixme` e implementar:
 | TC1062 | regression | OFF | success3DS | pasajero diferente |
 | TC1064 | regression | OFF | success3DS | segunda ejecución |
 
-### 3. `tests/features/gateway-pg/specs/stripe/carrier/hold/colaborador-hold-no3ds.spec.ts`
+### 3. `tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-no3ds.spec.ts`
 
 Desactivar `test.fixme` e implementar TC1027–TC1035 como variantes de TC1025/TC1026 cambiando datos de origen/destino o segunda corrida.
 
-### 4. `tests/features/gateway-pg/specs/stripe/carrier/hold/empresa-hold-no3ds.spec.ts`
+### 4. `tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-no3ds.spec.ts`
 
 Desactivar `test.fixme` e implementar TC1015–TC1023 como variantes de TC1013/TC1014.
 
-### 5. `tests/features/gateway-pg/specs/stripe/carrier/cargo-a-bordo/apppax-cargo-declines.spec.ts`
+### 5. `tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-declines.spec.ts`
 
 Implementar los 5 casos negativos. Cada uno sigue el mismo flujo que TC1081 pero con tarjeta diferente y assertion de error:
 
@@ -247,7 +247,7 @@ Implementar los 5 casos negativos. Cada uno sigue el mismo flujo que TC1081 pero
 | TC1085 | `STRIPE_TEST_CARDS.incorrectCvc` | CVC incorrecto — viaje NO en Por asignar |
 | TC1086 | `STRIPE_TEST_CARDS.stolenCard` | Tarjeta robada — viaje NO en Por asignar |
 
-### 6. `tests/features/gateway-pg/specs/stripe/carrier/cargo-a-bordo/apppax-cargo-antifraud.spec.ts`
+### 6. `tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-antifraud.spec.ts`
 
 Implementar los 5 casos de antifraude. Mismo flujo que TC1081 con tarjeta antifraude:
 
@@ -298,7 +298,7 @@ Ajustar profundidad de `../../` según la ubicación del archivo.
 
 ```bash
 npx tsc --noEmit
-npx playwright test tests/features/gateway-pg/specs/stripe/carrier/ --list
+npx playwright test tests/features/gateway-pg/specs/stripe/web/carrier/ --list
 ```
 
 El `--list` debe mostrar todos los TCs de cada spec sin errores de colección. Los `test.fixme` aparecerán como skipped — eso es correcto para TC1090 y TC1091.

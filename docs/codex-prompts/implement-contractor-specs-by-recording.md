@@ -28,7 +28,7 @@ TSC_POR_ETAPA: {}
 - `tests/config/runtime.ts` es la fuente de verdad para `contractor`.
 - `tests/pages/shared/LoginPage.ts` debe usarse para el bootstrap de login.
 - `tests/pages/carrier/DashboardPage.ts` valida el shell web y sirve tambien para contractor cuando el runtime lo permita.
-- `tests/features/gateway-pg/specs/stripe/contractor/vinculacion-tarjeta.spec.ts` es el entrypoint actual del portal contractor.
+- `tests/features/gateway-pg/specs/stripe/web/contractor/vinculacion-tarjeta.spec.ts` es el entrypoint actual del portal contractor.
 - `tests/pages/carrier/OperationalPreferencesPage.ts` es la pieza compartida para preparar `hold` desde carrier cuando un caso contractor lo necesita.
 - `tests/pages/carrier/NewTravelPageBase.ts` y `tests/pages/carrier/NewTravelPage.ts` son la base compartida para el formulario de alta; contractor debe heredar esos contratos si el recording confirma el mismo shell.
 - `tests/test-7.spec.ts` se toma como evidencia primaria de esta etapa para contractor: muestra logout de carrier, login contractor, vinculación de tarjeta, alta de viaje y challenge 3DS durante el flujo.
@@ -62,7 +62,7 @@ TSC_POR_ETAPA: {}
 - guardar la precondicion antes de entrar a contractor
 
 **Spec objetivo**
-- `tests/features/gateway-pg/specs/stripe/contractor/vinculacion-tarjeta.spec.ts`
+- `tests/features/gateway-pg/specs/stripe/web/contractor/vinculacion-tarjeta.spec.ts`
 
 **Cobertura esperada**
 - `P2-TC001` a `P2-TC006`
