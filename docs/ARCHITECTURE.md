@@ -161,6 +161,18 @@ tests/features/<x>/data/             ← scenarios específicos del feature
 - Helpers: kebab-case con sufijo semántico (`travel-cleanup.ts`, `stripe.helpers.ts`)
 - Fixtures: `<domain>.fixtures.ts`
 
+### TODO — Consolidación pendiente (TIER 1.5)
+
+`tests/specs/gateway-pg/stripe/` (32 archivos wrapper) queda pendiente de eliminación. Razón: `package.json` tiene 4 scripts (`test:test:gateway-pg:stripe`, `test:test:gateway-pg:3ds`, `test:test:e2e:flow2`, `test:test:e2e:passenger`) que referencian directamente esa ruta, y `docs/gateway-pg/` la usan como entrypoint oficial.
+
+**Antes de eliminar, auditar wrapper-por-wrapper** para confirmar que solo re-exportan (sin fixtures locales, sin `beforeAll` custom, sin orquestación). Luego:
+
+1. Migrar 4 scripts de `package.json` a `tests/features/gateway-pg/specs/stripe/`
+2. Actualizar `docs/gateway-pg/stripe/ARCHITECTURE.md` y `docs/gateway-pg/test-ids.md`
+3. Eliminar `tests/specs/gateway-pg/` completa
+
+Regla ESLint `no-restricted-imports` (MR !26) ya bloquea nuevos imports desde estos paths.
+
 ## 5. Política de modelos de IA (tier organizacional)
 
 Ver `.claude/docs/model-policy.md`:
