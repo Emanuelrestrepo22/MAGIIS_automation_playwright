@@ -90,7 +90,7 @@ jobs:
         run: pnpm exec tsc --noEmit
 
       - name: Lint
-        run: pnpm lint --if-present
+        run: pnpm run --if-present lint
 
   # ------------------------------------------------------------------------
   #  E2E Tests — smoke suite contra TEST
@@ -187,7 +187,7 @@ jobs:
       - name: Cleanup test travels
         if: always()
         continue-on-error: true
-        run: pnpm run cleanup:test:travels --if-present
+        run: pnpm run --if-present cleanup:test:travels
 
       # -------------------- ARTIFACTS OPTIMIZADOS --------------------
 
