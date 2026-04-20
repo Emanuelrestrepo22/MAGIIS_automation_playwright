@@ -4,21 +4,20 @@ Estos bloqueos requieren acción humana en el ambiente TEST. No son bugs de auto
 
 ---
 
-## TC1081 — Cargo a Bordo appPax: `limitExceeded`
+## TC1081 — Cargo a Bordo appPax: `limitExceeded` (RESUELTO — era bug del test)
 
-**Test afectado:** `apppax-cargo-happy.spec.ts` — `[TS-STRIPE-TC1081]`
+**Estado (2026-04-20):** 🟢 **Resuelto — NO es un blocker externo.**
 
-**Síntoma:** La URL redirige a `?limitExceeded=false` al crear viaje con método "Cargo a Bordo" para el pasajero appPax (Emanuel Restrepo `emanuel.restrepo@yopmail.com`).
+**Root cause real:** el spec `apppax-cargo-happy.spec.ts` tenía un guard misleading que interpretaba el redirect a `?limitExceeded=false` post-submit como un error del backend. En realidad, ese redirect es el **comportamiento normal del producto** para Cargo a Bordo con AppPax — el viaje se crea exitosamente, solo que la URL no redirige a `/travels/:id` sino que se queda en `/travel/create?limitExceeded=false`.
 
-**Causa raíz:** El backend retorna `limitExceeded` cuando el método de pago "Cargo a Bordo" no está habilitado para el pasajero, o cuando se supera el límite diario configurado para ese método.
+**Evidencia:**
+- Recorder `tests/test-4.spec.ts` reproduce el mismo flow manual y termina en la misma URL sin ser error.
+- Regla de negocio: tipo de servicio "Regular" es ilimitado por diseño; AppPax/empresa-individuo no tienen toggles de limitación (solo colaboradores).
+- Cargo a Bordo no usa tarjeta ni formulario Stripe en carrier — el cobro y validación ocurren en Driver App.
 
-**Acción requerida:**
-1. Acceder al portal carrier en TEST (`https://apps-test.magiis.com/carrier`).
-2. Ir a Configuración > Pasajeros > Emanuel Restrepo.
-3. Verificar que el método "Cargo a Bordo / Tarjeta de Crédito" esté habilitado.
-4. Alternativamente: consultar `GET /carriers/{carrierId}/passengers/{passengerId}` para ver `paymentMethods`.
+**Fix aplicado:** reemplazar guard de URL por validación via `captureCreatedTravelId` (network interception del POST `/travels`). Aplicado a los 11 specs de Cargo a Bordo (apppax/contractor/empresa × happy/3ds/antifraud/declines).
 
-**Nota (2026-04-20):** En UI el tipo de servicio "Regular" muestra límite ilimitado. No existe botón UI ni endpoint público para resetear uso acumulado en pasajeros AppPax. Si el síntoma persiste con contador acumulado, requiere intervención directa en DB/backend por admin.
+**Rama:** `carrier/cargo-a-bordo-tc1081-fix`
 
 **Tarjeta involucrada:** Ninguna (Cargo a Bordo = cobro desde Driver App al finalizar viaje).
 
@@ -79,7 +78,7 @@ Estos bloqueos requieren acción humana en el ambiente TEST. No son bugs de auto
 
 | TC | Bloqueo | Acción | Responsable |
 |---|---|---|---|
-| TC1081 | Cargo a Bordo AppPax `limitExceeded=false` sin endpoint público | Intervención DB/backend si se dispara | Backend |
+| TC1081 | ~~Cargo a Bordo AppPax `limitExceeded=false`~~ | ✅ Resuelto 2026-04-20 — era bug del test, no blocker externo (MR `carrier/cargo-a-bordo-tc1081-fix`) | — |
 | TC1092 | Tarjeta 3DS no vinculada al appPax | Vincular tarjeta desde portal o App Pax | Equipo QA |
 | TC1096 | Uso acumulado colaborador Regular | **Automatizado** via helper resetCollaboratorServiceUsage | — |
-| TC1111 | Potencial `limitExceeded=false` Marcelle Stripe | Validación pendiente + intervención DB si aplica | Equipo QA |
+| TC1111 | Potencial `limitExceeded=false` Marcelle Stripe | ✅ Validado PASS 2026-04-20 — sin mitigación requerida | — |

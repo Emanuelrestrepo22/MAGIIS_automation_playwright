@@ -40,17 +40,19 @@
 
 ## Pendientes activos
 
-### BL-001 — Habilitar "Cargo a Bordo" para AppPax en backend TEST
+### BL-001 — ~~Habilitar "Cargo a Bordo" para AppPax en backend TEST~~ — FALSA ALARMA
 
 - **Estado:** 🟢 Resuelto (2026-04-20 — falsa alarma, era bug de automation)
 - **Prioridad:** P1
 - **Tipo:** Configuración de ambiente (acción humana) → reclasificado como bug de automation
 - **Reportado:** 2026-04-19
 - **Resolución:** Root cause real: el spec asumía redirect a `/travels/:id` post-submit, pero el comportamiento normal del producto es quedarse en `/travel/create?limitExceeded=false` con el viaje igualmente creado. El guard `Promise.race` interpretaba ese query param como error. Fix: migración de 11 specs Cargo a Bordo (apppax/contractor/empresa × happy/3ds/antifraud/declines) a network interception del `POST /travels` usando `captureCreatedTravelId` + patrón de validación post-alta ya probado en `SMOKE-GW-TC04`. **Regla de negocio confirmada:** tipo "Regular" es ilimitado por diseño, Cargo a Bordo no usa tarjeta en carrier (cobro en Driver App), los toggles de limitación son solo para colaboradores (TC1096). No se requiere intervención backend.
+- **Evidencia:** Recorder `tests/test-4.spec.ts` reproduce el mismo flow manual con idéntica URL final. Run focalizado TC1081 PASS 1.9m.
 - **Referencias:**
   - GitHub PR #10 → commit `26766de` (squash merge en github/main)
+  - GitLab MR !49 → replica del fix en GitLab
   - `docs/gateway-pg/stripe/EXTERNAL-BLOCKERS.md` §TC1081 → estado 🟢
-  - Pendiente: aplicar el mismo fix en GitLab (rama equivalente `carrier/cargo-a-bordo-tc1081-fix`)
+  - `docs/reports/TC1081-FLAKINESS-DIAGNOSIS.md` (diagnóstico original identificó guard como misleading)
 
 ### BL-002 — Root cause TC1033 auth intermitente
 

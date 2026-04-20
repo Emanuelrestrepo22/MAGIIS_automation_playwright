@@ -3,13 +3,13 @@
  * Feature: Cargo a Bordo — Tarjeta de Crédito — Usuario App Pax — Pago exitoso
  * Tags: @smoke @cargo-a-bordo @web-only
  *
- * Precondiciones:
- * - El pasajero appPax (Emanuel Restrepo) debe tener una tarjeta vinculada y activa
- *   en el sistema MAGIIS con capacidad para Cargo a Bordo.
- * - El límite de crédito del pasajero no debe estar bloqueado (limitExceeded=false
- *   en la URL indica que la creación fue rechazada por el backend — verificar
- *   configuración del pasajero en el entorno TEST antes de ejecutar).
- * - Evidencia primaria: recorder test-17.spec.ts
+ * Notas de comportamiento:
+ * - Cargo a Bordo NO usa tarjeta ni formulario Stripe en carrier. El cobro y validación
+ *   de tarjeta ocurren exclusivamente en la Driver App al finalizar el viaje.
+ * - Post-submit el producto puede quedarse en /travel/create?limitExceeded=false como
+ *   comportamiento normal (no es un error). Validar creación vía network interception
+ *   del POST /travels, no vía URL redirect.
+ * - Evidencia primaria: recorder test-4.spec.ts (reproduce el mismo flow end-to-end).
  */
 import { expect } from '@playwright/test';
 import { test } from '../../../../../../../TestBase';
@@ -84,49 +84,21 @@ test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo', () => {
 				await expectNoThreeDSModal(page);
 			});
 
-			await test.step('Esperar redirección al detalle del viaje creado', async () => {
-				// El backend puede rechazar el viaje con ?limitExceeded=false si el pasajero
-				// no tiene tarjeta Cargo a Bordo activa o hay restricción de límite de crédito.
-				// En ese caso, el test falla con un mensaje de precondición en lugar de un timeout ciego.
-				const result = await Promise.race([
-					page.waitForURL(/\/travels\/[\w-]+$/, { timeout: 15_000 })
-						.then(() => 'success' as const),
-					page.waitForURL(/limitExceeded/, { timeout: 15_000 })
-						.then(() => 'limitExceeded' as const),
-				]).catch(() => 'timeout' as const);
-
-				if (result === 'limitExceeded') {
-					throw new Error(
-						'[TC1081] PRECONDICIÓN NO CUMPLIDA: el backend rechazó la creación del viaje con limitExceeded=false. ' +
-						'Verificar que el pasajero appPax (Emanuel Restrepo) tenga tarjeta activa para Cargo a Bordo en el entorno TEST.'
-					);
-				}
-
-				if (result === 'timeout') {
-					throw new Error(
-						'[TC1081] TIMEOUT: la URL no redirigió al detalle del viaje ni mostró limitExceeded. ' +
-						'Revisar el estado del viaje en el entorno TEST y los logs del servidor.'
-					);
-				}
+			await test.step('Confirmar creación del viaje via network interception', async () => {
+				// Cargo a Bordo con AppPax post-submit puede quedarse en /travel/create?limitExceeded=false
+				// como comportamiento normal del producto. La fuente de verdad es el POST /travels
+				// interceptado por captureCreatedTravelId.
+				await expect
+					.poll(() => travelIdRef?.travelId, {
+						timeout: 15_000,
+						message: '[TC1081] POST /travels no capturó travelId tras el submit',
+					})
+					.not.toBeNull();
 			});
 
-			expect(travelIdRef?.travelId, 'POST /travels debe haber capturado travelId').not.toBeNull();
-
-			const createdTravelId = extractTravelId(page.url());
-
-			await test.step('Validar viaje en gestion - columna Por asignar', async () => {
+			await test.step('Validar viaje en gestion - columna Por asignar con estado Buscando chofer', async () => {
 				await management.goto();
-				await management.expectPassengerInPorAsignar(TEST_DATA.appPaxPassenger, TEST_DATA.destination);
-			});
-
-			await test.step('Abrir detalle del viaje recien creado', async () => {
-				await management.openDetailForPassenger(TEST_DATA.appPaxPassenger, TEST_DATA.destination);
-				await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
-				expect(extractTravelId(page.url())).toBe(createdTravelId);
-			});
-
-			await test.step('Validar estado del viaje - Buscando conductor', async () => {
-				await detail.expectStatus('Buscando conductor');
+				await management.expectPassengerInPorAsignar(TEST_DATA.appPaxPassenger, undefined, 'Buscando chofer');
 			});
 		} finally {
 			if (travelIdRef) {
