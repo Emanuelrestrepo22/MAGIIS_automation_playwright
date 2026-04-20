@@ -1,5 +1,6 @@
 // tests/specs/smoke/login.smoke.test.ts
 import { test, expect } from '../../../TestBase';
+import { debugLog } from '../../../helpers';
 import { DashboardPage } from '../../../pages/carrier';
 import { LoginPage } from '../../../pages/shared';
 import { DataGenerator } from '../../../shared/utils/dataGenerator';
@@ -35,7 +36,7 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Login - Portal Carrier`, () => {
 		await test.step('[SMOKE-AUTH-TC01][STEP-03] Validar que ya no estamos en pantalla de login', async () => {
 			// La página de dashboard es el criterio de éxito más sólido aquí.
 			await dashboardPage.ensureDashboardLoaded();
-			console.log(`[SMOKE-AUTH-TC01] Login exitoso en ${env.toUpperCase()} ✅`);
+			debugLog('smoke', `[SMOKE-AUTH-TC01] Login exitoso en ${env.toUpperCase()} ✅`);
 		});
 	});
 
@@ -43,7 +44,7 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Login - Portal Carrier`, () => {
 		// Este segundo smoke cubre el guardrail mínimo del formulario:
 		// rechazar credenciales incorrectas mostrando feedback al usuario.
 		const { email, password } = DataGenerator.getInvalidCredentials();
-		console.log(`[SMOKE-AUTH-TC02][DATA] email: ${email} | password: ${password}`);
+		debugLog('smoke', `[SMOKE-AUTH-TC02][DATA] email: ${email} | password: ${password}`);
 		const loginPage = new LoginPage(page);
 
 		await test.step('[SMOKE-AUTH-TC02][STEP-01] Navegar a pantalla de login', async () => {
@@ -56,7 +57,7 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Login - Portal Carrier`, () => {
 
 		await test.step('[SMOKE-AUTH-TC02][STEP-03] Validar que aparece mensaje de error', async () => {
 			const errorVisible = await loginPage.isLoginErrorVisible();
-			console.log(`[SMOKE-AUTH-TC02][CHECK] ¿Error visible?: ${errorVisible}`);
+			debugLog('smoke', `[SMOKE-AUTH-TC02][CHECK] ¿Error visible?: ${errorVisible}`);
 			await expect(errorVisible).toBeTruthy();
 		});
 	});

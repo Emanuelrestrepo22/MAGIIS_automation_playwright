@@ -14,6 +14,7 @@
  */
 import { expect, type Page } from '@playwright/test';
 import { test } from '../../../../../../../TestBase';
+import { debugLog } from '../../../../../../../helpers';
 import { DashboardPage, NewTravelPage, OperationalPreferencesPage, TravelDetailPage, TravelManagementPage } from '../../../../../../../pages/carrier';
 import { expectNoThreeDSModal, loginAsDispatcher, STRIPE_TEST_CARDS, TEST_DATA } from '../../../../../fixtures/gateway.fixtures';
 import { waitForTravelCreation } from '../../../../../helpers/stripe.helpers';
@@ -106,7 +107,7 @@ async function resolveCardFlowEmpresa(
 			passengerName: scenario.apiSearchQuery,
 			requiredLast4: cardLast4,
 		});
-		console.log(`[card-precondition] ${scenario.passenger} (cardFlow=${cardFlow}): ${cardCheck.activeCards} tarjetas activas, tiene ${cardLast4}: ${cardCheck.hasRequiredCard}`);
+		debugLog('gateway-pg', `[card-precondition] ${scenario.passenger} (cardFlow=${cardFlow}): ${cardCheck.activeCards} tarjetas activas, tiene ${cardLast4}: ${cardCheck.hasRequiredCard}`);
 	}
 
 	if (cardFlow === 'existing') {
@@ -356,7 +357,7 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Hold sin 3DS', () 
 					const hasPorAsignar = /Por\s*Asignar/i.test(dashboardText ?? '');
 					const hasConflicto = /En\s*conflicto/i.test(dashboardText ?? '');
 					const hasNoAutorizado = /No\s*Autorizado/i.test(dashboardText ?? '');
-					console.log(`[diagnostic] travelId=${createdTravelId} → dashboard columns visible: porAsignar=${hasPorAsignar}, conflicto=${hasConflicto}, noAutorizado=${hasNoAutorizado}`);
+					debugLog('gateway-pg', `[diagnostic] travelId=${createdTravelId} → dashboard columns visible: porAsignar=${hasPorAsignar}, conflicto=${hasConflicto}, noAutorizado=${hasNoAutorizado}`);
 				});
 
 				await test.step('Validar viaje en gestion — columna Asignar (hold OK)', async () => {

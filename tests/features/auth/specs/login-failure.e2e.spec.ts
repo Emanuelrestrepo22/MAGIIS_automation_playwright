@@ -1,6 +1,7 @@
 // tests/specs/auth/login-failure.e2e.test.ts
 import { test, expect } from '../../../TestBase';
 import { DataGenerator } from '../../../shared/utils/dataGenerator';
+import { debugLog } from '../../../helpers';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 const LOGIN_NEGATIVE_FLAGS = {
@@ -25,7 +26,7 @@ test.describe('[TS-AUTH-TC02] Login fallido portal carrier — credenciales inv�
 
 	test('TS-AUTH-TC02-login-con-credenciales-invalidas', async ({ loginPage, page }) => {
 		const { email, password } = DataGenerator.getInvalidCredentials();
-		console.log(`[TS-AUTH-TC02][DATA] email: ${email} | password: ${password}`);
+		debugLog('auth', `[TS-AUTH-TC02][DATA] email: ${email} | password: ${password}`);
 
 		await test.step('[TS-AUTH-TC02][STEP-01] Navegar a pantalla de login', async () => {
 			await loginPage.goto();
@@ -41,7 +42,7 @@ test.describe('[TS-AUTH-TC02] Login fallido portal carrier — credenciales inv�
 
 		await test.step('[TS-AUTH-TC02][STEP-03] Validar que se muestre mensaje de error', async () => {
 			const errorVisible = await loginPage.isLoginErrorVisible();
-			console.log(`[TS-AUTH-TC02][CHECK] ¿Error visible?: ${errorVisible}`);
+			debugLog('auth', `[TS-AUTH-TC02][CHECK] ¿Error visible?: ${errorVisible}`);
 
 			// Dejamos flags de diagnóstico porque en UI negativa suele ser clave
 			// diferenciar entre "no hubo error" y "hubo error pero no visible".
@@ -54,7 +55,7 @@ test.describe('[TS-AUTH-TC02] Login fallido portal carrier — credenciales inv�
 
 		await test.step('[TS-AUTH-TC02][STEP-04] Validar texto del mensaje de error', async () => {
 			const errorMessage = await loginPage.getLoginErrorMessage();
-			console.log(`[TS-AUTH-TC02][CHECK] Mensaje recibido: "${errorMessage?.trim()}"`);
+			debugLog('auth', `[TS-AUTH-TC02][CHECK] Mensaje recibido: "${errorMessage?.trim()}"`);
 
 			try {
 				// Validamos el copy exacto porque este mensaje forma parte del comportamiento esperado.
