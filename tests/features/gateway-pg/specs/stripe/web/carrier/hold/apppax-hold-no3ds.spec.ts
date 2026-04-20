@@ -4,9 +4,9 @@
  * Tags: @regression @hold @web-only
  */
 import { expect, type Page } from '@playwright/test';
-import { test } from '../../../../../../TestBase';
-import { DashboardPage, NewTravelPage, OperationalPreferencesPage, ThreeDSModal, TravelManagementPage } from '../../../../../../pages/carrier';
-import { expectNoThreeDSModal, loginAsDispatcher, STRIPE_TEST_CARDS, TEST_DATA } from '../../../../fixtures/gateway.fixtures';
+import { test } from '../../../../../../../TestBase';
+import { DashboardPage, NewTravelPage, OperationalPreferencesPage, ThreeDSModal, TravelManagementPage } from '../../../../../../../pages/carrier';
+import { expectNoThreeDSModal, loginAsDispatcher, STRIPE_TEST_CARDS, TEST_DATA } from '../../../../../fixtures/gateway.fixtures';
 
 type ParametersSavePayload = {
 	enableCreditCardHold?: boolean;

@@ -19,16 +19,16 @@
  * TC004: Hold OFF — selección tarjeta existente + alta → viaje a "Buscando conductor" sin hold.
  */
 import { expect } from '@playwright/test';
-import { test } from '../../../../../TestBase';
-import { DashboardPage } from '../../../../../pages/carrier';
-import { ContractorNewTravelPage } from '../../../../../pages/contractor/NewTravelPage';
+import { test } from '../../../../../../TestBase';
+import { DashboardPage } from '../../../../../../pages/carrier';
+import { ContractorNewTravelPage } from '../../../../../../pages/contractor/NewTravelPage';
 import {
 	loginAsContractor,
 	expectNoThreeDSModal,
 	TEST_DATA,
 	STRIPE_TEST_CARDS,
-} from '../../../fixtures/gateway.fixtures';
-import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../../helpers/travel-cleanup';
+} from '../../../../fixtures/gateway.fixtures';
+import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../../../helpers/travel-cleanup';
 
 
 test.use({ role: 'contractor', storageState: { cookies: [], origins: [] } });

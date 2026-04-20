@@ -4,7 +4,7 @@
  * Tags: @regression @recurrente @web-only
  * Nota: TC047 marcado como CASO CRÍTICO en la fuente
  */
-import { test } from '../../../../../../TestBase';
+import { test } from '../../../../../../../TestBase';
 
 test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
 

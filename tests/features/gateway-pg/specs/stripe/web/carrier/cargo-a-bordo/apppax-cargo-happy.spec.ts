@@ -12,12 +12,12 @@
  * - Evidencia primaria: recorder test-17.spec.ts
  */
 import { expect } from '@playwright/test';
-import { test } from '../../../../../../TestBase';
-import { DashboardPage, NewTravelPage, TravelDetailPage, TravelManagementPage } from '../../../../../../pages/carrier';
-import { expectNoThreeDSModal, loginAsDispatcher, TEST_DATA } from '../../../../fixtures/gateway.fixtures';
-import { validateCardPrecondition } from '../../../../helpers/card-precondition';
-import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../../../helpers/travel-cleanup';
-import { PASSENGERS } from '../../../../data/passengers';
+import { test } from '../../../../../../../TestBase';
+import { DashboardPage, NewTravelPage, TravelDetailPage, TravelManagementPage } from '../../../../../../../pages/carrier';
+import { expectNoThreeDSModal, loginAsDispatcher, TEST_DATA } from '../../../../../fixtures/gateway.fixtures';
+import { validateCardPrecondition } from '../../../../../helpers/card-precondition';
+import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../../../../helpers/travel-cleanup';
+import { PASSENGERS } from '../../../../../data/passengers';
 
 // Flujo: carrier web crea viaje con método "Tarjeta de Crédito - Cargo a Bordo".
 // No hay formulario Stripe ni 3DS desde carrier. El cobro ocurre en Driver App al finalizar.

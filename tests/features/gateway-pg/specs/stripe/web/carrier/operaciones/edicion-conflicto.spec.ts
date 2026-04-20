@@ -4,7 +4,7 @@
  * Precondición: Fallo de 3DS u otro error impide el hold (tarjeta bloqueada, sin fondos)
  * Tags: @regression @3ds @web-only
  */
-import { test } from '../../../../../../TestBase';
+import { test } from '../../../../../../../TestBase';
 
 test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
 

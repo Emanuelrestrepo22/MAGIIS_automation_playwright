@@ -3,7 +3,7 @@
  * Feature: Viajes Recurrentes — Portal Carrier — Usuario App Pax
  * Tags: @regression @recurrente @web-only
  */
-import { test } from '../../../../../../TestBase';
+import { test } from '../../../../../../../TestBase';
 
 test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
 

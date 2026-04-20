@@ -4,10 +4,10 @@
  * Tags: @smoke @cargo-a-bordo @web-only
  */
 import { expect } from '@playwright/test';
-import { test } from '../../../../../../TestBase';
-import { DashboardPage, NewTravelPage, TravelDetailPage, TravelManagementPage } from '../../../../../../pages/carrier';
-import { expectNoThreeDSModal, loginAsDispatcher, TEST_DATA } from '../../../../fixtures/gateway.fixtures';
-import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../../../helpers/travel-cleanup';
+import { test } from '../../../../../../../TestBase';
+import { DashboardPage, NewTravelPage, TravelDetailPage, TravelManagementPage } from '../../../../../../../pages/carrier';
+import { expectNoThreeDSModal, loginAsDispatcher, TEST_DATA } from '../../../../../fixtures/gateway.fixtures';
+import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../../../../helpers/travel-cleanup';
 
 // Evidencia: test-13.spec.ts
 // Flujo: carrier web crea viaje con cliente contractor y método "Tarjeta de Crédito - Cargo a Bordo".

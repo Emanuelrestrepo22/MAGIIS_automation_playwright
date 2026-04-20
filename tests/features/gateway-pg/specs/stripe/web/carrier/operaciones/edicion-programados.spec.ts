@@ -4,9 +4,9 @@
  * Tags: @regression @web-only
  */
 import { expect } from '@playwright/test';
-import { test } from '../../../../../../TestBase';
-import { ThreeDSModal, ThreeDSErrorPopup, TravelDetailPage, TravelManagementPage } from '../../../../../../pages/carrier';
-import { expectNoThreeDSModal, loginAsDispatcher, STRIPE_TEST_CARDS } from '../../../../fixtures/gateway.fixtures';
+import { test } from '../../../../../../../TestBase';
+import { ThreeDSModal, ThreeDSErrorPopup, TravelDetailPage, TravelManagementPage } from '../../../../../../../pages/carrier';
+import { expectNoThreeDSModal, loginAsDispatcher, STRIPE_TEST_CARDS } from '../../../../../fixtures/gateway.fixtures';
 
 test.use({ role: 'carrier', storageState: undefined });
 test.describe.configure({ mode: 'serial' });

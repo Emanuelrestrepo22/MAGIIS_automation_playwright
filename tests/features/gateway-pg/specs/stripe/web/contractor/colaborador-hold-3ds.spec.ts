@@ -19,15 +19,15 @@
  * TC006: Hold OFF — tarjeta 4000 0025 0000 3155 + 3DS aprobado → viaje a "Buscando conductor" sin hold
  */
 import { expect } from '@playwright/test';
-import { test } from '../../../../../TestBase';
-import { DashboardPage, ThreeDSModal } from '../../../../../pages/carrier';
-import { ContractorNewTravelPage } from '../../../../../pages/contractor/NewTravelPage';
+import { test } from '../../../../../../TestBase';
+import { DashboardPage, ThreeDSModal } from '../../../../../../pages/carrier';
+import { ContractorNewTravelPage } from '../../../../../../pages/contractor/NewTravelPage';
 import {
 	loginAsContractor,
 	TEST_DATA,
 	STRIPE_TEST_CARDS,
-} from '../../../fixtures/gateway.fixtures';
-import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../../helpers/travel-cleanup';
+} from '../../../../fixtures/gateway.fixtures';
+import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../../../helpers/travel-cleanup';
 
 test.use({ role: 'contractor', storageState: { cookies: [], origins: [] } });
 test.describe.configure({ timeout: 180_000 });

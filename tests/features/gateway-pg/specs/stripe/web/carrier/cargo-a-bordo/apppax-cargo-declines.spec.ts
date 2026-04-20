@@ -14,10 +14,10 @@
  * Evidencia web: test-17.spec.ts
  */
 import type { Page } from '@playwright/test';
-import { test } from '../../../../../../TestBase';
-import { DashboardPage, NewTravelPage, TravelDetailPage, TravelManagementPage } from '../../../../../../pages/carrier';
-import { expectNoThreeDSModal, loginAsDispatcher, TEST_DATA } from '../../../../fixtures/gateway.fixtures';
-import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../../../helpers/travel-cleanup';
+import { test } from '../../../../../../../TestBase';
+import { DashboardPage, NewTravelPage, TravelDetailPage, TravelManagementPage } from '../../../../../../../pages/carrier';
+import { expectNoThreeDSModal, loginAsDispatcher, TEST_DATA } from '../../../../../fixtures/gateway.fixtures';
+import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../../../../helpers/travel-cleanup';
 
 test.use({ role: 'carrier', storageState: undefined });
 test.describe.configure({ timeout: 120_000 });

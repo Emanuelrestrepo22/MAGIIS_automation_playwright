@@ -7,13 +7,13 @@
  * Sin 3DS set 2: TC1041–TC1044
  */
 import { expect, type Page } from '@playwright/test';
-import { test } from '../../../../../../TestBase';
-import { DashboardPage, NewTravelPage, OperationalPreferencesPage, TravelManagementPage } from '../../../../../../pages/carrier';
-import { expectNoThreeDSModal, loginAsDispatcher, STRIPE_TEST_CARDS, TEST_DATA } from '../../../../fixtures/gateway.fixtures';
-import { waitForTravelCreation } from '../../../../helpers/stripe.helpers';
-import { validateCardPrecondition, type CardPreconditionResult } from '../../../../helpers/card-precondition';
-import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../../../helpers/travel-cleanup';
-import { PASSENGERS } from '../../../../data/passengers';
+import { test } from '../../../../../../../TestBase';
+import { DashboardPage, NewTravelPage, OperationalPreferencesPage, TravelManagementPage } from '../../../../../../../pages/carrier';
+import { expectNoThreeDSModal, loginAsDispatcher, STRIPE_TEST_CARDS, TEST_DATA } from '../../../../../fixtures/gateway.fixtures';
+import { waitForTravelCreation } from '../../../../../helpers/stripe.helpers';
+import { validateCardPrecondition, type CardPreconditionResult } from '../../../../../helpers/card-precondition';
+import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../../../../helpers/travel-cleanup';
+import { PASSENGERS } from '../../../../../data/passengers';
 
 function shortDestination(destination: string): string {
 	return destination.split(',')[0].trim();

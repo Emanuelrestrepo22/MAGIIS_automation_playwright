@@ -4,10 +4,10 @@
  * Tags: @smoke @cargo-a-bordo @web-only
  */
 import { expect } from '@playwright/test';
-import { test } from '../../../../../../TestBase';
-import { DashboardPage, NewTravelPage, TravelDetailPage, TravelManagementPage } from '../../../../../../pages/carrier';
-import { expectNoThreeDSModal, loginAsDispatcher, TEST_DATA } from '../../../../fixtures/gateway.fixtures';
-import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../../../helpers/travel-cleanup';
+import { test } from '../../../../../../../TestBase';
+import { DashboardPage, NewTravelPage, TravelDetailPage, TravelManagementPage } from '../../../../../../../pages/carrier';
+import { expectNoThreeDSModal, loginAsDispatcher, TEST_DATA } from '../../../../../fixtures/gateway.fixtures';
+import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../../../../helpers/travel-cleanup';
 
 // Flujo: carrier web crea viaje con cliente empresa individuo y método "Tarjeta de Crédito - Cargo a Bordo".
 // No hay formulario Stripe ni 3DS desde carrier. El cobro ocurre en Driver App al finalizar.

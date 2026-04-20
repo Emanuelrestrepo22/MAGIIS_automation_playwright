@@ -12,13 +12,13 @@
  * Ejecución: ENV=test npx playwright test apppax-hold-3ds -c playwright.gateway-pg.config.ts --workers=1
  */
 import { expect, type Page } from '@playwright/test';
-import { test } from '../../../../../../TestBase';
-import { DashboardPage, NewTravelPage, OperationalPreferencesPage, ThreeDSModal, TravelManagementPage } from '../../../../../../pages/carrier';
-import { loginAsDispatcher, STRIPE_TEST_CARDS, TEST_DATA } from '../../../../fixtures/gateway.fixtures';
-import { waitForTravelCreation } from '../../../../helpers/stripe.helpers';
-import { validateCardPrecondition, type CardPreconditionResult } from '../../../../helpers/card-precondition';
-import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../../../helpers/travel-cleanup';
-import { PASSENGERS } from '../../../../data/passengers';
+import { test } from '../../../../../../../TestBase';
+import { DashboardPage, NewTravelPage, OperationalPreferencesPage, ThreeDSModal, TravelManagementPage } from '../../../../../../../pages/carrier';
+import { loginAsDispatcher, STRIPE_TEST_CARDS, TEST_DATA } from '../../../../../fixtures/gateway.fixtures';
+import { waitForTravelCreation } from '../../../../../helpers/stripe.helpers';
+import { validateCardPrecondition, type CardPreconditionResult } from '../../../../../helpers/card-precondition';
+import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../../../../helpers/travel-cleanup';
+import { PASSENGERS } from '../../../../../data/passengers';
 
 function shortDestination(destination: string): string {
 	return destination.split(',')[0].trim();

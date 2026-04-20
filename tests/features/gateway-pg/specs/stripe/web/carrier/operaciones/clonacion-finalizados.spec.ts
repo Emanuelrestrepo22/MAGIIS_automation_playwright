@@ -3,7 +3,7 @@
  * Feature: Clonación de Viajes Finalizados — Carrier — Empresa Individuo
  * Tags: @regression @web-only
  */
-import { test } from '../../../../../../TestBase';
+import { test } from '../../../../../../../TestBase';
 
 test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
 
