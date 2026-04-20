@@ -21,7 +21,7 @@
  */
 import { expect, test } from '../../../../../TestBase';
 import { GatewayPgJourneyOrchestrator } from '../../../helpers/GatewayPgJourneyOrchestrator';
-import { STRIPE_TEST_CARDS } from '../../../data/stripe-cards';
+import { CARDS } from '../../../../../fixtures/stripe/card-policy';
 import { TEST_DATA } from '../../../data/stripeTestData';
 import { PASSENGERS } from '../../../data/passengers';
 import { getPassengerAppConfig } from '../../../../../mobile/appium/config/appiumRuntime';
@@ -40,7 +40,7 @@ type BusinessHold3dsScenario = {
 };
 
 const orchestrator = new GatewayPgJourneyOrchestrator();
-const threeDsCard = STRIPE_TEST_CARDS.visa_3ds_success; // 4000 0025 0000 3155 — 3DS success
+const threeDsCard = CARDS.HAPPY_3DS; // 4000 0027 6000 3184 — 3DS determinístico, migrado desde visa_3ds_success (3155) en TIER 4
 
 function createJourney(testCaseId: string) {
 	return orchestrator.createDraftJourney({
@@ -131,7 +131,7 @@ test.describe.serial('Gateway PG · E2E Mobile · App Pax Business — Hold con 
 						cvc: threeDsCard.cvc,
 						holderName: threeDsCard.holderName,
 					};
-					const cardLast4 = card.number.replace(/\D/g, '').slice(-4); // 3155
+					const cardLast4 = card.number.replace(/\D/g, '').slice(-4); // 3184
 
 					try {
 						// TODO(backend): Precondicion — garantizar enableCreditCardHold = scenario.holdMode
@@ -144,7 +144,7 @@ test.describe.serial('Gateway PG · E2E Mobile · App Pax Business — Hold con 
 
 						if (scenario.cardFlow === 'new') {
 							// TODO(wallet-cleanup): eliminar del wallet cualquier tarjeta con
-							// last4 = cardLast4 (3155) para forzar vinculacion nueva.
+							// last4 = cardLast4 (3184) para forzar vinculacion nueva.
 							await test.step(`[${scenario.testCaseId}] add new 3DS card to wallet`, async () => {
 								const walletState = await harness.ensureWalletCard(card);
 								// Deberia agregar la tarjeta 3DS nueva al wallet (puede disparar 3DS de validacion inicial).
