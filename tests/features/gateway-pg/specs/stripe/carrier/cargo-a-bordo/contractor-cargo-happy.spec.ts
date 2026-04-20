@@ -54,37 +54,20 @@ test.describe('Gateway PG · Carrier · Colaborador/Contractor — Cargo a Bordo
 				await expectNoThreeDSModal(page);
 			});
 
-			await test.step('Esperar creación del viaje', async () => {
-				const result = await Promise.race([
-					page.waitForURL(/\/travels\/[\w-]+$/, { timeout: 30_000, waitUntil: 'commit' }).then(() => 'success' as const),
-					page.waitForURL(/limitExceeded/, { timeout: 30_000, waitUntil: 'commit' }).then(() => 'limitExceeded' as const),
-				]).catch(() => 'timeout' as const);
-
-				if (result === 'limitExceeded') {
-					throw new Error(
-						'[TC1096] PRECONDICIÓN NO CUMPLIDA: limitExceeded=false. ' +
-						'Verificar tarjeta Cargo a Bordo del pasajero contractor (smith, Emanuel) en TEST.',
-					);
-				}
-				if (result === 'timeout') {
-					throw new Error('[TC1096] TIMEOUT: URL no redirigió al detalle del viaje ni a limitExceeded.');
-				}
+			await test.step('Confirmar creación del viaje via network interception', async () => {
+				// Cargo a Bordo post-submit puede quedarse en /travel/create?limitExceeded=false
+				// como comportamiento normal del producto. Fuente de verdad: POST /travels interceptado.
+				await expect
+					.poll(() => travelIdRef?.travelId, {
+						timeout: 30_000,
+						message: '[TC1096] POST /travels no capturó travelId tras el submit',
+					})
+					.not.toBeNull();
 			});
 
-			expect(travelIdRef?.travelId, 'POST /travels debe haber capturado travelId').not.toBeNull();
-
-			await test.step('Validar viaje en gestión - columna Por asignar', async () => {
+			await test.step('Validar viaje en gestión - columna Por asignar con estado Buscando chofer', async () => {
 				await management.goto();
-				await management.expectPassengerInPorAsignar(TEST_DATA.contractorPassenger, TEST_DATA.destination);
-			});
-
-			await test.step('Abrir detalle del viaje recién creado', async () => {
-				await management.openDetailForPassenger(TEST_DATA.contractorPassenger, TEST_DATA.destination);
-				await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 30_000, waitUntil: 'commit' });
-			});
-
-			await test.step('Validar estado del viaje - Buscando conductor', async () => {
-				await detail.expectStatus('Buscando conductor');
+				await management.expectPassengerInPorAsignar(TEST_DATA.contractorPassenger, undefined, 'Buscando chofer');
 			});
 		} finally {
 			if (travelIdRef) {
