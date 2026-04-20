@@ -838,11 +838,12 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Contractor`, 
 
 		await test.step('And: formulario completado — colaborador + tarjeta declinada genérica (0002) [SMOKE-GW-TC14]', async () => {
 			await travel.fillMinimum({
-				client:      TEST_DATA.contractorColaborador,
-				passenger:   TEST_DATA.contractorColaborador,
-				origin:      TEST_DATA.origin,
-				destination: TEST_DATA.destination,
-				cardLast4:   STRIPE_TEST_CARDS.declined.slice(-4), // 0002 — rechaza en authorize
+				client:        TEST_DATA.contractorColaborador,
+				passenger:     TEST_DATA.contractorColaborador,
+				origin:        TEST_DATA.origin,
+				destination:   TEST_DATA.destination,
+				cardLast4:     STRIPE_TEST_CARDS.declined.slice(-4), // 0002 — rechaza en authorize
+				expectDecline: true, // evita throw en waitForEnabledButton cuando Stripe declina antes de habilitar "Validar"
 			});
 		});
 
