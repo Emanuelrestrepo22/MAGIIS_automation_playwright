@@ -3,7 +3,7 @@
 > Fuente única de verdad para tareas pendientes, decisiones en espera y deuda técnica activa.
 > **Regla:** toda sesión de trabajo debe arrancar validando este documento. Si un ítem aparece aquí como pendiente pero ya fue resuelto por otra vía, actualizar su estado en lugar de duplicarlo.
 
-**Última revisión:** 2026-04-20 (Erika + Claude — Fase 1 CI Gates implementada: ritual pre-push + BL-015 + BL-016)
+**Última revisión:** 2026-04-20 (Erika + Claude — Fases 2-5 CI Gates aceleradas: husky + commitlint + CODEOWNERS + docs branch protection)
 
 ---
 
@@ -196,26 +196,52 @@
 
 ### BL-015 — Evaluar activar hook husky pre-push
 
-- **Estado:** 🔴 Pendiente (bloqueado por trigger)
+- **Estado:** 🟢 Hecho (2026-04-20 — acelerado via MR Fases 3-5)
 - **Prioridad:** P2
 - **Tipo:** Mejora CI
 - **Reportado:** 2026-04-20
-- **Contexto:** Fase 3 del plan Quality Gates (ver `docs/ops/CI-GATES-IMPLEMENTATION-PLAN.md`). Actualmente el ritual `pnpm pp` es manual. Activar hook husky cuando:
-  - Se sume dev nuevo al equipo, O
-  - Ritual manual no se usa >80% de los pushes (tracking mensual), O
-  - Hay ≥3 incidentes de main rojo/mes por errores detectables por el ritual.
-- **Próxima acción:** Monitorear adopción del ritual por 2-4 semanas. Decidir al final de Fase 2.
+- **Resolución:** Husky instalado, `.husky/pre-push` invocando `pnpm pp`. Escape `SKIP_HOOKS=true`. Hook `commit-msg` con commitlint activado. `prepare` script instala automáticamente con `pnpm install`.
 - **Referencias:** `docs/ops/CI-GATES-IMPLEMENTATION-PLAN.md` §Fase 3, BL-016
 
 ### BL-016 — Implementación plan Quality Gates progresivos
 
-- **Estado:** 🟡 Fase 2 en curso (adopción del ritual)
+- **Estado:** 🟡 Fases 3-4 completadas, Fase 5 parcial (branch protection pendiente trigger)
 - **Prioridad:** P2
 - **Tipo:** Mejora CI
 - **Reportado:** 2026-04-20
-- **Contexto:** Plan de 5 fases para llevar el proyecto de zero gates a gates estrictos progresivamente. Fase 0 y Fase 1 completadas 2026-04-20.
-- **Próxima acción:** Usar `pnpm pp` antes de cada push durante 2-4 semanas. Registrar catches reales. Decidir Fase 3 al final de adopción.
+- **Contexto:** Plan de 5 fases acelerado. Fases 0, 1, 3 y 4 completadas 2026-04-20. Fase 5: CODEOWNERS creado, branch protection documentada en `docs/ci/BRANCH-PROTECTION-SETTINGS.md`, activación manual pendiente (trigger: equipo ≥2 devs).
+- **Próxima acción:** Activar branch protection settings (UI) cuando se sume primer dev adicional. Ver BL-017.
 - **Referencias:** `docs/ops/CI-GATES-IMPLEMENTATION-PLAN.md` (plan completo), `scripts/ci/pre-push.mjs`, `docs/ci/CI-USAGE-GUIDELINES.md`
+
+### BL-017 — Aplicar branch protection estricta (Fase 5 CI Gates)
+
+- **Estado:** 🔴 Pendiente (trigger: equipo ≥2 devs)
+- **Prioridad:** P3
+- **Tipo:** Configuración
+- **Reportado:** 2026-04-20
+- **Contexto:** Configuración manual UI de GitLab + GitHub documentada en `docs/ci/BRANCH-PROTECTION-SETTINGS.md`. Requiere activarse solo cuando haya ≥2 devs para evitar auto-bloquearse.
+- **Próxima acción:** Aplicar settings al incorporar primer dev adicional. Seguir `docs/ci/BRANCH-PROTECTION-SETTINGS.md`.
+- **Referencias:** `docs/ci/BRANCH-PROTECTION-SETTINGS.md`, `docs/ops/CI-GATES-IMPLEMENTATION-PLAN.md` §Fase 5
+
+### BL-018 — Completar script weekly-ci-report.mjs
+
+- **Estado:** 🔴 Pendiente (esqueleto creado)
+- **Prioridad:** P3
+- **Tipo:** Mejora
+- **Reportado:** 2026-04-20
+- **Contexto:** Script esqueleto en `scripts/ci/weekly-ci-report.mjs` para generar reporte semanal de salud CI. Falta implementar parser de API GitLab/GitHub + generación de markdown.
+- **Próxima acción:** Completar implementación cuando haya consumo real acumulado para medir (fin de mes post-adopción).
+- **Referencias:** `scripts/ci/weekly-ci-report.mjs`
+
+### BL-019 — Integrar gitleaks al hook pre-push
+
+- **Estado:** 🔴 Pendiente (opcional)
+- **Prioridad:** P3
+- **Tipo:** Mejora seguridad
+- **Reportado:** 2026-04-20
+- **Contexto:** Gitleaks es un scanner de secrets más robusto que el check 4 grep. Instalación manual documentada en `docs/ci/CI-USAGE-GUIDELINES.md` sección "Secrets scanning". El script `pre-push.mjs` ya contempla un check 11 opcional que solo corre si gitleaks está en PATH.
+- **Próxima acción:** Instalar gitleaks en máquinas del equipo cuando haya más devs. Por ahora, skip check 11 si no está instalado.
+- **Referencias:** `docs/ci/CI-USAGE-GUIDELINES.md` sección "Secrets scanning"
 
 ---
 

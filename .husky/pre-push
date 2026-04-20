@@ -1,0 +1,16 @@
+#!/usr/bin/env sh
+
+# Skip hook intencional (WIP, emergencia, etc.)
+if [ "$SKIP_HOOKS" = "true" ]; then
+  echo "SKIP_HOOKS=true — bypass intencional del ritual pre-push"
+  exit 0
+fi
+
+# Correr el ritual existente
+pnpm pp || {
+  echo ""
+  echo "Si el fallo es intencional (WIP, emergencia), usa:"
+  echo "   SKIP_HOOKS=true git push"
+  echo ""
+  exit 1
+}

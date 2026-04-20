@@ -1,0 +1,18 @@
+#!/usr/bin/env sh
+
+# Skip intencional
+if [ "$SKIP_HOOKS" = "true" ]; then
+  exit 0
+fi
+
+# Validar mensaje con commitlint
+pnpm exec commitlint --edit "$1" || {
+  echo ""
+  echo "Formato esperado: <tipo>(<scope>): [TC-ID?] descripcion"
+  echo "   Ejemplos:"
+  echo "     feat(smoke): [TS-STRIPE-TC01] validar hold OK"
+  echo "     fix(carrier): [TC14] tolerar declined cards"
+  echo "   Skip: SKIP_HOOKS=true git commit --amend"
+  echo ""
+  exit 1
+}

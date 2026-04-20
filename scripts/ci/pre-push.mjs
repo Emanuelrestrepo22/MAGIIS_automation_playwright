@@ -2,7 +2,7 @@
 /**
  * pre-push.mjs — Ritual pre-push para magiis-playwright
  *
- * 10 checks en <30s antes de cada git push.
+ * 10 checks + 1 check opcional (gitleaks si instalado) en <30s antes de cada git push.
  * Previene pushes con errores evitables (tsc roto, .only olvidado, secrets).
  *
  * Uso:
@@ -11,7 +11,7 @@
  *   node scripts/ci/pre-push.mjs   # directo
  *
  * Escape:
- *   SKIP_HOOKS=true git push    # si alguna vez se activa como hook
+ *   SKIP_HOOKS=true git push    # bypass intencional (WIP, emergencia)
  *
  * Ver: docs/ci/CI-USAGE-GUIDELINES.md
  */
@@ -81,6 +81,7 @@ function grepForbidden(pattern, paths, { excludeFiles = [], flags = '' } = {}) {
 }
 
 console.log(`${c.bold}${c.cyan}Pre-push ritual — magiis-playwright${c.reset}`);
+console.log(`${c.gray}10 checks + gitleaks opcional${c.reset}`);
 console.log(`${c.gray}--------------------------------------------${c.reset}\n`);
 
 const totalStart = performance.now();
@@ -158,7 +159,8 @@ runCheck('2/10', 'Sin cards 3155 (LEGACY_3DS_SUCCESS) fuera de overrides',
 // [3] TODO(temp) / FIXME(urgent)
 runCheck('3/10', 'Sin TODO(temp) ni FIXME(urgent) sin resolver',
   () => {
-    const paths = ['tests/', 'src/'];
+    const paths = ['tests/'];
+    try { execSync('test -d src', { stdio: 'ignore' }); paths.push('src/'); } catch {}
     const existing = paths.filter(p => {
       try { execSync(`test -e "${p}"`, { stdio: 'ignore' }); return true; } catch { return false; }
     });
@@ -186,7 +188,8 @@ runCheck('3/10', 'Sin TODO(temp) ni FIXME(urgent) sin resolver',
 // [4] Credenciales hardcodeadas
 runCheck('4/10', 'Sin credenciales hardcodeadas',
   () => {
-    const paths = ['tests/', 'src/'];
+    const paths = ['tests/'];
+    try { execSync('test -d src', { stdio: 'ignore' }); paths.push('src/'); } catch {}
     const existing = paths.filter(p => {
       try { execSync(`test -e "${p}"`, { stdio: 'ignore' }); return true; } catch { return false; }
     });
@@ -304,28 +307,39 @@ runCheck('7/10', 'test.fixme con justificacion comentario',
     }
   }, { warningOnly: true });
 
-// [8] Branch actualizada con main
-runCheck('8/10', 'Branch cerca de origin/main',
+// [8] Branch actualizada con main (detecta remote dinamicamente: gitlab > origin > primero disponible)
+runCheck('8/10', 'Branch cerca de main (remote dinamico)',
   () => {
+    const remoteName = (() => {
+      try {
+        const remotes = execSync('git remote', { encoding: 'utf8' }).trim().split('\n').filter(Boolean);
+        if (remotes.length === 0) return null;
+        if (remotes.includes('gitlab')) return 'gitlab';
+        if (remotes.includes('origin')) return 'origin';
+        return remotes[0];
+      } catch { return null; }
+    })();
+
+    if (!remoteName) return { fail: false };
+
     try {
-      execSync('git fetch origin main --quiet', { stdio: ['ignore', 'pipe', 'ignore'], timeout: 10000 });
-      const behindStr = execSync('git rev-list --count HEAD..origin/main 2>/dev/null || echo 0', {
+      execSync(`git fetch ${remoteName} main --quiet`, { stdio: ['ignore', 'pipe', 'ignore'], timeout: 10000 });
+      const behind = parseInt(execSync(`git rev-list --count HEAD..${remoteName}/main`, {
         encoding: 'utf8',
         stdio: ['ignore', 'pipe', 'ignore'],
-      }).trim();
-      const behind = parseInt(behindStr) || 0;
+      }).trim()) || 0;
       if (behind > 5) {
         return {
           fail: true,
-          reason: `${behind} commits behind main`,
-          detail: 'Considera: git rebase origin/main',
+          reason: `${behind} commits behind ${remoteName}/main`,
+          detail: `Considera: git rebase ${remoteName}/main`,
         };
       }
       return { fail: false };
     } catch (err) {
       return {
         fail: true,
-        reason: 'No se pudo fetchear (offline?)',
+        reason: `No se pudo fetchear ${remoteName} (offline?)`,
         detail: err.message.slice(0, 100),
       };
     }
@@ -396,6 +410,34 @@ runCheck('10/10', 'TypeScript compila (tsc --noEmit)',
       };
     }
   });
+
+// [11] Gitleaks (opcional — solo si esta instalado en PATH)
+runCheck('11/opt', 'Gitleaks secrets scan (si instalado)',
+  () => {
+    try {
+      execSync('gitleaks version', { stdio: 'ignore', timeout: 5000 });
+    } catch {
+      // No instalado — skip silencioso
+      return { fail: false };
+    }
+    try {
+      execSync('gitleaks detect --source=. --no-git --log-level=error', {
+        stdio: ['ignore', 'pipe', 'pipe'],
+        timeout: 30000,
+      });
+      return { fail: false };
+    } catch (err) {
+      const out = (err.stdout?.toString() || '') + (err.stderr?.toString() || '');
+      if (out.includes('not recognized') || out.includes('command not found') || err.status === 127) {
+        return { fail: false };
+      }
+      return {
+        fail: true,
+        reason: 'Gitleaks detecto posibles secrets',
+        detail: out.slice(0, 500),
+      };
+    }
+  }, { warningOnly: true });
 
 // Summary
 const totalElapsed = Math.round((performance.now() - totalStart) / 1000);

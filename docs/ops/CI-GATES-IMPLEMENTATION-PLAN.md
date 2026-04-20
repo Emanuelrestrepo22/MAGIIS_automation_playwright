@@ -39,31 +39,29 @@ Preparación | Ritual deploy | Adopción + | Onboarding +    | Hook      | Branc
 - Retro semanal
 - Ajustar checks según falsos positivos
 
-### Fase 3 — Activación Hook (1 semana) 🔴 PENDIENTE
+### Fase 3 — Activación Hook (1 semana) 🟢 COMPLETADA 2026-04-20 (acelerada)
 
-**Trigger:** se suma dev nuevo O ritual no se usa lo suficiente
+- husky@9 como devDependency
+- `.husky/pre-push` invocando `pnpm pp` con SKIP_HOOKS como escape válvula
+- `prepare` script en package.json instala hook automáticamente con `pnpm install`
+- Cierra BL-015
 
-- Agregar husky como devDependency
-- `.husky/pre-push` invocando `pnpm pp`
-- `SKIP_HOOKS=true` como escape válvula
-- Onboarding express para nuevo dev
+### Fase 4 — Hook Maduro (1 mes) 🟢 COMPLETADA 2026-04-20 (acelerada — commitlint activo, gitleaks opcional)
 
-### Fase 4 — Hook Maduro (1 mes) 🔴 PENDIENTE
+- `@commitlint/cli` + `@commitlint/config-conventional` instalados
+- `.husky/commit-msg` valida formato `<tipo>(<scope>): [TC-ID?] descripción`
+- `commitlint.config.js` con reglas del proyecto (español OK, header 150 chars)
+- Mejoras al ritual `pre-push.mjs`:
+  - Check 8: detecta remote dinámicamente (gitlab > origin > primero disponible)
+  - Checks 3 y 4: escanean solo paths existentes (no `src/` que no existe)
+  - Check 11 opcional: gitleaks si está en PATH (warning-only, skip silencioso si no instalado)
+- Script esqueleto `scripts/ci/weekly-ci-report.mjs` para futuro dashboard (BL-018)
 
-**Trigger:** Fase 3 estable ≥1 mes
+### Fase 5 — Branch Protection Estricta 🟡 Parcial — CODEOWNERS creado, branch protection UI documentada (trigger: equipo ≥2 devs)
 
-- Gitleaks para secrets scanning
-- Commitlint con config-conventional
-- Dashboard de métricas CI
-
-### Fase 5 — Branch Protection Estricta 🔴 PENDIENTE
-
-**Trigger:** equipo ≥3 devs estables por ≥3 meses
-
-- GitLab: Approvals required ≥1
-- GitHub: CODEOWNERS + required reviewers
-- Signed commits (opcional)
-- docs/ci/CI-GOVERNANCE.md extendido
+- `.github/CODEOWNERS` con rules por path apuntando a `@emanuel.restrepo` (actualizable cuando escale)
+- `docs/ci/BRANCH-PROTECTION-SETTINGS.md` documenta configuración manual UI GitLab + GitHub
+- Branch protection real pendiente de activación manual (BL-017) — requiere equipo ≥2 devs para no auto-bloquearse
 
 ---
 
