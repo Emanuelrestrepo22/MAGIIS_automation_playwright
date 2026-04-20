@@ -3,7 +3,7 @@
 > Fuente única de verdad para tareas pendientes, decisiones en espera y deuda técnica activa.
 > **Regla:** toda sesión de trabajo debe arrancar validando este documento. Si un ítem aparece aquí como pendiente pero ya fue resuelto por otra vía, actualizar su estado en lugar de duplicarlo.
 
-**Última revisión:** 2026-04-20 (Erika + Claude — sesión priorización: BL-002 instrumentado 🟡, BL-008 guard apiResolved aplicado 🟡, BL-013 dataGenerator desacoplado de Stripe 🟢. Pendiente validación CI post-reset cupo)
+**Última revisión:** 2026-04-20 (Erika + Claude — sesión P3 paralela: BL-003 fixeado y smoke TC1081/TC1111 🟢 verde local, BL-009 auditoría completa + hallazgo crítico credenciales PROD, BL-012 conteo real 30 (+3 vs 27), +BL-021 TC1011 Appium registrado, +BL-022 regla Cargo a Bordo documentada)
 
 ---
 
@@ -70,12 +70,15 @@
 
 ### BL-003 — Validar empíricamente TC09 (Marcelle) y TC04 (AppPax)
 
-- **Estado:** 🔴 Pendiente (sin impacto actual)
+- **Estado:** 🟢 Hecho (2026-04-20 — smoke local verde tras fix TC1111)
 - **Prioridad:** P3
 - **Tipo:** Validación
-- **Contexto:** Ni TC09 (empresa-individuo) ni TC04 (AppPax personal) tienen endpoint de reset disponible. Hay que validar si fallan con el ambiente actual para decidir si requieren mitigación.
-- **Próxima acción:** Correr `pnpm run test:test:smoke -g "TS-STRIPE-TC1081|TS-STRIPE-TC1111" --headed` local una vez que haya CI o en local.
-- **Referencias:** EXTERNAL-BLOCKERS.md §TC1081 / §TC1111
+- **Resolución:**
+  - **TC1081 (TC04 — AppPax Cargo a Bordo):** ✅ PASS sin modificaciones. 34.2s. Viaje creado visible en grilla por nombre del pasajero (appPax = cliente).
+  - **TC1111 (TC09 — Empresa Cargo a Bordo):** ❌ FAIL inicial por assertion errónea. **Root cause:** para empresa individuo (Marcelle), la grilla de gestión muestra al cliente titular como pasajero en formato `apellido, nombre` (ej: `Stripe, Marcelle`), NO al sub-passenger seleccionado en el formulario. El spec buscaba por `TEST_DATA.passenger` (`Emanuel Restrepo`) que no aparece en la grilla.
+  - **Fix aplicado:** `expectPassengerInPorAsignar(TEST_DATA.client, ...)` en TC1111 + título actualizado a "alta de viaje exitosa" (alineado con la regla de negocio BL-022: Cargo a Bordo no valida tarjeta desde web). Evidencia: 2 passed (2.3m) local ENV=test.
+- **Impacto cross-test:** la misma lógica debe revisarse en otros TCs de empresa-individuo que usen `expectPassengerInPorAsignar`. TC08 (TS-STRIPE-TC1068) también usa cliente empresa — validar en próxima run completa.
+- **Referencias:** `tests/features/smoke/specs/gateway-pg.smoke.spec.ts` líneas 546-600, EXTERNAL-BLOCKERS.md §TC1081 / §TC1111
 
 ### BL-004 — Cupo CI GitLab agotado
 
@@ -132,12 +135,19 @@
 
 ### BL-009 — Poblar `tests/fixtures/users/`
 
-- **Estado:** 🔴 Pendiente (diferido)
-- **Prioridad:** P3
-- **Tipo:** Deuda técnica / organización
+- **Estado:** 🟡 Auditoría completa (2026-04-20) — ejecución pendiente por fases
+- **Prioridad:** P2 (elevada desde P3 por hallazgo crítico credenciales PROD)
+- **Tipo:** Deuda técnica / organización + Seguridad
 - **Contexto:** Usuarios dispersos hardcoded en specs/fixtures. Centralizarlos como SoT — complementa `fixtures/stripe/` y `fixtures/users/passengers.ts` ya existente.
-- **Próxima acción:** Auditar dispatcher, colaborador, empresa, appPax; extraer a `tests/fixtures/users/` con re-exports desde legacy paths.
-- **Referencias:** `docs/ARCHITECTURE.md` §4 "Dónde agregar data nueva"
+- **Auditoría (2026-04-20):** 10 puntos de dispersión detectados. Patrón canónico válido en `passengers.ts` pero sin credenciales ni mobile roles. 3 puntos de entrada de resolución: `runtime.ts`, `gatewayPortalRuntime.ts`, `gateway.fixtures.ts`.
+- **🚨 Hallazgo crítico:** `.env.prod` trackeado en git con `USER_CARRIER` y (probablemente) `PASS_CARRIER` en claro → rotación de credenciales + `.env.prod.local` ignorado. **Acción urgente antes de cualquier PR/merge.**
+- **Plan de ejecución (4 fases):**
+  1. **Emergencia creds**: mover `.env.prod` → `.env.prod.local` (gitignored) + rotar `PASS_CARRIER_PROD` + audit git history.
+  2. **SoT build**: crear `tests/fixtures/users/{types.ts, web-portals/dispatcher.ts, web-portals/contractor-collaborator.ts, mobile/driver.ts, mobile/passenger.ts, index.ts, README.md}`.
+  3. **Adopción gradual**: migrar `runtime.ts` + `gatewayPortalRuntime.ts` + `gateway.fixtures.ts` + mobile scripts a los fixtures.
+  4. **Legacy cleanup**: deprecar `features/gateway-pg/data/passengers.ts`, quitar hardcoding en `travel-cleanup.ts` (`DEFAULT_CARRIER_USER_ID = '6715'`) y mobile harness.
+- **Próxima acción:** ejecutar Fase 1 (emergencia creds) en sesión separada con el jefe/equipo infra para rotación coordinada.
+- **Referencias:** `docs/ARCHITECTURE.md` §4 "Dónde agregar data nueva", auditoría 2026-04-20 — reporte completo en conversación de sesión orquestador P3
 
 ### BL-010 — Mobile Appium Pattern 2 consolidation
 
@@ -156,14 +166,23 @@
 - **Contexto:** `tests/features/auth/specs/**` podría seguir el patrón `web/` como gateway-pg.
 - **Próxima acción:** Evaluar si el valor justifica el movimiento de archivos. Bajo impacto real hoy.
 
-### BL-012 — 27 `waitForTimeout` conservados con `NOTE(tier3-kept)`
+### BL-012 — `waitForTimeout` conservados con `NOTE(tier3-kept)` — conteo real 30 (+3 vs 27)
 
-- **Estado:** 🔴 Pendiente (revisión continua)
+- **Estado:** 🟡 Auditoría completa (2026-04-20) — plan priorizado
 - **Prioridad:** P3
 - **Tipo:** Deuda técnica
-- **Contexto:** 27 ocurrencias en `tests/pages/` quedaron con `NOTE(tier3-kept)` porque no tienen señal observable (debounce Angular, estabilización Stripe). Revisar periódicamente si aparecen eventos/APIs que permitan eliminarlos.
-- **Próxima acción:** Revisión trimestral de cada NOTE.
-- **Referencias:** `docs/reports/WAITFORTIMEOUT-MIGRATION.md`
+- **Contexto:** 30 ocurrencias actuales (3 adicionales vs 27 documentados en WAITFORTIMEOUT-MIGRATION.md; probable causa: refactors post-TIER3.2 en loops submit/vehicle carrier `NewTravelPageBase.ts:805, 815`). Revisar periódicamente si aparecen eventos/APIs que permitan eliminarlos.
+- **Clasificación (auditoría 2026-04-20):**
+  - **Cat A (eliminable hoy sin cambios):** 0 ocurrencias.
+  - **Cat B (instrumentable — requiere cambio en Angular):** 12 ocurrencias — debounce autocomplete (6) + post-click re-render (6).
+  - **Cat C (conservar legítimo — Stripe estabilización + loops con condición compuesta):** 18 ocurrencias — incluye los 4 críticos (`97, 107, 657, 908` del carrier/NewTravelPageBase + ThreeDSModal).
+- **Distribución por archivo:** `ThreeDSModal.ts` 5 (todos C) · `contractor/NewTravelPage.ts` 5 (todos B) · `carrier/NewTravelPageBase.ts` 20 (7 B + 13 C).
+- **Plan priorizado (18-22h totales):**
+  1. **Fase 1 (8-10h, ROI máximo):** agregar `(change)`/`(keyup)` listeners en 5 Angular inputs de `contractor/NewTravelPage.ts` (líneas 159, 164, 185, 189, 204) → elimina 5 debounces de autocomplete.
+  2. **Fase 2 (6-8h):** reemplazar post-click re-render en `carrier/NewTravelPageBase.ts` (327, 355, 362, 382, 389, 759, 883) con `expect.poll` sobre `.textContent()` cambiante.
+  3. **Fase 3 (4-6h):** validación smoke completa + verificar cero flakiness en carrier Preautorizadas.
+- **Próxima acción:** revisión trimestral (si no hay horas dedicadas antes). Si se activa Fase 1, coordinar con frontend para exponer los eventos Angular.
+- **Referencias:** `docs/reports/WAITFORTIMEOUT-MIGRATION.md`, auditoría 2026-04-20 — reporte completo en conversación de sesión orquestador P3
 
 ### BL-013 — Refactor `dataGenerator.ts` — mover lógica Stripe residual
 
@@ -288,6 +307,36 @@
   2. Si durante refactor de un POM se detecta pérdida de selectores útiles → extraer al POM y eliminar el recording.
   3. Máximo 10-12 recordings vivos; si crece más → consolidar o archivar.
 - **Referencias:** `tests/recordings/README.md`, MR de cleanup TIER 1 codegens
+
+### BL-021 — TC1011 — Alta de viaje AppPax con tarjeta Preautorizada (Hold) + Cobro en App Driver (Appium)
+
+- **Estado:** 🔴 Pendiente (nuevo — requiere implementación híbrida)
+- **Prioridad:** P2
+- **Tipo:** Automatización nueva (E2E híbrido Playwright + Appium)
+- **Reportado:** 2026-04-20
+- **Contexto:** TS-STRIPE-TC1011 — "Validar Alta de Viaje desde app pax para usuario personal con Tarjeta Preautorizada — Hold desde Alta de Viaje y Cobro desde App Driver". Todo el flujo vive en mobile: alta desde App Pax (con hold Stripe) + cobro desde App Driver. No hay fase web. Requiere Appium + WebdriverIO + Screens implementadas (`PassengerNewTripScreen`, `PassengerWalletScreen`, `DriverTripRequestScreen`, `DriverTripNavigationScreen`).
+- **Dependencias técnicas:**
+  - Setup Appium completo (server, inspector, emuladores Android driver + passenger).
+  - Screens draft existentes en `tests/mobile/appium/{passenger,driver}/` pero sin selectores confirmados.
+  - `JourneyContextStore` para pasar estado passenger → driver dentro del mismo dispositivo/sesión.
+- **Próxima acción:** convocar al agente `magiis-appium-hybrid-e2e` para: (1) alinear TC1011 con el Flow 2 existente en `tests/specs/e2e-flows/flow2-passenger-app-driver-app.e2e.spec.ts`; (2) identificar qué Screens y selectores faltan; (3) priorizar contra BL-010 (consolidación Appium Pattern 2).
+- **Referencias:** `memory/project_pax_hold_steps.md` (capturas manuales con selectores documentados), `tests/mobile/appium/passenger/PassengerNewTripScreen.ts` (draft), CLAUDE.md §Flujos E2E híbridos Flow 2
+
+### BL-022 — Regla de negocio: Cargo a Bordo no valida tarjeta desde Carrier/Contractor web
+
+- **Estado:** 🟢 Documentada (2026-04-20)
+- **Prioridad:** P2
+- **Tipo:** Documentación de regla de negocio
+- **Reportado:** 2026-04-20
+- **Contexto:** Aprendizaje confirmado por PO durante sesión TC1111:
+  - **Cargo a Bordo (Carrier/Contractor web)** — NO valida tarjeta desde el portal web. La validación y gestión de tarjeta ocurre en la **App Driver**. Desde el portal web solo se valida el alta exitosa del viaje (creación + aparición en grilla).
+  - **Tarjetas vinculadas previamente + Tarjetas Preautorizadas** — SÍ se validan desde los portales web (Stripe hold, 3DS, declinaciones, etc.).
+- **Impacto en smokes/specs:**
+  - Todo spec `@cargo-a-bordo` debe verificar solo alta exitosa (viaje en grilla + sin modal 3DS esperado).
+  - No verificar estado de pago, declinaciones de tarjeta, ni 3DS en Cargo a Bordo desde Carrier/Contractor. Aplica a TC1081 (TC04), TC1101, TC1111 (TC09) y futuros.
+  - Para empresa individuo: la grilla de gestión muestra al cliente titular como pasajero (formato `apellido, nombre`), no al sub-passenger del formulario.
+- **Próxima acción:** actualizar `CLAUDE.md` §"Glosario de dominio MAGIIS" o crear `docs/domain/cargo-a-bordo-rule.md` si crece el volumen de tests del feature. Por ahora la regla vive en comentarios del spec smoke.
+- **Referencias:** commit fix TC1111 (2026-04-20), mensaje del PO en sesión 2026-04-20
 
 ---
 
