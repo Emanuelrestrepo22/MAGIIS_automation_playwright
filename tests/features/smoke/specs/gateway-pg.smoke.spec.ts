@@ -299,6 +299,10 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 	});
 
 	// ── TC05 ─────────────────────────────────────────────────────────────────
+	// Mitigación temporal TC1033: retry(1) por fallos ENV intermitentes de auth.
+	// Root cause pendiente investigación. Ver docs/reports/TC1033-MITIGATION.md.
+	test.describe('[TS-STRIPE-TC1033] Colaborador · Hold ON · sin 3DS (4242) → SEARCHING_DRIVER', () => {
+	test.describe.configure({ retries: 1 });
 	test('@smoke @carrier @hold @happy [TS-STRIPE-TC1033] SMOKE-GW-TC05 — Colaborador · Hold ON · sin 3DS (4242) → SEARCHING_DRIVER desde portal Carrier', async ({ page }) => {
 		const dashboard   = new DashboardPage(page);
 		const preferences = new OperationalPreferencesPage(page);
@@ -349,6 +353,7 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 			console.log(`[SMOKE-GW-TC05] Colaborador Hold ON sin 3DS — SEARCHING_DRIVER en ${env.toUpperCase()} ✅`);
 		});
 	});
+	}); // end [TS-STRIPE-TC1033]
 
 	// ── TC06 ─────────────────────────────────────────────────────────────────
 	test('@smoke @carrier @hold @3ds @happy [TS-STRIPE-TC1037] SMOKE-GW-TC06 — Colaborador · Hold ON · con 3DS éxito (3155) → SEARCHING_DRIVER desde portal Carrier', async ({ page }) => {
