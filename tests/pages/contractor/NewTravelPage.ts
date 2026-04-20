@@ -13,7 +13,7 @@
  * es idéntico al carrier — se reutiliza desde NewTravelPage (carrier).
  */
 
-import type { Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 import { NewTravelPage } from '../carrier/NewTravelPage';
 import type { NewTravelFormInput } from '../carrier/NewTravelPageBase';
 import { expectEventuallyVisible } from '../../helpers';
@@ -155,13 +155,15 @@ export class ContractorNewTravelPage extends NewTravelPage {
 
 		// Paso 3: escribir la dirección tecla a tecla para disparar el autocomplete Angular
 		await searchInput.pressSequentially(queryText, { delay: 70 });
-		// NOTE(tier3-kept): debounce Angular autocomplete — no hay evento observable post-keyup sin modificar el componente
-		await this.page.waitForTimeout(1_800);
+		// BL-012 Fase 1: debounce Angular — reemplaza waitForTimeout(1_800) con polling sobre
+		// el render de opciones (inline o en CDK overlay). Más rápido si responde antes; fail-fast si no.
+		await this.waitForAutocompleteOptionsReady(originComp);
 
 		// Paso 4: click en la primera sugerencia que matchee el queryText
 		await this.clickAddressSuggestion(originComp, queryText);
-		// NOTE(tier3-kept): re-render post-select Angular — campo origen actualiza internamente sin señal DOM estable
-		await this.page.waitForTimeout(600);
+		// BL-012 Fase 1: re-render post-select Angular — reemplaza waitForTimeout(600) con expect
+		// sobre .placeholder invisible (el campo seleccionado oculta el placeholder).
+		await this.waitForPlaceFieldSelected(originComp);
 	}
 
 	/**
@@ -181,12 +183,12 @@ export class ContractorNewTravelPage extends NewTravelPage {
 
 		const searchInput = await this.openAddressDropdown(destComp);
 		await searchInput.pressSequentially(queryText, { delay: 70 });
-		// NOTE(tier3-kept): debounce Angular autocomplete — mismo patrón que origen
-		await this.page.waitForTimeout(1_800);
+		// BL-012 Fase 1: debounce Angular — mismo patrón que origen.
+		await this.waitForAutocompleteOptionsReady(destComp);
 
 		await this.clickAddressSuggestion(destComp, queryText);
-		// NOTE(tier3-kept): re-render post-select Angular — mismo patrón que origen
-		await this.page.waitForTimeout(600);
+		// BL-012 Fase 1: re-render post-select Angular — mismo patrón que origen.
+		await this.waitForPlaceFieldSelected(destComp);
 	}
 
 	override async selectClient(name: string): Promise<void> {
@@ -200,11 +202,45 @@ export class ContractorNewTravelPage extends NewTravelPage {
 		await this.userSearchInput.waitFor({ state: 'visible', timeout: 5_000 });
 		// Usar pressSequentially para disparar eventos de teclado reales (Angular busca en cada keyup).
 		await this.userSearchInput.pressSequentially(searchToken, { delay: 80 });
-		// NOTE(tier3-kept): debounce Angular dropdown de usuarios — no hay evento DOM observable post-keyup
-		await this.page.waitForTimeout(1_500);
-		// Opción de resultado — el recorder capturó '.data-with-icon-col' first (test-21.spec.ts:12).
+		// BL-012 Fase 1: debounce Angular dropdown de usuarios — reemplaza waitForTimeout(1_500)
+		// con polling determinista sobre la opción esperada. El option.waitFor de abajo también es
+		// criterio final, pero este expect explícito hace visible el gate y acorta el feedback loop.
 		const option = this.page.locator('.data-with-icon-col').first();
-		await option.waitFor({ state: 'visible', timeout: 10_000 });
+		await expect(option).toBeVisible({ timeout: 10_000 });
 		await option.click();
+	}
+
+	/**
+	 * BL-012 Fase 1 — espera a que Angular renderice al menos una opción en el autocomplete
+	 * de direcciones (inline dentro del componente o en CDK overlay a nivel de página).
+	 * Reemplaza `waitForTimeout(1_800)` con polling DOM determinista. Timeout generoso para
+	 * cubrir el debounce interno Angular + cualquier request paralelo de geocoding.
+	 */
+	private async waitForAutocompleteOptionsReady(
+		placeComponent: import('@playwright/test').Locator,
+	): Promise<void> {
+		await expect
+			.poll(
+				async () => {
+					const inline = await placeComponent.getByRole('listitem').count();
+					if (inline > 0) return inline;
+					return await this.page.getByRole('listitem').count();
+				},
+				{ timeout: 4_000, message: 'Esperando opciones de autocomplete (inline o CDK overlay)' },
+			)
+			.toBeGreaterThan(0);
+	}
+
+	/**
+	 * BL-012 Fase 1 — tras clickear una sugerencia, el placeholder del campo debe ocultarse
+	 * (porque el FormControl pasa a tener valor). Reemplaza `waitForTimeout(600)` con expect
+	 * observable. Si el placeholder no existe (DOM ya estabilizado antes de llegar acá),
+	 * `.not.toBeVisible` resuelve inmediatamente.
+	 */
+	private async waitForPlaceFieldSelected(
+		placeComponent: import('@playwright/test').Locator,
+	): Promise<void> {
+		const placeholder = placeComponent.locator('.placeholder').first();
+		await expect(placeholder).not.toBeVisible({ timeout: 3_000 });
 	}
 }
