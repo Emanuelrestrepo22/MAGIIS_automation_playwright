@@ -3,7 +3,7 @@
 > Fuente única de verdad para tareas pendientes, decisiones en espera y deuda técnica activa.
 > **Regla:** toda sesión de trabajo debe arrancar validando este documento. Si un ítem aparece aquí como pendiente pero ya fue resuelto por otra vía, actualizar su estado en lugar de duplicarlo.
 
-**Última revisión:** 2026-04-20 (Erika + Claude — cleanup 14 codegens: 6 eliminados + 7 archivados en tests/recordings/ con headers + BL-020 agregado)
+**Última revisión:** 2026-04-20 (Erika + Claude — BL-014 y BL-017 partidos en a/b: GitHub Actions optimizado aplicado + settings GitLab seguros activados via API; b-parts pendientes por cupo CI y equipo ≥2)
 
 ---
 
@@ -176,23 +176,26 @@
 - **Próxima acción:** Auditar exports y mover si aplica.
 - **Referencias:** MR !29 (TIER 2.1)
 
-### BL-014 — Aplicar templates YAML optimizados cuando vuelva cupo CI
+### BL-014a — Aplicar template GitHub Actions optimizado ✅
 
-- **Estado:** 🔴 Pendiente (bloqueado por cupo CI agotado, ver BL-004)
+- **Estado:** 🟢 Hecho (2026-04-20 — acelerado, cupo GitHub disponible)
 - **Prioridad:** P2
 - **Tipo:** Mejora CI
 - **Reportado:** 2026-04-20
-- **Contexto:** Los templates YAML optimizados (concurrency, paths-ignore, cache multi-capa, quick-checks fail-fast, timeout 30 min) existen en `.claude/skills/magiis-ci-efficiency/assets/templates/`. Aplicarlos al repo ahora tiene riesgo alto porque sin cupo CI no se puede validar que no rompan el pipeline existente. Diferido hasta que GitLab resetee (1 de mayo) o se active runner propio.
-- **Próxima acción:**
-  1. Esperar que vuelva cupo CI (reset mensual o runner propio operativo).
-  2. PR `chore/ci-optimize-github-actions` copiando `assets/templates/github-actions-playwright-optimized.yml` → `.github/workflows/playwright.yml`.
-  3. PR análogo para `.gitlab-ci.yml` con el template GitLab.
-  4. Validar pipeline post-aplicación (duración esperada: 13 min → 7-8 min).
-  5. Actualizar métricas baseline en `docs/ci/CI-USAGE-GUIDELINES.md`.
-- **Referencias:**
-  - `.claude/skills/magiis-ci-efficiency/assets/templates/`
-  - `docs/ci/CI-USAGE-GUIDELINES.md` (guía de equipo, ya en main)
-  - BL-004 (cupo CI agotado), BL-005 (propuesta original pre-cupo)
+- **Resolución:** `.github/workflows/playwright.yml` reemplazado por template optimizado: concurrency group con cancel-in-progress, paths-ignore (docs/.claude/.md), cache multi-capa (node_modules + playwright browsers), quick-checks fail-fast (tsc+lint antes de e2e), timeout 30 min por job, artifacts retention 3/7/30 según tipo, workflow_dispatch con inputs útiles (test_filter, headed).
+- **Impacto esperado:** duración efectiva 13 min → 7-8 min cuando cache está caliente. Cero pipelines docs-only.
+- **Validación:** el próximo push al repo dispara el workflow optimizado en GitHub Actions (cupo disponible).
+- **Referencias:** `.claude/skills/magiis-ci-efficiency/assets/templates/github-actions-playwright-optimized.yml`
+
+### BL-014b — Aplicar template GitLab CI optimizado (pendiente cupo)
+
+- **Estado:** 🔴 Pendiente (bloqueado por cupo CI GitLab agotado, ver BL-004)
+- **Prioridad:** P2
+- **Tipo:** Mejora CI
+- **Reportado:** 2026-04-20
+- **Contexto:** Template `gitlab-ci-playwright-optimized.yml` listo para aplicar. Sin cupo CI no se puede validar post-aplicación.
+- **Próxima acción:** tras reset del cupo GitLab (1 de mayo) o activación de runner propio, copiar `assets/templates/gitlab-ci-playwright-optimized.yml` → `.gitlab-ci.yml` y validar pipeline.
+- **Referencias:** `.claude/skills/magiis-ci-efficiency/assets/templates/gitlab-ci-playwright-optimized.yml`, BL-004
 
 ### BL-015 — Evaluar activar hook husky pre-push
 
@@ -213,15 +216,33 @@
 - **Próxima acción:** Activar branch protection settings (UI) cuando se sume primer dev adicional. Ver BL-017.
 - **Referencias:** `docs/ops/CI-GATES-IMPLEMENTATION-PLAN.md` (plan completo), `scripts/ci/pre-push.mjs`, `docs/ci/CI-USAGE-GUIDELINES.md`
 
-### BL-017 — Aplicar branch protection estricta (Fase 5 CI Gates)
+### BL-017a — Branch protection settings seguros ✅
 
-- **Estado:** 🔴 Pendiente (trigger: equipo ≥2 devs)
+- **Estado:** 🟢 Hecho (2026-04-20 — acelerado, settings sin requirement de otro dev)
 - **Prioridad:** P3
 - **Tipo:** Configuración
 - **Reportado:** 2026-04-20
-- **Contexto:** Configuración manual UI de GitLab + GitHub documentada en `docs/ci/BRANCH-PROTECTION-SETTINGS.md`. Requiere activarse solo cuando haya ≥2 devs para evitar auto-bloquearse.
-- **Próxima acción:** Aplicar settings al incorporar primer dev adicional. Seguir `docs/ci/BRANCH-PROTECTION-SETTINGS.md`.
-- **Referencias:** `docs/ci/BRANCH-PROTECTION-SETTINGS.md`, `docs/ops/CI-GATES-IMPLEMENTATION-PLAN.md` §Fase 5
+- **Resolución:** Activados via GitLab API lo aplicable sin equipo ≥2:
+  - `only_allow_merge_if_all_discussions_are_resolved: true` — obligatorio resolver threads
+  - `remove_source_branch_after_merge: true` — cleanup automático
+  - Protected branch main: `allow_force_push: false` (ya estaba)
+  - Protected branch main: push/merge access = Maintainers (ya estaba)
+- **No activado (peligro auto-bloqueo):** `only_allow_merge_if_pipeline_succeeds` → bloqueado por cupo CI agotado (sin pipelines, nada mergearía). Activar cuando vuelva el cupo.
+- **Referencias:** `docs/ci/BRANCH-PROTECTION-SETTINGS.md`
+
+### BL-017b — Branch protection estricta (pendiente equipo/cupo)
+
+- **Estado:** 🔴 Pendiente (trigger dual: equipo ≥2 + cupo CI disponible)
+- **Prioridad:** P3
+- **Tipo:** Configuración
+- **Reportado:** 2026-04-20
+- **Contexto:** Settings que requieren triggers externos:
+  - `only_allow_merge_if_pipeline_succeeds` → espera reset cupo CI (1 mayo) o runner propio
+  - `approvals_before_merge ≥ 1` → espera equipo ≥ 2 devs
+  - `Require code owner approval` → idem
+  - GitHub Settings → Branches → main rule → status checks required → espera cupo CI
+- **Próxima acción:** activar según corresponda cada trigger. Comandos listos en `docs/ci/BRANCH-PROTECTION-SETTINGS.md`.
+- **Referencias:** `docs/ci/BRANCH-PROTECTION-SETTINGS.md` §"Cómo re-aplicar via GitLab API"
 
 ### BL-018 — Completar script weekly-ci-report.mjs
 

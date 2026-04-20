@@ -1,96 +1,220 @@
+# ==========================================================================
+#  GitHub Actions — Playwright + pnpm + TypeScript (optimized for efficiency)
+#
+#  Features:
+#  - Concurrency group con cancel-in-progress
+#  - Paths-ignore para docs/.claude/
+#  - Cache multi-capa (pnpm store, node_modules, playwright browsers)
+#  - Quick checks fail-fast (tsc + lint) antes del e2e
+#  - Timeout 30 min
+#  - Artifacts condicionales (failure solo, retention acotado)
+#  - workflow_dispatch con inputs útiles
+#  - Secrets via secrets:, variables via vars:
+#
+#  Ref: magiis-ci-efficiency skill — references/yaml-optimizations.md
+# ==========================================================================
+
 name: E2E Tests — TEST Environment
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.claude/**'
+      - '.vscode/**'
+      - 'CLAUDE.md'
+      - 'AGENTS.md'
   pull_request:
-    branches: [ main ]
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.claude/**'
   workflow_dispatch:
     inputs:
-      headed:
-        description: 'Run with browser visible (headed)'
+      test_filter:
+        description: 'Playwright -g pattern (empty = all smoke tests)'
         required: false
-        default: 'false'
+        default: ''
+      headed:
+        description: 'Run with visible browser'
+        type: boolean
+        default: false
+
+# Cancela runs previos del mismo branch al llegar uno nuevo.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  e2e-test:
-    name: E2E Tests (TEST)
+  # ------------------------------------------------------------------------
+  #  Quick checks — fail-fast (tsc + lint en <2 min)
+  # ------------------------------------------------------------------------
+  quick-checks:
+    name: TypeScript + Lint
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Cache node_modules
+        id: cache-modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            **/node_modules
+          key: modules-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install dependencies
+        if: steps.cache-modules.outputs.cache-hit != 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: TypeScript compile check
+        run: pnpm exec tsc --noEmit
+
+      - name: Lint
+        run: pnpm lint --if-present
+
+  # ------------------------------------------------------------------------
+  #  E2E Tests — smoke suite contra TEST
+  # ------------------------------------------------------------------------
+  e2e-test:
+    name: E2E Smoke (TEST)
+    needs: quick-checks          # solo corre si quick-checks pasó
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
     environment: TEST
 
     env:
       ENV: test
-      HEADLESS: true
+      HEADLESS: ${{ inputs.headed != true }}
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
-    - name: Setup pnpm
-      uses: pnpm/action-setup@v4
-      with:
-        version: 10
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
 
-    - name: Setup Node.js 20
-      uses: actions/setup-node@v4
-      with:
-        node-version: 20
-        cache: pnpm
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
 
-    - name: Install dependencies
-      run: pnpm install --frozen-lockfile
+      - name: Cache node_modules
+        id: cache-modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            **/node_modules
+          key: modules-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
-    - name: Install Playwright Browsers (chromium only)
-      run: pnpm exec playwright install --with-deps chromium
+      - name: Install dependencies
+        if: steps.cache-modules.outputs.cache-hit != 'true'
+        run: pnpm install --frozen-lockfile
 
-    - name: Create storage directory
-      run: mkdir -p storage
+      - name: Cache Playwright browsers
+        id: cache-browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
 
-    - name: Create .env.test from secrets
-      run: |
-        cat > .env.test << 'ENVEOF'
-        ENV=test
-        BASE_URL=${{ vars.BASE_URL || 'https://apps-test.magiis.com' }}
-        AUTH_API_URL=${{ vars.AUTH_API_URL || '' }}
-        LOGIN_PATH="/#/authentication/login/carrier"
-        DASHBOARD_URL_PATTERN="dashboard"
-        USER_CARRIER=${{ secrets.USER_CARRIER }}
-        PASS_CARRIER=${{ secrets.PASS_CARRIER }}
-        USER_CONTRACTOR=${{ secrets.USER_CONTRACTOR }}
-        PASS_CONTRACTOR=${{ secrets.PASS_CONTRACTOR }}
-        HEADLESS=true
-        ENVEOF
-        # Validar que los secrets críticos no estén vacíos
-        if grep -q "^USER_CARRIER=$" .env.test || grep -q "^PASS_CARRIER=$" .env.test; then
-          echo "❌ ERROR: USER_CARRIER o PASS_CARRIER vacíos en GitHub Secrets"
-          echo "Configurar en: Settings → Secrets and variables → Actions"
-          exit 1
-        fi
-        # USER_CONTRACTOR opcional — tests contractor se marcan como skip si no está configurado
-        if grep -q "^USER_CONTRACTOR=$" .env.test; then
-          echo "⚠️  WARN: USER_CONTRACTOR no configurado — tests Portal Contractor pueden fallar"
-        fi
+      - name: Install Playwright browsers (chromium only)
+        if: steps.cache-browsers.outputs.cache-hit != 'true'
+        run: pnpm exec playwright install --with-deps chromium
 
-    - name: Run Stable Smoke Tests (TEST)
-      run: pnpm run test:test:smoke
+      - name: Install system deps for Playwright (always)
+        if: steps.cache-browsers.outputs.cache-hit == 'true'
+        run: pnpm exec playwright install-deps chromium
 
-    - name: Cleanup test travels (post-smoke)
-      if: always()
-      continue-on-error: true
-      run: pnpm run cleanup:test:travels
+      - name: Create storage directory
+        run: mkdir -p storage
 
-    - name: Upload evidence on failure
-      if: failure()
-      uses: actions/upload-artifact@v4
-      with:
-        name: evidence-test-${{ github.run_number }}
-        path: evidence/test/
-        retention-days: 14
+      - name: Create .env.test from secrets
+        run: |
+          cat > .env.test << 'ENVEOF'
+          ENV=test
+          BASE_URL=${{ vars.BASE_URL || 'https://apps-test.magiis.com' }}
+          AUTH_API_URL=${{ vars.AUTH_API_URL || '' }}
+          LOGIN_PATH="/#/authentication/login/carrier"
+          DASHBOARD_URL_PATTERN="dashboard"
+          USER_CARRIER=${{ secrets.USER_CARRIER }}
+          PASS_CARRIER=${{ secrets.PASS_CARRIER }}
+          USER_CONTRACTOR=${{ secrets.USER_CONTRACTOR }}
+          PASS_CONTRACTOR=${{ secrets.PASS_CONTRACTOR }}
+          HEADLESS=true
+          ENVEOF
+          # Validar secrets críticos
+          if grep -q "^USER_CARRIER=$" .env.test || grep -q "^PASS_CARRIER=$" .env.test; then
+            echo "❌ ERROR: USER_CARRIER o PASS_CARRIER vacíos en GitHub Secrets"
+            echo "Configurar en: Settings → Secrets and variables → Actions"
+            exit 1
+          fi
 
-    - name: Upload HTML report
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: report-test-${{ github.run_number }}
-        path: evidence/test/report/
-        retention-days: 7
+      - name: Run Smoke Tests (TEST)
+        run: |
+          if [ -n "${{ inputs.test_filter }}" ]; then
+            pnpm run test:test:smoke -- -g "${{ inputs.test_filter }}"
+          else
+            pnpm run test:test:smoke
+          fi
+
+      - name: Cleanup test travels
+        if: always()
+        continue-on-error: true
+        run: pnpm run cleanup:test:travels --if-present
+
+      # -------------------- ARTIFACTS OPTIMIZADOS --------------------
+
+      - name: Upload evidence (failures only, 7 days)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: evidence-${{ github.run_number }}
+          path: |
+            evidence/test/screenshots
+            evidence/test/videos
+            evidence/test/traces
+            evidence/test/error-context.md
+          retention-days: 7
+
+      - name: Upload JUnit (always, 30 days — para reportes)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-${{ github.run_number }}
+          path: evidence/test/junit.xml
+          retention-days: 30
+
+      - name: Upload HTML report (always, 3 days)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-${{ github.run_number }}
+          path: evidence/test/report
+          retention-days: 3
