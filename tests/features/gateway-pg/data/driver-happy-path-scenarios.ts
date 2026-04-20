@@ -47,7 +47,7 @@ export const CARRIER_DRIVER_HAPPY_PATH_SCENARIOS: CarrierDriverHappyPathScenario
 		passenger: DEFAULT_CLIENT,
 		origin: DEFAULT_ORIGIN,
 		destination: DEFAULT_DESTINATION,
-		cardLast4: CARDS.LEGACY_3DS_SUCCESS.slice(-4), // 3155 legacy — TC valida comportamiento especifico de risk score en hold+3DS
+		cardLast4: CARDS.HAPPY_3DS.slice(-4), // 3184 determinístico — migrado desde LEGACY_3DS_SUCCESS (3155) en TIER 4
 		rules: {
 			holdEnabled: true,
 			threeDSMode: 'challenge-accept',
@@ -61,7 +61,7 @@ export const CARRIER_DRIVER_HAPPY_PATH_SCENARIOS: CarrierDriverHappyPathScenario
 		passenger: DEFAULT_CLIENT,
 		origin: DEFAULT_ORIGIN,
 		destination: DEFAULT_DESTINATION,
-		cardLast4: CARDS.LEGACY_3DS_SUCCESS.slice(-4), // 3155 legacy — TC valida comportamiento especifico de risk score en hold OFF+3DS
+		cardLast4: CARDS.HAPPY_3DS.slice(-4), // 3184 determinístico — migrado desde LEGACY_3DS_SUCCESS (3155) en TIER 4
 		rules: {
 			holdEnabled: false,
 			threeDSMode: 'challenge-accept',

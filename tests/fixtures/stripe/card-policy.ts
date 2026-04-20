@@ -128,11 +128,16 @@ export const CARDS = {
 	// ═══════════════════════════════════════════════════════════════════
 
 	/**
-	 * @deprecated Use CARDS.HAPPY_3DS. ESLint rule bloquea uso nuevo — ver .eslintrc.json.
-	 *   Comportamiento variable en Stripe TEST (Stripe decide si desafía según
-	 *   risk score) → genera flakiness intermitente.
-	 *   Usar `HAPPY_3DS` (3184) o `HAPPY_3DS_SINGLE` (3220) según intención.
-	 *   Esta entrada queda solo para specs legacy hasta completar migración.
+	 * @deprecated ELIMINADO de uso activo en TIER 4 (migración completada).
+	 *   Card 3155 tiene flakiness por risk score variable en Stripe TEST:
+	 *   Stripe decide si desafía según el risk score de la sesión → falsos negativos intermitentes.
+	 *
+	 *   Si necesitas 3DS estable → usa CARDS.HAPPY_3DS (3184, always_authenticate).
+	 *   Si necesitas single-auth  → usa CARDS.HAPPY_3DS_SINGLE (3220, three_ds_required).
+	 *
+	 *   Esta entrada se mantiene ÚNICAMENTE para no romper imports externos que no
+	 *   hayan migrado aún. No usar en código nuevo — la ESLint rule anti-card-3155
+	 *   bloquea cualquier uso directo de CARDS.LEGACY_3DS_SUCCESS.
 	 * Stripe: `4000 0025 0000 3155`, visa_3ds_success.
 	 */
 	LEGACY_3DS_SUCCESS: STRIPE_TEST_CARDS.success3DS,

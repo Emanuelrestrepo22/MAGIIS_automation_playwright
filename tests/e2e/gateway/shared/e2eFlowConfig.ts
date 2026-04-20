@@ -48,10 +48,10 @@ export const GATEWAY_CONFIGS: Record<string, GatewayFlowConfig> = {
 	/** Stripe — tarjeta 3DS requerido, hold habilitado. */
 	'stripe-hold-3ds': {
 		gateway:     'stripe',
-		cardLast4:   '3155',
+		cardLast4:   '3184',
 		holdEnabled: true,
 		requires3DS: true,
-		label:       'Stripe Hold ON con 3DS (4000 0025 0000 3155)',
+		label:       'Stripe Hold ON con 3DS (4000 0027 6000 3184)',
 	},
 	/** MercadoPago — placeholder para futura implementación. */
 	'mercado-pago-hold-no3ds': {
@@ -75,10 +75,10 @@ export const GATEWAY_CONFIGS: Record<string, GatewayFlowConfig> = {
 	/** Stripe — colaborador con 3DS, hold habilitado. */
 	'contractor-stripe-hold-3ds': {
 		gateway:     'stripe',
-		cardLast4:   '3155',
+		cardLast4:   '3184',
 		holdEnabled: true,
 		requires3DS: true,
-		label:       'Contractor · Stripe Hold ON con 3DS (3155)',
+		label:       'Contractor · Stripe Hold ON con 3DS (3184)',
 	},
 };
 
