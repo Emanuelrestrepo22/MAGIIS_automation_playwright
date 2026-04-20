@@ -3,7 +3,7 @@
 > Fuente única de verdad para tareas pendientes, decisiones en espera y deuda técnica activa.
 > **Regla:** toda sesión de trabajo debe arrancar validando este documento. Si un ítem aparece aquí como pendiente pero ya fue resuelto por otra vía, actualizar su estado en lugar de duplicarlo.
 
-**Última revisión:** 2026-04-20 (Erika + Claude — BL-014 y BL-017 partidos en a/b: GitHub Actions optimizado aplicado + settings GitLab seguros activados via API; b-parts pendientes por cupo CI y equipo ≥2)
+**Última revisión:** 2026-04-20 (Erika + Claude — post PRs GitHub #10 y #11 mergeados: BL-001 cerrado 🟢 (TC1081 era bug de automation, no ambiente) + BL-005 cerrado 🟢 via PR #11 + Quality Gates foundation replicada en GitHub. b-parts siguen bloqueados por cupo y equipo ≥2)
 
 ---
 
@@ -42,16 +42,15 @@
 
 ### BL-001 — Habilitar "Cargo a Bordo" para AppPax en backend TEST
 
-- **Estado:** 🔴 Pendiente
+- **Estado:** 🟢 Resuelto (2026-04-20 — falsa alarma, era bug de automation)
 - **Prioridad:** P1
-- **Tipo:** Configuración de ambiente (acción humana)
+- **Tipo:** Configuración de ambiente (acción humana) → reclasificado como bug de automation
 - **Reportado:** 2026-04-19
-- **Contexto:** TC04 (TS-STRIPE-TC1081) falla intermitentemente con `?limitExceeded=false` cuando el método "Cargo a Bordo / Tarjeta de Crédito" no está habilitado para Emanuel Restrepo (AppPax). **No existe UI ni endpoint público para habilitarlo** — requiere intervención admin de backend.
-- **Próxima acción:** Coordinar con DevOps/backend para habilitar el método para `emanuel.restrepo@yopmail.com` en TEST.
+- **Resolución:** Root cause real: el spec asumía redirect a `/travels/:id` post-submit, pero el comportamiento normal del producto es quedarse en `/travel/create?limitExceeded=false` con el viaje igualmente creado. El guard `Promise.race` interpretaba ese query param como error. Fix: migración de 11 specs Cargo a Bordo (apppax/contractor/empresa × happy/3ds/antifraud/declines) a network interception del `POST /travels` usando `captureCreatedTravelId` + patrón de validación post-alta ya probado en `SMOKE-GW-TC04`. **Regla de negocio confirmada:** tipo "Regular" es ilimitado por diseño, Cargo a Bordo no usa tarjeta en carrier (cobro en Driver App), los toggles de limitación son solo para colaboradores (TC1096). No se requiere intervención backend.
 - **Referencias:**
-  - `docs/reports/TC1081-FLAKINESS-DIAGNOSIS.md`
-  - `docs/gateway-pg/stripe/EXTERNAL-BLOCKERS.md` §TC1081
-  - MR !26 (fix precondición rápida)
+  - GitHub PR #10 → commit `26766de` (squash merge en github/main)
+  - `docs/gateway-pg/stripe/EXTERNAL-BLOCKERS.md` §TC1081 → estado 🟢
+  - Pendiente: aplicar el mismo fix en GitLab (rama equivalente `carrier/cargo-a-bordo-tc1081-fix`)
 
 ### BL-002 — Root cause TC1033 auth intermitente
 
@@ -90,20 +89,12 @@
 
 ### BL-005 — Optimizar GitHub Actions y crear guía uso CI
 
-- **Estado:** 🔴 Pendiente (propuesto hoy)
+- **Estado:** 🟢 Hecho (2026-04-20 — via GitHub PR #11)
 - **Prioridad:** P2
 - **Tipo:** Mejora CI
 - **Reportado:** 2026-04-20
-- **Contexto:** GitHub Actions no tiene concurrency group ni paths-ignore. Docs-only PRs disparan smoke completo.
-- **Próxima acción:** PR `chore/github-actions-ci-efficiency`:
-  - `concurrency.group` con cancel-in-progress
-  - `paths-ignore` en `.github/workflows/playwright.yml`
-  - Cache de Playwright browsers
-  - Job `quick-checks` fail-fast antes del smoke
-  - Timeout 30 min
-  - Reducir retention artifacts (14→7 / 7→3 días)
-  - Nuevo doc `docs/ci/CI-USAGE-GUIDELINES.md` con decálogo de uso responsable
-- **Referencias:** `.github/workflows/playwright.yml`
+- **Resolución:** GitHub PR #11 `chore/ci-quality-gates-foundation` mergeado (commit `e85befd`). Trae al repo GitHub toda la infraestructura Quality Gates ya aplicada en GitLab: workflow `playwright.yml` con concurrency cancel-in-progress, paths-ignore (docs/.claude/.md), cache multi-capa (node_modules + playwright browsers), job `quick-checks` fail-fast (tsc+lint), timeout 30min, artifacts retention 3/7/30, `workflow_dispatch` con inputs `test_filter` y `headed`. También: husky 9.1.7 + commitlint 20.5.0, ritual `pnpm pp` (10 checks <30s), CODEOWNERS, docs/ci/CI-USAGE-GUIDELINES.md. Runs #52 y #55 ya pasaron post-merge.
+- **Referencias:** GitHub PR #11 → commit `e85befd`, `.github/workflows/playwright.yml`, `docs/ci/CI-USAGE-GUIDELINES.md`
 
 ### BL-006 — Cleanup 5 worktrees OneDrive con lock
 
