@@ -3,7 +3,7 @@
 > Fuente única de verdad para tareas pendientes, decisiones en espera y deuda técnica activa.
 > **Regla:** toda sesión de trabajo debe arrancar validando este documento. Si un ítem aparece aquí como pendiente pero ya fue resuelto por otra vía, actualizar su estado en lugar de duplicarlo.
 
-**Última revisión:** 2026-04-20 (Erika + Claude — sesión P3 paralela: BL-003 fixeado y smoke TC1081/TC1111 🟢 verde local, BL-009 auditoría completa + hallazgo crítico credenciales PROD, BL-012 conteo real 30 (+3 vs 27), +BL-021 TC1011 Appium registrado, +BL-022 regla Cargo a Bordo documentada)
+**Última revisión:** 2026-04-20 (Erika + Claude — modo agencia ronda 2: BL-009 Fase 2 skeleton implementado 🟡 (commit `90b7da7`), BL-021 TC1011 draft completo 🟡 (commit `94bb3bc`), BL-012 Fase 1 contractor 5 casos migrados a expect.poll 🟢 (commit `1a3de3f`))
 
 ---
 
@@ -135,19 +135,19 @@
 
 ### BL-009 — Poblar `tests/fixtures/users/`
 
-- **Estado:** 🟡 Auditoría completa (2026-04-20) — ejecución pendiente por fases
+- **Estado:** 🟡 Fase 2 implementada (2026-04-20) — Fase 1/3/4 pendientes
 - **Prioridad:** P2 (elevada desde P3 por hallazgo crítico credenciales PROD)
 - **Tipo:** Deuda técnica / organización + Seguridad
 - **Contexto:** Usuarios dispersos hardcoded en specs/fixtures. Centralizarlos como SoT — complementa `fixtures/stripe/` y `fixtures/users/passengers.ts` ya existente.
 - **Auditoría (2026-04-20):** 10 puntos de dispersión detectados. Patrón canónico válido en `passengers.ts` pero sin credenciales ni mobile roles. 3 puntos de entrada de resolución: `runtime.ts`, `gatewayPortalRuntime.ts`, `gateway.fixtures.ts`.
 - **🚨 Hallazgo crítico:** `.env.prod` trackeado en git con `USER_CARRIER` y (probablemente) `PASS_CARRIER` en claro → rotación de credenciales + `.env.prod.local` ignorado. **Acción urgente antes de cualquier PR/merge.**
 - **Plan de ejecución (4 fases):**
-  1. **Emergencia creds**: mover `.env.prod` → `.env.prod.local` (gitignored) + rotar `PASS_CARRIER_PROD` + audit git history.
-  2. **SoT build**: crear `tests/fixtures/users/{types.ts, web-portals/dispatcher.ts, web-portals/contractor-collaborator.ts, mobile/driver.ts, mobile/passenger.ts, index.ts, README.md}`.
-  3. **Adopción gradual**: migrar `runtime.ts` + `gatewayPortalRuntime.ts` + `gateway.fixtures.ts` + mobile scripts a los fixtures.
-  4. **Legacy cleanup**: deprecar `features/gateway-pg/data/passengers.ts`, quitar hardcoding en `travel-cleanup.ts` (`DEFAULT_CARRIER_USER_ID = '6715'`) y mobile harness.
-- **Próxima acción:** ejecutar Fase 1 (emergencia creds) en sesión separada con el jefe/equipo infra para rotación coordinada.
-- **Referencias:** `docs/ARCHITECTURE.md` §4 "Dónde agregar data nueva", auditoría 2026-04-20 — reporte completo en conversación de sesión orquestador P3
+  1. **🔴 Emergencia creds** (pendiente acción humana): mover `.env.prod` → `.env.prod.local` (gitignored) + rotar `PASS_CARRIER_PROD` + audit git history.
+  2. **🟢 SoT build** (commit `90b7da7`, 2026-04-20): creados `tests/fixtures/users/{types.ts, internal/env-resolver.ts, web-portals/{dispatcher,contractor-collaborator}.ts, mobile/{driver,passenger}.ts, index.ts, README.md}`. Getters lazy de email/password via `process.env.*` con fallback sufijo env (USER_CARRIER_TEST → USER_CARRIER). `tsc --noEmit` OK.
+  3. **🔴 Adopción gradual**: migrar `runtime.ts` + `gatewayPortalRuntime.ts` + `gateway.fixtures.ts` + mobile scripts a los fixtures nuevos (consumers de los legacy intactos).
+  4. **🔴 Legacy cleanup**: deprecar `features/gateway-pg/data/passengers.ts`, quitar hardcoding en `travel-cleanup.ts` (`DEFAULT_CARRIER_USER_ID = '6715'`) y mobile harness.
+- **Próxima acción:** Fase 1 requiere rotación humana coordinada con infra. Fase 3 es el siguiente paso técnico ejecutable (adoptar los fixtures nuevos en los 3 puntos de entrada).
+- **Referencias:** commit `90b7da7`, `tests/fixtures/users/README.md`, `docs/ARCHITECTURE.md` §4 "Dónde agregar data nueva"
 
 ### BL-010 — Mobile Appium Pattern 2 consolidation
 
@@ -168,21 +168,22 @@
 
 ### BL-012 — `waitForTimeout` conservados con `NOTE(tier3-kept)` — conteo real 30 (+3 vs 27)
 
-- **Estado:** 🟡 Auditoría completa (2026-04-20) — plan priorizado
+- **Estado:** 🟡 Fase 1 contractor completa (2026-04-20) — Fase 1 carrier + bloqueo Stripe pendientes
 - **Prioridad:** P3
 - **Tipo:** Deuda técnica
-- **Contexto:** 30 ocurrencias actuales (3 adicionales vs 27 documentados en WAITFORTIMEOUT-MIGRATION.md; probable causa: refactors post-TIER3.2 en loops submit/vehicle carrier `NewTravelPageBase.ts:805, 815`). Revisar periódicamente si aparecen eventos/APIs que permitan eliminarlos.
+- **Contexto:** 30 ocurrencias actuales (3 adicionales vs 27 documentados en WAITFORTIMEOUT-MIGRATION.md; probable causa: refactors post-TIER3.2 en loops submit/vehicle carrier `NewTravelPageBase.ts:805, 815`).
 - **Clasificación (auditoría 2026-04-20):**
   - **Cat A (eliminable hoy sin cambios):** 0 ocurrencias.
-  - **Cat B (instrumentable — requiere cambio en Angular):** 12 ocurrencias — debounce autocomplete (6) + post-click re-render (6).
-  - **Cat C (conservar legítimo — Stripe estabilización + loops con condición compuesta):** 18 ocurrencias — incluye los 4 críticos (`97, 107, 657, 908` del carrier/NewTravelPageBase + ThreeDSModal).
-- **Distribución por archivo:** `ThreeDSModal.ts` 5 (todos C) · `contractor/NewTravelPage.ts` 5 (todos B) · `carrier/NewTravelPageBase.ts` 20 (7 B + 13 C).
-- **Plan priorizado (18-22h totales):**
-  1. **Fase 1 (8-10h, ROI máximo):** agregar `(change)`/`(keyup)` listeners en 5 Angular inputs de `contractor/NewTravelPage.ts` (líneas 159, 164, 185, 189, 204) → elimina 5 debounces de autocomplete.
-  2. **Fase 2 (6-8h):** reemplazar post-click re-render en `carrier/NewTravelPageBase.ts` (327, 355, 362, 382, 389, 759, 883) con `expect.poll` sobre `.textContent()` cambiante.
-  3. **Fase 3 (4-6h):** validación smoke completa + verificar cero flakiness en carrier Preautorizadas.
-- **Próxima acción:** revisión trimestral (si no hay horas dedicadas antes). Si se activa Fase 1, coordinar con frontend para exponer los eventos Angular.
-- **Referencias:** `docs/reports/WAITFORTIMEOUT-MIGRATION.md`, auditoría 2026-04-20 — reporte completo en conversación de sesión orquestador P3
+  - **Cat B (instrumentable):** 12 ocurrencias — debounce autocomplete (6) + post-click re-render (6). **Feasibility piloto validada: Opción A Playwright puro sin tocar frontend** — `expect.poll` sobre `.count()` de opciones + `expect.not.toBeVisible` sobre `.placeholder`.
+  - **Cat C (conservar legítimo — Stripe + loops con condición compuesta):** 18 ocurrencias — incluye los 4 críticos (`97, 107, 657, 908` del carrier/NewTravelPageBase + ThreeDSModal).
+- **Distribución por archivo:** `ThreeDSModal.ts` 5 (todos C) · `contractor/NewTravelPage.ts` 5 (**todos migrados 🟢**) · `carrier/NewTravelPageBase.ts` 20 (7 B + 13 C).
+- **Plan priorizado — estimación real tras piloto:**
+  1. **🟢 Fase 1 contractor** (commit `1a3de3f`, 2026-04-20): 5 `waitForTimeout` (líneas 159, 164, 185, 189, 204) migrados a `expect.poll` / `expect.not.toBeVisible` via helpers `waitForAutocompleteOptionsReady` + `waitForPlaceFieldSelected`. Esfuerzo real: ~30 min vs estimación original 8-10h.
+  2. **🔴 Fase 1 carrier** (3-4h, aplicable misma técnica): 9 casos Cat B en `carrier/NewTravelPageBase.ts` líneas 238, 327, 346, 355, 362, 377, 382, 389 + ajustes en 759, 883. Patrón idéntico al contractor.
+  3. **🔴 Bloqueo Stripe** (Opción B, requiere coordinación backend): 4 casos críticos (ThreeDSModal 97/107 + NewTravelPageBase 657/908). Sin señal DOM observable; requiere webhook/backend instrumentado para eliminar.
+- **Métrica actualizada:** 5/30 migrados (17%). Queda ~12 Cat B + 13 Cat C conservables por diseño.
+- **Próxima acción:** aplicar Fase 1 carrier en otra sesión dedicada (3-4h); medir tiempos reales en CI para ajustar timeouts conservadores si son excesivos.
+- **Referencias:** commit `1a3de3f`, `docs/reports/WAITFORTIMEOUT-MIGRATION.md`, auditoría 2026-04-20
 
 ### BL-013 — Refactor `dataGenerator.ts` — mover lógica Stripe residual
 
@@ -310,17 +311,20 @@
 
 ### BL-021 — TC1011 — Alta de viaje AppPax con tarjeta Preautorizada (Hold) + Cobro en App Driver (Appium)
 
-- **Estado:** 🔴 Pendiente (nuevo — requiere implementación híbrida)
+- **Estado:** 🟡 Draft trazable completo (2026-04-20) — implementación funcional pendiente sesión Appium
 - **Prioridad:** P2
 - **Tipo:** Automatización nueva (E2E híbrido Playwright + Appium)
 - **Reportado:** 2026-04-20
-- **Contexto:** TS-STRIPE-TC1011 — "Validar Alta de Viaje desde app pax para usuario personal con Tarjeta Preautorizada — Hold desde Alta de Viaje y Cobro desde App Driver". Todo el flujo vive en mobile: alta desde App Pax (con hold Stripe) + cobro desde App Driver. No hay fase web. Requiere Appium + WebdriverIO + Screens implementadas (`PassengerNewTripScreen`, `PassengerWalletScreen`, `DriverTripRequestScreen`, `DriverTripNavigationScreen`).
-- **Dependencias técnicas:**
-  - Setup Appium completo (server, inspector, emuladores Android driver + passenger).
-  - Screens draft existentes en `tests/mobile/appium/{passenger,driver}/` pero sin selectores confirmados.
-  - `JourneyContextStore` para pasar estado passenger → driver dentro del mismo dispositivo/sesión.
-- **Próxima acción:** convocar al agente `magiis-appium-hybrid-e2e` para: (1) alinear TC1011 con el Flow 2 existente en `tests/specs/e2e-flows/flow2-passenger-app-driver-app.e2e.spec.ts`; (2) identificar qué Screens y selectores faltan; (3) priorizar contra BL-010 (consolidación Appium Pattern 2).
-- **Referencias:** `memory/project_pax_hold_steps.md` (capturas manuales con selectores documentados), `tests/mobile/appium/passenger/PassengerNewTripScreen.ts` (draft), CLAUDE.md §Flujos E2E híbridos Flow 2
+- **Contexto:** TS-STRIPE-TC1011 — "Validar Alta de Viaje desde app pax para usuario personal con Tarjeta Preautorizada — Hold desde Alta de Viaje y Cobro desde App Driver". Todo el flujo vive en mobile: alta desde App Pax (con hold Stripe) + cobro desde App Driver. No hay fase web.
+- **Avance 2026-04-20 (commit `94bb3bc`):** draft completo en `docs/test-cases/mobile/TC1011-DRAFT.md` (12 secciones: identidad, precondiciones, flujo canónico por fases, gap analysis, selectores conocidos vs TODO, handoff contract, riesgos, trazabilidad).
+- **Gap identificado:**
+  - **Passenger (Fase A):** sin gaps críticos. Screens + selectores validados en `TC-PAX-HOLD-STEPS.md`. Falta formalizar `PassengerTripStatusScreen`.
+  - **Driver (Fase B):** sin gap estructural. Checkpoints en `DriverFlowSelectors.ts` + `DriverTripHappyPathHarness`. Requieren validación live contra Driver App actual.
+  - **Orquestación (Fase A↔B):** GAP CRÍTICO — `JourneyBridge.buildJourneyId()` hardcodea prefijo `flow1-*` y `initJourneyContext()` asume `flowType='carrier-web-driver-app'`. Ambos requieren parametrización antes de soportar TC1011.
+- **Estimación implementación funcional:** 3.5-4 días-persona. Bloquea: dispositivo/emulador dual (passenger+driver APKs) + Appium server activo + validación selectores Driver live.
+- **Decisión tomada:** NO crear spec propio `flow1-appPax-*` (violaría taxonomía MAGIIS). Agregar `test.describe('[TS-STRIPE-TC1011]')` dentro del `flow2-passenger-driver/flow2.e2e.spec.ts` existente cuando se active sesión Appium.
+- **Próxima acción:** activar sesión Appium dedicada → extender `JourneyBridge` con `flowType` parametrizable → implementar spec TC1011 dentro de flow2 → validación E2E.
+- **Referencias:** commit `94bb3bc`, `docs/test-cases/mobile/TC1011-DRAFT.md`, `memory/project_pax_hold_steps.md`, CLAUDE.md §Flujos E2E híbridos Flow 2
 
 ### BL-022 — Regla de negocio: Cargo a Bordo no valida tarjeta desde Carrier/Contractor web
 
