@@ -261,6 +261,63 @@ node ~/.claude/skills/magiis-ci-efficiency/scripts/estimate-ci-budget.mjs \
 
 ---
 
+## 🛡️ Ritual pre-push (15-30 segundos que ahorran 13 min CI)
+
+Antes de cada `git push`, correr localmente:
+
+```bash
+pnpm pp    # alias corto
+# o
+pnpm prepush    # alias largo
+```
+
+### Qué chequea (10 validaciones)
+
+| # | Check | Tipo |
+|---|---|---|
+| 1 | Sin `test.only / describe.only / it.only` | 🔴 FAIL |
+| 2 | Sin card 3155 (deprecated) fuera de overrides | 🔴 FAIL |
+| 3 | Sin `TODO(temp) / FIXME(urgent)` sin resolver | 🔴 FAIL |
+| 4 | Sin credenciales hardcodeadas | 🔴 FAIL |
+| 5 | Sin `.env` files staged | 🔴 FAIL |
+| 6 | Sin `console.log` nuevos en specs (usar `debugLog`) | ⚠️ WARN |
+| 7 | `test.fixme` con justificación comentario | ⚠️ WARN |
+| 8 | Branch cerca de `origin/main` (<5 commits behind) | ⚠️ WARN |
+| 9 | Trazabilidad `BL-NNN / TC-xxx` en branch o commit | ⚠️ WARN |
+| 10 | TypeScript compila (`tsc --noEmit`) | 🔴 FAIL |
+
+🔴 FAIL = bloqueante si el hook está activo (Fase 3 futura)
+⚠️ WARN = informativo, no bloquea
+
+### Tiempo esperado
+
+~15-30s en total. Si supera 60s, abrir issue y optimizar.
+
+### Si algún check da falso positivo
+
+Ejemplo: pushear un WIP intencional con `test.fixme` sin justificación todavía.
+
+```bash
+# Si el hook está activo:
+SKIP_HOOKS=true git push
+
+# Si corrés el ritual manual, simplemente ignorá los warnings y pushá:
+git push
+```
+
+Siempre documentar el bypass en el commit message.
+
+### Evolución futura
+
+Este ritual es **Fase 1** de un plan progresivo. Fases futuras:
+- **Fase 3** (cuando se sume dev nuevo): activar hook husky automático
+- **Fase 4** (1 mes post-hook): agregar gitleaks + commitlint
+- **Fase 5** (equipo ≥3): branch protection estricta
+
+Ver `docs/ops/CI-GATES-IMPLEMENTATION-PLAN.md` para el plan completo.
+
+---
+
 ## 📆 Pendientes de este documento
 
 Ver `docs/ops/BACKLOG.md`:

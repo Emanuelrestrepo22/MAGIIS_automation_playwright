@@ -3,7 +3,7 @@
 > Fuente única de verdad para tareas pendientes, decisiones en espera y deuda técnica activa.
 > **Regla:** toda sesión de trabajo debe arrancar validando este documento. Si un ítem aparece aquí como pendiente pero ya fue resuelto por otra vía, actualizar su estado en lugar de duplicarlo.
 
-**Última revisión:** 2026-04-20 (Erika + Claude — BL-006 cerrado, BL-014 agregado, CI-USAGE-GUIDELINES.md creado)
+**Última revisión:** 2026-04-20 (Erika + Claude — Fase 1 CI Gates implementada: ritual pre-push + BL-015 + BL-016)
 
 ---
 
@@ -193,6 +193,29 @@
   - `.claude/skills/magiis-ci-efficiency/assets/templates/`
   - `docs/ci/CI-USAGE-GUIDELINES.md` (guía de equipo, ya en main)
   - BL-004 (cupo CI agotado), BL-005 (propuesta original pre-cupo)
+
+### BL-015 — Evaluar activar hook husky pre-push
+
+- **Estado:** 🔴 Pendiente (bloqueado por trigger)
+- **Prioridad:** P2
+- **Tipo:** Mejora CI
+- **Reportado:** 2026-04-20
+- **Contexto:** Fase 3 del plan Quality Gates (ver `docs/ops/CI-GATES-IMPLEMENTATION-PLAN.md`). Actualmente el ritual `pnpm pp` es manual. Activar hook husky cuando:
+  - Se sume dev nuevo al equipo, O
+  - Ritual manual no se usa >80% de los pushes (tracking mensual), O
+  - Hay ≥3 incidentes de main rojo/mes por errores detectables por el ritual.
+- **Próxima acción:** Monitorear adopción del ritual por 2-4 semanas. Decidir al final de Fase 2.
+- **Referencias:** `docs/ops/CI-GATES-IMPLEMENTATION-PLAN.md` §Fase 3, BL-016
+
+### BL-016 — Implementación plan Quality Gates progresivos
+
+- **Estado:** 🟡 Fase 2 en curso (adopción del ritual)
+- **Prioridad:** P2
+- **Tipo:** Mejora CI
+- **Reportado:** 2026-04-20
+- **Contexto:** Plan de 5 fases para llevar el proyecto de zero gates a gates estrictos progresivamente. Fase 0 y Fase 1 completadas 2026-04-20.
+- **Próxima acción:** Usar `pnpm pp` antes de cada push durante 2-4 semanas. Registrar catches reales. Decidir Fase 3 al final de adopción.
+- **Referencias:** `docs/ops/CI-GATES-IMPLEMENTATION-PLAN.md` (plan completo), `scripts/ci/pre-push.mjs`, `docs/ci/CI-USAGE-GUIDELINES.md`
 
 ---
 

@@ -77,7 +77,9 @@
     "prettier:fix": "npx prettier --write tests/**/*.ts",
     "check:ts": "tsc --noEmit",
     "test:login": "pnpm exec playwright test tests/features/auth/specs/login-success.e2e.spec.ts --project=chromium",
-    "test:login:headed": "pnpm exec playwright test tests/features/auth/specs/login-success.e2e.spec.ts --project=chromium --headed"
+    "test:login:headed": "pnpm exec playwright test tests/features/auth/specs/login-success.e2e.spec.ts --project=chromium --headed",
+    "pp": "node scripts/ci/pre-push.mjs",
+    "prepush": "node scripts/ci/pre-push.mjs"
   },
   "keywords": [
     "playwright",

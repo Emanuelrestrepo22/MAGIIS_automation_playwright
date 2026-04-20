@@ -21,7 +21,7 @@
  */
 import { expect, test } from '../../../../../TestBase';
 import { GatewayPgJourneyOrchestrator } from '../../../helpers/GatewayPgJourneyOrchestrator';
-import { CARDS } from '../../../../../fixtures/stripe/card-policy';
+import { STRIPE_TEST_CARD_FIXTURES } from '../../../../../fixtures/stripe/cards';
 import { TEST_DATA } from '../../../data/stripeTestData';
 import { PASSENGERS } from '../../../data/passengers';
 import { getPassengerAppConfig } from '../../../../../mobile/appium/config/appiumRuntime';
@@ -40,7 +40,10 @@ type BusinessHold3dsScenario = {
 };
 
 const orchestrator = new GatewayPgJourneyOrchestrator();
-const threeDsCard = CARDS.HAPPY_3DS; // 4000 0027 6000 3184 — 3DS determinístico, migrado desde visa_3ds_success (3155) en TIER 4
+// Usamos el registry raw (objeto con number/exp/cvc/holderName) para poder
+// destructurar las propiedades del card. Equivalente semántico a CARDS.HAPPY_3DS
+// (ambos resuelven a 4000 0027 6000 3184 — always_authenticate, 3DS determinístico).
+const threeDsCard = STRIPE_TEST_CARD_FIXTURES.always_authenticate;
 
 function createJourney(testCaseId: string) {
 	return orchestrator.createDraftJourney({
