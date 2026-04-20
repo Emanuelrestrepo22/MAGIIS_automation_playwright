@@ -58,7 +58,7 @@ export class ContractorNewTravelPage extends NewTravelPage {
 		await this.assertDefaultServiceTypeRegular();
 		await this.setOriginContractor(opts.origin);
 		await this.setDestinationContractor(opts.destination);
-		await this.selectCardByLast4(opts.cardLast4, opts.skipCardValidation ?? false);
+		await this.selectCardByLast4(opts.cardLast4, opts.skipCardValidation ?? false, opts.expectDecline ?? false);
 	}
 
 	/**

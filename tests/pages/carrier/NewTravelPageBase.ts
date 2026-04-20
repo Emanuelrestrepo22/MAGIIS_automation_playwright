@@ -16,6 +16,13 @@ export type NewTravelFormInput = {
 	 * el caller quiere controlar el flujo de validación con `clickValidateCardAllowingReject()`.
 	 */
 	skipCardValidation?: boolean;
+	/**
+	 * Si true, indica que se espera que Stripe decline la tarjeta durante la validación.
+	 * `fillMinimum` usará `clickValidateCardAllowingReject()` en lugar de `clickValidateCard()`,
+	 * evitando el throw por timeout cuando el botón "Validar" nunca se habilita o la card
+	 * es rechazada post-click. Aplica a tests UNHAPPY como TC14 (0002 generic_decline).
+	 */
+	expectDecline?: boolean;
 };
 
 /**
@@ -661,13 +668,18 @@ export abstract class NewTravelPageBase {
 		await this.assertPaymentMethodPreauthorizedSelected();
 	}
 
-	async selectCardByLast4(last4: string, skipValidate = false): Promise<void> {
+	async selectCardByLast4(last4: string, skipValidate = false, allowDecline = false): Promise<void> {
 		await this.fillPreauthorizedCard(last4);
-		// Clickear Validar sigue siendo parte del flujo legado que usa este método.
-		// Los tests UNHAPPY con cards de rechazo usan skipValidate=true para controlar
+		// Los tests UNHAPPY con cards de rechazo conocidas usan skipValidate=true para controlar
 		// la validación con `clickValidateCardAllowingReject()` y capturar el error de Stripe.
+		// allowDecline=true usa `clickValidateCardAllowingReject()` internamente — no lanza timeout
+		// cuando el botón "Validar" nunca habilita ni cuando Stripe rechaza post-click (ej: TC14 card 0002).
 		if (!skipValidate) {
-			await this.clickValidateCard();
+			if (allowDecline) {
+				await this.clickValidateCardAllowingReject();
+			} else {
+				await this.clickValidateCard();
+			}
 		}
 	}
 
@@ -925,7 +937,7 @@ export abstract class NewTravelPageBase {
 		if (opts.preferSavedCard) {
 			await this.selectCardSmart(opts.cardLast4);
 		} else {
-			await this.selectCardByLast4(opts.cardLast4, opts.skipCardValidation ?? false);
+			await this.selectCardByLast4(opts.cardLast4, opts.skipCardValidation ?? false, opts.expectDecline ?? false);
 		}
 	}
 
