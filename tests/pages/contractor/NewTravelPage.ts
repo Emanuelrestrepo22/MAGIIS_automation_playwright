@@ -16,6 +16,7 @@
 import type { Page } from '@playwright/test';
 import { NewTravelPage } from '../carrier/NewTravelPage';
 import type { NewTravelFormInput } from '../carrier/NewTravelPageBase';
+import { expectEventuallyVisible } from '../../helpers';
 
 export class ContractorNewTravelPage extends NewTravelPage {
 	/** Selector del campo "Seleccione un usuario" en contractor (evidencia: test-21.spec.ts) */
@@ -75,12 +76,13 @@ export class ContractorNewTravelPage extends NewTravelPage {
 			const xBtn = placeComponent.locator('text=✕, text=×').first();
 			if (await xBtn.isVisible().catch(() => false)) {
 				await xBtn.click();
-				await this.page.waitForTimeout(400);
+				// Migrado tier3: waitForTimeout(400) eliminado — el placeholder.waitFor debajo es el criterio real
+				await expectEventuallyVisible(placeComponent.locator('.placeholder').first(), 5_000);
 			}
 			return;
 		}
 		await clearBtn.click();
-		await this.page.waitForTimeout(400);
+		// Migrado tier3: waitForTimeout(400) eliminado — placeholder.waitFor es el criterio determinista
 		// Esperar que reaparezca el placeholder (campo vacío)
 		const placeholder = placeComponent.locator('.placeholder').first();
 		await placeholder.waitFor({ state: 'visible', timeout: 5_000 }).catch(() => {});
@@ -103,8 +105,8 @@ export class ContractorNewTravelPage extends NewTravelPage {
 		for (const target of clickTargets) {
 			if (!(await target.isVisible().catch(() => false))) continue;
 			await target.click({ force: true });
-			await this.page.waitForTimeout(400);
-			if (await searchInput.isVisible().catch(() => false)) break;
+			// Migrado tier3: waitForTimeout(400) → expectEventuallyVisible; searchInput.waitFor debajo es el criterio final
+			if (await searchInput.isVisible({ timeout: 400 }).catch(() => false)) break;
 		}
 
 		await searchInput.waitFor({ state: 'visible', timeout: 10_000 });
@@ -153,10 +155,12 @@ export class ContractorNewTravelPage extends NewTravelPage {
 
 		// Paso 3: escribir la dirección tecla a tecla para disparar el autocomplete Angular
 		await searchInput.pressSequentially(queryText, { delay: 70 });
+		// NOTE(tier3-kept): debounce Angular autocomplete — no hay evento observable post-keyup sin modificar el componente
 		await this.page.waitForTimeout(1_800);
 
 		// Paso 4: click en la primera sugerencia que matchee el queryText
 		await this.clickAddressSuggestion(originComp, queryText);
+		// NOTE(tier3-kept): re-render post-select Angular — campo origen actualiza internamente sin señal DOM estable
 		await this.page.waitForTimeout(600);
 	}
 
@@ -177,9 +181,11 @@ export class ContractorNewTravelPage extends NewTravelPage {
 
 		const searchInput = await this.openAddressDropdown(destComp);
 		await searchInput.pressSequentially(queryText, { delay: 70 });
+		// NOTE(tier3-kept): debounce Angular autocomplete — mismo patrón que origen
 		await this.page.waitForTimeout(1_800);
 
 		await this.clickAddressSuggestion(destComp, queryText);
+		// NOTE(tier3-kept): re-render post-select Angular — mismo patrón que origen
 		await this.page.waitForTimeout(600);
 	}
 
@@ -190,11 +196,11 @@ export class ContractorNewTravelPage extends NewTravelPage {
 		const searchToken = firstToken.slice(0, 3).toLowerCase();
 
 		await this.userSelectTrigger.click();
-		// Dar tiempo a Angular para abrir el dropdown (mismo patrón que carrier selectAutocompleteOption).
-		await this.page.waitForTimeout(400);
+		// Migrado tier3: waitForTimeout(400) eliminado — userSearchInput.waitFor es el criterio determinista
 		await this.userSearchInput.waitFor({ state: 'visible', timeout: 5_000 });
 		// Usar pressSequentially para disparar eventos de teclado reales (Angular busca en cada keyup).
 		await this.userSearchInput.pressSequentially(searchToken, { delay: 80 });
+		// NOTE(tier3-kept): debounce Angular dropdown de usuarios — no hay evento DOM observable post-keyup
 		await this.page.waitForTimeout(1_500);
 		// Opción de resultado — el recorder capturó '.data-with-icon-col' first (test-21.spec.ts:12).
 		const option = this.page.locator('.data-with-icon-col').first();
