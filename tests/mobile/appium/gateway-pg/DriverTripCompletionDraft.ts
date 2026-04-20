@@ -1,6 +1,6 @@
 import { getDriverAppConfig } from '../config/appiumRuntime';
 import type { MobileGatewayExecutionPlan } from '../contracts/mobileGatewayExecutionPlan';
-import type { GatewayPgJourneyContext } from '../../../shared/contracts/gateway-pg';
+import type { GatewayPgJourneyContext } from '../../../features/gateway-pg/contracts/gateway-pg.types';
 
 export class DriverTripCompletionDraft {
 	buildExecutionPlan(context: GatewayPgJourneyContext): MobileGatewayExecutionPlan {

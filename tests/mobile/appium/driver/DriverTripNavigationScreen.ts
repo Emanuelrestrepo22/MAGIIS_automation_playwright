@@ -3,7 +3,7 @@
  * Active trip navigation screen in the Android Driver App.
  */
 
-import type { GeoPoint } from '../../../shared/contracts/gateway-pg';
+import type { GeoPoint } from '../../../features/gateway-pg/contracts/gateway-pg.types';
 import type { MobileActorConfig } from '../config/appiumRuntime';
 import { AppiumSessionBase, type AppiumDriver } from '../base/AppiumSessionBase';
 import { DRIVER_ACTION_SELECTORS } from './DriverFlowSelectors';
