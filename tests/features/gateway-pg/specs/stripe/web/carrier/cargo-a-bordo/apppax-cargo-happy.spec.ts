@@ -18,6 +18,7 @@ import { expectNoThreeDSModal, loginAsDispatcher, TEST_DATA } from '../../../../
 import { validateCardPrecondition } from '../../../../../helpers/card-precondition';
 import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../../../../helpers/travel-cleanup';
 import { PASSENGERS } from '../../../../../data/passengers';
+import { debugLog } from '../../../../../../../helpers';
 
 // Flujo: carrier web crea viaje con método "Tarjeta de Crédito - Cargo a Bordo".
 // No hay formulario Stripe ni 3DS desde carrier. El cobro ocurre en Driver App al finalizar.
@@ -50,7 +51,7 @@ test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo', () => {
 				passengerName: PASSENGERS.appPax.apiSearchQuery!,
 				requiredLast4: '4242',
 			});
-			console.log(`[card-precondition] ${PASSENGERS.appPax.name}: ${check.activeCards} tarjetas, tiene 4242: ${check.hasRequiredCard}, limpiadas: ${check.cardsDeleted}`);
+			debugLog('gateway-pg:carrier', `[card-precondition] ${PASSENGERS.appPax.name}: ${check.activeCards} tarjetas, tiene 4242: ${check.hasRequiredCard}, limpiadas: ${check.cardsDeleted}`);
 			if (!check.hasRequiredCard) {
 				throw new Error(
 					`[TC1081] PRECONDICIÓN NO CUMPLIDA: pasajero appPax sin tarjeta 4242 activa (tarjetas activas: ${check.activeCards}). Vincular manualmente en TEST antes de ejecutar.`

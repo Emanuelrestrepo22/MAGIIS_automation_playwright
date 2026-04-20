@@ -19,6 +19,7 @@ import { waitForTravelCreation } from '../../../../../helpers/stripe.helpers';
 import { validateCardPrecondition, type CardPreconditionResult } from '../../../../../helpers/card-precondition';
 import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../../../../helpers/travel-cleanup';
 import { PASSENGERS } from '../../../../../data/passengers';
+import { debugLog } from '../../../../../../../helpers';
 
 function shortDestination(destination: string): string {
 	return destination.split(',')[0].trim();
@@ -98,7 +99,7 @@ async function runHoldOnScenario(page: Page, scenario: Hold3dsScenario): Promise
 					passengerName: scenario.apiSearchQuery!,
 					requiredLast4: cardLast4,
 				});
-				console.log(`[card-precondition] ${scenario.passenger}: ${cardCheck.activeCards} tarjetas, tiene ${cardLast4}: ${cardCheck.hasRequiredCard}`);
+				debugLog('gateway-pg:carrier', `[card-precondition] ${scenario.passenger}: ${cardCheck.activeCards} tarjetas, tiene ${cardLast4}: ${cardCheck.hasRequiredCard}`);
 			});
 		}
 
@@ -186,7 +187,7 @@ async function runHoldOffScenario(page: Page, scenario: Hold3dsScenario): Promis
 				passengerName: scenario.apiSearchQuery!,
 				requiredLast4: cardLast4,
 			});
-			console.log(`[card-precondition] ${scenario.passenger}: ${cardCheck.activeCards} tarjetas, tiene ${cardLast4}: ${cardCheck.hasRequiredCard}`);
+			debugLog('gateway-pg:carrier', `[card-precondition] ${scenario.passenger}: ${cardCheck.activeCards} tarjetas, tiene ${cardLast4}: ${cardCheck.hasRequiredCard}`);
 		});
 	}
 
