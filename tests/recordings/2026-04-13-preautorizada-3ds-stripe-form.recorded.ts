@@ -1,3 +1,18 @@
+/**
+ * RECORDING — no ejecutable (*.recorded.ts no matchea Playwright testMatch).
+ *
+ * Fecha captura: 2026-04-13
+ * Flow capturado: Habilitar "Cobros con Tarjeta" en preferencias operativas + crear viaje con Stripe (iframes) + validación 3DS
+ * Capturado con: npx playwright codegen https://apps-test.magiis.com/
+ *
+ * Spec productivo equivalente:
+ *   tests/features/gateway-pg/specs/stripe/web/carrier/hold/*.spec.ts
+ *
+ * Por qué se conserva: alta relevancia para PG — captura toggle de preferencias + secuencia Stripe 3DS con selectores de iframe completos.
+ *
+ * Status: REFERENCIA — selectores de iframe complejos pero completos.
+ * Ver: tests/recordings/README.md
+ */
 import { test, expect } from '@playwright/test';
 
 test('test', async ({ page }) => {

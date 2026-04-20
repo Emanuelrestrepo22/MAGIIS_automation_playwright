@@ -3,7 +3,7 @@
 > Fuente única de verdad para tareas pendientes, decisiones en espera y deuda técnica activa.
 > **Regla:** toda sesión de trabajo debe arrancar validando este documento. Si un ítem aparece aquí como pendiente pero ya fue resuelto por otra vía, actualizar su estado en lugar de duplicarlo.
 
-**Última revisión:** 2026-04-20 (Erika + Claude — BL-019 cancelado con racional: perímetro secrets ya cubierto por .env/Masked vars + 3 capas existentes)
+**Última revisión:** 2026-04-20 (Erika + Claude — cleanup 14 codegens: 6 eliminados + 7 archivados en tests/recordings/ con headers + BL-020 agregado)
 
 ---
 
@@ -254,6 +254,19 @@
   - Aparece necesidad de compliance/audit que lo exija
 - **Infrastructure ya lista si se reactiva:** check 11 del script existe, doc de instalación en guidelines. Tiempo de reactivación: ~15 min instalación + eventual `.gitleaks.toml` para falsos positivos.
 - **Referencias:** `docs/ci/CI-USAGE-GUIDELINES.md` sección "Secrets scanning", conversación de decisión 2026-04-20
+
+### BL-020 — Consolidar recordings codegen en specs productivos
+
+- **Estado:** 🔴 Pendiente (baja prioridad, housekeeping)
+- **Prioridad:** P3
+- **Tipo:** Deuda técnica
+- **Reportado:** 2026-04-20
+- **Contexto:** 7 recordings movidos a `tests/recordings/` (antes `tests/test-{5,7,8,9,10,18}.spec.ts` + `test-4`). Capturaron flows reales de Cargo a Bordo y Preautorizada+3DS vía `npx playwright codegen`. Los flows tienen specs productivos equivalentes en `tests/features/gateway-pg/specs/stripe/web/carrier/`, pero los recordings son útiles como referencia de selectores reales + debugging de cambios del DOM.
+- **Próxima acción:**
+  1. Revisión trimestral — si un recording no se consulta en 90 días → eliminar (queda en git history).
+  2. Si durante refactor de un POM se detecta pérdida de selectores útiles → extraer al POM y eliminar el recording.
+  3. Máximo 10-12 recordings vivos; si crece más → consolidar o archivar.
+- **Referencias:** `tests/recordings/README.md`, MR de cleanup TIER 1 codegens
 
 ---
 

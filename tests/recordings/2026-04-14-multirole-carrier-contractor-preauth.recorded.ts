@@ -1,3 +1,19 @@
+/**
+ * RECORDING — no ejecutable (*.recorded.ts no matchea Playwright testMatch).
+ *
+ * Fecha captura: 2026-04-14
+ * Flow capturado: Logout de carrier + login contractor + crear viaje con pago "Preautorizada" + validación 3DS
+ * Capturado con: npx playwright codegen https://apps-test.magiis.com/
+ *
+ * Spec productivo equivalente:
+ *   tests/features/gateway-pg/specs/stripe/web/contractor/*.spec.ts
+ *   tests/TestBase.ts (fixtures de role-switching)
+ *
+ * Por qué se conserva: único recording que cubre switch carrier→contractor + pago preautorizado 3DS. Referencia útil para tests multi-role.
+ *
+ * Status: REFERENCIA — la secuencia de logout/login es específica, contrastar con storageState fixture moderno.
+ * Ver: tests/recordings/README.md
+ */
 import { test, expect } from '@playwright/test';
 
 test('test', async ({ page }) => {

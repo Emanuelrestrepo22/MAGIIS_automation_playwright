@@ -1,3 +1,18 @@
+/**
+ * RECORDING — no ejecutable (*.recorded.ts no matchea Playwright testMatch).
+ *
+ * Fecha captura: 2026-04-14
+ * Flow capturado: Habilitar Cobros + crear viaje + Preautorizada + Stripe (con RE-llenados del formulario, típico de sesión codegen interactiva con correcciones) + 3DS + vehículo + enviar
+ * Capturado con: npx playwright codegen https://apps-test.magiis.com/
+ *
+ * Spec productivo equivalente:
+ *   tests/features/gateway-pg/specs/stripe/web/carrier/hold/*.spec.ts
+ *
+ * Por qué se conserva: muestra casos edge — user tuvo que reintentar el llenado. Útil para tests de resiliencia del formulario (clear field + fill again).
+ *
+ * Status: REFERENCIA — los reintentos son artefacto del codegen manual, no del flow de negocio.
+ * Ver: tests/recordings/README.md
+ */
 import { test, expect } from '@playwright/test';
 
 test('test', async ({ page }) => {
