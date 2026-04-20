@@ -1,0 +1,5 @@
+version: 1
+interface:
+  display_name: MAGIIS Appium Hybrid E2E
+  short_description: Read QA docs, use Appium MCP for discovery, and turn hybrid mobile phases into Appium drafts.
+  default_prompt: Read the QA documentation, isolate the mobile phases of the hybrid journey, use Appium MCP to validate mobile evidence and contexts when needed, define the Playwright-to-Appium handoff, and generate Appium Android draft artifacts aligned with the MAGIIS hybrid architecture.

@@ -1,0 +1,27 @@
+{
+  "test_case_id": "TS-AUTH-01",
+  "title": "validar login carrier",
+  "module": "auth",
+  "portal": "carrier",
+  "environment": ["TEST", "UAT"],
+  "priority": "P1",
+  "source_type": "xlsx",
+  "source_file": "Auth_Test_Suite.xlsx",
+  "preconditions": [],
+  "steps": [],
+  "expected_results": [],
+  "tags": ["@auth", "@smoke", "@module-auth"],
+  "critical_flow": true,
+  "dependencies": [],
+  "risks_gaps": [],
+  "playwright_assets": {
+    "spec_file": "tests/specs/auth/TS-AUTH-01-validar-login-carrier.spec.ts",
+    "page_objects": ["LoginPage"],
+    "fixtures": [],
+    "data_files": [],
+    "todo_blocks": [
+      "TODO: validate API side effects if required",
+      "TODO: validate external dependency such as DB, Stripe Dashboard, or 3DS if applicable"
+    ]
+  }
+}
