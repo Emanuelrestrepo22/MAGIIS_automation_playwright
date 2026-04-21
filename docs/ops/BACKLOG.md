@@ -328,7 +328,14 @@
 
 ### BL-023 — Sincronizar github/main con gitlab/main (remotes divergentes)
 
-- **Estado:** 🟡 Fases 2-4-6 aplicadas local (pre-push bloqueante + .gitattributes + MERGE-POLICY.md + ci:sync-check). Fase 1 (activar mirror en UI GitLab) pendiente acción humana. Fase 0b reducida: solo 6 test-N recordings obsoletos en GitHub, no rescate necesario.
+- **Estado:** 🟢 Resuelto (2026-04-21) — remotes sincronizados en `8b41c04`, política operativa activa, pre-push check 11 bloqueante en producción.
+- **Resolución:** Fases 2-4-6 aplicadas vía MR GitLab → `main` (commit de merge `8b41c04`). Fase 1: sincronización inicial de `github/main` vía `git push github main --force-with-lease` autorizado por Erika — aligned los 139 commits de drift. Los 37 commits únicos previos de GitHub quedan en reflog (recuperables si fuese necesario). `pnpm ci:sync-check` reporta ✅ Remotes sincronizados.
+- **Mirror automático pendiente (follow-up):** el mirror GitLab → GitHub en UI quedó configurado pero no se validó end-to-end. Próximo push a `gitlab/main` dirá si el mirror replica solo. Si falla, el workaround es repetir el `ci:sync-check` + force-push manual. Sin urgencia operativa.
+- **Aprendizajes incorporados:**
+  - Pre-push check 11 (merge dry-run) previene reingreso del problema
+  - `.gitattributes` merge=union neutraliza conflicts en hotspot files
+  - MERGE-POLICY.md formaliza el flujo uni-agente vs multi-agente
+  - `pnpm ci:sync-check` da alerta temprana de drift futuro
 - **Prioridad:** P2
 - **Tipo:** Infraestructura / deuda técnica
 - **Reportado:** 2026-04-20
