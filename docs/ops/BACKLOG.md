@@ -328,7 +328,7 @@
 
 ### BL-023 — Sincronizar github/main con gitlab/main (remotes divergentes)
 
-- **Estado:** 🔴 Pendiente (detectado 2026-04-20 al intentar PR #12)
+- **Estado:** 🟡 Fases 2-4-6 aplicadas local (pre-push bloqueante + .gitattributes + MERGE-POLICY.md + ci:sync-check). Fase 1 (activar mirror en UI GitLab) pendiente acción humana. Fase 0b reducida: solo 6 test-N recordings obsoletos en GitHub, no rescate necesario.
 - **Prioridad:** P2
 - **Tipo:** Infraestructura / deuda técnica
 - **Reportado:** 2026-04-20
