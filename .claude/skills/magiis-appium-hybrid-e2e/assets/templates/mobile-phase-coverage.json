@@ -1,0 +1,18 @@
+{
+  "cases": [
+    {
+      "test_case_id": "TC-GATEWAY-01",
+      "driver_phases": [
+        "driver_trip_acceptance",
+        "driver_route_simulation",
+        "driver_trip_completion"
+      ],
+      "passenger_phases": [],
+      "payment_validation_sources": [
+        "api",
+        "mobile-ui"
+      ],
+      "coverage_status": "draft"
+    }
+  ]
+}

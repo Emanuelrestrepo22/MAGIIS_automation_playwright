@@ -3,7 +3,7 @@
 > Fuente única de verdad para tareas pendientes, decisiones en espera y deuda técnica activa.
 > **Regla:** toda sesión de trabajo debe arrancar validando este documento. Si un ítem aparece aquí como pendiente pero ya fue resuelto por otra vía, actualizar su estado en lugar de duplicarlo.
 
-**Última revisión:** 2026-04-20 (Erika + Claude — post PRs GitHub #10 y #11 mergeados: BL-001 cerrado 🟢 (TC1081 era bug de automation, no ambiente) + BL-005 cerrado 🟢 via PR #11 + Quality Gates foundation replicada en GitHub. b-parts siguen bloqueados por cupo y equipo ≥2)
+**Última revisión:** 2026-04-20 (Erika + Claude — post PR #12 cerrado por conflict: detectado BL-023 🔴 — github/main y gitlab/main divergentes. MR GitLab sigue viable para `integration/pre-main`. Previo en misma fecha: BL-002 🟡, BL-008 🟡, BL-013 🟢 + ronda 2 agencia: BL-009/BL-012/BL-021)
 
 ---
 
@@ -56,24 +56,29 @@
 
 ### BL-002 — Root cause TC1033 auth intermitente
 
-- **Estado:** 🔴 Pendiente (mitigación aplicada con `retry(1)`)
+- **Estado:** 🟡 Instrumentación aplicada — pendiente primera corrida CI para clasificar falla
 - **Prioridad:** P2
 - **Tipo:** Investigación
 - **Reportado:** 2026-04-19
 - **Contexto:** Falla intermitente en login dispatcher al inicio de TC05. `retry(1)` enmascara el síntoma pero no resuelve la raíz.
-- **Próxima acción:** Revisar TTL del storageState en `global-setup.multi-role.ts`; correlacionar con logs backend; si retry >20% escalar a bug de infra.
+- **Avance 2026-04-20:** hallazgo de arquitectura — el smoke corre `--project=chromium` y NO consume el storageState preautenticado del `global-setup.multi-role.ts`. Cada test del smoke hace `loginAsDispatcher` completo (clearCookies + re-goto + login + ensureDashboardLoaded). Instrumenté `loginAsDispatcher` y `loginAsContractor` con `runLoginPhase` para taggear la fase exacta que falla (`[login:goto]`, `[login:submit]`, `[login:dashboard]`) y emitir duración vía `debugLog('auth', ...)`. Sin cambio de control flow ni de timeouts.
+- **Próxima acción:** primera corrida CI post-instrumentación → clasificar el bucket dominante de falla → aplicar fix focalizado según qué fase domine. Sin cupo CI activo esperar reset 1 mayo o usar GitHub Actions.
 - **Referencias:**
-  - `docs/reports/TC1033-MITIGATION.md`
+  - `tests/features/gateway-pg/fixtures/gateway.fixtures.ts` (instrumentación)
+  - `docs/reports/TC1033-MITIGATION.md` (§ "Hallazgo de arquitectura 2026-04-20")
   - MR !31 (retry aplicado)
 
 ### BL-003 — Validar empíricamente TC09 (Marcelle) y TC04 (AppPax)
 
-- **Estado:** 🔴 Pendiente (sin impacto actual)
+- **Estado:** 🟢 Hecho (2026-04-20 — smoke local verde tras fix TC1111)
 - **Prioridad:** P3
 - **Tipo:** Validación
-- **Contexto:** Ni TC09 (empresa-individuo) ni TC04 (AppPax personal) tienen endpoint de reset disponible. Hay que validar si fallan con el ambiente actual para decidir si requieren mitigación.
-- **Próxima acción:** Correr `pnpm run test:test:smoke -g "TS-STRIPE-TC1081|TS-STRIPE-TC1111" --headed` local una vez que haya CI o en local.
-- **Referencias:** EXTERNAL-BLOCKERS.md §TC1081 / §TC1111
+- **Resolución:**
+  - **TC1081 (TC04 — AppPax Cargo a Bordo):** ✅ PASS sin modificaciones. 34.2s. Viaje creado visible en grilla por nombre del pasajero (appPax = cliente).
+  - **TC1111 (TC09 — Empresa Cargo a Bordo):** ❌ FAIL inicial por assertion errónea. **Root cause:** para empresa individuo (Marcelle), la grilla de gestión muestra al cliente titular como pasajero en formato `apellido, nombre` (ej: `Stripe, Marcelle`), NO al sub-passenger seleccionado en el formulario. El spec buscaba por `TEST_DATA.passenger` (`Emanuel Restrepo`) que no aparece en la grilla.
+  - **Fix aplicado:** `expectPassengerInPorAsignar(TEST_DATA.client, ...)` en TC1111 + título actualizado a "alta de viaje exitosa" (alineado con la regla de negocio BL-022: Cargo a Bordo no valida tarjeta desde web). Evidencia: 2 passed (2.3m) local ENV=test.
+- **Impacto cross-test:** la misma lógica debe revisarse en otros TCs de empresa-individuo que usen `expectPassengerInPorAsignar`. TC08 (TS-STRIPE-TC1068) también usa cliente empresa — validar en próxima run completa.
+- **Referencias:** `tests/features/smoke/specs/gateway-pg.smoke.spec.ts` líneas 546-600, EXTERNAL-BLOCKERS.md §TC1081 / §TC1111
 
 ### BL-004 — Cupo CI GitLab agotado
 
@@ -118,21 +123,31 @@
 
 ### BL-008 — TIER 4.A v2: precondición tolerante a API-fail para TC07/TC09
 
-- **Estado:** 🔴 Pendiente (MR !36 revertido por regresión)
+- **Estado:** 🟡 Guard `apiResolved` aplicado — falta migrar consumers para usar el nuevo campo cuando sea necesario
 - **Prioridad:** P3
 - **Tipo:** Mejora
-- **Contexto:** MR !36 falló porque `validateCardPrecondition` devuelve defaults cuando no encuentra al pasajero vía API, y el check nuevo disparaba throw engañoso.
-- **Próxima acción:** Reimplementar con guard: solo fallar si el helper confirmó API exitosa y `!hasRequiredCard`. En otro caso, solo `debugLog` warning.
-- **Referencias:** MR !39 (revert), MR !40 (TIER 5 aplicado para TC07 vía endpoint DELETE — puede hacer esto obsoleto).
+- **Contexto:** MR !36 falló porque `validateCardPrecondition` devolvía defaults cuando la API fallaba, y el check nuevo disparaba throw engañoso sin poder distinguir "API cayó" vs "API ok pero no hay tarjeta".
+- **Avance 2026-04-20:** agregué campo `apiResolved: boolean` al `CardPreconditionResult` (aditivo, no rompe consumers). Se setea `false` cuando falla `getPassengerId` o `getPassengerCards`, `true` solo si la cadena API completó. El try/catch del segundo endpoint (paymentMethodsByPax) ahora también atrapa fallos en vez de lanzar. Guía de uso en el JSDoc del helper.
+- **Próxima acción:** cuando se reabra el trabajo en TC07/TC09 (cargo-a-bordo / hold), el consumer puede hacer `if (result.apiResolved && !result.hasRequiredCard) throw ...`. No hay migración masiva pendiente — el campo es opt-in.
+- **Referencias:**
+  - `tests/features/gateway-pg/helpers/card-precondition.ts` (JSDoc §"BL-008 — Guard tolerante a API-fail")
+  - MR !39 (revert), MR !40 (TIER 5 para TC07 vía endpoint DELETE — puede hacer esto obsoleto).
 
 ### BL-009 — Poblar `tests/fixtures/users/`
 
-- **Estado:** 🔴 Pendiente (diferido)
-- **Prioridad:** P3
-- **Tipo:** Deuda técnica / organización
+- **Estado:** 🟡 Fase 2 implementada (2026-04-20) — Fase 1/3/4 pendientes
+- **Prioridad:** P2 (elevada desde P3 por hallazgo crítico credenciales PROD)
+- **Tipo:** Deuda técnica / organización + Seguridad
 - **Contexto:** Usuarios dispersos hardcoded en specs/fixtures. Centralizarlos como SoT — complementa `fixtures/stripe/` y `fixtures/users/passengers.ts` ya existente.
-- **Próxima acción:** Auditar dispatcher, colaborador, empresa, appPax; extraer a `tests/fixtures/users/` con re-exports desde legacy paths.
-- **Referencias:** `docs/ARCHITECTURE.md` §4 "Dónde agregar data nueva"
+- **Auditoría (2026-04-20):** 10 puntos de dispersión detectados. Patrón canónico válido en `passengers.ts` pero sin credenciales ni mobile roles. 3 puntos de entrada de resolución: `runtime.ts`, `gatewayPortalRuntime.ts`, `gateway.fixtures.ts`.
+- **🚨 Hallazgo crítico:** `.env.prod` trackeado en git con `USER_CARRIER` y (probablemente) `PASS_CARRIER` en claro → rotación de credenciales + `.env.prod.local` ignorado. **Acción urgente antes de cualquier PR/merge.**
+- **Plan de ejecución (4 fases):**
+  1. **🔴 Emergencia creds** (pendiente acción humana): mover `.env.prod` → `.env.prod.local` (gitignored) + rotar `PASS_CARRIER_PROD` + audit git history.
+  2. **🟢 SoT build** (commit `90b7da7`, 2026-04-20): creados `tests/fixtures/users/{types.ts, internal/env-resolver.ts, web-portals/{dispatcher,contractor-collaborator}.ts, mobile/{driver,passenger}.ts, index.ts, README.md}`. Getters lazy de email/password via `process.env.*` con fallback sufijo env (USER_CARRIER_TEST → USER_CARRIER). `tsc --noEmit` OK.
+  3. **🔴 Adopción gradual**: migrar `runtime.ts` + `gatewayPortalRuntime.ts` + `gateway.fixtures.ts` + mobile scripts a los fixtures nuevos (consumers de los legacy intactos).
+  4. **🔴 Legacy cleanup**: deprecar `features/gateway-pg/data/passengers.ts`, quitar hardcoding en `travel-cleanup.ts` (`DEFAULT_CARRIER_USER_ID = '6715'`) y mobile harness.
+- **Próxima acción:** Fase 1 requiere rotación humana coordinada con infra. Fase 3 es el siguiente paso técnico ejecutable (adoptar los fixtures nuevos en los 3 puntos de entrada).
+- **Referencias:** commit `90b7da7`, `tests/fixtures/users/README.md`, `docs/ARCHITECTURE.md` §4 "Dónde agregar data nueva"
 
 ### BL-010 — Mobile Appium Pattern 2 consolidation
 
@@ -151,23 +166,35 @@
 - **Contexto:** `tests/features/auth/specs/**` podría seguir el patrón `web/` como gateway-pg.
 - **Próxima acción:** Evaluar si el valor justifica el movimiento de archivos. Bajo impacto real hoy.
 
-### BL-012 — 27 `waitForTimeout` conservados con `NOTE(tier3-kept)`
+### BL-012 — `waitForTimeout` conservados con `NOTE(tier3-kept)` — conteo real 30 (+3 vs 27)
 
-- **Estado:** 🔴 Pendiente (revisión continua)
+- **Estado:** 🟡 Fase 1 contractor completa (2026-04-20) — Fase 1 carrier + bloqueo Stripe pendientes
 - **Prioridad:** P3
 - **Tipo:** Deuda técnica
-- **Contexto:** 27 ocurrencias en `tests/pages/` quedaron con `NOTE(tier3-kept)` porque no tienen señal observable (debounce Angular, estabilización Stripe). Revisar periódicamente si aparecen eventos/APIs que permitan eliminarlos.
-- **Próxima acción:** Revisión trimestral de cada NOTE.
-- **Referencias:** `docs/reports/WAITFORTIMEOUT-MIGRATION.md`
+- **Contexto:** 30 ocurrencias actuales (3 adicionales vs 27 documentados en WAITFORTIMEOUT-MIGRATION.md; probable causa: refactors post-TIER3.2 en loops submit/vehicle carrier `NewTravelPageBase.ts:805, 815`).
+- **Clasificación (auditoría 2026-04-20):**
+  - **Cat A (eliminable hoy sin cambios):** 0 ocurrencias.
+  - **Cat B (instrumentable):** 12 ocurrencias — debounce autocomplete (6) + post-click re-render (6). **Feasibility piloto validada: Opción A Playwright puro sin tocar frontend** — `expect.poll` sobre `.count()` de opciones + `expect.not.toBeVisible` sobre `.placeholder`.
+  - **Cat C (conservar legítimo — Stripe + loops con condición compuesta):** 18 ocurrencias — incluye los 4 críticos (`97, 107, 657, 908` del carrier/NewTravelPageBase + ThreeDSModal).
+- **Distribución por archivo:** `ThreeDSModal.ts` 5 (todos C) · `contractor/NewTravelPage.ts` 5 (**todos migrados 🟢**) · `carrier/NewTravelPageBase.ts` 20 (7 B + 13 C).
+- **Plan priorizado — estimación real tras piloto:**
+  1. **🟢 Fase 1 contractor** (commit `1a3de3f`, 2026-04-20): 5 `waitForTimeout` (líneas 159, 164, 185, 189, 204) migrados a `expect.poll` / `expect.not.toBeVisible` via helpers `waitForAutocompleteOptionsReady` + `waitForPlaceFieldSelected`. Esfuerzo real: ~30 min vs estimación original 8-10h.
+  2. **🔴 Fase 1 carrier** (3-4h, aplicable misma técnica): 9 casos Cat B en `carrier/NewTravelPageBase.ts` líneas 238, 327, 346, 355, 362, 377, 382, 389 + ajustes en 759, 883. Patrón idéntico al contractor.
+  3. **🔴 Bloqueo Stripe** (Opción B, requiere coordinación backend): 4 casos críticos (ThreeDSModal 97/107 + NewTravelPageBase 657/908). Sin señal DOM observable; requiere webhook/backend instrumentado para eliminar.
+- **Métrica actualizada:** 5/30 migrados (17%). Queda ~12 Cat B + 13 Cat C conservables por diseño.
+- **Próxima acción:** aplicar Fase 1 carrier en otra sesión dedicada (3-4h); medir tiempos reales en CI para ajustar timeouts conservadores si son excesivos.
+- **Referencias:** commit `1a3de3f`, `docs/reports/WAITFORTIMEOUT-MIGRATION.md`, auditoría 2026-04-20
 
 ### BL-013 — Refactor `dataGenerator.ts` — mover lógica Stripe residual
 
-- **Estado:** 🔴 Pendiente
+- **Estado:** 🟢 Hecho (2026-04-20) — confirmado que no hay lógica Stripe que mover
 - **Prioridad:** P3
 - **Tipo:** Deuda técnica
-- **Contexto:** Posible lógica Stripe residual en `tests/shared/utils/dataGenerator.ts` que debería vivir en `fixtures/stripe/`.
-- **Próxima acción:** Auditar exports y mover si aplica.
-- **Referencias:** MR !29 (TIER 2.1)
+- **Resolución:** auditoría del módulo. `dataGenerator.ts` sólo contiene helpers de auth (emails/passwords random con faker). No hay generadores Stripe allí. El TODO histórico "mover faker bruto de stripe-cards.ts → aquí" fue descartado porque contradice la regla canónica del proyecto: **la respuesta esperada de un test de gateway la determina el número de la tarjeta** (`4242` aprobado, `9235` falla 3DS, etc.), no data aleatoria. Las tarjetas son SoT fija en `tests/fixtures/stripe/cards.ts` + `card-policy.ts`; los campos auxiliares (holderName, zip) son inertes al outcome y pueden quedar random sin impacto. Apliqué: `console.log` → `debugLog('datagen', ...)`, removí los TODOs obsoletos, docblock explícito sobre el alcance del módulo, nueva sección "Regla canónica" en `tests/fixtures/stripe/README.md`.
+- **Referencias:**
+  - `tests/shared/utils/dataGenerator.ts` (docblock actualizado)
+  - `tests/fixtures/stripe/README.md` (§"Regla canónica — la respuesta la define el número de tarjeta")
+  - MR !29 (TIER 2.1)
 
 ### BL-014a — Aplicar template GitHub Actions optimizado ✅
 
@@ -281,6 +308,60 @@
   2. Si durante refactor de un POM se detecta pérdida de selectores útiles → extraer al POM y eliminar el recording.
   3. Máximo 10-12 recordings vivos; si crece más → consolidar o archivar.
 - **Referencias:** `tests/recordings/README.md`, MR de cleanup TIER 1 codegens
+
+### BL-021 — TC1011 — Alta de viaje AppPax con tarjeta Preautorizada (Hold) + Cobro en App Driver (Appium)
+
+- **Estado:** 🟡 Draft trazable completo (2026-04-20) — implementación funcional pendiente sesión Appium
+- **Prioridad:** P2
+- **Tipo:** Automatización nueva (E2E híbrido Playwright + Appium)
+- **Reportado:** 2026-04-20
+- **Contexto:** TS-STRIPE-TC1011 — "Validar Alta de Viaje desde app pax para usuario personal con Tarjeta Preautorizada — Hold desde Alta de Viaje y Cobro desde App Driver". Todo el flujo vive en mobile: alta desde App Pax (con hold Stripe) + cobro desde App Driver. No hay fase web.
+- **Avance 2026-04-20 (commit `94bb3bc`):** draft completo en `docs/test-cases/mobile/TC1011-DRAFT.md` (12 secciones: identidad, precondiciones, flujo canónico por fases, gap analysis, selectores conocidos vs TODO, handoff contract, riesgos, trazabilidad).
+- **Gap identificado:**
+  - **Passenger (Fase A):** sin gaps críticos. Screens + selectores validados en `TC-PAX-HOLD-STEPS.md`. Falta formalizar `PassengerTripStatusScreen`.
+  - **Driver (Fase B):** sin gap estructural. Checkpoints en `DriverFlowSelectors.ts` + `DriverTripHappyPathHarness`. Requieren validación live contra Driver App actual.
+  - **Orquestación (Fase A↔B):** GAP CRÍTICO — `JourneyBridge.buildJourneyId()` hardcodea prefijo `flow1-*` y `initJourneyContext()` asume `flowType='carrier-web-driver-app'`. Ambos requieren parametrización antes de soportar TC1011.
+- **Estimación implementación funcional:** 3.5-4 días-persona. Bloquea: dispositivo/emulador dual (passenger+driver APKs) + Appium server activo + validación selectores Driver live.
+- **Decisión tomada:** NO crear spec propio `flow1-appPax-*` (violaría taxonomía MAGIIS). Agregar `test.describe('[TS-STRIPE-TC1011]')` dentro del `flow2-passenger-driver/flow2.e2e.spec.ts` existente cuando se active sesión Appium.
+- **Próxima acción:** activar sesión Appium dedicada → extender `JourneyBridge` con `flowType` parametrizable → implementar spec TC1011 dentro de flow2 → validación E2E.
+- **Referencias:** commit `94bb3bc`, `docs/test-cases/mobile/TC1011-DRAFT.md`, `memory/project_pax_hold_steps.md`, CLAUDE.md §Flujos E2E híbridos Flow 2
+
+### BL-023 — Sincronizar github/main con gitlab/main (remotes divergentes)
+
+- **Estado:** 🔴 Pendiente (detectado 2026-04-20 al intentar PR #12)
+- **Prioridad:** P2
+- **Tipo:** Infraestructura / deuda técnica
+- **Reportado:** 2026-04-20
+- **Contexto:** Los dos remotes del proyecto (`github` y `gitlab`) tienen historiales fuertemente divergentes. Al abrir PR #12 (`integration/pre-main` → `github/main`) se detectaron conflictos porque:
+  - `github/main` tiene 38 commits ausentes en `integration/pre-main` (PRs #8, #10, #11 y 35 commits previos de la rama GitHub)
+  - `gitlab/main` tiene ~100 commits ausentes en `github/main` (toda la cadena TIER 1-5, BL-014-020, feature-first)
+  - Ambos comparten raíz histórica pero llevan meses sin sync bidireccional
+- **Impacto:** cualquier rama basada en `gitlab/main` genera conflict masivo al intentar PR a GitHub. Actualmente PRs se abren en uno u otro remote, nunca en ambos sin esfuerzo manual.
+- **Workaround aplicado 2026-04-20:** `integration/pre-main` se mergeó solo vía MR a `gitlab/main` (donde fue la base). PR #12 en GitHub queda cerrado con referencia a este BL.
+- **Próxima acción (opciones a evaluar con equipo + jefe):**
+  1. **Unificar un remote como canonical** y deprecar el otro (recomendado GitLab porque tiene el historial más completo).
+  2. **Merge forzado bidireccional** — traer `gitlab/main` a `github/main` con merge commit gigante explicativo. Una vez igualados, mantener sync via `git push github main && git push gitlab main` en cada release.
+  3. **Mirror automático** — configurar GitLab mirror push a GitHub (feature nativa GitLab) para que `gitlab/main` se replique automático.
+- **Bloqueantes:** decisión estratégica del equipo. No es urgente mientras se trabaje solo en GitLab.
+- **Referencias:**
+  - PR GitHub #12 (cerrado por este motivo)
+  - Diagnóstico completo: `git log integration/pre-main..github/main` muestra los 38 commits ausentes
+
+### BL-022 — Regla de negocio: Cargo a Bordo no valida tarjeta desde Carrier/Contractor web
+
+- **Estado:** 🟢 Documentada (2026-04-20)
+- **Prioridad:** P2
+- **Tipo:** Documentación de regla de negocio
+- **Reportado:** 2026-04-20
+- **Contexto:** Aprendizaje confirmado por PO durante sesión TC1111:
+  - **Cargo a Bordo (Carrier/Contractor web)** — NO valida tarjeta desde el portal web. La validación y gestión de tarjeta ocurre en la **App Driver**. Desde el portal web solo se valida el alta exitosa del viaje (creación + aparición en grilla).
+  - **Tarjetas vinculadas previamente + Tarjetas Preautorizadas** — SÍ se validan desde los portales web (Stripe hold, 3DS, declinaciones, etc.).
+- **Impacto en smokes/specs:**
+  - Todo spec `@cargo-a-bordo` debe verificar solo alta exitosa (viaje en grilla + sin modal 3DS esperado).
+  - No verificar estado de pago, declinaciones de tarjeta, ni 3DS en Cargo a Bordo desde Carrier/Contractor. Aplica a TC1081 (TC04), TC1101, TC1111 (TC09) y futuros.
+  - Para empresa individuo: la grilla de gestión muestra al cliente titular como pasajero (formato `apellido, nombre`), no al sub-passenger del formulario.
+- **Próxima acción:** actualizar `CLAUDE.md` §"Glosario de dominio MAGIIS" o crear `docs/domain/cargo-a-bordo-rule.md` si crece el volumen de tests del feature. Por ahora la regla vive en comentarios del spec smoke.
+- **Referencias:** commit fix TC1111 (2026-04-20), mensaje del PO en sesión 2026-04-20
 
 ---
 
