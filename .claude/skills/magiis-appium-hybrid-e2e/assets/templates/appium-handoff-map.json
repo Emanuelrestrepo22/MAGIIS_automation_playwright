@@ -1,0 +1,20 @@
+{
+  "journeys": [
+    {
+      "test_case_id": "TC-GATEWAY-01",
+      "journey_id_strategy": "TC-GATEWAY-01-stripe-<timestamp>",
+      "playwright_outputs_required": [
+        "journeyId",
+        "tripId",
+        "gateway",
+        "paymentReference"
+      ],
+      "appium_start_phase": "driver_trip_acceptance",
+      "actor": "driver",
+      "data_required": [
+        "tripId",
+        "driverId"
+      ]
+    }
+  ]
+}

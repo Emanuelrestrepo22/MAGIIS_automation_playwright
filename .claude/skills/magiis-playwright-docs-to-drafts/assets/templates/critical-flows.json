@@ -1,0 +1,23 @@
+{
+  "status": "draft",
+  "generated_at": "",
+  "summary": {
+    "total_cases": 0,
+    "critical_flows": 0,
+    "p1_cases": 0,
+    "p2_cases": 0
+  },
+  "critical_flows": [
+    {
+      "test_case_id": "",
+      "title": "",
+      "module": "",
+      "portal": "",
+      "priority": "P1",
+      "critical_flow": true,
+      "reason": "",
+      "dependencies": [],
+      "risks_gaps": []
+    }
+  ]
+}

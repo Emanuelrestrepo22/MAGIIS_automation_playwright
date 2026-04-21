@@ -2,6 +2,7 @@ import type { Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 import { getPortalCredentials, getPortalUrl } from '../../../config/gatewayPortalRuntime';
 import { resolveRoleCredentials, resolveLoginPath } from '../../../config/runtime';
+import { debugLog } from '../../../helpers/debug';
 import { DashboardPage } from '../../../pages/carrier';
 import { LoginPage } from '../../../pages/shared';
 import { STRIPE_CVC, STRIPE_EXPIRY, STRIPE_TEST_CARDS, TEST_DATA } from '../data/stripeTestData';
@@ -12,14 +13,34 @@ import { NewTravelPage, ThreeDSModal, ThreeDSErrorPopup, TravelDetailPage, Trave
 export { STRIPE_CVC, STRIPE_EXPIRY, STRIPE_TEST_CARDS, TEST_DATA, getPortalUrl };
 const THREE_DS_MODAL_SELECTOR = 'iframe[src*="three-ds-2-challenge"]';
 
+type LoginPhase = 'goto' | 'submit' | 'dashboard';
+
+// Instrumentación BL-002 (TC1033): envuelve cada fase del login para identificar
+// cuál falla en runs flaky. Relanza el error con prefijo `[login:<phase>]` para
+// que el stacktrace deje claro qué paso rompió sin mirar los logs. Duraciones
+// viajan por `debugLog('auth', ...)` — activar con `DEBUG=auth` en .env.
+async function runLoginPhase<T>(role: string, phase: LoginPhase, fn: () => Promise<T>): Promise<T> {
+	const start = Date.now();
+	try {
+		const result = await fn();
+		debugLog('auth', `[${role}:${phase}] ok in ${Date.now() - start}ms`);
+		return result;
+	} catch (err) {
+		const duration = Date.now() - start;
+		const original = err instanceof Error ? err.message : String(err);
+		debugLog('auth', `[${role}:${phase}] FAILED after ${duration}ms — ${original}`);
+		throw new Error(`[login:${phase}][${role}] ${original} (after ${duration}ms)`);
+	}
+}
+
 export async function loginAsDispatcher(page: Page): Promise<void> {
 	// Login rápido del portal carrier para journeys disparados por dispatcher.
 	const { user, pass } = getPortalCredentials('carrier');
 	const loginPage = new LoginPage(page, 'carrier', getPortalUrl('carrier'));
 	const dashboardPage = new DashboardPage(page);
-	await loginPage.goto();
-	await loginPage.login(user, pass);
-	await dashboardPage.ensureDashboardLoaded();
+	await runLoginPhase('carrier', 'goto', () => loginPage.goto());
+	await runLoginPhase('carrier', 'submit', () => loginPage.login(user, pass));
+	await runLoginPhase('carrier', 'dashboard', () => dashboardPage.ensureDashboardLoaded());
 }
 
 export async function loginAsContractor(page: Page): Promise<void> {
@@ -29,9 +50,9 @@ export async function loginAsContractor(page: Page): Promise<void> {
 	const loginPath = resolveLoginPath('contractor');
 	const loginPage = new LoginPage(page, 'contractor', `${baseUrl}${loginPath}`);
 	const dashboardPage = new DashboardPage(page);
-	await loginPage.goto();
-	await loginPage.login(username, password);
-	await dashboardPage.ensureDashboardLoaded();
+	await runLoginPhase('contractor', 'goto', () => loginPage.goto());
+	await runLoginPhase('contractor', 'submit', () => loginPage.login(username, password));
+	await runLoginPhase('contractor', 'dashboard', () => dashboardPage.ensureDashboardLoaded());
 }
 
 export async function loginAsPax(page: Page): Promise<void> {

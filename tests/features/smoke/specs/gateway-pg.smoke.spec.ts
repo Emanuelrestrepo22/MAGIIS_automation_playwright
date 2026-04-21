@@ -543,7 +543,11 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 	});
 
 	// ── TC09 ─────────────────────────────────────────────────────────────────
-	test('@smoke @carrier @cargo-a-bordo @happy [TS-STRIPE-TC1111] SMOKE-GW-TC09 — Empresa · Cargo a Bordo · pago exitoso desde portal Carrier', async ({ page }) => {
+	test('@smoke @carrier @cargo-a-bordo @happy [TS-STRIPE-TC1111] SMOKE-GW-TC09 — Empresa · Cargo a Bordo · alta de viaje exitosa desde portal Carrier', async ({ page }) => {
+		// Regla de negocio (BL-022): Cargo a Bordo NO valida tarjeta desde Carrier — la validación/cobro
+		// ocurre en App Driver. Desde Carrier solo se valida el alta exitosa del viaje.
+		// Para empresa individuo (Marcelle), la grilla de gestión muestra al cliente titular como pasajero
+		// en formato "apellido, nombre" (ej: "Stripe, Marcelle"), no al sub-passenger del formulario.
 		const dashboard  = new DashboardPage(page);
 		const travel     = new NewTravelPage(page);
 		const management = new TravelManagementPage(page);
@@ -585,14 +589,16 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 				await expectNoThreeDSModal(page);
 			});
 
-			await test.step('Then: viaje creado visible en gestión [SMOKE-GW-TC09]', async () => {
+			await test.step('Then: alta exitosa — viaje visible en gestión bajo cliente empresa [SMOKE-GW-TC09]', async () => {
 				await management.goto();
+				// La grilla muestra al cliente titular, no al sub-passenger. matchesSearchText normaliza
+				// por tokens, así "Marcelle Stripe" matchea la celda "Stripe, Marcelle".
 				await management.expectPassengerInPorAsignar(
-					TEST_DATA.passenger,
+					TEST_DATA.client,
 					undefined,
 					'Buscando chofer',
 				);
-				debugLog('smoke', `[SMOKE-GW-TC09] Empresa Cargo a Bordo — viaje creado en ${env.toUpperCase()} ✅`);
+				debugLog('smoke', `[SMOKE-GW-TC09] Empresa Cargo a Bordo — alta exitosa en ${env.toUpperCase()} ✅`);
 			});
 		} finally {
 			if (travelIdRef) await cancelTravelIfCreated(page, travelIdRef);

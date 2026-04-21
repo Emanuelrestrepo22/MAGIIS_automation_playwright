@@ -328,6 +328,13 @@ export interface CardPreconditionResult {
 	creditCardEnabled: boolean;
 	/** Cantidad de tarjetas eliminadas en cleanup (0 si no se ejecutó) */
 	cardsDeleted: number;
+	/**
+	 * true si la API respondió exitosamente (passenger + paymentMethodsByPax).
+	 * false cuando getPassengerId o getPassengerCards fallaron — en ese caso el
+	 * resto de campos son valores neutros y `!hasRequiredCard` NO significa
+	 * "no hay tarjeta", significa "no pudimos confirmar". Ver BL-008.
+	 */
+	apiResolved: boolean;
 }
 
 /**
@@ -348,6 +355,19 @@ export interface CardPreconditionResult {
  * });
  * // result.cardsDeleted > 0 si se limpiaron excedentes
  * ```
+ *
+ * **BL-008 — Guard tolerante a API-fail:**
+ * Cuando la API (passenger lookup o paymentMethodsByPax) falla, el helper no
+ * lanza sino que devuelve un objeto neutro con `apiResolved=false`. El caller
+ * debe usar `apiResolved` para decidir si puede tomar decisiones duras sobre
+ * el estado de tarjetas. Lo correcto:
+ * ```ts
+ * if (result.apiResolved && !result.hasRequiredCard) {
+ *   throw new Error('pasajero sin tarjeta requerida');
+ * } else if (!result.apiResolved) {
+ *   debugLog('card-precondition', 'API no disponible — continuando con flujo new');
+ * }
+ * ```
  */
 export async function validateCardPrecondition(
 	page: Page,
@@ -367,8 +387,9 @@ export async function validateCardPrecondition(
 		passengerId = await getPassengerId(page, opts.passengerName, carrierId);
 	} catch (err) {
 		// Pasajero no encontrado vía API (puede ser colaborador contractor que no
-		// aparece en el listado carrier directo). Devolver resultado neutro para
-		// que el test continúe sin preferSavedCard — vinculará nueva tarjeta.
+		// aparece en el listado carrier directo). Devolver resultado neutro con
+		// apiResolved=false para que el caller distinga "API cayó" vs "API ok pero
+		// no hay tarjeta" (BL-008, post-revert MR !36).
 		console.warn(
 			`[card-precondition] No se pudo obtener passengerId para "${opts.passengerName}" — continuando sin precondición API. Error: ${(err as Error).message}`,
 		);
@@ -380,10 +401,30 @@ export async function validateCardPrecondition(
 			matchingCards: [],
 			creditCardEnabled: false,
 			cardsDeleted: 0,
+			apiResolved: false,
 		};
 	}
 
-	let paymentData = await getPassengerCards(page, passengerId, carrierId);
+	let paymentData: PaymentMethodsByPaxResponse;
+	try {
+		paymentData = await getPassengerCards(page, passengerId, carrierId);
+	} catch (err) {
+		// Idem: si paymentMethodsByPax cae después de resolver passengerId,
+		// no podemos afirmar nada sobre tarjetas. Marcar apiResolved=false.
+		console.warn(
+			`[card-precondition] paymentMethodsByPax falló para passengerId=${passengerId} (${opts.passengerName}) — Error: ${(err as Error).message}`,
+		);
+		return {
+			passengerId,
+			totalCards: 0,
+			activeCards: 0,
+			hasRequiredCard: false,
+			matchingCards: [],
+			creditCardEnabled: false,
+			cardsDeleted: 0,
+			apiResolved: false,
+		};
+	}
 	let cards = paymentData.cards ?? [];
 
 	// Cleanup automático si excede el umbral
@@ -418,5 +459,6 @@ export async function validateCardPrecondition(
 		matchingCards,
 		creditCardEnabled: (paymentData.paymentMethods ?? []).includes('CREDIT_CARD'),
 		cardsDeleted,
+		apiResolved: true,
 	};
 }

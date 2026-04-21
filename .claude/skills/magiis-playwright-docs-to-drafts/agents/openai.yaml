@@ -1,0 +1,5 @@
+version: 1
+interface:
+  display_name: MAGIIS Docs To Drafts
+  short_description: Read QA docs, generate traceable Playwright drafts, and refresh Stripe / Gateway PG coverage.
+  default_prompt: Read the available QA documentation, extract and normalize test cases, prioritize critical flows, generate traceable Playwright draft automation artifacts, and refresh coverage documentation when Stripe or Gateway PG manual matrices are involved. Do not write directly to main.

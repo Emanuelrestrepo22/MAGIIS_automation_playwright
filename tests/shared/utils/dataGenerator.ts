@@ -2,13 +2,20 @@
  * tests/shared/utils/dataGenerator.ts
  * Generador centralizado de datos de prueba transversales.
  *
- * Dominio: auth / credentials
- * Importado por: login-failure.e2e.spec.ts, portals.smoke.spec.ts
+ * Dominio: auth / credentials (emails, passwords aleatorios para casos negativos).
+ * Importado por: login-failure.e2e.spec.ts, portals.smoke.spec.ts.
  *
- * TODO (TIER 2.x): migrar console.log de seedOnce a debugLog de tests/helpers/debug.ts
- * TODO (TIER 2.x): mover faker bruto de gateway-pg/data/stripe-cards.ts → aquí o a fixtures/stripe/
+ * **Alcance intencional — qué NO va acá:**
+ * No hay generadores de tarjetas Stripe en este módulo y no deben agregarse. En
+ * los tests de gateway la **respuesta esperada la determina el número de la
+ * tarjeta** (`4242` aprobado, `9235` falla 3DS, `9995` insufficient_funds, etc.),
+ * no data aleatoria. Por eso las tarjetas viven fijas en
+ * `tests/fixtures/stripe/cards.ts` + `card-policy.ts` — son SoT determinística,
+ * no algo a generar. Cualquier campo auxiliar (holderName, zip) es inerte al
+ * outcome Stripe y se resuelve dentro del registry, no acá.
  */
 import { faker } from '@faker-js/faker';
+import { debugLog } from '../../helpers/debug';
 
 export class DataGenerator {
 	private static seeded = false;
@@ -22,8 +29,7 @@ export class DataGenerator {
 			const seed = Date.now();
 			faker.seed(seed);
 			this.seeded = true;
-			// TODO(TIER 2.x): reemplazar por debugLog('datagen', ...) de tests/helpers/debug.ts
-			console.log(`[DataGenerator] Seed fijado: ${seed}`);
+			debugLog('datagen', `Seed fijado: ${seed}`);
 		}
 	}
 
