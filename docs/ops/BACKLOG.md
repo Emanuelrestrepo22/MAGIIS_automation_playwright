@@ -3,7 +3,7 @@
 > Fuente única de verdad para tareas pendientes, decisiones en espera y deuda técnica activa.
 > **Regla:** toda sesión de trabajo debe arrancar validando este documento. Si un ítem aparece aquí como pendiente pero ya fue resuelto por otra vía, actualizar su estado en lugar de duplicarlo.
 
-**Última revisión:** 2026-04-20 (Erika + Claude — modo agencia ronda 2: BL-009 Fase 2 skeleton implementado 🟡 (commit `90b7da7`), BL-021 TC1011 draft completo 🟡 (commit `94bb3bc`), BL-012 Fase 1 contractor 5 casos migrados a expect.poll 🟢 (commit `1a3de3f`))
+**Última revisión:** 2026-04-20 (Erika + Claude — post PR #12 cerrado por conflict: detectado BL-023 🔴 — github/main y gitlab/main divergentes. MR GitLab sigue viable para `integration/pre-main`. Previo en misma fecha: BL-002 🟡, BL-008 🟡, BL-013 🟢 + ronda 2 agencia: BL-009/BL-012/BL-021)
 
 ---
 
@@ -325,6 +325,27 @@
 - **Decisión tomada:** NO crear spec propio `flow1-appPax-*` (violaría taxonomía MAGIIS). Agregar `test.describe('[TS-STRIPE-TC1011]')` dentro del `flow2-passenger-driver/flow2.e2e.spec.ts` existente cuando se active sesión Appium.
 - **Próxima acción:** activar sesión Appium dedicada → extender `JourneyBridge` con `flowType` parametrizable → implementar spec TC1011 dentro de flow2 → validación E2E.
 - **Referencias:** commit `94bb3bc`, `docs/test-cases/mobile/TC1011-DRAFT.md`, `memory/project_pax_hold_steps.md`, CLAUDE.md §Flujos E2E híbridos Flow 2
+
+### BL-023 — Sincronizar github/main con gitlab/main (remotes divergentes)
+
+- **Estado:** 🔴 Pendiente (detectado 2026-04-20 al intentar PR #12)
+- **Prioridad:** P2
+- **Tipo:** Infraestructura / deuda técnica
+- **Reportado:** 2026-04-20
+- **Contexto:** Los dos remotes del proyecto (`github` y `gitlab`) tienen historiales fuertemente divergentes. Al abrir PR #12 (`integration/pre-main` → `github/main`) se detectaron conflictos porque:
+  - `github/main` tiene 38 commits ausentes en `integration/pre-main` (PRs #8, #10, #11 y 35 commits previos de la rama GitHub)
+  - `gitlab/main` tiene ~100 commits ausentes en `github/main` (toda la cadena TIER 1-5, BL-014-020, feature-first)
+  - Ambos comparten raíz histórica pero llevan meses sin sync bidireccional
+- **Impacto:** cualquier rama basada en `gitlab/main` genera conflict masivo al intentar PR a GitHub. Actualmente PRs se abren en uno u otro remote, nunca en ambos sin esfuerzo manual.
+- **Workaround aplicado 2026-04-20:** `integration/pre-main` se mergeó solo vía MR a `gitlab/main` (donde fue la base). PR #12 en GitHub queda cerrado con referencia a este BL.
+- **Próxima acción (opciones a evaluar con equipo + jefe):**
+  1. **Unificar un remote como canonical** y deprecar el otro (recomendado GitLab porque tiene el historial más completo).
+  2. **Merge forzado bidireccional** — traer `gitlab/main` a `github/main` con merge commit gigante explicativo. Una vez igualados, mantener sync via `git push github main && git push gitlab main` en cada release.
+  3. **Mirror automático** — configurar GitLab mirror push a GitHub (feature nativa GitLab) para que `gitlab/main` se replique automático.
+- **Bloqueantes:** decisión estratégica del equipo. No es urgente mientras se trabaje solo en GitLab.
+- **Referencias:**
+  - PR GitHub #12 (cerrado por este motivo)
+  - Diagnóstico completo: `git log integration/pre-main..github/main` muestra los 38 commits ausentes
 
 ### BL-022 — Regla de negocio: Cargo a Bordo no valida tarjeta desde Carrier/Contractor web
 
