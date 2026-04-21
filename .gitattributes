@@ -1,0 +1,36 @@
+# .gitattributes — magiis-playwright
+#
+# Estrategias de merge por archivo.
+#
+# ---- Hotspot files (BL-023) ----
+# Estos archivos son editados por múltiples sesiones de agente en paralelo y
+# generan conflicts bobos al mergear. La estrategia `merge=union` concatena
+# las líneas de ambas ramas sin pedir resolución manual.
+#
+# Política operativa obligatoria (ver docs/ci/MERGE-POLICY.md):
+#   - Las sesiones SOLO AGREGAN bloques nuevos al final del archivo.
+#   - Los cambios de estado sobre bloques existentes (🔴 → 🟡 → 🟢) van en
+#     un commit SEPARADO, no en el mismo push que el agregado. Así el diff
+#     resuelve natural por línea.
+#   - Si merge=union produce líneas mezcladas inconsistentes, resolver a mano
+#     reordenando post-merge — nunca dejar el mix en un push final.
+#
+# Limitación conocida: merge=union intercala líneas en orden de aparición.
+# No garantiza coherencia semántica, solo ausencia de conflict marker.
+docs/ops/BACKLOG.md merge=union
+docs/gateway-pg/stripe/CHANGELOG.md merge=union
+docs/reports/README.md merge=union
+
+# ---- Binary files (sin diff textual) ----
+*.xlsx binary
+*.xls binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.pdf binary
+
+# NOTA: no se aplica normalización `eol=lf` global sobre *.ts/*.js/*.md todavía.
+# El repo histórico tiene ~175 archivos con CRLF en working tree (Windows);
+# agregar `text eol=lf` ahora marcaría todos como modificados en el próximo
+# `git status`. Migración planeada como tarea aparte con `git add --renormalize`
+# y commit de conversión masiva, fuera del scope de BL-023.
