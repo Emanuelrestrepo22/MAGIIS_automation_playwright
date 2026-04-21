@@ -131,7 +131,7 @@ console.log(`${c.gray}--------------------------------------------${c.reset}\n`)
 const totalStart = performance.now();
 
 // [1] .only
-runCheck('1/10', 'Sin test.only / describe.only / it.only',
+runCheck('1/11', 'Sin test.only / describe.only / it.only',
   () => {
     const paths = ['tests/'];
     const pathArgs = paths.filter(p => {
@@ -159,7 +159,7 @@ runCheck('1/10', 'Sin test.only / describe.only / it.only',
   });
 
 // [2] Cards deprecated
-runCheck('2/10', 'Sin cards 3155 (LEGACY_3DS_SUCCESS) fuera de overrides',
+runCheck('2/11', 'Sin cards 3155 (LEGACY_3DS_SUCCESS) fuera de overrides',
   () => {
     const paths = ['tests/', 'src/'];
     const existing = paths.filter(p => {
@@ -201,7 +201,7 @@ runCheck('2/10', 'Sin cards 3155 (LEGACY_3DS_SUCCESS) fuera de overrides',
   });
 
 // [3] TODO(temp) / FIXME(urgent)
-runCheck('3/10', 'Sin TODO(temp) ni FIXME(urgent) sin resolver',
+runCheck('3/11', 'Sin TODO(temp) ni FIXME(urgent) sin resolver',
   () => {
     const paths = ['tests/'];
     try { execSync('test -d src', { stdio: 'ignore' }); paths.push('src/'); } catch {}
@@ -230,7 +230,7 @@ runCheck('3/10', 'Sin TODO(temp) ni FIXME(urgent) sin resolver',
   });
 
 // [4] Credenciales hardcodeadas
-runCheck('4/10', 'Sin credenciales hardcodeadas',
+runCheck('4/11', 'Sin credenciales hardcodeadas',
   () => {
     const paths = ['tests/'];
     try { execSync('test -d src', { stdio: 'ignore' }); paths.push('src/'); } catch {}
@@ -258,7 +258,7 @@ runCheck('4/10', 'Sin credenciales hardcodeadas',
   });
 
 // [5] .env files en staged
-runCheck('5/10', 'Sin .env files en staged',
+runCheck('5/11', 'Sin .env files en staged',
   () => {
     try {
       const out = execSync('git diff --cached --name-only', { encoding: 'utf8' });
@@ -278,7 +278,7 @@ runCheck('5/10', 'Sin .env files en staged',
   });
 
 // [6] console.log nuevos en specs (warning)
-runCheck('6/10', 'Sin console.log nuevos en tests/features/*.spec.ts',
+runCheck('6/11', 'Sin console.log nuevos en tests/features/*.spec.ts',
   () => {
     try {
       const out = execSync(
@@ -304,7 +304,7 @@ runCheck('6/10', 'Sin console.log nuevos en tests/features/*.spec.ts',
   }, { warningOnly: true });
 
 // [7] test.fixme sin justificacion
-runCheck('7/10', 'test.fixme con justificacion comentario',
+runCheck('7/11', 'test.fixme con justificacion comentario',
   () => {
     try {
       const out = execSync(
