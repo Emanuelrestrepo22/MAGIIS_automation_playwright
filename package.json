@@ -81,7 +81,8 @@
     "pp": "node scripts/ci/pre-push.mjs",
     "prepush": "node scripts/ci/pre-push.mjs",
     "prepare": "husky",
-    "ci:report": "node scripts/ci/weekly-ci-report.mjs"
+    "ci:report": "node scripts/ci/weekly-ci-report.mjs",
+    "ci:sync-check": "node scripts/ci/check-remote-sync.mjs"
   },
   "keywords": [
     "playwright",
