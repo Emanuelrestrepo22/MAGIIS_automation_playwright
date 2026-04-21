@@ -2,6 +2,24 @@
 
 > Política operativa para mergear cambios a `main` sin conflicts estructurales y manteniendo GitLab ↔ GitHub sincronizados. Fuente: resolución BL-023.
 
+## ⚡ Quick reference card — pegar en memoria
+
+```text
+SIEMPRE                              NUNCA
+────                                 ────
+git push gitlab main                 git push github main
+pnpm pp (pre-push ritual)            SKIP_HOOKS=true (excepto emergencia)
+pnpm ci:sync-check (antes de retro)  Editar bloques viejos en hotspot files
+Rama para >200 líneas o multi-agente PR en GitHub mientras gitlab es canonical
+Check 11 rojo → git rebase           Mergear con Check 11 rojo
+```
+
+**Flujo ordinario por tipo de cambio:**
+
+- Cambio pequeño, uni-agente, pre-push verde → commit directo a main + push gitlab
+- Cambio grande o multi-agente → rama + MR GitLab
+- Hotspot (BACKLOG.md, CHANGELOG.md) → append-only + commits separados para estado
+
 ## Contexto
 
 - **Equipo:** 1 dev (Erika) + N sesiones Claude agent ejecutadas en paralelo.
@@ -109,10 +127,70 @@ Cadencia: manual antes de retros, o en hook semanal (opcional).
 
 ---
 
+## Gotchas conocidos
+
+### pnpm `--if-present` debe ir ANTES del script name
+
+Sintaxis correcta:
+
+```bash
+pnpm --if-present run lint          # ✅ pnpm consume el flag
+```
+
+Sintaxis rota (falla con "Invalid option '--if-present'"):
+
+```bash
+pnpm lint --if-present              # ❌ se propaga a ESLint
+pnpm run lint --if-present          # ❌ idem, al script
+```
+
+En workflows CI y scripts de package.json, siempre poner el flag propio de pnpm antes del `run <script>`. Detectado como root cause del fallo inicial de GitHub Actions post-activación del mirror (commit `1939a10`).
+
+### Mirror push GitLab → GitHub no es instantáneo
+
+- Schedule interno de GitLab: 2-5 min por sync
+- Si hace falta verificación inmediata: `pnpm ci:sync-check` reporta drift actual
+- Para forzar sync manual: GitLab Settings → Repository → Mirroring repositories → 🔄 Update Now
+
+### `merge=union` intercala líneas sin ordenar
+
+Si 2 ramas editan el BACKLOG en líneas cercanas, `merge=union` las concatena en el orden que llegan, no semántico. El merge no falla pero queda feo. Solución: revisar el archivo post-merge y reordenar antes del próximo push.
+
+---
+
+## Protocolo de emergencia — reconciliar remotes
+
+**Usar SOLO si:**
+
+- `pnpm ci:sync-check` reporta drift >50 commits
+- El mirror está caído y no se puede reparar en ventana razonable
+- Los historiales divergieron por un error operativo
+
+**Requiere autorización textual explícita del dev** por ser destructivo.
+
+```bash
+# 1. Confirmar que gitlab/main tiene el trabajo correcto (canonical)
+git log gitlab/main -10
+
+# 2. Actualizar main local
+git checkout main && git pull gitlab main
+
+# 3. Force-push a github con lease (aborta si alguien más pusheó)
+git push github main --force-with-lease
+
+# 4. Validar
+git fetch github main && pnpm ci:sync-check
+```
+
+Tras el force-push, reactivar/revisar el mirror en GitLab para que el problema no reingrese. Documentar el incidente en `docs/ops/BACKLOG.md`.
+
+---
+
 ## Referencias
 
 - BL-023 en `docs/ops/BACKLOG.md` — contexto histórico del problema
 - `scripts/ci/pre-push.mjs` — implementación Check 8 + Check 11
+- `scripts/ci/check-remote-sync.mjs` — detector de drift
 - `.gitattributes` — estrategia merge=union hotspots
 - Skill `magiis-branch-convention` — naming y scope de ramas
 - `docs/ci/CI-USAGE-GUIDELINES.md` — uso general del CI
