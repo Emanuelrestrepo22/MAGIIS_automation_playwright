@@ -90,7 +90,9 @@ jobs:
         run: pnpm exec tsc --noEmit
 
       - name: Lint
-        run: pnpm lint --if-present
+        # pnpm propaga flags al script si se ponen como sufijo; el flag propio
+        # de pnpm `--if-present` tiene que ir *antes* del nombre del script.
+        run: pnpm --if-present run lint
 
   # ------------------------------------------------------------------------
   #  E2E Tests — smoke suite contra TEST
@@ -187,7 +189,9 @@ jobs:
       - name: Cleanup test travels
         if: always()
         continue-on-error: true
-        run: pnpm run cleanup:test:travels --if-present
+        # `--if-present` antes del script name para que pnpm lo consuma
+        # (no lo propague al script — el sufijo va al comando final).
+        run: pnpm --if-present run cleanup:test:travels
 
       # -------------------- ARTIFACTS OPTIMIZADOS --------------------
 
