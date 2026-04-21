@@ -24,7 +24,7 @@ IDs canónicos: ver `matriz_cases.md` y `matriz_cases2.md` (fuente de verdad).
   - TC02 (AppPax · 3DS): `STRIPE_TEST_CARDS.success3DS` (3155 flaky) → `CARDS.HAPPY_3DS` (3184 always_authenticate).
   - TC06 (Colaborador · 3DS): idem.
   - TC12 (Contractor · 3DS + hold): `STRIPE_TEST_CARDS.alwaysAuthenticate` → `CARDS.HAPPY_3DS_HOLD_CAPTURE` (alias explícito).
-- **Flows E2E migrados:**
+- **Flows híbridos migrados:**
   - `flow1-carrier-driver/web-phase.ts` `resolveCardLast4ForConfig`: 3155 → `CARDS.HAPPY_3DS` (3184).
   - `flow3-contractor-driver/web-phase.ts` `resolveCardLast4ForConfig`: 3155 → `CARDS.HAPPY_3DS_HOLD_CAPTURE` (3184).
 
@@ -85,11 +85,11 @@ El mensaje de error de Stripe no siempre aparece en UI del contractor con cards 
 
 - **`matriz_cases.md` sección 2.2 (TC1013-1016):** homogeneizar redacción al patrón canónico `Validar Alta de Viaje desde app pax para usuario personal con Tarjeta Preautorizada [Hold|sin Hold] desde Alta de Viaje y Cobro desde App Driver [con validación 3DS]`. TC1013/1014 reordenados (`"para usuario personal desde app pax"` → `"desde app pax para usuario personal"`). TC1015 incorporó `"desde app pax"` que antes omitía. Alineamiento de pipes de la tabla recalculado.
 - **`normalized-test-cases.json`:** títulos TC1013/1014/1015 sincronizados al nuevo orden canónico del md.
-- **`STRIPE_Test_Suite_Matriz_Sincronizado.xlsx`:** regenerado desde matriz `.md` canónica. 215 filas actualizadas en TEST_SUITE + TEST_SUITE 2.0 (184 con título canónico del md, 31 por normalización mecánica). Removido prefijo `"E2E "` (pre=347 → post=0) y formato corto `"Hold y Cobro desde App Driver"` expandido a `"Hold desde Alta de Viaje y Cobro desde App Driver"` (pre=146 → post=0). Artefacto `"app modo personal"` limpiado; doble `"desde app pax ... desde app pax"` colapsado.
+- **`STRIPE_Test_Suite_Matriz_Sincronizado.xlsx`:** regenerado desde matriz `.md` canónica. 215 filas actualizadas en TEST_SUITE + TEST_SUITE 2.0 (184 con título canónico del md, 31 por normalización mecánica). Removido prefijo descriptivo deprecado (pre=347 → post=0) y formato corto de Hold/Cobro expandido al patrón canónico "Hold desde Alta de Viaje y Cobro desde App Driver" (pre=146 → post=0). Artefacto `"app modo personal"` limpiado; doble `"desde app pax ... desde app pax"` colapsado.
 
 ### Added
 
-- **`scripts/ai/matriz-coherencia/sync-xlsx-canonical.py`:** script de sync idempotente que lee `matriz_cases.md` + `matriz_cases2.md` (incluye IDs `TS-STRIPE-P2-TCxxx`), construye mapa ID→título canónico y aplica tanto override con título del md como sustituciones mecánicas (E2E, Hold y Cobro, app modo personal). `openpyxl` preserva estilos/colores.
+- **`scripts/ai/matriz-coherencia/sync-xlsx-canonical.py`:** script de sync idempotente que lee `matriz_cases.md` + `matriz_cases2.md` (incluye IDs `TS-STRIPE-P2-TCxxx`), construye mapa ID→título canónico y aplica tanto override con título del md como sustituciones mecánicas (prefijo descriptivo deprecado, formato corto de Hold/Cobro expandido al patrón canónico, app modo personal). `openpyxl` preserva estilos/colores.
 
 ### Infrastructure
 
