@@ -2,8 +2,9 @@
 /**
  * pre-push.mjs — Ritual pre-push para magiis-playwright
  *
- * 10 checks + 1 check opcional (gitleaks si instalado) en <30s antes de cada git push.
- * Previene pushes con errores evitables (tsc roto, .only olvidado, secrets).
+ * 11 checks + 1 check opcional (gitleaks si instalado) en <30s antes de cada git push.
+ * Previene pushes con errores evitables (tsc roto, .only olvidado, secrets,
+ * merge conflicts contra main).
  *
  * Uso:
  *   pnpm pp            # alias
@@ -12,6 +13,15 @@
  *
  * Escape:
  *   SKIP_HOOKS=true git push    # bypass intencional (WIP, emergencia)
+ *
+ * Política de checks (ver docs/ci/MERGE-POLICY.md §Pre-push):
+ *   - Check 8  (warning) — branch behind de gitlab/main. Sugiere rebase, no bloquea.
+ *                         Threshold reducido a > 0 para feedback temprano.
+ *   - Check 12 (BLOQUEANTE) — merge dry-run contra gitlab/main. Bloquea solo
+ *                              si el merge produce conflict markers reales.
+ *                              Diseño: permite ramas multi-agente behind siempre
+ *                              que no haya conflict sustantivo — sí bloquea
+ *                              push que claramente va a romper main.
  *
  * Ver: docs/ci/CI-USAGE-GUIDELINES.md
  */
@@ -56,6 +66,40 @@ function runCheck(id, name, fn, { warningOnly = false } = {}) {
   }
 }
 
+// Estado compartido para checks que consultan gitlab/main. Evita fetches
+// duplicados entre check 8 (behind count) y check 11 (merge dry-run).
+const mainRemoteState = {
+  resolved: null,       // nombre del remote resuelto (gitlab > origin > primero)
+  fetched: false,       // true si ya se ejecutó `git fetch <remote> main`
+  behind: null,         // cuántos commits behind quedó HEAD vs <remote>/main
+};
+
+function resolveMainRemote() {
+  if (mainRemoteState.resolved !== null) return mainRemoteState.resolved;
+  try {
+    const remotes = execSync('git remote', { encoding: 'utf8' }).trim().split('\n').filter(Boolean);
+    if (remotes.length === 0) { mainRemoteState.resolved = ''; return ''; }
+    if (remotes.includes('gitlab')) { mainRemoteState.resolved = 'gitlab'; return 'gitlab'; }
+    if (remotes.includes('origin')) { mainRemoteState.resolved = 'origin'; return 'origin'; }
+    mainRemoteState.resolved = remotes[0];
+    return remotes[0];
+  } catch {
+    mainRemoteState.resolved = '';
+    return '';
+  }
+}
+
+function ensureMainFetched(remoteName) {
+  if (mainRemoteState.fetched) return true;
+  try {
+    execSync(`git fetch ${remoteName} main --quiet`, { stdio: ['ignore', 'pipe', 'ignore'], timeout: 10000 });
+    mainRemoteState.fetched = true;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function grepForbidden(pattern, paths, { excludeFiles = [], flags = '' } = {}) {
   try {
     const pathArgs = paths.filter(p => {
@@ -81,7 +125,7 @@ function grepForbidden(pattern, paths, { excludeFiles = [], flags = '' } = {}) {
 }
 
 console.log(`${c.bold}${c.cyan}Pre-push ritual — magiis-playwright${c.reset}`);
-console.log(`${c.gray}10 checks + gitleaks opcional${c.reset}`);
+console.log(`${c.gray}11 checks + gitleaks opcional${c.reset}`);
 console.log(`${c.gray}--------------------------------------------${c.reset}\n`);
 
 const totalStart = performance.now();
@@ -307,46 +351,45 @@ runCheck('7/10', 'test.fixme con justificacion comentario',
     }
   }, { warningOnly: true });
 
-// [8] Branch actualizada con main (detecta remote dinamicamente: gitlab > origin > primero disponible)
-runCheck('8/10', 'Branch cerca de main (remote dinamico)',
+// [8] Branch cerca de gitlab/main (warning — threshold agresivo post-BL-023)
+// Sigue siendo WARNING (no bloquea). El bloqueo real lo hace check 11 (merge
+// dry-run) si hay conflict sustantivo. Así permite ramas multi-agente behind
+// siempre que el merge siga siendo limpio.
+runCheck('8/11', 'Branch cerca de gitlab/main (remote dinamico)',
   () => {
-    const remoteName = (() => {
-      try {
-        const remotes = execSync('git remote', { encoding: 'utf8' }).trim().split('\n').filter(Boolean);
-        if (remotes.length === 0) return null;
-        if (remotes.includes('gitlab')) return 'gitlab';
-        if (remotes.includes('origin')) return 'origin';
-        return remotes[0];
-      } catch { return null; }
-    })();
-
+    const remoteName = resolveMainRemote();
     if (!remoteName) return { fail: false };
 
+    const fetched = ensureMainFetched(remoteName);
+    if (!fetched) {
+      return {
+        fail: true,
+        reason: `No se pudo fetchear ${remoteName} (offline?)`,
+        detail: 'el merge dry-run también se saltó en check 11',
+      };
+    }
+
     try {
-      execSync(`git fetch ${remoteName} main --quiet`, { stdio: ['ignore', 'pipe', 'ignore'], timeout: 10000 });
       const behind = parseInt(execSync(`git rev-list --count HEAD..${remoteName}/main`, {
         encoding: 'utf8',
         stdio: ['ignore', 'pipe', 'ignore'],
       }).trim()) || 0;
-      if (behind > 5) {
+      mainRemoteState.behind = behind;
+      if (behind > 0) {
         return {
           fail: true,
-          reason: `${behind} commits behind ${remoteName}/main`,
-          detail: `Considera: git rebase ${remoteName}/main`,
+          reason: `${behind} commit(s) behind ${remoteName}/main — considerá rebase`,
+          detail: `git fetch ${remoteName} main && git rebase ${remoteName}/main`,
         };
       }
       return { fail: false };
     } catch (err) {
-      return {
-        fail: true,
-        reason: `No se pudo fetchear ${remoteName} (offline?)`,
-        detail: err.message.slice(0, 100),
-      };
+      return { fail: true, reason: err.message.slice(0, 100) };
     }
   }, { warningOnly: true });
 
 // [9] BL/TC en mensaje de commit o branch
-runCheck('9/10', 'Trazabilidad BL-NNN / TC-xxx en branch o commit',
+runCheck('9/11', 'Trazabilidad BL-NNN / TC-xxx en branch o commit',
   () => {
     try {
       const branch = execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf8' }).trim();
@@ -368,7 +411,7 @@ runCheck('9/10', 'Trazabilidad BL-NNN / TC-xxx en branch o commit',
   }, { warningOnly: true });
 
 // [10] TypeScript compila
-runCheck('10/10', 'TypeScript compila (tsc --noEmit)',
+runCheck('10/11', 'TypeScript compila (tsc --noEmit)',
   () => {
     // Resolver tsc: primero pnpm exec, luego node_modules local, luego git root
     function findTsc() {
@@ -411,8 +454,74 @@ runCheck('10/10', 'TypeScript compila (tsc --noEmit)',
     }
   });
 
-// [11] Gitleaks (opcional — solo si esta instalado en PATH)
-runCheck('11/opt', 'Gitleaks secrets scan (si instalado)',
+// [11] Merge dry-run contra gitlab/main (BLOQUEANTE — previene conflicts reales)
+// Diseño BL-023: en vez de bloquear por "estar behind" (que frena flujo
+// multi-agente en paralelo), bloqueamos solo si el merge dry-run produce
+// conflict markers sustantivos. Ramas que están behind pero mergean limpias
+// pasan. Si tu rama toca los mismos hunks que main avanzado → bloqueo con
+// instrucción concreta de rebase.
+runCheck('11/11', 'Merge dry-run contra gitlab/main sin conflicts',
+  () => {
+    const remoteName = resolveMainRemote();
+    if (!remoteName) return { fail: false };
+
+    const branch = (() => {
+      try { return execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf8' }).trim(); }
+      catch { return ''; }
+    })();
+    // En main/develop mergear contra main no tiene sentido.
+    if (branch === 'main' || branch === 'develop') return { fail: false };
+
+    // Early-return: si ya sabemos (del check 8) que la rama está up-to-date,
+    // el merge-tree siempre será vacío — saltear el trabajo.
+    if (mainRemoteState.behind === 0) return { fail: false };
+
+    if (!ensureMainFetched(remoteName)) {
+      // Fetch falló (offline). Check 8 ya reporta el warning; no duplicamos.
+      return { fail: false };
+    }
+
+    try {
+      const base = execSync(`git merge-base HEAD ${remoteName}/main`, { encoding: 'utf8' }).trim();
+      const mergeOut = execSync(`git merge-tree ${base} HEAD ${remoteName}/main 2>&1`, {
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'pipe'],
+        timeout: 10000,
+        maxBuffer: 10 * 1024 * 1024,
+      });
+
+      const conflictMarkerRegex = /^(<{7}|>{7}|={7})/m;
+      if (!conflictMarkerRegex.test(mergeOut)) return { fail: false };
+
+      // Hay conflict. Mejor esfuerzo para mostrar archivos afectados.
+      // Uso [^\n]*? (lazy pero sin cruzar líneas) para evitar backtracking O(n²)
+      // sobre output potencialmente grande.
+      const conflictFiles = new Set();
+      for (const m of mergeOut.matchAll(/^(?:added in both|changed in both)[^\n]*\n(?:[^\n]*\n){0,4}?\s+our\s+\d+\s+([^\n]+)/gm)) {
+        conflictFiles.add(m[1].trim());
+      }
+      const sample = [...conflictFiles].slice(0, 5).join(', ') || '(ver git merge-tree output)';
+      return {
+        fail: true,
+        reason: `merge dry-run contra ${remoteName}/main produce conflicts`,
+        detail: `archivos conflictivos: ${sample}\n   ejecutá: git fetch ${remoteName} main && git rebase ${remoteName}/main`,
+      };
+    } catch (err) {
+      // Buffer overflow = divergencia enorme, señal útil para el dev.
+      if (err.code === 'ERR_CHILD_PROCESS_STDIO_MAXBUFFER') {
+        return {
+          fail: true,
+          reason: `merge-tree output excedió 10MB (divergencia enorme con ${remoteName}/main)`,
+          detail: `rebase manual requerido: git fetch ${remoteName} main && git rebase ${remoteName}/main`,
+        };
+      }
+      // Otros errores (timeout, comando fail): no bloquear, solo nota.
+      return { fail: false };
+    }
+  });
+
+// [12] Gitleaks (opcional — solo si esta instalado en PATH)
+runCheck('12/opt', 'Gitleaks secrets scan (si instalado)',
   () => {
     try {
       execSync('gitleaks version', { stdio: 'ignore', timeout: 5000 });
