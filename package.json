@@ -82,7 +82,9 @@
     "prepush": "node scripts/ci/pre-push.mjs",
     "prepare": "husky",
     "ci:report": "node scripts/ci/weekly-ci-report.mjs",
-    "ci:sync-check": "node scripts/ci/check-remote-sync.mjs"
+    "ci:sync-check": "node scripts/ci/check-remote-sync.mjs",
+    "sync:trello": "node --no-warnings --loader ts-node/esm scripts/trello/sync-backlog-to-trello.ts",
+    "sync:trello:dry": "node --no-warnings --loader ts-node/esm scripts/trello/sync-backlog-to-trello.ts --dry"
   },
   "keywords": [
     "playwright",
