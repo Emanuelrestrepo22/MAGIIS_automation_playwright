@@ -543,6 +543,21 @@
 - **Subrama afectada:** `scripts/backlog-bl002-008-013` (local) tiene los mismos commits BL-002/008/013 que pre-main + Merge a pre-main. No borrar hasta cerrar BL-033.
 - **Referencias:** BL-023 (causa raíz), commits `270b1b9` (merge pre-main → main original), `8b41c04` (sync forzado que reescribió historia)
 
+### BL-034 — Cleanup auditoría de ramas — 21 ramas eliminadas
+
+- **Estado:** 🟢 Hecho (2026-04-27)
+- **Prioridad:** P3
+- **Tipo:** Operacional
+- **Reportado:** 2026-04-27
+- **Resolución:** auditoría completa de ramas locales (22) + remotas (gitlab 1, github 6). Clasificación en 3 categorías:
+  - **Cat A — MERGED clean (15 locales, ahead=0):** `feature/ai-matriz-coherencia`, `feature/ai-matriz-sources-rename`, `feature/cards-policy-full-migration`, `contractor/{smoke-cleanup-edge-cards,tc-matrix-ids,tc12-optional-second-3ds,tc12-second-3ds-longer-timeout,tc14-authorize-decline,tc14-v3-decline-timeout}`, `docs/matriz-cleanup-final`, `scripts/{ci-auto-cancel,fixtures-stripe-policy}`, `smoke/nonfatal-cleanup-hold`, `carrier/cargo-a-bordo-tc1081-fix`, `chore/backlog-sync-post-tc1081` → **borradas**.
+  - **Cat B — Squash-merged confirmadas en BACKLOG (3 locales + 3 remotas github):** `chore/ci-quality-gates-foundation` (BL-005 PR #11 commit `e85befd`), `scripts/bl023-merge-policy` (BL-023 commit `8b41c04`), `carrier/cargo-a-bordo-tc1081-fix-v2` (BL-001 PR #10 commit `26766de`) → **borradas locales + push --delete a github**.
+  - **Cat C — requieren decisión (4 ramas, NO borradas):** `integration/pre-main` (espejo UAT, ver BL-033), `scripts/backlog-bl002-008-013` (subrama pre-main, ver BL-033), `scripts/ci-interruptible` (1 commit huérfano `a587184` fix matriz), `github/carrier/cargo-a-bordo-tc1081-fix` (residuo pre-sync GitHub).
+- **Validación:** pre-push hook corrió en `push --delete` con 11/11 checks verdes (38s). Merge dry-run contra `gitlab/main` OK. `git status` limpio.
+- **Estado final:** locales restantes: `main`, `integration/pre-main`, `scripts/backlog-bl002-008-013`, `scripts/ci-interruptible`. Remotas github: `main`, `integration/pre-main`, `carrier/cargo-a-bordo-tc1081-fix`. GitLab: sólo `main`.
+- **Hallazgo derivado:** BL-033 abierto (P1) — la auditoría reveló que pre-main contiene 13 commits con código BL-009/012/013/021/022 huérfanos no presentes en main.
+- **Referencias:** sesión 2026-04-27, BL-033 (hallazgo derivado), commits del cleanup en historial git
+
 ---
 
 ## Resuelto recientemente (últimos 30 días)
