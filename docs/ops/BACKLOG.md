@@ -370,6 +370,150 @@
 - **Próxima acción:** actualizar `CLAUDE.md` §"Glosario de dominio MAGIIS" o crear `docs/domain/cargo-a-bordo-rule.md` si crece el volumen de tests del feature. Por ahora la regla vive en comentarios del spec smoke.
 - **Referencias:** commit fix TC1111 (2026-04-20), mensaje del PO en sesión 2026-04-20
 
+### BL-024 — Generalizar CardResolver multi-gateway (extender contracts existentes)
+
+- **Estado:** 🔴 Pendiente
+- **Prioridad:** P2
+- **Tipo:** Arquitectura
+- **Reportado:** 2026-04-27
+- **Contexto:** El esqueleto multi-gateway ya existe en `tests/features/gateway-pg/helpers/adapters/` con stubs declarativos para `stripe`, `authorize`, `ebizcharge`, `mercado-pago`. El `CardResolver` actual (`tests/fixtures/stripe/card-resolver.ts`) sólo cubre Stripe. Para soportar la estandarización pedida por el líder (mismo flujo, distintos datos), hay que generalizar a una interfaz `resolveCard({ gateway, outcome }) → Card` polimórfica que delegue al fixture correspondiente del gateway.
+- **Alcance:** confirmado en sesión 2026-04-27 con el líder — el flujo Playwright es idéntico entre los 4 gateways, sólo cambia (a) la matriz tarjeta→outcome y (b) la presencia/ausencia de 3DS. No se requiere `GatewayRuntimeAdapter` con métodos polimórficos; alcanza el adapter declarativo + flag `requires3ds` ya presente.
+- **Próxima acción:**
+  1. Mover `tests/fixtures/stripe/` → `tests/fixtures/gateways/stripe/` (consolidación namespace).
+  2. Crear `tests/fixtures/gateways/_shared/card-resolver.ts` con firma `resolveCard({ gateway, outcome }): TestCard`.
+  3. Definir tipo común `TestCard` (`number`, `cvc`, `expMonth`, `expYear`, `holderName`, `expectedOutcome`, `requires3ds`).
+  4. Re-exportar legacy `tests/fixtures/stripe/cards.ts` para no romper consumers.
+- **Referencias:** `tests/features/gateway-pg/helpers/adapters/types.ts` (contrato declarativo existente), `tests/fixtures/stripe/card-policy.ts`, BL-025/026/027/028 (consumidores)
+
+### BL-025 — Test data Authorize.net (CVC-based outcomes)
+
+- **Estado:** 🟡 Fixtures de datos creados (2026-04-27) — pendiente runtime + spec parametrizado
+- **Prioridad:** P2
+- **Tipo:** Investigación
+- **Reportado:** 2026-04-27
+- **Contexto:** Authorize.net sandbox usa **CVV y ZIP** para disparar outcomes específicos sobre un set fijo de tarjetas por marca. **No requiere 3DS** en el flujo MAGIIS estándar. Hallazgo: el número de tarjeta NO determina el outcome (a diferencia de Stripe), sino la combinación (CVV, ZIP).
+- **Avance 2026-04-27:** estructura de datos completa creada en `tests/fixtures/authorize/` espejando el patrón Stripe:
+  - `cards.ts` — `AuthorizeTestCard` type + registry `AUTHORIZE_TEST_CARDS` con 11 entries cubriendo happy paths (Visa/MC/Amex/Discover) + unhappy (decline genérico, CVV mismatch/not-processed, AVS no-match/non-US, partial/prepaid auth).
+  - `card-policy.ts` — namespace semántico `AUTHORIZE_CARDS` con keys por intención (`SUCCESS`, `DECLINE_GENERIC`, `DECLINE_CVV`, `AVS_NO_MATCH`, etc.).
+  - `card-resolver.ts` — `resolveCard(cardId)` análogo al de Stripe pero sin "número directo" (porque varios outcomes comparten el mismo number).
+  - `README.md` — guía con tabla de triggers CVV (900/901/904) y ZIP (46282 declined, 46205 AVS, 46225-28 partial/prepaid), referencia a doc oficial.
+  - `tsc --noEmit` OK — no rompe ningún consumer de Stripe.
+- **Próxima acción:**
+  1. BL-024 — crear `tests/fixtures/gateways/_shared/resolver.ts` polimórfico para abstraer Stripe + Authorize bajo `resolveCard({ gateway, outcome })`.
+  2. Adapter runtime: cómo llenar el form de Authorize en el portal MAGIIS (selectores específicos vs reutilizar shared card form).
+  3. Validar acceso a sandbox keys (`AUTHORIZE_API_LOGIN_ID` + `AUTHORIZE_TRANSACTION_KEY`) en `.env` (pendiente confirmación con backend).
+  4. POC spec parametrizado: una sola lógica que corra contra Stripe y Authorize.
+- **Bloqueantes:** confirmar con líder si MAGIIS PROD usa Authorize.net o sólo TEST sandbox. Si no se usa, deprioritizar a P3.
+- **Referencias:** `tests/fixtures/authorize/`, BL-024 (depende), <https://developer.authorize.net/hello_world/testing_guide.html>
+
+### BL-026 — Test data MercadoPago (holderName-based outcomes)
+
+- **Estado:** 🔴 Pendiente
+- **Prioridad:** P2
+- **Tipo:** Investigación
+- **Reportado:** 2026-04-27
+- **Contexto:** MercadoPago sandbox usa el **nombre del titular** como trigger de outcome (`APRO` → approved, `OTHE` → other_error, `CONT` → pending, etc), combinado con un set fijo de tarjetas de prueba por marca. No requiere 3DS para los flujos MAGIIS habituales.
+- **Próxima acción:**
+  1. Recolectar matriz holderName→outcome de la doc oficial MP (sección "Probar integración").
+  2. Crear `tests/fixtures/gateways/mercado-pago/cards.ts` con cards Visa/Master/Amex sandbox + mapping holderName.
+  3. Setear `mercadoPagoGatewayAdapter.requires3ds = false`.
+  4. Validar acceso a sandbox keys en `.env`.
+- **Bloqueantes:** confirmar con líder si MAGIIS PROD integra MercadoPago.
+- **Referencias:** BL-024 (depende), <https://www.mercadopago.com.ar/developers/es/docs/checkout-api/integration-test/test-cards>
+
+### BL-027 — Test data eBizCharge (matriz a investigar)
+
+- **Estado:** 🔴 Pendiente
+- **Prioridad:** P3
+- **Tipo:** Investigación
+- **Reportado:** 2026-04-27
+- **Contexto:** eBizCharge es el menos documentado de los 4 gateways. Hay que investigar:
+  - ¿Qué dispara cada outcome? (CVC, número, otro)
+  - ¿Requiere 3DS o es flat charge/hold?
+  - ¿Hay sandbox público o requiere account?
+- **Próxima acción:**
+  1. Investigar docs oficiales eBizCharge testing.
+  2. Confirmar con backend MAGIIS qué tipo de integración hay (REST API, hosted iframe, JS SDK).
+  3. Si se confirma uso, replicar patrón de BL-025/026 en `tests/fixtures/gateways/ebizcharge/cards.ts`.
+- **Bloqueantes:** confirmar con líder si MAGIIS realmente usa eBizCharge en algún portal/PROD. Si no se usa, cancelar.
+- **Referencias:** BL-024 (depende)
+
+### BL-028 — Parametrizar specs Stripe con `gateway` param + skip-3DS condicional
+
+- **Estado:** 🔴 Pendiente
+- **Prioridad:** P2
+- **Tipo:** Automatización (refactor)
+- **Reportado:** 2026-04-27
+- **Contexto:** Una vez disponibles los datasets multi-gateway (BL-024 a BL-027), los ~30 specs en `tests/features/gateway-pg/specs/stripe/` se pueden refactorizar a un solo set parametrizado por `gateway: PaymentGateway`. Mismo flujo, datos resueltos por `resolveCard({ gateway, outcome })`, pasos 3DS gated por `if (adapter.requires3ds)`.
+- **Beneficio:** una sola lógica → cobertura ×4 sin duplicación. Único punto de mantenimiento. Es el "fin de implementación" pedido por el líder.
+- **Próxima acción:**
+  1. Mover `specs/stripe/` → `specs/gateways/` (sin renombrar archivos individuales todavía).
+  2. Tomar 1 spec piloto (ej. `hold/apppax-hold-no3ds.spec.ts`) y parametrizarlo con `for (const gateway of GATEWAYS)`.
+  3. Validar matriz de ejecución: `stripe × {happy,3ds,declines,hold}` debe seguir verde.
+  4. Iterar sobre el resto de specs (lote por feature).
+- **Bloqueantes:** depende de BL-024 + al menos un dataset de gateway alternativo (BL-025 Authorize).
+- **Referencias:** BL-024, BL-025, BL-026, BL-027
+
+### BL-029 — Definir contrato de reporte de pruebas para Microsoft Teams
+
+- **Estado:** 🔴 Pendiente — esperando decisión del líder
+- **Prioridad:** P2
+- **Tipo:** Decisión
+- **Reportado:** 2026-04-27
+- **Contexto:** El líder pidió un espacio en Teams donde el equipo pueda ver el informe de las pruebas automatizadas. Antes de implementar, hay que decidir el contrato del mensaje:
+  - Métricas a incluir (passed/failed/skipped, duración, branch/commit, autor, link al reporte).
+  - Formato (Adaptive Card rich vs markdown plain).
+  - Frecuencia (post-run CI, nightly, semanal, on-failure-only).
+- **Próxima acción:** sesión con líder para validar:
+  1. Canal Teams destino (qué team/channel).
+  2. Trigger de envío (cada PR, nightly, weekly, on-failure).
+  3. Métricas mínimas viables vs ricas.
+  4. Quién crea el flow Power Automate (líder vs IT).
+- **Referencias:** BL-030 (depende), BL-031 (depende), BL-032 (depende)
+
+### BL-030 — Crear flow Power Automate en canal Teams MAGIIS
+
+- **Estado:** 🔴 Pendiente — bloqueado por BL-029
+- **Prioridad:** P2
+- **Tipo:** Configuración
+- **Reportado:** 2026-04-27
+- **Contexto:** El path oficial Microsoft 2026+ para postear desde un sistema externo a un canal Teams es vía Power Automate workflow trigger HTTP. El antiguo Office 365 Connector Webhook está deprecado (EOL enero 2026). No requiere App Registration en Azure AD.
+- **Próxima acción:**
+  1. Líder o admin Teams crea flow en Power Automate: trigger `When a HTTP request is received` (genera URL secreta).
+  2. Acción siguiente: `Post adaptive card to a chat or channel` apuntando al canal acordado en BL-029.
+  3. Compartir trigger URL con QA → guardar como `TEAMS_WORKFLOW_URL` en GitHub Secrets / GitLab Masked Variables (NO commitear).
+- **Bloqueantes:** definición de canal y formato (BL-029).
+- **Referencias:** BL-029, <https://learn.microsoft.com/en-us/power-automate/teams/overview>
+
+### BL-031 — Script `scripts/teams/post-run-report.ts`
+
+- **Estado:** 🔴 Pendiente — bloqueado por BL-030
+- **Prioridad:** P2
+- **Tipo:** Mejora CI
+- **Reportado:** 2026-04-27
+- **Contexto:** Script que parsee el JSON reporter de Playwright (`test-results/results.json`) y postee un Adaptive Card al webhook URL del flow Power Automate (BL-030). Debe ser idempotente, fallar gracefully si el JSON no existe (por ejemplo si Playwright crasheó), y soportar modo `--dry` para preview.
+- **Próxima acción:**
+  1. Diseñar el shape del Adaptive Card según contrato BL-029.
+  2. Implementar parser del `playwright-report/results.json`.
+  3. Agregar `pnpm report:teams` y `pnpm report:teams:dry` a `package.json`.
+  4. Probar local con webhook real antes de meter al CI.
+- **Bloqueantes:** webhook URL del flow (BL-030).
+- **Referencias:** patrón existente en `scripts/trello/sync-backlog-to-trello.ts`, BL-030
+
+### BL-032 — Integrar reporte Teams al pipeline CI
+
+- **Estado:** 🔴 Pendiente — bloqueado por BL-031
+- **Prioridad:** P2
+- **Tipo:** Mejora CI
+- **Reportado:** 2026-04-27
+- **Contexto:** Sumar step en `.github/workflows/playwright.yml` (y `.gitlab-ci.yml` cuando vuelva el cupo) que llame a `pnpm report:teams` después de la fase de tests, con `if: always()` para reportar incluso fallos.
+- **Próxima acción:**
+  1. Agregar step `Report results to Teams` post-tests con env `TEAMS_WORKFLOW_URL` desde Secrets.
+  2. Validar primer run completo (PR de prueba con cambio mínimo).
+  3. Documentar el flujo en `docs/ci/CI-USAGE-GUIDELINES.md` (sección "Notificaciones").
+- **Bloqueantes:** script funcional (BL-031).
+- **Referencias:** BL-031, `.github/workflows/playwright.yml`, `docs/ci/CI-USAGE-GUIDELINES.md`
+
 ---
 
 ## Resuelto recientemente (últimos 30 días)
