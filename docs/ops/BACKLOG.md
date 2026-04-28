@@ -514,6 +514,35 @@
 - **Bloqueantes:** script funcional (BL-031).
 - **Referencias:** BL-031, `.github/workflows/playwright.yml`, `docs/ci/CI-USAGE-GUIDELINES.md`
 
+### BL-033 — Reconciliar `integration/pre-main` con `main` (trabajo huérfano post-BL-023)
+
+- **Estado:** 🔴 Pendiente — hallazgo crítico durante auditoría de ramas 2026-04-27
+- **Prioridad:** P1 — el BACKLOG referencia commits en pre-main como "🟢 Hecho" pero el código no está en main, los specs pueden estar rotos
+- **Tipo:** Infraestructura / deuda crítica
+- **Reportado:** 2026-04-27
+- **Contexto:** El sync forzado de remotes BL-023 (force-push de github/main alineando con gitlab/main) reescribió la historia de main. Los 13 commits originales de `integration/pre-main` quedaron huérfanos — incluyendo SHAs explícitamente referenciados en items "🟢 Hecho" del BACKLOG.
+- **Auditoría 2026-04-27:** 45 archivos / 2302 líneas existen en pre-main y NO en main. Mapping entre commits perdidos y BL- afectados:
+  - `c0b708a` instrumentación login → **BL-002** (estado actual: "🟡 Instrumentación aplicada")
+  - `8ad9370` guard apiResolved → **BL-008** (estado: "🟡 Guard aplicado")
+  - `01ad7a9` desacoplar dataGenerator → **BL-013** (estado: "🟢 Hecho" — MIENTE)
+  - `90b7da7` skeleton fixtures users → **BL-009** (estado: "🟢 SoT build commit 90b7da7" — el SHA no existe en main)
+  - `1a3de3f` migrar 5 waitForTimeout → **BL-012** (estado: "🟢 Fase 1 contractor commit 1a3de3f" — idem)
+  - `94bb3bc` draft TC1011 → **BL-021** (estado: "🟡 Draft commit 94bb3bc" — idem)
+  - `62beb78` fix smoke TC1111 → **BL-022** (estado: "🟢 Documentada")
+- **Archivos críticos ausentes en main (muestra):**
+  - `tests/fixtures/users/{types,internal/env-resolver,web-portals/dispatcher,web-portals/contractor-collaborator,mobile/driver,mobile/passenger}.ts` — fixtures users completos (BL-009)
+  - `docs/test-cases/mobile/TC1011-DRAFT.md` (BL-021)
+  - Cambios en `tests/pages/contractor/NewTravelPage.ts` (+62 líneas, BL-012)
+- **Próxima acción:**
+  1. Validar uno por uno qué commit/archivo falta en main vs lo declarado en BACKLOG.
+  2. Decidir estrategia: cherry-pick selectivo a main, merge `pre-main → main` resolviendo conflicts contra los 11 commits nuevos post-sync, o rescate manual.
+  3. Validar `pnpm check:ts` + smoke local post-reconciliación.
+  4. Una vez main tenga el contenido, actualizar los SHAs referenciados en BL-009/012/013/021/022.
+  5. Cerrar el ciclo: pre-main puede borrarse o resincronizarse hard-reset desde main para volver a ser "espejo" para el flujo UAT.
+- **Bloqueante crítico:** revisar BL-009 (fixtures users), BL-012 (waitForTimeout carrier), BL-013 (dataGenerator), BL-021 (TC1011 draft) — sus commits "🟢" pueden estar mintiendo.
+- **Subrama afectada:** `scripts/backlog-bl002-008-013` (local) tiene los mismos commits BL-002/008/013 que pre-main + Merge a pre-main. No borrar hasta cerrar BL-033.
+- **Referencias:** BL-023 (causa raíz), commits `270b1b9` (merge pre-main → main original), `8b41c04` (sync forzado que reescribió historia)
+
 ---
 
 ## Resuelto recientemente (últimos 30 días)
