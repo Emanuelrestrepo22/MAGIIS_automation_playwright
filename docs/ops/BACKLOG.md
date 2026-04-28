@@ -543,6 +543,31 @@
 - **Subrama afectada:** `scripts/backlog-bl002-008-013` (local) tiene los mismos commits BL-002/008/013 que pre-main + Merge a pre-main. No borrar hasta cerrar BL-033.
 - **Referencias:** BL-023 (causa raíz), commits `270b1b9` (merge pre-main → main original), `8b41c04` (sync forzado que reescribió historia)
 
+### BL-035 — Desactivar CI en GitHub Actions y GitLab — decisión 2026-04-27
+
+- **Estado:** 🟢 Hecho (2026-04-27)
+- **Prioridad:** P1
+- **Tipo:** Configuración
+- **Reportado:** 2026-04-27
+- **Contexto:** El líder pidió no usar CI automático ni en GitHub Actions ni en GitLab CI. La validación de calidad pasa exclusivamente por el ritual local pre-push (`pnpm pp` — 11 checks <30s) y corridas manuales `workflow_dispatch` cuando sea estrictamente necesario.
+- **Resolución:**
+  - **`.github/workflows/playwright.yml`:** triggers `push` y `pull_request` removidos. Sólo `workflow_dispatch` con inputs (`test_filter`, `headed`).
+  - **`.github/workflows/doc-terminology-check.yml`:** triggers `pull_request` y `push` removidos. Sólo `workflow_dispatch`.
+  - **`.github/workflows/playwright-prod-smoke.yml`:** ya estaba inerte (workflow_dispatch only desde abril). Sin cambios.
+  - **`.gitlab-ci.yml`:** agregado `workflow.rules: when: never` al inicio. Skip de todos los pipelines automáticos. Manual only desde UI GitLab "Run pipeline".
+  - Comentarios `⚠️ CI DESACTIVADO 2026-04-27 — decisión BL-035` agregados como header en cada archivo + instrucciones de reactivación apuntando al historial git.
+- **Política operativa post-decisión:**
+  - **Pre-push hook husky** (`pnpm pp`) sigue siendo la primera y única línea de defensa antes de pushear. 11 checks: tsc, lint, no-test-only, no-cards-deprecadas, no-credenciales-hardcodeadas, no-env-staged, no-console.log, justificación test.fixme, branch ahead-of-main, traceability BL-/TC-, merge dry-run.
+  - **Corridas Playwright** se ejecutan exclusivamente local (`pnpm test:test:smoke` etc.) o manualmente desde UI cloud cuando se quiera.
+  - **Items afectados** en otros BL- (a actualizar en commit separado per regla BACKLOG):
+    - BL-004 (Cupo CI GitLab agotado) → ya no aplica, el cupo no se consume.
+    - BL-007 (Decisión runner CI propio) → decisión tomada: no runner, no CI cloud.
+    - BL-014b (Aplicar template GitLab CI optimizado) → cancelar.
+    - BL-016 (Quality Gates progresivos) → mantener Fases 0-4 (pre-push hook), Fase 5 branch-protection sigue válida pero ahora sin status-checks-required.
+- **Push pendiente:** los cambios viven en commit local, no toman efecto en `gitlab/main` ni `github/main` hasta que se autorice el push. Mientras tanto los workflows remotos siguen activos (aunque GitLab tiene cupo agotado hasta 1 mayo).
+- **Reversibilidad:** trivial — `git revert <sha>` o restaurar manualmente los triggers removidos desde el historial.
+- **Referencias:** decisión líder 2026-04-27, BL-004, BL-007, BL-014b
+
 ### BL-034 — Cleanup auditoría de ramas — 21 ramas eliminadas
 
 - **Estado:** 🟢 Hecho (2026-04-27)
