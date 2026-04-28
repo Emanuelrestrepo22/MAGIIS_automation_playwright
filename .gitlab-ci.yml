@@ -1,14 +1,13 @@
 stages:
   - test
 
-# Auto-cancel de pipelines redundantes en ramas protegidas (main).
-# Para que `interruptible: true` tenga efecto en branches protegidas hay que
-# declararlo explícitamente a nivel workflow — de lo contrario GitLab mantiene
-# los pipelines "completos" por seguridad, incluso si uno nuevo llega al ref.
-# Ref: https://docs.gitlab.com/ee/ci/yaml/#workflowauto_cancel
+# ⚠️ CI DESACTIVADO 2026-04-27 — decisión BL-035
+# La regla `when: never` skip TODOS los pipelines GitLab automáticos.
+# Solo se pueden disparar manualmente desde la UI con "Run pipeline".
+# Para reactivar: restaurar `auto_cancel: on_new_commit: interruptible`.
 workflow:
-  auto_cancel:
-    on_new_commit: interruptible
+  rules:
+    - when: never
 
 variables:
   PNPM_CACHE_FOLDER: "$CI_PROJECT_DIR/.pnpm-store"

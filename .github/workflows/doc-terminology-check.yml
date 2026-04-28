@@ -4,16 +4,11 @@ name: Doc Terminology Check
 # sincronizada en docs, specs y cobertura. Ver:
 #   docs/gateway-pg/stripe/TRACEABILITY.md §5
 
+# ⚠️ CI DESACTIVADO 2026-04-27 — decisión BL-035
+# Triggers automáticos removidos. Sólo manual via workflow_dispatch.
+# Para reactivar: restaurar pull_request + push del historial git.
 on:
-  pull_request:
-    paths:
-      - 'docs/gateway-pg/stripe/**'
-      - 'tests/features/gateway-pg/**'
-      - 'tests/coverage/**'
-      - 'scripts/ai/check-doc-terminology.mjs'
-      - 'scripts/ai/phase*-sync-*.mjs'
-  push:
-    branches: [main]
+  workflow_dispatch:
 
 jobs:
   terminology:
