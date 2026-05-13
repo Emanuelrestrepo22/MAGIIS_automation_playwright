@@ -1,8 +1,6 @@
-import type { Page } from '@playwright/test';
-import { ErrorPopup as SharedErrorPopup } from './ErrorPopup';
-
-export class ThreeDSErrorPopup extends SharedErrorPopup {
-  constructor(page: Page) {
-    super(page);
-  }
-}
+/**
+ * @deprecated Re-export legacy — la SoT real vive en `pages/carrier/stripe/ThreeDSErrorPopup.ts`.
+ *
+ * Movido en 2026-05-13 (organización multi-gateway). Stripe-specific.
+ */
+export { ThreeDSErrorPopup } from './stripe/ThreeDSErrorPopup';
