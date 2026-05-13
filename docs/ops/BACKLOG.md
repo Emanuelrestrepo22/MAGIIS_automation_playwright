@@ -3,7 +3,7 @@
 > Fuente única de verdad para tareas pendientes, decisiones en espera y deuda técnica activa.
 > **Regla:** toda sesión de trabajo debe arrancar validando este documento. Si un ítem aparece aquí como pendiente pero ya fue resuelto por otra vía, actualizar su estado en lugar de duplicarlo.
 
-**Última revisión:** 2026-05-13 (Erika + Claude — 9 hitos en sesión, los 5 últimos vía orquestación paralela de agents: BL-033 cerrado como falso positivo + BL-012 Fase 1 carrier completada (`1fe01e5`, 8/30 = 27%) + **BL-024 completo en 6 fases** (`4b80d45`/`02617b7`/`a26aa35`/`d4bafa9`/`e13ff92`/`6cbac28`) + **BL-009 Fase 3.0** (`d916c96`) + **BL-035 cleanup** (`cdbdba2` cancela BL-004/BL-014b + reduce scope BL-017b) + **BL-028 piloto** (`f24305b` — primer spec parametrizado multi-gateway) + **BL-009 Fase 3.2** (`74dd559` — bridge polimórfico) + **BL-009 Fase 3.1** (`fb0d475` — fixture PAX_WEB + migrar loginAsPax) + **BL-009 Fase 4** (`25f6ebb` — legacy cleanup: passengers re-export + DEFAULT_CARRIER_USER_ID documentado). Anterior: 2026-04-20 (post PR #12 conflict → BL-023 detectado).
+**Última revisión:** 2026-05-13 (Erika + Claude — 10 hitos en sesión, 6 vía orquestación paralela de agents incluyendo modelo Opus para análisis QA exhaustivo: BL-033 falso positivo + BL-012 Fase 1 carrier (`1fe01e5`) + **BL-024 6 fases** (`4b80d45`/`02617b7`/`a26aa35`/`d4bafa9`/`e13ff92`/`6cbac28` — umbrella `fixtures/gateways/`) + **BL-009 Fase 3.0** (`d916c96`) + **BL-035 cleanup** (`cdbdba2`) + **BL-028 piloto** (`f24305b`) + **BL-009 Fase 3.2** (`74dd559` — bridge polimórfico) + **BL-009 Fase 3.1** (`fb0d475` — fixture PAX_WEB) + **BL-009 Fase 4** (`25f6ebb` — legacy cleanup) + **BL-025 docs Authorize** (`c2bcb16` + `3862664` — agent Opus: 7 archivos / 1529 líneas QA oficial en `docs/gateway-pg/authorize/`). Anterior: 2026-04-20 (post PR #12 conflict → BL-023 detectado).
 
 ---
 
@@ -403,7 +403,16 @@
 
 ### BL-025 — Test data Authorize.net (CVC-based outcomes)
 
-- **Estado:** 🟡 Fixtures de datos creados + migrados a umbrella `fixtures/gateways/authorize/` (BL-024 Fase 3, commit `a26aa35`, 2026-05-13) — pendiente runtime + spec parametrizado
+- **Estado:** 🟡 Fixtures + documentación QA oficial completos. Runtime POM + spec piloto pendientes (bloqueado en credenciales sandbox + decisión líder + modelo integración backend).
+- **Avance 2026-05-13 (agent Opus paralelo, commits `c2bcb16` + `3862664`):** documentación oficial QA generada en `docs/gateway-pg/authorize/` espejando estructura Stripe — 7 archivos / 1529 líneas:
+  - `README.md` (64L) — overview + onboarding
+  - `ARCHITECTURE.md` (393L) — arquitectura, mapping MAGIIS↔Authorize (Hold→authOnly, Capture→priorAuthCapture), endpoints, triggers CVV/ZIP completos, response codes, stored credentials con networkTransId
+  - `matriz_cases.md` (247L) — matriz canónica TS-AUTHORIZE-TC1001..TC1130 (happy paths, declines, CVV, AVS, partial/prepaid)
+  - `matriz_cases2.md` (212L) — edge cases TC1201..TC1323 (reembolsos, voids, stored creds reuse, ARB, Held for Review, E2E híbridos)
+  - `TRACEABILITY.md` (229L) — 25 pares Stripe↔Authorize mapeados + ~80 Stripe que NO migran + ~25 Authorize exclusivos + tabla de intents canónicos del resolver
+  - `EXTERNAL-BLOCKERS.md` (240L) — sandbox keys, decisión líder PROD, modelo integración, POM Authorize, backend hooks E2E
+  - `CHANGELOG.md` (144L) — historial BL-024 Fase 3 + pendientes BL-025
+- **Hallazgo:** `.gitignore:66` ignoraba `ARCHITECTURE.md` genéricamente y solo Stripe tenía excepción. Agregadas anticipadamente las excepciones para `mercado-pago/` y `ebizcharge/` (commit pendiente).
 - **Prioridad:** P2
 - **Tipo:** Investigación
 - **Reportado:** 2026-04-27
@@ -414,13 +423,18 @@
   - `card-resolver.ts` — `resolveCard(cardId)` análogo al de Stripe pero sin "número directo" (porque varios outcomes comparten el mismo number).
   - `README.md` — guía con tabla de triggers CVV (900/901/904) y ZIP (46282 declined, 46205 AVS, 46225-28 partial/prepaid), referencia a doc oficial.
   - `tsc --noEmit` OK — no rompe ningún consumer de Stripe.
-- **Próxima acción:**
-  1. ~~BL-024~~ ✅ Resolver polimórfico ya creado en `tests/fixtures/gateways/_shared/resolver.ts` (2026-05-13).
-  2. Adapter runtime: cómo llenar el form de Authorize en el portal MAGIIS (selectores específicos vs reutilizar shared card form).
-  3. Validar acceso a sandbox keys (`AUTHORIZE_API_LOGIN_ID` + `AUTHORIZE_TRANSACTION_KEY`) en `.env` (pendiente confirmación con backend).
-  4. POC spec parametrizado: una sola lógica que corra contra Stripe y Authorize (slot `specs/authorize/` ya reservado, ver `specs/authorize/README.md`).
-- **Bloqueantes:** confirmar con líder si MAGIIS PROD usa Authorize.net o sólo TEST sandbox. Si no se usa, deprioritizar a P3.
-- **Referencias:** `tests/fixtures/gateways/authorize/` (SoT canónica), `tests/fixtures/gateways/authorize/README.md`, `tests/features/gateway-pg/specs/authorize/README.md`, BL-024 ✅ (resolver listo), <https://developer.authorize.net/hello_world/testing_guide.html>
+- **Próxima acción** (orden recomendado, derivado de `docs/gateway-pg/authorize/EXTERNAL-BLOCKERS.md`):
+  1. ~~BL-024~~ ✅ Resolver polimórfico creado en `tests/fixtures/gateways/_shared/resolver.ts`.
+  2. ~~Documentación QA oficial~~ ✅ Generada en `docs/gateway-pg/authorize/` (2026-05-13).
+  3. **§EXTERNAL-BLOCKERS.md §1** — solicitar Merchant Interface sandbox + generar `AUTHORIZE_API_LOGIN_ID` + `AUTHORIZE_TRANSACTION_KEY`, cargar en `.env.test`. Acción humana coordinada con infra.
+  4. **§EXTERNAL-BLOCKERS.md §2** — sesión con líder técnico para confirmar si MAGIIS PROD usa Authorize.net. Si no, deprioritizar a P3.
+  5. **§EXTERNAL-BLOCKERS.md §3** — sesión con backend MAGIIS para confirmar modelo de integración (Accept.js iframe / Accept Hosted / API directa). Probable: Accept.js.
+  6. **§EXTERNAL-BLOCKERS.md §4** — DOM dump del form Authorize en portal MAGIIS y crear POM Authorize en `tests/pages/carrier/` (si difiere de Stripe Elements).
+  7. **Runtime spec piloto** — primer spec en `tests/features/gateway-pg/specs/authorize/web/carrier/hold/apppax-hold-no3ds.spec.ts` con intent HAPPY_NO_AUTH. Validar contra sandbox real.
+  8. **BL-028 ampliación** — agregar `'authorize'` al array `ACTIVE_GATEWAYS` en `tests/features/gateway-pg/specs/_parametrized/hold-happy-no3ds.parametrized.spec.ts`.
+  9. **§EXTERNAL-BLOCKERS.md §5** — validar que backend MAGIIS routea capture por `gateway` para habilitar E2E híbridos (TC1301-TC1312 en matriz_cases2).
+- **Bloqueantes:** pasos 3-9 dependen secuencialmente de acción humana (3) → decisión líder (4) → coordinación backend (5).
+- **Referencias:** `docs/gateway-pg/authorize/` (documentación QA completa — leer README.md primero), `tests/fixtures/gateways/authorize/` (SoT canónica), `tests/features/gateway-pg/specs/authorize/README.md`, BL-024 ✅, <https://developer.authorize.net/hello_world/testing_guide.html>, <https://developer.authorize.net/api/reference/index.html>
 
 ### BL-026 — Test data MercadoPago (holderName-based outcomes)
 

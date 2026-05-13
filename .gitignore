@@ -67,5 +67,7 @@ ARCHITECTURE.md
 GATEWAY_PG_ARCHITECTURE.md
 !docs/gateway-pg/stripe/ARCHITECTURE.md
 !docs/gateway-pg/authorize/ARCHITECTURE.md
+!docs/gateway-pg/mercado-pago/ARCHITECTURE.md
+!docs/gateway-pg/ebizcharge/ARCHITECTURE.md
 !docs/ARCHITECTURE.md
 .mcp.json
