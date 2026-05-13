@@ -3,7 +3,7 @@
 > Fuente única de verdad para tareas pendientes, decisiones en espera y deuda técnica activa.
 > **Regla:** toda sesión de trabajo debe arrancar validando este documento. Si un ítem aparece aquí como pendiente pero ya fue resuelto por otra vía, actualizar su estado en lugar de duplicarlo.
 
-**Última revisión:** 2026-05-13 (Erika + Claude — 7 hitos en sesión, los 3 últimos vía orquestación paralela de agents: BL-033 cerrado como falso positivo + BL-012 Fase 1 carrier completada (commit `1fe01e5`, 8/30 = 27%) + **BL-024 completo en 6 fases** (commits `4b80d45`/`02617b7`/`a26aa35`/`d4bafa9`/`e13ff92`/`6cbac28` — umbrella `fixtures/gateways/` con resolver polimórfico cross-gateway + adapters conectados + slot specs/authorize/ + READMEs canónicos) + **BL-009 Fase 3.0** (commit `d916c96`) + **BL-035 cleanup** (commit `cdbdba2` cancelando BL-004/BL-014b + reduciendo scope BL-017b) + **BL-028 piloto** (commit `f24305b` — spec parametrizado multi-gateway) + **BL-009 Fase 3.2** (commit `74dd559` — bridge polimórfico `getCredentialsForRole` migra 3 consumers)). Anterior: 2026-04-20 (post PR #12 conflict → BL-023 detectado).
+**Última revisión:** 2026-05-13 (Erika + Claude — 9 hitos en sesión, los 5 últimos vía orquestación paralela de agents: BL-033 cerrado como falso positivo + BL-012 Fase 1 carrier completada (`1fe01e5`, 8/30 = 27%) + **BL-024 completo en 6 fases** (`4b80d45`/`02617b7`/`a26aa35`/`d4bafa9`/`e13ff92`/`6cbac28`) + **BL-009 Fase 3.0** (`d916c96`) + **BL-035 cleanup** (`cdbdba2` cancela BL-004/BL-014b + reduce scope BL-017b) + **BL-028 piloto** (`f24305b` — primer spec parametrizado multi-gateway) + **BL-009 Fase 3.2** (`74dd559` — bridge polimórfico) + **BL-009 Fase 3.1** (`fb0d475` — fixture PAX_WEB + migrar loginAsPax) + **BL-009 Fase 4** (`25f6ebb` — legacy cleanup: passengers re-export + DEFAULT_CARRIER_USER_ID documentado). Anterior: 2026-04-20 (post PR #12 conflict → BL-023 detectado).
 
 ---
 
@@ -62,7 +62,8 @@
 - **Reportado:** 2026-04-19
 - **Contexto:** Falla intermitente en login dispatcher al inicio de TC05. `retry(1)` enmascara el síntoma pero no resuelve la raíz.
 - **Avance 2026-04-20:** hallazgo de arquitectura — el smoke corre `--project=chromium` y NO consume el storageState preautenticado del `global-setup.multi-role.ts`. Cada test del smoke hace `loginAsDispatcher` completo (clearCookies + re-goto + login + ensureDashboardLoaded). Instrumenté `loginAsDispatcher` y `loginAsContractor` con `runLoginPhase` para taggear la fase exacta que falla (`[login:goto]`, `[login:submit]`, `[login:dashboard]`) y emitir duración vía `debugLog('auth', ...)`. Sin cambio de control flow ni de timeouts.
-- **Próxima acción:** primera corrida local (post BL-035 CI desactivado) → clasificar el bucket dominante de falla → aplicar fix focalizado según qué fase domine. **Plan original "esperar corrida CI" inviable post BL-035 — replantear a smoke local repetido (N=5-10) con `pnpm test:test:smoke` para acumular muestra**.
+- **Próxima acción:** corrida local repetida N=5-10 con `pnpm test:test:smoke` para acumular muestra y clasificar el bucket dominante de falla → aplicar fix focalizado según qué fase domine. **Requiere acción humana**: ambiente live activo + decisión sobre interpretación de buckets (`[login:goto]` / `[login:submit]` / `[login:dashboard]`). NO es automatizable por agent sin servidor de pruebas accesible.
+- **Bloqueo operativo (2026-05-13):** este item requiere ejecución humana porque (a) los agents no tienen acceso al portal MAGIIS TEST live, (b) la clasificación de buckets demanda criterio humano sobre flakiness intermitente. La instrumentación BL-002 ya está aplicada en `gateway.fixtures.ts` desde `0299955`; sólo falta correr y analizar.
 - **Nota 2026-05-13:** el SHA original `c0b708a` referenciado en avances anteriores quedó fuera del grafo accesible desde main. El contenido fue consolidado a `main` en el commit integrador `0299955` (2026-04-21, squash MR `integration/pre-main` → `main`). Ver BL-033 para detalle del falso positivo de pérdida.
 - **Referencias:**
   - `tests/features/gateway-pg/fixtures/gateway.fixtures.ts` (instrumentación — en main vía `0299955`)
@@ -133,22 +134,24 @@
 
 ### BL-009 — Poblar `tests/fixtures/users/`
 
-- **Estado:** 🟡 Fases 2 + 3 (parcial) implementadas — Fase 1 (rotación PROD), 3.1 (pax web), 3.2 (polimórfico) y 4 pendientes
+- **Estado:** 🟡 Fases 2 / 3.0 / 3.1 / 3.2 / 4 completas — sólo Fase 1 (rotación creds PROD) pendiente con acción humana.
 - **Prioridad:** P2 (elevada desde P3 por hallazgo crítico credenciales PROD)
 - **Tipo:** Deuda técnica / organización + Seguridad
-- **Contexto:** Usuarios dispersos hardcoded en specs/fixtures. Centralizarlos como SoT — complementa `fixtures/gateways/` y `fixtures/users/passengers.ts` ya existente.
-- **Auditoría (2026-04-20):** 10 puntos de dispersión detectados. Patrón canónico válido en `passengers.ts` pero sin credenciales ni mobile roles. 3 puntos de entrada de resolución: `runtime.ts`, `gatewayPortalRuntime.ts`, `gateway.fixtures.ts`.
+- **Contexto:** Usuarios dispersos hardcoded en specs/fixtures. Centralizarlos como SoT — complementa `fixtures/gateways/` y `fixtures/users/passengers.ts`.
+- **Auditoría (2026-04-20):** 10 puntos de dispersión detectados. 3 puntos de entrada de resolución: `runtime.ts`, `gatewayPortalRuntime.ts`, `gateway.fixtures.ts` (+ 3 consumers polimórficos: `global-setup.multi-role.ts`, `TestBase.ts`, `apiClient.ts`).
 - **🚨 Hallazgo crítico:** `.env.prod` trackeado en git con `USER_CARRIER` y (probablemente) `PASS_CARRIER` en claro → rotación de credenciales + `.env.prod.local` ignorado. **Acción urgente antes de cualquier PR/merge.**
 - **Plan de ejecución:**
   1. **🔴 Emergencia creds** (pendiente acción humana): mover `.env.prod` → `.env.prod.local` (gitignored) + rotar `PASS_CARRIER_PROD` + audit git history.
-  2. **🟢 SoT build** (commit consolidado `0299955`, 2026-04-21): creados `tests/fixtures/users/{types.ts, internal/env-resolver.ts, web-portals/{dispatcher,contractor-collaborator}.ts, mobile/{driver,passenger}.ts, index.ts, README.md}`. Getters lazy de email/password via `process.env.*` con fallback sufijo env (USER_CARRIER_TEST → USER_CARRIER). `tsc --noEmit` OK.
-  3. **🟡 Adopción gradual** — sub-fases:
-     - **🟢 Fase 3.0** (commit `d916c96`, 2026-05-13): `gateway.fixtures.ts` adopta `DISPATCHER[env]` y `CONTRACTOR_COLLABORATOR[env]` para `loginAsDispatcher` y `loginAsContractor`. Nuevo helper `getCurrentUserEnvironment()` en `fixtures/users/index.ts` con narrowing tipado.
-     - **🔴 Fase 3.1**: crear fixture `PAX_WEB` (portal web pax) y migrar `loginAsPax` desde `getPortalCredentials('pax')`. No bloqueante.
-     - **🟢 Fase 3.2** (commit `74dd559`, 2026-05-13 — ejecutada en worktree paralelo): nuevo helper `getCredentialsForRole(role: AppRole, env?: UserEnvironment)` en `fixtures/users/index.ts` con mapping `'carrier'/'web' → DISPATCHER[env]` y `'contractor' → CONTRACTOR_COLLABORATOR[env]`. Migrados los 3 consumers polimórficos: `global-setup.multi-role.ts`, `tests/TestBase.ts`, `tests/shared/utils/apiClient.ts`. `resolveRoleCredentials()` del runtime queda intacto para retrocompatibilidad.
-  4. **🔴 Legacy cleanup**: deprecar `features/gateway-pg/data/passengers.ts`, quitar hardcoding en `travel-cleanup.ts` (`DEFAULT_CARRIER_USER_ID = '6715'`) y mobile harness.
-- **Próxima acción:** Fase 3.2 (bridge polimórfico para 3 consumers de roles dinámicos) — sin bloqueante técnico, ~1-2h. Fase 1 sigue requiriendo coordinación humana con infra.
-- **Referencias:** commit `d916c96` (Fase 3.0 — gateway.fixtures.ts), commit consolidado `0299955` (Fase 2 SoT), `tests/fixtures/users/README.md`, `docs/ARCHITECTURE.md` §4 "Dónde agregar data nueva", BL-024 ✅ (umbrella gateways relacionado).
+  2. **🟢 SoT build** (commit consolidado `0299955`, 2026-04-21): creados `tests/fixtures/users/{types.ts, internal/env-resolver.ts, web-portals/{dispatcher,contractor-collaborator}.ts, mobile/{driver,passenger}.ts, index.ts, README.md}`. Getters lazy de email/password via `process.env.*` con fallback sufijo env. `tsc --noEmit` OK.
+  3. **🟢 Adopción gradual** — sub-fases:
+     - **🟢 Fase 3.0** (commit `d916c96`, 2026-05-13): `gateway.fixtures.ts` adopta `DISPATCHER[env]` y `CONTRACTOR_COLLABORATOR[env]` para `loginAsDispatcher` y `loginAsContractor`. Helper `getCurrentUserEnvironment()` agregado.
+     - **🟢 Fase 3.1** (commit `fb0d475` cherry-pick de `8d783f0`, 2026-05-13 — agent paralelo): NUEVO fixture `PAX_WEB` en `tests/fixtures/users/web-portals/pax-web.ts` (suffix por env + fallback legacy `PAX_USER`/`PAX_PASS`). `PortalRole` gana valor `'pax-web'`. `loginAsPax` en `gateway.fixtures.ts` migrado a `PAX_WEB[env]`.
+     - **🟢 Fase 3.2** (commit `74dd559`, 2026-05-13 — agent paralelo): bridge polimórfico `getCredentialsForRole(role: AppRole, env?: UserEnvironment)` con mapping `'carrier'/'web' → DISPATCHER[env]` y `'contractor' → CONTRACTOR_COLLABORATOR[env]`. Los 3 consumers polimórficos migrados.
+  4. **🟢 Fase 4 — Legacy cleanup** (commit `25f6ebb`, 2026-05-13 — agent paralelo):
+     - `tests/features/gateway-pg/data/passengers.ts` invertido a thin re-export `@deprecated` desde `tests/fixtures/users/passengers.ts` (SoT canónica).
+     - `travel-cleanup.ts:DEFAULT_CARRIER_USER_ID = '6715'` validado: ya tenía override por env (`process.env.CARRIER_USER_ID`), agregado JSDoc explicando que `6715`/`1521`/`'  Remises EEUU'` son IDs estables del dispatcher TEST (no credenciales rotables). Refactor mayor (resolución dinámica vía `GET /users/me`) sólo aplica si en el futuro estos IDs varían por test/ambiente.
+- **Próxima acción:** Fase 1 — rotación PROD humana + audit git history. Sin bloqueante técnico (todo el código adoptó la SoT).
+- **Referencias:** commits `fb0d475` (Fase 3.1), `25f6ebb` (Fase 4), `74dd559` (Fase 3.2), `d916c96` (Fase 3.0), commit consolidado `0299955` (Fase 2 SoT), `tests/fixtures/users/README.md`, BL-024 ✅ (umbrella gateways relacionado).
 
 ### BL-010 — Mobile Appium Pattern 2 consolidation
 
