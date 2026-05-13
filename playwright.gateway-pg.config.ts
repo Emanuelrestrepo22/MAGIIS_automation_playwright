@@ -5,7 +5,16 @@ export default defineConfig({
   // Partimos de la config general y recortamos solo lo necesario para la suite de gateway.
   ...baseConfig,
   // Gateway-pg vive en su propia carpeta porque suele requerir reglas de ejecución más estrictas.
-  testDir: "./tests/features/gateway-pg/specs/stripe",
+  //
+  // BL-024 + organización 2026-05-13 — multi-gateway:
+  // testDir cubre TODOS los gateways (stripe/, authorize/ cuando entre runtime,
+  // _parametrized/ para specs cross-gateway). Para correr solo un gateway,
+  // usar los scripts npm específicos:
+  //   - pnpm test:test:gateway-pg:stripe     → solo specs/stripe/**
+  //   - pnpm test:test:gateway-pg:authorize  → solo specs/authorize/** (BL-025)
+  //   - pnpm test:test:gateway-pg            → todos los gateways
+  testDir: "./tests/features/gateway-pg/specs",
+  testMatch: /\.spec\.ts$/,
   fullyParallel: false,
   workers: 1,
   timeout: 120 * 1000,
