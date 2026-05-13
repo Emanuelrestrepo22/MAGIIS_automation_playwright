@@ -28,8 +28,10 @@ export type {
 export { DISPATCHER, CONTRACTOR_COLLABORATOR } from './web-portals';
 export { DRIVER, PASSENGER_APP_USER } from './mobile';
 
-// ─── Fixtures legacy (pasajeros de dominio, sin credenciales) ─────────────────
-// Mantener como re-export hasta BL-009 Fase 4 (legacy cleanup).
+// ─── Pasajeros de dominio (sin credenciales) ──────────────────────────────────
+// BL-009 Fase 4 (2026-05-13) — `./passengers` es el SoT canónico.
+// El path legacy `features/gateway-pg/data/passengers` quedó como re-export
+// thin para preservar imports existentes.
 export { PASSENGERS, type TestPassenger } from './passengers';
 
 // ─── Helpers de ambiente ──────────────────────────────────────────────────────

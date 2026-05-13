@@ -17,8 +17,28 @@
 import type { Page, Response } from '@playwright/test';
 import { cacheAuthToken, getApiHeaders } from './card-precondition';
 
+/**
+ * IDs por defecto del carrier dispatcher utilizado en TEST (remises.eeuu).
+ *
+ * Estos valores **no son secretos** — son identificadores numéricos visibles
+ * en el payload del PUT /travels/{id}/cancel y se requieren para que el
+ * backend acepte la cancelación. Se exponen como overridables vía env vars
+ * para permitir correr la suite contra otro carrier (UAT / cuenta alterna)
+ * sin tocar código:
+ *
+ *   - CARRIER_ID            (default '1521')   — carrier owner del viaje
+ *   - CARRIER_USER_ID       (default '6715')   — user dispatcher que cancela
+ *   - CARRIER_DISPLAY_NAME  (default '  Remises EEUU') — name del payload
+ *
+ * Evidencia: payload real capturado del request /cancel del portal carrier
+ * con login DISPATCHER de TEST (`USER_CARRIER` / `PASS_CARRIER`).
+ *
+ * BL-009 Fase 4 — el fallback hardcoded se mantiene a propósito: estos IDs
+ * son estables para el ambiente TEST y no clasifican como credenciales.
+ * Si en el futuro varían por test/ambiente, refactorizar a resolución
+ * dinámica via API (`GET /users/me`) o vía fixture en `tests/fixtures/users/`.
+ */
 const DEFAULT_CARRIER_ID = process.env.CARRIER_ID ?? '1521';
-/** User ID del dispatcher carrier (remises.eeuu) — confirmado en payload de cancel */
 const DEFAULT_CARRIER_USER_ID = process.env.CARRIER_USER_ID ?? '6715';
 const DEFAULT_CARRIER_NAME = process.env.CARRIER_DISPLAY_NAME ?? '  Remises EEUU';
 

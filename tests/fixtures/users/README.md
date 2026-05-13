@@ -23,7 +23,7 @@ tests/fixtures/users/
 │   ├── driver.ts                     # DRIVER (Android app)
 │   ├── passenger.ts                  # PASSENGER_APP_USER (Android app)
 │   └── index.ts                      # barrel
-├── passengers.ts                     # PASSENGERS — dominio sin creds (re-export legacy)
+├── passengers.ts                     # PASSENGERS — dominio sin creds (SoT canónico desde BL-009 Fase 4)
 ├── index.ts                          # barrel raíz — importar desde aquí
 └── README.md
 ```
@@ -140,8 +140,9 @@ El error de missing-env se dispara solo cuando se lee `fixture.email` o
   (`resolveRoleCredentials`) y `tests/config/gatewayPortalRuntime.ts`
   (`getPortalCredentials`) + scripts `tests/mobile/appium/scripts/*` para
   que consuman estos fixtures en vez de `process.env.*` directo.
-- **BACKLOG BL-009 Fase 4** — legacy cleanup: deprecar
-  `tests/features/gateway-pg/data/passengers.ts` y unificar bajo
-  `tests/fixtures/users/passengers.ts`.
+- **BACKLOG BL-009 Fase 4** (2026-05-13) — completado: `tests/fixtures/users/passengers.ts`
+  pasó a ser el SoT canónico; `tests/features/gateway-pg/data/passengers.ts` quedó
+  como thin re-export `@deprecated` para preservar imports existentes. Migración
+  definitiva de los specs consumers queda para Fase 5+.
 - **Arquitectura general:** `docs/ARCHITECTURE.md` §4 "Dónde agregar data nueva".
 - **Convención de test data:** `CLAUDE.md` §"Stripe — tarjetas de prueba".
