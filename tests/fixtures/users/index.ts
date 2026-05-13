@@ -10,6 +10,8 @@
  * Ver README.md para la guía completa.
  */
 
+import type { AppRole } from '../../config/runtime';
+import { CONTRACTOR_COLLABORATOR, DISPATCHER } from './web-portals';
 import type { UserEnvironment } from './types';
 
 // ─── Tipos públicos ───────────────────────────────────────────────────────────
@@ -54,4 +56,44 @@ export function getCurrentUserEnvironment(): UserEnvironment {
   // No usamos console.warn para evitar romper el check 6 del pre-push (sin console.log nuevos).
   // El default a 'test' es seguro porque las creds TEST son las únicas que están en .env por defecto.
   return 'test';
+}
+
+/**
+ * Bridge polimórfico: resuelve credenciales para un `AppRole` del runtime web.
+ *
+ * BL-009 Fase 3.2 (2026-05-13) — reemplaza `resolveRoleCredentials(role)` de
+ * `tests/config/runtime.ts` en consumers que reciben `AppRole` dinámicamente
+ * (global-setup.multi-role.ts, TestBase.ts, apiClient.ts).
+ *
+ * Delega al fixture canónico correspondiente y preserva la shape legacy
+ * `{ username, password }` mapeando `WebUser.email → username`. De este modo,
+ * los consumers polimórficos pueden migrar sin tocar su contrato de salida.
+ *
+ * Mapping rol → fixture:
+ *   - 'carrier'    → DISPATCHER[env]
+ *   - 'contractor' → CONTRACTOR_COLLABORATOR[env]
+ *   - 'web'        → DISPATCHER[env]  (alias histórico del runtime web genérico)
+ *
+ * `resolveRoleCredentials()` del runtime queda intacto para retrocompatibilidad.
+ *
+ * Uso:
+ *   import { getCredentialsForRole } from 'tests/fixtures/users';
+ *   const { username, password } = getCredentialsForRole(role);
+ */
+export function getCredentialsForRole(
+  role: AppRole,
+  env: UserEnvironment = getCurrentUserEnvironment(),
+): { username: string; password: string } {
+  // 'carrier' y 'web' comparten el mismo fixture: el dispatcher del SPA carrier.
+  // 'web' existe como alias histórico en runtime.ts para tests que no son
+  // estrictamente del portal carrier pero usan el mismo login.
+  const user = role === 'contractor' ? CONTRACTOR_COLLABORATOR[env] : DISPATCHER[env];
+
+  // Preservamos la shape legacy `{ username, password }` que esperan los
+  // 3 consumers (global-setup, TestBase, apiClient). El fixture canónico
+  // expone `email` — mapeamos a `username` sin renombrar el campo del SoT.
+  return {
+    username: user.email,
+    password: user.password,
+  };
 }

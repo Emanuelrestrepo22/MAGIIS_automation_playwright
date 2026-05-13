@@ -4,8 +4,8 @@ import {
   getConfiguredRoles,
   getEnvFile,
   getRoleRuntimeConfig,
-  resolveRoleCredentials,
 } from "./tests/config/runtime";
+import { getCredentialsForRole } from "./tests/fixtures/users";
 import { LoginPage } from "./tests/pages/shared";
 
 async function globalSetup(): Promise<void> {
@@ -36,7 +36,7 @@ async function globalSetup(): Promise<void> {
     // Resolvemos la configuración específica del rol en cada iteración:
     // URL, patrón de dashboard, credenciales y destino del storage.
     const roleConfig = getRoleRuntimeConfig(role);
-    const credentials = resolveRoleCredentials(role);
+    const credentials = getCredentialsForRole(role);
     const page = await browser.newPage();
 
     try {

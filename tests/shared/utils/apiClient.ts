@@ -1,7 +1,8 @@
 // tests/utils/apiClient.ts
 import type { APIRequestContext } from '@playwright/test';
 import type { AppRole } from '../../config/runtime';
-import { getDefaultRole, resolveAuthApiUrl, resolveRoleCredentials } from '../../config/runtime';
+import { getDefaultRole, resolveAuthApiUrl } from '../../config/runtime';
+import { getCredentialsForRole } from '../../fixtures/users';
 
 export class ApiClient {
 	private readonly role: AppRole;
@@ -26,7 +27,7 @@ export class ApiClient {
 
 		// El payload reutiliza las credenciales del rol actual para mantener
 		// sincronía entre login UI y login API.
-		const credentials = resolveRoleCredentials(role);
+		const credentials = getCredentialsForRole(role);
 		const payload = {
 			username: credentials.username,
 			password: credentials.password

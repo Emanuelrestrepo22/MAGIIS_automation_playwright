@@ -1,7 +1,8 @@
 import { test as base, expect } from '@playwright/test';
 import type { APIRequestContext, Page } from '@playwright/test';
 import type { AppRole, RoleCredentials, RoleRuntimeConfig } from './config/runtime';
-import { getDefaultRole, getRoleRuntimeConfig, resolveRoleCredentials } from './config/runtime';
+import { getDefaultRole, getRoleRuntimeConfig } from './config/runtime';
+import { getCredentialsForRole } from './fixtures/users';
 import { LoginPage } from './pages/shared/LoginPage';
 import { ApiClient } from './shared/utils/apiClient';
 
@@ -26,7 +27,7 @@ const test = base.extend<Fixtures>({
 
 	// Resuelve usuario y contraseña en un solo lugar para mantener consistencia.
 	credentials: async ({ role }, use: (credentials: RoleCredentials) => Promise<void>) => {
-		await use(resolveRoleCredentials(role));
+		await use(getCredentialsForRole(role));
 	},
 
 	// Entrega un page object de login listo para el rol actual.
