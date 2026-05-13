@@ -3,7 +3,7 @@
 > Fuente única de verdad para tareas pendientes, decisiones en espera y deuda técnica activa.
 > **Regla:** toda sesión de trabajo debe arrancar validando este documento. Si un ítem aparece aquí como pendiente pero ya fue resuelto por otra vía, actualizar su estado en lugar de duplicarlo.
 
-**Última revisión:** 2026-05-13 (Erika + Claude — 3 cierres mayores en sesión: BL-033 cerrado como falso positivo (integrador `0299955` ya consolidó pre-main → main el 2026-04-21; `integration/pre-main` resincronizado; SHAs huérfanos corregidos en BL-002/008/009/012/013/021/022) + BL-012 Fase 1 carrier completada (commit `1fe01e5`, 3 waitForTimeout debounce Angular migrados, métrica 8/30 = 27%) + **BL-024 completo en 6 fases** (commits `4b80d45`/`02617b7`/`a26aa35`/`d4bafa9`/`e13ff92`/`6cbac28` — umbrella `fixtures/gateways/` con resolver polimórfico cross-gateway + adapters conectados + slot specs/authorize/ + READMEs canónicos)). Anterior: 2026-04-20 (post PR #12 conflict → BL-023 detectado).
+**Última revisión:** 2026-05-13 (Erika + Claude — 4 hitos en sesión: BL-033 cerrado como falso positivo + BL-012 Fase 1 carrier completada (commit `1fe01e5`, 8/30 = 27%) + **BL-024 completo en 6 fases** (commits `4b80d45`/`02617b7`/`a26aa35`/`d4bafa9`/`e13ff92`/`6cbac28` — umbrella `fixtures/gateways/` con resolver polimórfico cross-gateway + adapters conectados + slot specs/authorize/ + READMEs canónicos) + **BL-009 Fase 3.0** (commit `d916c96`, `gateway.fixtures.ts` adopta `DISPATCHER`/`CONTRACTOR_COLLABORATOR` con helper `getCurrentUserEnvironment()`)). Anterior: 2026-04-20 (post PR #12 conflict → BL-023 detectado).
 
 ---
 
@@ -137,19 +137,22 @@
 
 ### BL-009 — Poblar `tests/fixtures/users/`
 
-- **Estado:** 🟡 Fase 2 implementada (2026-04-20) — Fase 1/3/4 pendientes
+- **Estado:** 🟡 Fases 2 + 3 (parcial) implementadas — Fase 1 (rotación PROD), 3.1 (pax web), 3.2 (polimórfico) y 4 pendientes
 - **Prioridad:** P2 (elevada desde P3 por hallazgo crítico credenciales PROD)
 - **Tipo:** Deuda técnica / organización + Seguridad
-- **Contexto:** Usuarios dispersos hardcoded en specs/fixtures. Centralizarlos como SoT — complementa `fixtures/stripe/` y `fixtures/users/passengers.ts` ya existente.
+- **Contexto:** Usuarios dispersos hardcoded en specs/fixtures. Centralizarlos como SoT — complementa `fixtures/gateways/` y `fixtures/users/passengers.ts` ya existente.
 - **Auditoría (2026-04-20):** 10 puntos de dispersión detectados. Patrón canónico válido en `passengers.ts` pero sin credenciales ni mobile roles. 3 puntos de entrada de resolución: `runtime.ts`, `gatewayPortalRuntime.ts`, `gateway.fixtures.ts`.
 - **🚨 Hallazgo crítico:** `.env.prod` trackeado en git con `USER_CARRIER` y (probablemente) `PASS_CARRIER` en claro → rotación de credenciales + `.env.prod.local` ignorado. **Acción urgente antes de cualquier PR/merge.**
-- **Plan de ejecución (4 fases):**
+- **Plan de ejecución:**
   1. **🔴 Emergencia creds** (pendiente acción humana): mover `.env.prod` → `.env.prod.local` (gitignored) + rotar `PASS_CARRIER_PROD` + audit git history.
-  2. **🟢 SoT build** (commit consolidado `0299955`, 2026-04-21 — SHA original `90b7da7` del 2026-04-20 quedó fuera del grafo de main; ver BL-033): creados `tests/fixtures/users/{types.ts, internal/env-resolver.ts, web-portals/{dispatcher,contractor-collaborator}.ts, mobile/{driver,passenger}.ts, index.ts, README.md}`. Getters lazy de email/password via `process.env.*` con fallback sufijo env (USER_CARRIER_TEST → USER_CARRIER). `tsc --noEmit` OK.
-  3. **🔴 Adopción gradual**: migrar `runtime.ts` + `gatewayPortalRuntime.ts` + `gateway.fixtures.ts` + mobile scripts a los fixtures nuevos (consumers de los legacy intactos).
+  2. **🟢 SoT build** (commit consolidado `0299955`, 2026-04-21): creados `tests/fixtures/users/{types.ts, internal/env-resolver.ts, web-portals/{dispatcher,contractor-collaborator}.ts, mobile/{driver,passenger}.ts, index.ts, README.md}`. Getters lazy de email/password via `process.env.*` con fallback sufijo env (USER_CARRIER_TEST → USER_CARRIER). `tsc --noEmit` OK.
+  3. **🟡 Adopción gradual** — sub-fases:
+     - **🟢 Fase 3.0** (commit `d916c96`, 2026-05-13): `gateway.fixtures.ts` adopta `DISPATCHER[env]` y `CONTRACTOR_COLLABORATOR[env]` para `loginAsDispatcher` y `loginAsContractor`. Nuevo helper `getCurrentUserEnvironment()` en `fixtures/users/index.ts` con narrowing tipado.
+     - **🔴 Fase 3.1**: crear fixture `PAX_WEB` (portal web pax) y migrar `loginAsPax` desde `getPortalCredentials('pax')`. No bloqueante.
+     - **🔴 Fase 3.2**: migrar consumers polimórficos (`global-setup.multi-role.ts`, `tests/TestBase.ts`, `tests/shared/utils/apiClient.ts`) que usan `resolveRoleCredentials(role: AppRole)`. Requiere helper `getCredentialsForRole(role)` que delegue a los fixtures users según el rol.
   4. **🔴 Legacy cleanup**: deprecar `features/gateway-pg/data/passengers.ts`, quitar hardcoding en `travel-cleanup.ts` (`DEFAULT_CARRIER_USER_ID = '6715'`) y mobile harness.
-- **Próxima acción:** Fase 1 requiere rotación humana coordinada con infra. Fase 3 es el siguiente paso técnico ejecutable (adoptar los fixtures nuevos en los 3 puntos de entrada).
-- **Referencias:** commit consolidado `0299955` (squash MR pre-main → main 2026-04-21), `tests/fixtures/users/README.md`, `docs/ARCHITECTURE.md` §4 "Dónde agregar data nueva", BL-033 (falso positivo).
+- **Próxima acción:** Fase 3.2 (bridge polimórfico para 3 consumers de roles dinámicos) — sin bloqueante técnico, ~1-2h. Fase 1 sigue requiriendo coordinación humana con infra.
+- **Referencias:** commit `d916c96` (Fase 3.0 — gateway.fixtures.ts), commit consolidado `0299955` (Fase 2 SoT), `tests/fixtures/users/README.md`, `docs/ARCHITECTURE.md` §4 "Dónde agregar data nueva", BL-024 ✅ (umbrella gateways relacionado).
 
 ### BL-010 — Mobile Appium Pattern 2 consolidation
 
