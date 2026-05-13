@@ -66,5 +66,6 @@ CLAUDE.md
 ARCHITECTURE.md
 GATEWAY_PG_ARCHITECTURE.md
 !docs/gateway-pg/stripe/ARCHITECTURE.md
+!docs/gateway-pg/authorize/ARCHITECTURE.md
 !docs/ARCHITECTURE.md
 .mcp.json
