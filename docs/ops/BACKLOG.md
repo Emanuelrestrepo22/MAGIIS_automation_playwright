@@ -3,7 +3,7 @@
 > Fuente única de verdad para tareas pendientes, decisiones en espera y deuda técnica activa.
 > **Regla:** toda sesión de trabajo debe arrancar validando este documento. Si un ítem aparece aquí como pendiente pero ya fue resuelto por otra vía, actualizar su estado en lugar de duplicarlo.
 
-**Última revisión:** 2026-05-13 (Erika + Claude — 2 cierres en sesión: BL-033 cerrado como falso positivo (integrador `0299955` ya consolidó pre-main → main el 2026-04-21; `integration/pre-main` resincronizado; SHAs huérfanos corregidos en BL-002/008/009/012/013/021/022) + BL-012 Fase 1 carrier completada (commit `1fe01e5`, 3 waitForTimeout debounce Angular migrados, métrica 8/30 = 27%)). Anterior: 2026-04-20 (post PR #12 conflict → BL-023 detectado).
+**Última revisión:** 2026-05-13 (Erika + Claude — 3 cierres mayores en sesión: BL-033 cerrado como falso positivo (integrador `0299955` ya consolidó pre-main → main el 2026-04-21; `integration/pre-main` resincronizado; SHAs huérfanos corregidos en BL-002/008/009/012/013/021/022) + BL-012 Fase 1 carrier completada (commit `1fe01e5`, 3 waitForTimeout debounce Angular migrados, métrica 8/30 = 27%) + **BL-024 completo en 6 fases** (commits `4b80d45`/`02617b7`/`a26aa35`/`d4bafa9`/`e13ff92`/`6cbac28` — umbrella `fixtures/gateways/` con resolver polimórfico cross-gateway + adapters conectados + slot specs/authorize/ + READMEs canónicos)). Anterior: 2026-04-20 (post PR #12 conflict → BL-023 detectado).
 
 ---
 
@@ -376,22 +376,32 @@
 
 ### BL-024 — Generalizar CardResolver multi-gateway (extender contracts existentes)
 
-- **Estado:** 🔴 Pendiente
+- **Estado:** 🟢 Hecho (2026-05-13) — 6 fases completadas en una sesión, todo funcional, pre-push 11/11 OK en cada commit.
 - **Prioridad:** P2
 - **Tipo:** Arquitectura
 - **Reportado:** 2026-04-27
-- **Contexto:** El esqueleto multi-gateway ya existe en `tests/features/gateway-pg/helpers/adapters/` con stubs declarativos para `stripe`, `authorize`, `ebizcharge`, `mercado-pago`. El `CardResolver` actual (`tests/fixtures/stripe/card-resolver.ts`) sólo cubre Stripe. Para soportar la estandarización pedida por el líder (mismo flujo, distintos datos), hay que generalizar a una interfaz `resolveCard({ gateway, outcome }) → Card` polimórfica que delegue al fixture correspondiente del gateway.
-- **Alcance:** confirmado en sesión 2026-04-27 con el líder — el flujo Playwright es idéntico entre los 4 gateways, sólo cambia (a) la matriz tarjeta→outcome y (b) la presencia/ausencia de 3DS. No se requiere `GatewayRuntimeAdapter` con métodos polimórficos; alcanza el adapter declarativo + flag `requires3ds` ya presente.
-- **Próxima acción:**
-  1. Mover `tests/fixtures/stripe/` → `tests/fixtures/gateways/stripe/` (consolidación namespace).
-  2. Crear `tests/fixtures/gateways/_shared/card-resolver.ts` con firma `resolveCard({ gateway, outcome }): TestCard`.
-  3. Definir tipo común `TestCard` (`number`, `cvc`, `expMonth`, `expYear`, `holderName`, `expectedOutcome`, `requires3ds`).
-  4. Re-exportar legacy `tests/fixtures/stripe/cards.ts` para no romper consumers.
-- **Referencias:** `tests/features/gateway-pg/helpers/adapters/types.ts` (contrato declarativo existente), `tests/fixtures/stripe/card-policy.ts`, BL-025/026/027/028 (consumidores)
+- **Resolución (6 fases):**
+  1. **Fase 1 — Invertir dirección SoT Stripe** (commit `4b80d45`): el contenido real (registries, env-resolution, types) se movió de `features/gateway-pg/data/stripe-cards.ts` + `stripeTestData.ts` (legacy) a `tests/fixtures/stripe/cards.ts`. Los legacy quedaron como thin re-exports. API pública sin cambios.
+  2. **Fase 2 — Separar dominio de gateway** (commit `02617b7`): `TEST_DATA` (client, passenger, origin, destination) extraído a `tests/features/gateway-pg/data/journey-defaults.ts` (archivo neutro). `stripeTestData.ts` queda 100% re-export. Habilita que tests Authorize/MP/Ebiz reutilicen los datos de dominio sin importar un archivo Stripe-named.
+  3. **Fase 3 — Crear umbrella `fixtures/gateways/`** (commit `a26aa35`): nueva estructura unificada con `_shared/` (types comunes + resolver polimórfico) + `stripe/` + `authorize/` + slots `mercado-pago/` + `ebizcharge/`. SoT canónica REAL bajo `gateways/<gateway>/`; el path anterior `fixtures/<gateway>/` quedó como thin re-export. Resolver `resolveCard({ gateway, intent })` normaliza a `GenericTestCard` con campos comunes. Mapping `STRIPE_INTENT_MAP` (6 intents soportados) y `AUTHORIZE_INTENT_MAP` (3 intents — sin 3DS, sin DECLINE_CAPTURE).
+  4. **Fase 4 — Conectar adapters con fixtures** (commit `d4bafa9`): `helpers/adapters/index.ts` re-exporta el resolver cross-gateway + tipos. Nueva `assertAdapterFixtureConsistency()` valida en runtime que `requires3ds` matchee con el comportamiento real. JSDoc de cada adapter linkea a su fixture. Armonizado naming `'mercado-pago'` (con guion) entre `GatewayName` y `PaymentGateway`.
+  5. **Fase 5 — Slot `specs/authorize/` reservado** (commit `e13ff92`): directorio espejo de `specs/stripe/` con README plantilla que documenta por qué está vacío, estructura propuesta, patrón parametrizado recomendado y checklist de activación.
+  6. **Fase 6 — Documentación canónica** (commit `6cbac28`): `fixtures/gateways/stripe/README.md` y `fixtures/gateways/authorize/README.md` con contenido completo (tablas, política de elección, patrón resolver shared). `fixtures/stripe/README.md` y `fixtures/authorize/README.md` marcados como pointers. CLAUDE.md (local, gitignored) gana sección "Multi-gateway: dónde vive qué".
+- **Principio rector consolidado:** *El comportamiento esperado del sistema es constante; sólo los datos de entrada cambian por pasarela.* Permite specs parametrizables `test.describe.each(GATEWAYS)` con `resolveCard({ gateway, intent })` + `JOURNEY_DEFAULTS` constantes.
+- **Aprendizajes incorporados:**
+  - Pre-push check 2 (cards 3155) requirió ampliar allowlist a los nuevos paths SoT.
+  - `GatewayName` (`_shared/types.ts`) debe coincidir EXACTAMENTE con `PaymentGateway` (`contracts/gateway-pg.types.ts`) — naming `'mercado-pago'` con guion.
+  - Thin re-exports preservan 100% de la API legacy → migración sin romper specs existentes.
+- **Habilita ahora:**
+  - **BL-025**: Authorize SoT ya vive en `fixtures/gateways/authorize/` ✓. Falta runtime (POM/spec).
+  - **BL-026**: slot `mercado-pago/` reservado con README — esperando confirmación uso.
+  - **BL-027**: slot `ebizcharge/` reservado con README — esperando confirmación uso.
+  - **BL-028**: resolver cross-gateway listo. Falta solo el spec piloto parametrizado.
+- **Referencias:** commits Fase 1-6, `tests/fixtures/gateways/README.md`, `tests/fixtures/gateways/_shared/`, `tests/features/gateway-pg/helpers/adapters/index.ts`, BL-025/026/027/028 (consumidores), `CLAUDE.md` §"Multi-gateway: dónde vive qué".
 
 ### BL-025 — Test data Authorize.net (CVC-based outcomes)
 
-- **Estado:** 🟡 Fixtures de datos creados (2026-04-27) — pendiente runtime + spec parametrizado
+- **Estado:** 🟡 Fixtures de datos creados + migrados a umbrella `fixtures/gateways/authorize/` (BL-024 Fase 3, commit `a26aa35`, 2026-05-13) — pendiente runtime + spec parametrizado
 - **Prioridad:** P2
 - **Tipo:** Investigación
 - **Reportado:** 2026-04-27
@@ -403,31 +413,32 @@
   - `README.md` — guía con tabla de triggers CVV (900/901/904) y ZIP (46282 declined, 46205 AVS, 46225-28 partial/prepaid), referencia a doc oficial.
   - `tsc --noEmit` OK — no rompe ningún consumer de Stripe.
 - **Próxima acción:**
-  1. BL-024 — crear `tests/fixtures/gateways/_shared/resolver.ts` polimórfico para abstraer Stripe + Authorize bajo `resolveCard({ gateway, outcome })`.
+  1. ~~BL-024~~ ✅ Resolver polimórfico ya creado en `tests/fixtures/gateways/_shared/resolver.ts` (2026-05-13).
   2. Adapter runtime: cómo llenar el form de Authorize en el portal MAGIIS (selectores específicos vs reutilizar shared card form).
   3. Validar acceso a sandbox keys (`AUTHORIZE_API_LOGIN_ID` + `AUTHORIZE_TRANSACTION_KEY`) en `.env` (pendiente confirmación con backend).
-  4. POC spec parametrizado: una sola lógica que corra contra Stripe y Authorize.
+  4. POC spec parametrizado: una sola lógica que corra contra Stripe y Authorize (slot `specs/authorize/` ya reservado, ver `specs/authorize/README.md`).
 - **Bloqueantes:** confirmar con líder si MAGIIS PROD usa Authorize.net o sólo TEST sandbox. Si no se usa, deprioritizar a P3.
-- **Referencias:** `tests/fixtures/authorize/`, BL-024 (depende), <https://developer.authorize.net/hello_world/testing_guide.html>
+- **Referencias:** `tests/fixtures/gateways/authorize/` (SoT canónica), `tests/fixtures/gateways/authorize/README.md`, `tests/features/gateway-pg/specs/authorize/README.md`, BL-024 ✅ (resolver listo), <https://developer.authorize.net/hello_world/testing_guide.html>
 
 ### BL-026 — Test data MercadoPago (holderName-based outcomes)
 
-- **Estado:** 🔴 Pendiente
+- **Estado:** 🔴 Pendiente — slot `tests/fixtures/gateways/mercado-pago/` reservado con README (BL-024 Fase 3, 2026-05-13). Resolver cross-gateway lanza "no soportado" hasta que se pueble.
 - **Prioridad:** P2
 - **Tipo:** Investigación
 - **Reportado:** 2026-04-27
 - **Contexto:** MercadoPago sandbox usa el **nombre del titular** como trigger de outcome (`APRO` → approved, `OTHE` → other_error, `CONT` → pending, etc), combinado con un set fijo de tarjetas de prueba por marca. No requiere 3DS para los flujos MAGIIS habituales.
 - **Próxima acción:**
   1. Recolectar matriz holderName→outcome de la doc oficial MP (sección "Probar integración").
-  2. Crear `tests/fixtures/gateways/mercado-pago/cards.ts` con cards Visa/Master/Amex sandbox + mapping holderName.
-  3. Setear `mercadoPagoGatewayAdapter.requires3ds = false`.
-  4. Validar acceso a sandbox keys en `.env`.
+  2. Poblar `tests/fixtures/gateways/mercado-pago/cards.ts` + `card-policy.ts` + `card-resolver.ts` (slot ya creado).
+  3. Agregar mapping en `tests/fixtures/gateways/_shared/resolver.ts` (`MERCADO_PAGO_INTENT_MAP`).
+  4. Verificar `mercadoPagoGatewayAdapter.requires3ds = false`.
+  5. Validar acceso a sandbox keys en `.env`.
 - **Bloqueantes:** confirmar con líder si MAGIIS PROD integra MercadoPago.
-- **Referencias:** BL-024 (depende), <https://www.mercadopago.com.ar/developers/es/docs/checkout-api/integration-test/test-cards>
+- **Referencias:** `tests/fixtures/gateways/mercado-pago/README.md`, BL-024 ✅ (umbrella listo), <https://www.mercadopago.com.ar/developers/es/docs/checkout-api/integration-test/test-cards>
 
 ### BL-027 — Test data eBizCharge (matriz a investigar)
 
-- **Estado:** 🔴 Pendiente
+- **Estado:** 🔴 Pendiente — slot `tests/fixtures/gateways/ebizcharge/` reservado con README (BL-024 Fase 3, 2026-05-13). Resolver cross-gateway lanza "no soportado" hasta que se pueble.
 - **Prioridad:** P3
 - **Tipo:** Investigación
 - **Reportado:** 2026-04-27
@@ -438,25 +449,27 @@
 - **Próxima acción:**
   1. Investigar docs oficiales eBizCharge testing.
   2. Confirmar con backend MAGIIS qué tipo de integración hay (REST API, hosted iframe, JS SDK).
-  3. Si se confirma uso, replicar patrón de BL-025/026 en `tests/fixtures/gateways/ebizcharge/cards.ts`.
+  3. Si se confirma uso, poblar `tests/fixtures/gateways/ebizcharge/cards.ts` + `card-policy.ts` + `card-resolver.ts` (slot ya creado).
+  4. Agregar mapping en `_shared/resolver.ts` (`EBIZCHARGE_INTENT_MAP`).
 - **Bloqueantes:** confirmar con líder si MAGIIS realmente usa eBizCharge en algún portal/PROD. Si no se usa, cancelar.
-- **Referencias:** BL-024 (depende)
+- **Referencias:** `tests/fixtures/gateways/ebizcharge/README.md`, BL-024 ✅ (umbrella listo)
 
 ### BL-028 — Parametrizar specs Stripe con `gateway` param + skip-3DS condicional
 
-- **Estado:** 🔴 Pendiente
+- **Estado:** 🟡 Infraestructura lista (BL-024 ✅ 2026-05-13). Pendiente spec piloto.
 - **Prioridad:** P2
 - **Tipo:** Automatización (refactor)
 - **Reportado:** 2026-04-27
-- **Contexto:** Una vez disponibles los datasets multi-gateway (BL-024 a BL-027), los ~30 specs en `tests/features/gateway-pg/specs/stripe/` se pueden refactorizar a un solo set parametrizado por `gateway: PaymentGateway`. Mismo flujo, datos resueltos por `resolveCard({ gateway, outcome })`, pasos 3DS gated por `if (adapter.requires3ds)`.
+- **Contexto:** Con BL-024 completado, ahora existe `resolveCard({ gateway, intent })` polimórfico + `GenericTestCard` shape común + adapter `requires3ds` flag para gating 3DS condicional. Los ~30 specs en `tests/features/gateway-pg/specs/stripe/` pueden refactorizarse a un set parametrizado.
 - **Beneficio:** una sola lógica → cobertura ×4 sin duplicación. Único punto de mantenimiento. Es el "fin de implementación" pedido por el líder.
 - **Próxima acción:**
-  1. Mover `specs/stripe/` → `specs/gateways/` (sin renombrar archivos individuales todavía).
-  2. Tomar 1 spec piloto (ej. `hold/apppax-hold-no3ds.spec.ts`) y parametrizarlo con `for (const gateway of GATEWAYS)`.
-  3. Validar matriz de ejecución: `stripe × {happy,3ds,declines,hold}` debe seguir verde.
+  1. ~~Crear umbrella + resolver~~ ✅ Hecho en BL-024.
+  2. Tomar 1 spec piloto (ej. `hold/apppax-hold-no3ds.spec.ts`) y parametrizarlo con `test.describe.each(GATEWAYS)`.
+  3. Validar matriz de ejecución: `stripe × {happy,3ds,declines,hold}` debe seguir verde tras el refactor.
   4. Iterar sobre el resto de specs (lote por feature).
-- **Bloqueantes:** depende de BL-024 + al menos un dataset de gateway alternativo (BL-025 Authorize).
-- **Referencias:** BL-024, BL-025, BL-026, BL-027
+  5. Cuando Authorize tenga runtime (BL-025), agregar `gateway: 'authorize'` a `GATEWAYS` y validar specs con intents soportados.
+- **Bloqueantes:** ya ningún técnico — todo el plumbing existe. Bloqueante de scope: depende de BL-025 para validar la parametrización contra un segundo gateway real.
+- **Referencias:** BL-024 ✅, BL-025, `tests/fixtures/gateways/_shared/resolver.ts`, `tests/features/gateway-pg/helpers/adapters/index.ts`, `tests/features/gateway-pg/specs/authorize/README.md`
 
 ### BL-029 — Definir contrato de reporte de pruebas para Microsoft Teams
 
