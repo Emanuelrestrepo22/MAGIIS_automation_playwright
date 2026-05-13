@@ -169,6 +169,7 @@ runCheck('2/11', 'Sin cards 3155 (LEGACY_3DS_SUCCESS) fuera de overrides',
     const excludeFiles = [
       'tests/data/gateway-pg/stripe-cards.ts',
       'tests/features/gateway-pg/data/stripe-cards.ts',
+      'tests/fixtures/stripe/cards.ts',           // BL-024 Fase 1 — SoT canónica
       'tests/fixtures/stripe/card-policy.ts',
       'tests/e2e/shared/e2eFlowConfig.ts',
       'tests/features/gateway-pg/data/driver-happy-path-scenarios.ts',
