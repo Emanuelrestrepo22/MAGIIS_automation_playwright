@@ -6,3 +6,4 @@
 
 export { DISPATCHER } from './dispatcher';
 export { CONTRACTOR_COLLABORATOR } from './contractor-collaborator';
+export { PAX_WEB } from './pax-web';

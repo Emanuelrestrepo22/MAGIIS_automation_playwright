@@ -4,7 +4,7 @@
  * BL-009 Fase 2 — punto de entrada canónico. Todo import nuevo de
  * credenciales/usuarios debe partir desde aquí:
  *
- *   import { DISPATCHER, CONTRACTOR_COLLABORATOR, DRIVER, PASSENGER_APP_USER } from 'tests/fixtures/users';
+ *   import { DISPATCHER, CONTRACTOR_COLLABORATOR, PAX_WEB, DRIVER, PASSENGER_APP_USER } from 'tests/fixtures/users';
  *   import { PASSENGERS, type TestPassenger } from 'tests/fixtures/users';
  *
  * Ver README.md para la guía completa.
@@ -25,7 +25,7 @@ export type {
 } from './types';
 
 // ─── Fixtures con credenciales ────────────────────────────────────────────────
-export { DISPATCHER, CONTRACTOR_COLLABORATOR } from './web-portals';
+export { DISPATCHER, CONTRACTOR_COLLABORATOR, PAX_WEB } from './web-portals';
 export { DRIVER, PASSENGER_APP_USER } from './mobile';
 
 // ─── Pasajeros de dominio (sin credenciales) ──────────────────────────────────

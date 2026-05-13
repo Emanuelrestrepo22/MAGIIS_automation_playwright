@@ -1,11 +1,12 @@
 import type { Page } from '@playwright/test';
 import { expect } from '@playwright/test';
-import { getPortalCredentials, getPortalUrl } from '../../../config/gatewayPortalRuntime';
+import { getPortalUrl } from '../../../config/gatewayPortalRuntime';
 import { resolveLoginPath } from '../../../config/runtime';
 import { debugLog } from '../../../helpers/debug';
 import {
 	CONTRACTOR_COLLABORATOR,
 	DISPATCHER,
+	PAX_WEB,
 	getCurrentUserEnvironment,
 } from '../../../fixtures/users';
 import { DashboardPage } from '../../../pages/carrier';
@@ -80,16 +81,21 @@ export async function loginAsContractor(page: Page): Promise<void> {
 /**
  * Login del portal pax cuando la prueba nace del wallet.
  *
- * NOTA BL-009 Fase 3: este consumer NO se migró todavía porque no existe
- * fixture web pax en `tests/fixtures/users/web-portals/`. Los fixtures
- * mobile (PASSENGER_APP_USER) son para Appium, no para login web. Crear
- * fixture web pax es Fase 3.1 si se necesita estandarizar el portal pax.
+ * BL-009 Fase 3.1 (2026-05-13) — credenciales resueltas vía `PAX_WEB[env]`
+ * (SoT canónica `tests/fixtures/users/web-portals/pax-web.ts`). Antes leía
+ * `getPortalCredentials('pax')` que delegaba a `process.env.PAX_USER` directo
+ * sin suffix por ambiente. La URL del portal sigue viniendo de
+ * `gatewayPortalRuntime.ts:getPortalUrl('pax')` (legítimo — config de routing,
+ * no de credenciales).
+ *
+ * `getPortalCredentials('pax')` del runtime legacy queda intacto para
+ * retrocompatibilidad de otros consumers eventuales.
  */
 export async function loginAsPax(page: Page): Promise<void> {
-	const { user, pass } = getPortalCredentials('pax');
+	const paxUser = PAX_WEB[getCurrentUserEnvironment()];
 	const loginPage = new LoginPage(page, 'pax', getPortalUrl('pax'));
 	await loginPage.goto();
-	await loginPage.login(user, pass);
+	await loginPage.login(paxUser.email, paxUser.password);
 	await page.waitForURL('**/home**', { timeout: 15_000 });
 }
 

@@ -15,8 +15,8 @@
 /** Ambientes soportados para resolución de credenciales. */
 export type UserEnvironment = 'test' | 'uat' | 'prod';
 
-/** Roles de portal web (SPA carrier/contractor). */
-export type PortalRole = 'dispatcher' | 'contractor-collaborator';
+/** Roles de portal web (SPA carrier/contractor/pax web). */
+export type PortalRole = 'dispatcher' | 'contractor-collaborator' | 'pax-web';
 
 /** Roles de app mobile Android (Appium). */
 export type MobileRole = 'driver' | 'passenger';
