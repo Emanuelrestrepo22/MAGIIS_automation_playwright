@@ -1,8 +1,13 @@
 import type { Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 import { getPortalCredentials, getPortalUrl } from '../../../config/gatewayPortalRuntime';
-import { resolveRoleCredentials, resolveLoginPath } from '../../../config/runtime';
+import { resolveLoginPath } from '../../../config/runtime';
 import { debugLog } from '../../../helpers/debug';
+import {
+	CONTRACTOR_COLLABORATOR,
+	DISPATCHER,
+	getCurrentUserEnvironment,
+} from '../../../fixtures/users';
 import { DashboardPage } from '../../../pages/carrier';
 import { LoginPage } from '../../../pages/shared';
 import { STRIPE_CVC, STRIPE_EXPIRY, STRIPE_TEST_CARDS, TEST_DATA } from '../data/stripeTestData';
@@ -33,30 +38,54 @@ async function runLoginPhase<T>(role: string, phase: LoginPhase, fn: () => Promi
 	}
 }
 
+/**
+ * Login rápido del portal carrier para journeys disparados por dispatcher.
+ *
+ * BL-009 Fase 3 (2026-05-13) — credenciales resueltas vía `DISPATCHER[env]`
+ * (SoT canónica `tests/fixtures/users/web-portals/dispatcher.ts`). Antes leía
+ * `getPortalCredentials('carrier')` que delegaba a `process.env.CARRIER_USER`.
+ * La URL del portal sigue viniendo de `gatewayPortalRuntime.ts` (legítimo —
+ * config de URL, no de credenciales).
+ */
 export async function loginAsDispatcher(page: Page): Promise<void> {
-	// Login rápido del portal carrier para journeys disparados por dispatcher.
-	const { user, pass } = getPortalCredentials('carrier');
+	const dispatcher = DISPATCHER[getCurrentUserEnvironment()];
 	const loginPage = new LoginPage(page, 'carrier', getPortalUrl('carrier'));
 	const dashboardPage = new DashboardPage(page);
 	await runLoginPhase('carrier', 'goto', () => loginPage.goto());
-	await runLoginPhase('carrier', 'submit', () => loginPage.login(user, pass));
+	await runLoginPhase('carrier', 'submit', () => loginPage.login(dispatcher.email, dispatcher.password));
 	await runLoginPhase('carrier', 'dashboard', () => dashboardPage.ensureDashboardLoaded());
 }
 
+/**
+ * Login del portal contractor.
+ *
+ * BL-009 Fase 3 (2026-05-13) — credenciales resueltas vía
+ * `CONTRACTOR_COLLABORATOR[env]` (SoT canónica
+ * `tests/fixtures/users/web-portals/contractor-collaborator.ts`). Antes leía
+ * `resolveRoleCredentials('contractor')` que delegaba a `USER_CONTRACTOR`.
+ * El login path sigue viniendo de `runtime.ts:resolveLoginPath('contractor')`
+ * porque es config de routing, no de credenciales.
+ */
 export async function loginAsContractor(page: Page): Promise<void> {
-	// Login del portal contractor. Credenciales vienen de USER_CONTRACTOR / PASS_CONTRACTOR.
-	const { username, password } = resolveRoleCredentials('contractor');
+	const collaborator = CONTRACTOR_COLLABORATOR[getCurrentUserEnvironment()];
 	const baseUrl = process.env.BASE_URL ?? '';
 	const loginPath = resolveLoginPath('contractor');
 	const loginPage = new LoginPage(page, 'contractor', `${baseUrl}${loginPath}`);
 	const dashboardPage = new DashboardPage(page);
 	await runLoginPhase('contractor', 'goto', () => loginPage.goto());
-	await runLoginPhase('contractor', 'submit', () => loginPage.login(username, password));
+	await runLoginPhase('contractor', 'submit', () => loginPage.login(collaborator.email, collaborator.password));
 	await runLoginPhase('contractor', 'dashboard', () => dashboardPage.ensureDashboardLoaded());
 }
 
+/**
+ * Login del portal pax cuando la prueba nace del wallet.
+ *
+ * NOTA BL-009 Fase 3: este consumer NO se migró todavía porque no existe
+ * fixture web pax en `tests/fixtures/users/web-portals/`. Los fixtures
+ * mobile (PASSENGER_APP_USER) son para Appium, no para login web. Crear
+ * fixture web pax es Fase 3.1 si se necesita estandarizar el portal pax.
+ */
 export async function loginAsPax(page: Page): Promise<void> {
-	// Login equivalente para el portal de pasajero cuando la prueba nace del wallet.
 	const { user, pass } = getPortalCredentials('pax');
 	const loginPage = new LoginPage(page, 'pax', getPortalUrl('pax'));
 	await loginPage.goto();
