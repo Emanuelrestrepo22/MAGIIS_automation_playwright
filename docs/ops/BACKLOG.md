@@ -3,7 +3,7 @@
 > Fuente única de verdad para tareas pendientes, decisiones en espera y deuda técnica activa.
 > **Regla:** toda sesión de trabajo debe arrancar validando este documento. Si un ítem aparece aquí como pendiente pero ya fue resuelto por otra vía, actualizar su estado en lugar de duplicarlo.
 
-**Última revisión:** 2026-05-13 (Erika + Claude — 4 hitos en sesión: BL-033 cerrado como falso positivo + BL-012 Fase 1 carrier completada (commit `1fe01e5`, 8/30 = 27%) + **BL-024 completo en 6 fases** (commits `4b80d45`/`02617b7`/`a26aa35`/`d4bafa9`/`e13ff92`/`6cbac28` — umbrella `fixtures/gateways/` con resolver polimórfico cross-gateway + adapters conectados + slot specs/authorize/ + READMEs canónicos) + **BL-009 Fase 3.0** (commit `d916c96`, `gateway.fixtures.ts` adopta `DISPATCHER`/`CONTRACTOR_COLLABORATOR` con helper `getCurrentUserEnvironment()`)). Anterior: 2026-04-20 (post PR #12 conflict → BL-023 detectado).
+**Última revisión:** 2026-05-13 (Erika + Claude — 7 hitos en sesión, los 3 últimos vía orquestación paralela de agents: BL-033 cerrado como falso positivo + BL-012 Fase 1 carrier completada (commit `1fe01e5`, 8/30 = 27%) + **BL-024 completo en 6 fases** (commits `4b80d45`/`02617b7`/`a26aa35`/`d4bafa9`/`e13ff92`/`6cbac28` — umbrella `fixtures/gateways/` con resolver polimórfico cross-gateway + adapters conectados + slot specs/authorize/ + READMEs canónicos) + **BL-009 Fase 3.0** (commit `d916c96`) + **BL-035 cleanup** (commit `cdbdba2` cancelando BL-004/BL-014b + reduciendo scope BL-017b) + **BL-028 piloto** (commit `f24305b` — spec parametrizado multi-gateway) + **BL-009 Fase 3.2** (commit `74dd559` — bridge polimórfico `getCredentialsForRole` migra 3 consumers)). Anterior: 2026-04-20 (post PR #12 conflict → BL-023 detectado).
 
 ---
 
@@ -145,7 +145,7 @@
   3. **🟡 Adopción gradual** — sub-fases:
      - **🟢 Fase 3.0** (commit `d916c96`, 2026-05-13): `gateway.fixtures.ts` adopta `DISPATCHER[env]` y `CONTRACTOR_COLLABORATOR[env]` para `loginAsDispatcher` y `loginAsContractor`. Nuevo helper `getCurrentUserEnvironment()` en `fixtures/users/index.ts` con narrowing tipado.
      - **🔴 Fase 3.1**: crear fixture `PAX_WEB` (portal web pax) y migrar `loginAsPax` desde `getPortalCredentials('pax')`. No bloqueante.
-     - **🔴 Fase 3.2**: migrar consumers polimórficos (`global-setup.multi-role.ts`, `tests/TestBase.ts`, `tests/shared/utils/apiClient.ts`) que usan `resolveRoleCredentials(role: AppRole)`. Requiere helper `getCredentialsForRole(role)` que delegue a los fixtures users según el rol.
+     - **🟢 Fase 3.2** (commit `74dd559`, 2026-05-13 — ejecutada en worktree paralelo): nuevo helper `getCredentialsForRole(role: AppRole, env?: UserEnvironment)` en `fixtures/users/index.ts` con mapping `'carrier'/'web' → DISPATCHER[env]` y `'contractor' → CONTRACTOR_COLLABORATOR[env]`. Migrados los 3 consumers polimórficos: `global-setup.multi-role.ts`, `tests/TestBase.ts`, `tests/shared/utils/apiClient.ts`. `resolveRoleCredentials()` del runtime queda intacto para retrocompatibilidad.
   4. **🔴 Legacy cleanup**: deprecar `features/gateway-pg/data/passengers.ts`, quitar hardcoding en `travel-cleanup.ts` (`DEFAULT_CARRIER_USER_ID = '6715'`) y mobile harness.
 - **Próxima acción:** Fase 3.2 (bridge polimórfico para 3 consumers de roles dinámicos) — sin bloqueante técnico, ~1-2h. Fase 1 sigue requiriendo coordinación humana con infra.
 - **Referencias:** commit `d916c96` (Fase 3.0 — gateway.fixtures.ts), commit consolidado `0299955` (Fase 2 SoT), `tests/fixtures/users/README.md`, `docs/ARCHITECTURE.md` §4 "Dónde agregar data nueva", BL-024 ✅ (umbrella gateways relacionado).
@@ -455,20 +455,25 @@
 
 ### BL-028 — Parametrizar specs Stripe con `gateway` param + skip-3DS condicional
 
-- **Estado:** 🟡 Infraestructura lista (BL-024 ✅ 2026-05-13). Pendiente spec piloto.
+- **Estado:** 🟡 Piloto creado y verde (commit `f24305b`, 2026-05-13). Migración del resto de specs pendiente.
 - **Prioridad:** P2
 - **Tipo:** Automatización (refactor)
 - **Reportado:** 2026-04-27
-- **Contexto:** Con BL-024 completado, ahora existe `resolveCard({ gateway, intent })` polimórfico + `GenericTestCard` shape común + adapter `requires3ds` flag para gating 3DS condicional. Los ~30 specs en `tests/features/gateway-pg/specs/stripe/` pueden refactorizarse a un set parametrizado.
-- **Beneficio:** una sola lógica → cobertura ×4 sin duplicación. Único punto de mantenimiento. Es el "fin de implementación" pedido por el líder.
+- **Avance 2026-05-13 (ejecutado en agent paralelo, integrado a main):** primer spec piloto creado en `tests/features/gateway-pg/specs/_parametrized/hold-happy-no3ds.parametrized.spec.ts` + README. Demuestra el patrón habilitado por BL-024:
+  - `ACTIVE_GATEWAYS: GatewayName[] = ['stripe']` (Authorize se sumará cuando BL-025 tenga runtime).
+  - `for (const gateway of ACTIVE_GATEWAYS)` iterando con `test.describe(`gateway=${gateway}`)`.
+  - `resolveCard({ gateway, intent: 'HAPPY_NO_AUTH' })` resuelve el dato variable.
+  - `JOURNEY_DEFAULTS` aporta dominio constante.
+  - Assertion final replicada del spec canónico `apppax-hold-no3ds.spec.ts`: `management.expectPassengerInPorAsignar(passenger, undefined, 'Buscando chofer')` (equivalente al estado MAGIIS `SEARCHING_DRIVER`).
+  - Sanity checks sobre `card.gateway`, `card.requires3ds`, `card.last4`.
+- **Ajustes del piloto vs esqueleto sugerido:** `test`/`expect` se importan de `TestBase` (no `@playwright/test`) por el patrón `test.use({ role: 'carrier', storageState: {...} })`. Necesario importar `DashboardPage` + `OperationalPreferencesPage` para `preferences.ensureHoldEnabled()` + `dashboard.openNewTravel()` antes de `travel.ensureLoaded()`.
 - **Próxima acción:**
   1. ~~Crear umbrella + resolver~~ ✅ Hecho en BL-024.
-  2. Tomar 1 spec piloto (ej. `hold/apppax-hold-no3ds.spec.ts`) y parametrizarlo con `test.describe.each(GATEWAYS)`.
-  3. Validar matriz de ejecución: `stripe × {happy,3ds,declines,hold}` debe seguir verde tras el refactor.
-  4. Iterar sobre el resto de specs (lote por feature).
-  5. Cuando Authorize tenga runtime (BL-025), agregar `gateway: 'authorize'` a `GATEWAYS` y validar specs con intents soportados.
-- **Bloqueantes:** ya ningún técnico — todo el plumbing existe. Bloqueante de scope: depende de BL-025 para validar la parametrización contra un segundo gateway real.
-- **Referencias:** BL-024 ✅, BL-025, `tests/fixtures/gateways/_shared/resolver.ts`, `tests/features/gateway-pg/helpers/adapters/index.ts`, `tests/features/gateway-pg/specs/authorize/README.md`
+  2. ~~Spec piloto~~ ✅ Hecho (commit `f24305b`).
+  3. Iterar sobre el resto de specs por feature (hold, cargo-a-bordo, declines, recurrentes), reemplazando el `gateway: 'stripe'` hardcoded por loop sobre `ACTIVE_GATEWAYS`.
+  4. Cuando Authorize tenga runtime (BL-025), agregar `gateway: 'authorize'` a `ACTIVE_GATEWAYS` y validar specs con intents soportados.
+- **Bloqueantes:** ya ningún técnico. Bloqueante de scope: depende de BL-025 para validar parametrización contra un segundo gateway real (con el piloto actual no se valida la utilidad porque solo corre Stripe).
+- **Referencias:** commit `f24305b` (piloto), BL-024 ✅, BL-025, `tests/features/gateway-pg/specs/_parametrized/`, `tests/fixtures/gateways/_shared/resolver.ts`, `tests/features/gateway-pg/specs/authorize/README.md`
 
 ### BL-029 — Definir contrato de reporte de pruebas para Microsoft Teams
 
