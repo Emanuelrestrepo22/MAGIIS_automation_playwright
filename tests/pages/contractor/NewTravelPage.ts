@@ -211,27 +211,6 @@ export class ContractorNewTravelPage extends NewTravelPage {
 	}
 
 	/**
-	 * BL-012 Fase 1 — espera a que Angular renderice al menos una opción en el autocomplete
-	 * de direcciones (inline dentro del componente o en CDK overlay a nivel de página).
-	 * Reemplaza `waitForTimeout(1_800)` con polling DOM determinista. Timeout generoso para
-	 * cubrir el debounce interno Angular + cualquier request paralelo de geocoding.
-	 */
-	private async waitForAutocompleteOptionsReady(
-		placeComponent: import('@playwright/test').Locator,
-	): Promise<void> {
-		await expect
-			.poll(
-				async () => {
-					const inline = await placeComponent.getByRole('listitem').count();
-					if (inline > 0) return inline;
-					return await this.page.getByRole('listitem').count();
-				},
-				{ timeout: 4_000, message: 'Esperando opciones de autocomplete (inline o CDK overlay)' },
-			)
-			.toBeGreaterThan(0);
-	}
-
-	/**
 	 * BL-012 Fase 1 — tras clickear una sugerencia, el placeholder del campo debe ocultarse
 	 * (porque el FormControl pasa a tener valor). Reemplaza `waitForTimeout(600)` con expect
 	 * observable. Si el placeholder no existe (DOM ya estabilizado antes de llegar acá),

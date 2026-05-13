@@ -234,8 +234,9 @@ export abstract class NewTravelPageBase {
 
 		for (const query of fallbackQueries) {
 			await searchInput.fill(query);
-			// NOTE(tier3-kept): debounce Angular — espera que el dropdown filtre opciones tras fill; sin evento observable
-			await this.page.waitForTimeout(1_000);
+			// BL-012 Fase 1: debounce Angular — reemplaza waitForTimeout(1_000) con polling DOM
+			// sobre la cuenta de opciones del dropdown. Fail-fast si Angular no renderiza nada.
+			await this.waitForAutocompleteOptionsReady(select, { timeoutMs: 5_000 });
 
 			const deadline = Date.now() + 15_000;
 			while (Date.now() < deadline) {
@@ -342,8 +343,9 @@ export abstract class NewTravelPageBase {
 
 		const searchInput = await this.openPlaceDropdown(place);
 		await searchInput.fill(queryText);
-		// NOTE(tier3-kept): debounce Angular autocomplete de direcciones — sin evento observable post-fill
-		await this.page.waitForTimeout(1_000);
+		// BL-012 Fase 1: debounce Angular autocomplete de direcciones — reemplaza waitForTimeout(1_000)
+		// con polling DOM determinista sobre opciones renderizadas.
+		await this.waitForAutocompleteOptionsReady(place, { timeoutMs: 4_000 });
 
 		const suggestionText = address.split(',').slice(0, -1).join(',').trim() || address;
 		const suggestion = place.getByText(new RegExp(escapeRegExp(suggestionText), 'i')).first();
@@ -373,8 +375,8 @@ export abstract class NewTravelPageBase {
 		await this.page.waitForTimeout(500);
 
 		await searchInput.fill(queryText);
-		// NOTE(tier3-kept): debounce Angular — retry path; mismo patrón que primera pasada
-		await this.page.waitForTimeout(1_000);
+		// BL-012 Fase 1: debounce Angular retry path — mismo patrón determinista que la primera pasada.
+		await this.waitForAutocompleteOptionsReady(place, { timeoutMs: 4_000 });
 
 		if (await suggestion.isVisible().catch(() => false)) {
 			await suggestion.click();
@@ -947,5 +949,40 @@ export abstract class NewTravelPageBase {
 
 	async assertPaymentMethodPreauthorizedSelected(): Promise<void> {
 		await expect(this.paymentMethodValue).toContainText('Tarjeta de Crédito - Preautorizada', { timeout: 10_000 });
+	}
+
+	/**
+	 * BL-012 Fase 1 — espera a que Angular renderice al menos una opción en el
+	 * autocomplete/dropdown asociado al componente. Reemplaza `waitForTimeout`
+	 * usado como debounce ciego con polling DOM determinista. Más rápido cuando
+	 * Angular responde antes; fail-fast si el debounce no termina en `timeoutMs`.
+	 *
+	 * Detecta opciones en 3 ubicaciones (en orden):
+	 *   1. `select-dropdown .options li` — dropdown nativo del SuperPage.
+	 *   2. `getByRole('listitem')` inline dentro del componente.
+	 *   3. `getByRole('listitem')` a nivel de página (CDK overlay).
+	 *
+	 * Patrón validado en contractor commit `0299955` (Fase 1 contractor).
+	 */
+	protected async waitForAutocompleteOptionsReady(
+		component: Locator,
+		options: { timeoutMs?: number } = {},
+	): Promise<void> {
+		const timeoutMs = options.timeoutMs ?? 4_000;
+		await expect
+			.poll(
+				async () => {
+					const dropdownOptions = await component.locator('select-dropdown .options li').count();
+					if (dropdownOptions > 0) return dropdownOptions;
+					const inlineList = await component.getByRole('listitem').count();
+					if (inlineList > 0) return inlineList;
+					return await this.page.getByRole('listitem').count();
+				},
+				{
+					timeout: timeoutMs,
+					message: 'BL-012: esperando opciones de autocomplete Angular (dropdown nativo, inline o CDK overlay)',
+				},
+			)
+			.toBeGreaterThan(0);
 	}
 }
