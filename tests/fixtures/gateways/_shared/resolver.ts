@@ -124,9 +124,9 @@ export function resolveCard({ gateway, intent }: ResolveCardArgs): GenericTestCa
 			return normalizeAuthorizeCard(authorizeCard);
 		}
 
-		case 'mercadopago':
+		case 'mercado-pago':
 			throw new Error(
-				"Gateway 'mercadopago' aún no soportado — investigación pendiente (BL-026).",
+				"Gateway 'mercado-pago' aún no soportado — investigación pendiente (BL-026).",
 			);
 
 		case 'ebizcharge':
@@ -147,6 +147,6 @@ export function resolveCard({ gateway, intent }: ResolveCardArgs): GenericTestCa
 export const SUPPORTED_INTENTS_BY_GATEWAY = {
 	stripe: Object.keys(STRIPE_INTENT_MAP) as CardIntent[],
 	authorize: Object.keys(AUTHORIZE_INTENT_MAP) as CardIntent[],
-	mercadopago: [] as CardIntent[],
+	'mercado-pago': [] as CardIntent[],
 	ebizcharge: [] as CardIntent[],
 } as const;

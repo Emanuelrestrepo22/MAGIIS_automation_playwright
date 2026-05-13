@@ -1,5 +1,18 @@
 import type { GatewayPgAdapter } from './types';
 
+/**
+ * Adapter declarativo Authorize.net — metadata estática del comportamiento del gateway.
+ *
+ * BL-024 Fase 4 (2026-05-13) — vinculado a su fixture canónico en
+ * `tests/fixtures/gateways/authorize/` (cards.ts + card-policy.ts + card-resolver.ts).
+ *
+ * Para resolver una tarjeta concreta por intención (multi-gateway), usar
+ * `resolveCard({ gateway: 'authorize', intent })` desde `tests/fixtures/gateways/_shared`.
+ *
+ * Notas Authorize:
+ *   - `requires3ds: false` — el flujo MAGIIS estándar no usa 3DS en Authorize.
+ *   - El outcome se dispara por combinación (CVV + ZIP), no por número.
+ */
 export const authorizeGatewayAdapter: GatewayPgAdapter = {
 	gateway: 'authorize',
 	displayName: 'Authorize',

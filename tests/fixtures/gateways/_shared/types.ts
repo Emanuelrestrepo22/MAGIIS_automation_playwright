@@ -16,13 +16,17 @@
 /**
  * Gateways de pago soportados por MAGIIS.
  *
+ * **Importante:** estos valores deben coincidir EXACTAMENTE con `PaymentGateway`
+ * de `tests/features/gateway-pg/contracts/gateway-pg.types.ts`. Cualquier
+ * divergencia rompe el mapeo con `helpers/adapters/index.ts`.
+ *
  * Estado:
  *   - stripe       — producción activa, cobertura completa
  *   - authorize    — sandbox listo, runtime pendiente
- *   - mercadopago  — investigación pendiente (BL-026)
+ *   - mercado-pago — investigación pendiente (BL-026)
  *   - ebizcharge   — investigación pendiente (BL-027)
  */
-export type GatewayName = 'stripe' | 'authorize' | 'mercadopago' | 'ebizcharge';
+export type GatewayName = 'stripe' | 'authorize' | 'mercado-pago' | 'ebizcharge';
 
 /**
  * Intents canónicos cross-gateway.
