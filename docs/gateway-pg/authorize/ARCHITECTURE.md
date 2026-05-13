@@ -39,6 +39,54 @@ Authorize.net es un **gateway secundario** del ecosistema de pagos MAGIIS. Su ro
 
 ---
 
+## 1.bis Switching de pasarela (modelo exclusivo MAGIIS) — CRÍTICO
+
+> **Aprendizaje incorporado 2026-05-13** (sesión Erika): MAGIIS opera con **una sola pasarela activa por vez a nivel global**. Para habilitar Authorize, primero hay que **desvincular Stripe** y luego vincular Authorize. NO es un toggle por usuario ni por viaje — afecta a todo el sistema.
+
+### Implicaciones operativas
+
+| Implicación | Detalle |
+| --- | --- |
+| **Tests Stripe vs Authorize NO concurrentes** | No se pueden correr suites de ambos gateways contra el mismo ambiente al mismo tiempo. Serializar o usar ambientes separados (`.env.test-stripe` vs `.env.test-authorize`). |
+| **Switching como precondición** | Cada vez que cambia el gateway activo, hay un flujo administrativo previo. Documentado en `BL-037` del backlog. |
+| **Side effect en tarjetas vinculadas** | TODO confirmar con backend: las tarjetas guardadas en wallet bajo Stripe ¿quedan inválidas al switchear? ¿se purgan? ¿se migran como tokens externos? |
+| **Side effect en transacciones pendientes** | TODO confirmar: viajes en estado `SEARCHING_DRIVER` o con `Hold` activo al momento del switching ¿qué pasa con el capture posterior? |
+| **Reset entre suites** | El primer paso de la suite Authorize debe garantizar que el gateway activo es Authorize. Si no, falla rápido con error explícito antes de gastar tiempo en specs. |
+
+### Estrategia de tests sugerida
+
+1. **Suite `@gateway-switching`** dedicada: smoke crítico operacional. Valida los 2 sentidos (Stripe → Authorize → Stripe) + side effects (wallet, transacciones pendientes).
+2. **Precondición de suite Authorize**: helper `ensureActiveGateway('authorize')` al `test.beforeAll()` de cada suite. Si el gateway activo no es Authorize, lanza con instrucción manual de qué setear.
+3. **Marker `@requires-gateway-switch`** para los tests que ejercitan el flujo de cambio.
+4. **CI/runner**: cuando exista ambiente para multi-gateway, evaluar split de jobs por gateway. Hoy `pnpm pp` local + `workflow_dispatch` cubre (BL-035 desactivó CI automático).
+
+### Captura del flujo de switching — pendiente runtime
+
+Para automatizar el switching hay que conocer su flujo real (panel admin, secuencia de clicks, side effects observables). Hoy NO conocemos:
+
+- URL del panel de switching
+- Selectores estables (botones, dropdowns, confirmaciones)
+- Mensajes de éxito/error
+- Tiempo de propagación del cambio en el sistema
+
+**Plan de captura** (referenciado por `BL-037`):
+
+```bash
+# Vos, con sandbox admin login activo:
+npx playwright codegen <URL_PANEL_ADMIN_SWITCHING>
+# Click a click el flujo:
+#   1. Login admin
+#   2. Navegar a configuración de pasarela
+#   3. Desvincular Stripe (capturar el modal de confirmación si lo hay)
+#   4. Vincular Authorize (capturar los inputs API_LOGIN_ID + TRANSACTION_KEY)
+#   5. Confirmar el cambio y validar el indicador visual del estado
+# Pegar el spec generado en tests/features/gateway-pg/specs/authorize/admin/gateway-switching.spec.ts
+```
+
+Después yo te ayudo a estabilizar selectores (`getByRole` / `getByTestId`), parametrizar credenciales con `fixtures/users/admin` (a crear) y agregar las assertions críticas.
+
+---
+
 ## 2. Modelo de integración
 
 Authorize.net ofrece tres modelos de integración. **MAGIIS aún no confirma cuál usa** (ver [`EXTERNAL-BLOCKERS.md`](./EXTERNAL-BLOCKERS.md) §3). Las opciones, ordenadas por probabilidad:

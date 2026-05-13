@@ -3,7 +3,7 @@
 > Fuente única de verdad para tareas pendientes, decisiones en espera y deuda técnica activa.
 > **Regla:** toda sesión de trabajo debe arrancar validando este documento. Si un ítem aparece aquí como pendiente pero ya fue resuelto por otra vía, actualizar su estado en lugar de duplicarlo.
 
-**Última revisión:** 2026-05-13 (Erika + Claude — 10 hitos en sesión, 6 vía orquestación paralela de agents incluyendo modelo Opus para análisis QA exhaustivo: BL-033 falso positivo + BL-012 Fase 1 carrier (`1fe01e5`) + **BL-024 6 fases** (`4b80d45`/`02617b7`/`a26aa35`/`d4bafa9`/`e13ff92`/`6cbac28` — umbrella `fixtures/gateways/`) + **BL-009 Fase 3.0** (`d916c96`) + **BL-035 cleanup** (`cdbdba2`) + **BL-028 piloto** (`f24305b`) + **BL-009 Fase 3.2** (`74dd559` — bridge polimórfico) + **BL-009 Fase 3.1** (`fb0d475` — fixture PAX_WEB) + **BL-009 Fase 4** (`25f6ebb` — legacy cleanup) + **BL-025 docs Authorize** (`c2bcb16` + `3862664` — agent Opus: 7 archivos / 1529 líneas QA oficial en `docs/gateway-pg/authorize/`). Anterior: 2026-04-20 (post PR #12 conflict → BL-023 detectado).
+**Última revisión:** 2026-05-13 (Erika + Claude — 10 hitos cerrados + 2 BLs nuevos abiertos. Hitos: BL-033 falso positivo + BL-012 Fase 1 carrier (`1fe01e5`) + **BL-024 6 fases** (`4b80d45`/`02617b7`/`a26aa35`/`d4bafa9`/`e13ff92`/`6cbac28`) + **BL-009 Fase 3.0** (`d916c96`) + **BL-035 cleanup** (`cdbdba2`) + **BL-028 piloto** (`f24305b`) + **BL-009 Fase 3.2** (`74dd559`) + **BL-009 Fase 3.1** (`fb0d475`) + **BL-009 Fase 4** (`25f6ebb`) + **BL-025 docs Authorize** (`c2bcb16` + `3862664` — agent Opus). Nuevos: **BL-036** (pruebas API smoke MAGIIS + Authorize sandbox) y **BL-037** (test switching de pasarela Stripe↔Authorize, P1 precondición operacional). Documentado switching exclusivo en `docs/gateway-pg/authorize/ARCHITECTURE.md` §1.bis. Anterior: 2026-04-20.
 
 ---
 
@@ -620,6 +620,87 @@
 - **Estado final:** locales restantes: `main`, `integration/pre-main`, `scripts/backlog-bl002-008-013`, `scripts/ci-interruptible`. Remotas github: `main`, `integration/pre-main`, `carrier/cargo-a-bordo-tc1081-fix`. GitLab: sólo `main`.
 - **Hallazgo derivado:** BL-033 abierto (P1) — la auditoría reveló que pre-main contiene 13 commits con código BL-009/012/013/021/022 huérfanos no presentes en main.
 - **Referencias:** sesión 2026-04-27, BL-033 (hallazgo derivado), commits del cleanup en historial git
+
+### BL-036 — Pruebas API smoke: MAGIIS backend + Authorize.net sandbox
+
+- **Estado:** 🔴 Pendiente — pedido por el líder (sesión 2026-05-13)
+- **Prioridad:** P2
+- **Tipo:** Automatización (testing nuevo de tipo API)
+- **Reportado:** 2026-05-13
+- **Contexto:** Hoy las pruebas de gateway se ejecutan al 100% por UI (Playwright + browser). Falta una capa de tests API que (a) valide que las llamadas al backend MAGIIS funcionan tras integraciones nuevas, (b) actúe como red de seguridad ante regresiones cuando cambia algo del backend o del gateway. La estrategia es **arrancar básico**: primero confirmar que las llamadas funcionan, después escalar profundidad.
+- **Objetivo del líder (textual):** *"primero evaluamos las llamadas funcionan en el proceso y después implementamos, para evaluar que en cambios si se llega a romper tenemos nuestra prueba"*.
+- **Alcance acotado a 2 frentes**:
+  1. **API contra MAGIIS backend** — validar el contrato MAGIIS ↔ gateway:
+     - Hold (`POST /travels` o equivalente) responde 2xx + estado `SEARCHING_DRIVER`.
+     - Capture (cobro al finalizar) actualiza el viaje a `FINALIZADO` con `paymentReference`.
+     - Webhook callback de gateway → backend actualiza estado correctamente.
+     - Vincular tarjeta al wallet → endpoint responde + tarjeta aparece en listado.
+     - Reutilizar `tests/shared/utils/apiClient.ts` (ya integrado con `getCredentialsForRole`).
+  2. **API directa contra Authorize.net sandbox** — validar el contrato externo:
+     - `POST https://apitest.authorize.net/xml/v1/request.api` con `authOnlyTransaction` + Visa 4111 + CVV 900 → `responseCode = "1"`.
+     - Mismo con ZIP 46282 → `responseCode = "2"` (declined).
+     - Mismo con CVV 901 → CVV "N: Does NOT Match".
+     - Útil como contrato externo: si Authorize cambia el sandbox, los tests fallan ANTES que los E2E.
+- **Estructura sugerida**:
+
+  ```text
+  tests/features/gateway-pg/api/
+  ├── magiis-backend/
+  │   ├── hold-capture.api.spec.ts
+  │   ├── webhook-callback.api.spec.ts
+  │   └── wallet-link.api.spec.ts
+  └── authorize-sandbox/
+      ├── contract-happy.api.spec.ts
+      ├── contract-decline.api.spec.ts
+      └── contract-cvv-avs.api.spec.ts
+  ```
+
+- **Próxima acción:**
+  1. Confirmar con backend MAGIIS los endpoints reales (paths, payloads, auth).
+  2. Crear `tests/features/gateway-pg/api/` con primer spec piloto `authorize-sandbox/contract-happy.api.spec.ts` (no requiere ambiente MAGIIS — solo Authorize sandbox + credenciales).
+  3. Iterar: smoke básicos primero, después profundidad.
+- **Bloqueantes:** credenciales sandbox Authorize (paso 1 de BL-025) para el frente "API directa". Para el frente "MAGIIS backend" depende de documentación del backend.
+- **Beneficio (palabras del líder):** red de seguridad para detectar regresiones cuando cambia código de integración — falla rápido a nivel API sin necesidad de correr la suite E2E completa.
+- **Referencias:** `tests/shared/utils/apiClient.ts`, `docs/gateway-pg/authorize/ARCHITECTURE.md` §6 (endpoints), <https://developer.authorize.net/api/reference/index.html>, BL-025 (credenciales), BL-037 (switching)
+
+### BL-037 — Test del switching de pasarela (Stripe ↔ Authorize)
+
+- **Estado:** 🔴 Pendiente — bloqueado en captura de flujo
+- **Prioridad:** P1 (precondición para habilitar suite Authorize)
+- **Tipo:** Automatización (testing nuevo crítico)
+- **Reportado:** 2026-05-13
+- **Contexto:** MAGIIS opera con **una sola pasarela activa a nivel global**. Para activar Authorize hay que **desvincular Stripe → vincular Authorize**. NO es toggle por usuario ni por viaje — afecta todo el sistema. Documentado en `docs/gateway-pg/authorize/ARCHITECTURE.md` §1.bis.
+- **Por qué P1:** sin este flujo automatizado, cada corrida de la suite Authorize requiere intervención humana previa. Es la precondición operacional para cualquier test de Authorize.
+- **Side effects abiertos (TODO confirmar con backend):**
+  1. Tarjetas guardadas en wallet bajo Stripe al momento del switch ¿quedan inválidas? ¿se purgan? ¿se migran como tokens externos?
+  2. Viajes en estado `SEARCHING_DRIVER` o con `Hold` activo al momento del switch ¿qué pasa con el capture posterior?
+  3. ¿Hay tiempo de propagación del cambio? ¿Algún viaje creado en la ventana entre desvinculación y vinculación rompe?
+- **Plan de captura (acordado 2026-05-13)** — Playwright codegen:
+
+  ```bash
+  # Vos, con sandbox admin login activo:
+  npx playwright codegen <URL_PANEL_ADMIN_SWITCHING>
+  # Pasos a capturar:
+  #   1. Login admin
+  #   2. Navegar a configuración de pasarela
+  #   3. Desvincular Stripe (capturar modal de confirmación)
+  #   4. Vincular Authorize (capturar inputs API_LOGIN_ID + TRANSACTION_KEY)
+  #   5. Confirmar el cambio
+  #   6. Validar indicador visual del estado post-switch
+  # Pegar spec generado en tests/features/gateway-pg/specs/authorize/admin/gateway-switching.spec.ts
+  ```
+
+- **Próxima acción:**
+  1. Vos ejecutás el codegen contra sandbox admin → entregás spec crudo.
+  2. Yo estabilizo selectores (`getByRole` / `getByTestId`), parametrizo credenciales con fixture users (a crear: `ADMIN_GATEWAY` en `tests/fixtures/users/web-portals/admin-gateway.ts`).
+  3. Agregar helper `ensureActiveGateway('authorize' | 'stripe')` en `tests/features/gateway-pg/helpers/` con verificación + intentar switch si no coincide.
+  4. Agregar suite `@gateway-switching` con 2 tests críticos:
+     - Test 1: switch Stripe → Authorize. Asserts: indicador UI, side effect wallet (TODO), side effect transacciones pendientes (TODO).
+     - Test 2: switch Authorize → Stripe (reset). Mismo set de asserts.
+  5. Documentar en `docs/gateway-pg/authorize/matriz_cases.md` (sección admin) los TCs nuevos.
+- **Bloqueantes:** captura humana del flujo + URL real del panel admin + credenciales admin sandbox.
+- **Marker propuesto:** `@gateway-switching` (smoke crítico operacional, no concurrente con suites de cards).
+- **Referencias:** `docs/gateway-pg/authorize/ARCHITECTURE.md` §1.bis (modelo exclusivo), BL-025 (runtime Authorize), BL-036 (API frente alternativo para validar el switch sin UI)
 
 ---
 
