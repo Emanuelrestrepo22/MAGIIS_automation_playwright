@@ -81,19 +81,15 @@
 - **Impacto cross-test:** la misma lógica debe revisarse en otros TCs de empresa-individuo que usen `expectPassengerInPorAsignar`. TC08 (TS-STRIPE-TC1068) también usa cliente empresa — validar en próxima run completa.
 - **Referencias:** `tests/features/smoke/specs/gateway-pg.smoke.spec.ts` líneas 546-600, EXTERNAL-BLOCKERS.md §TC1081 / §TC1111
 
-### BL-004 — Cupo CI GitLab agotado
+### BL-004 — ~~Cupo CI GitLab agotado~~ — CANCELADO POR BL-035
 
-- **Estado:** 🟡 Mitigado temporalmente (usando GitHub Actions)
-- **Prioridad:** P1
+- **Estado:** ⚫ Cancelado (2026-05-13) — BL-035 desactivó el CI automático tanto en GitLab como en GitHub el 2026-04-27. Sin pipelines automáticos, el cupo no se consume → este item no aplica.
+- **Prioridad:** ~~P1~~ N/A
 - **Tipo:** Infraestructura
-- **Contexto:** Pipelines GitLab fallan con `ci_quota_exceeded` desde 2026-04-20. Resetea 1° de mayo.
-- **Próxima acción:**
-  1. Durante abril: usar GitHub Actions como canal principal de CI
-  2. Evaluar runner propio (local Docker, AWS EC2 o Spot Autoscaler) — decisión diferida con equipo + jefe
-  3. Optimizar `.github/workflows/playwright.yml` con concurrency + paths-ignore + cache playwright
+- **Razón de cancelación:** la decisión del líder de mover la validación a `pnpm pp` local (BL-035) eliminó la dependencia del cupo CI. Si en el futuro se reactiva CI automático, abrir un BL nuevo en vez de reusar este.
 - **Referencias:**
-  - `memory/project_gitlab_ci_quota.md` (memoria global)
-  - MR !37, !38, !40 pendientes de validar cuando vuelva cupo
+  - BL-035 (decisión que lo dejó obsoleto)
+  - `memory/project_gitlab_ci_quota.md` (memoria global — sigue válida como referencia histórica)
 
 ### BL-005 — Optimizar GitHub Actions y crear guía uso CI
 
@@ -213,15 +209,15 @@
 - **Validación:** el próximo push al repo dispara el workflow optimizado en GitHub Actions (cupo disponible).
 - **Referencias:** `.claude/skills/magiis-ci-efficiency/assets/templates/github-actions-playwright-optimized.yml`
 
-### BL-014b — Aplicar template GitLab CI optimizado (pendiente cupo)
+### BL-014b — ~~Aplicar template GitLab CI optimizado~~ — CANCELADO POR BL-035
 
-- **Estado:** 🔴 Pendiente (bloqueado por cupo CI GitLab agotado, ver BL-004)
-- **Prioridad:** P2
+- **Estado:** ⚫ Cancelado (2026-05-13) — BL-035 desactivó CI automático en GitLab (`workflow.rules: when: never`). Aplicar un template optimizado no aporta valor mientras no haya pipelines automáticos.
+- **Prioridad:** ~~P2~~ N/A
 - **Tipo:** Mejora CI
-- **Reportado:** 2026-04-20
-- **Contexto:** Template `gitlab-ci-playwright-optimized.yml` listo para aplicar. Sin cupo CI no se puede validar post-aplicación.
-- **Próxima acción:** tras reset del cupo GitLab (1 de mayo) o activación de runner propio, copiar `assets/templates/gitlab-ci-playwright-optimized.yml` → `.gitlab-ci.yml` y validar pipeline.
-- **Referencias:** `.claude/skills/magiis-ci-efficiency/assets/templates/gitlab-ci-playwright-optimized.yml`, BL-004
+- **Razón de cancelación:** el template optimizado optimizaba lo que ya no existe. Si se reactiva CI cloud en el futuro, el template sigue disponible en `.claude/skills/magiis-ci-efficiency/assets/templates/` y se puede abrir un BL nuevo.
+- **Referencias:**
+  - BL-035 (decisión que lo dejó obsoleto)
+  - `.claude/skills/magiis-ci-efficiency/assets/templates/gitlab-ci-playwright-optimized.yml` (preservado como referencia)
 
 ### BL-015 — Evaluar activar hook husky pre-push
 
@@ -256,19 +252,19 @@
 - **No activado (peligro auto-bloqueo):** `only_allow_merge_if_pipeline_succeeds` → bloqueado por cupo CI agotado (sin pipelines, nada mergearía). Activar cuando vuelva el cupo.
 - **Referencias:** `docs/ci/BRANCH-PROTECTION-SETTINGS.md`
 
-### BL-017b — Branch protection estricta (pendiente equipo/cupo)
+### BL-017b — Branch protection estricta (pendiente equipo)
 
-- **Estado:** 🔴 Pendiente (trigger dual: equipo ≥2 + cupo CI disponible)
+- **Estado:** 🔴 Pendiente (alcance reducido por BL-035) — trigger único restante: equipo ≥ 2 devs.
 - **Prioridad:** P3
 - **Tipo:** Configuración
 - **Reportado:** 2026-04-20
-- **Contexto:** Settings que requieren triggers externos:
-  - `only_allow_merge_if_pipeline_succeeds` → espera reset cupo CI (1 mayo) o runner propio
-  - `approvals_before_merge ≥ 1` → espera equipo ≥ 2 devs
-  - `Require code owner approval` → idem
-  - GitHub Settings → Branches → main rule → status checks required → espera cupo CI
-- **Próxima acción:** activar según corresponda cada trigger. Comandos listos en `docs/ci/BRANCH-PROTECTION-SETTINGS.md`.
-- **Referencias:** `docs/ci/BRANCH-PROTECTION-SETTINGS.md` §"Cómo re-aplicar via GitLab API"
+- **Contexto post BL-035 (2026-05-13):** los settings que dependían de CI fueron retirados de scope:
+  - ~~`only_allow_merge_if_pipeline_succeeds`~~ → CANCELADO. BL-035 desactivó CI automático; no hay pipeline obligatorio que esperar. La validación de calidad pasa por `pnpm pp` local (pre-push hook).
+  - ~~GitHub Settings → status checks required~~ → CANCELADO por la misma razón.
+  - `approvals_before_merge ≥ 1` → sigue válido cuando se sume el segundo dev.
+  - `Require code owner approval` → sigue válido cuando se sume el segundo dev.
+- **Próxima acción:** activar `approvals_before_merge` + `code_owner_approval` cuando el equipo crezca a 2+ devs. Comandos listos en `docs/ci/BRANCH-PROTECTION-SETTINGS.md`.
+- **Referencias:** BL-035 (canceló settings dependientes de CI), `docs/ci/BRANCH-PROTECTION-SETTINGS.md` §"Cómo re-aplicar via GitLab API"
 
 ### BL-018 — Completar script weekly-ci-report.mjs
 
