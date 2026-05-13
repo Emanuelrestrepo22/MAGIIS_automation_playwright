@@ -3,7 +3,7 @@
 > Fuente única de verdad para tareas pendientes, decisiones en espera y deuda técnica activa.
 > **Regla:** toda sesión de trabajo debe arrancar validando este documento. Si un ítem aparece aquí como pendiente pero ya fue resuelto por otra vía, actualizar su estado en lugar de duplicarlo.
 
-**Última revisión:** 2026-05-13 (Erika + Claude — cierre de BL-033 como falso positivo: auditoría confirma que el integrador `0299955` consolidó las 2302 líneas a `main` el 2026-04-21 antes del force-push BL-023. Corrigidos SHAs huérfanos en BL-002/008/009/012/013/021/022 al commit consolidado. `integration/pre-main` resincronizado desde main.). Anterior: 2026-04-20 (post PR #12 conflict → BL-023 detectado).
+**Última revisión:** 2026-05-13 (Erika + Claude — 2 cierres en sesión: BL-033 cerrado como falso positivo (integrador `0299955` ya consolidó pre-main → main el 2026-04-21; `integration/pre-main` resincronizado; SHAs huérfanos corregidos en BL-002/008/009/012/013/021/022) + BL-012 Fase 1 carrier completada (commit `1fe01e5`, 3 waitForTimeout debounce Angular migrados, métrica 8/30 = 27%)). Anterior: 2026-04-20 (post PR #12 conflict → BL-023 detectado).
 
 ---
 
@@ -170,22 +170,22 @@
 
 ### BL-012 — `waitForTimeout` conservados con `NOTE(tier3-kept)` — conteo real 30 (+3 vs 27)
 
-- **Estado:** 🟡 Fase 1 contractor completa (2026-04-20) — Fase 1 carrier + bloqueo Stripe pendientes
+- **Estado:** 🟡 Fase 1 contractor + Fase 1 carrier completas (2026-05-13) — bloqueo Stripe pendiente
 - **Prioridad:** P3
 - **Tipo:** Deuda técnica
-- **Contexto:** 30 ocurrencias actuales (3 adicionales vs 27 documentados en WAITFORTIMEOUT-MIGRATION.md; probable causa: refactors post-TIER3.2 en loops submit/vehicle carrier `NewTravelPageBase.ts:805, 815`).
-- **Clasificación (auditoría 2026-04-20):**
+- **Contexto:** 30 ocurrencias detectadas en auditoría 2026-04-20 (3 adicionales vs 27 documentados en WAITFORTIMEOUT-MIGRATION.md; probable causa: refactors post-TIER3.2 en loops submit/vehicle carrier `NewTravelPageBase.ts:805, 815`).
+- **Clasificación reconfirmada (auditoría 2026-05-13 sobre código actual):**
   - **Cat A (eliminable hoy sin cambios):** 0 ocurrencias.
-  - **Cat B (instrumentable):** 12 ocurrencias — debounce autocomplete (6) + post-click re-render (6). **Feasibility piloto validada: Opción A Playwright puro sin tocar frontend** — `expect.poll` sobre `.count()` de opciones + `expect.not.toBeVisible` sobre `.placeholder`.
-  - **Cat C (conservar legítimo — Stripe + loops con condición compuesta):** 18 ocurrencias — incluye los 4 críticos (`97, 107, 657, 908` del carrier/NewTravelPageBase + ThreeDSModal).
-- **Distribución por archivo:** `ThreeDSModal.ts` 5 (todos C) · `contractor/NewTravelPage.ts` 5 (**todos migrados 🟢**) · `carrier/NewTravelPageBase.ts` 20 (7 B + 13 C).
+  - **Cat B (instrumentable con `expect.poll`):** 8 ocurrencias — debounce Angular autocomplete. **Todas migradas.**
+  - **Cat C (conservar legítimo — Stripe + loops con condición compuesta + post-click sin verificable en scope):** ~22 ocurrencias.
+- **Distribución actual:** `ThreeDSModal.ts` 5 (todos C) · `contractor/NewTravelPage.ts` 0 (todos migrados 🟢) · `carrier/NewTravelPageBase.ts` 17 (todos C, los Cat B ya migrados 🟢).
 - **Plan priorizado — estimación real tras piloto:**
   1. **🟢 Fase 1 contractor** (commit consolidado `0299955`, 2026-04-21 — SHA original `1a3de3f` del 2026-04-20 quedó fuera del grafo; ver BL-033): 5 `waitForTimeout` (líneas 159, 164, 185, 189, 204) migrados a `expect.poll` / `expect.not.toBeVisible` via helpers `waitForAutocompleteOptionsReady` + `waitForPlaceFieldSelected`. Esfuerzo real: ~30 min vs estimación original 8-10h.
-  2. **🔴 Fase 1 carrier** (3-4h, aplicable misma técnica): 9 casos Cat B en `carrier/NewTravelPageBase.ts` líneas 238, 327, 346, 355, 362, 377, 382, 389 + ajustes en 759, 883. Patrón idéntico al contractor.
-  3. **🔴 Bloqueo Stripe** (Opción B, requiere coordinación backend): 4 casos críticos (ThreeDSModal 97/107 + NewTravelPageBase 657/908). Sin señal DOM observable; requiere webhook/backend instrumentado para eliminar.
-- **Métrica actualizada:** 5/30 migrados (17%). Queda ~12 Cat B + 13 Cat C conservables por diseño.
-- **Próxima acción:** aplicar Fase 1 carrier en otra sesión dedicada (3-4h); medir tiempos reales localmente para ajustar timeouts conservadores si son excesivos (BL-035: CI desactivado).
-- **Referencias:** commit consolidado `0299955` (squash MR pre-main → main 2026-04-21), `docs/reports/WAITFORTIMEOUT-MIGRATION.md`, auditoría 2026-04-20, BL-033 (falso positivo).
+  2. **🟢 Fase 1 carrier** (commit `1fe01e5`, 2026-05-13): 3 `waitForTimeout` Cat B migrados en `carrier/NewTravelPageBase.ts` (líneas 238 `selectAutocompleteOption` debounce, 346 `searchPlace` debounce happy, 377 `searchPlace` debounce retry). Nuevo helper `protected waitForAutocompleteOptionsReady()` en NewTravelPageBase con triple polling (select-dropdown nativo, listitems inline, CDK overlay). Helper privado duplicado en contractor eliminado — ahora hereda del base. Esfuerzo real: ~1h. Las líneas 327/355/362/382/389 originalmente marcadas como Cat B en el BACKLOG resultaron Cat C tras auditoría in-situ (post-click sin elemento verificable en scope antes del return; ya tienen `NOTE(tier3-kept)`).
+  3. **🔴 Bloqueo Stripe** (Opción B, requiere coordinación backend): 4 casos críticos (ThreeDSModal 93/102 + NewTravelPageBase 659/910). Sin señal DOM observable; requiere webhook/backend instrumentado para eliminar.
+- **Métrica actualizada:** 8/30 migrados (27%). Quedan ~22 Cat C conservables por diseño.
+- **Próxima acción:** evaluar si vale la pena escalar a Cat C (Stripe estabilización) — requiere coordinación backend para instrumentar webhooks. Por ahora la deuda restante es por diseño y aceptable.
+- **Referencias:** commit `1fe01e5` (Fase 1 carrier, 2026-05-13), commit consolidado `0299955` (Fase 1 contractor, 2026-04-21), `docs/reports/WAITFORTIMEOUT-MIGRATION.md`, BL-033 (falso positivo SHAs).
 
 ### BL-013 — Refactor `dataGenerator.ts` — mover lógica Stripe residual
 
