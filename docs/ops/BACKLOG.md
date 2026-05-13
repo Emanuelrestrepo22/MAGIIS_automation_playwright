@@ -3,7 +3,7 @@
 > Fuente única de verdad para tareas pendientes, decisiones en espera y deuda técnica activa.
 > **Regla:** toda sesión de trabajo debe arrancar validando este documento. Si un ítem aparece aquí como pendiente pero ya fue resuelto por otra vía, actualizar su estado en lugar de duplicarlo.
 
-**Última revisión:** 2026-04-20 (Erika + Claude — post PR #12 cerrado por conflict: detectado BL-023 🔴 — github/main y gitlab/main divergentes. MR GitLab sigue viable para `integration/pre-main`. Previo en misma fecha: BL-002 🟡, BL-008 🟡, BL-013 🟢 + ronda 2 agencia: BL-009/BL-012/BL-021)
+**Última revisión:** 2026-05-13 (Erika + Claude — cierre de BL-033 como falso positivo: auditoría confirma que el integrador `0299955` consolidó las 2302 líneas a `main` el 2026-04-21 antes del force-push BL-023. Corrigidos SHAs huérfanos en BL-002/008/009/012/013/021/022 al commit consolidado. `integration/pre-main` resincronizado desde main.). Anterior: 2026-04-20 (post PR #12 conflict → BL-023 detectado).
 
 ---
 
@@ -62,11 +62,12 @@
 - **Reportado:** 2026-04-19
 - **Contexto:** Falla intermitente en login dispatcher al inicio de TC05. `retry(1)` enmascara el síntoma pero no resuelve la raíz.
 - **Avance 2026-04-20:** hallazgo de arquitectura — el smoke corre `--project=chromium` y NO consume el storageState preautenticado del `global-setup.multi-role.ts`. Cada test del smoke hace `loginAsDispatcher` completo (clearCookies + re-goto + login + ensureDashboardLoaded). Instrumenté `loginAsDispatcher` y `loginAsContractor` con `runLoginPhase` para taggear la fase exacta que falla (`[login:goto]`, `[login:submit]`, `[login:dashboard]`) y emitir duración vía `debugLog('auth', ...)`. Sin cambio de control flow ni de timeouts.
-- **Próxima acción:** primera corrida CI post-instrumentación → clasificar el bucket dominante de falla → aplicar fix focalizado según qué fase domine. Sin cupo CI activo esperar reset 1 mayo o usar GitHub Actions.
+- **Próxima acción:** primera corrida local (post BL-035 CI desactivado) → clasificar el bucket dominante de falla → aplicar fix focalizado según qué fase domine. **Plan original "esperar corrida CI" inviable post BL-035 — replantear a smoke local repetido (N=5-10) con `pnpm test:test:smoke` para acumular muestra**.
+- **Nota 2026-05-13:** el SHA original `c0b708a` referenciado en avances anteriores quedó fuera del grafo accesible desde main. El contenido fue consolidado a `main` en el commit integrador `0299955` (2026-04-21, squash MR `integration/pre-main` → `main`). Ver BL-033 para detalle del falso positivo de pérdida.
 - **Referencias:**
-  - `tests/features/gateway-pg/fixtures/gateway.fixtures.ts` (instrumentación)
+  - `tests/features/gateway-pg/fixtures/gateway.fixtures.ts` (instrumentación — en main vía `0299955`)
   - `docs/reports/TC1033-MITIGATION.md` (§ "Hallazgo de arquitectura 2026-04-20")
-  - MR !31 (retry aplicado)
+  - MR !31 (retry aplicado), BL-033 (falso positivo huérfanos), BL-035 (CI desactivado)
 
 ### BL-003 — Validar empíricamente TC09 (Marcelle) y TC04 (AppPax)
 
@@ -129,9 +130,10 @@
 - **Contexto:** MR !36 falló porque `validateCardPrecondition` devolvía defaults cuando la API fallaba, y el check nuevo disparaba throw engañoso sin poder distinguir "API cayó" vs "API ok pero no hay tarjeta".
 - **Avance 2026-04-20:** agregué campo `apiResolved: boolean` al `CardPreconditionResult` (aditivo, no rompe consumers). Se setea `false` cuando falla `getPassengerId` o `getPassengerCards`, `true` solo si la cadena API completó. El try/catch del segundo endpoint (paymentMethodsByPax) ahora también atrapa fallos en vez de lanzar. Guía de uso en el JSDoc del helper.
 - **Próxima acción:** cuando se reabra el trabajo en TC07/TC09 (cargo-a-bordo / hold), el consumer puede hacer `if (result.apiResolved && !result.hasRequiredCard) throw ...`. No hay migración masiva pendiente — el campo es opt-in.
+- **Nota 2026-05-13:** el SHA original `8ad9370` referenciado en avances anteriores quedó fuera del grafo accesible desde main. El contenido fue consolidado a `main` en el commit integrador `0299955` (2026-04-21). Ver BL-033 para detalle del falso positivo.
 - **Referencias:**
-  - `tests/features/gateway-pg/helpers/card-precondition.ts` (JSDoc §"BL-008 — Guard tolerante a API-fail")
-  - MR !39 (revert), MR !40 (TIER 5 para TC07 vía endpoint DELETE — puede hacer esto obsoleto).
+  - `tests/features/gateway-pg/helpers/card-precondition.ts` (JSDoc §"BL-008 — Guard tolerante a API-fail" — en main vía `0299955`)
+  - MR !39 (revert), MR !40 (TIER 5 para TC07 vía endpoint DELETE — puede hacer esto obsoleto), BL-033 (falso positivo).
 
 ### BL-009 — Poblar `tests/fixtures/users/`
 
@@ -143,11 +145,11 @@
 - **🚨 Hallazgo crítico:** `.env.prod` trackeado en git con `USER_CARRIER` y (probablemente) `PASS_CARRIER` en claro → rotación de credenciales + `.env.prod.local` ignorado. **Acción urgente antes de cualquier PR/merge.**
 - **Plan de ejecución (4 fases):**
   1. **🔴 Emergencia creds** (pendiente acción humana): mover `.env.prod` → `.env.prod.local` (gitignored) + rotar `PASS_CARRIER_PROD` + audit git history.
-  2. **🟢 SoT build** (commit `90b7da7`, 2026-04-20): creados `tests/fixtures/users/{types.ts, internal/env-resolver.ts, web-portals/{dispatcher,contractor-collaborator}.ts, mobile/{driver,passenger}.ts, index.ts, README.md}`. Getters lazy de email/password via `process.env.*` con fallback sufijo env (USER_CARRIER_TEST → USER_CARRIER). `tsc --noEmit` OK.
+  2. **🟢 SoT build** (commit consolidado `0299955`, 2026-04-21 — SHA original `90b7da7` del 2026-04-20 quedó fuera del grafo de main; ver BL-033): creados `tests/fixtures/users/{types.ts, internal/env-resolver.ts, web-portals/{dispatcher,contractor-collaborator}.ts, mobile/{driver,passenger}.ts, index.ts, README.md}`. Getters lazy de email/password via `process.env.*` con fallback sufijo env (USER_CARRIER_TEST → USER_CARRIER). `tsc --noEmit` OK.
   3. **🔴 Adopción gradual**: migrar `runtime.ts` + `gatewayPortalRuntime.ts` + `gateway.fixtures.ts` + mobile scripts a los fixtures nuevos (consumers de los legacy intactos).
   4. **🔴 Legacy cleanup**: deprecar `features/gateway-pg/data/passengers.ts`, quitar hardcoding en `travel-cleanup.ts` (`DEFAULT_CARRIER_USER_ID = '6715'`) y mobile harness.
 - **Próxima acción:** Fase 1 requiere rotación humana coordinada con infra. Fase 3 es el siguiente paso técnico ejecutable (adoptar los fixtures nuevos en los 3 puntos de entrada).
-- **Referencias:** commit `90b7da7`, `tests/fixtures/users/README.md`, `docs/ARCHITECTURE.md` §4 "Dónde agregar data nueva"
+- **Referencias:** commit consolidado `0299955` (squash MR pre-main → main 2026-04-21), `tests/fixtures/users/README.md`, `docs/ARCHITECTURE.md` §4 "Dónde agregar data nueva", BL-033 (falso positivo).
 
 ### BL-010 — Mobile Appium Pattern 2 consolidation
 
@@ -178,12 +180,12 @@
   - **Cat C (conservar legítimo — Stripe + loops con condición compuesta):** 18 ocurrencias — incluye los 4 críticos (`97, 107, 657, 908` del carrier/NewTravelPageBase + ThreeDSModal).
 - **Distribución por archivo:** `ThreeDSModal.ts` 5 (todos C) · `contractor/NewTravelPage.ts` 5 (**todos migrados 🟢**) · `carrier/NewTravelPageBase.ts` 20 (7 B + 13 C).
 - **Plan priorizado — estimación real tras piloto:**
-  1. **🟢 Fase 1 contractor** (commit `1a3de3f`, 2026-04-20): 5 `waitForTimeout` (líneas 159, 164, 185, 189, 204) migrados a `expect.poll` / `expect.not.toBeVisible` via helpers `waitForAutocompleteOptionsReady` + `waitForPlaceFieldSelected`. Esfuerzo real: ~30 min vs estimación original 8-10h.
+  1. **🟢 Fase 1 contractor** (commit consolidado `0299955`, 2026-04-21 — SHA original `1a3de3f` del 2026-04-20 quedó fuera del grafo; ver BL-033): 5 `waitForTimeout` (líneas 159, 164, 185, 189, 204) migrados a `expect.poll` / `expect.not.toBeVisible` via helpers `waitForAutocompleteOptionsReady` + `waitForPlaceFieldSelected`. Esfuerzo real: ~30 min vs estimación original 8-10h.
   2. **🔴 Fase 1 carrier** (3-4h, aplicable misma técnica): 9 casos Cat B en `carrier/NewTravelPageBase.ts` líneas 238, 327, 346, 355, 362, 377, 382, 389 + ajustes en 759, 883. Patrón idéntico al contractor.
   3. **🔴 Bloqueo Stripe** (Opción B, requiere coordinación backend): 4 casos críticos (ThreeDSModal 97/107 + NewTravelPageBase 657/908). Sin señal DOM observable; requiere webhook/backend instrumentado para eliminar.
 - **Métrica actualizada:** 5/30 migrados (17%). Queda ~12 Cat B + 13 Cat C conservables por diseño.
-- **Próxima acción:** aplicar Fase 1 carrier en otra sesión dedicada (3-4h); medir tiempos reales en CI para ajustar timeouts conservadores si son excesivos.
-- **Referencias:** commit `1a3de3f`, `docs/reports/WAITFORTIMEOUT-MIGRATION.md`, auditoría 2026-04-20
+- **Próxima acción:** aplicar Fase 1 carrier en otra sesión dedicada (3-4h); medir tiempos reales localmente para ajustar timeouts conservadores si son excesivos (BL-035: CI desactivado).
+- **Referencias:** commit consolidado `0299955` (squash MR pre-main → main 2026-04-21), `docs/reports/WAITFORTIMEOUT-MIGRATION.md`, auditoría 2026-04-20, BL-033 (falso positivo).
 
 ### BL-013 — Refactor `dataGenerator.ts` — mover lógica Stripe residual
 
@@ -191,10 +193,11 @@
 - **Prioridad:** P3
 - **Tipo:** Deuda técnica
 - **Resolución:** auditoría del módulo. `dataGenerator.ts` sólo contiene helpers de auth (emails/passwords random con faker). No hay generadores Stripe allí. El TODO histórico "mover faker bruto de stripe-cards.ts → aquí" fue descartado porque contradice la regla canónica del proyecto: **la respuesta esperada de un test de gateway la determina el número de la tarjeta** (`4242` aprobado, `9235` falla 3DS, etc.), no data aleatoria. Las tarjetas son SoT fija en `tests/fixtures/stripe/cards.ts` + `card-policy.ts`; los campos auxiliares (holderName, zip) son inertes al outcome y pueden quedar random sin impacto. Apliqué: `console.log` → `debugLog('datagen', ...)`, removí los TODOs obsoletos, docblock explícito sobre el alcance del módulo, nueva sección "Regla canónica" en `tests/fixtures/stripe/README.md`.
+- **Nota 2026-05-13:** el SHA original `01ad7a9` quedó fuera del grafo accesible desde main. El contenido vive en main vía commit consolidado `0299955` (2026-04-21). Ver BL-033.
 - **Referencias:**
-  - `tests/shared/utils/dataGenerator.ts` (docblock actualizado)
+  - `tests/shared/utils/dataGenerator.ts` (docblock actualizado — en main vía `0299955`)
   - `tests/fixtures/stripe/README.md` (§"Regla canónica — la respuesta la define el número de tarjeta")
-  - MR !29 (TIER 2.1)
+  - MR !29 (TIER 2.1), BL-033 (falso positivo huérfanos).
 
 ### BL-014a — Aplicar template GitHub Actions optimizado ✅
 
@@ -316,7 +319,7 @@
 - **Tipo:** Automatización nueva (E2E híbrido Playwright + Appium)
 - **Reportado:** 2026-04-20
 - **Contexto:** TS-STRIPE-TC1011 — "Validar Alta de Viaje desde app pax para usuario personal con Tarjeta Preautorizada — Hold desde Alta de Viaje y Cobro desde App Driver". Todo el flujo vive en mobile: alta desde App Pax (con hold Stripe) + cobro desde App Driver. No hay fase web.
-- **Avance 2026-04-20 (commit `94bb3bc`):** draft completo en `docs/test-cases/mobile/TC1011-DRAFT.md` (12 secciones: identidad, precondiciones, flujo canónico por fases, gap analysis, selectores conocidos vs TODO, handoff contract, riesgos, trazabilidad).
+- **Avance 2026-04-20 (commit consolidado `0299955`, 2026-04-21 — SHA original `94bb3bc` del 2026-04-20 quedó fuera del grafo de main; ver BL-033):** draft completo en `docs/test-cases/mobile/TC1011-DRAFT.md` (12 secciones: identidad, precondiciones, flujo canónico por fases, gap analysis, selectores conocidos vs TODO, handoff contract, riesgos, trazabilidad).
 - **Gap identificado:**
   - **Passenger (Fase A):** sin gaps críticos. Screens + selectores validados en `TC-PAX-HOLD-STEPS.md`. Falta formalizar `PassengerTripStatusScreen`.
   - **Driver (Fase B):** sin gap estructural. Checkpoints en `DriverFlowSelectors.ts` + `DriverTripHappyPathHarness`. Requieren validación live contra Driver App actual.
@@ -324,7 +327,7 @@
 - **Estimación implementación funcional:** 3.5-4 días-persona. Bloquea: dispositivo/emulador dual (passenger+driver APKs) + Appium server activo + validación selectores Driver live.
 - **Decisión tomada:** NO crear spec propio `flow1-appPax-*` (violaría taxonomía MAGIIS). Agregar `test.describe('[TS-STRIPE-TC1011]')` dentro del `flow2-passenger-driver/flow2.e2e.spec.ts` existente cuando se active sesión Appium.
 - **Próxima acción:** activar sesión Appium dedicada → extender `JourneyBridge` con `flowType` parametrizable → implementar spec TC1011 dentro de flow2 → validación E2E.
-- **Referencias:** commit `94bb3bc`, `docs/test-cases/mobile/TC1011-DRAFT.md`, `memory/project_pax_hold_steps.md`, CLAUDE.md §Flujos E2E híbridos Flow 2
+- **Referencias:** commit consolidado `0299955` (squash MR pre-main → main 2026-04-21), `docs/test-cases/mobile/TC1011-DRAFT.md`, `memory/project_pax_hold_steps.md`, CLAUDE.md §Flujos E2E híbridos Flow 2, BL-033 (falso positivo).
 
 ### BL-023 — Sincronizar github/main con gitlab/main (remotes divergentes)
 
@@ -368,7 +371,8 @@
   - No verificar estado de pago, declinaciones de tarjeta, ni 3DS en Cargo a Bordo desde Carrier/Contractor. Aplica a TC1081 (TC04), TC1101, TC1111 (TC09) y futuros.
   - Para empresa individuo: la grilla de gestión muestra al cliente titular como pasajero (formato `apellido, nombre`), no al sub-passenger del formulario.
 - **Próxima acción:** actualizar `CLAUDE.md` §"Glosario de dominio MAGIIS" o crear `docs/domain/cargo-a-bordo-rule.md` si crece el volumen de tests del feature. Por ahora la regla vive en comentarios del spec smoke.
-- **Referencias:** commit fix TC1111 (2026-04-20), mensaje del PO en sesión 2026-04-20
+- **Nota 2026-05-13:** el SHA original `62beb78` (fix TC1111) quedó fuera del grafo accesible desde main. El contenido vive en main vía commit consolidado `0299955` (2026-04-21). Ver BL-033.
+- **Referencias:** commit consolidado `0299955` (squash MR pre-main → main 2026-04-21), mensaje del PO en sesión 2026-04-20, BL-033 (falso positivo).
 
 ### BL-024 — Generalizar CardResolver multi-gateway (extender contracts existentes)
 
@@ -514,34 +518,34 @@
 - **Bloqueantes:** script funcional (BL-031).
 - **Referencias:** BL-031, `.github/workflows/playwright.yml`, `docs/ci/CI-USAGE-GUIDELINES.md`
 
-### BL-033 — Reconciliar `integration/pre-main` con `main` (trabajo huérfano post-BL-023)
+### BL-033 — ~~Reconciliar `integration/pre-main` con `main` (trabajo huérfano post-BL-023)~~ — FALSO POSITIVO
 
-- **Estado:** 🔴 Pendiente — hallazgo crítico durante auditoría de ramas 2026-04-27
-- **Prioridad:** P1 — el BACKLOG referencia commits en pre-main como "🟢 Hecho" pero el código no está en main, los specs pueden estar rotos
-- **Tipo:** Infraestructura / deuda crítica
+- **Estado:** 🟢 Resuelto (2026-05-13) — falso positivo, diagnóstico invertido. Sin acción técnica requerida.
+- **Prioridad:** ~~P1~~ → N/A
+- **Tipo:** Infraestructura / deuda crítica → reclasificado como diagnóstico erróneo
 - **Reportado:** 2026-04-27
-- **Contexto:** El sync forzado de remotes BL-023 (force-push de github/main alineando con gitlab/main) reescribió la historia de main. Los 13 commits originales de `integration/pre-main` quedaron huérfanos — incluyendo SHAs explícitamente referenciados en items "🟢 Hecho" del BACKLOG.
-- **Auditoría 2026-04-27:** 45 archivos / 2302 líneas existen en pre-main y NO en main. Mapping entre commits perdidos y BL- afectados:
-  - `c0b708a` instrumentación login → **BL-002** (estado actual: "🟡 Instrumentación aplicada")
-  - `8ad9370` guard apiResolved → **BL-008** (estado: "🟡 Guard aplicado")
-  - `01ad7a9` desacoplar dataGenerator → **BL-013** (estado: "🟢 Hecho" — MIENTE)
-  - `90b7da7` skeleton fixtures users → **BL-009** (estado: "🟢 SoT build commit 90b7da7" — el SHA no existe en main)
-  - `1a3de3f` migrar 5 waitForTimeout → **BL-012** (estado: "🟢 Fase 1 contractor commit 1a3de3f" — idem)
-  - `94bb3bc` draft TC1011 → **BL-021** (estado: "🟡 Draft commit 94bb3bc" — idem)
-  - `62beb78` fix smoke TC1111 → **BL-022** (estado: "🟢 Documentada")
-- **Archivos críticos ausentes en main (muestra):**
-  - `tests/fixtures/users/{types,internal/env-resolver,web-portals/dispatcher,web-portals/contractor-collaborator,mobile/driver,mobile/passenger}.ts` — fixtures users completos (BL-009)
-  - `docs/test-cases/mobile/TC1011-DRAFT.md` (BL-021)
-  - Cambios en `tests/pages/contractor/NewTravelPage.ts` (+62 líneas, BL-012)
-- **Próxima acción:**
-  1. Validar uno por uno qué commit/archivo falta en main vs lo declarado en BACKLOG.
-  2. Decidir estrategia: cherry-pick selectivo a main, merge `pre-main → main` resolviendo conflicts contra los 11 commits nuevos post-sync, o rescate manual.
-  3. Validar `pnpm check:ts` + smoke local post-reconciliación.
-  4. Una vez main tenga el contenido, actualizar los SHAs referenciados en BL-009/012/013/021/022.
-  5. Cerrar el ciclo: pre-main puede borrarse o resincronizarse hard-reset desde main para volver a ser "espejo" para el flujo UAT.
-- **Bloqueante crítico:** revisar BL-009 (fixtures users), BL-012 (waitForTimeout carrier), BL-013 (dataGenerator), BL-021 (TC1011 draft) — sus commits "🟢" pueden estar mintiendo.
-- **Subrama afectada:** `scripts/backlog-bl002-008-013` (local) tiene los mismos commits BL-002/008/013 que pre-main + Merge a pre-main. No borrar hasta cerrar BL-033.
-- **Referencias:** BL-023 (causa raíz), commits `270b1b9` (merge pre-main → main original), `8b41c04` (sync forzado que reescribió historia)
+- **Resolución (2026-05-13):** auditoría con `git diff --name-status main..integration/pre-main` muestra **únicamente deletes y modifications, ningún add** — lo que prueba que `pre-main` está ATRASADO respecto a `main`, no al revés. La hipótesis original confundió la dirección del diff (lo que falta en `pre-main` vs lo que falta en `main`). Las 2302 líneas declaradas "huérfanas" YA están en `main` desde el commit integrador `0299955` "chore(integration): pre-main sesión 2026-04-20 — 8 BL + TC1111" (2026-04-21, **45 archivos / 2302 insertions — cifra exacta**), un squash merge de `integration/pre-main → main` vía MR GitLab ejecutado ANTES del force-push BL-023.
+- **Verificación cruzada:** `git log -1 main -- <archivo>` para cada archivo declarado huérfano devuelve `0299955`:
+  - `tests/fixtures/users/types.ts` (BL-009) → `0299955` ✓
+  - `tests/pages/contractor/NewTravelPage.ts` waitForTimeout migrados (BL-012) → `0299955` ✓
+  - `docs/test-cases/mobile/TC1011-DRAFT.md` (BL-021) → `0299955` ✓
+  - `tests/shared/utils/dataGenerator.ts` desacoplado (BL-013) → `0299955` ✓
+  - `tests/features/gateway-pg/helpers/card-precondition.ts` apiResolved guard (BL-008) → `0299955` ✓
+  - `tests/features/gateway-pg/fixtures/gateway.fixtures.ts` instrumentación (BL-002) → `0299955` ✓
+  - `tests/features/smoke/specs/gateway-pg.smoke.spec.ts` fix TC1111 (BL-022) → `0299955` ✓
+- **Línea de tiempo real:**
+  1. `0299955` (2026-04-21) — squash integrador `integration/pre-main → main` (2302 líneas, 45 archivos)
+  2. `270b1b9` (2026-04-21) — merge commit del MR GitLab
+  3. `8b41c04` (2026-04-21) — BL-023 force-push (sync remotes — NO eliminó el integrador, lo preservó en main)
+  4. `63c3e93` (2026-04-21) — creación de este BL-033 con diagnóstico erróneo
+  5. `0299955` y todo el trabajo posterior (BL-025/034/035) conviven sanos en main desde entonces.
+- **Estado de SHAs originales:** los 7 SHAs (`90b7da7`, `1a3de3f`, `94bb3bc`, `01ad7a9`, `8ad9370`, `c0b708a`, `62beb78`) sobreviven como objetos git pero no son alcanzables desde `main` por la cadena de parents normal — solo desde `integration/pre-main`. Su contenido está consolidado en `main` bajo el SHA único `0299955`.
+- **Acciones aplicadas (2026-05-13):**
+  1. Corregir SHAs referenciados en BL-002/008/009/012/013/021/022 al consolidado `0299955` con nota de la consolidación.
+  2. Resincronizar `integration/pre-main` con hard-reset desde `main` para que vuelva a ser espejo UAT (opción elegida por dev).
+  3. Borrar `scripts/backlog-bl002-008-013` (local) — la subrama subsidiaria ya no tiene función.
+- **Aprendizaje:** todo diagnóstico de "trabajo huérfano" debe validarse con `git log main -- <archivo>` antes de declarar pérdida. El diff `main..rama` muestra el delta desde main hacia rama; el inverso `rama..main` muestra lo opuesto. En caso de duda, contar archivos `A` en ambas direcciones.
+- **Referencias:** commit `0299955`, BL-023 (causa del falso positivo por reescritura de historia que confundió la auditoría posterior), commits `270b1b9` y `8b41c04`.
 
 ### BL-035 — Desactivar CI en GitHub Actions y GitLab — decisión 2026-04-27
 
