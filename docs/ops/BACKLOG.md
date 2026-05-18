@@ -3,7 +3,7 @@
 > Fuente única de verdad para tareas pendientes, decisiones en espera y deuda técnica activa.
 > **Regla:** toda sesión de trabajo debe arrancar validando este documento. Si un ítem aparece aquí como pendiente pero ya fue resuelto por otra vía, actualizar su estado en lugar de duplicarlo.
 
-**Última revisión:** 2026-05-13 (Erika + Claude — 10 hitos cerrados + 2 BLs nuevos abiertos. Hitos: BL-033 falso positivo + BL-012 Fase 1 carrier (`1fe01e5`) + **BL-024 6 fases** (`4b80d45`/`02617b7`/`a26aa35`/`d4bafa9`/`e13ff92`/`6cbac28`) + **BL-009 Fase 3.0** (`d916c96`) + **BL-035 cleanup** (`cdbdba2`) + **BL-028 piloto** (`f24305b`) + **BL-009 Fase 3.2** (`74dd559`) + **BL-009 Fase 3.1** (`fb0d475`) + **BL-009 Fase 4** (`25f6ebb`) + **BL-025 docs Authorize** (`c2bcb16` + `3862664` — agent Opus). Nuevos: **BL-036** (pruebas API smoke MAGIIS + Authorize sandbox) y **BL-037** (test switching de pasarela Stripe↔Authorize, P1 precondición operacional). Documentado switching exclusivo en `docs/gateway-pg/authorize/ARCHITECTURE.md` §1.bis. Anterior: 2026-04-20.
+**Última revisión:** 2026-05-13 (Erika + Claude — 14 hitos cerrados + 2 BLs nuevos abiertos. Hitos: BL-033 falso positivo + BL-012 Fase 1 carrier (`1fe01e5`) + **BL-024 6 fases** + **BL-009 Fase 3.0** (`d916c96`) + **BL-035 cleanup** (`cdbdba2`) + **BL-028 piloto** (`f24305b`) + **BL-009 Fase 3.2** (`74dd559`) + **BL-009 Fase 3.1** (`fb0d475`) + **BL-009 Fase 4** (`25f6ebb`) + **BL-025 docs Authorize** (agent Opus) + **TIER 1 organización multi-gateway** (`b6edee5` — helpers split + POMs 3DS movidos + CONTEXT.md reescrito) + **TIER 2 organización** (`99c6bc7` — config testDir multi-gateway + scripts npm + specs/README.md) + **TIER 2 cleanup** (`c8bf677` — 5 specs sueltos movidos a sub-categorías + fix execFileSync pre-push) + **BL-036 frente B plantilla API client Authorize** (`8eda8b7` — AuthorizeApiClient + 3 specs piloto + skip strategy). Nuevos abiertos: **BL-036** (pruebas API smoke, frente B 🟡 plantilla lista) y **BL-037** (test switching de pasarela Stripe↔Authorize, P1 precondición operacional). Documentado switching exclusivo en `docs/gateway-pg/authorize/ARCHITECTURE.md` §1.bis. Anterior: 2026-04-20.
 
 ---
 
@@ -623,7 +623,7 @@
 
 ### BL-036 — Pruebas API smoke: MAGIIS backend + Authorize.net sandbox
 
-- **Estado:** 🔴 Pendiente — pedido por el líder (sesión 2026-05-13)
+- **Estado:** 🟡 Frente B (Authorize sandbox) plantilla técnica completa (commit `8eda8b7`, 2026-05-13). Frente A (MAGIIS backend) pendiente. Ambos esperan ejecución contra ambiente real.
 - **Prioridad:** P2
 - **Tipo:** Automatización (testing nuevo de tipo API)
 - **Reportado:** 2026-05-13
@@ -655,11 +655,20 @@
       └── contract-cvv-avs.api.spec.ts
   ```
 
+- **Avance 2026-05-13 (commit `8eda8b7` — frente B plantilla completa):**
+  - NUEVO `tests/shared/utils/authorize-api-client.ts` (286L): wrapper Playwright sobre APIRequestContext con operaciones `authOnlyTransaction`, `authCaptureTransaction`, `priorAuthCapture`, `voidTransaction`. Helper `hasAuthorizeCredentials()` para skipear sin credenciales. Error tipado `AuthorizeApiError` con response + body para debug.
+  - NUEVOS 3 specs piloto en `tests/features/gateway-pg/api/authorize-sandbox/`:
+    - `contract-happy.api.spec.ts` (3 tests: Visa/MC/Amex + CVV 900 → Response Code 1).
+    - `contract-decline.api.spec.ts` (1 test: ZIP 46282 → Response Code 2).
+    - `contract-cvv-avs.api.spec.ts` (3 tests: CVV 901/904 mismatch + AVS 46205 no-match).
+  - NUEVO `tests/features/gateway-pg/api/README.md`: documenta ambos frentes + patrón canónico + plan de extensión.
+  - **Skip strategy:** sin `AUTHORIZE_API_LOGIN_ID` o `AUTHORIZE_TRANSACTION_KEY` en env, los 7 tests se skipean con mensaje. NO rompe la suite — diseñado para coexistir con BL-025 paso 1 (credenciales humano).
 - **Próxima acción:**
-  1. Confirmar con backend MAGIIS los endpoints reales (paths, payloads, auth).
-  2. Crear `tests/features/gateway-pg/api/` con primer spec piloto `authorize-sandbox/contract-happy.api.spec.ts` (no requiere ambiente MAGIIS — solo Authorize sandbox + credenciales).
-  3. Iterar: smoke básicos primero, después profundidad.
-- **Bloqueantes:** credenciales sandbox Authorize (paso 1 de BL-025) para el frente "API directa". Para el frente "MAGIIS backend" depende de documentación del backend.
+  1. ~~Crear plantilla frente B~~ ✅ Hecho (commit `8eda8b7`).
+  2. Setear credenciales sandbox en `.env.test` cuando lleguen → ejecutar los 7 tests → esperado verde.
+  3. Frente A: confirmar con backend MAGIIS los endpoints reales (paths, payloads, auth) → crear plantilla análoga en `api/magiis-backend/`.
+  4. Iterar: extender a Partial/Prepaid (ZIPs 46225-46228), Hold + Capture combinados, Void de hold no-settled.
+- **Bloqueantes:** ejecución contra ambiente real depende de (a) credenciales sandbox Authorize para frente B, (b) documentación backend MAGIIS para frente A.
 - **Beneficio (palabras del líder):** red de seguridad para detectar regresiones cuando cambia código de integración — falla rápido a nivel API sin necesidad de correr la suite E2E completa.
 - **Referencias:** `tests/shared/utils/apiClient.ts`, `docs/gateway-pg/authorize/ARCHITECTURE.md` §6 (endpoints), <https://developer.authorize.net/api/reference/index.html>, BL-025 (credenciales), BL-037 (switching)
 
