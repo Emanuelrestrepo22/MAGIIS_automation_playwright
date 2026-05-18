@@ -339,8 +339,8 @@ test.describe('Gateway PG · Carrier · Colaborador — Hold sin 3DS', () => {
 			await runHoldOffScenario(page, {
 				client: TEST_DATA.contractorClient,
 				passenger: TEST_DATA.contractorPassenger,
-				origin: 'Florida 100, CABA',
-				destination: 'Palermo Soho, CABA',
+				origin: TEST_DATA.origin,
+				destination: TEST_DATA.destination,
 				apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
 				cardFlow: 'new',
 			});

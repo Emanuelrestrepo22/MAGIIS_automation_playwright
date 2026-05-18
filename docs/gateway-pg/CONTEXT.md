@@ -24,7 +24,29 @@ Sirve como referencia para:
 
 ## Modelo arquitectónico (umbrella multi-gateway)
 
-> Principio rector: *"El comportamiento esperado del sistema es constante; sólo los datos de entrada cambian por pasarela."*
+> **Principio rector** (afirmado por el líder, sesión 2026-05-13):
+>
+> *"Todos los datos de usuarios y direcciones son los mismos pero sólo cambia la información de tarjetas. Las informaciones generales deben estar centralizadas para las pruebas, como parte de la estandarización."*
+>
+> El comportamiento esperado del sistema es constante. **Sólo la información de tarjetas cambia entre pasarelas.** Todo el resto (usuarios, direcciones, journey defaults, assertions UI, estados MAGIIS) **debe estar centralizado y reutilizado** — nunca duplicado ni hardcoded en specs.
+
+### Qué es "información general centralizada" en este proyecto
+
+| Dato | Ubicación canónica | Uso desde specs |
+| --- | --- | --- |
+| **Usuarios de plataforma** (creds dispatcher/contractor/pax/driver) | `tests/fixtures/users/` (`DISPATCHER`, `CONTRACTOR_COLLABORATOR`, `PAX_WEB`, `DRIVER`, `PASSENGER_APP_USER`) | `getCredentialsForRole(role)` o fixture directo |
+| **Pasajeros de dominio** (entidades MAGIIS sin creds) | `tests/fixtures/users/passengers.ts` (`PASSENGERS.empresaIndividuo`, `PASSENGERS.colaborador`, `PASSENGERS.appPax`) | `PASSENGERS.<key>.name` / `apiSearchQuery` |
+| **Direcciones / journey defaults** | `tests/features/gateway-pg/data/journey-defaults.ts` (`JOURNEY_DEFAULTS` / `TEST_DATA`) | `TEST_DATA.origin`, `TEST_DATA.destination`, `TEST_DATA.client`, etc. |
+| **Tarjetas** (único dato variable por gateway) | `tests/fixtures/gateways/<gateway>/cards.ts` | `resolveCard({ gateway, intent })` o `CARDS.HAPPY_3DS` / `AUTHORIZE_CARDS.SUCCESS` |
+| **Estados de viaje** (`SEARCHING_DRIVER`, `NO_AUTORIZADO`, etc.) | Glosario `CLAUDE.md` raíz | strings literales bajo control de cambio |
+
+### Prohibido en specs (anti-patterns)
+
+- ❌ Hardcodear emails / passwords: `email: 'foo@bar.com'` → usar fixture.
+- ❌ Hardcodear direcciones: `origin: 'Florida 100, CABA'` → usar `TEST_DATA.origin`.
+- ❌ Hardcodear nombres de pasajeros: `client: 'Marcelle Stripe'` → usar `PASSENGERS.empresaIndividuo.name`.
+- ❌ Hardcodear números de tarjeta: `cardNumber: '4242424242424242'` → usar `CARDS.SUCCESS_NO_3DS` / `AUTHORIZE_CARDS.SUCCESS` / `resolveCard({ gateway, intent })`.
+- ❌ Duplicar `STRIPE_*` constantes en POMs locales → ya viven en `fixtures/gateways/stripe/cards.ts`.
 
 ### Capas
 

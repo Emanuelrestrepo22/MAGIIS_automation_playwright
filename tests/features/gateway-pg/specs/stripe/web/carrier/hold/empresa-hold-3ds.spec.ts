@@ -262,8 +262,8 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Hold con 3DS', () 
       await runHoldOnScenario(page, {
         client: PASSENGERS.empresaIndividuo.name,
         passenger: PASSENGERS.empresaIndividuo.name,
-        origin: 'Av. Corrientes 1234, Buenos Aires',
-        destination: 'Av. Santa Fe 2100, Buenos Aires',
+        origin: TEST_DATA.origin,
+        destination: TEST_DATA.destination,
         cardLast4: STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4),
         apiSearchQuery: PASSENGERS.empresaIndividuo.apiSearchQuery,
         cardFlow: 'existing',
@@ -285,8 +285,8 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Hold con 3DS', () 
       await runHoldOnScenario(page, {
         client: PASSENGERS.empresaIndividuo.name,
         passenger: PASSENGERS.empresaIndividuo.name,
-        origin: 'Florida 100, CABA',
-        destination: 'Palermo Soho, CABA',
+        origin: TEST_DATA.origin,
+        destination: TEST_DATA.destination,
         apiSearchQuery: PASSENGERS.empresaIndividuo.apiSearchQuery,
         cardFlow: 'new',
       });
@@ -309,8 +309,8 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Hold con 3DS', () 
       await runHoldOffScenario(page, {
         client: PASSENGERS.empresaIndividuo.name,
         passenger: PASSENGERS.empresaIndividuo.name,
-        origin: 'Av. Corrientes 1234, Buenos Aires',
-        destination: 'Av. Santa Fe 2100, Buenos Aires',
+        origin: TEST_DATA.origin,
+        destination: TEST_DATA.destination,
         apiSearchQuery: PASSENGERS.empresaIndividuo.apiSearchQuery,
         cardFlow: 'existing',
       });
@@ -331,8 +331,8 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Hold con 3DS', () 
       await runHoldOffScenario(page, {
         client: PASSENGERS.empresaIndividuo.name,
         passenger: PASSENGERS.empresaIndividuo.name,
-        origin: 'Florida 100, CABA',
-        destination: 'Palermo Soho, CABA',
+        origin: TEST_DATA.origin,
+        destination: TEST_DATA.destination,
         apiSearchQuery: PASSENGERS.empresaIndividuo.apiSearchQuery,
         cardFlow: 'new',
       });

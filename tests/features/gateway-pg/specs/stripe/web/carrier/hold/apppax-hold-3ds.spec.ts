@@ -280,8 +280,8 @@ test.describe('Gateway PG · Carrier · App Pax — Hold con 3DS', () => {
 			await runHoldOnScenario(page, {
 				client: TEST_DATA.appPaxPassenger,
 				passenger: TEST_DATA.appPaxPassenger,
-				origin: 'Av. Corrientes 1234, Buenos Aires',
-				destination: 'Av. Santa Fe 2100, Buenos Aires',
+				origin: TEST_DATA.origin,
+				destination: TEST_DATA.destination,
 				cardLast4: STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4),
 				apiSearchQuery: PASSENGERS.appPax.apiSearchQuery,
 			});
@@ -301,8 +301,8 @@ test.describe('Gateway PG · Carrier · App Pax — Hold con 3DS', () => {
 			await runHoldOnScenario(page, {
 				client: TEST_DATA.appPaxPassenger,
 				passenger: TEST_DATA.appPaxPassenger,
-				origin: 'Florida 100, CABA',
-				destination: 'Palermo Soho, CABA',
+				origin: TEST_DATA.origin,
+				destination: TEST_DATA.destination,
 				apiSearchQuery: PASSENGERS.appPax.apiSearchQuery,
 			});
 		});
@@ -326,8 +326,8 @@ test.describe('Gateway PG · Carrier · App Pax — Hold con 3DS', () => {
 			await runHoldOffScenario(page, {
 				client: TEST_DATA.appPaxPassenger,
 				passenger: TEST_DATA.appPaxPassenger,
-				origin: 'Av. Corrientes 1234, Buenos Aires',
-				destination: 'Av. Santa Fe 2100, Buenos Aires',
+				origin: TEST_DATA.origin,
+				destination: TEST_DATA.destination,
 				apiSearchQuery: PASSENGERS.appPax.apiSearchQuery,
 			});
 		});
@@ -346,8 +346,8 @@ test.describe('Gateway PG · Carrier · App Pax — Hold con 3DS', () => {
 			await runHoldOffScenario(page, {
 				client: TEST_DATA.appPaxPassenger,
 				passenger: TEST_DATA.appPaxPassenger,
-				origin: 'Florida 100, CABA',
-				destination: 'Palermo Soho, CABA',
+				origin: TEST_DATA.origin,
+				destination: TEST_DATA.destination,
 				apiSearchQuery: PASSENGERS.appPax.apiSearchQuery,
 			});
 		});

@@ -296,8 +296,8 @@ test.describe('Gateway PG · Carrier · Colaborador — Hold con 3DS', () => {
       await runHoldOnScenario(page, {
         client: TEST_DATA.contractorClient,
         passenger: TEST_DATA.contractorPassenger,
-        origin: 'Av. Corrientes 1234, Buenos Aires',
-        destination: 'Av. Santa Fe 2100, Buenos Aires',
+        origin: TEST_DATA.origin,
+        destination: TEST_DATA.destination,
         cardLast4: STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4),
         apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
         cardFlow: 'new',
@@ -319,8 +319,8 @@ test.describe('Gateway PG · Carrier · Colaborador — Hold con 3DS', () => {
       await runHoldOnScenario(page, {
         client: TEST_DATA.contractorClient,
         passenger: TEST_DATA.contractorPassenger,
-        origin: 'Florida 100, CABA',
-        destination: 'Palermo Soho, CABA',
+        origin: TEST_DATA.origin,
+        destination: TEST_DATA.destination,
         apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
         cardFlow: 'new',
       });
@@ -343,8 +343,8 @@ test.describe('Gateway PG · Carrier · Colaborador — Hold con 3DS', () => {
       await runHoldOffScenario(page, {
         client: TEST_DATA.contractorClient,
         passenger: TEST_DATA.contractorPassenger,
-        origin: 'Av. Corrientes 1234, Buenos Aires',
-        destination: 'Av. Santa Fe 2100, Buenos Aires',
+        origin: TEST_DATA.origin,
+        destination: TEST_DATA.destination,
         apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
         cardFlow: 'existing',
       });
@@ -365,8 +365,8 @@ test.describe('Gateway PG · Carrier · Colaborador — Hold con 3DS', () => {
       await runHoldOffScenario(page, {
         client: TEST_DATA.contractorClient,
         passenger: TEST_DATA.contractorPassenger,
-        origin: 'Florida 100, CABA',
-        destination: 'Palermo Soho, CABA',
+        origin: TEST_DATA.origin,
+        destination: TEST_DATA.destination,
         apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
         cardFlow: 'new',
       });
