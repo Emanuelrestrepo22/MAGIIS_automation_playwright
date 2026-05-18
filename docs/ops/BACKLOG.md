@@ -3,7 +3,7 @@
 > Fuente única de verdad para tareas pendientes, decisiones en espera y deuda técnica activa.
 > **Regla:** toda sesión de trabajo debe arrancar validando este documento. Si un ítem aparece aquí como pendiente pero ya fue resuelto por otra vía, actualizar su estado en lugar de duplicarlo.
 
-**Última revisión:** 2026-05-13 (Erika + Claude — 14 hitos cerrados + 2 BLs nuevos abiertos. Hitos: BL-033 falso positivo + BL-012 Fase 1 carrier (`1fe01e5`) + **BL-024 6 fases** + **BL-009 Fase 3.0** (`d916c96`) + **BL-035 cleanup** (`cdbdba2`) + **BL-028 piloto** (`f24305b`) + **BL-009 Fase 3.2** (`74dd559`) + **BL-009 Fase 3.1** (`fb0d475`) + **BL-009 Fase 4** (`25f6ebb`) + **BL-025 docs Authorize** (agent Opus) + **TIER 1 organización multi-gateway** (`b6edee5` — helpers split + POMs 3DS movidos + CONTEXT.md reescrito) + **TIER 2 organización** (`99c6bc7` — config testDir multi-gateway + scripts npm + specs/README.md) + **TIER 2 cleanup** (`c8bf677` — 5 specs sueltos movidos a sub-categorías + fix execFileSync pre-push) + **BL-036 frente B plantilla API client Authorize** (`8eda8b7` — AuthorizeApiClient + 3 specs piloto + skip strategy). Nuevos abiertos: **BL-036** (pruebas API smoke, frente B 🟡 plantilla lista) y **BL-037** (test switching de pasarela Stripe↔Authorize, P1 precondición operacional). Documentado switching exclusivo en `docs/gateway-pg/authorize/ARCHITECTURE.md` §1.bis. Anterior: 2026-04-20.
+**Última revisión:** 2026-05-13 (Erika + Claude — 15 hitos cerrados + 3 BLs nuevos abiertos. Hitos cierran TIER 1/2/cleanup organización multi-gateway + BL-024 6 fases + BL-009 fases 3.0/3.1/3.2/4 + BL-025 docs Authorize (agent Opus) + BL-028 piloto + BL-035 cleanup + BL-036 frente B plantilla API + **mejora continua orquestador** (DRY JOURNEY_DEFAULTS en 2 specs + STRIPE_CARD_BY_LAST4 extraído al fixture `tests/fixtures/gateways/stripe/card-by-last4.ts` + JSDoc deuda Strategy Pattern). Nuevos abiertos: **BL-036** (pruebas API smoke, frente B 🟡 plantilla lista) + **BL-037** (test switching pasarela Stripe↔Authorize, P1 precondición operacional) + **BL-038** (P1 Strategy Pattern CardForm multi-gateway — deuda estructural identificada en auditoría 2026-05-13, mitigación parcial aplicada). Anterior: 2026-04-20.
 
 ---
 
@@ -620,6 +620,32 @@
 - **Estado final:** locales restantes: `main`, `integration/pre-main`, `scripts/backlog-bl002-008-013`, `scripts/ci-interruptible`. Remotas github: `main`, `integration/pre-main`, `carrier/cargo-a-bordo-tc1081-fix`. GitLab: sólo `main`.
 - **Hallazgo derivado:** BL-033 abierto (P1) — la auditoría reveló que pre-main contiene 13 commits con código BL-009/012/013/021/022 huérfanos no presentes en main.
 - **Referencias:** sesión 2026-04-27, BL-033 (hallazgo derivado), commits del cleanup en historial git
+
+### BL-038 — Strategy Pattern para CardForm multi-gateway (POM)
+
+- **Estado:** 🔴 Pendiente — deuda estructural identificada en auditoría de mejora continua 2026-05-13.
+- **Prioridad:** P1 (precondición técnica para BL-025 runtime POM Authorize)
+- **Tipo:** Arquitectura / refactor estructural
+- **Reportado:** 2026-05-13
+- **Contexto:** Auditoría de organización 2026-05-13 detectó que `tests/pages/carrier/NewTravelPageBase.ts:fillPreauthorizedCard(last4)` está atado a Stripe:
+  - Importa constantes Stripe-specific (`STRIPE_EXPIRY`, `STRIPE_CVC`, `STRIPE_BILLING_ZIP`, `STRIPE_CARD_HOLDER_NAME`).
+  - Llena 3 iframes Stripe Elements (`cardNumber`, `cardExpiry`, `cardCvc`) directamente.
+  - El registry `STRIPE_CARD_BY_LAST4` fue extraído al fixture canónico en sesión 2026-05-13 (mitigación parcial), pero la lógica de llenado del form sigue 100% Stripe-coupled.
+- **Impacto multi-gateway:** cuando entre Authorize en runtime (BL-025), su POM va a ser DIFERENTE — Authorize.net no usa iframes Stripe; usa Accept.js (iframe único o form embebido) o API directa. Hoy NO hay forma limpia de switchear sin duplicar el POM completo.
+- **Solución propuesta (Strategy Pattern):**
+  - Crear interfaz `CardFormStrategy { fill(card: GenericTestCard): Promise<void>; assertReady(): Promise<void> }`.
+  - Implementaciones por gateway:
+    - `tests/pages/carrier/stripe/StripeCardForm.ts` (extraer el método actual).
+    - `tests/pages/carrier/authorize/AuthorizeCardForm.ts` (nuevo cuando entre POM Authorize).
+  - `NewTravelPageBase` recibe la strategy por DI o resuelve por config global (gateway activo del sistema, ver BL-037 switching exclusivo).
+  - `fillPreauthorizedCard(last4)` se vuelve thin wrapper que delega a la strategy.
+- **Alcance estimado:** 17 archivos consumers afectados (14 specs + 2 helpers + 1 e2e). Refactor controlado por el patrón ya validado en TIER 1 (re-exports preservan API legacy).
+- **Bloqueantes:** ninguno técnico. Recomendación: ejecutar cuando entre el POM real Authorize (BL-025 paso 4) para validar el diseño contra DOS implementaciones reales, evitando over-engineering basado solo en Stripe.
+- **Mitigación aplicada 2026-05-13:**
+  - `STRIPE_CARD_BY_LAST4` movido a `tests/fixtures/gateways/stripe/card-by-last4.ts` (centralizado en SoT).
+  - JSDoc en `fillPreauthorizedCard` documenta la deuda y apunta a este BL.
+  - Import directo desde `fixtures/gateways/stripe/cards.ts` (no más vía `stripeTestData` legacy).
+- **Referencias:** auditoría 2026-05-13 (commit `c8bf677` + tier docs), BL-024 ✅ (umbrella + resolver cross-gateway), BL-025 (runtime POM Authorize), BL-037 (gateway switching que determina qué strategy activar).
 
 ### BL-036 — Pruebas API smoke: MAGIIS backend + Authorize.net sandbox
 

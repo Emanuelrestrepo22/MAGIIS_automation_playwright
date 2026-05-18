@@ -1,6 +1,10 @@
 import { expect, type Frame, type Locator, type Page } from '@playwright/test';
 import { getPortalUrl } from '../../config/gatewayPortalRuntime';
-import { STRIPE_BILLING_ZIP, STRIPE_CARD_HOLDER_NAME, STRIPE_CVC, STRIPE_EXPIRY, STRIPE_TEST_CARDS } from '../../features/gateway-pg/data/stripeTestData';
+// BL-024 mejora continua: data Stripe viene del fixture canónico, no del legacy.
+// El POM sigue acoplado a Stripe Elements (deuda TIER A — BL-038 Strategy Pattern),
+// pero al menos las constantes y mappings centralizados en el fixture.
+import { STRIPE_BILLING_ZIP, STRIPE_CARD_HOLDER_NAME, STRIPE_CVC, STRIPE_EXPIRY } from '../../fixtures/gateways/stripe/cards';
+import { resolveStripeCardByLast4 } from '../../fixtures/gateways/stripe/card-by-last4';
 
 export type NewTravelFormInput = {
 	client?: string;
@@ -41,25 +45,11 @@ type TariffType = 'Distancia' | 'ADisposicion';
 type PaymentMethod = 'Preautorizada' | 'CuentaCorriente' | 'Efectivo' | 'CargoABordo';
 type TipType = 'SIN_PROPINA' | 'PCT_10' | 'PCT_15' | 'PCT_20' | 'CUSTOM';
 
-const STRIPE_CARD_BY_LAST4: Record<string, string> = {
-	[STRIPE_TEST_CARDS.successDirect.slice(-4)]: STRIPE_TEST_CARDS.successDirect,
-	[STRIPE_TEST_CARDS.success3DS.slice(-4)]: STRIPE_TEST_CARDS.success3DS,
-	[STRIPE_TEST_CARDS.fail3DS.slice(-4)]: STRIPE_TEST_CARDS.fail3DS,
-	[STRIPE_TEST_CARDS.insufficientFunds.slice(-4)]: STRIPE_TEST_CARDS.insufficientFunds,
-	[STRIPE_TEST_CARDS.declined.slice(-4)]: STRIPE_TEST_CARDS.declined,
-	[STRIPE_TEST_CARDS.threeDSRequired.slice(-4)]: STRIPE_TEST_CARDS.threeDSRequired,
-	[STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4)]: STRIPE_TEST_CARDS.alwaysAuthenticate,
-	[STRIPE_TEST_CARDS.mastercardDebit.slice(-4)]: STRIPE_TEST_CARDS.mastercardDebit,
-	[STRIPE_TEST_CARDS.lostCard.slice(-4)]: STRIPE_TEST_CARDS.lostCard,
-	[STRIPE_TEST_CARDS.stolenCard.slice(-4)]: STRIPE_TEST_CARDS.stolenCard,
-	[STRIPE_TEST_CARDS.incorrectCvc.slice(-4)]: STRIPE_TEST_CARDS.incorrectCvc,
-	[STRIPE_TEST_CARDS.expiredCard.slice(-4)]: STRIPE_TEST_CARDS.expiredCard,
-	[STRIPE_TEST_CARDS.highestRisk.slice(-4)]: STRIPE_TEST_CARDS.highestRisk,
-	[STRIPE_TEST_CARDS.alwaysBlocked.slice(-4)]: STRIPE_TEST_CARDS.alwaysBlocked,
-	[STRIPE_TEST_CARDS.cvcCheckFail.slice(-4)]: STRIPE_TEST_CARDS.cvcCheckFail,
-	[STRIPE_TEST_CARDS.zipFailElevated.slice(-4)]: STRIPE_TEST_CARDS.zipFailElevated,
-	[STRIPE_TEST_CARDS.addressUnavailable.slice(-4)]: STRIPE_TEST_CARDS.addressUnavailable
-};
+// BL-024 mejora continua (2026-05-13): el mapping `last4 → cardNumber` fue
+// extraído al fixture canónico `tests/fixtures/gateways/stripe/card-by-last4.ts`.
+// Si necesitás agregar una card Stripe nueva, hacelo en `cards.ts` (registry
+// principal) — el mapping se reconstruye automáticamente desde ahí.
+
 const TRAVEL_SUBMIT_TIMEOUT = 60_000;
 
 function normalizeText(value: string | null | undefined): string {
@@ -639,12 +629,18 @@ export abstract class NewTravelPageBase {
 		throw new Error(`Stripe frame not found: ${component}`);
 	}
 
-	/** Completa los datos de la tarjeta preautorizada sin disparar validación. */
+	/**
+	 * Completa los datos de la tarjeta preautorizada sin disparar validación.
+	 *
+	 * NOTA deuda TIER A (BL-038): este método está atado a Stripe Elements
+	 * (3 iframes + constantes STRIPE_*). Cuando entre Authorize (que usa
+	 * Accept.js o form propio), hace falta Strategy Pattern para que
+	 * `fillPreauthorizedCard` delegue a una `CardFormStrategy` específica
+	 * del gateway activo.
+	 */
 	async fillPreauthorizedCard(last4: string): Promise<void> {
-		const cardNumber = STRIPE_CARD_BY_LAST4[last4];
-		if (!cardNumber) {
-			throw new Error(`Unknown Stripe test card last4: ${last4}`);
-		}
+		// Resolución del cardNumber centralizada en el fixture Stripe canónico.
+		const cardNumber = resolveStripeCardByLast4(last4);
 
 		await this.paymentMethodSelector.click();
 		const preauthOption = this.page

@@ -411,8 +411,8 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Hold sin 3DS', () 
 			await runHoldOnScenario(page, {
 				client: PASSENGERS.empresaIndividuo.name,
 				passenger: PASSENGERS.empresaIndividuo.name,
-				origin: 'Reconquista 661, Buenos Aires, Argentina',
-				destination: 'Cazadores 1987, Buenos Aires, Argentina',
+				origin: TEST_DATA.origin,
+				destination: TEST_DATA.destination,
 				apiSearchQuery: PASSENGERS.empresaIndividuo.apiSearchQuery,
 				cardFlow: 'new',
 			});
@@ -460,8 +460,8 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Hold sin 3DS', () 
 			await runHoldOffScenario(page, {
 				client: PASSENGERS.empresaIndividuo.name,
 				passenger: PASSENGERS.empresaIndividuo.name,
-				origin: 'Reconquista 661, Buenos Aires, Argentina',
-				destination: 'Cazadores 1987, Buenos Aires, Argentina',
+				origin: TEST_DATA.origin,
+				destination: TEST_DATA.destination,
 				apiSearchQuery: PASSENGERS.empresaIndividuo.apiSearchQuery,
 				cardFlow: 'new',
 			});
