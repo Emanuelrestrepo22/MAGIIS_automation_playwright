@@ -13,9 +13,9 @@
  * Popup B (MAGIIS error) NO aparece en este escenario.
  */
 
-import { test, expect } from '../../../../TestBase';
-import { loginAsDispatcher, setupTravelWithFailed3DS, TEST_DATA, STRIPE_TEST_CARDS } from '../../fixtures/gateway.fixtures';
-import { DashboardPage, NewTravelPage, OperationalPreferencesPage, ThreeDSModal, TravelDetailPage, TravelManagementPage } from '../../../../pages/carrier';
+import { test, expect } from '../../../../../../../TestBase';
+import { loginAsDispatcher, setupTravelWithFailed3DS, TEST_DATA, STRIPE_TEST_CARDS } from '../../../../../fixtures/gateway.fixtures';
+import { DashboardPage, NewTravelPage, OperationalPreferencesPage, ThreeDSModal, TravelDetailPage, TravelManagementPage } from '../../../../../../../pages/carrier';
 
 test.describe.configure({ mode: 'serial' });
 

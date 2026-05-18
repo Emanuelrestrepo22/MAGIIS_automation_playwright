@@ -7,9 +7,9 @@
  * TC1059 – Hold ON, tarjeta con fondos insuficientes (4000 0000 0000 9995) — viaje no se crea
  */
 
-import { test, expect } from '../../../../TestBase';
-import { loginAsDispatcher, expectNoThreeDSModal, TEST_DATA, STRIPE_TEST_CARDS } from '../../fixtures/gateway.fixtures';
-import { NewTravelPage, OperationalPreferencesPage, TravelManagementPage } from '../../../../pages/carrier';
+import { test, expect } from '../../../../../../../TestBase';
+import { loginAsDispatcher, expectNoThreeDSModal, TEST_DATA, STRIPE_TEST_CARDS } from '../../../../../fixtures/gateway.fixtures';
+import { NewTravelPage, OperationalPreferencesPage, TravelManagementPage } from '../../../../../../../pages/carrier';
 
 test.describe.configure({ mode: 'serial' });
 test.describe.configure({ timeout: 120_000 });

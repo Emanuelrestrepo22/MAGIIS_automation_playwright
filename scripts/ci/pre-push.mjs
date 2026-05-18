@@ -26,7 +26,7 @@
  * Ver: docs/ci/CI-USAGE-GUIDELINES.md
  */
 
-import { execSync } from 'node:child_process';
+import { execSync, execFileSync } from 'node:child_process';
 import { performance } from 'node:perf_hooks';
 
 // ANSI colors
@@ -242,10 +242,13 @@ runCheck('4/11', 'Sin credenciales hardcodeadas',
     });
     if (existing.length === 0) return { fail: false };
     try {
-      // Patrón como variable para evitar conflicto con template literal
+      // BL fix shell escaping (2026-05-13): execFileSync con args array evita
+      // que cmd.exe / bash interprete `${}` y `[\']` como sintaxis de shell.
+      // El patrón pasa como argumento literal, no como parte del comando.
       const credPattern = '(PASS_CARRIER|PASS_CONTRACTOR|SECRET_KEY)\\s*=\\s*[\'"][^\'\"${}]{3,}';
-      const out = execSync(
-        `grep -rn --include="*.ts" -E "${credPattern}" ${existing.join(' ')} 2>&1`,
+      const out = execFileSync(
+        'grep',
+        ['-rn', '--include=*.ts', '-E', credPattern, ...existing],
         { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }
       );
       const lines = out.split('\n').filter(l => l.trim())
@@ -255,6 +258,7 @@ runCheck('4/11', 'Sin credenciales hardcodeadas',
       }
       return { fail: false };
     } catch (err) {
+      // grep exit 1 = no matches (caso happy). Cualquier otro exit = error real.
       if (err.status === 1) return { fail: false };
       throw err;
     }

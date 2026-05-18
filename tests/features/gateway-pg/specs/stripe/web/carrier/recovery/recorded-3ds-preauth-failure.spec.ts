@@ -7,9 +7,9 @@
  *          pop-up de error visible, URL permanece en formulario de alta sin crear viaje
  */
 import { expect } from '@playwright/test';
-import { test } from '../../../../TestBase';
-import { DashboardPage, NewTravelPage, OperationalPreferencesPage, ThreeDSModal, ThreeDSErrorPopup } from '../../../../pages/carrier';
-import { loginAsDispatcher, STRIPE_TEST_CARDS, TEST_DATA } from '../../fixtures/gateway.fixtures';
+import { test } from '../../../../../../../TestBase';
+import { DashboardPage, NewTravelPage, OperationalPreferencesPage, ThreeDSModal, ThreeDSErrorPopup } from '../../../../../../../pages/carrier';
+import { loginAsDispatcher, STRIPE_TEST_CARDS, TEST_DATA } from '../../../../../fixtures/gateway.fixtures';
 
 test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
 

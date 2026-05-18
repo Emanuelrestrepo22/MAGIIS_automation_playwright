@@ -9,9 +9,9 @@
  *          PENDIENTE: requiere flujo de vinculación completo en travel-detail
  */
 
-import { test, expect } from '../../../../TestBase';
-import { loginAsDispatcher, setupTravelWithFailed3DS, TEST_DATA } from '../../fixtures/gateway.fixtures';
-import { TravelDetailPage } from '../../../../pages/carrier';
+import { test, expect } from '../../../../../../../TestBase';
+import { loginAsDispatcher, setupTravelWithFailed3DS, TEST_DATA } from '../../../../../fixtures/gateway.fixtures';
+import { TravelDetailPage } from '../../../../../../../pages/carrier';
 
 test.describe.configure({ mode: 'serial' });
 

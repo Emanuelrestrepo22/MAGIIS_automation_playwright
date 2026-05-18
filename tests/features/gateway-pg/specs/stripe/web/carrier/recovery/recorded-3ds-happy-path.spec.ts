@@ -8,10 +8,10 @@
  *   - El formulario pre-carga dirección "home" del pasajero como origen → setOrigin() la limpia con X
  */
 
-import { test, expect } from '../../../../TestBase';
-import { LoginPage } from '../../../../pages/shared';
-import { DashboardPage, NewTravelPage, OperationalPreferencesPage, ThreeDSModal } from '../../../../pages/carrier';
-import { STRIPE_TEST_CARDS, TEST_DATA } from '../../data/stripeTestData';
+import { test, expect } from '../../../../../../../TestBase';
+import { LoginPage } from '../../../../../../../pages/shared';
+import { DashboardPage, NewTravelPage, OperationalPreferencesPage, ThreeDSModal } from '../../../../../../../pages/carrier';
+import { STRIPE_TEST_CARDS, TEST_DATA } from '../../../../../data/stripeTestData';
 
 test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
 

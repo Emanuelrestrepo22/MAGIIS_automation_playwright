@@ -8,16 +8,16 @@ Este directorio organiza los specs del feature `gateway-pg` por **pasarela de pa
 specs/
 ├── stripe/         🟢 Producción activa (cobertura completa)
 │   ├── web/
-│   │   ├── carrier/{cargo-a-bordo, hold, operaciones, recurrentes}/
+│   │   ├── carrier/
+│   │   │   ├── cargo-a-bordo/
+│   │   │   ├── hold/                ← incluye hold-capture.spec.ts (TS-STRIPE-TC1049/1059)
+│   │   │   ├── operaciones/
+│   │   │   ├── recurrentes/
+│   │   │   └── recovery/            ← 4 specs 3DS recovery (TC1051/1057/1061/1063/1064/1053/1039)
 │   │   └── contractor/
 │   ├── e2e-mobile/
 │   ├── quote/
-│   ├── config/
-│   ├── 3ds-failure.spec.ts          ← suelto (TODO mover a web/carrier/recovery/)
-│   ├── 3ds-retry-card-change.spec.ts ← suelto (TODO mover a web/carrier/recovery/)
-│   ├── hold-capture.spec.ts          ← suelto (TODO mover a web/carrier/hold/)
-│   ├── recorded-3ds-happy-path.spec.ts ← suelto
-│   └── recorded-3ds-preauth-failure.spec.ts ← suelto
+│   └── config/
 ├── authorize/      🟡 Slot reservado (BL-025 pendiente runtime)
 │   └── README.md
 └── _parametrized/  🟡 Specs cross-gateway que iteran ACTIVE_GATEWAYS (BL-028)
@@ -75,14 +75,14 @@ El subdirectorio `_parametrized/` contiene specs que iteran sobre `ACTIVE_GATEWA
 
 Habilitado por BL-024 (umbrella + resolver polimórfico). Migración bulk del resto de specs pendiente (BL-028 fase 2).
 
-## TODO de organización
+## Reorganización 2026-05-13
 
-Los 5 specs sueltos en `stripe/` (root del directorio Stripe) deberían reorganizarse:
+Los 5 specs sueltos que vivían en `specs/stripe/` root fueron movidos a sus sub-categorías:
 
-- `3ds-failure.spec.ts`, `3ds-retry-card-change.spec.ts`, `recorded-3ds-*.spec.ts` → `web/carrier/recovery/`
+- `3ds-failure.spec.ts`, `3ds-retry-card-change.spec.ts`, `recorded-3ds-happy-path.spec.ts`, `recorded-3ds-preauth-failure.spec.ts` → `web/carrier/recovery/`
 - `hold-capture.spec.ts` → `web/carrier/hold/`
 
-Esto **NO se hizo en esta sesión** porque requiere actualizar 5 sets de imports + `package.json` + referencias en docs. Pendiente sesión dedicada (sin ID de BL aún — agregar a `docs/ops/BACKLOG.md` si crece la prioridad).
+Imports relativos ajustados (3 niveles más profundo). `package.json` actualizado con el nuevo path del script `:stripe:3ds`. Algunos docs (`docs/reports/`, `docs/qa-scope/`, codex-prompts) pueden tener referencias antiguas a los paths originales — son referenciales, se actualizarán cuando se toquen.
 
 ## Referencias
 
