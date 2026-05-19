@@ -35,7 +35,7 @@ export default defineConfig({
     ["list"],
     ["html", { open: "never", outputFolder: `evidence/${env}/report` }],
     ["junit", { outputFile: `evidence/${env}/junit.xml` }],
-    ["./project-root/custom-reporter.ts"],
+    ["./tests/utils/reporters/custom-reporter.ts"],
   ],
 
   use: {

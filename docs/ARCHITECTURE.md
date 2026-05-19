@@ -117,13 +117,11 @@ tests/features/<x>/data/             ← scenarios específicos del feature
 | `tests/config/` | Runtime configs, URLs por env | `runtime.ts`, `gatewayPortalRuntime.ts` |
 | `tests/fixtures/` | **Datos atómicos transversales** (cards, users) | `stripe/cards.ts`, `users/passengers.ts` |
 | `tests/pages/shared/` | POMs comunes carrier+contractor | `LoginPage.ts`, `SuperPage.ts` |
-| `tests/pages/carrier/` | POMs canónicos carrier | `DashboardPage.ts`, `NewTravelPageBase.ts`, `ThreeDSModal.ts` |
+| `tests/pages/carrier/` | POMs canónicos carrier (compartidos) + sub-dirs gateway-specific | `DashboardPage.ts`, `NewTravelPageBase.ts`, `stripe/ThreeDSModal.ts` |
 | `tests/pages/contractor/` | Subclases carrier donde hay divergencia | `NewTravelPage.ts` (override fillMinimum) |
-| `tests/selectors/` | Selectores web separados (no-POM) | — |
-| `tests/shared/contracts/` | Contratos de datos compartidos | — |
-| `tests/shared/utils/` | Utilidades compartidas (data generator faker) | `dataGenerator.ts` |
-| `tests/utils/` | Utilidades técnicas puras (API clients, etc.) | `apiClient.ts`, `geminiClient.ts`, `scripts/` |
-| `tests/helpers/` | **Helpers globales Playwright** (reservada — por poblar) | (pendiente) |
+| `tests/shared/utils/` | Utilidades técnicas puras + clientes API | `apiClient.ts`, `authorize-api-client.ts`, `dataGenerator.ts`, `excel-reader.ts`, `geminiClient.ts` |
+| `tests/utils/` | CLI scripts y reporters Playwright | `reporters/custom-reporter.ts`, `scripts/update-matriz-xlsx.ts` |
+| `tests/helpers/` | **Helpers Playwright globales** (assertions, browser, debug, retry) | `assertions.ts`, `browser.ts`, `debug.ts`, `retry.ts`, `index.ts` |
 | `tests/features/<x>/specs/` | Specs Playwright del feature | `gateway-pg/specs/stripe/web/carrier/hold/*.spec.ts` |
 | `tests/features/<x>/fixtures/` | Fixtures específicas del feature | `gateway.fixtures.ts` |
 | `tests/features/<x>/helpers/` | Helpers específicos del feature | `stripe.helpers.ts`, `travel-cleanup.ts` |
@@ -145,11 +143,24 @@ tests/features/<x>/data/             ← scenarios específicos del feature
 - Atómico transversal (card, user, payload base) → `tests/fixtures/<dominio>/`
 - Scenario específico (combinación card × user × flow) → `tests/features/<feature>/data/`
 
-### Dónde agregar helper nuevo
+### Dónde agregar helper nuevo (regla canónica — 4 ubicaciones)
 
-- Wrapper sobre Playwright API reutilizable cross-feature (`waitForStableURL`, assertions custom) → `tests/helpers/` (crear si hace falta el archivo)
-- Específico del feature (ej: cleanup de travels, stripe 3DS helpers) → `tests/features/<feature>/helpers/`
-- Utilidad técnica pura (API client, parser) → `tests/utils/` o `tests/shared/utils/`
+Cuatro ubicaciones con regla clara. Si dudás, pensá en el "scope" del helper:
+
+| Si el helper… | Va en | Ejemplo |
+| --- | --- | --- |
+| Es **wrapper de Playwright API** reutilizable cross-feature (assertions custom, retry, debug, browser utilities) | `tests/helpers/` | `assertions.ts`, `browser.ts`, `retry.ts`, `debug.ts` |
+| Es **utilidad técnica pura** o cliente externo (API client, parser, generator de fake data) | `tests/shared/utils/` | `apiClient.ts` (MAGIIS backend), `authorize-api-client.ts` (sandbox), `dataGenerator.ts` |
+| Es **específico de UN feature** (cleanup de travels, orquestación journey, etc.) | `tests/features/<feature>/helpers/` | `gateway-pg/helpers/travel-cleanup.ts`, `gateway-pg/helpers/journey-url.helpers.ts` |
+| Es **específico de UN gateway** dentro de un feature multi-gateway | `tests/features/<feature>/helpers/<gateway>/` | `gateway-pg/helpers/stripe/recovery.helpers.ts` |
+| Es **específico mobile (Appium)** | `tests/mobile/appium/helpers/` | (screens helpers) |
+
+Anti-patterns prohibidos:
+
+- ❌ Hardcodear lógica que cabe en helper directamente en specs.
+- ❌ Importar `pages/` desde `helpers/` (capa de presentación primero).
+- ❌ Crear helper en `tests/helpers/` cuando es claramente específico de un feature.
+- ❌ Duplicar helpers entre carrier y contractor cuando la lógica es la misma (extraer al base o a `tests/helpers/`).
 
 ### Dónde agregar Page Object
 
