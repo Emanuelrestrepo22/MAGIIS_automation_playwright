@@ -3,7 +3,7 @@
 > Fuente única de verdad para tareas pendientes, decisiones en espera y deuda técnica activa.
 > **Regla:** toda sesión de trabajo debe arrancar validando este documento. Si un ítem aparece aquí como pendiente pero ya fue resuelto por otra vía, actualizar su estado en lugar de duplicarlo.
 
-**Última revisión:** 2026-05-13 (Erika + Claude — 15 hitos cerrados + 3 BLs nuevos abiertos. Hitos cierran TIER 1/2/cleanup organización multi-gateway + BL-024 6 fases + BL-009 fases 3.0/3.1/3.2/4 + BL-025 docs Authorize (agent Opus) + BL-028 piloto + BL-035 cleanup + BL-036 frente B plantilla API + **mejora continua orquestador** (DRY JOURNEY_DEFAULTS en 2 specs + STRIPE_CARD_BY_LAST4 extraído al fixture `tests/fixtures/gateways/stripe/card-by-last4.ts` + JSDoc deuda Strategy Pattern). Nuevos abiertos: **BL-036** (pruebas API smoke, frente B 🟡 plantilla lista) + **BL-037** (test switching pasarela Stripe↔Authorize, P1 precondición operacional) + **BL-038** (P1 Strategy Pattern CardForm multi-gateway — deuda estructural identificada en auditoría 2026-05-13, mitigación parcial aplicada). Anterior: 2026-04-20.
+**Última revisión:** 2026-05-19 (Erika + Claude — análisis comparativo vs `https://playwright.dev/docs/intro` + best practices oficiales. **7 BLs nuevos abiertos** derivados del gap-analysis hacia estandarización y mejora continua: **BL-039** ESLint Playwright plugin (P1, guardrail estructural) + **BL-040** soft assertions + `expect.configure` por dominio (P3) + **BL-041** auth como project dependency reemplaza `global-setup.multi-role.ts` (P1, mitiga BL-002) + **BL-042** sharding CI con blob reporter (P1, alivia cuota GitLab — sinérgico con BL-035) + **BL-043** network mocking Stripe/Authorize + API project separado (P2, absorbe BL-036 al cerrarse) + **BL-044** visual regression dirigida modales 3DS + popups críticos (P2) + **BL-045** tags + grep para reemplazar 50 scripts npm proliferados (P3). Anterior: 2026-05-13 (15 hitos cerrados + 3 BLs nuevos abiertos. Hitos cerraron TIER 1/2/cleanup organización multi-gateway + BL-024 6 fases + BL-009 fases 3.0/3.1/3.2/4 + BL-025 docs Authorize (agent Opus) + BL-028 piloto + BL-035 cleanup + BL-036 frente B plantilla API + **mejora continua orquestador** DRY JOURNEY_DEFAULTS + STRIPE_CARD_BY_LAST4 extraído al fixture + JSDoc deuda Strategy Pattern; nuevos abiertos: BL-036 / BL-037 / BL-038).
 
 ---
 
@@ -736,6 +736,213 @@
 - **Bloqueantes:** captura humana del flujo + URL real del panel admin + credenciales admin sandbox.
 - **Marker propuesto:** `@gateway-switching` (smoke crítico operacional, no concurrente con suites de cards).
 - **Referencias:** `docs/gateway-pg/authorize/ARCHITECTURE.md` §1.bis (modelo exclusivo), BL-025 (runtime Authorize), BL-036 (API frente alternativo para validar el switch sin UI)
+
+### BL-039 — ESLint Playwright plugin + reglas anti-anti-pattern
+
+- **Estado:** 🔴 Pendiente
+- **Prioridad:** P1
+- **Tipo:** Mejora / Infra (guardrail estructural)
+- **Reportado:** 2026-05-19
+- **Contexto:** Hoy `eslint . --ext .ts` corre con reglas TypeScript genéricas pero **no usa `eslint-plugin-playwright`**, por lo que anti-patterns explícitamente prohibidos en `CLAUDE.md` ("Sin `waitForTimeout` salvo diagnóstico", "Assertions funcionales, no solo de visibilidad", locators preferidos sobre CSS) sólo se validan en code review humano. Detectado como gap en análisis comparativo vs <https://playwright.dev/docs/best-practices> + `https://playwright.dev/docs/intro` (2026-05-19).
+- **Propuesta concreta:**
+  1. Instalar `eslint-plugin-playwright` y agregar al config (`.eslintrc` o flat config existente).
+  2. Activar `plugin:playwright/recommended` + reglas estrictas: `no-wait-for-timeout` (error), `no-force-option` (error), `expect-expect` (error), `no-page-pause` (error), `prefer-web-first-assertions` (error), `no-conditional-in-test` (error), `no-skipped-test` (warn), `no-networkidle` (warn).
+  3. Correr `pnpm lint --fix` para autofix de las que lo permitan; documentar excepciones manuales con `// eslint-disable-next-line` + comentario justificando.
+  4. Mover `@typescript-eslint/no-floating-promises` a `error` (Playwright lo recomienda explícitamente).
+  5. Validar que el hook pre-push (`pnpm pp`) ya invoca lint → si no, agregarlo al Check.
+- **Beneficio:** automatiza la auditoría manual de `CLAUDE.md` (sección "QA automation — Playwright"). Bloquea regresiones de estilo en pre-commit sin gasto humano. Trazable: cualquier infracción aparece como error de lint con su file:line.
+- **Esfuerzo:** S (1-2 días). Riesgo: bajo; los fixes son mecánicos o `eslint-disable` puntual.
+- **Próxima acción:** crear rama `scripts/eslint-playwright-plugin`, agregar plugin + reglas, correr `pnpm lint` y categorizar errores existentes (autofix vs manual). MR con baseline de violations existentes documentadas.
+- **Referencias:** <https://github.com/playwright-community/eslint-plugin-playwright>, sección "QA automation — Playwright" en `CLAUDE.md`, BL-035 (CI desactivado — habilitar lint en CI cuando se reactive)
+
+### BL-040 — Soft assertions en E2E híbridos + `expect.configure` por dominio
+
+- **Estado:** 🔴 Pendiente
+- **Prioridad:** P3
+- **Tipo:** Mejora (calidad de evidencia + claridad declarativa)
+- **Reportado:** 2026-05-19
+- **Contexto:** Dos mejoras menores acopladas detectadas en análisis vs best practices Playwright:
+  1. **Soft assertions:** en `tests/e2e/gateway/flow1-carrier-driver/flow1.e2e.spec.ts` (y flows 2/3), un fallo en assertion 5 de 8 corta el spec y NO genera evidencia de 6/7/8. La fase móvil Appium queda sin contexto del estado web final. `expect.soft()` permite acumular fallos sin abortar.
+  2. **`expect.configure` por dominio:** hoy hay timeouts manuales en specs Stripe 3DS (`actionTimeout: 15_000` global + custom en spec). Mejor patrón canónico: helpers tipados por dominio.
+- **Propuesta concreta:**
+  1. Crear `tests/utils/expect-extend.ts` con:
+     - `expect3DS = expect.configure({ timeout: 30_000 })` — modales bancarios.
+     - `expectFast = expect.configure({ timeout: 2_000 })` — assertions sincronicas DOM.
+     - `expectGatewaySettle = expect.configure({ timeout: 20_000 })` — confirmaciones post-API.
+  2. Migrar 5-8 specs de mayor impacto al patrón (no big-bang).
+  3. En flows E2E híbridos (`tests/e2e/gateway/flow*`), reemplazar assertions secuenciales por `expect.soft()` cuando la pérdida temprana arruina la captura de contexto de la fase siguiente.
+  4. Cerrar con `expect(test.info().errors).toHaveLength(0)` al final del spec para falla controlada.
+- **Beneficio:** elimina magic numbers en specs, mejora dump de evidencia en E2E híbridos (menos re-runs), trazabilidad explícita por dominio.
+- **Esfuerzo:** XS (medio día por capa).
+- **Próxima acción:** crear `tests/utils/expect-extend.ts` con los 3 configures + migrar `flow1.e2e.spec.ts` como piloto. Documentar en `tests/utils/README.md` cuándo usar cada uno.
+- **Referencias:** <https://playwright.dev/docs/test-assertions#soft-assertions>, <https://playwright.dev/docs/test-assertions#expectconfigure>, BL-024 (multi-gateway resolver — `expect.configure` por gateway es candidato natural)
+
+### BL-041 — Auth como project dependency (reemplaza `global-setup.multi-role.ts`)
+
+- **Estado:** 🔴 Pendiente
+- **Prioridad:** P1
+- **Tipo:** Refactor estructural / Deuda técnica
+- **Reportado:** 2026-05-19
+- **Contexto:** `global-setup.multi-role.ts` hace login secuencial para los 3 roles (carrier/contractor/web) antes de cualquier test. Si falla la auth de **cualquier rol** se aborta TODA la suite — bloqueante directo de BL-002 (TC1033 auth intermitente). Desde Playwright 1.31, el patrón canónico es **proyectos `setup` con `dependencies`**: cada rol tiene su setup project independiente que solo corre si el test consumidor lo requiere.
+- **Propuesta concreta:**
+  1. Crear `tests/setup/carrier.setup.ts`, `tests/setup/contractor.setup.ts`, `tests/setup/web.setup.ts` — cada uno hace login del rol + guarda `storageState`.
+  2. Actualizar `playwright.config.ts`:
+
+     ```ts
+     projects: [
+       { name: 'setup-carrier', testMatch: /carrier\.setup\.ts/ },
+       { name: 'setup-contractor', testMatch: /contractor\.setup\.ts/ },
+       { name: 'carrier', dependencies: ['setup-carrier'], use: { storageState: '...' } },
+       { name: 'contractor', dependencies: ['setup-contractor'], use: { storageState: '...' } },
+     ]
+     ```
+
+  3. Eliminar `globalSetup: './global-setup.multi-role.ts'` del config (queda como referencia hasta validar).
+  4. Replicar el cambio en `playwright.gateway-pg.config.ts`.
+  5. Migrar `tests/features/smoke/specs/portals.smoke.spec.ts` para que **consuma** el storageState del project en lugar de hacer login full en cada test (mitigación BL-002 — el smoke ya no replica el login).
+- **Beneficio:**
+  - Auths **paralelas** (hoy secuencial) → reduce tiempo de bootstrap ~50%.
+  - Si corres solo `--project=carrier`, NO se ejecuta auth de contractor (hoy sí).
+  - BL-002 (TC1033 intermitente) mitigado: el retry del setup project es independiente del test consumidor; smoke deja de duplicar auth.
+  - UI Mode muestra fase setup como nodo visible → debugging visual de auth.
+- **Esfuerzo:** M (3-4 días — refactor controlado + validación contra suite gateway).
+- **Riesgo:** medio. Mitigación: feature branch obligatoria (`scripts/auth-project-dependency`), correr suite completa local antes de MR, mantener `global-setup.multi-role.ts` archivado 1 sprint por si hay rollback.
+- **Próxima acción:** crear rama, refactor incremental (carrier primero), validar `pnpm test:test:smoke` en TEST live antes de migrar contractor.
+- **Referencias:** <https://playwright.dev/docs/auth#authenticate-with-a-setup-project>, BL-002 (auth intermitente — primer beneficiario), `global-setup.multi-role.ts`, `tests/config/runtime.ts` (getStorageStatePath)
+
+### BL-042 — Sharding CI con blob reporter (alivia cuota GitLab)
+
+- **Estado:** 🔴 Pendiente
+- **Prioridad:** P1
+- **Tipo:** Mejora / Infra CI
+- **Reportado:** 2026-05-19
+- **Contexto:** La memoria global [`project_gitlab_ci_quota`](../../C:/Users/Erika/.claude/projects/c--Users-Erika-OneDrive---MAGIIS-USA-LLC--1--Escritorio-magiis-playwright/memory/project_gitlab_ci_quota.md) registra que el cupo mensual GitLab CI se agotó. Hoy los pipelines corren **secuenciales en 1 runner**, lo que multiplica el wall-clock por la cantidad de specs. Playwright soporta `--shard=N/M` nativo desde 1.20 + reporter `blob` para consolidar resultados de shards en un único HTML report.
+- **Propuesta concreta:**
+  1. Cuando se reactive CI (post BL-035), implementar matrix con 3-4 shards:
+
+     ```yaml
+     # .gitlab-ci.yml
+     test:
+       parallel:
+         matrix:
+           - SHARD: ["1/4", "2/4", "3/4", "4/4"]
+       script:
+         - npx playwright test --shard=$SHARD --reporter=blob
+       artifacts:
+         paths: [blob-report/]
+     merge:
+       needs: [test]
+       script:
+         - npx playwright merge-reports --reporter=html ./blob-report
+       artifacts:
+         paths: [playwright-report/]
+     ```
+
+  2. Validar que `fullyParallel: true` ya está activo en `playwright.config.ts` (✅ confirmado).
+  3. Excluir suites con `--workers=1` requerido (Stripe 3DS) del sharding → correrlas como job separado serial.
+  4. Documentar la matriz en `docs/ci/README.md` (a crear o anexar a MERGE-POLICY.md).
+- **Beneficio:**
+  - 4 shards = ~4x menos wall-clock por pipeline → más pipelines en la misma cuota mensual.
+  - 1 sólo HTML report consolidado (mejor UX que 4 reports separados).
+  - Cada shard en runner fresco → reduce flakiness por contaminación de estado.
+- **Esfuerzo:** M (2-3 días — config CI + 1-2 corridas piloto + ajuste de balanceo).
+- **Bloqueante operativo:** BL-035 (CI desactivado) — habilitar primero el pipeline base antes de optimizar.
+- **Próxima acción:** rama `scripts/ci-sharding`, prototipar el YAML, correr piloto con `--shard=1/2 + 2/2` (sólo 2 shards primero para reducir riesgo), validar el merge-reports localmente.
+- **Referencias:** <https://playwright.dev/docs/test-sharding>, <https://playwright.dev/docs/test-reporters#blob-reporter>, BL-035 (CI desactivado — precondición), `memory/project_gitlab_ci_quota.md`
+
+### BL-043 — Network mocking Stripe/Authorize + API project separado
+
+- **Estado:** 🔴 Pendiente
+- **Prioridad:** P2
+- **Tipo:** Mejora / Cobertura
+- **Reportado:** 2026-05-19
+- **Contexto:** Hoy **el 100% de la suite gateway pega a sandbox Stripe/Authorize real**. Esto implica: (a) cualquier latencia o caída del sandbox flakea suite local + CI, (b) edge cases que sandbox no permite forzar fácil (timeouts SDK, network errors, JSON malformados de gateway) NO se prueban. Además, BL-036 frente B tiene plantilla de API tests pero no hay project Playwright dedicado a API (vive como specs que igual cargan browser).
+- **Propuesta concreta dividida en 2 frentes acoplados:**
+  1. **Network mocking** — capa nueva de specs `tests/features/gateway-pg/specs/<gateway>/unit/*.unit.spec.ts`:
+     - `page.route('**/api.stripe.com/**', route => route.fulfill({ status: 402, json: { error: { code: 'card_declined' } } }))`.
+     - Validar SÓLO el comportamiento MAGIIS frente a cada response del SDK (qué muestra la UI, qué redirige, cómo loggea).
+     - <2s por spec vs >30s contra sandbox.
+  2. **API project separado** — formalizar BL-036:
+
+     ```ts
+     {
+       name: 'api',
+       testDir: './tests/features/gateway-pg/api',
+       use: { baseURL: process.env.API_BASE_URL ?? process.env.BASE_URL },
+       // sin browser = corre 10x más rápido + libera CPU
+     }
+     ```
+
+  3. Reporter separado para `api` (más austero, sin trace ni video).
+- **Beneficio:**
+  - Specs `unit` reproducibles 100% (sin dependencia de sandbox externo).
+  - Coverage de edge cases hoy no probados (timeouts, network errors, response shapes inválidas).
+  - API project sin browser → reduce uso CPU/memoria en CI, menos cuota consumida (sinérgico con BL-042).
+  - Cierra BL-036 frente B en estado 🟢 al integrarlo como project formal.
+- **Esfuerzo:** M (3-4 días — 1 día por project + 2 días por mocks piloto en 3-4 escenarios críticos).
+- **Mantener:** specs E2E contra sandbox como segunda capa de validación (no reemplazar, complementar).
+- **Próxima acción:** rama `e2e/network-mocking-gateway`, empezar con `card_declined` Stripe como piloto + agregar `api` project a `playwright.gateway-pg.config.ts`.
+- **Referencias:** <https://playwright.dev/docs/mock>, <https://playwright.dev/docs/network>, <https://playwright.dev/docs/test-api-testing>, BL-036 (API frente B — se cierra al absorberlo), BL-027 (eBizCharge slot — patrón mocking reutilizable)
+
+### BL-044 — Visual regression dirigida (modales 3DS + popups críticos)
+
+- **Estado:** 🔴 Pendiente
+- **Prioridad:** P2
+- **Tipo:** Mejora / Cobertura
+- **Reportado:** 2026-05-19
+- **Contexto:** Hoy las assertions son textuales/estructurales. Si Stripe Elements cambia el layout de su iframe 3DS (cambio externo), los selectores actuales pueden seguir matcheando pero la UI estar visualmente rota. `toHaveScreenshot` de Playwright es el patrón canónico — pero el riesgo de adopción big-bang es alto (baselines a mantener). Solución: **scope quirúrgico**.
+- **Propuesta concreta:**
+  1. Identificar 5-8 componentes de alto riesgo de regresión visual:
+     - Modal 3DS Stripe (challenge frame).
+     - Popup "no se pudo realizar el pago" (referencia memoria [`project_bug_viaje_calle_unhappy`](../../C:/Users/Erika/.claude/projects/c--Users-Erika-OneDrive---MAGIIS-USA-LLC--1--Escritorio-magiis-playwright/memory/project_bug_viaje_calle_unhappy.md)).
+     - Formulario CardLinking (Stripe).
+     - Formulario CardLinking (Authorize) — pieza nueva BL-024.
+     - ThreeDSErrorPopup.
+  2. Crear suite `tests/features/gateway-pg/specs/visual/` con `await expect(component.frame).toHaveScreenshot('3ds-stripe-challenge.png', { maxDiffPixelRatio: 0.02, mask: [dynamicTimestamp] })`.
+  3. **Scope acotado:** NO full-page. SOLO el componente (`locator.screenshot` con clipping).
+  4. Documentar política de actualización de baselines en `tests/features/gateway-pg/specs/visual/README.md` (cuándo regenerar, quién aprueba).
+  5. Integrar como project opcional (`--project=visual` solo en pipelines selectivos para no quemar cuota CI).
+- **Beneficio:**
+  - Detecta cambios de UI silenciosos en gateway donde un cambio de Stripe Elements puede romper UX sin que ningún test funcional falle.
+  - Cobertura del bug histórico documentado en memoria global (popup unhappy paths).
+- **Esfuerzo:** M (3-5 días — 1 día por componente con baseline + revisión cross-OS).
+- **Riesgo:** mantenimiento de baselines. Mitigación: scope acotado a 5-8 componentes, no full-page, política clara de actualización.
+- **Próxima acción:** rama `e2e/visual-regression-dirigida`, piloto con modal 3DS Stripe (componente más estable), iterar con popup unhappy.
+- **Referencias:** <https://playwright.dev/docs/test-snapshots>, <https://playwright.dev/docs/screenshots>, BL-024 (Authorize CardForm — visual regression natural), `memory/project_bug_viaje_calle_unhappy.md`
+
+### BL-045 — Tags + grep para reemplazar scripts npm proliferados
+
+- **Estado:** 🔴 Pendiente
+- **Prioridad:** P3
+- **Tipo:** Mejora / Mantenibilidad
+- **Reportado:** 2026-05-19
+- **Contexto:** `package.json` tiene >50 scripts `test:*` (`test:test:gateway-pg:stripe:3ds`, `test:gateway:smoke`, `test:gateway:critical`, `test:gateway:cargo`, etc.). El patrón es **procedural por carpeta**; cada nueva combinación de scope requiere agregar un script. Esto rompe el principio "ejecución declarativa" + dificulta onboarding (cuál corro?). Playwright nativo soporta tags con `@` en describe/title + `--grep`.
+- **Propuesta concreta:**
+  1. Adoptar convención de tags en describe/title:
+     - `@smoke @critical @regression` — capa de cobertura.
+     - `@gateway @auth @navbar` — dominio.
+     - `@stripe @authorize @mercadopago` — pasarela.
+     - `@hold @3ds @capture @decline` — intent.
+     - `@flaky` — known-flaky con retry alto.
+  2. Reducir scripts npm a un set canónico chico (≤15):
+
+     ```bash
+     pnpm test:smoke          # --grep "@smoke"
+     pnpm test:critical       # --grep "@critical"
+     pnpm test:gateway-3ds    # --grep "@gateway @3ds"
+     pnpm test:gateway-stripe # --grep "@stripe"
+     ```
+
+  3. Documentar matriz tag → cobertura en `docs/ci/TAGS.md`.
+  4. Mover scripts deprecados a `package.json.archive` antes de borrar (sprint 1 de gracia).
+- **Beneficio:**
+  - Matriz declarativa: el slogan no procedural ("dame todo lo que sea 3DS + Stripe" en lugar de "corre el script test:test:gateway-pg:stripe:3ds").
+  - Onboarding: 15 scripts < 50 scripts.
+  - CI matrix más limpia (`--grep=@critical` en lugar de N jobs YAML).
+- **Esfuerzo:** S (2 días — tag manual de specs existentes + actualizar package.json + docs).
+- **Riesgo:** bajo. Mitigación: mantener scripts deprecados 1 sprint con `echo "DEPRECATED, use ..."`.
+- **Próxima acción:** rama `scripts/tags-canonical`, taggear suite gateway primero (mayor impacto), reducir 50 scripts → 15.
+- **Referencias:** <https://playwright.dev/docs/test-annotations#tag-tests>, sección "Convenciones de test cases" en `CLAUDE.md`, BL-042 (sharding — beneficio compuesto cuando el matrix CI usa grep en lugar de scripts)
 
 ---
 
