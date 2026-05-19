@@ -259,7 +259,7 @@ async function runHoldOffScenario(page: Page, scenario: HoldNo3dsScenario): Prom
 test.use({ role: 'carrier', storageState: undefined });
 test.describe.configure({ timeout: 180_000 });
 
-test.describe('Gateway PG · Carrier · Colaborador — Hold sin 3DS', () => {
+test.describe('Gateway PG · Carrier · Colaborador — Hold sin 3DS @gateway @stripe @hold @critical @smoke @regression', () => {
 
 	test.describe('Hold ON', () => {
 		// TC1033 es el smoke legacy pre-fase2; no tiene par -CARD-EXISTING en JSON.

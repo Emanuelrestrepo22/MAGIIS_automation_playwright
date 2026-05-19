@@ -7,7 +7,7 @@ import { test } from '../../../../../../../TestBase';
 
 test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
 
-test.describe('Gateway PG · Carrier · Empresa Individuo — Clonación de Viajes Finalizados', () => {
+test.describe('Gateway PG · Carrier · Empresa Individuo — Clonación de Viajes Finalizados @gateway @stripe @hold @3ds @regression', () => {
 
   test.describe('Sin 3DS', () => {
     test('[TS-STRIPE-P2-TC072] @regression @hold clonación finalizado hold+cobro', async () => {

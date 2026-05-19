@@ -16,7 +16,7 @@ import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from 
 test.use({ role: 'carrier', storageState: undefined });
 test.describe.configure({ timeout: 120_000 });
 
-test.describe('Gateway PG · Carrier · Colaborador/Contractor — Cargo a Bordo', () => {
+test.describe('Gateway PG · Carrier · Colaborador/Contractor — Cargo a Bordo @gateway @stripe @cargo-a-bordo @hold @critical @smoke', () => {
 
 	test('[TS-STRIPE-TC1096] @smoke @cargo-a-bordo pago exitoso sin 3DS', async ({ page }) => {
 		const dashboard = new DashboardPage(page);

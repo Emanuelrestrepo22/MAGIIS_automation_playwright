@@ -15,7 +15,7 @@ import { TravelDetailPage } from '../../../../../../../pages/carrier';
 
 test.describe.configure({ mode: 'serial' });
 
-test.describe('Gateway PG · Carrier · App Pax — Cambio de tarjeta post-fallo 3DS', () => {
+test.describe('Gateway PG · Carrier · App Pax — Cambio de tarjeta post-fallo 3DS @gateway @stripe @hold @3ds @wallet @regression', () => {
 	test.use({ role: 'carrier', storageState: undefined });
 
 	test.beforeEach(async ({ page }) => {

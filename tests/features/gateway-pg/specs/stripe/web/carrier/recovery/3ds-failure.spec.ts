@@ -19,7 +19,7 @@ import { DashboardPage, NewTravelPage, OperationalPreferencesPage, ThreeDSModal,
 
 test.describe.configure({ mode: 'serial' });
 
-test.describe('Gateway PG · Carrier · App Pax — Fallo 3DS, red flag y reintento', () => {
+test.describe('Gateway PG · Carrier · App Pax — Fallo 3DS, red flag y reintento @gateway @stripe @hold @3ds @decline @regression', () => {
 	test.use({ role: 'carrier', storageState: undefined });
 
 	test.beforeEach(async ({ page }) => {

@@ -70,7 +70,7 @@ async function webPhaseCargoAppPax(page: Page): Promise<TravelIdRef> {
 	return travelIdRef;
 }
 
-test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo · Antifraud', () => {
+test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo · Antifraud @gateway @stripe @cargo-a-bordo @hold @decline @regression', () => {
 
 	test('[TS-STRIPE-TC1087] @regression @cargo-a-bordo tarjeta alto riesgo desde Driver App', async ({ page }) => {
 		let travelIdRef: TravelIdRef | null = null;

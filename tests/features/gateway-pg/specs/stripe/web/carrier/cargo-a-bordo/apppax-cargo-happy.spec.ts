@@ -33,7 +33,7 @@ function extractTravelId(url: string): string {
 	return match[1];
 }
 
-test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo', () => {
+test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo @gateway @stripe @cargo-a-bordo @hold @critical @smoke', () => {
 
 	test('[TS-STRIPE-TC1081] @smoke @cargo-a-bordo pago exitoso sin 3DS', async ({ page }) => {
 		const dashboard = new DashboardPage(page);

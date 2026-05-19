@@ -269,7 +269,7 @@ async function runHoldOffScenario(page: Page, scenario: HoldNo3dsScenario): Prom
 test.use({ role: 'carrier', storageState: undefined });
 test.describe.configure({ timeout: 180_000 });
 
-test.describe('Gateway PG · Carrier · Empresa Individuo — Hold sin 3DS', () => {
+test.describe('Gateway PG · Carrier · Empresa Individuo — Hold sin 3DS @gateway @stripe @hold @critical @smoke @regression', () => {
 
 	test.describe('Hold ON', () => {
 		// TC1065 — canónico card-new. Mantiene lógica inline específica (diagnósticos del dashboard)

@@ -15,7 +15,7 @@ import { STRIPE_TEST_CARDS, TEST_DATA } from '../../../../../data/stripeTestData
 
 test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
 
-test.describe('[TS-STRIPE-TC1053] Hold ON + success3DS (4000 0025 0000 3155) — modal 3DS se presenta, pasajero aprueba, viaje pasa a "Buscando conductor"', () => {
+test.describe('[TS-STRIPE-TC1053] Hold ON + success3DS (4000 0025 0000 3155) — modal 3DS se presenta, pasajero aprueba, viaje pasa a "Buscando conductor" @gateway @stripe @hold @3ds @critical', () => {
   test('crear viaje con tarjeta 3DS, aprobar autenticación y validar viaje activo', async ({ page, credentials }) => {
     test.setTimeout(90_000);
 

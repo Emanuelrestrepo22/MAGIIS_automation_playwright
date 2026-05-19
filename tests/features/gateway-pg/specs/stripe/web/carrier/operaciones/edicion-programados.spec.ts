@@ -11,7 +11,7 @@ import { expectNoThreeDSModal, loginAsDispatcher, STRIPE_TEST_CARDS } from '../.
 test.use({ role: 'carrier', storageState: undefined });
 test.describe.configure({ mode: 'serial' });
 
-test.describe('Gateway PG · Carrier · Empresa Individuo - Edicion de Viajes Programados', () => {
+test.describe('Gateway PG · Carrier · Empresa Individuo - Edicion de Viajes Programados @gateway @stripe @hold @3ds @regression', () => {
 	test('[TS-STRIPE-P2-TC078] @regression @hold alta + edicion hold+cobro', async ({ page }) => {
 		const management = new TravelManagementPage(page);
 		const detail = new TravelDetailPage(page);

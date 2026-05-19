@@ -34,7 +34,7 @@ function createJourney(testCaseId: string) {
 	});
 }
 
-test.describe.serial('Gateway PG · E2E Mobile · App Pax Personal', () => {
+test.describe.serial('Gateway PG · E2E Mobile · App Pax Personal @gateway @stripe @e2e-hybrid @3ds @wallet', () => {
 	for (const scenario of PASSENGER_FLOW2_SCENARIOS) {
 		test(`[${scenario.testCaseId}] ${scenario.title} (${scenario.sourceCaseIds.join(' / ')})`, async () => {
 			if (!scenario.active) {

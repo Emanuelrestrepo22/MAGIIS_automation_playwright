@@ -31,7 +31,7 @@ function createJourney(testCaseId: string) {
 	});
 }
 
-test.describe.serial('Gateway PG · E2E Mobile · App Pax Business / Collaborator No 3DS', () => {
+test.describe.serial('Gateway PG · E2E Mobile · App Pax Business / Collaborator No 3DS @gateway @stripe @e2e-hybrid @wallet', () => {
 	for (const scenario of PASSENGER_BUSINESS_NO3DS_SCENARIOS) {
 		test(
 			`[${scenario.testCaseId}] ${scenario.title} (${scenario.sourceCaseIds.join(' / ')})`,

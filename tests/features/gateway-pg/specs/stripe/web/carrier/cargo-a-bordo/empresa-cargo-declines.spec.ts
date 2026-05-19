@@ -71,7 +71,7 @@ async function webPhaseCargoEmpresa(page: Page): Promise<TravelIdRef> {
 	return travelIdRef;
 }
 
-test.describe('Gateway PG · Carrier · Empresa Individuo — Cargo a Bordo · Declines', () => {
+test.describe('Gateway PG · Carrier · Empresa Individuo — Cargo a Bordo · Declines @gateway @stripe @cargo-a-bordo @hold @decline @regression', () => {
 
 	test('[TS-STRIPE-TC1112] @regression @cargo-a-bordo pago rechazado genérico desde Driver App', async ({ page }) => {
 		let travelIdRef: TravelIdRef | null = null;

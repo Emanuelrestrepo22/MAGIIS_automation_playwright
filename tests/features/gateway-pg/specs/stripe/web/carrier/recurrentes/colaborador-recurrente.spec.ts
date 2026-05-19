@@ -8,7 +8,7 @@ import { test } from '../../../../../../../TestBase';
 
 test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
 
-test.describe('Gateway PG · Carrier · Colaborador — Viajes Recurrentes', () => {
+test.describe('Gateway PG · Carrier · Colaborador — Viajes Recurrentes @gateway @stripe @hold @wallet @regression', () => {
 
   test.describe('Vinculación de tarjeta', () => {
     test('[TS-STRIPE-P2-TC041] @regression @recurrente @hold vinculación + recurrente hold+cobro', async () => {

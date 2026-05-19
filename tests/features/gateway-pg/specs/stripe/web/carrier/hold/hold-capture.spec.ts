@@ -14,7 +14,7 @@ import { NewTravelPage, OperationalPreferencesPage, TravelManagementPage } from 
 test.describe.configure({ mode: 'serial' });
 test.describe.configure({ timeout: 120_000 });
 
-test.describe('Gateway PG · Carrier · App Pax — Hold sin 3DS', () => {
+test.describe('Gateway PG · Carrier · App Pax — Hold sin 3DS @gateway @stripe @hold @capture @decline @regression', () => {
 	test.use({ role: 'carrier', storageState: undefined });
 
 	test.beforeEach(async ({ page }) => {

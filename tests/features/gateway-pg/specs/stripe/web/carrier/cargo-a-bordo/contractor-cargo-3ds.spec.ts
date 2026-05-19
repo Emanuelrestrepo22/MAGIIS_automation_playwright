@@ -72,7 +72,7 @@ async function webPhaseCargoContractor(page: Page): Promise<TravelIdRef> {
 	return travelIdRef;
 }
 
-test.describe('Gateway PG · Carrier · Colaborador/Contractor — Cargo a Bordo · 3DS', () => {
+test.describe('Gateway PG · Carrier · Colaborador/Contractor — Cargo a Bordo · 3DS @gateway @stripe @cargo-a-bordo @hold @3ds @critical', () => {
 
 	test('[TS-STRIPE-TC1107] @critical @3ds @cargo-a-bordo pago exitoso con 3DS desde Driver App', async ({ page }) => {
 		let travelIdRef: TravelIdRef | null = null;
