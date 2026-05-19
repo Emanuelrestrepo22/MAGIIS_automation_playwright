@@ -30,6 +30,7 @@
  */
 
 import { test, expect } from '../TestBase';
+import { expectGatewaySettle } from '../utils/expect-extend';
 import { findLatestJourneyContextId } from '../features/gateway-pg/context/gatewayJourneyContext';
 import type { GatewayPgJourneyContext } from '../features/gateway-pg/contracts/gateway-pg.types';
 import { expectNoThreeDSModal, loginAsDispatcher } from '../features/gateway-pg/fixtures/gateway.fixtures';
@@ -100,17 +101,32 @@ test.describe('[E2E-FLOW-1] Carrier Web → Driver App @regression @stripe @hybr
       // Capturar tripId de la URL
       const url = page.url();
       const tripId = url.match(/\/travels\/(\w+)/)?.[1];
-      expect(tripId).toBeTruthy();
+
+      // BL-040: soft assertions en fase web para preservar contexto hacia la fase móvil.
+      // Si una de estas falla, igual seguimos hasta el barrier hard antes del handoff,
+      // permitiendo capturar evidencia del estado real (statusBadge text, tripId, URL).
+      expect.soft(tripId, 'tripId extraído de URL /travels/<id>').toBeTruthy();
 
       const statusBadge = await detailPage.getTravelStatus();
       // Debería mostrar estado Buscando conductor
-      await expect(statusBadge).toContainText('Buscando conductor', { timeout: 20_000 });
+      await expectGatewaySettle
+        .soft(statusBadge, 'badge de status del viaje muestra "Buscando conductor"')
+        .toContainText('Buscando conductor');
 
       journey = orchestrator.attachTripData(journey, { tripId: tripId ?? 'TODO' });
     });
 
     // ── Fase 3: Preparar handoff hacia Driver App ─────────────────────────
     await test.step('[FLOW1-TC01][STEP-05] Persistir contexto para handoff a Driver App', async () => {
+      // Confirmación dura: si la fase web acumuló errores soft, cortar antes del handoff móvil.
+      // El JourneyContext que se persiste en evidence/journey-context/ es el contrato hacia la
+      // fase Appium; si llegamos acá con errores acumulados, el handoff produciría un context
+      // con datos parcialmente inválidos. Mejor abortar acá con todos los errores capturados.
+      expect(
+        test.info().errors,
+        'Fase web acumuló errores soft — ver bloque arriba'
+      ).toHaveLength(0);
+
       journey = orchestrator.prepareMobileHandoff(
         journey,
         `Viaje ${journey.tripId} listo. Driver App debe aceptar y completar el viaje.`
