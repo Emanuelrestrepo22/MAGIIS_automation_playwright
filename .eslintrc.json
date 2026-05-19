@@ -82,7 +82,8 @@
 			"warn"
 		],
 
-		// 🔽 Desactivadas porque requieren type information
+		// 🔽 Desactivadas porque requieren type information (no parserOptions.project en config root)
+		// BL-039: no-floating-promises se habilita type-aware sólo en override tests/** abajo.
 		"@typescript-eslint/no-floating-promises": "off",
 		"@typescript-eslint/no-misused-promises": "off",
 		"@typescript-eslint/no-unnecessary-condition": "off",
@@ -195,6 +196,28 @@
 			],
 			"rules": {
 				"no-restricted-syntax": "off"
+			}
+		},
+		{
+			"files": [
+				"tests/**/*.ts"
+			],
+			"extends": [
+				"plugin:playwright/recommended"
+			],
+			"parserOptions": {
+				"project": "./tsconfig.eslint.json"
+			},
+			"rules": {
+				"playwright/no-wait-for-timeout": "error",
+				"playwright/no-force-option": "error",
+				"playwright/expect-expect": "error",
+				"playwright/no-page-pause": "error",
+				"playwright/prefer-web-first-assertions": "error",
+				"playwright/no-conditional-in-test": "error",
+				"playwright/no-skipped-test": "warn",
+				"playwright/no-networkidle": "warn",
+				"@typescript-eslint/no-floating-promises": "error"
 			}
 		}
 	],
