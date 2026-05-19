@@ -1,5 +1,5 @@
-// tests/specs/api/auth-login.api.test.ts
-import { test, expect } from '../../TestBase';
+// tests/features/auth/specs/api/auth-login.api.test.ts
+import { test, expect } from '../../../../TestBase';
 
 test.describe('TS-AUTH-XX API Login Carrier', () => {
 	// La API se prueba con el mismo rol "carrier" que usamos en UI
