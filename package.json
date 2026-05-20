@@ -13,6 +13,8 @@
     "test:test:gateway-pg:stripe": "cross-env ENV=test npx playwright test tests/features/gateway-pg/specs/stripe -c playwright.gateway-pg.config.ts",
     "test:test:gateway-pg:authorize": "cross-env ENV=test npx playwright test tests/features/gateway-pg/specs/authorize -c playwright.gateway-pg.config.ts",
     "test:test:gateway-pg:parametrized": "cross-env ENV=test npx playwright test tests/features/gateway-pg/specs/_parametrized -c playwright.gateway-pg.config.ts",
+    "test:test:gateway-pg:unit": "cross-env ENV=test npx playwright test -c playwright.gateway-pg.config.ts --project=unit",
+    "test:test:gateway-pg:api": "cross-env ENV=test npx playwright test -c playwright.gateway-pg.config.ts --project=api",
     "test:test:gateway-pg:stripe:3ds": "cross-env ENV=test npx playwright test tests/features/gateway-pg/specs/stripe/web/carrier/recovery/recorded-3ds-happy-path.spec.ts --project=chromium --workers=1",
     "test:test:gateway-pg:stripe:recovery": "cross-env ENV=test npx playwright test tests/features/gateway-pg/specs/stripe/web/carrier/recovery --project=chromium --workers=1",
     "test:test:gateway-pg:3ds": "pnpm test:test:gateway-pg:stripe:3ds",
