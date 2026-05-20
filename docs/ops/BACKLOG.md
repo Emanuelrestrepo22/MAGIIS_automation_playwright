@@ -757,7 +757,10 @@
 
 ### BL-040 — Soft assertions en E2E híbridos + `expect.configure` por dominio
 
-- **Estado:** 🔴 Pendiente
+- **Estado:** 🟡 Trabajo en 2 ramas paralelas (2026-05-19):
+  - `scripts/expect-configure-soft-assertions` (`b51c35f`, usuario original)
+  - `scripts/soft-assertions-expect-extend` (`008cfad`, segunda iteración con helper `assertSoftThenFail` + piloto migrado en `flow1.e2e.spec.ts`)
+  Decidir cuál mergear o consolidar en un MR único antes de cerrar.
 - **Prioridad:** P3
 - **Tipo:** Mejora (calidad de evidencia + claridad declarativa)
 - **Reportado:** 2026-05-19
@@ -912,7 +915,7 @@
 
 ### BL-045 — Tags + grep para reemplazar scripts npm proliferados
 
-- **Estado:** 🔴 Pendiente
+- **Estado:** 🟡 Implementado en rama `scripts/tags-canonical` (commit `b27caca`, 2026-05-19). NUEVO `docs/ci/TAGS.md` con convención de tags (capa/dominio/gateway/intent/estado). Tags aplicados a 41 specs Stripe (piloto). `package.json` con 11 scripts canónicos `test:*` (antes >50). 15 scripts deprecados con `echo + exit 1` (sprint de gracia). Scripts UAT/PROD migrados a `--grep`. Follow-ups: taggear Authorize post-BL-024, taggear suite smoke a nivel describe, taggear e2e híbridos, borrar wrappers DEPRECATED en sprint+1.
 - **Prioridad:** P3
 - **Tipo:** Mejora / Mantenibilidad
 - **Reportado:** 2026-05-19
