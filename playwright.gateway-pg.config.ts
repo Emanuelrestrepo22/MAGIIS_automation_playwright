@@ -1,5 +1,9 @@
 import { defineConfig } from "@playwright/test";
 import baseConfig from "./playwright.config";
+import { getCurrentEnv, getStorageStatePath } from "./tests/config/runtime";
+
+// Resolvemos env una vez para reutilizarlo en projects que necesitan storageState.
+const env = getCurrentEnv();
 
 export default defineConfig({
   // Partimos de la config general y recortamos solo lo necesario para la suite de gateway.
@@ -41,7 +45,9 @@ export default defineConfig({
     },
     {
       name: "regression-web",
-      grepInvert: /@mobile|@smoke|@critical/,
+      // BL-044 — excluir @visual también para que la regresión web por default
+      // no intente comparar baselines de visual regression (opt-in vía --project=visual).
+      grepInvert: /@mobile|@smoke|@critical|@visual/,
       use: {
         browserName: "chromium",
       },
@@ -89,6 +95,19 @@ export default defineConfig({
       testMatch: /\.api\.spec\.ts$/,
       use: {
         browserName: "chromium",
+      },
+    },
+    {
+      // BL-044 — Visual regression opcional, opt-in.
+      // NO incluido en regression-web ni smoke por default.
+      // Correr con: pnpm exec playwright test --project=visual -c playwright.gateway-pg.config.ts
+      // Generar baselines (humano, una sola vez por componente):
+      //   pnpm exec playwright test --project=visual --update-snapshots -c playwright.gateway-pg.config.ts
+      name: "visual",
+      testDir: "./tests/features/gateway-pg/specs/visual",
+      use: {
+        browserName: "chromium",
+        storageState: getStorageStatePath("carrier", env),
       },
     },
   ],
