@@ -244,7 +244,7 @@ async function runHoldOffScenario(page: Page, scenario: Hold3dsScenario): Promis
 test.use({ role: 'carrier', storageState: undefined });
 test.describe.configure({ timeout: 180_000 });
 
-test.describe('Gateway PG · Carrier · Empresa Individuo — Hold con 3DS', () => {
+test.describe('Gateway PG · Carrier · Empresa Individuo — Hold con 3DS @gateway @stripe @hold @3ds @critical @regression', () => {
 
   test.describe('Hold ON', () => {
     test('[TS-STRIPE-TC1069] @critical @3ds @hold @card-new hold+cobro empresa 3DS — Vincular tarjeta nueva', async ({ page }) => {

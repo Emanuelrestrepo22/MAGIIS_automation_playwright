@@ -34,7 +34,7 @@ import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from 
 test.use({ role: 'contractor', storageState: { cookies: [], origins: [] } });
 test.describe.configure({ timeout: 180_000 });
 
-test.describe('Gateway PG · Contractor · Colaborador — Hold sin 3DS (tarjeta 4242 4242 4242 4242)', () => {
+test.describe('Gateway PG · Contractor · Colaborador — Hold sin 3DS (tarjeta 4242 4242 4242 4242) @gateway @stripe @hold @critical @smoke @regression', () => {
 
 	test.describe('Hold ON', () => {
 

@@ -7,7 +7,7 @@ import { test } from '../../../../../TestBase';
 
 test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
 
-test.describe('Gateway PG · Configuración Pasarela Stripe', () => {
+test.describe('Gateway PG · Configuración Pasarela Stripe @gateway @stripe @wallet @regression', () => {
 
   test.describe('Visualización y estado inicial', () => {
     test('[TS-STRIPE-TC1001] @smoke @web-only visualizar pasarela Stripe no vinculada', async () => {

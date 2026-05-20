@@ -8,7 +8,7 @@ import { test } from '../../../../../../../TestBase';
 
 test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
 
-test.describe('Gateway PG · Carrier · Empresa Individuo — Edición en Conflicto', () => {
+test.describe('Gateway PG · Carrier · Empresa Individuo — Edición en Conflicto @gateway @stripe @hold @3ds @decline @regression', () => {
 
   test.describe('Sin 3DS', () => {
     test('[TS-STRIPE-P2-TC084] @regression @hold alta + edición conflicto hold+cobro', async () => {

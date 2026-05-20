@@ -259,7 +259,7 @@ async function runHoldOffScenario(page: Page, scenario: Hold3dsScenario): Promis
 
 test.use({ role: 'carrier', storageState: undefined });
 
-test.describe('Gateway PG · Carrier · App Pax — Hold con 3DS', () => {
+test.describe('Gateway PG · Carrier · App Pax — Hold con 3DS @gateway @stripe @hold @3ds @critical @regression', () => {
 
 	test.describe('Hold ON — autenticación 3DS exitosa', () => {
 

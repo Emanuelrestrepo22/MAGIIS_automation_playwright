@@ -4,7 +4,7 @@ import { HybridCarrierDriverHappyPathHarness } from '../../../helpers/hybridCarr
 
 const RUN_MOBILE_HAPPY_PATH = process.env.RUN_MOBILE_HAPPY_PATH === 'true';
 
-test.describe.serial('Gateway PG · E2E Mobile · Carrier -> Driver happy path template', () => {
+test.describe.serial('Gateway PG · E2E Mobile · Carrier -> Driver happy path template @gateway @stripe @e2e-hybrid @hold @critical', () => {
 	test.use({ role: 'carrier', storageState: undefined });
 
 	for (const scenario of CARRIER_DRIVER_HAPPY_PATH_SCENARIOS) {

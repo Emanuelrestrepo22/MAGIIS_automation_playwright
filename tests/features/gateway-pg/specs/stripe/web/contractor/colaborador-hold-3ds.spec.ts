@@ -32,7 +32,7 @@ import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from 
 test.use({ role: 'contractor', storageState: { cookies: [], origins: [] } });
 test.describe.configure({ timeout: 180_000 });
 
-test.describe('Gateway PG · Contractor · Colaborador — Hold + 3DS (tarjeta 4000 0025 0000 3155)', () => {
+test.describe('Gateway PG · Contractor · Colaborador — Hold + 3DS (tarjeta 4000 0025 0000 3155) @gateway @stripe @hold @3ds @critical @regression', () => {
 
 	test('[TS-STRIPE-P2-TC005] @regression @contractor @hold @3ds Hold ON + tarjeta 3DS 3155 + aprobación → viaje a "Buscando conductor"', async ({ page }) => {
 		// Precondición: enableCreditCardHold=true en parámetros carrier.

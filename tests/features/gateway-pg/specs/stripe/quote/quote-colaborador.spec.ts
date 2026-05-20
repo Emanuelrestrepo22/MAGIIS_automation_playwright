@@ -7,7 +7,7 @@ import { test } from '../../../../../TestBase';
 
 test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
 
-test.describe('Gateway PG · Quote · Colaborador', () => {
+test.describe('Gateway PG · Quote · Colaborador @gateway @stripe @hold @3ds @regression', () => {
 
   test.describe('Via número de teléfono — sin 3DS', () => {
     test('[TS-STRIPE-P2-TC011] @regression @quote @hold quote colaborador teléfono hold+cobro', async () => {
