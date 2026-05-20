@@ -37,6 +37,8 @@ import { runWebPhase }      from './web-phase';
 import { readFinalContext } from '../shared/JourneyBridge';
 import { GATEWAY_CONFIGS }  from '../shared/e2eFlowConfig';
 import type { GatewayFlowConfig, MobilePhaseResult } from '../shared/e2eFlowConfig';
+// BL-040: soft assertions para preservar evidencia entre fase web y fase mobile.
+import { assertSoftThenFail } from '../../../utils/expect-extend';
 
 // ─── Constantes ──────────────────────────────────────────────────────────────
 
@@ -98,7 +100,10 @@ function runMobilePhase(journeyId: string, timeoutMs: number): MobilePhaseResult
 // sin duplicar lógica de steps ni assertions.
 
 function runFlow1Test(tcId: string, config: GatewayFlowConfig) {
-	return async ({ page }: { page: import('@playwright/test').Page }) => {
+	return async (
+		{ page }: { page: import('@playwright/test').Page },
+		testInfo: import('@playwright/test').TestInfo,
+	) => {
 		test.setTimeout(TOTAL_TIMEOUT);
 
 		if (WEB_ONLY) {
@@ -128,12 +133,14 @@ function runFlow1Test(tcId: string, config: GatewayFlowConfig) {
 		// ── BRIDGE: JourneyContext ready-for-driver ────────────────────────────
 		await test.step('[BRIDGE] Verificar JourneyContext ready-for-driver', async () => {
 			const ctx = await readFinalContext(journeyId);
+			// BL-040: soft assertions — si una falla, las demás todavía capturan
+			// evidencia (tripId/status/handoff) para diagnosticar el handoff completo.
 			// Debería tener el tripId extraído desde la URL.
-			expect(ctx.tripId).toBe(tripId);
+			expect.soft(ctx.tripId).toBe(tripId);
 			// Debería estar en espera de que el driver acepte.
-			expect(ctx.status).toBe('ready-for-driver');
+			expect.soft(ctx.status).toBe('ready-for-driver');
 			// El handoff al driver debería estar marcado como listo.
-			expect(ctx.driverHandoff.status).toBe('ready');
+			expect.soft(ctx.driverHandoff.status).toBe('ready');
 			console.log(`[flow1.spec][${tcId}] ✓ JourneyContext listo — ${ctx.status}`);
 		});
 
@@ -162,18 +169,25 @@ function runFlow1Test(tcId: string, config: GatewayFlowConfig) {
 		// ── VALIDACIÓN FINAL ───────────────────────────────────────────────────
 		await test.step('[VALIDATE] Verificar JourneyContext driver-completed', async () => {
 			const finalCtx = await readFinalContext(journeyId);
+			// BL-040: soft assertions — si un checkpoint falla, las demás siguen
+			// reportando para tener visión completa del final state del journey.
 			// Debería haber completado todos los checkpoints del harness.
-			expect(mobileResult!.checkpoints).toContain('confirm');
-			expect(mobileResult!.checkpoints).toContain('in-progress');
-			expect(mobileResult!.checkpoints).toContain('resume');
-			expect(mobileResult!.checkpoints).toContain('closed');
+			expect.soft(mobileResult!.checkpoints).toContain('confirm');
+			expect.soft(mobileResult!.checkpoints).toContain('in-progress');
+			expect.soft(mobileResult!.checkpoints).toContain('resume');
+			expect.soft(mobileResult!.checkpoints).toContain('closed');
 			// El estado final del journey debería ser driver-completed.
-			expect(finalCtx.status).toBe('driver-completed');
+			expect.soft(finalCtx.status).toBe('driver-completed');
 			// El método de pago y el monto deberían estar informados.
-			expect(mobileResult!.paymentMethod).toBeTruthy();
-			expect(mobileResult!.totalAmount).toBeTruthy();
+			expect.soft(mobileResult!.paymentMethod).toBeTruthy();
+			expect.soft(mobileResult!.totalAmount).toBeTruthy();
 			console.log(`[flow1.spec][${tcId}] ✓ Flow 1 PASS — journey ${journeyId} completado.`);
 		});
+
+		// BL-040: cierre consolidado — dispara fail con TODOS los soft errors
+		// del journey (BRIDGE + VALIDATE). Si la fase mobile pasó pero hubo
+		// soft failures en BRIDGE o en VALIDATE, este es el punto de falla.
+		assertSoftThenFail(testInfo);
 	};
 }
 
