@@ -855,7 +855,7 @@
 
 ### BL-043 — Network mocking Stripe/Authorize + API project separado
 
-- **Estado:** 🔴 Pendiente
+- **Estado:** 🟡 Estructura + piloto en rama `e2e/network-mocking-gateway` (commit `e15a578`, 2026-05-19). `playwright.gateway-pg.config.ts` gana 2 projects: `unit` (matchea `*.unit.spec.ts`, network mocking) + `api` (matchea `*.api.spec.ts`, testDir override `tests/features/gateway-pg/api/`). Piloto `tests/features/gateway-pg/specs/stripe/unit/stripe-card-declined.unit.spec.ts` mockea Stripe API → `card_declined` con `page.route()`. README explicativo + 2 scripts npm nuevos (`test:test:gateway-pg:unit`, `:api`). Cierra parcialmente BL-036 frente B (API project formalizado). Assertions UI específicas marcadas como TODO (requieren inspección manual vs MAGIIS TEST live).
 - **Prioridad:** P2
 - **Tipo:** Mejora / Cobertura
 - **Reportado:** 2026-05-19
@@ -889,7 +889,7 @@
 
 ### BL-044 — Visual regression dirigida (modales 3DS + popups críticos)
 
-- **Estado:** 🔴 Pendiente
+- **Estado:** 🟡 Piloto en rama `e2e/visual-regression-3ds-modal` (commit `cfdb19b`, 2026-05-19). Modal 3DS Stripe taggeado para visual regression con `toHaveScreenshot`. Resto de componentes (popup unhappy, CardLinking, ThreeDSErrorPopup) pendientes.
 - **Prioridad:** P2
 - **Tipo:** Mejora / Cobertura
 - **Reportado:** 2026-05-19
