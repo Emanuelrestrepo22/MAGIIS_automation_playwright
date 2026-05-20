@@ -757,7 +757,7 @@
 
 ### BL-040 — Soft assertions en E2E híbridos + `expect.configure` por dominio
 
-- **Estado:** 🔴 Pendiente
+- **Estado:** 🟡 Piloto implementado en rama `scripts/soft-assertions-expect-extend` (2026-05-19). NUEVO `tests/utils/expect-extend.ts` con 4 configures (expect3DS 30s, expectGatewaySettle 20s, expectFast 2s, expectAuth 15s) + helper `assertSoftThenFail(testInfo)` para fail consolidado. NUEVO `tests/utils/README.md` documentando convención. Spec piloto migrado: `tests/e2e/gateway/flow1-carrier-driver/flow1.e2e.spec.ts` con `expect.soft` en bloques BRIDGE + VALIDATE + cierre `assertSoftThenFail`. Migración bulk del resto pendiente.
 - **Prioridad:** P3
 - **Tipo:** Mejora (calidad de evidencia + claridad declarativa)
 - **Reportado:** 2026-05-19
