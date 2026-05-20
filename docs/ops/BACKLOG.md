@@ -739,7 +739,7 @@
 
 ### BL-039 — ESLint Playwright plugin + reglas anti-anti-pattern
 
-- **Estado:** 🔴 Pendiente
+- **Estado:** 🟡 Plugin implementado en rama `scripts/eslint-playwright-plugin` (commit `e658807`, 2026-05-19). Pendiente merge a main. Baseline documentado: 478 violations totales (186 expect-expect, 118 consistent-spacing, 95 no-conditional-in-test, 30 no-wait-for-timeout, 19 no-skipped-test, 16 no-conditional-expect, 14 no-force-option, 10 valid-title, 7 prefer-locator, 2 no-wait-for-selector, 1 valid-describe-callback). Todas como warning por `eslint-plugin-only-warn`. Migración del baseline incremental — no big-bang.
 - **Prioridad:** P1
 - **Tipo:** Mejora / Infra (guardrail estructural)
 - **Reportado:** 2026-05-19
