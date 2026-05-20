@@ -66,5 +66,30 @@ export default defineConfig({
         browserName: "chromium",
       },
     },
+    // BL-043 (2026-05-19) — Unit project: specs con network mocking de
+    // gateways. NO carga browser real para asserts UI — solo lanza el
+    // page.route() interception y valida el comportamiento MAGIIS frente
+    // a respuestas controladas del SDK. <2s por spec vs >30s vs sandbox.
+    // Reproducible 100% (sin dependencia de servicios externos).
+    {
+      name: "unit",
+      testMatch: /\.unit\.spec\.ts$/,
+      use: {
+        browserName: "chromium",
+      },
+    },
+    // BL-043 (2026-05-19) — API project: contract tests directos contra
+    // sandbox externo (Authorize, Stripe API). Match canónico *.api.spec.ts.
+    // Override testDir porque los specs API viven en /api/, no en /specs/.
+    // Los specs usan APIRequestContext nativo — no llaman al browser, pero
+    // browserName requerido por el config base (overhead despreciable).
+    {
+      name: "api",
+      testDir: "./tests/features/gateway-pg/api",
+      testMatch: /\.api\.spec\.ts$/,
+      use: {
+        browserName: "chromium",
+      },
+    },
   ],
 });

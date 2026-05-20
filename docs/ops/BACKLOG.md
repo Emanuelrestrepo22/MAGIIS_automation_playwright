@@ -855,7 +855,7 @@
 
 ### BL-043 — Network mocking Stripe/Authorize + API project separado
 
-- **Estado:** 🔴 Pendiente
+- **Estado:** 🟡 Estructura + piloto en rama `e2e/network-mocking-gateway` (2026-05-19). `playwright.gateway-pg.config.ts` gana 2 projects nuevos: `unit` (network mocking, matchea `*.unit.spec.ts`) + `api` (contract tests Authorize sandbox, matchea `*.api.spec.ts` con testDir propio en `tests/features/gateway-pg/api/`). Spec piloto `tests/features/gateway-pg/specs/stripe/unit/stripe-card-declined.unit.spec.ts` con `page.route()` mockeando Stripe API → `card_declined` response. README explicando convención + cobertura recomendada. 2 scripts npm nuevos: `test:test:gateway-pg:unit` y `:api`. Assertions UI específicas marcadas como TODO (requieren inspección manual vs MAGIIS TEST live). Cierra parcialmente BL-036 frente B (API project formalizado).
 - **Prioridad:** P2
 - **Tipo:** Mejora / Cobertura
 - **Reportado:** 2026-05-19
