@@ -128,7 +128,7 @@ export const AUTHORIZE_CARDS = {
 	 * Prepaid con balance cero — la tarjeta prepaga no tiene fondos.
 	 * Authorize: zip `46228` → Prepaid Auth, $0 balance.
 	 */
-	PREPAID_ZERO: AUTHORIZE_TEST_CARDS.prepaidZeroBalance,
+	PREPAID_ZERO: AUTHORIZE_TEST_CARDS.prepaidZeroBalance
 } as const satisfies Record<string, AuthorizeTestCard>;
 
 export type AuthorizeCardPolicyKey = keyof typeof AUTHORIZE_CARDS;

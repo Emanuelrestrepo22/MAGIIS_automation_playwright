@@ -26,19 +26,18 @@ import {
 	loginAsContractor,
 	expectNoThreeDSModal,
 	TEST_DATA,
-	STRIPE_TEST_CARDS,
+	STRIPE_TEST_CARDS
 } from '../../../../fixtures/gateway.fixtures';
 import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../../../helpers/travel-cleanup';
-
 
 test.use({ role: 'contractor', storageState: { cookies: [], origins: [] } });
 test.describe.configure({ timeout: 180_000 });
 
 test.describe('Gateway PG · Contractor · Colaborador — Hold sin 3DS (tarjeta 4242 4242 4242 4242) @gateway @stripe @hold @critical @smoke @regression', () => {
-
 	test.describe('Hold ON', () => {
-
-		test('[TS-STRIPE-P2-TC001] @smoke @contractor @hold Hold ON + nueva vinculación tarjeta 4242 + alta colaborador → viaje a "Buscando conductor"', async ({ page }) => {
+		test('[TS-STRIPE-P2-TC001] @smoke @contractor @hold Hold ON + nueva vinculación tarjeta 4242 + alta colaborador → viaje a "Buscando conductor"', async ({
+			page
+		}) => {
 			const dashboard = new DashboardPage(page);
 			const travel = new ContractorNewTravelPage(page);
 			let travelIdRef: TravelIdRef | null = null;
@@ -61,7 +60,7 @@ test.describe('Gateway PG · Contractor · Colaborador — Hold sin 3DS (tarjeta
 						passenger: TEST_DATA.contractorColaborador,
 						origin: TEST_DATA.origin,
 						destination: TEST_DATA.destination,
-						cardLast4: STRIPE_TEST_CARDS.successDirect.slice(-4), // 4242
+						cardLast4: STRIPE_TEST_CARDS.successDirect.slice(-4) // 4242
 					});
 				});
 
@@ -76,10 +75,10 @@ test.describe('Gateway PG · Contractor · Colaborador — Hold sin 3DS (tarjeta
 				});
 
 				// El portal contractor redirige a /dashboard tras crear el viaje (no a /travels/xxx).
-				await page.waitForURL(
-					url => !url.href.includes('/travel/create'),
-					{ timeout: 30_000, waitUntil: 'commit' }
-				);
+				await page.waitForURL(url => !url.href.includes('/travel/create'), {
+					timeout: 30_000,
+					waitUntil: 'commit'
+				});
 
 				// Validación API: el POST /travels devolvió un travelId — viaje creado en backend.
 				expect(travelIdRef?.travelId, 'POST /travels debe haber capturado un travelId').not.toBeNull();
@@ -88,7 +87,9 @@ test.describe('Gateway PG · Contractor · Colaborador — Hold sin 3DS (tarjeta
 			}
 		});
 
-		test('[TS-STRIPE-P2-TC003] @regression @contractor @hold Hold ON + selección tarjeta VISA guardada del colaborador + alta → viaje a "Buscando conductor"', async ({ page }) => {
+		test('[TS-STRIPE-P2-TC003] @regression @contractor @hold Hold ON + selección tarjeta VISA guardada del colaborador + alta → viaje a "Buscando conductor"', async ({
+			page
+		}) => {
 			const dashboard = new DashboardPage(page);
 			const travel = new ContractorNewTravelPage(page);
 			let travelIdRef: TravelIdRef | null = null;
@@ -115,7 +116,10 @@ test.describe('Gateway PG · Contractor · Colaborador — Hold sin 3DS (tarjeta
 					// Precondición: el colaborador debe tener una tarjeta guardada resaltada (.highlighted).
 					const highlighted = page.locator('.ng-star-inserted.highlighted > .data-with-icon-col').first();
 					const hasCard = await highlighted.isVisible({ timeout: 5_000 }).catch(() => false);
-					test.skip(!hasCard, '[TC003] PRECONDICIÓN: colaborador no tiene tarjeta guardada en TEST. Vincular tarjeta primero.');
+					test.skip(
+						!hasCard,
+						'[TC003] PRECONDICIÓN: colaborador no tiene tarjeta guardada en TEST. Vincular tarjeta primero.'
+					);
 					await travel.selectSavedCard();
 				});
 
@@ -129,10 +133,10 @@ test.describe('Gateway PG · Contractor · Colaborador — Hold sin 3DS (tarjeta
 					await expectNoThreeDSModal(page);
 				});
 
-				await page.waitForURL(
-					url => !url.href.includes('/travel/create'),
-					{ timeout: 30_000, waitUntil: 'commit' }
-				);
+				await page.waitForURL(url => !url.href.includes('/travel/create'), {
+					timeout: 30_000,
+					waitUntil: 'commit'
+				});
 
 				// Validación API: el POST /travels devolvió un travelId — viaje creado en backend.
 				expect(travelIdRef?.travelId, 'POST /travels debe haber capturado un travelId').not.toBeNull();
@@ -140,12 +144,12 @@ test.describe('Gateway PG · Contractor · Colaborador — Hold sin 3DS (tarjeta
 				if (travelIdRef) await cancelTravelIfCreated(page, travelIdRef);
 			}
 		});
-
 	});
 
 	test.describe('Hold OFF', () => {
-
-		test('[TS-STRIPE-P2-TC002] @regression @contractor @hold Hold OFF + nueva vinculación tarjeta 4242 + alta colaborador → viaje a "Buscando conductor" sin hold', async ({ page }) => {
+		test('[TS-STRIPE-P2-TC002] @regression @contractor @hold Hold OFF + nueva vinculación tarjeta 4242 + alta colaborador → viaje a "Buscando conductor" sin hold', async ({
+			page
+		}) => {
 			const dashboard = new DashboardPage(page);
 			const travel = new ContractorNewTravelPage(page);
 			let travelIdRef: TravelIdRef | null = null;
@@ -168,7 +172,7 @@ test.describe('Gateway PG · Contractor · Colaborador — Hold sin 3DS (tarjeta
 						passenger: TEST_DATA.contractorColaborador,
 						origin: TEST_DATA.origin,
 						destination: TEST_DATA.destination,
-						cardLast4: STRIPE_TEST_CARDS.successDirect.slice(-4), // 4242
+						cardLast4: STRIPE_TEST_CARDS.successDirect.slice(-4) // 4242
 					});
 				});
 
@@ -182,10 +186,10 @@ test.describe('Gateway PG · Contractor · Colaborador — Hold sin 3DS (tarjeta
 					await expectNoThreeDSModal(page);
 				});
 
-				await page.waitForURL(
-					url => !url.href.includes('/travel/create'),
-					{ timeout: 30_000, waitUntil: 'commit' }
-				);
+				await page.waitForURL(url => !url.href.includes('/travel/create'), {
+					timeout: 30_000,
+					waitUntil: 'commit'
+				});
 
 				// Validación API: el POST /travels devolvió un travelId — viaje creado en backend.
 				expect(travelIdRef?.travelId, 'POST /travels debe haber capturado un travelId').not.toBeNull();
@@ -194,7 +198,9 @@ test.describe('Gateway PG · Contractor · Colaborador — Hold sin 3DS (tarjeta
 			}
 		});
 
-		test('[TS-STRIPE-P2-TC004] @regression @contractor @hold Hold OFF + selección tarjeta VISA guardada del colaborador + alta → viaje a "Buscando conductor" sin hold', async ({ page }) => {
+		test('[TS-STRIPE-P2-TC004] @regression @contractor @hold Hold OFF + selección tarjeta VISA guardada del colaborador + alta → viaje a "Buscando conductor" sin hold', async ({
+			page
+		}) => {
 			const dashboard = new DashboardPage(page);
 			const travel = new ContractorNewTravelPage(page);
 			let travelIdRef: TravelIdRef | null = null;
@@ -220,7 +226,10 @@ test.describe('Gateway PG · Contractor · Colaborador — Hold sin 3DS (tarjeta
 				await test.step('Seleccionar tarjeta VISA guardada del colaborador (Hold OFF)', async () => {
 					const highlighted = page.locator('.ng-star-inserted.highlighted > .data-with-icon-col').first();
 					const hasCard = await highlighted.isVisible({ timeout: 5_000 }).catch(() => false);
-					test.skip(!hasCard, '[TC004] PRECONDICIÓN: colaborador no tiene tarjeta guardada en TEST. Vincular tarjeta primero.');
+					test.skip(
+						!hasCard,
+						'[TC004] PRECONDICIÓN: colaborador no tiene tarjeta guardada en TEST. Vincular tarjeta primero.'
+					);
 					await travel.selectSavedCard();
 				});
 
@@ -234,10 +243,10 @@ test.describe('Gateway PG · Contractor · Colaborador — Hold sin 3DS (tarjeta
 					await expectNoThreeDSModal(page);
 				});
 
-				await page.waitForURL(
-					url => !url.href.includes('/travel/create'),
-					{ timeout: 30_000, waitUntil: 'commit' }
-				);
+				await page.waitForURL(url => !url.href.includes('/travel/create'), {
+					timeout: 30_000,
+					waitUntil: 'commit'
+				});
 
 				// Validación API: el POST /travels devolvió un travelId — viaje creado en backend.
 				expect(travelIdRef?.travelId, 'POST /travels debe haber capturado un travelId').not.toBeNull();
@@ -245,7 +254,5 @@ test.describe('Gateway PG · Contractor · Colaborador — Hold sin 3DS (tarjeta
 				if (travelIdRef) await cancelTravelIfCreated(page, travelIdRef);
 			}
 		});
-
 	});
-
 });

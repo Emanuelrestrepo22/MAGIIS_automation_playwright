@@ -150,7 +150,7 @@ export function assertSoftThenFail(testInfo: TestInfo): void {
 			.map((err, i) => `  [${i + 1}] ${err.message?.split('\n')[0] ?? 'soft assertion failed'}`)
 			.join('\n');
 		throw new Error(
-			`[soft-assertions] ${testInfo.errors.length} soft failure(s) acumulado(s) en este spec:\n${summary}`,
+			`[soft-assertions] ${testInfo.errors.length} soft failure(s) acumulado(s) en este spec:\n${summary}`
 		);
 	}
 }

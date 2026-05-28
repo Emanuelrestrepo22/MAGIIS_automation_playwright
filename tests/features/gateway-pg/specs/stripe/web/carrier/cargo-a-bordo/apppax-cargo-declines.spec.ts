@@ -15,7 +15,12 @@
  */
 import { expect, type Page } from '@playwright/test';
 import { test } from '../../../../../../../TestBase';
-import { DashboardPage, NewTravelPage, TravelDetailPage, TravelManagementPage } from '../../../../../../../pages/carrier';
+import {
+	DashboardPage,
+	NewTravelPage,
+	TravelDetailPage,
+	TravelManagementPage
+} from '../../../../../../../pages/carrier';
 import { expectNoThreeDSModal, loginAsDispatcher, TEST_DATA } from '../../../../../fixtures/gateway.fixtures';
 import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../../../../helpers/travel-cleanup';
 
@@ -61,7 +66,7 @@ async function webPhaseCargoAppPax(page: Page): Promise<TravelIdRef> {
 		await expect
 			.poll(() => travelIdRef?.travelId, {
 				timeout: 15_000,
-				message: '[Cargo a Bordo] POST /travels no capturó travelId tras el submit',
+				message: '[Cargo a Bordo] POST /travels no capturó travelId tras el submit'
 			})
 			.not.toBeNull();
 	});
@@ -75,13 +80,15 @@ async function webPhaseCargoAppPax(page: Page): Promise<TravelIdRef> {
 }
 
 test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo · Declines @gateway @stripe @cargo-a-bordo @hold @decline @regression', () => {
-
 	test('[TS-STRIPE-TC1082] @regression @cargo-a-bordo pago rechazado genérico desde Driver App', async ({ page }) => {
 		let travelIdRef: TravelIdRef | null = null;
 		try {
 			travelIdRef = await webPhaseCargoAppPax(page);
 			await test.step('[DRIVER APP] Conductor finaliza viaje → cobra con tarjeta declinada → pago rechazado genérico', async () => {
-				test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium + DriverTripPaymentScreen implementado.');
+				test.fixme(
+					true,
+					'PENDIENTE: fase Driver App — requiere Appium + DriverTripPaymentScreen implementado.'
+				);
 			});
 		} finally {
 			if (travelIdRef) await cancelTravelIfCreated(page, travelIdRef);
@@ -135,5 +142,4 @@ test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo · Declines @g
 			if (travelIdRef) await cancelTravelIfCreated(page, travelIdRef);
 		}
 	});
-
 });

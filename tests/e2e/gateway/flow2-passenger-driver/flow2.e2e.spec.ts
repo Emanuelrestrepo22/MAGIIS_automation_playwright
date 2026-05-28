@@ -35,69 +35,57 @@ import { test } from '../../../TestBase';
 // ─── TC001 — Passenger personal sin 3DS ──────────────────────────────────────
 
 test.describe('[E2E-FLOW2-TC001] E2E Flow 2 — Passenger App + Driver App — Personal sin 3DS', () => {
-	test(
-		'[E2E-FLOW2-TC001] Passenger agrega tarjeta personal (4242) → crea viaje → driver completa',
-		async () => {
-			// TODO (requiere dispositivo):
-			//   1. Conectar PassengerTripHappyPathHarness con selectores validados
-			//   2. Ejecutar fase mobile con mobile-phase-passenger.ts
-			//   3. Conectar fase driver con DriverTripHappyPathHarness
-			//   4. Validar JourneyContext final driver-completed
-			test.fixme(
-				true,
-				'[E2E-FLOW2-TC001] Bloqueado: requiere dispositivo Android disponible para sesión Appium. ' +
+	test('[E2E-FLOW2-TC001] Passenger agrega tarjeta personal (4242) → crea viaje → driver completa', async () => {
+		// TODO (requiere dispositivo):
+		//   1. Conectar PassengerTripHappyPathHarness con selectores validados
+		//   2. Ejecutar fase mobile con mobile-phase-passenger.ts
+		//   3. Conectar fase driver con DriverTripHappyPathHarness
+		//   4. Validar JourneyContext final driver-completed
+		test.fixme(
+			true,
+			'[E2E-FLOW2-TC001] Bloqueado: requiere dispositivo Android disponible para sesión Appium. ' +
 				'Screens implementados — pendiente validación E2E end-to-end. ' +
-				'Precondición: limpiar viajes activos/NO_AUTORIZADO del user en Carrier.',
-			);
-		},
-	);
+				'Precondición: limpiar viajes activos/NO_AUTORIZADO del user en Carrier.'
+		);
+	});
 });
 
 // ─── TC002 — Passenger personal con 3DS ──────────────────────────────────────
 
 test.describe('[E2E-FLOW2-TC002] E2E Flow 2 — Passenger App + Driver App — Personal con 3DS', () => {
-	test(
-		'[E2E-FLOW2-TC002] Passenger agrega tarjeta personal 3DS (3155) → completa desafío → driver completa',
-		async () => {
-			// TODO (requiere dispositivo):
-			//   1. Mismos prerrequisitos que TC001
-			//   2. Agregar manejo de 3DS challenge en PassengerWalletScreen
-			//      (WebView con iframe Stripe — ver helpers/threeDsChallenge.ts)
-			test.fixme(
-				true,
-				'[E2E-FLOW2-TC002] Bloqueado: requiere dispositivo Android disponible. ' +
-				'3DS challenge en WebView passenger identificado y documentado en TC-PAX-HOLD-STEPS.',
-			);
-		},
-	);
+	test('[E2E-FLOW2-TC002] Passenger agrega tarjeta personal 3DS (3155) → completa desafío → driver completa', async () => {
+		// TODO (requiere dispositivo):
+		//   1. Mismos prerrequisitos que TC001
+		//   2. Agregar manejo de 3DS challenge en PassengerWalletScreen
+		//      (WebView con iframe Stripe — ver helpers/threeDsChallenge.ts)
+		test.fixme(
+			true,
+			'[E2E-FLOW2-TC002] Bloqueado: requiere dispositivo Android disponible. ' +
+				'3DS challenge en WebView passenger identificado y documentado en TC-PAX-HOLD-STEPS.'
+		);
+	});
 });
 
 // ─── TC003 — Passenger business sin 3DS ──────────────────────────────────────
 
 test.describe('[E2E-FLOW2-TC003] E2E Flow 2 — Passenger App + Driver App — Business sin 3DS', () => {
-	test(
-		'[E2E-FLOW2-TC003] Passenger business agrega tarjeta (4242) → crea viaje → driver completa',
-		async () => {
-			test.fixme(
-				true,
-				'[E2E-FLOW2-TC003] Bloqueado: requiere dispositivo Android disponible. ' +
-				'PassengerHomeScreen.ensureProfileMode("business") implementado y validado.',
-			);
-		},
-	);
+	test('[E2E-FLOW2-TC003] Passenger business agrega tarjeta (4242) → crea viaje → driver completa', async () => {
+		test.fixme(
+			true,
+			'[E2E-FLOW2-TC003] Bloqueado: requiere dispositivo Android disponible. ' +
+				'PassengerHomeScreen.ensureProfileMode("business") implementado y validado.'
+		);
+	});
 });
 
 // ─── TC004 — Passenger business con 3DS ──────────────────────────────────────
 
 test.describe('[E2E-FLOW2-TC004] E2E Flow 2 — Passenger App + Driver App — Business con 3DS', () => {
-	test(
-		'[E2E-FLOW2-TC004] Passenger business agrega tarjeta 3DS (3155) → completa desafío → driver completa',
-		async () => {
-			test.fixme(
-				true,
-				'[E2E-FLOW2-TC004] Bloqueado: requiere dispositivo Android disponible. ' +
-				'Depende de TC001 + TC002 + TC003 desbloqueados.',
-			);
-		},
-	);
+	test('[E2E-FLOW2-TC004] Passenger business agrega tarjeta 3DS (3155) → completa desafío → driver completa', async () => {
+		test.fixme(
+			true,
+			'[E2E-FLOW2-TC004] Bloqueado: requiere dispositivo Android disponible. ' +
+				'Depende de TC001 + TC002 + TC003 desbloqueados.'
+		);
+	});
 });

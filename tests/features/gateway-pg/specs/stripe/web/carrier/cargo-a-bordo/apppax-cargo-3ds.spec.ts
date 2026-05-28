@@ -13,7 +13,12 @@
  */
 import { expect, type Page } from '@playwright/test';
 import { test } from '../../../../../../../TestBase';
-import { DashboardPage, NewTravelPage, TravelDetailPage, TravelManagementPage } from '../../../../../../../pages/carrier';
+import {
+	DashboardPage,
+	NewTravelPage,
+	TravelDetailPage,
+	TravelManagementPage
+} from '../../../../../../../pages/carrier';
 import { expectNoThreeDSModal, loginAsDispatcher, TEST_DATA } from '../../../../../fixtures/gateway.fixtures';
 import { validateCardPrecondition } from '../../../../../helpers/card-precondition';
 import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../../../../helpers/travel-cleanup';
@@ -38,9 +43,12 @@ async function webPhaseCargoAppPax(page: Page): Promise<TravelIdRef> {
 	await test.step('Precondición: validar tarjeta 3DS (3155) vinculada al pasajero appPax', async () => {
 		const check = await validateCardPrecondition(page, {
 			passengerName: PASSENGERS.appPax.apiSearchQuery!,
-			requiredLast4: '3155',
+			requiredLast4: '3155'
 		});
-		debugLog('gateway-pg:carrier', `[card-precondition] ${PASSENGERS.appPax.name}: ${check.activeCards} tarjetas, tiene 3155: ${check.hasRequiredCard}, limpiadas: ${check.cardsDeleted}`);
+		debugLog(
+			'gateway-pg:carrier',
+			`[card-precondition] ${PASSENGERS.appPax.name}: ${check.activeCards} tarjetas, tiene 3155: ${check.hasRequiredCard}, limpiadas: ${check.cardsDeleted}`
+		);
 		if (!check.hasRequiredCard) {
 			throw new Error(
 				`[TC1092] PRECONDICIÓN NO CUMPLIDA: pasajero appPax sin tarjeta 3DS 3155 activa (tarjetas activas: ${check.activeCards}). Vincular manualmente en TEST antes de ejecutar.`
@@ -75,7 +83,7 @@ async function webPhaseCargoAppPax(page: Page): Promise<TravelIdRef> {
 		await expect
 			.poll(() => travelIdRef?.travelId, {
 				timeout: 15_000,
-				message: '[Cargo a Bordo] POST /travels no capturó travelId tras el submit',
+				message: '[Cargo a Bordo] POST /travels no capturó travelId tras el submit'
 			})
 			.not.toBeNull();
 	});
@@ -89,13 +97,15 @@ async function webPhaseCargoAppPax(page: Page): Promise<TravelIdRef> {
 }
 
 test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo · 3DS @gateway @stripe @cargo-a-bordo @hold @3ds @critical', () => {
-
 	test('[TS-STRIPE-TC1092] @critical @3ds @cargo-a-bordo pago exitoso con 3DS desde Driver App', async ({ page }) => {
 		let travelIdRef: TravelIdRef | null = null;
 		try {
 			travelIdRef = await webPhaseCargoAppPax(page);
 			await test.step('[DRIVER APP] Conductor finaliza viaje → 3DS requerido → pasajero completa challenge → cobro exitoso', async () => {
-				test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium + DriverTripPaymentScreen + manejo de WebView 3DS.');
+				test.fixme(
+					true,
+					'PENDIENTE: fase Driver App — requiere Appium + DriverTripPaymentScreen + manejo de WebView 3DS.'
+				);
 			});
 		} finally {
 			if (travelIdRef) await cancelTravelIfCreated(page, travelIdRef);
@@ -137,5 +147,4 @@ test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo · 3DS @gatewa
 			if (travelIdRef) await cancelTravelIfCreated(page, travelIdRef);
 		}
 	});
-
 });

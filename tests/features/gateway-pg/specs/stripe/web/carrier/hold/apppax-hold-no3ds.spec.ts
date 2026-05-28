@@ -5,8 +5,19 @@
  */
 import { expect, type Page } from '@playwright/test';
 import { test } from '../../../../../../../TestBase';
-import { DashboardPage, NewTravelPage, OperationalPreferencesPage, ThreeDSModal, TravelManagementPage } from '../../../../../../../pages/carrier';
-import { expectNoThreeDSModal, loginAsDispatcher, STRIPE_TEST_CARDS, TEST_DATA } from '../../../../../fixtures/gateway.fixtures';
+import {
+	DashboardPage,
+	NewTravelPage,
+	OperationalPreferencesPage,
+	ThreeDSModal,
+	TravelManagementPage
+} from '../../../../../../../pages/carrier';
+import {
+	expectNoThreeDSModal,
+	loginAsDispatcher,
+	STRIPE_TEST_CARDS,
+	TEST_DATA
+} from '../../../../../fixtures/gateway.fixtures';
 
 type ParametersSavePayload = {
 	enableCreditCardHold?: boolean;
@@ -37,7 +48,7 @@ async function restoreHoldAndSave(page: Page, preferences: OperationalPreference
 	await preferences.setHoldEnabled(true);
 
 	const responsePromise = page.waitForResponse(
-		(response) => response.request().method() === 'POST' && PARAMETERS_SAVE_URL.test(response.url()),
+		response => response.request().method() === 'POST' && PARAMETERS_SAVE_URL.test(response.url()),
 		{ timeout: 15_000 }
 	);
 
@@ -89,7 +100,7 @@ async function runHoldOnScenario(page: Page, scenario: HoldNo3dsScenario): Promi
 			passenger: scenario.passenger,
 			origin: scenario.origin,
 			destination: scenario.destination,
-			cardLast4: STRIPE_TEST_CARDS.successDirect.slice(-4),
+			cardLast4: STRIPE_TEST_CARDS.successDirect.slice(-4)
 		});
 	});
 
@@ -134,7 +145,7 @@ async function runHoldOffScenario(page: Page, scenario: HoldNo3dsScenario): Prom
 				passenger: scenario.passenger,
 				origin: scenario.origin,
 				destination: scenario.destination,
-				cardLast4: STRIPE_TEST_CARDS.successDirect.slice(-4),
+				cardLast4: STRIPE_TEST_CARDS.successDirect.slice(-4)
 			});
 		});
 
@@ -163,7 +174,6 @@ test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
 test.describe.configure({ timeout: 180_000 });
 
 test.describe('Gateway PG · Carrier · App Pax — Hold sin 3DS @gateway @stripe @hold @critical @smoke @regression', () => {
-
 	test.describe('Hold ON', () => {
 		test('[TS-STRIPE-TC1049] @smoke @hold hold+cobro app pax sin 3DS', async ({ page }) => {
 			const dashboard = new DashboardPage(page);
@@ -193,7 +203,7 @@ test.describe('Gateway PG · Carrier · App Pax — Hold sin 3DS @gateway @strip
 					passenger: TEST_DATA.appPaxPassenger,
 					origin: TEST_DATA.origin,
 					destination: TEST_DATA.destination,
-					cardLast4: STRIPE_TEST_CARDS.successDirect.slice(-4), // 4242
+					cardLast4: STRIPE_TEST_CARDS.successDirect.slice(-4) // 4242
 				});
 			});
 
@@ -207,10 +217,10 @@ test.describe('Gateway PG · Carrier · App Pax — Hold sin 3DS @gateway @strip
 				await expectNoThreeDSModal(page);
 			});
 
-				await test.step('Validar viaje en gestion — columna Por asignar', async () => {
-					await management.goto();
-					await management.expectPassengerInPorAsignar(TEST_DATA.passenger, undefined, 'Buscando chofer');
-				});
+			await test.step('Validar viaje en gestion — columna Por asignar', async () => {
+				await management.goto();
+				await management.expectPassengerInPorAsignar(TEST_DATA.passenger, undefined, 'Buscando chofer');
+			});
 		});
 
 		test('[TS-STRIPE-TC1051] @regression @hold hold+cobro app pax sin 3DS variante', async ({ page }) => {
@@ -218,7 +228,7 @@ test.describe('Gateway PG · Carrier · App Pax — Hold sin 3DS @gateway @strip
 				client: TEST_DATA.appPaxPassenger,
 				passenger: TEST_DATA.appPaxPassenger,
 				origin: 'Av. Corrientes 1234, Buenos Aires',
-				destination: 'Av. Santa Fe 2100, Buenos Aires',
+				destination: 'Av. Santa Fe 2100, Buenos Aires'
 			});
 		});
 
@@ -227,7 +237,7 @@ test.describe('Gateway PG · Carrier · App Pax — Hold sin 3DS @gateway @strip
 				client: TEST_DATA.appPaxPassenger,
 				passenger: TEST_DATA.appPaxPassenger,
 				origin: TEST_DATA.origin,
-				destination: TEST_DATA.destination,
+				destination: TEST_DATA.destination
 			});
 		});
 
@@ -236,7 +246,7 @@ test.describe('Gateway PG · Carrier · App Pax — Hold sin 3DS @gateway @strip
 				client: TEST_DATA.appPaxPassenger,
 				passenger: TEST_DATA.appPaxPassenger,
 				origin: TEST_DATA.origin,
-				destination: TEST_DATA.destination,
+				destination: TEST_DATA.destination
 			});
 		});
 	});
@@ -267,7 +277,7 @@ test.describe('Gateway PG · Carrier · App Pax — Hold sin 3DS @gateway @strip
 						passenger: TEST_DATA.appPaxPassenger,
 						origin: TEST_DATA.origin,
 						destination: TEST_DATA.destination,
-						cardLast4: STRIPE_TEST_CARDS.successDirect.slice(-4), // 4242
+						cardLast4: STRIPE_TEST_CARDS.successDirect.slice(-4) // 4242
 					});
 				});
 
@@ -283,7 +293,11 @@ test.describe('Gateway PG · Carrier · App Pax — Hold sin 3DS @gateway @strip
 
 				await test.step('Validar viaje en gestion — columna Por asignar', async () => {
 					await management.goto();
-					await management.expectPassengerInPorAsignar(TEST_DATA.appPaxPassenger, undefined, 'Buscando chofer');
+					await management.expectPassengerInPorAsignar(
+						TEST_DATA.appPaxPassenger,
+						undefined,
+						'Buscando chofer'
+					);
 				});
 			} finally {
 				await test.step('Restaurar hold al final del test', async () => {
@@ -297,7 +311,7 @@ test.describe('Gateway PG · Carrier · App Pax — Hold sin 3DS @gateway @strip
 				client: TEST_DATA.appPaxPassenger,
 				passenger: TEST_DATA.appPaxPassenger,
 				origin: 'Av. Corrientes 1234, Buenos Aires',
-				destination: 'Av. Santa Fe 2100, Buenos Aires',
+				destination: 'Av. Santa Fe 2100, Buenos Aires'
 			});
 		});
 
@@ -306,7 +320,7 @@ test.describe('Gateway PG · Carrier · App Pax — Hold sin 3DS @gateway @strip
 				client: TEST_DATA.appPaxPassenger,
 				passenger: TEST_DATA.appPaxPassenger,
 				origin: TEST_DATA.origin,
-				destination: TEST_DATA.destination,
+				destination: TEST_DATA.destination
 			});
 		});
 
@@ -315,9 +329,8 @@ test.describe('Gateway PG · Carrier · App Pax — Hold sin 3DS @gateway @strip
 				client: TEST_DATA.appPaxPassenger,
 				passenger: TEST_DATA.appPaxPassenger,
 				origin: TEST_DATA.origin,
-				destination: TEST_DATA.destination,
+				destination: TEST_DATA.destination
 			});
 		});
 	});
-
 });

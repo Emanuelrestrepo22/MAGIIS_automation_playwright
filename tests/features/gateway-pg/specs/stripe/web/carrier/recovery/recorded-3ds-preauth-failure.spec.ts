@@ -8,13 +8,21 @@
  */
 import { expect } from '@playwright/test';
 import { test } from '../../../../../../../TestBase';
-import { DashboardPage, NewTravelPage, OperationalPreferencesPage, ThreeDSModal, ThreeDSErrorPopup } from '../../../../../../../pages/carrier';
+import {
+	DashboardPage,
+	NewTravelPage,
+	OperationalPreferencesPage,
+	ThreeDSModal,
+	ThreeDSErrorPopup
+} from '../../../../../../../pages/carrier';
 import { loginAsDispatcher, STRIPE_TEST_CARDS, TEST_DATA } from '../../../../../fixtures/gateway.fixtures';
 
 test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
 
 test.describe('[TS-STRIPE-TC1039] Hold ON + cliente contractor + pasajero app pax invitado + threeDSRequired + fallo 3DS — pop-up de error, URL permanece en formulario @gateway @stripe @hold @3ds @decline @regression', () => {
-	test('muestra pop-up de error de autenticación 3DS y no crea el viaje cuando la autenticación falla', async ({ page }) => {
+	test('muestra pop-up de error de autenticación 3DS y no crea el viaje cuando la autenticación falla', async ({
+		page
+	}) => {
 		test.setTimeout(90_000);
 
 		const dashboard = new DashboardPage(page);

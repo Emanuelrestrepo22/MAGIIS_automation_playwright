@@ -5,7 +5,12 @@
  */
 import { expect } from '@playwright/test';
 import { test } from '../../../../../../../TestBase';
-import { DashboardPage, NewTravelPage, TravelDetailPage, TravelManagementPage } from '../../../../../../../pages/carrier';
+import {
+	DashboardPage,
+	NewTravelPage,
+	TravelDetailPage,
+	TravelManagementPage
+} from '../../../../../../../pages/carrier';
 import { expectNoThreeDSModal, loginAsDispatcher, TEST_DATA } from '../../../../../fixtures/gateway.fixtures';
 import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../../../../helpers/travel-cleanup';
 
@@ -17,7 +22,6 @@ test.use({ role: 'carrier', storageState: undefined });
 test.describe.configure({ timeout: 120_000 });
 
 test.describe('Gateway PG · Carrier · Colaborador/Contractor — Cargo a Bordo @gateway @stripe @cargo-a-bordo @hold @critical @smoke', () => {
-
 	test('[TS-STRIPE-TC1096] @smoke @cargo-a-bordo pago exitoso sin 3DS', async ({ page }) => {
 		const dashboard = new DashboardPage(page);
 		const travel = new NewTravelPage(page);
@@ -60,14 +64,18 @@ test.describe('Gateway PG · Carrier · Colaborador/Contractor — Cargo a Bordo
 				await expect
 					.poll(() => travelIdRef?.travelId, {
 						timeout: 30_000,
-						message: '[TC1096] POST /travels no capturó travelId tras el submit',
+						message: '[TC1096] POST /travels no capturó travelId tras el submit'
 					})
 					.not.toBeNull();
 			});
 
 			await test.step('Validar viaje en gestión - columna Por asignar con estado Buscando chofer', async () => {
 				await management.goto();
-				await management.expectPassengerInPorAsignar(TEST_DATA.contractorPassenger, undefined, 'Buscando chofer');
+				await management.expectPassengerInPorAsignar(
+					TEST_DATA.contractorPassenger,
+					undefined,
+					'Buscando chofer'
+				);
 			});
 		} finally {
 			if (travelIdRef) {
@@ -77,5 +85,4 @@ test.describe('Gateway PG · Carrier · Colaborador/Contractor — Cargo a Bordo
 			}
 		}
 	});
-
 });

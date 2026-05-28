@@ -10,7 +10,7 @@ import { ErrorPopup as SharedErrorPopup } from '../ErrorPopup';
  * Movido desde `pages/carrier/ThreeDSErrorPopup.ts` en 2026-05-13.
  */
 export class ThreeDSErrorPopup extends SharedErrorPopup {
-  constructor(page: Page) {
-    super(page);
-  }
+	constructor(page: Page) {
+		super(page);
+	}
 }

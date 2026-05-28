@@ -24,7 +24,7 @@ test.describe('[BL-036][API] Authorize.net sandbox — CVV + AVS triggers', () =
 		const response = await client.authOnlyTransaction(
 			AUTHORIZE_CARDS.DECLINE_CVV,
 			'10.00',
-			`bl-036-cvv-mismatch-${Date.now()}`,
+			`bl-036-cvv-mismatch-${Date.now()}`
 		);
 
 		expect(response.messages.resultCode).toBe('Ok');
@@ -39,7 +39,7 @@ test.describe('[BL-036][API] Authorize.net sandbox — CVV + AVS triggers', () =
 		const response = await client.authOnlyTransaction(
 			AUTHORIZE_CARDS.CVV_NOT_PROCESSED,
 			'10.00',
-			`bl-036-cvv-notproc-${Date.now()}`,
+			`bl-036-cvv-notproc-${Date.now()}`
 		);
 
 		expect(response.messages.resultCode).toBe('Ok');
@@ -52,7 +52,7 @@ test.describe('[BL-036][API] Authorize.net sandbox — CVV + AVS triggers', () =
 		const response = await client.authOnlyTransaction(
 			AUTHORIZE_CARDS.AVS_NO_MATCH,
 			'10.00',
-			`bl-036-avs-nomatch-${Date.now()}`,
+			`bl-036-avs-nomatch-${Date.now()}`
 		);
 
 		expect(response.messages.resultCode).toBe('Ok');

@@ -37,7 +37,7 @@ import {
 	expectNoThreeDSModal,
 	loginAsDispatcher,
 	NewTravelPage,
-	TravelManagementPage,
+	TravelManagementPage
 } from '../../fixtures/gateway.fixtures';
 import { DashboardPage, OperationalPreferencesPage } from '../../../../pages/carrier';
 
@@ -86,7 +86,7 @@ test.describe('[BL-028][parametrized] Hold happy path sin 3DS', () => {
 						passenger: JOURNEY_DEFAULTS.appPaxPassenger,
 						origin: JOURNEY_DEFAULTS.origin,
 						destination: JOURNEY_DEFAULTS.destination,
-						cardLast4: card.last4,
+						cardLast4: card.last4
 					});
 				});
 
@@ -105,7 +105,7 @@ test.describe('[BL-028][parametrized] Hold happy path sin 3DS', () => {
 					await management.expectPassengerInPorAsignar(
 						JOURNEY_DEFAULTS.appPaxPassenger,
 						undefined,
-						'Buscando chofer',
+						'Buscando chofer'
 					);
 				});
 			});

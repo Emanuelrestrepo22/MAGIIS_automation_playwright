@@ -44,7 +44,7 @@ export function resolveCard(cardId: AuthorizeCardId): AuthorizeTestCard {
 	const card = AUTHORIZE_CARDS[cardId];
 	if (!card) {
 		throw new Error(
-			`Authorize card '${cardId}' no existe en AUTHORIZE_CARDS. Agregarla al policy en tests/fixtures/gateways/authorize/card-policy.ts.`,
+			`Authorize card '${cardId}' no existe en AUTHORIZE_CARDS. Agregarla al policy en tests/fixtures/gateways/authorize/card-policy.ts.`
 		);
 	}
 	return card;

@@ -28,9 +28,12 @@ export class OperationalPreferencesPage {
 
 	constructor(page: Page) {
 		this.page = page;
-		this.holdCard = page.locator('app-general-parameters div.card').filter({
-			has: page.getByText('Cobros con Tarjeta', { exact: false }),
-		}).first();
+		this.holdCard = page
+			.locator('app-general-parameters div.card')
+			.filter({
+				has: page.getByText('Cobros con Tarjeta', { exact: false })
+			})
+			.first();
 		this.holdCardHeader = this.holdCard.locator('.title-flex');
 		this.holdToggle = this.holdCard.locator('input.switch-input[type="checkbox"]').first();
 		this.holdPreviousHoursInput = this.holdCard.locator('input[formcontrolname="ccHoldPreviousHs"]');
@@ -39,16 +42,17 @@ export class OperationalPreferencesPage {
 	}
 
 	async goto(): Promise<void> {
-		const responsePromise = this.page.waitForResponse(
-			(r) => r.request().method() === 'GET' && PARAMETERS_URL.test(r.url()),
-			{ timeout: 15_000 },
-		).catch(() => null);
+		const responsePromise = this.page
+			.waitForResponse(r => r.request().method() === 'GET' && PARAMETERS_URL.test(r.url()), { timeout: 15_000 })
+			.catch(() => null);
 
 		const currentUrl = this.page.url();
 		const portal = currentUrl.includes('/contractor') ? 'contractor' : 'carrier';
 		const baseUrl = getPortalUrl('carrier');
 		await this.page.goto(`${baseUrl}/#/home/${portal}/settings/parameters`);
-		await expect(this.page.getByRole('heading', { name: 'Configuración Parámetros' })).toBeVisible({ timeout: 15_000 });
+		await expect(this.page.getByRole('heading', { name: 'Configuración Parámetros' })).toBeVisible({
+			timeout: 15_000
+		});
 
 		this._parametersResponse = await responsePromise;
 	}
@@ -61,7 +65,7 @@ export class OperationalPreferencesPage {
 	async readHoldStateFromApi(): Promise<boolean | null> {
 		if (!this._parametersResponse) return null;
 		try {
-			const body = await this._parametersResponse.json() as Record<string, unknown>;
+			const body = (await this._parametersResponse.json()) as Record<string, unknown>;
 			return body['enableCreditCardHold'] === true;
 		} catch {
 			return null;
@@ -140,7 +144,7 @@ export class OperationalPreferencesPage {
 
 	async saveAndCaptureParametersPayload(timeout = 15_000): Promise<ParametersSaveResult> {
 		const responsePromise = this.page.waitForResponse(
-			(response) => response.request().method() === 'POST' && PARAMETERS_URL.test(response.url()),
+			response => response.request().method() === 'POST' && PARAMETERS_URL.test(response.url()),
 			{ timeout }
 		);
 
@@ -148,7 +152,9 @@ export class OperationalPreferencesPage {
 
 		const response = await responsePromise;
 		if (!response.ok()) {
-			throw new Error(`Saving operational preferences failed with status ${response.status()} at ${response.url()}`);
+			throw new Error(
+				`Saving operational preferences failed with status ${response.status()} at ${response.url()}`
+			);
 		}
 
 		const request = response.request();
@@ -157,7 +163,7 @@ export class OperationalPreferencesPage {
 
 		return {
 			url: response.url(),
-			payload,
+			payload
 		};
 	}
 

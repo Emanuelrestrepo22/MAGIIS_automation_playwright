@@ -13,20 +13,20 @@ type DriverCheckpointSelector = {
 export const DRIVER_CHECKPOINT_SELECTORS: Record<DriverCheckpointStage, DriverCheckpointSelector> = {
 	confirm: {
 		urlTokens: ['TravelConfirmPage'],
-		webSelectors: ['app-page-travel-confirm', 'button.btn.primary'],
+		webSelectors: ['app-page-travel-confirm', 'button.btn.primary']
 	},
 	'in-progress': {
 		urlTokens: ['TravelInProgressPage'],
-		webSelectors: ['app-page-travel-in-progress', 'app-page-travel-in-progress button.btn.finish'],
+		webSelectors: ['app-page-travel-in-progress', 'app-page-travel-in-progress button.btn.finish']
 	},
 	resume: {
 		urlTokens: ['TravelResumePage'],
-		webSelectors: ['app-travel-resume', 'app-travel-resume button.btn.finish'],
+		webSelectors: ['app-travel-resume', 'app-travel-resume button.btn.finish']
 	},
 	closed: {
 		urlTokens: ['/navigator/home', 'TravelConfirmPage'],
-		webSelectors: ['button.driver-home.home-icon-base', 'app-page-travel-confirm button.btn.primary'],
-	},
+		webSelectors: ['button.driver-home.home-icon-base', 'app-page-travel-confirm button.btn.primary']
+	}
 };
 
 export const DRIVER_ACTION_SELECTORS = {
@@ -34,6 +34,5 @@ export const DRIVER_ACTION_SELECTORS = {
 	startTripPrimaryButton: 'button.btn.primary.trip-pax-start',
 	endTripPrimaryButton: 'app-page-travel-in-progress button.btn.finish',
 	confirmModalYesButtons: ['app-confirm-modal button.btn.primary', 'ion-modal button.btn.primary'],
-	closeTripPrimaryButton: 'app-travel-resume button.btn.finish',
+	closeTripPrimaryButton: 'app-travel-resume button.btn.finish'
 } as const;
-

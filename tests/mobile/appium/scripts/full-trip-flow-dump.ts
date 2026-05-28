@@ -12,13 +12,13 @@ import { remote } from 'webdriverio';
 import { writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 
-const UDID    = process.env.ANDROID_UDID        ?? 'R92XB0B8F3J';
+const UDID = process.env.ANDROID_UDID ?? 'R92XB0B8F3J';
 const PACKAGE = process.env.ANDROID_APP_PACKAGE ?? 'com.magiis.app.test.driver';
 
 const log = (msg: string) => console.log(`[flow] ${msg}`);
 
 async function switchToWebView(driver: WebdriverIO.Browser): Promise<boolean> {
-	const contexts = await driver.getContexts() as string[];
+	const contexts = (await driver.getContexts()) as string[];
 	log(`Contextos: ${contexts.join(', ')}`);
 	const wv = contexts.find((c: string) => c.startsWith('WEBVIEW'));
 	if (!wv) return false;
@@ -27,7 +27,7 @@ async function switchToWebView(driver: WebdriverIO.Browser): Promise<boolean> {
 }
 
 async function tapButtonByText(driver: WebdriverIO.Browser, text: string): Promise<boolean> {
-	const allBtns: any[] = await driver.$$('button.btn.primary') as unknown as any[];
+	const allBtns: any[] = (await driver.$$('button.btn.primary')) as unknown as any[];
 	for (const btn of allBtns) {
 		const btnText = (await btn.getText().catch(() => '')).trim();
 		const visible = await btn.isDisplayed().catch(() => false);
@@ -40,7 +40,7 @@ async function tapButtonByText(driver: WebdriverIO.Browser, text: string): Promi
 	}
 	// Fallback para "Si" que puede estar en modal con clase diferente
 	if (text === 'Si') {
-		const allBtnsAny: any[] = await driver.$$('button') as unknown as any[];
+		const allBtnsAny: any[] = (await driver.$$('button')) as unknown as any[];
 		for (const btn of allBtnsAny) {
 			const btnText = (await btn.getText().catch(() => '')).trim();
 			const visible = await btn.isDisplayed().catch(() => false);
@@ -55,31 +55,36 @@ async function tapButtonByText(driver: WebdriverIO.Browser, text: string): Promi
 }
 
 async function dumpWebView(driver: WebdriverIO.Browser, label: string): Promise<void> {
-	const dump = await driver.execute<string, []>(() => {
-		const out: string[] = [`URL: ${window.location.href}`];
-		document.querySelectorAll('[id]').forEach(el => {
-			const text = (el as HTMLElement).innerText?.trim().replace(/\n/g, ' ').slice(0, 120) ?? '';
-			out.push(`[id="${el.id}"] tag=${el.tagName.toLowerCase()} text="${text}"`);
-		});
-		document.querySelectorAll('button, ion-button, [role="button"]').forEach(el => {
-			const text = (el as HTMLElement).innerText?.trim().replace(/\n/g, ' ').slice(0, 120) ?? '';
-			const cls  = el.className?.toString().slice(0, 80) ?? '';
-			if (text) out.push(`[BTN] id="${el.id}" class="${cls}" text="${text}"`);
-		});
-		document.querySelectorAll('span, h1, h2, h3, ion-label, ion-title, p').forEach(el => {
-			const text = (el as HTMLElement).innerText?.trim().replace(/\n/g, ' ').slice(0, 100) ?? '';
-			if (text.length > 1 && text.length < 100)
-				out.push(`[TEXT] ${el.tagName.toLowerCase()} text="${text}"`);
-		});
-		document.querySelectorAll('[class*="page"], [class*="travel"], [class*="trip"], [class*="navigation"]').forEach(el => {
-			out.push(`[CONTAINER] ${el.tagName.toLowerCase()} class="${el.className?.toString().slice(0, 100)}"`);
-		});
-		return out.join('\n');
-	}).catch(e => `JS error: ${e}`);
+	const dump = await driver
+		.execute<string, []>(() => {
+			const out: string[] = [`URL: ${window.location.href}`];
+			document.querySelectorAll('[id]').forEach(el => {
+				const text = (el as HTMLElement).innerText?.trim().replace(/\n/g, ' ').slice(0, 120) ?? '';
+				out.push(`[id="${el.id}"] tag=${el.tagName.toLowerCase()} text="${text}"`);
+			});
+			document.querySelectorAll('button, ion-button, [role="button"]').forEach(el => {
+				const text = (el as HTMLElement).innerText?.trim().replace(/\n/g, ' ').slice(0, 120) ?? '';
+				const cls = el.className?.toString().slice(0, 80) ?? '';
+				if (text) out.push(`[BTN] id="${el.id}" class="${cls}" text="${text}"`);
+			});
+			document.querySelectorAll('span, h1, h2, h3, ion-label, ion-title, p').forEach(el => {
+				const text = (el as HTMLElement).innerText?.trim().replace(/\n/g, ' ').slice(0, 100) ?? '';
+				if (text.length > 1 && text.length < 100) out.push(`[TEXT] ${el.tagName.toLowerCase()} text="${text}"`);
+			});
+			document
+				.querySelectorAll('[class*="page"], [class*="travel"], [class*="trip"], [class*="navigation"]')
+				.forEach(el => {
+					out.push(
+						`[CONTAINER] ${el.tagName.toLowerCase()} class="${el.className?.toString().slice(0, 100)}"`
+					);
+				});
+			return out.join('\n');
+		})
+		.catch(e => `JS error: ${e}`);
 
 	console.log(`\n=== DUMP: ${label} ===\n${dump}\n=== FIN ===`);
 	mkdirSync('evidence/dom-dump', { recursive: true });
-	const ts  = new Date().toISOString().replace(/[:.]/g, '-');
+	const ts = new Date().toISOString().replace(/[:.]/g, '-');
 	const out = join('evidence/dom-dump', `${label}-${ts}.txt`);
 	writeFileSync(out, dump, 'utf-8');
 	log(`✓ Guardado: ${out}`);
@@ -87,26 +92,33 @@ async function dumpWebView(driver: WebdriverIO.Browser, label: string): Promise<
 
 async function run(): Promise<void> {
 	const driver = await remote({
-		protocol: 'http', hostname: 'localhost', port: 4723, path: '/',
+		protocol: 'http',
+		hostname: 'localhost',
+		port: 4723,
+		path: '/',
 		logLevel: 'warn',
 		capabilities: {
-			platformName:                     'Android',
-			'appium:automationName':          'UiAutomator2',
-			'appium:deviceName':              'SM-A055M',
-			'appium:udid':                    UDID,
-			'appium:appPackage':              PACKAGE,
-			'appium:appActivity':             '.MainActivity',
-			'appium:noReset':                 true,
-			'appium:forceAppLaunch':          false,
-			'appium:newCommandTimeout':       120,
-			'appium:chromedriverAutodownload': true,
-		} as Record<string, unknown>,
+			platformName: 'Android',
+			'appium:automationName': 'UiAutomator2',
+			'appium:deviceName': 'SM-A055M',
+			'appium:udid': UDID,
+			'appium:appPackage': PACKAGE,
+			'appium:appActivity': '.MainActivity',
+			'appium:noReset': true,
+			'appium:forceAppLaunch': false,
+			'appium:newCommandTimeout': 120,
+			'appium:chromedriverAutodownload': true
+		} as Record<string, unknown>
 	});
 	log('✓ Sesión adjuntada');
 	await driver.pause(2000);
 
 	const ok = await switchToWebView(driver);
-	if (!ok) { log('⚠  Sin WebView'); await driver.deleteSession(); return; }
+	if (!ok) {
+		log('⚠  Sin WebView');
+		await driver.deleteSession();
+		return;
+	}
 	await driver.pause(1000);
 
 	const url0 = await driver.execute<string, []>(() => window.location.href).catch(() => '');

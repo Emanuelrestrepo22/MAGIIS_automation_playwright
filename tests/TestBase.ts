@@ -38,7 +38,10 @@ const test = base.extend<Fixtures>({
 
 	// Expone un cliente API alineado con el mismo rol del test para combinar
 	// checks UI y backend sin duplicar wiring.
-	apiClient: async ({ request, role }: { request: APIRequestContext; role: AppRole }, use: (apiClient: ApiClient) => Promise<void>) => {
+	apiClient: async (
+		{ request, role }: { request: APIRequestContext; role: AppRole },
+		use: (apiClient: ApiClient) => Promise<void>
+	) => {
 		const apiClient = new ApiClient(request, role);
 		await use(apiClient);
 	}

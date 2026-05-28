@@ -31,13 +31,7 @@
  *   <https://developer.authorize.net/hello_world/testing_guide.html>
  */
 
-export type AuthorizeCardBrand =
-	| 'visa'
-	| 'mastercard'
-	| 'amex'
-	| 'discover'
-	| 'diners'
-	| 'jcb';
+export type AuthorizeCardBrand = 'visa' | 'mastercard' | 'amex' | 'discover' | 'diners' | 'jcb';
 
 /**
  * Outcomes esperados del sandbox Authorize.net.
@@ -92,7 +86,7 @@ export const AUTHORIZE_TEST_CARDS = {
 		zip: '90210',
 		holderName: AUTHORIZE_DEFAULT_HOLDER,
 		expectedOutcome: 'approved',
-		description: 'Visa + CVV 900 (match) + ZIP neutro → approved (Response Code 1)',
+		description: 'Visa + CVV 900 (match) + ZIP neutro → approved (Response Code 1)'
 	},
 
 	mastercardSuccess: {
@@ -103,7 +97,7 @@ export const AUTHORIZE_TEST_CARDS = {
 		zip: '90210',
 		holderName: AUTHORIZE_DEFAULT_HOLDER,
 		expectedOutcome: 'approved',
-		description: 'Mastercard + CVV 900 + ZIP neutro → approved',
+		description: 'Mastercard + CVV 900 + ZIP neutro → approved'
 	},
 
 	amexSuccess: {
@@ -114,7 +108,7 @@ export const AUTHORIZE_TEST_CARDS = {
 		zip: '90210',
 		holderName: AUTHORIZE_DEFAULT_HOLDER,
 		expectedOutcome: 'approved',
-		description: 'Amex + CVV 9000 (4 dígitos) + ZIP neutro → approved',
+		description: 'Amex + CVV 9000 (4 dígitos) + ZIP neutro → approved'
 	},
 
 	discoverSuccess: {
@@ -125,7 +119,7 @@ export const AUTHORIZE_TEST_CARDS = {
 		zip: '90210',
 		holderName: AUTHORIZE_DEFAULT_HOLDER,
 		expectedOutcome: 'approved',
-		description: 'Discover + CVV 900 + ZIP neutro → approved',
+		description: 'Discover + CVV 900 + ZIP neutro → approved'
 	},
 
 	// ═══════════════════════════════════════════════════════════════════
@@ -140,7 +134,7 @@ export const AUTHORIZE_TEST_CARDS = {
 		zip: '46282', // trigger declined
 		holderName: AUTHORIZE_DEFAULT_HOLDER,
 		expectedOutcome: 'declined-generic',
-		description: 'Visa + ZIP 46282 → Response Code 2 (declined genérico)',
+		description: 'Visa + ZIP 46282 → Response Code 2 (declined genérico)'
 	},
 
 	// ═══════════════════════════════════════════════════════════════════
@@ -155,7 +149,7 @@ export const AUTHORIZE_TEST_CARDS = {
 		zip: '90210',
 		holderName: AUTHORIZE_DEFAULT_HOLDER,
 		expectedOutcome: 'cvv-mismatch',
-		description: 'Visa + CVV 901 → CVV "N: Does NOT Match"',
+		description: 'Visa + CVV 901 → CVV "N: Does NOT Match"'
 	},
 
 	cvvNotProcessed: {
@@ -166,7 +160,7 @@ export const AUTHORIZE_TEST_CARDS = {
 		zip: '90210',
 		holderName: AUTHORIZE_DEFAULT_HOLDER,
 		expectedOutcome: 'cvv-not-processed',
-		description: 'Visa + CVV 904 → CVV "P: Is NOT Processed"',
+		description: 'Visa + CVV 904 → CVV "P: Is NOT Processed"'
 	},
 
 	// ═══════════════════════════════════════════════════════════════════
@@ -181,7 +175,7 @@ export const AUTHORIZE_TEST_CARDS = {
 		zip: '46205', // trigger AVS no match
 		holderName: AUTHORIZE_DEFAULT_HOLDER,
 		expectedOutcome: 'avs-no-match',
-		description: 'Visa + ZIP 46205 → AVS "N: No Match"',
+		description: 'Visa + ZIP 46205 → AVS "N: No Match"'
 	},
 
 	avsNonUsIssuer: {
@@ -192,7 +186,7 @@ export const AUTHORIZE_TEST_CARDS = {
 		zip: '46204',
 		holderName: AUTHORIZE_DEFAULT_HOLDER,
 		expectedOutcome: 'avs-non-us-issuer',
-		description: 'Visa + ZIP 46204 → AVS "G: Non-U.S. Issuer"',
+		description: 'Visa + ZIP 46204 → AVS "G: Non-U.S. Issuer"'
 	},
 
 	// ═══════════════════════════════════════════════════════════════════
@@ -207,7 +201,7 @@ export const AUTHORIZE_TEST_CARDS = {
 		zip: '46225',
 		holderName: AUTHORIZE_DEFAULT_HOLDER,
 		expectedOutcome: 'partial-authorization',
-		description: 'Visa + ZIP 46225 → Partial Auth ($1.23 authorized)',
+		description: 'Visa + ZIP 46225 → Partial Auth ($1.23 authorized)'
 	},
 
 	prepaidZeroBalance: {
@@ -218,8 +212,8 @@ export const AUTHORIZE_TEST_CARDS = {
 		zip: '46228',
 		holderName: AUTHORIZE_DEFAULT_HOLDER,
 		expectedOutcome: 'prepaid-zero-balance',
-		description: 'Visa + ZIP 46228 → Prepaid Auth con $0 de balance',
-	},
+		description: 'Visa + ZIP 46228 → Prepaid Auth con $0 de balance'
+	}
 } as const satisfies Record<string, AuthorizeTestCard>;
 
 export type AuthorizeTestCardKey = keyof typeof AUTHORIZE_TEST_CARDS;

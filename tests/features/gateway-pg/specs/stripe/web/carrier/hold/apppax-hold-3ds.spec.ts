@@ -13,7 +13,13 @@
  */
 import { expect, type Page } from '@playwright/test';
 import { test } from '../../../../../../../TestBase';
-import { DashboardPage, NewTravelPage, OperationalPreferencesPage, ThreeDSModal, TravelManagementPage } from '../../../../../../../pages/carrier';
+import {
+	DashboardPage,
+	NewTravelPage,
+	OperationalPreferencesPage,
+	ThreeDSModal,
+	TravelManagementPage
+} from '../../../../../../../pages/carrier';
 import { loginAsDispatcher, STRIPE_TEST_CARDS, TEST_DATA } from '../../../../../fixtures/gateway.fixtures';
 import { waitForTravelCreation } from '../../../../../helpers/stripe.helpers';
 import { validateCardPrecondition, type CardPreconditionResult } from '../../../../../helpers/card-precondition';
@@ -52,7 +58,7 @@ async function restoreHoldAndSave(page: Page, preferences: OperationalPreference
 	await preferences.setHoldEnabled(true);
 
 	const responsePromise = page.waitForResponse(
-		(response) => response.request().method() === 'POST' && PARAMETERS_SAVE_URL.test(response.url()),
+		response => response.request().method() === 'POST' && PARAMETERS_SAVE_URL.test(response.url()),
 		{ timeout: 15_000 }
 	);
 
@@ -97,9 +103,12 @@ async function runHoldOnScenario(page: Page, scenario: Hold3dsScenario): Promise
 			await test.step('Precondición: validar tarjeta vinculada vía API', async () => {
 				cardCheck = await validateCardPrecondition(page, {
 					passengerName: scenario.apiSearchQuery!,
-					requiredLast4: cardLast4,
+					requiredLast4: cardLast4
 				});
-				debugLog('gateway-pg:carrier', `[card-precondition] ${scenario.passenger}: ${cardCheck.activeCards} tarjetas, tiene ${cardLast4}: ${cardCheck.hasRequiredCard}`);
+				debugLog(
+					'gateway-pg:carrier',
+					`[card-precondition] ${scenario.passenger}: ${cardCheck.activeCards} tarjetas, tiene ${cardLast4}: ${cardCheck.hasRequiredCard}`
+				);
 			});
 		}
 
@@ -123,7 +132,7 @@ async function runHoldOnScenario(page: Page, scenario: Hold3dsScenario): Promise
 				origin: scenario.origin,
 				destination: scenario.destination,
 				cardLast4,
-				preferSavedCard: cardCheck?.hasRequiredCard ?? false,
+				preferSavedCard: cardCheck?.hasRequiredCard ?? false
 			});
 		});
 
@@ -185,9 +194,12 @@ async function runHoldOffScenario(page: Page, scenario: Hold3dsScenario): Promis
 		await test.step('Precondición: validar tarjeta vinculada vía API', async () => {
 			cardCheck = await validateCardPrecondition(page, {
 				passengerName: scenario.apiSearchQuery!,
-				requiredLast4: cardLast4,
+				requiredLast4: cardLast4
 			});
-			debugLog('gateway-pg:carrier', `[card-precondition] ${scenario.passenger}: ${cardCheck.activeCards} tarjetas, tiene ${cardLast4}: ${cardCheck.hasRequiredCard}`);
+			debugLog(
+				'gateway-pg:carrier',
+				`[card-precondition] ${scenario.passenger}: ${cardCheck.activeCards} tarjetas, tiene ${cardLast4}: ${cardCheck.hasRequiredCard}`
+			);
 		});
 	}
 
@@ -210,7 +222,7 @@ async function runHoldOffScenario(page: Page, scenario: Hold3dsScenario): Promis
 				origin: scenario.origin,
 				destination: scenario.destination,
 				cardLast4,
-				preferSavedCard: cardCheck?.hasRequiredCard ?? false,
+				preferSavedCard: cardCheck?.hasRequiredCard ?? false
 			});
 		});
 
@@ -260,9 +272,7 @@ async function runHoldOffScenario(page: Page, scenario: Hold3dsScenario): Promis
 test.use({ role: 'carrier', storageState: undefined });
 
 test.describe('Gateway PG · Carrier · App Pax — Hold con 3DS @gateway @stripe @hold @3ds @critical @regression', () => {
-
 	test.describe('Hold ON — autenticación 3DS exitosa', () => {
-
 		// Debería crear un viaje con hold activo, completar 3DS con éxito,
 		// y dejar el viaje en estado "Buscando conductor" visible en gestión.
 		test('[TS-STRIPE-TC1053] @smoke @critical @3ds @hold hold+cobro app pax 3DS success', async ({ page }) => {
@@ -272,7 +282,7 @@ test.describe('Gateway PG · Carrier · App Pax — Hold con 3DS @gateway @strip
 				origin: TEST_DATA.origin,
 				destination: TEST_DATA.destination,
 				cardLast4: STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4), // 3184
-				apiSearchQuery: PASSENGERS.appPax.apiSearchQuery,
+				apiSearchQuery: PASSENGERS.appPax.apiSearchQuery
 			});
 		});
 
@@ -283,7 +293,7 @@ test.describe('Gateway PG · Carrier · App Pax — Hold con 3DS @gateway @strip
 				origin: TEST_DATA.origin,
 				destination: TEST_DATA.destination,
 				cardLast4: STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4),
-				apiSearchQuery: PASSENGERS.appPax.apiSearchQuery,
+				apiSearchQuery: PASSENGERS.appPax.apiSearchQuery
 			});
 		});
 
@@ -293,24 +303,24 @@ test.describe('Gateway PG · Carrier · App Pax — Hold con 3DS @gateway @strip
 				passenger: TEST_DATA.appPaxPassenger,
 				origin: TEST_DATA.origin,
 				destination: TEST_DATA.destination,
-				apiSearchQuery: PASSENGERS.appPax.apiSearchQuery,
+				apiSearchQuery: PASSENGERS.appPax.apiSearchQuery
 			});
 		});
 
-		test('[TS-STRIPE-TC1063] @regression @3ds @hold hold+cobro app pax 3DS success variante 2', async ({ page }) => {
+		test('[TS-STRIPE-TC1063] @regression @3ds @hold hold+cobro app pax 3DS success variante 2', async ({
+			page
+		}) => {
 			await runHoldOnScenario(page, {
 				client: TEST_DATA.appPaxPassenger,
 				passenger: TEST_DATA.appPaxPassenger,
 				origin: TEST_DATA.origin,
 				destination: TEST_DATA.destination,
-				apiSearchQuery: PASSENGERS.appPax.apiSearchQuery,
+				apiSearchQuery: PASSENGERS.appPax.apiSearchQuery
 			});
 		});
-
 	});
 
 	test.describe('Hold OFF — sin cobro al finalizar', () => {
-
 		test('[TS-STRIPE-TC1054] @regression @3ds sin hold app pax 3DS success', async ({ page }) => {
 			await runHoldOffScenario(page, {
 				client: TEST_DATA.appPaxPassenger,
@@ -318,7 +328,7 @@ test.describe('Gateway PG · Carrier · App Pax — Hold con 3DS @gateway @strip
 				origin: TEST_DATA.origin,
 				destination: TEST_DATA.destination,
 				cardLast4: STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4), // 3184
-				apiSearchQuery: PASSENGERS.appPax.apiSearchQuery,
+				apiSearchQuery: PASSENGERS.appPax.apiSearchQuery
 			});
 		});
 
@@ -328,7 +338,7 @@ test.describe('Gateway PG · Carrier · App Pax — Hold con 3DS @gateway @strip
 				passenger: TEST_DATA.appPaxPassenger,
 				origin: TEST_DATA.origin,
 				destination: TEST_DATA.destination,
-				apiSearchQuery: PASSENGERS.appPax.apiSearchQuery,
+				apiSearchQuery: PASSENGERS.appPax.apiSearchQuery
 			});
 		});
 
@@ -338,7 +348,7 @@ test.describe('Gateway PG · Carrier · App Pax — Hold con 3DS @gateway @strip
 				passenger: TEST_DATA.appPaxPassenger,
 				origin: TEST_DATA.origin,
 				destination: TEST_DATA.destination,
-				apiSearchQuery: PASSENGERS.appPax.apiSearchQuery,
+				apiSearchQuery: PASSENGERS.appPax.apiSearchQuery
 			});
 		});
 
@@ -348,10 +358,8 @@ test.describe('Gateway PG · Carrier · App Pax — Hold con 3DS @gateway @strip
 				passenger: TEST_DATA.appPaxPassenger,
 				origin: TEST_DATA.origin,
 				destination: TEST_DATA.destination,
-				apiSearchQuery: PASSENGERS.appPax.apiSearchQuery,
+				apiSearchQuery: PASSENGERS.appPax.apiSearchQuery
 			});
 		});
-
 	});
-
 });

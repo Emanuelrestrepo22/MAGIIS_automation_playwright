@@ -30,17 +30,17 @@
  *   - Colaborador con hold habilitado en portal contractor TEST
  */
 
-import { spawnSync }      from 'node:child_process';
-import * as path          from 'node:path';
-import { fileURLToPath }  from 'node:url';
-import { test, expect }   from '../../../TestBase';
+import { spawnSync } from 'node:child_process';
+import * as path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { test, expect } from '../../../TestBase';
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname  = path.dirname(__filename);
+const __dirname = path.dirname(__filename);
 import { TravelDetailPage } from '../../../pages/carrier';
-import { runWebPhase }      from './web-phase';
+import { runWebPhase } from './web-phase';
 import { readFinalContext } from '../shared/JourneyBridge';
-import { GATEWAY_CONFIGS }  from '../shared/e2eFlowConfig';
+import { GATEWAY_CONFIGS } from '../shared/e2eFlowConfig';
 import type { GatewayFlowConfig, MobilePhaseResult } from '../shared/e2eFlowConfig';
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
@@ -54,19 +54,15 @@ const MOBILE_PHASE_SCRIPT = path.resolve(__dirname, 'mobile-phase.ts');
 function runMobilePhase(journeyId: string, timeoutMs: number): MobilePhaseResult {
 	console.log(`[flow3.spec] Lanzando fase mobile — journeyId: ${journeyId}`);
 
-	const result = spawnSync(
-		'npx',
-		['ts-node', '--esm', MOBILE_PHASE_SCRIPT],
-		{
-			env: {
-				...process.env,
-				E2E_JOURNEY_ID:        journeyId,
-				E2E_MOBILE_TIMEOUT_MS: String(timeoutMs),
-			},
-			timeout:  timeoutMs + 30_000,
-			encoding: 'utf-8',
+	const result = spawnSync('npx', ['ts-node', '--esm', MOBILE_PHASE_SCRIPT], {
+		env: {
+			...process.env,
+			E2E_JOURNEY_ID: journeyId,
+			E2E_MOBILE_TIMEOUT_MS: String(timeoutMs)
 		},
-	);
+		timeout: timeoutMs + 30_000,
+		encoding: 'utf-8'
+	});
 
 	if (result.stdout) console.log('[mobile-phase stdout]\n', result.stdout);
 	if (result.stderr) console.error('[mobile-phase stderr]\n', result.stderr);
@@ -74,19 +70,15 @@ function runMobilePhase(journeyId: string, timeoutMs: number): MobilePhaseResult
 	if (result.status !== 0) {
 		throw new Error(
 			`[flow3.spec] Fase mobile falló con exit code ${result.status ?? 'null'}.\n` +
-			`stderr: ${result.stderr ?? '(vacío)'}`,
+				`stderr: ${result.stderr ?? '(vacío)'}`
 		);
 	}
 
 	const OUTPUT_MARKER = 'E2E_MOBILE_RESULT:';
-	const resultLine = (result.stdout ?? '')
-		.split('\n')
-		.find(line => line.includes(OUTPUT_MARKER));
+	const resultLine = (result.stdout ?? '').split('\n').find(line => line.includes(OUTPUT_MARKER));
 
 	if (!resultLine) {
-		throw new Error(
-			`[flow3.spec] No se encontró "${OUTPUT_MARKER}" en stdout de la fase mobile.`,
-		);
+		throw new Error(`[flow3.spec] No se encontró "${OUTPUT_MARKER}" en stdout de la fase mobile.`);
 	}
 
 	return JSON.parse(resultLine.split(OUTPUT_MARKER)[1]) as MobilePhaseResult;
@@ -101,18 +93,18 @@ function runFlow3Test(tcId: string, config: GatewayFlowConfig) {
 		if (WEB_ONLY) {
 			console.warn(
 				`[flow3.spec][${tcId}] APPIUM_SERVER_URL no definido o E2E_WEB_ONLY=true. ` +
-				'Ejecutando solo la fase web para validar el handoff.',
+					'Ejecutando solo la fase web para validar el handoff.'
 			);
 		}
 
 		let journeyId = '';
-		let tripId    = '';
+		let tripId = '';
 
 		// ── FASE WEB ───────────────────────────────────────────────────────────
 		await test.step('[WEB] Crear viaje desde portal contractor', async () => {
 			const result = await runWebPhase(page, config, tcId);
 			journeyId = result.journeyId;
-			tripId    = result.tripId;
+			tripId = result.tripId;
 			console.log(`[flow3.spec][${tcId}] ✓ Fase web completada — tripId: ${tripId}`);
 		});
 
@@ -136,7 +128,7 @@ function runFlow3Test(tcId: string, config: GatewayFlowConfig) {
 			test.fixme(
 				true,
 				'APPIUM_SERVER_URL no disponible — fase mobile omitida. ' +
-				'Definir APPIUM_SERVER_URL en .env.test para correr el flow completo.',
+					'Definir APPIUM_SERVER_URL en .env.test para correr el flow completo.'
 			);
 			return;
 		}
@@ -147,7 +139,7 @@ function runFlow3Test(tcId: string, config: GatewayFlowConfig) {
 			mobileResult = runMobilePhase(journeyId, 180_000);
 			console.log(
 				`[flow3.spec][${tcId}] ✓ Fase mobile completada — ` +
-				`amount: ${mobileResult.totalAmount} | method: ${mobileResult.paymentMethod}`,
+					`amount: ${mobileResult.totalAmount} | method: ${mobileResult.paymentMethod}`
 			);
 		});
 
@@ -175,7 +167,7 @@ test.use({ role: 'contractor', storageState: { cookies: [], origins: [] } });
 test.describe('[E2E-FLOW3-TC001] E2E Flow 3 — Contractor Web + Driver App — Stripe Hold ON sin 3DS', () => {
 	test(
 		'[E2E-FLOW3-TC001] Alta de viaje contractor (4242 sin 3DS) + driver acepta y completa el viaje',
-		runFlow3Test('E2E-FLOW3-TC001', GATEWAY_CONFIGS['contractor-stripe-hold-no3ds']),
+		runFlow3Test('E2E-FLOW3-TC001', GATEWAY_CONFIGS['contractor-stripe-hold-no3ds'])
 	);
 });
 
@@ -184,6 +176,6 @@ test.describe('[E2E-FLOW3-TC001] E2E Flow 3 — Contractor Web + Driver App — 
 test.describe('[E2E-FLOW3-TC002] E2E Flow 3 — Contractor Web + Driver App — Stripe Hold ON con 3DS', () => {
 	test(
 		'[E2E-FLOW3-TC002] Alta de viaje contractor (3155 con 3DS) + driver acepta y completa el viaje',
-		runFlow3Test('E2E-FLOW3-TC002', GATEWAY_CONFIGS['contractor-stripe-hold-3ds']),
+		runFlow3Test('E2E-FLOW3-TC002', GATEWAY_CONFIGS['contractor-stripe-hold-3ds'])
 	);
 });

@@ -14,8 +14,20 @@
  */
 
 import { test, expect } from '../../../../../../../TestBase';
-import { loginAsDispatcher, setupTravelWithFailed3DS, TEST_DATA, STRIPE_TEST_CARDS } from '../../../../../fixtures/gateway.fixtures';
-import { DashboardPage, NewTravelPage, OperationalPreferencesPage, ThreeDSModal, TravelDetailPage, TravelManagementPage } from '../../../../../../../pages/carrier';
+import {
+	loginAsDispatcher,
+	setupTravelWithFailed3DS,
+	TEST_DATA,
+	STRIPE_TEST_CARDS
+} from '../../../../../fixtures/gateway.fixtures';
+import {
+	DashboardPage,
+	NewTravelPage,
+	OperationalPreferencesPage,
+	ThreeDSModal,
+	TravelDetailPage,
+	TravelManagementPage
+} from '../../../../../../../pages/carrier';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -27,7 +39,9 @@ test.describe('Gateway PG · Carrier · App Pax — Fallo 3DS, red flag y reinte
 	});
 
 	test.describe('[TS-STRIPE-TC1057] Hold ON + fail3DS (4000 0000 0000 9235) — challenge rechazado → NO_AUTORIZADO en "En conflicto" (sin pop-up MAGIIS post-fallo)', () => {
-		test('tras rechazar challenge 3DS el viaje queda en NO_AUTORIZADO y fuera de "Por asignar"', async ({ page }) => {
+		test('tras rechazar challenge 3DS el viaje queda en NO_AUTORIZADO y fuera de "Por asignar"', async ({
+			page
+		}) => {
 			const dashboard = new DashboardPage(page);
 			const preferences = new OperationalPreferencesPage(page);
 			const travel = new NewTravelPage(page);
@@ -52,7 +66,7 @@ test.describe('Gateway PG · Carrier · App Pax — Fallo 3DS, red flag y reinte
 					passenger: TEST_DATA.appPaxPassenger,
 					origin: TEST_DATA.origin,
 					destination: TEST_DATA.destination,
-					cardLast4: STRIPE_TEST_CARDS.fail3DS.slice(-4), // 9235
+					cardLast4: STRIPE_TEST_CARDS.fail3DS.slice(-4) // 9235
 				});
 				await travel.submit();
 			});
@@ -72,7 +86,9 @@ test.describe('Gateway PG · Carrier · App Pax — Fallo 3DS, red flag y reinte
 
 			await test.step('Validar gestión — viaje no aparece en columna "Por asignar"', async () => {
 				await management.goto();
-				await expect.soft(management.porAsignarColumn()).not.toContainText(TEST_DATA.appPaxPassenger, { timeout: 10_000 });
+				await expect
+					.soft(management.porAsignarColumn())
+					.not.toContainText(TEST_DATA.appPaxPassenger, { timeout: 10_000 });
 			});
 		});
 	});
@@ -94,7 +110,9 @@ test.describe('Gateway PG · Carrier · App Pax — Fallo 3DS, red flag y reinte
 			await expect(detail.retryButton()).toBeVisible({ timeout: 10_000 });
 		});
 
-		test('estado del viaje es "No autorizado" — no aparece "Buscando conductor" mientras 3DS está pendiente', async ({ page }) => {
+		test('estado del viaje es "No autorizado" — no aparece "Buscando conductor" mientras 3DS está pendiente', async ({
+			page
+		}) => {
 			await setupTravelWithFailed3DS(page, TEST_DATA);
 			await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
 

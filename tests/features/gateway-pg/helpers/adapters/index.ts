@@ -46,7 +46,7 @@ export {
 	type CardIntent,
 	type GatewayName,
 	type GenericTestCard,
-	type ResolveCardArgs,
+	type ResolveCardArgs
 } from '../../../../fixtures/gateways/_shared';
 
 /**
@@ -63,14 +63,14 @@ export {
 export function assertAdapterFixtureConsistency(): true {
 	const checks: Array<{ gateway: PaymentGateway; expected: boolean }> = [
 		{ gateway: 'stripe', expected: true },
-		{ gateway: 'authorize', expected: false },
+		{ gateway: 'authorize', expected: false }
 	];
 
 	for (const { gateway, expected } of checks) {
 		const adapter = gatewayAdapterMap[gateway];
 		if (adapter.requires3ds !== expected) {
 			throw new Error(
-				`[adapter-fixture-drift] ${gateway}.requires3ds = ${adapter.requires3ds} pero el resolver espera ${expected}.`,
+				`[adapter-fixture-drift] ${gateway}.requires3ds = ${adapter.requires3ds} pero el resolver espera ${expected}.`
 			);
 		}
 	}

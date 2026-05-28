@@ -22,19 +22,16 @@ import { expect } from '@playwright/test';
 import { test } from '../../../../../../TestBase';
 import { DashboardPage, ThreeDSModal } from '../../../../../../pages/carrier';
 import { ContractorNewTravelPage } from '../../../../../../pages/contractor/NewTravelPage';
-import {
-	loginAsContractor,
-	TEST_DATA,
-	STRIPE_TEST_CARDS,
-} from '../../../../fixtures/gateway.fixtures';
+import { loginAsContractor, TEST_DATA, STRIPE_TEST_CARDS } from '../../../../fixtures/gateway.fixtures';
 import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../../../helpers/travel-cleanup';
 
 test.use({ role: 'contractor', storageState: { cookies: [], origins: [] } });
 test.describe.configure({ timeout: 180_000 });
 
 test.describe('Gateway PG · Contractor · Colaborador — Hold + 3DS (tarjeta 4000 0025 0000 3155) @gateway @stripe @hold @3ds @critical @regression', () => {
-
-	test('[TS-STRIPE-P2-TC005] @regression @contractor @hold @3ds Hold ON + tarjeta 3DS 3155 + aprobación → viaje a "Buscando conductor"', async ({ page }) => {
+	test('[TS-STRIPE-P2-TC005] @regression @contractor @hold @3ds Hold ON + tarjeta 3DS 3155 + aprobación → viaje a "Buscando conductor"', async ({
+		page
+	}) => {
 		// Precondición: enableCreditCardHold=true en parámetros carrier.
 		const dashboard = new DashboardPage(page);
 		const travel = new ContractorNewTravelPage(page);
@@ -59,7 +56,7 @@ test.describe('Gateway PG · Contractor · Colaborador — Hold + 3DS (tarjeta 4
 					passenger: TEST_DATA.contractorColaborador,
 					origin: TEST_DATA.origin,
 					destination: TEST_DATA.destination,
-					cardLast4: STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4), // 3155
+					cardLast4: STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4) // 3155
 				});
 			});
 
@@ -84,10 +81,10 @@ test.describe('Gateway PG · Contractor · Colaborador — Hold + 3DS (tarjeta 4
 			});
 
 			// El portal contractor redirige a /dashboard tras crear el viaje (no a /travels/xxx).
-			await page.waitForURL(
-				url => !url.href.includes('/travel/create'),
-				{ timeout: 30_000, waitUntil: 'commit' }
-			);
+			await page.waitForURL(url => !url.href.includes('/travel/create'), {
+				timeout: 30_000,
+				waitUntil: 'commit'
+			});
 
 			// Validación API: el POST /travels devolvió un travelId — viaje creado en backend.
 			expect(travelIdRef?.travelId, 'POST /travels debe haber capturado un travelId').not.toBeNull();
@@ -96,7 +93,9 @@ test.describe('Gateway PG · Contractor · Colaborador — Hold + 3DS (tarjeta 4
 		}
 	});
 
-	test('[TS-STRIPE-P2-TC006] @regression @contractor @3ds Hold OFF + tarjeta 3DS 3155 + aprobación → viaje a "Buscando conductor" sin hold', async ({ page }) => {
+	test('[TS-STRIPE-P2-TC006] @regression @contractor @3ds Hold OFF + tarjeta 3DS 3155 + aprobación → viaje a "Buscando conductor" sin hold', async ({
+		page
+	}) => {
 		// Precondición: enableCreditCardHold=false en parámetros carrier.
 		const dashboard = new DashboardPage(page);
 		const travel = new ContractorNewTravelPage(page);
@@ -121,7 +120,7 @@ test.describe('Gateway PG · Contractor · Colaborador — Hold + 3DS (tarjeta 4
 					passenger: TEST_DATA.contractorColaborador,
 					origin: TEST_DATA.origin,
 					destination: TEST_DATA.destination,
-					cardLast4: STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4), // 3155
+					cardLast4: STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4) // 3155
 				});
 			});
 
@@ -145,10 +144,10 @@ test.describe('Gateway PG · Contractor · Colaborador — Hold + 3DS (tarjeta 4
 			});
 
 			// El portal contractor redirige a /dashboard tras crear el viaje (no a /travels/xxx).
-			await page.waitForURL(
-				url => !url.href.includes('/travel/create'),
-				{ timeout: 30_000, waitUntil: 'commit' }
-			);
+			await page.waitForURL(url => !url.href.includes('/travel/create'), {
+				timeout: 30_000,
+				waitUntil: 'commit'
+			});
 
 			// Validación API: el POST /travels devolvió un travelId — viaje creado en backend.
 			expect(travelIdRef?.travelId, 'POST /travels debe haber capturado un travelId').not.toBeNull();
@@ -156,5 +155,4 @@ test.describe('Gateway PG · Contractor · Colaborador — Hold + 3DS (tarjeta 4
 			if (travelIdRef) await cancelTravelIfCreated(page, travelIdRef);
 		}
 	});
-
 });

@@ -23,14 +23,21 @@ test.describe('Gateway PG · Carrier · App Pax — Cambio de tarjeta post-fallo
 	});
 
 	test.describe('[TS-STRIPE-TC1063] Cambio a tarjeta vinculada existente desde detalle post-fallo 3DS — hold re-ejecutado, viaje pasa a "Buscando conductor"', () => {
-		test('puede seleccionar otra tarjeta vinculada desde la sección de pago en detalle del viaje', async ({ page }) => {
+		test('puede seleccionar otra tarjeta vinculada desde la sección de pago en detalle del viaje', async ({
+			page
+		}) => {
 			await setupTravelWithFailed3DS(page, TEST_DATA);
 			await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
 
-			test.fail(true, 'PENDIENTE: requiere payment-method.component en travel-detail para seleccionar tarjeta guardada');
+			test.fail(
+				true,
+				'PENDIENTE: requiere payment-method.component en travel-detail para seleccionar tarjeta guardada'
+			);
 		});
 
-		test('al guardar la tarjeta existente se re-ejecuta el hold automáticamente y viaje pasa a "Buscando conductor"', async ({ page }) => {
+		test('al guardar la tarjeta existente se re-ejecuta el hold automáticamente y viaje pasa a "Buscando conductor"', async ({
+			page
+		}) => {
 			await setupTravelWithFailed3DS(page, TEST_DATA);
 			await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
 
@@ -39,7 +46,9 @@ test.describe('Gateway PG · Carrier · App Pax — Cambio de tarjeta post-fallo
 	});
 
 	test.describe('[TS-STRIPE-TC1064] Vinculación de tarjeta nueva (success3DS 4000 0025 0000 3155) desde detalle post-fallo — 3DS aprobado, viaje pasa a "Buscando conductor"', () => {
-		test('el botón de cambio/vinculación de tarjeta está disponible en el detalle del viaje en estado NO_AUTORIZADO', async ({ page }) => {
+		test('el botón de cambio/vinculación de tarjeta está disponible en el detalle del viaje en estado NO_AUTORIZADO', async ({
+			page
+		}) => {
 			await setupTravelWithFailed3DS(page, TEST_DATA);
 			await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
 
@@ -60,7 +69,10 @@ test.describe('Gateway PG · Carrier · App Pax — Cambio de tarjeta post-fallo
 			await setupTravelWithFailed3DS(page, TEST_DATA);
 			await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
 
-			test.fail(true, 'PENDIENTE: depende de vinculación y hold exitoso con nueva tarjeta success3DS (4000 0025 0000 3155)');
+			test.fail(
+				true,
+				'PENDIENTE: depende de vinculación y hold exitoso con nueva tarjeta success3DS (4000 0025 0000 3155)'
+			);
 		});
 	});
 });

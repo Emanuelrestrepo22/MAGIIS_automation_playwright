@@ -1,10 +1,5 @@
 import path from 'node:path';
-import {
-	buildAndroidCapabilities,
-	getDriverAppConfig,
-	getPassengerAppConfig,
-	type MobileActor,
-} from './appiumRuntime';
+import { buildAndroidCapabilities, getDriverAppConfig, getPassengerAppConfig, type MobileActor } from './appiumRuntime';
 
 export type AppiumMcpServerEntry = {
 	disabled: boolean;
@@ -46,8 +41,8 @@ export function buildAppiumMcpCapabilitiesConfig(actor: MobileActor): Record<str
 		android: buildAndroidCapabilities(config),
 		general: {
 			platformName: 'Android',
-			'appium:automationName': 'UiAutomator2',
-		},
+			'appium:automationName': 'UiAutomator2'
+		}
 	};
 }
 
@@ -56,7 +51,7 @@ function buildMcpEnv(actor: MobileActor): Record<string, string> {
 		ANDROID_HOME: process.env.ANDROID_HOME ?? 'SET_ANDROID_HOME',
 		CAPABILITIES_CONFIG: getAppiumMcpCapabilitiesPath(actor),
 		SCREENSHOTS_DIR: getAppiumMcpScreenshotsDir(actor),
-		NO_UI: process.env.APPIUM_MCP_NO_UI ?? 'false',
+		NO_UI: process.env.APPIUM_MCP_NO_UI ?? 'false'
 	};
 
 	const passthroughEnv = [
@@ -66,7 +61,7 @@ function buildMcpEnv(actor: MobileActor): Record<string, string> {
 		'AI_VISION_COORD_TYPE',
 		'AI_VISION_IMAGE_MAX_WIDTH',
 		'AI_VISION_IMAGE_QUALITY',
-		'REMOTE_SERVER_URL_ALLOW_REGEX',
+		'REMOTE_SERVER_URL_ALLOW_REGEX'
 	];
 
 	for (const key of passthroughEnv) {
@@ -90,8 +85,8 @@ export function buildAppiumMcpServerConfig(actor: MobileActor): AppiumMcpServerC
 				type: 'stdio',
 				command: 'npx',
 				args: ['-y', 'appium-mcp@latest'],
-				env: buildMcpEnv(actor),
-			},
-		},
+				env: buildMcpEnv(actor)
+			}
+		}
 	};
 }

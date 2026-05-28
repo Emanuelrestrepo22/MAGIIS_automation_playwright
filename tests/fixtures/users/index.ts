@@ -15,14 +15,7 @@ import { CONTRACTOR_COLLABORATOR, DISPATCHER } from './web-portals';
 import type { UserEnvironment } from './types';
 
 // ─── Tipos públicos ───────────────────────────────────────────────────────────
-export type {
-  UserEnvironment,
-  PortalRole,
-  MobileRole,
-  WebUser,
-  MobileUser,
-  EnvironmentMap,
-} from './types';
+export type { UserEnvironment, PortalRole, MobileRole, WebUser, MobileUser, EnvironmentMap } from './types';
 
 // ─── Fixtures con credenciales ────────────────────────────────────────────────
 export { DISPATCHER, CONTRACTOR_COLLABORATOR, PAX_WEB } from './web-portals';
@@ -51,13 +44,13 @@ export { PASSENGERS, type TestPassenger } from './passengers';
  *   const { email, password } = DISPATCHER[env];
  */
 export function getCurrentUserEnvironment(): UserEnvironment {
-  const env = process.env.ENV ?? 'test';
-  if (env === 'test' || env === 'uat' || env === 'prod') {
-    return env;
-  }
-  // No usamos console.warn para evitar romper el check 6 del pre-push (sin console.log nuevos).
-  // El default a 'test' es seguro porque las creds TEST son las únicas que están en .env por defecto.
-  return 'test';
+	const env = process.env.ENV ?? 'test';
+	if (env === 'test' || env === 'uat' || env === 'prod') {
+		return env;
+	}
+	// No usamos console.warn para evitar romper el check 6 del pre-push (sin console.log nuevos).
+	// El default a 'test' es seguro porque las creds TEST son las únicas que están en .env por defecto.
+	return 'test';
 }
 
 /**
@@ -83,19 +76,19 @@ export function getCurrentUserEnvironment(): UserEnvironment {
  *   const { username, password } = getCredentialsForRole(role);
  */
 export function getCredentialsForRole(
-  role: AppRole,
-  env: UserEnvironment = getCurrentUserEnvironment(),
+	role: AppRole,
+	env: UserEnvironment = getCurrentUserEnvironment()
 ): { username: string; password: string } {
-  // 'carrier' y 'web' comparten el mismo fixture: el dispatcher del SPA carrier.
-  // 'web' existe como alias histórico en runtime.ts para tests que no son
-  // estrictamente del portal carrier pero usan el mismo login.
-  const user = role === 'contractor' ? CONTRACTOR_COLLABORATOR[env] : DISPATCHER[env];
+	// 'carrier' y 'web' comparten el mismo fixture: el dispatcher del SPA carrier.
+	// 'web' existe como alias histórico en runtime.ts para tests que no son
+	// estrictamente del portal carrier pero usan el mismo login.
+	const user = role === 'contractor' ? CONTRACTOR_COLLABORATOR[env] : DISPATCHER[env];
 
-  // Preservamos la shape legacy `{ username, password }` que esperan los
-  // 3 consumers (global-setup, TestBase, apiClient). El fixture canónico
-  // expone `email` — mapeamos a `username` sin renombrar el campo del SoT.
-  return {
-    username: user.email,
-    password: user.password,
-  };
+	// Preservamos la shape legacy `{ username, password }` que esperan los
+	// 3 consumers (global-setup, TestBase, apiClient). El fixture canónico
+	// expone `email` — mapeamos a `username` sin renombrar el campo del SoT.
+	return {
+		username: user.email,
+		password: user.password
+	};
 }

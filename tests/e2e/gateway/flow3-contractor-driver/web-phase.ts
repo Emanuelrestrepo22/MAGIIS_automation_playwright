@@ -20,15 +20,12 @@
  */
 
 import type { Page } from '@playwright/test';
-import {
-	DashboardPage,
-	ThreeDSModal,
-} from '../../../pages/carrier';
+import { DashboardPage, ThreeDSModal } from '../../../pages/carrier';
 import { ContractorNewTravelPage } from '../../../pages/contractor/NewTravelPage';
 import {
 	loginAsContractor,
 	STRIPE_TEST_CARDS,
-	TEST_DATA,
+	TEST_DATA
 } from '../../../features/gateway-pg/fixtures/gateway.fixtures';
 import { CARDS } from '../../../fixtures/stripe/card-policy';
 import { waitForTravelCreation } from '../../../features/gateway-pg/helpers/stripe.helpers';
@@ -37,9 +34,8 @@ import type { GatewayFlowConfig } from '../shared/e2eFlowConfig';
 
 export type WebPhaseResult = {
 	journeyId: string;
-	tripId:    string;
+	tripId: string;
 };
-
 
 /**
  * Ejecuta la fase web completa del Flow 3.
@@ -49,13 +45,9 @@ export type WebPhaseResult = {
  * @param tcId      - ID del test case para trazabilidad en el JourneyContext.
  * @returns         - { journeyId, tripId } para pasar a la fase mobile.
  */
-export async function runWebPhase(
-	page:   Page,
-	config: GatewayFlowConfig,
-	tcId:   string,
-): Promise<WebPhaseResult> {
+export async function runWebPhase(page: Page, config: GatewayFlowConfig, tcId: string): Promise<WebPhaseResult> {
 	const dashboard = new DashboardPage(page);
-	const travel    = new ContractorNewTravelPage(page);
+	const travel = new ContractorNewTravelPage(page);
 
 	// ── Paso 1: Login contractor ──────────────────────────────────────────────
 	console.log('[flow3/web-phase] Paso 1: Login contractor (colaborador)');
@@ -71,7 +63,9 @@ export async function runWebPhase(
 	// El hold es una configuración del portal carrier, no del contractor.
 	// El contractor no tiene acceso a /settings/parameters.
 	// Precondición: el carrier debe tener hold habilitado antes de correr este flow.
-	console.log(`[flow3/web-phase] Paso 3: Hold es config carrier (skipped en contractor) — esperado: hold=${config.holdEnabled}`);
+	console.log(
+		`[flow3/web-phase] Paso 3: Hold es config carrier (skipped en contractor) — esperado: hold=${config.holdEnabled}`
+	);
 
 	// ── Paso 4: Abrir formulario de nuevo viaje ───────────────────────────────
 	console.log('[flow3/web-phase] Paso 4: Abrir formulario de nuevo viaje');
@@ -83,11 +77,11 @@ export async function runWebPhase(
 	// Contractor: en el portal contractor el cliente Y pasajero es el colaborador.
 	// Evidencia: colaborador-hold-no3ds.spec.ts usa client=contractorColaborador.
 	await travel.fillMinimum({
-		client:      TEST_DATA.contractorColaborador,
-		passenger:   TEST_DATA.contractorColaborador,
-		origin:      TEST_DATA.origin,
+		client: TEST_DATA.contractorColaborador,
+		passenger: TEST_DATA.contractorColaborador,
+		origin: TEST_DATA.origin,
 		destination: TEST_DATA.destination,
-		cardLast4:   config.cardLast4,
+		cardLast4: config.cardLast4
 	});
 
 	// ── Paso 6: Enviar viaje ──────────────────────────────────────────────────

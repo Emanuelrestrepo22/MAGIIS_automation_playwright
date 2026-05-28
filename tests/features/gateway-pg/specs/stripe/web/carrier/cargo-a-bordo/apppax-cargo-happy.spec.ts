@@ -13,7 +13,12 @@
  */
 import { expect } from '@playwright/test';
 import { test } from '../../../../../../../TestBase';
-import { DashboardPage, NewTravelPage, TravelDetailPage, TravelManagementPage } from '../../../../../../../pages/carrier';
+import {
+	DashboardPage,
+	NewTravelPage,
+	TravelDetailPage,
+	TravelManagementPage
+} from '../../../../../../../pages/carrier';
 import { expectNoThreeDSModal, loginAsDispatcher, TEST_DATA } from '../../../../../fixtures/gateway.fixtures';
 import { validateCardPrecondition } from '../../../../../helpers/card-precondition';
 import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../../../../helpers/travel-cleanup';
@@ -34,7 +39,6 @@ function extractTravelId(url: string): string {
 }
 
 test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo @gateway @stripe @cargo-a-bordo @hold @critical @smoke', () => {
-
 	test('[TS-STRIPE-TC1081] @smoke @cargo-a-bordo pago exitoso sin 3DS', async ({ page }) => {
 		const dashboard = new DashboardPage(page);
 		const travel = new NewTravelPage(page);
@@ -49,9 +53,12 @@ test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo @gateway @stri
 		await test.step('Precondición: validar tarjeta 4242 vinculada al pasajero appPax', async () => {
 			const check = await validateCardPrecondition(page, {
 				passengerName: PASSENGERS.appPax.apiSearchQuery!,
-				requiredLast4: '4242',
+				requiredLast4: '4242'
 			});
-			debugLog('gateway-pg:carrier', `[card-precondition] ${PASSENGERS.appPax.name}: ${check.activeCards} tarjetas, tiene 4242: ${check.hasRequiredCard}, limpiadas: ${check.cardsDeleted}`);
+			debugLog(
+				'gateway-pg:carrier',
+				`[card-precondition] ${PASSENGERS.appPax.name}: ${check.activeCards} tarjetas, tiene 4242: ${check.hasRequiredCard}, limpiadas: ${check.cardsDeleted}`
+			);
 			if (!check.hasRequiredCard) {
 				throw new Error(
 					`[TC1081] PRECONDICIÓN NO CUMPLIDA: pasajero appPax sin tarjeta 4242 activa (tarjetas activas: ${check.activeCards}). Vincular manualmente en TEST antes de ejecutar.`
@@ -91,7 +98,7 @@ test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo @gateway @stri
 				await expect
 					.poll(() => travelIdRef?.travelId, {
 						timeout: 15_000,
-						message: '[TC1081] POST /travels no capturó travelId tras el submit',
+						message: '[TC1081] POST /travels no capturó travelId tras el submit'
 					})
 					.not.toBeNull();
 			});
@@ -108,5 +115,4 @@ test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo @gateway @stri
 			}
 		}
 	});
-
 });

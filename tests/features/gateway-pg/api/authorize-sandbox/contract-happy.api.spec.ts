@@ -29,7 +29,7 @@ test.describe('[BL-036][API] Authorize.net sandbox — Happy paths (Response Cod
 		const response = await client.authOnlyTransaction(
 			AUTHORIZE_CARDS.SUCCESS,
 			'10.00',
-			`bl-036-happy-visa-${Date.now()}`,
+			`bl-036-happy-visa-${Date.now()}`
 		);
 
 		expect(response.messages.resultCode).toBe('Ok');
@@ -47,7 +47,7 @@ test.describe('[BL-036][API] Authorize.net sandbox — Happy paths (Response Cod
 		const response = await client.authOnlyTransaction(
 			AUTHORIZE_CARDS.SUCCESS_MASTERCARD,
 			'10.00',
-			`bl-036-happy-mc-${Date.now()}`,
+			`bl-036-happy-mc-${Date.now()}`
 		);
 
 		expect(response.messages.resultCode).toBe('Ok');
@@ -62,7 +62,7 @@ test.describe('[BL-036][API] Authorize.net sandbox — Happy paths (Response Cod
 		const response = await client.authOnlyTransaction(
 			AUTHORIZE_CARDS.SUCCESS_AMEX,
 			'10.00',
-			`bl-036-happy-amex-${Date.now()}`,
+			`bl-036-happy-amex-${Date.now()}`
 		);
 
 		expect(response.messages.resultCode).toBe('Ok');

@@ -9,11 +9,7 @@
  */
 
 import type { Page } from '@playwright/test';
-import {
-	NewTravelPage,
-	OperationalPreferencesPage,
-	ThreeDSModal,
-} from '../../../../pages/carrier';
+import { NewTravelPage, OperationalPreferencesPage, ThreeDSModal } from '../../../../pages/carrier';
 import { STRIPE_TEST_CARDS } from '../../data/stripeTestData';
 import { extractTravelIdFromUrl } from '../journey-url.helpers';
 

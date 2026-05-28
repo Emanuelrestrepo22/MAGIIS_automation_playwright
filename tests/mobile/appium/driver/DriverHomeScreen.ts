@@ -34,14 +34,20 @@ export class DriverHomeScreen extends AppiumSessionBase {
 			}
 
 			return await driver.execute((tripId: string) => {
-				const normalize = (value: unknown): string => String(value ?? '').replace(/\s+/g, ' ').trim();
+				const normalize = (value: unknown): string =>
+					String(value ?? '')
+						.replace(/\s+/g, ' ')
+						.trim();
 				const isVisible = (element: Element): boolean => {
 					const html = element as HTMLElement;
 					const rect = html.getBoundingClientRect();
 					const style = window.getComputedStyle(html);
-					return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+					return (
+						style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0
+					);
 				};
-				const textOf = (element: Element): string => normalize((element as HTMLElement).innerText || element.textContent);
+				const textOf = (element: Element): string =>
+					normalize((element as HTMLElement).innerText || element.textContent);
 				const attrOf = (element: Element, name: string): string => normalize(element.getAttribute(name));
 
 				const visibleElements = Array.from(document.querySelectorAll('*'))
@@ -51,17 +57,21 @@ export class DriverHomeScreen extends AppiumSessionBase {
 						return {
 							tag: html.tagName.toLowerCase(),
 							id: normalize(html.id),
-							accessibilityId: attrOf(html, 'aria-label') || attrOf(html, 'content-desc') || attrOf(html, 'data-testid'),
+							accessibilityId:
+								attrOf(html, 'aria-label') ||
+								attrOf(html, 'content-desc') ||
+								attrOf(html, 'data-testid'),
 							text: textOf(html),
 							className: normalize(typeof html.className === 'string' ? html.className : ''),
-							role: attrOf(html, 'role'),
+							role: attrOf(html, 'role')
 						};
 					})
 					.filter(item => item.id || item.accessibilityId || item.text || item.className || item.role);
 
 				const tripMatches = visibleElements.filter(item => {
-					const haystacks = [item.id, item.accessibilityId, item.text, item.className, item.role]
-						.map(value => value.toLowerCase());
+					const haystacks = [item.id, item.accessibilityId, item.text, item.className, item.role].map(value =>
+						value.toLowerCase()
+					);
 					const hasTripId = tripId ? haystacks.some(value => value.includes(tripId.toLowerCase())) : false;
 					const hasKeywords = haystacks.some(value => value.includes('trip') || value.includes('viaje'));
 					return hasTripId || hasKeywords;
@@ -70,9 +80,9 @@ export class DriverHomeScreen extends AppiumSessionBase {
 				const availability = document.querySelector('#availability') as HTMLElement | null;
 				const availabilityText = normalize(
 					availability?.querySelector('.available-label')?.textContent ||
-					availability?.querySelector('span')?.textContent ||
-					availability?.textContent ||
-					''
+						availability?.querySelector('span')?.textContent ||
+						availability?.textContent ||
+						''
 				);
 
 				const buttons = Array.from(document.querySelectorAll('button, [role="button"], ion-button'))
@@ -87,15 +97,19 @@ export class DriverHomeScreen extends AppiumSessionBase {
 					ids,
 					texts,
 					buttons,
-					tripMatches: tripMatches.map(item =>
-						`${item.tag} | id=${item.id} | aria=${item.accessibilityId} | text=${item.text} | class=${item.className} | role=${item.role}`
+					tripMatches: tripMatches.map(
+						item =>
+							`${item.tag} | id=${item.id} | aria=${item.accessibilityId} | text=${item.text} | class=${item.className} | role=${item.role}`
 					),
 					availabilityText,
 					hasAvailability: !!availability,
 					hasTripId: tripId
-						? visibleElements.some(item => [item.id, item.accessibilityId, item.text, item.className, item.role]
-							.some(value => value.toLowerCase().includes(tripId.toLowerCase())))
-						: false,
+						? visibleElements.some(item =>
+								[item.id, item.accessibilityId, item.text, item.className, item.role].some(value =>
+									value.toLowerCase().includes(tripId.toLowerCase())
+								)
+							)
+						: false
 				};
 			}, expectedTripId ?? '');
 		} catch (error) {
@@ -107,10 +121,7 @@ export class DriverHomeScreen extends AppiumSessionBase {
 	private async containsTextNative(text: string, timeout = 5_000): Promise<boolean> {
 		const driver = this.getDriver();
 		const deadline = Date.now() + timeout;
-		const selectors = [
-			`//*[contains(@text, "${text}")]`,
-			`//*[contains(@content-desc, "${text}")]`,
-		];
+		const selectors = [`//*[contains(@text, "${text}")]`, `//*[contains(@content-desc, "${text}")]`];
 
 		while (Date.now() < deadline) {
 			for (const selector of selectors) {
@@ -180,7 +191,9 @@ export class DriverHomeScreen extends AppiumSessionBase {
 			return true;
 		}
 
-		const pageSource = await this.getDriver().getPageSource().catch(() => '');
+		const pageSource = await this.getDriver()
+			.getPageSource()
+			.catch(() => '');
 		return pageSource.includes(normalizedTripId);
 	}
 
@@ -199,7 +212,9 @@ export class DriverHomeScreen extends AppiumSessionBase {
 		const driver = this.getDriver();
 		const clicked = await driver.execute<boolean, []>(() => {
 			// Buscar en la página activa (no ion-page-hidden)
-			const activePage = document.querySelector('page-home:not(.ion-page-hidden), .ion-page:not(.ion-page-hidden)');
+			const activePage = document.querySelector(
+				'page-home:not(.ion-page-hidden), .ion-page:not(.ion-page-hidden)'
+			);
 			const scope: Document | Element = activePage ?? document;
 			const btn = scope.querySelector('button.driver-home.home-icon-base') as HTMLButtonElement | null;
 			if (btn && btn.offsetParent !== null) {
@@ -225,19 +240,30 @@ export class DriverHomeScreen extends AppiumSessionBase {
 			const webview = await this.switchToWebView();
 			if (webview) {
 				const clicked = await driver.execute((expectedTripId: string) => {
-					const normalize = (value: unknown): string => String(value ?? '').replace(/\s+/g, ' ').trim();
+					const normalize = (value: unknown): string =>
+						String(value ?? '')
+							.replace(/\s+/g, ' ')
+							.trim();
 					const isVisible = (element: Element): boolean => {
 						const html = element as HTMLElement;
 						const rect = html.getBoundingClientRect();
 						const style = window.getComputedStyle(html);
-						return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+						return (
+							style.display !== 'none' &&
+							style.visibility !== 'hidden' &&
+							rect.width > 0 &&
+							rect.height > 0
+						);
 					};
-					const textOf = (element: Element): string => normalize((element as HTMLElement).innerText || element.textContent);
+					const textOf = (element: Element): string =>
+						normalize((element as HTMLElement).innerText || element.textContent);
 
 					// Selector confirmado: button.driver-home.home-icon-base (DOM dump 2026-04-09)
-					const candidates = Array.from(document.querySelectorAll(
-						'button.driver-home.home-icon-base, [id*="trip"], [class*="trip-card"], [role="button"], button, ion-card, a, article, li'
-					)) as HTMLElement[];
+					const candidates = Array.from(
+						document.querySelectorAll(
+							'button.driver-home.home-icon-base, [id*="trip"], [class*="trip-card"], [role="button"], button, ion-card, a, article, li'
+						)
+					) as HTMLElement[];
 
 					const matching = candidates.filter(element => {
 						if (!isVisible(element)) {
@@ -249,7 +275,7 @@ export class DriverHomeScreen extends AppiumSessionBase {
 							normalize(element.className),
 							normalize(element.getAttribute('aria-label')),
 							normalize(element.getAttribute('content-desc')),
-							textOf(element),
+							textOf(element)
 						].map(value => value.toLowerCase());
 
 						if (expectedTripId) {
@@ -273,20 +299,20 @@ export class DriverHomeScreen extends AppiumSessionBase {
 				}
 			}
 		} catch (error) {
-			console.warn('[DriverHomeScreen] WebView openTripRequest fallback:', error instanceof Error ? error.message : error);
+			console.warn(
+				'[DriverHomeScreen] WebView openTripRequest fallback:',
+				error instanceof Error ? error.message : error
+			);
 		}
 
 		const nativeSelectors = tripId
 			? [
-				`//*[contains(@text, "${tripId}")]`,
-				`//*[contains(@content-desc, "${tripId}")]`,
-				'//*[contains(@text, "Trip")]',
-				'//*[contains(@text, "Viaje")]',
-			]
-			: [
-				'//*[contains(@text, "Trip")]',
-				'//*[contains(@text, "Viaje")]',
-			];
+					`//*[contains(@text, "${tripId}")]`,
+					`//*[contains(@content-desc, "${tripId}")]`,
+					'//*[contains(@text, "Trip")]',
+					'//*[contains(@text, "Viaje")]'
+				]
+			: ['//*[contains(@text, "Trip")]', '//*[contains(@text, "Viaje")]'];
 
 		const clicked = await this.clickFirstNative(nativeSelectors, 5_000);
 		if (!clicked) {
@@ -307,10 +333,15 @@ export class DriverHomeScreen extends AppiumSessionBase {
 				}
 			}
 		} catch (error) {
-			console.warn('[DriverHomeScreen] isDriverOnline web fallback:', error instanceof Error ? error.message : error);
+			console.warn(
+				'[DriverHomeScreen] isDriverOnline web fallback:',
+				error instanceof Error ? error.message : error
+			);
 		}
 
-		const pageSource = await this.getDriver().getPageSource().catch(() => '');
+		const pageSource = await this.getDriver()
+			.getPageSource()
+			.catch(() => '');
 		if (/no disponible|offline|ocupado/i.test(pageSource)) {
 			return false;
 		}
@@ -338,7 +369,10 @@ export class DriverHomeScreen extends AppiumSessionBase {
 			}
 
 			const url = await driver.execute<string, []>(() => window.location.href).catch(() => '');
-			const homeVisible = await driver.$('button.driver-home.home-icon-base').isDisplayed().catch(() => false);
+			const homeVisible = await driver
+				.$('button.driver-home.home-icon-base')
+				.isDisplayed()
+				.catch(() => false);
 			const isHomeUrl = /\/navigator\/home(?:[;?].*)?/i.test(url);
 			const closedFlag = /FROM_TRAVEL_CLOSED=true/i.test(url);
 
@@ -367,12 +401,17 @@ export class DriverHomeScreen extends AppiumSessionBase {
 			}
 
 			const url = await driver.execute<string, []>(() => window.location.href).catch(() => '');
-			if (checkpoint.urlTokens.some((token) => url.includes(token))) {
+			if (checkpoint.urlTokens.some(token => url.includes(token))) {
 				return true;
 			}
 
 			for (const selector of checkpoint.webSelectors) {
-				if (await driver.$(selector).isDisplayed().catch(() => false)) {
+				if (
+					await driver
+						.$(selector)
+						.isDisplayed()
+						.catch(() => false)
+				) {
 					return true;
 				}
 			}
@@ -400,12 +439,23 @@ export class DriverHomeScreen extends AppiumSessionBase {
 						return true;
 					}
 
-					const candidates = Array.from(document.querySelectorAll('button, [role="button"], ion-button, [id*="availability"]')) as HTMLElement[];
+					const candidates = Array.from(
+						document.querySelectorAll('button, [role="button"], ion-button, [id*="availability"]')
+					) as HTMLElement[];
 					const match = candidates.find(element => {
-						const text = ((element.innerText || element.textContent || '') as string).replace(/\s+/g, ' ').trim().toLowerCase();
+						const text = ((element.innerText || element.textContent || '') as string)
+							.replace(/\s+/g, ' ')
+							.trim()
+							.toLowerCase();
 						const id = (element.id || '').toLowerCase();
 						const cls = typeof element.className === 'string' ? element.className.toLowerCase() : '';
-						return text.includes('disponible') || text.includes('available') || text.includes('online') || id.includes('availability') || cls.includes('availability');
+						return (
+							text.includes('disponible') ||
+							text.includes('available') ||
+							text.includes('online') ||
+							id.includes('availability') ||
+							cls.includes('availability')
+						);
 					});
 
 					if (match) {
@@ -421,12 +471,15 @@ export class DriverHomeScreen extends AppiumSessionBase {
 		}
 
 		if (!clicked) {
-			clicked = await this.clickFirstNative([
-				'//*[@text="Disponible"]',
-				'//*[@text="No disponible"]',
-				'//*[contains(@text, "Disponible")]',
-				'//*[contains(@text, "No disponible")]',
-			], 5_000);
+			clicked = await this.clickFirstNative(
+				[
+					'//*[@text="Disponible"]',
+					'//*[@text="No disponible"]',
+					'//*[contains(@text, "Disponible")]',
+					'//*[contains(@text, "No disponible")]'
+				],
+				5_000
+			);
 		}
 
 		await this.pause(2_500);

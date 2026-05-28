@@ -46,9 +46,11 @@ const PAYMENT_FORM_SELECTORS = {
 	// Campos del formulario Stripe (dentro del WebView).
 	// Stripe normalmente usa iframes; la estrategia es ejecutar JS en el contexto del frame.
 	// TODO: confirmar si el form está en un iframe o en el documento raíz.
-	cardNumber: '[data-testid="cardNumber"], input[placeholder*="Card"], input[name="cardnumber"], input[autocomplete="cc-number"]',
+	cardNumber:
+		'[data-testid="cardNumber"], input[placeholder*="Card"], input[name="cardnumber"], input[autocomplete="cc-number"]',
 	cardExpiry: '[data-testid="cardExpiry"], input[placeholder*="MM"], input[name="exp"], input[autocomplete="cc-exp"]',
-	cardCvc: '[data-testid="cardCvc"], input[placeholder*="CVC"], input[placeholder*="CVV"], input[name="cvc"], input[autocomplete="cc-csc"]',
+	cardCvc:
+		'[data-testid="cardCvc"], input[placeholder*="CVC"], input[placeholder*="CVV"], input[name="cvc"], input[autocomplete="cc-csc"]',
 	cardZip: '[data-testid="billingName"], input[placeholder*="ZIP"], input[name="postal"]',
 	submitButton: 'button[type="submit"], button[data-testid="hosted-payment-submit-button"], button.SubmitButton',
 
@@ -60,7 +62,7 @@ const PAYMENT_FORM_SELECTORS = {
 	// TODO: identificar el WebView de challenge con Appium Inspector.
 	threeDSFrame: 'iframe[name*="stripe"], iframe[src*="3ds"], iframe[src*="stripe"]',
 	threeDSCompleteButton: '[id="test-source-authorize-3ds"], [data-testid="3ds-challenge-complete"]',
-	threeDSFailButton: '[id="test-source-fail-3ds"], [data-testid="3ds-challenge-fail"]',
+	threeDSFailButton: '[id="test-source-fail-3ds"], [data-testid="3ds-challenge-fail"]'
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -103,14 +105,15 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 			await this.switchToWebView(3_000);
 
 			const url = await driver.execute<string, []>(() => window.location.href).catch(() => '');
-			const matchesUrl = PAYMENT_FORM_SELECTORS.urlTokens.some(token =>
-				url.toLowerCase().includes(token),
-			);
+			const matchesUrl = PAYMENT_FORM_SELECTORS.urlTokens.some(token => url.toLowerCase().includes(token));
 			if (matchesUrl) return true;
 
 			// Fallback: detectar el campo de tarjeta en el DOM.
 			const hasCardInput = await driver
-				.execute<boolean, []>(() => !!document.querySelector('input[autocomplete="cc-number"], input[name="cardnumber"]'))
+				.execute<
+					boolean,
+					[]
+				>(() => !!document.querySelector('input[autocomplete="cc-number"], input[name="cardnumber"]'))
 				.catch(() => false);
 			if (hasCardInput) return true;
 
@@ -142,7 +145,7 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 					if (!el) return false;
 					const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
 						window.HTMLInputElement.prototype,
-						'value',
+						'value'
 					)?.set;
 					nativeInputValueSetter?.call(el, value);
 					el.dispatchEvent(new Event('input', { bubbles: true }));
@@ -156,7 +159,7 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 				if (cardData.zip) fill(selectors.cardZip, cardData.zip);
 			},
 			PAYMENT_FORM_SELECTORS,
-			card,
+			card
 		);
 
 		console.log(`[DriverTripPaymentScreen] Tarjeta ${card.number.slice(-4)} ingresada`);
@@ -173,9 +176,7 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 
 		const clicked = await driver
 			.execute<boolean, []>(() => {
-				const btn = document.querySelector(
-					'button[type="submit"], button.SubmitButton',
-				) as HTMLElement | null;
+				const btn = document.querySelector('button[type="submit"], button.SubmitButton') as HTMLElement | null;
 				if (btn) {
 					btn.click();
 					return true;
@@ -187,7 +188,11 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 		if (!clicked) {
 			// Fallback nativo.
 			// TODO: ajustar selector nativo con Appium Inspector.
-			await driver.$('//android.widget.Button[contains(@text,"Pagar") or contains(@text,"Cobrar") or contains(@text,"Submit")]').click();
+			await driver
+				.$(
+					'//android.widget.Button[contains(@text,"Pagar") or contains(@text,"Cobrar") or contains(@text,"Submit")]'
+				)
+				.click();
 		}
 
 		console.log('[DriverTripPaymentScreen] Submit realizado');
@@ -212,7 +217,10 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 
 			const result = await driver
 				.execute<PaymentOutcome | null, []>(() => {
-					const normalize = (v: unknown) => String(v ?? '').toLowerCase().trim();
+					const normalize = (v: unknown) =>
+						String(v ?? '')
+							.toLowerCase()
+							.trim();
 					const body = normalize(document.body.innerText ?? document.body.textContent);
 
 					// 3DS challenge detectado primero (URL cambia antes que los mensajes).
@@ -222,7 +230,9 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 					}
 
 					// Error / decline.
-					const errorEl = document.querySelector('[class*="error"], [class*="Error"], [role="alert"]') as HTMLElement | null;
+					const errorEl = document.querySelector(
+						'[class*="error"], [class*="Error"], [role="alert"]'
+					) as HTMLElement | null;
 					if (errorEl) {
 						return { status: 'declined', reason: (errorEl.innerText || errorEl.textContent || '').trim() };
 					}
@@ -238,7 +248,9 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 					}
 
 					// Éxito.
-					const successEl = document.querySelector('[class*="success"], [class*="Success"]') as HTMLElement | null;
+					const successEl = document.querySelector(
+						'[class*="success"], [class*="Success"]'
+					) as HTMLElement | null;
 					if (successEl) {
 						return { status: 'success', message: successEl.innerText?.trim() };
 					}
@@ -273,9 +285,10 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 	async handle3DSChallenge(action: 'complete' | 'fail', timeout = 20_000): Promise<void> {
 		const driver = this.getDriver();
 		const deadline = Date.now() + timeout;
-		const targetId = action === 'complete'
-			? PAYMENT_FORM_SELECTORS.threeDSCompleteButton
-			: PAYMENT_FORM_SELECTORS.threeDSFailButton;
+		const targetId =
+			action === 'complete'
+				? PAYMENT_FORM_SELECTORS.threeDSCompleteButton
+				: PAYMENT_FORM_SELECTORS.threeDSFailButton;
 
 		console.log(`[DriverTripPaymentScreen] Esperando challenge 3DS (action=${action})...`);
 
@@ -284,27 +297,27 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 			await this.switchToWebView(3_000);
 
 			const clicked = await driver
-				.execute<boolean, [string]>(
-					(selector) => {
-						const el = document.querySelector(selector) as HTMLElement | null;
-						if (el) {
-							el.click();
-							return true;
-						}
-						// Buscar también por texto visible si el selector falla.
-						const buttons = Array.from(document.querySelectorAll('button, [role="button"]')) as HTMLElement[];
-						const match = action === 'complete'
-							? buttons.find(b => /autorizar|authorize|completar|complete|aprobar|approve/i.test(b.innerText))
+				.execute<boolean, [string]>(selector => {
+					const el = document.querySelector(selector) as HTMLElement | null;
+					if (el) {
+						el.click();
+						return true;
+					}
+					// Buscar también por texto visible si el selector falla.
+					const buttons = Array.from(document.querySelectorAll('button, [role="button"]')) as HTMLElement[];
+					const match =
+						action === 'complete'
+							? buttons.find(b =>
+									/autorizar|authorize|completar|complete|aprobar|approve/i.test(b.innerText)
+								)
 							: buttons.find(b => /rechazar|fail|deny|cancelar/i.test(b.innerText));
 
-						if (match) {
-							match.click();
-							return true;
-						}
-						return false;
-					},
-					targetId,
-				)
+					if (match) {
+						match.click();
+						return true;
+					}
+					return false;
+				}, targetId)
 				.catch(() => false);
 
 			if (clicked) {
@@ -317,7 +330,7 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 
 		throw new Error(
 			`[DriverTripPaymentScreen] No se encontró botón de 3DS challenge (action=${action}) en ${timeout}ms. ` +
-			`TODO: Verificar selectores con Appium Inspector en la pantalla de challenge.`,
+				`TODO: Verificar selectores con Appium Inspector en la pantalla de challenge.`
 		);
 	}
 

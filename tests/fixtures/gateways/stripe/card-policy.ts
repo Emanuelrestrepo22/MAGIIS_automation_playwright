@@ -151,7 +151,7 @@ export const CARDS = {
 	 * Resultado: cargo rechazado con código `incorrect_cvc`.
 	 * Usar en tests de validación de wallet que deben fallar al guardar.
 	 */
-	DECLINE_INVALID_CVC: STRIPE_TEST_CARDS.incorrectCvc,
+	DECLINE_INVALID_CVC: STRIPE_TEST_CARDS.incorrectCvc
 } as const;
 
 export type CardPolicyKey = keyof typeof CARDS;

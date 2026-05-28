@@ -31,8 +31,22 @@ const log = (message: string): void => {
 	console.log(`[passenger-personal-3ds-hold] ${message}`);
 };
 
-async function handleThreeDsPopup(driver: Browser, dumpState: (label: string) => Promise<string>, timeoutMs: number): Promise<'completed' | 'not-present' | 'failed'> {
-	const approveTexts = ['Complete', 'Complete authentication', 'COMPLETE', 'Completar', 'Completar autenticación', 'Autorizar', 'Aprobar', 'Confirm', 'Submit'];
+async function handleThreeDsPopup(
+	driver: Browser,
+	dumpState: (label: string) => Promise<string>,
+	timeoutMs: number
+): Promise<'completed' | 'not-present' | 'failed'> {
+	const approveTexts = [
+		'Complete',
+		'Complete authentication',
+		'COMPLETE',
+		'Completar',
+		'Completar autenticación',
+		'Autorizar',
+		'Aprobar',
+		'Confirm',
+		'Submit'
+	];
 
 	const deadline = Date.now() + timeoutMs;
 	let lastObservation: 'not-present' | 'failed' = 'not-present';
@@ -50,7 +64,9 @@ async function handleThreeDsPopup(driver: Browser, dumpState: (label: string) =>
 			const clicked = (await driver.execute((texts: string[]) => {
 				const buttons = Array.from(document.querySelectorAll('button, [role="button"], a')) as HTMLElement[];
 				for (const text of texts) {
-					const button = buttons.find(item => (item.innerText ?? item.textContent ?? '').trim() === text && item.offsetParent !== null);
+					const button = buttons.find(
+						item => (item.innerText ?? item.textContent ?? '').trim() === text && item.offsetParent !== null
+					);
 					if (button) {
 						button.click();
 						return true;
@@ -73,7 +89,9 @@ async function handleThreeDsPopup(driver: Browser, dumpState: (label: string) =>
 
 		const inlineResult = (await driver.execute((texts: string[]) => {
 			const iframes = Array.from(document.querySelectorAll('iframe')) as HTMLIFrameElement[];
-			const threeDsFrame = iframes.find(frame => /stripe|hooks|acs|3ds|authenticate|verify/i.test(frame.src ?? frame.name ?? ''));
+			const threeDsFrame = iframes.find(frame =>
+				/stripe|hooks|acs|3ds|authenticate|verify/i.test(frame.src ?? frame.name ?? '')
+			);
 			if (!threeDsFrame) {
 				return 'not-present';
 			}
@@ -86,7 +104,9 @@ async function handleThreeDsPopup(driver: Browser, dumpState: (label: string) =>
 
 				const buttons = Array.from(frameDoc.querySelectorAll('button, [role="button"], a')) as HTMLElement[];
 				for (const text of texts) {
-					const button = buttons.find(item => (item.innerText ?? item.textContent ?? '').trim() === text && item.offsetParent !== null);
+					const button = buttons.find(
+						item => (item.innerText ?? item.textContent ?? '').trim() === text && item.offsetParent !== null
+					);
 					if (button) {
 						button.click();
 						return 'completed';
@@ -105,9 +125,16 @@ async function handleThreeDsPopup(driver: Browser, dumpState: (label: string) =>
 
 		if (inlineResult === 'not-present') {
 			const modalResult = (await driver.execute((texts: string[]) => {
-				const isPaymentFormOverlay = (element: HTMLElement): boolean => Boolean(element.querySelector('app-credit-card-payment-data, app-credit-card-dialog'));
-				const overlays = Array.from(document.querySelectorAll('ion-modal, [class*="3ds"], [class*="stripe"], app-confirm-modal, [data-react-aria-top-layer]')) as HTMLElement[];
-				const visible = overlays.filter(element => element.offsetParent !== null && !isPaymentFormOverlay(element));
+				const isPaymentFormOverlay = (element: HTMLElement): boolean =>
+					Boolean(element.querySelector('app-credit-card-payment-data, app-credit-card-dialog'));
+				const overlays = Array.from(
+					document.querySelectorAll(
+						'ion-modal, [class*="3ds"], [class*="stripe"], app-confirm-modal, [data-react-aria-top-layer]'
+					)
+				) as HTMLElement[];
+				const visible = overlays.filter(
+					element => element.offsetParent !== null && !isPaymentFormOverlay(element)
+				);
 				if (!visible.length) {
 					return 'not-present';
 				}
@@ -115,7 +142,9 @@ async function handleThreeDsPopup(driver: Browser, dumpState: (label: string) =>
 				for (const overlay of visible) {
 					const buttons = Array.from(overlay.querySelectorAll('button, [role="button"]')) as HTMLElement[];
 					for (const text of texts) {
-						const button = buttons.find(item => (item.innerText ?? '').trim() === text && item.offsetParent !== null);
+						const button = buttons.find(
+							item => (item.innerText ?? '').trim() === text && item.offsetParent !== null
+						);
 						if (button) {
 							button.click();
 							return 'completed';
@@ -185,7 +214,11 @@ async function run(): Promise<void> {
 
 		await dumpAppiumState(driver, 'passenger-personal-trip-before-3ds');
 
-		const threeDsResult = await handleThreeDsPopup(driver, label => dumpAppiumState(driver, label), threeDsTimeoutMs);
+		const threeDsResult = await handleThreeDsPopup(
+			driver,
+			label => dumpAppiumState(driver, label),
+			threeDsTimeoutMs
+		);
 
 		log(`3DS result: ${threeDsResult}`);
 		if (threeDsResult !== 'completed') {

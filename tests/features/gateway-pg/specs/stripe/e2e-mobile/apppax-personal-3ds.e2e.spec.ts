@@ -38,7 +38,12 @@ test.describe.serial('Gateway PG · E2E Mobile · App Pax Personal @gateway @str
 	for (const scenario of PASSENGER_FLOW2_SCENARIOS) {
 		test(`[${scenario.testCaseId}] ${scenario.title} (${scenario.sourceCaseIds.join(' / ')})`, async () => {
 			if (!scenario.active) {
-				test.fixme(true, scenario.requiresDriverPhase ? 'Passenger wallet and trip setup are ready, but driver handoff/post-trip evidence is still pending.' : 'Passenger negative evidence is still pending validation.');
+				test.fixme(
+					true,
+					scenario.requiresDriverPhase
+						? 'Passenger wallet and trip setup are ready, but driver handoff/post-trip evidence is still pending.'
+						: 'Passenger negative evidence is still pending validation.'
+				);
 				return;
 			}
 
@@ -66,7 +71,12 @@ test.describe.serial('Gateway PG · E2E Mobile · App Pax Personal @gateway @str
 						await test.step(`[${scenario.testCaseId}] add card to wallet`, async () => {
 							const walletState = await harness.ensureWalletCard(card);
 							expect(walletState).toMatch(/added|already-present/);
-							journey = orchestrator.updatePhase(journey, 'passenger_wallet_setup', 'draft', `Passenger wallet card ${walletState}`);
+							journey = orchestrator.updatePhase(
+								journey,
+								'passenger_wallet_setup',
+								'draft',
+								`Passenger wallet card ${walletState}`
+							);
 							await orchestrator.persist(journey);
 						});
 						break;
@@ -76,7 +86,12 @@ test.describe.serial('Gateway PG · E2E Mobile · App Pax Personal @gateway @str
 							await harness.cleanWallet();
 							await harness.ensureWalletCard(card);
 							await harness.deleteWalletCard(cardLast4);
-							journey = orchestrator.updatePhase(journey, 'passenger_wallet_setup', 'draft', 'Passenger deleted a linked 3DS wallet card');
+							journey = orchestrator.updatePhase(
+								journey,
+								'passenger_wallet_setup',
+								'draft',
+								'Passenger deleted a linked 3DS wallet card'
+							);
 							await orchestrator.persist(journey);
 						});
 						break;
@@ -85,7 +100,12 @@ test.describe.serial('Gateway PG · E2E Mobile · App Pax Personal @gateway @str
 						await test.step(`[${scenario.testCaseId}] select existing wallet card`, async () => {
 							await harness.ensureWalletCard(card);
 							await harness.selectExistingCard(cardLast4);
-							journey = orchestrator.updatePhase(journey, 'passenger_wallet_setup', 'draft', 'Passenger selected an existing wallet card');
+							journey = orchestrator.updatePhase(
+								journey,
+								'passenger_wallet_setup',
+								'draft',
+								'Passenger selected an existing wallet card'
+							);
 							await orchestrator.persist(journey);
 						});
 						break;
@@ -99,7 +119,10 @@ test.describe.serial('Gateway PG · E2E Mobile · App Pax Personal @gateway @str
 							journey = orchestrator.attachTripData(journey, {
 								tripId: tripId ?? 'TODO'
 							});
-							journey = orchestrator.prepareMobileHandoff(journey, 'Passenger created the trip and handed it to the driver lane');
+							journey = orchestrator.prepareMobileHandoff(
+								journey,
+								'Passenger created the trip and handed it to the driver lane'
+							);
 							await orchestrator.persist(journey);
 						});
 						break;

@@ -15,8 +15,19 @@
 import { expect, type Page } from '@playwright/test';
 import { test } from '../../../../../../../TestBase';
 import { debugLog } from '../../../../../../../helpers';
-import { DashboardPage, NewTravelPage, OperationalPreferencesPage, TravelDetailPage, TravelManagementPage } from '../../../../../../../pages/carrier';
-import { expectNoThreeDSModal, loginAsDispatcher, STRIPE_TEST_CARDS, TEST_DATA } from '../../../../../fixtures/gateway.fixtures';
+import {
+	DashboardPage,
+	NewTravelPage,
+	OperationalPreferencesPage,
+	TravelDetailPage,
+	TravelManagementPage
+} from '../../../../../../../pages/carrier';
+import {
+	expectNoThreeDSModal,
+	loginAsDispatcher,
+	STRIPE_TEST_CARDS,
+	TEST_DATA
+} from '../../../../../fixtures/gateway.fixtures';
 import { waitForTravelCreation } from '../../../../../helpers/stripe.helpers';
 import { validateCardPrecondition, type CardPreconditionResult } from '../../../../../helpers/card-precondition';
 import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../../../../helpers/travel-cleanup';
@@ -55,7 +66,7 @@ async function restoreHoldAndSave(page: Page, preferences: OperationalPreference
 	await preferences.setHoldEnabled(true);
 
 	const responsePromise = page.waitForResponse(
-		(response) => response.request().method() === 'POST' && PARAMETERS_SAVE_URL.test(response.url()),
+		response => response.request().method() === 'POST' && PARAMETERS_SAVE_URL.test(response.url()),
 		{ timeout: 15_000 }
 	);
 
@@ -97,7 +108,7 @@ function shortDestination(destination: string): string {
 async function resolveCardFlowEmpresa(
 	page: Page,
 	scenario: HoldNo3dsScenario,
-	cardLast4: string,
+	cardLast4: string
 ): Promise<{ cardCheck: CardPreconditionResult | null; preferSavedCard: boolean }> {
 	const cardFlow: CardFlow = scenario.cardFlow ?? 'new';
 	let cardCheck: CardPreconditionResult | null = null;
@@ -105,15 +116,18 @@ async function resolveCardFlowEmpresa(
 	if (scenario.apiSearchQuery) {
 		cardCheck = await validateCardPrecondition(page, {
 			passengerName: scenario.apiSearchQuery,
-			requiredLast4: cardLast4,
+			requiredLast4: cardLast4
 		});
-		debugLog('gateway-pg', `[card-precondition] ${scenario.passenger} (cardFlow=${cardFlow}): ${cardCheck.activeCards} tarjetas activas, tiene ${cardLast4}: ${cardCheck.hasRequiredCard}`);
+		debugLog(
+			'gateway-pg',
+			`[card-precondition] ${scenario.passenger} (cardFlow=${cardFlow}): ${cardCheck.activeCards} tarjetas activas, tiene ${cardLast4}: ${cardCheck.hasRequiredCard}`
+		);
 	}
 
 	if (cardFlow === 'existing') {
 		test.skip(
 			!cardCheck?.hasRequiredCard,
-			`[card-existing] Precondición: pasajero ${scenario.passenger} debe tener tarjeta ${cardLast4} vinculada.`,
+			`[card-existing] Precondición: pasajero ${scenario.passenger} debe tener tarjeta ${cardLast4} vinculada.`
 		);
 		return { cardCheck, preferSavedCard: true };
 	}
@@ -161,7 +175,7 @@ async function runHoldOnScenario(page: Page, scenario: HoldNo3dsScenario): Promi
 				origin: scenario.origin,
 				destination: scenario.destination,
 				cardLast4,
-				preferSavedCard,
+				preferSavedCard
 			});
 		});
 
@@ -231,7 +245,7 @@ async function runHoldOffScenario(page: Page, scenario: HoldNo3dsScenario): Prom
 				origin: scenario.origin,
 				destination: scenario.destination,
 				cardLast4,
-				preferSavedCard,
+				preferSavedCard
 			});
 		});
 
@@ -270,11 +284,12 @@ test.use({ role: 'carrier', storageState: undefined });
 test.describe.configure({ timeout: 180_000 });
 
 test.describe('Gateway PG · Carrier · Empresa Individuo — Hold sin 3DS @gateway @stripe @hold @critical @smoke @regression', () => {
-
 	test.describe('Hold ON', () => {
 		// TC1065 — canónico card-new. Mantiene lógica inline específica (diagnósticos del dashboard)
 		// para preservar la cobertura histórica del smoke. Ver par card-existing en TC1067.
-		test('[TS-STRIPE-TC1065] @smoke @hold @card-new hold+cobro empresa sin 3DS — Vincular tarjeta nueva', async ({ page }) => {
+		test('[TS-STRIPE-TC1065] @smoke @hold @card-new hold+cobro empresa sin 3DS — Vincular tarjeta nueva', async ({
+			page
+		}) => {
 			const dashboard = new DashboardPage(page);
 			const preferences = new OperationalPreferencesPage(page);
 			const travel = new NewTravelPage(page);
@@ -297,9 +312,9 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Hold sin 3DS @gate
 						origin: TEST_DATA.origin,
 						destination: TEST_DATA.destination,
 						apiSearchQuery: PASSENGERS.empresaIndividuo.apiSearchQuery,
-						cardFlow: 'new',
+						cardFlow: 'new'
 					},
-					cardLast4,
+					cardLast4
 				);
 				preferSavedCard = resolved.preferSavedCard;
 			});
@@ -327,7 +342,7 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Hold sin 3DS @gate
 						origin: TEST_DATA.origin,
 						destination: TEST_DATA.destination,
 						cardLast4,
-						preferSavedCard,
+						preferSavedCard
 					});
 				});
 
@@ -353,11 +368,17 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Hold sin 3DS @gate
 				await test.step('Diagnóstico: estado del viaje en dashboard', async () => {
 					await management.goto();
 					await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
-					const dashboardText = await page.locator('main').textContent().catch(() => '');
+					const dashboardText = await page
+						.locator('main')
+						.textContent()
+						.catch(() => '');
 					const hasPorAsignar = /Por\s*Asignar/i.test(dashboardText ?? '');
 					const hasConflicto = /En\s*conflicto/i.test(dashboardText ?? '');
 					const hasNoAutorizado = /No\s*Autorizado/i.test(dashboardText ?? '');
-					debugLog('gateway-pg', `[diagnostic] travelId=${createdTravelId} → dashboard columns visible: porAsignar=${hasPorAsignar}, conflicto=${hasConflicto}, noAutorizado=${hasNoAutorizado}`);
+					debugLog(
+						'gateway-pg',
+						`[diagnostic] travelId=${createdTravelId} → dashboard columns visible: porAsignar=${hasPorAsignar}, conflicto=${hasConflicto}, noAutorizado=${hasNoAutorizado}`
+					);
 				});
 
 				await test.step('Validar viaje en gestion — columna Asignar (hold OK)', async () => {
@@ -383,14 +404,16 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Hold sin 3DS @gate
 		});
 
 		// Par card-existing de TC1065 — canonical_ref TS-STRIPE-TC1065 en normalized-test-cases.json
-		test('[TS-STRIPE-TC1067] @regression @hold @card-existing hold+cobro empresa sin 3DS — Usar tarjeta vinculada existente', async ({ page }) => {
+		test('[TS-STRIPE-TC1067] @regression @hold @card-existing hold+cobro empresa sin 3DS — Usar tarjeta vinculada existente', async ({
+			page
+		}) => {
 			await runHoldOnScenario(page, {
 				client: PASSENGERS.empresaIndividuo.name,
 				passenger: PASSENGERS.empresaIndividuo.name,
 				origin: TEST_DATA.origin,
 				destination: TEST_DATA.destination,
 				apiSearchQuery: PASSENGERS.empresaIndividuo.apiSearchQuery,
-				cardFlow: 'existing',
+				cardFlow: 'existing'
 			});
 		});
 
@@ -402,7 +425,7 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Hold sin 3DS @gate
 				origin: TEST_DATA.origin,
 				destination: TEST_DATA.destination,
 				apiSearchQuery: PASSENGERS.empresaIndividuo.apiSearchQuery,
-				cardFlow: 'new',
+				cardFlow: 'new'
 			});
 		});
 
@@ -414,32 +437,36 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Hold sin 3DS @gate
 				origin: TEST_DATA.origin,
 				destination: TEST_DATA.destination,
 				apiSearchQuery: PASSENGERS.empresaIndividuo.apiSearchQuery,
-				cardFlow: 'new',
+				cardFlow: 'new'
 			});
 		});
 	});
 
 	test.describe('Hold OFF', () => {
-		test('[TS-STRIPE-TC1066] @regression @hold @card-new sin hold empresa sin 3DS — Vincular tarjeta nueva', async ({ page }) => {
+		test('[TS-STRIPE-TC1066] @regression @hold @card-new sin hold empresa sin 3DS — Vincular tarjeta nueva', async ({
+			page
+		}) => {
 			await runHoldOffScenario(page, {
 				client: PASSENGERS.empresaIndividuo.name,
 				passenger: PASSENGERS.empresaIndividuo.name,
 				origin: TEST_DATA.origin,
 				destination: TEST_DATA.destination,
 				apiSearchQuery: PASSENGERS.empresaIndividuo.apiSearchQuery,
-				cardFlow: 'new',
+				cardFlow: 'new'
 			});
 		});
 
 		// Par card-existing de TC1066 — canonical_ref TS-STRIPE-TC1066 en normalized-test-cases.json
-		test('[TS-STRIPE-TC1068] @regression @hold @card-existing sin hold empresa sin 3DS — Usar tarjeta vinculada existente', async ({ page }) => {
+		test('[TS-STRIPE-TC1068] @regression @hold @card-existing sin hold empresa sin 3DS — Usar tarjeta vinculada existente', async ({
+			page
+		}) => {
 			await runHoldOffScenario(page, {
 				client: PASSENGERS.empresaIndividuo.name,
 				passenger: PASSENGERS.empresaIndividuo.name,
 				origin: TEST_DATA.origin,
 				destination: TEST_DATA.destination,
 				apiSearchQuery: PASSENGERS.empresaIndividuo.apiSearchQuery,
-				cardFlow: 'existing',
+				cardFlow: 'existing'
 			});
 		});
 
@@ -451,7 +478,7 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Hold sin 3DS @gate
 				origin: TEST_DATA.origin,
 				destination: TEST_DATA.destination,
 				apiSearchQuery: PASSENGERS.empresaIndividuo.apiSearchQuery,
-				cardFlow: 'new',
+				cardFlow: 'new'
 			});
 		});
 
@@ -463,9 +490,8 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Hold sin 3DS @gate
 				origin: TEST_DATA.origin,
 				destination: TEST_DATA.destination,
 				apiSearchQuery: PASSENGERS.empresaIndividuo.apiSearchQuery,
-				cardFlow: 'new',
+				cardFlow: 'new'
 			});
 		});
 	});
-
 });

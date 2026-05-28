@@ -5,7 +5,13 @@
  */
 import { expect, type Page } from '@playwright/test';
 import { test } from '../../../../../../../TestBase';
-import { DashboardPage, NewTravelPage, OperationalPreferencesPage, ThreeDSModal, TravelManagementPage } from '../../../../../../../pages/carrier';
+import {
+	DashboardPage,
+	NewTravelPage,
+	OperationalPreferencesPage,
+	ThreeDSModal,
+	TravelManagementPage
+} from '../../../../../../../pages/carrier';
 import { loginAsDispatcher, STRIPE_TEST_CARDS, TEST_DATA } from '../../../../../fixtures/gateway.fixtures';
 import { waitForTravelCreation } from '../../../../../helpers/stripe.helpers';
 import { validateCardPrecondition, type CardPreconditionResult } from '../../../../../helpers/card-precondition';
@@ -44,7 +50,7 @@ async function restoreHoldAndSave(page: Page, preferences: OperationalPreference
 	await preferences.setHoldEnabled(true);
 
 	const responsePromise = page.waitForResponse(
-		(response) => response.request().method() === 'POST' && PARAMETERS_SAVE_URL.test(response.url()),
+		response => response.request().method() === 'POST' && PARAMETERS_SAVE_URL.test(response.url()),
 		{ timeout: 15_000 }
 	);
 
@@ -83,7 +89,7 @@ type Hold3dsScenario = {
 async function resolveCardFlow3ds(
 	page: Page,
 	scenario: Hold3dsScenario,
-	cardLast4: string,
+	cardLast4: string
 ): Promise<{ cardCheck: CardPreconditionResult | null; preferSavedCard: boolean }> {
 	const cardFlow: CardFlow = scenario.cardFlow ?? 'new';
 	let cardCheck: CardPreconditionResult | null = null;
@@ -91,15 +97,18 @@ async function resolveCardFlow3ds(
 	if (scenario.apiSearchQuery) {
 		cardCheck = await validateCardPrecondition(page, {
 			passengerName: scenario.apiSearchQuery,
-			requiredLast4: cardLast4,
+			requiredLast4: cardLast4
 		});
-		debugLog('gateway-pg:carrier', `[card-precondition 3ds] ${scenario.passenger} (cardFlow=${cardFlow}): ${cardCheck.activeCards} tarjetas, tiene ${cardLast4}: ${cardCheck.hasRequiredCard}`);
+		debugLog(
+			'gateway-pg:carrier',
+			`[card-precondition 3ds] ${scenario.passenger} (cardFlow=${cardFlow}): ${cardCheck.activeCards} tarjetas, tiene ${cardLast4}: ${cardCheck.hasRequiredCard}`
+		);
 	}
 
 	if (cardFlow === 'existing') {
 		test.skip(
 			!cardCheck?.hasRequiredCard,
-			`[card-existing 3ds] Precondición: pasajero ${scenario.passenger} debe tener tarjeta ${cardLast4} vinculada.`,
+			`[card-existing 3ds] Precondición: pasajero ${scenario.passenger} debe tener tarjeta ${cardLast4} vinculada.`
 		);
 		return { cardCheck, preferSavedCard: true };
 	}
@@ -147,7 +156,7 @@ async function runHoldOnScenario(page: Page, scenario: Hold3dsScenario): Promise
 				origin: scenario.origin,
 				destination: scenario.destination,
 				cardLast4,
-				preferSavedCard,
+				preferSavedCard
 			});
 		});
 
@@ -229,7 +238,7 @@ async function runHoldOffScenario(page: Page, scenario: Hold3dsScenario): Promis
 				origin: scenario.origin,
 				destination: scenario.destination,
 				cardLast4,
-				preferSavedCard,
+				preferSavedCard
 			});
 		});
 
@@ -278,99 +287,105 @@ test.use({ role: 'carrier', storageState: undefined });
 test.describe.configure({ timeout: 180_000 });
 
 test.describe('Gateway PG · Carrier · Colaborador — Hold con 3DS @gateway @stripe @hold @3ds @critical @regression', () => {
+	test.describe('Hold ON', () => {
+		test('[TS-STRIPE-TC1037] @critical @3ds @hold @card-new hold+cobro colaborador 3DS — Vincular tarjeta nueva', async ({
+			page
+		}) => {
+			await runHoldOnScenario(page, {
+				client: TEST_DATA.contractorClient,
+				passenger: TEST_DATA.contractorPassenger,
+				origin: TEST_DATA.origin,
+				destination: TEST_DATA.destination,
+				apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
+				cardFlow: 'new'
+			});
+		});
+		// TC1039 en el JSON es un escenario negativo (fallo 3DS); en este spec se mantiene
+		// la cobertura histórica con alwaysAuthenticate. No tiene par -CARD-EXISTING.
+		test('[TS-STRIPE-TC1039] @regression @3ds @hold hold+cobro colaborador 3DS variante', async ({ page }) => {
+			await runHoldOnScenario(page, {
+				client: TEST_DATA.contractorClient,
+				passenger: TEST_DATA.contractorPassenger,
+				origin: TEST_DATA.origin,
+				destination: TEST_DATA.destination,
+				cardLast4: STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4),
+				apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
+				cardFlow: 'new'
+			});
+		});
+		// Par card-existing de TC1037 — canonical_ref TS-STRIPE-TC1037 en normalized-test-cases.json
+		test('[TS-STRIPE-TC1045] @regression @3ds @hold @card-existing hold+cobro colaborador 3DS — Usar tarjeta vinculada existente', async ({
+			page
+		}) => {
+			await runHoldOnScenario(page, {
+				client: TEST_DATA.contractorClient,
+				passenger: TEST_DATA.contractorPassenger,
+				origin: TEST_DATA.origin,
+				destination: TEST_DATA.destination,
+				apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
+				cardFlow: 'existing'
+			});
+		});
+		// DEPRECATED: ver TC canónico TS-STRIPE-TC1037 (fase 2 — duplicado sin card-flow diferenciado)
+		test('[TS-STRIPE-TC1047] @regression @3ds @hold hold+cobro colaborador 3DS variante 2', async ({ page }) => {
+			await runHoldOnScenario(page, {
+				client: TEST_DATA.contractorClient,
+				passenger: TEST_DATA.contractorPassenger,
+				origin: TEST_DATA.origin,
+				destination: TEST_DATA.destination,
+				apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
+				cardFlow: 'new'
+			});
+		});
+	});
 
-  test.describe('Hold ON', () => {
-    test('[TS-STRIPE-TC1037] @critical @3ds @hold @card-new hold+cobro colaborador 3DS — Vincular tarjeta nueva', async ({ page }) => {
-      await runHoldOnScenario(page, {
-        client: TEST_DATA.contractorClient,
-        passenger: TEST_DATA.contractorPassenger,
-        origin: TEST_DATA.origin,
-        destination: TEST_DATA.destination,
-        apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
-        cardFlow: 'new',
-      });
-    });
-    // TC1039 en el JSON es un escenario negativo (fallo 3DS); en este spec se mantiene
-    // la cobertura histórica con alwaysAuthenticate. No tiene par -CARD-EXISTING.
-    test('[TS-STRIPE-TC1039] @regression @3ds @hold hold+cobro colaborador 3DS variante', async ({ page }) => {
-      await runHoldOnScenario(page, {
-        client: TEST_DATA.contractorClient,
-        passenger: TEST_DATA.contractorPassenger,
-        origin: TEST_DATA.origin,
-        destination: TEST_DATA.destination,
-        cardLast4: STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4),
-        apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
-        cardFlow: 'new',
-      });
-    });
-    // Par card-existing de TC1037 — canonical_ref TS-STRIPE-TC1037 en normalized-test-cases.json
-    test('[TS-STRIPE-TC1045] @regression @3ds @hold @card-existing hold+cobro colaborador 3DS — Usar tarjeta vinculada existente', async ({ page }) => {
-      await runHoldOnScenario(page, {
-        client: TEST_DATA.contractorClient,
-        passenger: TEST_DATA.contractorPassenger,
-        origin: TEST_DATA.origin,
-        destination: TEST_DATA.destination,
-        apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
-        cardFlow: 'existing',
-      });
-    });
-    // DEPRECATED: ver TC canónico TS-STRIPE-TC1037 (fase 2 — duplicado sin card-flow diferenciado)
-    test('[TS-STRIPE-TC1047] @regression @3ds @hold hold+cobro colaborador 3DS variante 2', async ({ page }) => {
-      await runHoldOnScenario(page, {
-        client: TEST_DATA.contractorClient,
-        passenger: TEST_DATA.contractorPassenger,
-        origin: TEST_DATA.origin,
-        destination: TEST_DATA.destination,
-        apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
-        cardFlow: 'new',
-      });
-    });
-  });
-
-  test.describe('Hold OFF', () => {
-    test('[TS-STRIPE-TC1038] @regression @3ds @card-new sin hold colaborador 3DS — Vincular tarjeta nueva', async ({ page }) => {
-      await runHoldOffScenario(page, {
-        client: TEST_DATA.contractorClient,
-        passenger: TEST_DATA.contractorPassenger,
-        origin: TEST_DATA.origin,
-        destination: TEST_DATA.destination,
-        apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
-        cardFlow: 'new',
-      });
-    });
-    // Par card-existing de TC1038 — canonical_ref TS-STRIPE-TC1038 en normalized-test-cases.json
-    test('[TS-STRIPE-TC1040] @regression @3ds @card-existing sin hold colaborador 3DS — Usar tarjeta vinculada existente', async ({ page }) => {
-      await runHoldOffScenario(page, {
-        client: TEST_DATA.contractorClient,
-        passenger: TEST_DATA.contractorPassenger,
-        origin: TEST_DATA.origin,
-        destination: TEST_DATA.destination,
-        apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
-        cardFlow: 'existing',
-      });
-    });
-    // DEPRECATED: ver TC canónico TS-STRIPE-TC1038 (fase 2 — duplicado sin card-flow diferenciado)
-    test('[TS-STRIPE-TC1046] @regression @3ds sin hold colaborador 3DS (set 2)', async ({ page }) => {
-      await runHoldOffScenario(page, {
-        client: TEST_DATA.contractorClient,
-        passenger: TEST_DATA.contractorPassenger,
-        origin: TEST_DATA.origin,
-        destination: TEST_DATA.destination,
-        apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
-        cardFlow: 'new',
-      });
-    });
-    // DEPRECATED: ver TC canónico TS-STRIPE-TC1038 (fase 2 — duplicado sin card-flow diferenciado)
-    test('[TS-STRIPE-TC1048] @regression @3ds sin hold colaborador 3DS variante 2', async ({ page }) => {
-      await runHoldOffScenario(page, {
-        client: TEST_DATA.contractorClient,
-        passenger: TEST_DATA.contractorPassenger,
-        origin: TEST_DATA.origin,
-        destination: TEST_DATA.destination,
-        apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
-        cardFlow: 'new',
-      });
-    });
-  });
-
+	test.describe('Hold OFF', () => {
+		test('[TS-STRIPE-TC1038] @regression @3ds @card-new sin hold colaborador 3DS — Vincular tarjeta nueva', async ({
+			page
+		}) => {
+			await runHoldOffScenario(page, {
+				client: TEST_DATA.contractorClient,
+				passenger: TEST_DATA.contractorPassenger,
+				origin: TEST_DATA.origin,
+				destination: TEST_DATA.destination,
+				apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
+				cardFlow: 'new'
+			});
+		});
+		// Par card-existing de TC1038 — canonical_ref TS-STRIPE-TC1038 en normalized-test-cases.json
+		test('[TS-STRIPE-TC1040] @regression @3ds @card-existing sin hold colaborador 3DS — Usar tarjeta vinculada existente', async ({
+			page
+		}) => {
+			await runHoldOffScenario(page, {
+				client: TEST_DATA.contractorClient,
+				passenger: TEST_DATA.contractorPassenger,
+				origin: TEST_DATA.origin,
+				destination: TEST_DATA.destination,
+				apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
+				cardFlow: 'existing'
+			});
+		});
+		// DEPRECATED: ver TC canónico TS-STRIPE-TC1038 (fase 2 — duplicado sin card-flow diferenciado)
+		test('[TS-STRIPE-TC1046] @regression @3ds sin hold colaborador 3DS (set 2)', async ({ page }) => {
+			await runHoldOffScenario(page, {
+				client: TEST_DATA.contractorClient,
+				passenger: TEST_DATA.contractorPassenger,
+				origin: TEST_DATA.origin,
+				destination: TEST_DATA.destination,
+				apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
+				cardFlow: 'new'
+			});
+		});
+		// DEPRECATED: ver TC canónico TS-STRIPE-TC1038 (fase 2 — duplicado sin card-flow diferenciado)
+		test('[TS-STRIPE-TC1048] @regression @3ds sin hold colaborador 3DS variante 2', async ({ page }) => {
+			await runHoldOffScenario(page, {
+				client: TEST_DATA.contractorClient,
+				passenger: TEST_DATA.contractorPassenger,
+				origin: TEST_DATA.origin,
+				destination: TEST_DATA.destination,
+				apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
+				cardFlow: 'new'
+			});
+		});
+	});
 });

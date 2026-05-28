@@ -12,7 +12,12 @@
  */
 import { expect, type Page } from '@playwright/test';
 import { test } from '../../../../../../../TestBase';
-import { DashboardPage, NewTravelPage, TravelDetailPage, TravelManagementPage } from '../../../../../../../pages/carrier';
+import {
+	DashboardPage,
+	NewTravelPage,
+	TravelDetailPage,
+	TravelManagementPage
+} from '../../../../../../../pages/carrier';
 import { expectNoThreeDSModal, loginAsDispatcher, TEST_DATA } from '../../../../../fixtures/gateway.fixtures';
 import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../../../../helpers/travel-cleanup';
 
@@ -59,7 +64,7 @@ async function webPhaseCargoContractor(page: Page): Promise<TravelIdRef> {
 		await expect
 			.poll(() => travelIdRef?.travelId, {
 				timeout: 30_000,
-				message: '[Cargo a Bordo contractor] POST /travels no capturó travelId tras el submit',
+				message: '[Cargo a Bordo contractor] POST /travels no capturó travelId tras el submit'
 			})
 			.not.toBeNull();
 	});
@@ -73,13 +78,15 @@ async function webPhaseCargoContractor(page: Page): Promise<TravelIdRef> {
 }
 
 test.describe('Gateway PG · Carrier · Colaborador/Contractor — Cargo a Bordo · 3DS @gateway @stripe @cargo-a-bordo @hold @3ds @critical', () => {
-
 	test('[TS-STRIPE-TC1107] @critical @3ds @cargo-a-bordo pago exitoso con 3DS desde Driver App', async ({ page }) => {
 		let travelIdRef: TravelIdRef | null = null;
 		try {
 			travelIdRef = await webPhaseCargoContractor(page);
 			await test.step('[DRIVER APP] Conductor cobra → 3DS requerido → pasajero aprueba → cobro exitoso', async () => {
-				test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium + DriverTripPaymentScreen + manejo de WebView 3DS.');
+				test.fixme(
+					true,
+					'PENDIENTE: fase Driver App — requiere Appium + DriverTripPaymentScreen + manejo de WebView 3DS.'
+				);
 			});
 		} finally {
 			if (travelIdRef) await cancelTravelIfCreated(page, travelIdRef);
@@ -121,5 +128,4 @@ test.describe('Gateway PG · Carrier · Colaborador/Contractor — Cargo a Bordo
 			if (travelIdRef) await cancelTravelIfCreated(page, travelIdRef);
 		}
 	});
-
 });

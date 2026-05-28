@@ -52,150 +52,143 @@ function createJourney(testCaseId: string) {
 		portal: 'pax',
 		role: 'passenger',
 		flowType: 'passenger-app-driver-app',
-		passengerProfileMode: 'business',
+		passengerProfileMode: 'business'
 	});
 }
 
 const SCENARIOS: BusinessHold3dsScenario[] = [
 	{
 		testCaseId: 'TS-STRIPE-TC1021',
-		title:
-			'Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3DS — Vincular tarjeta nueva',
+		title: 'Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3DS — Vincular tarjeta nueva',
 		holdMode: 'on',
 		cardFlow: 'new',
 		passengerName: PASSENGERS.colaborador.name,
 		origin: TEST_DATA.origin,
 		destination: TEST_DATA.destination,
 		expectedTripOutcome:
-			'Deberia crear el viaje con hold autorizado despues de completar el challenge 3DS exitosamente',
+			'Deberia crear el viaje con hold autorizado despues de completar el challenge 3DS exitosamente'
 	},
 	{
 		testCaseId: 'TS-STRIPE-TC1022',
-		title:
-			'Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS — Vincular tarjeta nueva',
+		title: 'Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS — Vincular tarjeta nueva',
 		holdMode: 'off',
 		cardFlow: 'new',
 		passengerName: PASSENGERS.colaborador.name,
 		origin: TEST_DATA.origin,
 		destination: TEST_DATA.destination,
 		expectedTripOutcome:
-			'Deberia crear el viaje sin hold (cobro diferido) despues de completar el challenge 3DS exitosamente',
+			'Deberia crear el viaje sin hold (cobro diferido) despues de completar el challenge 3DS exitosamente'
 	},
 	{
 		testCaseId: 'TS-STRIPE-TC1023',
-		title:
-			'Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3DS — Usar tarjeta vinculada existente',
+		title: 'Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3DS — Usar tarjeta vinculada existente',
 		holdMode: 'on',
 		cardFlow: 'existing',
 		passengerName: PASSENGERS.colaborador.name,
 		origin: TEST_DATA.origin,
 		destination: TEST_DATA.destination,
 		expectedTripOutcome:
-			'Deberia reusar la tarjeta 3DS ya vinculada y crear el hold (el challenge puede o no dispararse segun la autorizacion previa)',
+			'Deberia reusar la tarjeta 3DS ya vinculada y crear el hold (el challenge puede o no dispararse segun la autorizacion previa)'
 	},
 	{
 		testCaseId: 'TS-STRIPE-TC1024',
-		title:
-			'Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS — Usar tarjeta vinculada existente',
+		title: 'Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS — Usar tarjeta vinculada existente',
 		holdMode: 'off',
 		cardFlow: 'existing',
 		passengerName: PASSENGERS.colaborador.name,
 		origin: TEST_DATA.origin,
 		destination: TEST_DATA.destination,
-		expectedTripOutcome:
-			'Deberia reusar la tarjeta 3DS ya vinculada y crear el viaje sin hold (cobro diferido)',
-	},
+		expectedTripOutcome: 'Deberia reusar la tarjeta 3DS ya vinculada y crear el viaje sin hold (cobro diferido)'
+	}
 ];
 
-test.describe.serial('Gateway PG · E2E Mobile · App Pax Business — Hold con 3DS @gateway @stripe @e2e-hybrid @hold @3ds', () => {
+test.describe
+	.serial('Gateway PG · E2E Mobile · App Pax Business — Hold con 3DS @gateway @stripe @e2e-hybrid @hold @3ds', () => {
 	for (const scenario of SCENARIOS) {
 		test.describe(`[${scenario.testCaseId}] ${scenario.title}`, () => {
-			test(
-				`hold=${scenario.holdMode} · 3ds · card=${scenario.cardFlow}`,
-				async () => {
-					// Test productivo habilitado (fixme levantado Fase P3).
-					// Skip condicional: si no hay servidor Appium disponible el test no
-					// puede ejecutarse (requiere emulador Android + PassengerWalletScreen).
-					// TODO(QA): después de la primera corrida con APPIUM_SERVER_URL seteado,
-					//   validar manualmente que handleThreeDsPopup resuelve el challenge en
-					//   modo business y que PassengerTripHappyPathHarness expone hold toggle.
-					test.skip(
-						!process.env.APPIUM_SERVER_URL,
-						`${scenario.testCaseId} requiere servidor Appium Android activo (APPIUM_SERVER_URL).`,
-					);
+			test(`hold=${scenario.holdMode} · 3ds · card=${scenario.cardFlow}`, async () => {
+				// Test productivo habilitado (fixme levantado Fase P3).
+				// Skip condicional: si no hay servidor Appium disponible el test no
+				// puede ejecutarse (requiere emulador Android + PassengerWalletScreen).
+				// TODO(QA): después de la primera corrida con APPIUM_SERVER_URL seteado,
+				//   validar manualmente que handleThreeDsPopup resuelve el challenge en
+				//   modo business y que PassengerTripHappyPathHarness expone hold toggle.
+				test.skip(
+					!process.env.APPIUM_SERVER_URL,
+					`${scenario.testCaseId} requiere servidor Appium Android activo (APPIUM_SERVER_URL).`
+				);
 
-					const harness = new PassengerTripHappyPathHarness(getPassengerAppConfig(), undefined, {
-						profileMode: 'business',
+				const harness = new PassengerTripHappyPathHarness(getPassengerAppConfig(), undefined, {
+					profileMode: 'business'
+				});
+				let journey = createJourney(scenario.testCaseId);
+				const card = {
+					number: threeDsCard.number,
+					expiry: threeDsCard.exp,
+					cvc: threeDsCard.cvc,
+					holderName: threeDsCard.holderName
+				};
+				const cardLast4 = card.number.replace(/\D/g, '').slice(-4); // 3184
+
+				try {
+					// TODO(backend): Precondicion — garantizar enableCreditCardHold = scenario.holdMode
+					// en el carrier business del colaborador. Extender OperationalPreferencesPage
+					// o crear helper API si el toggle no es accesible desde app-pax UI.
+
+					await test.step(`[${scenario.testCaseId}] start passenger session (business mode)`, async () => {
+						await harness.startSession();
 					});
-					let journey = createJourney(scenario.testCaseId);
-					const card = {
-						number: threeDsCard.number,
-						expiry: threeDsCard.exp,
-						cvc: threeDsCard.cvc,
-						holderName: threeDsCard.holderName,
-					};
-					const cardLast4 = card.number.replace(/\D/g, '').slice(-4); // 3184
 
-					try {
-						// TODO(backend): Precondicion — garantizar enableCreditCardHold = scenario.holdMode
-						// en el carrier business del colaborador. Extender OperationalPreferencesPage
-						// o crear helper API si el toggle no es accesible desde app-pax UI.
-
-						await test.step(`[${scenario.testCaseId}] start passenger session (business mode)`, async () => {
-							await harness.startSession();
+					if (scenario.cardFlow === 'new') {
+						// TODO(wallet-cleanup): eliminar del wallet cualquier tarjeta con
+						// last4 = cardLast4 (3184) para forzar vinculacion nueva.
+						await test.step(`[${scenario.testCaseId}] add new 3DS card to wallet`, async () => {
+							const walletState = await harness.ensureWalletCard(card);
+							// Deberia agregar la tarjeta 3DS nueva al wallet (puede disparar 3DS de validacion inicial).
+							expect(walletState).toBe('added');
 						});
-
-						if (scenario.cardFlow === 'new') {
-							// TODO(wallet-cleanup): eliminar del wallet cualquier tarjeta con
-							// last4 = cardLast4 (3184) para forzar vinculacion nueva.
-							await test.step(`[${scenario.testCaseId}] add new 3DS card to wallet`, async () => {
-								const walletState = await harness.ensureWalletCard(card);
-								// Deberia agregar la tarjeta 3DS nueva al wallet (puede disparar 3DS de validacion inicial).
-								expect(walletState).toBe('added');
-							});
-						} else {
-							// TODO(wallet-precondition): garantizar que la tarjeta 3DS YA este vinculada
-							// al colaborador business antes del test. Hoy ensureWalletCard vuelve
-							// 'already-present' cuando corresponde.
-							await test.step(`[${scenario.testCaseId}] select existing 3DS wallet card`, async () => {
-								const walletState = await harness.ensureWalletCard(card);
-								// Deberia detectar la tarjeta 3DS ya vinculada como existente.
-								expect(walletState).toMatch(/added|already-present/);
-								await harness.selectExistingCard(cardLast4);
-							});
-						}
-
-						await test.step(`[${scenario.testCaseId}] create business trip with 3DS challenge`, async () => {
-							// handleThreeDsPopup se dispara internamente cuando el backend pide 3DS.
-							const tripId = await harness.createTrip(scenario.origin, scenario.destination, cardLast4);
-							// Deberia crear el viaje business 3DS y devolver tripId estable.
-							// Comentario matriz: ${scenario.expectedTripOutcome}
-							expect(tripId, scenario.expectedTripOutcome).toBeTruthy();
-
-							journey = orchestrator.attachTripData(journey, {
-								tripId: tripId ?? 'TODO',
-							});
-							journey = orchestrator.prepareMobileHandoff(
-								journey,
-								`Passenger business 3DS trip created for ${scenario.testCaseId} (hold=${scenario.holdMode}, card=${scenario.cardFlow})`,
-							);
-							await orchestrator.persist(journey);
+					} else {
+						// TODO(wallet-precondition): garantizar que la tarjeta 3DS YA este vinculada
+						// al colaborador business antes del test. Hoy ensureWalletCard vuelve
+						// 'already-present' cuando corresponde.
+						await test.step(`[${scenario.testCaseId}] select existing 3DS wallet card`, async () => {
+							const walletState = await harness.ensureWalletCard(card);
+							// Deberia detectar la tarjeta 3DS ya vinculada como existente.
+							expect(walletState).toMatch(/added|already-present/);
+							await harness.selectExistingCard(cardLast4);
 						});
+					}
 
-						// TODO(driver-handoff): validar cobro desde app driver una vez que
-						// DriverTripHappyPathHarness este wireado a este journey (flow 2).
-					} catch (error) {
-						journey = orchestrator.fail(
+					await test.step(`[${scenario.testCaseId}] create business trip with 3DS challenge`, async () => {
+						// handleThreeDsPopup se dispara internamente cuando el backend pide 3DS.
+						const tripId = await harness.createTrip(scenario.origin, scenario.destination, cardLast4);
+						// Deberia crear el viaje business 3DS y devolver tripId estable.
+						// Comentario matriz: ${scenario.expectedTripOutcome}
+						expect(tripId, scenario.expectedTripOutcome).toBeTruthy();
+
+						journey = orchestrator.attachTripData(journey, {
+							tripId: tripId ?? 'TODO'
+						});
+						journey = orchestrator.prepareMobileHandoff(
 							journey,
-							error instanceof Error ? error.message : `Draft ${scenario.testCaseId} failed`,
+							`Passenger business 3DS trip created for ${scenario.testCaseId} (hold=${scenario.holdMode}, card=${scenario.cardFlow})`
 						);
 						await orchestrator.persist(journey);
-						throw error;
-					} finally {
-						await harness.endSession();
-					}
-				},
-			);
+					});
+
+					// TODO(driver-handoff): validar cobro desde app driver una vez que
+					// DriverTripHappyPathHarness este wireado a este journey (flow 2).
+				} catch (error) {
+					journey = orchestrator.fail(
+						journey,
+						error instanceof Error ? error.message : `Draft ${scenario.testCaseId} failed`
+					);
+					await orchestrator.persist(journey);
+					throw error;
+				} finally {
+					await harness.endSession();
+				}
+			});
 		});
 	}
 });

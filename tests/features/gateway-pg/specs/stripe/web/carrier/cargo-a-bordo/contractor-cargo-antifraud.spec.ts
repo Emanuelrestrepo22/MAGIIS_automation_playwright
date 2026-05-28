@@ -11,7 +11,12 @@
  */
 import { expect, type Page } from '@playwright/test';
 import { test } from '../../../../../../../TestBase';
-import { DashboardPage, NewTravelPage, TravelDetailPage, TravelManagementPage } from '../../../../../../../pages/carrier';
+import {
+	DashboardPage,
+	NewTravelPage,
+	TravelDetailPage,
+	TravelManagementPage
+} from '../../../../../../../pages/carrier';
 import { expectNoThreeDSModal, loginAsDispatcher, TEST_DATA } from '../../../../../fixtures/gateway.fixtures';
 import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../../../../helpers/travel-cleanup';
 
@@ -58,7 +63,7 @@ async function webPhaseCargoContractor(page: Page): Promise<TravelIdRef> {
 		await expect
 			.poll(() => travelIdRef?.travelId, {
 				timeout: 15_000,
-				message: '[Cargo a Bordo contractor] POST /travels no capturó travelId tras el submit',
+				message: '[Cargo a Bordo contractor] POST /travels no capturó travelId tras el submit'
 			})
 			.not.toBeNull();
 	});
@@ -72,7 +77,6 @@ async function webPhaseCargoContractor(page: Page): Promise<TravelIdRef> {
 }
 
 test.describe('Gateway PG · Carrier · Colaborador/Contractor — Cargo a Bordo · Antifraud @gateway @stripe @cargo-a-bordo @hold @decline @regression', () => {
-
 	test('[TS-STRIPE-TC1102] @regression @cargo-a-bordo tarjeta alto riesgo desde Driver App', async ({ page }) => {
 		let travelIdRef: TravelIdRef | null = null;
 		try {
@@ -85,7 +89,9 @@ test.describe('Gateway PG · Carrier · Colaborador/Contractor — Cargo a Bordo
 		}
 	});
 
-	test('[TS-STRIPE-TC1103] @regression @cargo-a-bordo tarjeta siempre bloqueada desde Driver App', async ({ page }) => {
+	test('[TS-STRIPE-TC1103] @regression @cargo-a-bordo tarjeta siempre bloqueada desde Driver App', async ({
+		page
+	}) => {
 		let travelIdRef: TravelIdRef | null = null;
 		try {
 			travelIdRef = await webPhaseCargoContractor(page);
@@ -132,5 +138,4 @@ test.describe('Gateway PG · Carrier · Colaborador/Contractor — Cargo a Bordo
 			if (travelIdRef) await cancelTravelIfCreated(page, travelIdRef);
 		}
 	});
-
 });

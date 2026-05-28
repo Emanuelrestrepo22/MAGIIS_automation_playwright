@@ -24,7 +24,7 @@ import { remote } from 'webdriverio';
 import { writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 
-const UDID    = process.env.ANDROID_UDID        ?? 'R92XB0B8F3J';
+const UDID = process.env.ANDROID_UDID ?? 'R92XB0B8F3J';
 const PACKAGE = process.env.ANDROID_APP_PACKAGE ?? 'com.magiis.app.test.driver';
 
 const log = (msg: string) => console.log(`[happy-path] ${msg}`);
@@ -53,7 +53,7 @@ const RESULTS: StepResult[] = [];
 async function handle3DS(
 	driver: WebdriverIO.Browser,
 	logFn: (m: string) => void,
-	dumpFn: (label: string) => Promise<void>,
+	dumpFn: (label: string) => Promise<void>
 ): Promise<'completed' | 'not-present' | 'failed' | string> {
 	// Textos del botón de aprobación en el challenge Stripe test mode.
 	// Fuente: Stripe test 3DS UI para tarjetas:
@@ -62,37 +62,40 @@ async function handle3DS(
 	// El iframe de Stripe en test mode muestra botones en inglés.
 	// Si la app localiza el iframe, pueden aparecer en español.
 	const APPROVE_TEXTS = [
-		'Complete',                    // Stripe test 3DS — botón principal
-		'Complete authentication',     // Stripe test 3DS — texto largo
+		'Complete', // Stripe test 3DS — botón principal
+		'Complete authentication', // Stripe test 3DS — texto largo
 		'COMPLETE',
-		'Completar',                   // localización español
+		'Completar', // localización español
 		'Completar autenticación',
 		'Autorizar',
 		'Aprobar',
 		'Confirm',
-		'Submit',
+		'Submit'
 	];
 
 	// ── A: Detectar nuevo contexto WebView (3DS en Chrome Custom Tab) ─────────
-	const contexts = await driver.getContexts() as string[];
+	const contexts = (await driver.getContexts()) as string[];
 	logFn(`  3DS check — contextos: ${contexts.join(', ')}`);
 
-	const threeDSContext = contexts.find(c =>
-		c.startsWith('WEBVIEW') && !c.includes('com.magiis')
-	);
+	const threeDSContext = contexts.find(c => c.startsWith('WEBVIEW') && !c.includes('com.magiis'));
 	if (threeDSContext) {
 		logFn(`  3DS contexto externo detectado: ${threeDSContext}`);
 		await driver.switchContext(threeDSContext);
 		await dumpFn('P6-3DS-external-context');
 
-		const completed = await driver.execute((texts: string[]) => {
+		const completed = (await driver.execute((texts: string[]) => {
 			const btns = Array.from(document.querySelectorAll('button, [role="button"], a')) as HTMLElement[];
 			for (const txt of texts) {
-				const btn = btns.find(b => (b.innerText ?? b.textContent ?? '').trim() === txt && b.offsetParent !== null);
-				if (btn) { (btn as HTMLButtonElement).click(); return true; }
+				const btn = btns.find(
+					b => (b.innerText ?? b.textContent ?? '').trim() === txt && b.offsetParent !== null
+				);
+				if (btn) {
+					(btn as HTMLButtonElement).click();
+					return true;
+				}
 			}
 			return false;
-		}, APPROVE_TEXTS) as boolean;
+		}, APPROVE_TEXTS)) as boolean;
 
 		// Volver al WebView principal
 		const mainWV = contexts.find(c => c.includes('com.magiis'));
@@ -105,12 +108,10 @@ async function handle3DS(
 	const mainWV = contexts.find(c => c.includes('com.magiis'));
 	if (mainWV) await driver.switchContext(mainWV);
 
-	const inlineResult = await driver.execute((texts: string[]) => {
+	const inlineResult = (await driver.execute((texts: string[]) => {
 		// Buscar iframe de Stripe/3DS
 		const iframes = Array.from(document.querySelectorAll('iframe')) as HTMLIFrameElement[];
-		const threeDSFrame = iframes.find(f =>
-			/stripe|hooks|acs|3ds|authenticate|verify/i.test(f.src ?? f.name ?? '')
-		);
+		const threeDSFrame = iframes.find(f => /stripe|hooks|acs|3ds|authenticate|verify/i.test(f.src ?? f.name ?? ''));
 		if (!threeDSFrame) return 'not-present';
 
 		// Intentar click dentro del iframe (solo funciona si mismo origen)
@@ -119,31 +120,41 @@ async function handle3DS(
 			if (!frameDoc) return 'iframe-no-access';
 			const btns = Array.from(frameDoc.querySelectorAll('button, [role="button"], a')) as HTMLElement[];
 			for (const txt of texts) {
-				const btn = btns.find(b => (b.innerText ?? b.textContent ?? '').trim() === txt && b.offsetParent !== null);
-				if (btn) { (btn as HTMLButtonElement).click(); return 'completed'; }
+				const btn = btns.find(
+					b => (b.innerText ?? b.textContent ?? '').trim() === txt && b.offsetParent !== null
+				);
+				if (btn) {
+					(btn as HTMLButtonElement).click();
+					return 'completed';
+				}
 			}
 			return 'iframe-btn-not-found';
 		} catch {
 			return 'iframe-cross-origin';
 		}
-	}, APPROVE_TEXTS) as string;
+	}, APPROVE_TEXTS)) as string;
 
 	if (inlineResult === 'not-present') {
 		// ── C: Buscar en ion-modal / overlays visibles ─────────────────────────
-		const modalResult = await driver.execute((texts: string[]) => {
-			const overlays = Array.from(document.querySelectorAll('ion-modal, [class*="3ds"], [class*="stripe"], app-confirm-modal')) as HTMLElement[];
-			const visible  = overlays.filter(el => el.offsetParent !== null);
+		const modalResult = (await driver.execute((texts: string[]) => {
+			const overlays = Array.from(
+				document.querySelectorAll('ion-modal, [class*="3ds"], [class*="stripe"], app-confirm-modal')
+			) as HTMLElement[];
+			const visible = overlays.filter(el => el.offsetParent !== null);
 			if (!visible.length) return 'not-present';
 
 			for (const overlay of visible) {
 				const btns = Array.from(overlay.querySelectorAll('button, [role="button"]')) as HTMLElement[];
 				for (const txt of texts) {
 					const btn = btns.find(b => (b.innerText ?? '').trim() === txt && b.offsetParent !== null);
-					if (btn) { (btn as HTMLButtonElement).click(); return 'completed'; }
+					if (btn) {
+						(btn as HTMLButtonElement).click();
+						return 'completed';
+					}
 				}
 			}
 			return 'modal-btn-not-found';
-		}, APPROVE_TEXTS) as string;
+		}, APPROVE_TEXTS)) as string;
 
 		return modalResult as 'completed' | 'not-present' | 'failed';
 	}
@@ -168,46 +179,58 @@ function saveEvidence(label: string, content: string): void {
 
 async function run(): Promise<void> {
 	const driver = await remote({
-		protocol: 'http', hostname: 'localhost', port: 4723, path: '/',
+		protocol: 'http',
+		hostname: 'localhost',
+		port: 4723,
+		path: '/',
 		logLevel: 'warn',
 		capabilities: {
-			platformName:                      'Android',
-			'appium:automationName':           'UiAutomator2',
-			'appium:deviceName':               'SM-A055M',
-			'appium:udid':                     UDID,
-			'appium:appPackage':               PACKAGE,
-			'appium:appActivity':              '.MainActivity',
-			'appium:noReset':                  true,
-			'appium:forceAppLaunch':           false,
-			'appium:newCommandTimeout':        180,
-			'appium:chromedriverAutodownload': true,
-		} as Record<string, unknown>,
+			platformName: 'Android',
+			'appium:automationName': 'UiAutomator2',
+			'appium:deviceName': 'SM-A055M',
+			'appium:udid': UDID,
+			'appium:appPackage': PACKAGE,
+			'appium:appActivity': '.MainActivity',
+			'appium:noReset': true,
+			'appium:forceAppLaunch': false,
+			'appium:newCommandTimeout': 180,
+			'appium:chromedriverAutodownload': true
+		} as Record<string, unknown>
 	});
 	log('✓ Sesión adjuntada');
 
 	// ── Helpers ────────────────────────────────────────────────────────────────
 
 	const switchWV = async (): Promise<boolean> => {
-		const ctxs = await driver.getContexts() as string[];
-		const wv   = ctxs.find((c: string) => c.startsWith('WEBVIEW'));
-		if (wv) { await driver.switchContext(wv); return true; }
+		const ctxs = (await driver.getContexts()) as string[];
+		const wv = ctxs.find((c: string) => c.startsWith('WEBVIEW'));
+		if (wv) {
+			await driver.switchContext(wv);
+			return true;
+		}
 		return false;
 	};
 
-	const getUrl = (): Promise<string> =>
-		driver.execute<string, []>(() => window.location.href).catch(() => '');
+	const getUrl = (): Promise<string> => driver.execute<string, []>(() => window.location.href).catch(() => '');
 
 	/** Click JS acotado al primer contenedor visible (sin ion-page-hidden). */
 	const jsClickInContainer = (containerSel: string, btnText: string): Promise<boolean> =>
-		driver.execute((cSel: string, txt: string) => {
-			const containers = Array.from(document.querySelectorAll(cSel)) as HTMLElement[];
-			const active = containers.find(el => !el.classList.contains('ion-page-hidden'));
-			if (!active) return false;
-			const btns = Array.from(active.querySelectorAll('button')) as HTMLButtonElement[];
-			const btn  = btns.find(b => (b.innerText ?? '').trim() === txt && b.offsetParent !== null);
-			if (btn) { btn.click(); return true; }
-			return false;
-		}, containerSel, btnText);
+		driver.execute(
+			(cSel: string, txt: string) => {
+				const containers = Array.from(document.querySelectorAll(cSel)) as HTMLElement[];
+				const active = containers.find(el => !el.classList.contains('ion-page-hidden'));
+				if (!active) return false;
+				const btns = Array.from(active.querySelectorAll('button')) as HTMLButtonElement[];
+				const btn = btns.find(b => (b.innerText ?? '').trim() === txt && b.offsetParent !== null);
+				if (btn) {
+					btn.click();
+					return true;
+				}
+				return false;
+			},
+			containerSel,
+			btnText
+		);
 
 	/** Click JS en cualquier modal visible (app-confirm-modal, ion-modal). */
 	const jsClickModal = (btnText: string): Promise<boolean> =>
@@ -218,8 +241,11 @@ async function run(): Promise<void> {
 				for (const modal of modals) {
 					if (modal.offsetParent === null) continue;
 					const btns = Array.from(modal.querySelectorAll('button')) as HTMLButtonElement[];
-					const btn  = btns.find(b => (b.innerText ?? '').trim() === txt && b.offsetParent !== null);
-					if (btn) { btn.click(); return true; }
+					const btn = btns.find(b => (b.innerText ?? '').trim() === txt && b.offsetParent !== null);
+					if (btn) {
+						btn.click();
+						return true;
+					}
 				}
 			}
 			return false;
@@ -238,22 +264,30 @@ async function run(): Promise<void> {
 	};
 
 	const dumpScreen = async (label: string): Promise<void> => {
-		const content = await driver.execute<string, []>(() => {
-			const lines: string[] = [`URL: ${window.location.href}`];
-			(document.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).forEach(el => {
-				const t   = (el.innerText ?? '').trim().slice(0, 80);
-				const cls = (el.className ?? '').toString().slice(0, 60);
-				const vis = el.offsetParent !== null;
-				if (t) lines.push(`[BTN vis=${vis}] class="${cls}" text="${t}"`);
-			});
-			['app-page-travel-confirm', 'app-page-travel-to-start', 'app-page-travel-in-progress',
-			 'app-travel-resume', 'app-confirm-modal', 'page-home'].forEach(sel => {
-				(document.querySelectorAll(sel) as NodeListOf<Element>).forEach(el => {
-					lines.push(`[CONTAINER] ${sel} class="${(el.className ?? '').toString().slice(0, 80)}"`);
+		const content = await driver
+			.execute<string, []>(() => {
+				const lines: string[] = [`URL: ${window.location.href}`];
+				(document.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).forEach(el => {
+					const t = (el.innerText ?? '').trim().slice(0, 80);
+					const cls = (el.className ?? '').toString().slice(0, 60);
+					const vis = el.offsetParent !== null;
+					if (t) lines.push(`[BTN vis=${vis}] class="${cls}" text="${t}"`);
 				});
-			});
-			return lines.join('\n');
-		}).catch(e => `JS error: ${e}`);
+				[
+					'app-page-travel-confirm',
+					'app-page-travel-to-start',
+					'app-page-travel-in-progress',
+					'app-travel-resume',
+					'app-confirm-modal',
+					'page-home'
+				].forEach(sel => {
+					(document.querySelectorAll(sel) as NodeListOf<Element>).forEach(el => {
+						lines.push(`[CONTAINER] ${sel} class="${(el.className ?? '').toString().slice(0, 80)}"`);
+					});
+				});
+				return lines.join('\n');
+			})
+			.catch(e => `JS error: ${e}`);
 		saveEvidence(label, content);
 	};
 
@@ -286,7 +320,11 @@ async function run(): Promise<void> {
 
 	const ok2 = await jsClickInContainer('app-page-travel-to-start', 'Empezar Viaje');
 	log(ok2 ? '✓ Tap "Empezar Viaje"' : '⚠ No encontrado');
-	RESULTS.push({ step: 'P2-EmpezarViaje', status: (url2.includes('TravelToStartPage') && ok2) ? 'OK' : 'FAIL', url: url2 });
+	RESULTS.push({
+		step: 'P2-EmpezarViaje',
+		status: url2.includes('TravelToStartPage') && ok2 ? 'OK' : 'FAIL',
+		url: url2
+	});
 
 	// ── PASO 3: Modal inicio → Si ──────────────────────────────────────────────
 	log('\n══ PASO 3: Confirmar inicio (modal) ══');
@@ -322,9 +360,9 @@ async function run(): Promise<void> {
 	log(`URL: ${url6}`);
 	await dumpScreen('P6-resume');
 
-	const CLOSE_BTNS   = ['Cerrar Viaje', 'Firmar y Cerrar viaje', 'Finalizar Viaje'];
-	const MAX_ITER     = 4;
-	let   iterCount    = 0;
+	const CLOSE_BTNS = ['Cerrar Viaje', 'Firmar y Cerrar viaje', 'Finalizar Viaje'];
+	const MAX_ITER = 4;
+	let iterCount = 0;
 	const cardsTapped: string[] = [];
 	const closesBtnsTapped: string[] = [];
 
@@ -340,10 +378,13 @@ async function run(): Promise<void> {
 			if (!container) return '';
 			const candidates = [
 				...Array.from(container.querySelectorAll('button.payment, button[class*="payment"]')),
-				...Array.from(container.querySelectorAll('div.travel-payment button')),
+				...Array.from(container.querySelectorAll('div.travel-payment button'))
 			] as HTMLButtonElement[];
 			const visible = candidates.find(b => b.offsetParent !== null);
-			if (visible) { visible.click(); return (visible.innerText ?? '').trim(); }
+			if (visible) {
+				visible.click();
+				return (visible.innerText ?? '').trim();
+			}
 			return '';
 		});
 		if (tappedCard) {
@@ -353,18 +394,24 @@ async function run(): Promise<void> {
 		}
 
 		// Tap botón de cierre (no deshabilitado)
-		const tappedClose = await driver.execute((candidates: string[]) => {
+		const tappedClose = (await driver.execute((candidates: string[]) => {
 			const container = document.querySelector('app-travel-resume');
 			if (!container) return '';
 			const btns = Array.from(container.querySelectorAll('button')) as HTMLButtonElement[];
 			for (const txt of candidates) {
 				const btn = btns.find(
-					b => (b.innerText ?? '').trim() === txt && b.offsetParent !== null && !(b as HTMLButtonElement).disabled
+					b =>
+						(b.innerText ?? '').trim() === txt &&
+						b.offsetParent !== null &&
+						!(b as HTMLButtonElement).disabled
 				);
-				if (btn) { btn.click(); return txt; }
+				if (btn) {
+					btn.click();
+					return txt;
+				}
 			}
 			return '';
-		}, CLOSE_BTNS) as string;
+		}, CLOSE_BTNS)) as string;
 
 		if (tappedClose) {
 			closesBtnsTapped.push(tappedClose);
@@ -392,16 +439,16 @@ async function run(): Promise<void> {
 	}
 
 	RESULTS.push({
-		step:   'P6a-SeleccionarTarjeta',
+		step: 'P6a-SeleccionarTarjeta',
 		status: 'OK',
-		url:    url6,
-		note:   cardsTapped.length ? cardsTapped.join(', ') : 'N/A',
+		url: url6,
+		note: cardsTapped.length ? cardsTapped.join(', ') : 'N/A'
 	});
 	RESULTS.push({
-		step:   'P6b-CerrarViaje',
+		step: 'P6b-CerrarViaje',
 		status: closesBtnsTapped.length ? 'OK' : 'FAIL',
-		url:    url6,
-		note:   closesBtnsTapped.join(' → '),
+		url: url6,
+		note: closesBtnsTapped.join(' → ')
 	});
 
 	// ── PASO 7: Validar Home ───────────────────────────────────────────────────
@@ -412,7 +459,12 @@ async function run(): Promise<void> {
 	log(`URL final: ${urlFinal}`);
 	const homeOk = urlFinal.includes('FROM_TRAVEL_CLOSED') || urlFinal.includes('/navigator/home');
 	await dumpScreen('P7-home-final');
-	RESULTS.push({ step: 'P7-Home', status: homeOk ? 'OK' : 'FAIL', url: urlFinal, note: homeOk ? 'FROM_TRAVEL_CLOSED=true' : 'URL inesperada' });
+	RESULTS.push({
+		step: 'P7-Home',
+		status: homeOk ? 'OK' : 'FAIL',
+		url: urlFinal,
+		note: homeOk ? 'FROM_TRAVEL_CLOSED=true' : 'URL inesperada'
+	});
 
 	// ── Reporte ────────────────────────────────────────────────────────────────
 	log('\n══════════════════════════════════════════');

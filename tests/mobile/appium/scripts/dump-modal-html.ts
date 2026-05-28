@@ -10,30 +10,33 @@ import { remote } from 'webdriverio';
 import { writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 
-const UDID        = process.env.ANDROID_UDID        ?? 'R92XB0B8F3J';
+const UDID = process.env.ANDROID_UDID ?? 'R92XB0B8F3J';
 const APP_PACKAGE = process.env.ANDROID_APP_PACKAGE ?? 'com.magiis.app.test.passenger';
-const LABEL       = process.env.SCREEN_LABEL        ?? 'modal-deep';
-const DUMP_DIR    = process.env.DUMP_DIR            ?? 'evidence/dom-dump';
+const LABEL = process.env.SCREEN_LABEL ?? 'modal-deep';
+const DUMP_DIR = process.env.DUMP_DIR ?? 'evidence/dom-dump';
 
 async function run(): Promise<void> {
 	const driver = await remote({
-		protocol: 'http', hostname: 'localhost', port: 4723, path: '/',
+		protocol: 'http',
+		hostname: 'localhost',
+		port: 4723,
+		path: '/',
 		logLevel: 'warn',
 		capabilities: {
-			platformName:               'Android',
-			'appium:automationName':    'UiAutomator2',
-			'appium:deviceName':        'Pixel_7',
-			'appium:udid':              UDID,
-			'appium:appPackage':        APP_PACKAGE,
-			'appium:appActivity':       '.MainActivity',
-			'appium:noReset':           true,
-			'appium:forceAppLaunch':    false,
+			platformName: 'Android',
+			'appium:automationName': 'UiAutomator2',
+			'appium:deviceName': 'Pixel_7',
+			'appium:udid': UDID,
+			'appium:appPackage': APP_PACKAGE,
+			'appium:appActivity': '.MainActivity',
+			'appium:noReset': true,
+			'appium:forceAppLaunch': false,
 			'appium:newCommandTimeout': 120,
-			'appium:chromedriverAutodownload': true,
-		} as Record<string, unknown>,
+			'appium:chromedriverAutodownload': true
+		} as Record<string, unknown>
 	});
 
-	const contexts = await driver.getContexts() as string[];
+	const contexts = (await driver.getContexts()) as string[];
 	const webview = contexts.find(c => c.startsWith('WEBVIEW'));
 	if (!webview) {
 		console.error('No WEBVIEW context');
@@ -42,12 +45,16 @@ async function run(): Promise<void> {
 	}
 	await driver.switchContext(webview);
 
-	const snapshot = await driver.execute<Record<string, unknown>, []>(() => {
+	const snapshot = (await driver.execute<Record<string, unknown>, []>(() => {
 		const host = document.querySelector('app-credit-card-payment-data') as HTMLElement | null;
 		const form = host?.querySelector('form') as HTMLFormElement | null;
-		const button = Array.from(host?.querySelectorAll('button, ion-button') ?? []).find(b => (b.textContent ?? '').trim().toUpperCase().includes('GUARDAR')) as HTMLElement | null;
+		const button = Array.from(host?.querySelectorAll('button, ion-button') ?? []).find(b =>
+			(b.textContent ?? '').trim().toUpperCase().includes('GUARDAR')
+		) as HTMLElement | null;
 
-		const errorCandidates = Array.from(host?.querySelectorAll('.error, .form-error, [class*="error"]') ?? []) as HTMLElement[];
+		const errorCandidates = Array.from(
+			host?.querySelectorAll('.error, .form-error, [class*="error"]') ?? []
+		) as HTMLElement[];
 		const errors = errorCandidates
 			.filter(el => el.offsetParent !== null)
 			.map(el => ({ class: el.className, text: (el.innerText ?? '').trim().slice(0, 200) }))
@@ -67,7 +74,11 @@ async function run(): Promise<void> {
 						.slice(0, 60);
 
 					if (typeof (component as any).isStripeFormValid === 'function') {
-						try { isStripeFormValid = (component as any).isStripeFormValid(); } catch { isStripeFormValid = 'threw'; }
+						try {
+							isStripeFormValid = (component as any).isStripeFormValid();
+						} catch {
+							isStripeFormValid = 'threw';
+						}
 					} else if ('isStripeFormValid' in component) {
 						isStripeFormValid = (component as any).isStripeFormValid;
 					}
@@ -84,11 +95,25 @@ async function run(): Promise<void> {
 			try {
 				const component = ng.getComponent(host);
 				if (component && typeof component === 'object') {
-					for (const flag of ['disabledForm', 'stripeReady', 'stripeMounted', 'needCloseAllModal', 'isStripe', 'disabledDocNumber', 'showSecondSegment']) {
-						try { componentFlags[flag] = (component as any)[flag]; } catch { componentFlags[flag] = 'threw'; }
+					for (const flag of [
+						'disabledForm',
+						'stripeReady',
+						'stripeMounted',
+						'needCloseAllModal',
+						'isStripe',
+						'disabledDocNumber',
+						'showSecondSegment'
+					]) {
+						try {
+							componentFlags[flag] = (component as any)[flag];
+						} catch {
+							componentFlags[flag] = 'threw';
+						}
 					}
 				}
-			} catch { /* ignore */ }
+			} catch {
+				/* ignore */
+			}
 		}
 
 		let elementAtButtonCenter: string | null = null;
@@ -100,24 +125,26 @@ async function run(): Promise<void> {
 			if (elementAt) {
 				const tag = elementAt.tagName.toLowerCase();
 				const cls = (elementAt as HTMLElement).className?.toString() ?? '';
-				const id  = (elementAt as HTMLElement).id ?? '';
+				const id = (elementAt as HTMLElement).id ?? '';
 				elementAtButtonCenter = `${tag}#${id}.${cls.slice(0, 120)}`;
 			} else {
 				elementAtButtonCenter = '<null>';
 			}
 		}
 
-		const clickListenerCount = button ? (() => {
-			// getEventListeners is only available in DevTools, so we synthesize a test click and see if the form submits.
-			return 'unknown';
-		})() : 'no-button';
+		const clickListenerCount = button
+			? (() => {
+					// getEventListeners is only available in DevTools, so we synthesize a test click and see if the form submits.
+					return 'unknown';
+				})()
+			: 'no-button';
 
 		return {
 			url: window.location.href,
 			hostPresent: Boolean(host),
 			hostOuterHTML: host?.outerHTML?.slice(0, 12000) ?? null,
 			formClass: form?.className ?? null,
-			buttonDisabled: button ? (button as HTMLButtonElement).disabled ?? null : null,
+			buttonDisabled: button ? ((button as HTMLButtonElement).disabled ?? null) : null,
 			buttonRect: button?.getBoundingClientRect().toJSON() ?? null,
 			modalErrors: errors,
 			ngKeys,
@@ -126,12 +153,12 @@ async function run(): Promise<void> {
 			elementAtButtonCenter,
 			clickListenerCount,
 			stripeElementsStatus: Array.from(document.querySelectorAll('.stripe-element')).map(el => el.className),
-			ionModalVisible: Boolean(document.querySelector('ion-modal.show-modal')),
+			ionModalVisible: Boolean(document.querySelector('ion-modal.show-modal'))
 		};
-	}) as Record<string, unknown>;
+	})) as Record<string, unknown>;
 
 	mkdirSync(DUMP_DIR, { recursive: true });
-	const ts  = new Date().toISOString().replace(/[:.]/g, '-');
+	const ts = new Date().toISOString().replace(/[:.]/g, '-');
 	const out = join(DUMP_DIR, `${LABEL}-${ts}.json`);
 	writeFileSync(out, JSON.stringify(snapshot, null, 2), 'utf-8');
 	console.log(`✓ Guardado: ${out}`);

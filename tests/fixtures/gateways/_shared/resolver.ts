@@ -42,7 +42,7 @@ const STRIPE_INTENT_MAP: Record<CardIntent, keyof typeof CARDS> = {
 	FAIL_AUTH: 'FAIL_3DS',
 	DECLINE_AUTHORIZE: 'DECLINE_AUTHORIZE',
 	DECLINE_CAPTURE: 'DECLINE_CAPTURE',
-	DECLINE_INVALID_CVC: 'DECLINE_INVALID_CVC',
+	DECLINE_INVALID_CVC: 'DECLINE_INVALID_CVC'
 };
 
 /**
@@ -53,7 +53,7 @@ const STRIPE_INTENT_MAP: Record<CardIntent, keyof typeof CARDS> = {
 const AUTHORIZE_INTENT_MAP: Partial<Record<CardIntent, AuthorizeCardId>> = {
 	HAPPY_NO_AUTH: 'SUCCESS',
 	DECLINE_AUTHORIZE: 'DECLINE_GENERIC',
-	DECLINE_INVALID_CVC: 'DECLINE_CVV',
+	DECLINE_INVALID_CVC: 'DECLINE_CVV'
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -71,7 +71,7 @@ function normalizeStripeCard(card: StripeTestCard, intent: CardIntent): GenericT
 		holderName: card.holderName,
 		zip: card.zip_code,
 		expectedOutcome: intent.toLowerCase().replace(/_/g, '-'),
-		requires3ds: intentsRequiring3DS.includes(intent),
+		requires3ds: intentsRequiring3DS.includes(intent)
 	};
 }
 
@@ -85,7 +85,7 @@ function normalizeAuthorizeCard(card: AuthorizeTestCard): GenericTestCard {
 		holderName: card.holderName,
 		zip: card.zip,
 		expectedOutcome: card.expectedOutcome,
-		requires3ds: false,
+		requires3ds: false
 	};
 }
 
@@ -105,7 +105,7 @@ export function resolveCard({ gateway, intent }: ResolveCardArgs): GenericTestCa
 			const policyKey = STRIPE_INTENT_MAP[intent];
 			if (!policyKey) {
 				throw new Error(
-					`Intent '${intent}' no soportado por gateway 'stripe' — agregar mapping en STRIPE_INTENT_MAP.`,
+					`Intent '${intent}' no soportado por gateway 'stripe' — agregar mapping en STRIPE_INTENT_MAP.`
 				);
 			}
 			const cardNumber = CARDS[policyKey] as StripeCardId;
@@ -117,7 +117,7 @@ export function resolveCard({ gateway, intent }: ResolveCardArgs): GenericTestCa
 			const policyKey = AUTHORIZE_INTENT_MAP[intent];
 			if (!policyKey) {
 				throw new Error(
-					`Intent '${intent}' no soportado por gateway 'authorize' — el sandbox no expone ese comportamiento (verificar AUTHORIZE_INTENT_MAP).`,
+					`Intent '${intent}' no soportado por gateway 'authorize' — el sandbox no expone ese comportamiento (verificar AUTHORIZE_INTENT_MAP).`
 				);
 			}
 			const authorizeCard = authorizeResolveCard(policyKey);
@@ -125,14 +125,10 @@ export function resolveCard({ gateway, intent }: ResolveCardArgs): GenericTestCa
 		}
 
 		case 'mercado-pago':
-			throw new Error(
-				"Gateway 'mercado-pago' aún no soportado — investigación pendiente (BL-026).",
-			);
+			throw new Error("Gateway 'mercado-pago' aún no soportado — investigación pendiente (BL-026).");
 
 		case 'ebizcharge':
-			throw new Error(
-				"Gateway 'ebizcharge' aún no soportado — investigación pendiente (BL-027).",
-			);
+			throw new Error("Gateway 'ebizcharge' aún no soportado — investigación pendiente (BL-027).");
 
 		default: {
 			const exhaustive: never = gateway;
@@ -148,5 +144,5 @@ export const SUPPORTED_INTENTS_BY_GATEWAY = {
 	stripe: Object.keys(STRIPE_INTENT_MAP) as CardIntent[],
 	authorize: Object.keys(AUTHORIZE_INTENT_MAP) as CardIntent[],
 	'mercado-pago': [] as CardIntent[],
-	ebizcharge: [] as CardIntent[],
+	ebizcharge: [] as CardIntent[]
 } as const;

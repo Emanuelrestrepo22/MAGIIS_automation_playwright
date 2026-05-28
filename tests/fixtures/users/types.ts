@@ -28,16 +28,16 @@ export type MobileRole = 'driver' | 'passenger';
  * rotar credenciales requiera SOLO cambiar el env file — nunca código.
  */
 export interface WebUser {
-  /** Rol semántico dentro del portal (dispatcher = carrier, collaborator = contractor). */
-  role: PortalRole;
-  /** Ambiente al que apunta este fixture. */
-  environment: UserEnvironment;
-  /** Resolver de email — lee `process.env.*` en cada llamada. */
-  readonly email: string;
-  /** Resolver de password — lee `process.env.*` en cada llamada. */
-  readonly password: string;
-  /** Evidencia / contexto humano. */
-  notes?: string;
+	/** Rol semántico dentro del portal (dispatcher = carrier, collaborator = contractor). */
+	role: PortalRole;
+	/** Ambiente al que apunta este fixture. */
+	environment: UserEnvironment;
+	/** Resolver de email — lee `process.env.*` en cada llamada. */
+	readonly email: string;
+	/** Resolver de password — lee `process.env.*` en cada llamada. */
+	readonly password: string;
+	/** Evidencia / contexto humano. */
+	notes?: string;
 }
 
 /**
@@ -48,11 +48,11 @@ export interface WebUser {
  * entrega credenciales.
  */
 export interface MobileUser {
-  role: MobileRole;
-  environment: UserEnvironment;
-  readonly email: string;
-  readonly password: string;
-  notes?: string;
+	role: MobileRole;
+	environment: UserEnvironment;
+	readonly email: string;
+	readonly password: string;
+	notes?: string;
 }
 
 /**

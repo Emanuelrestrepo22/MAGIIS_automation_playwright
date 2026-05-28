@@ -3,16 +3,17 @@ import { expect } from '@playwright/test';
 import { getPortalUrl } from '../../../config/gatewayPortalRuntime';
 import { resolveLoginPath } from '../../../config/runtime';
 import { debugLog } from '../../../helpers/debug';
-import {
-	CONTRACTOR_COLLABORATOR,
-	DISPATCHER,
-	PAX_WEB,
-	getCurrentUserEnvironment,
-} from '../../../fixtures/users';
+import { CONTRACTOR_COLLABORATOR, DISPATCHER, PAX_WEB, getCurrentUserEnvironment } from '../../../fixtures/users';
 import { DashboardPage } from '../../../pages/carrier';
 import { LoginPage } from '../../../pages/shared';
 import { STRIPE_CVC, STRIPE_EXPIRY, STRIPE_TEST_CARDS, TEST_DATA } from '../data/stripeTestData';
-import { NewTravelPage, ThreeDSModal, ThreeDSErrorPopup, TravelDetailPage, TravelManagementPage } from '../../../pages/carrier';
+import {
+	NewTravelPage,
+	ThreeDSModal,
+	ThreeDSErrorPopup,
+	TravelDetailPage,
+	TravelManagementPage
+} from '../../../pages/carrier';
 
 // Reexportamos estos datos para que las specs de gateway importen todo
 // desde una sola entrada y no tengan que conocer la estructura interna del módulo.

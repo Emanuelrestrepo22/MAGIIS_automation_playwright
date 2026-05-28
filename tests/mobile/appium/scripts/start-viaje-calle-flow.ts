@@ -39,20 +39,20 @@ import { writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 
 // ── Config ───────────────────────────────────────────────────────────────────
-const UDID        = process.env.ANDROID_UDID        ?? 'R92XB0B8F3J';
-const PACKAGE     = process.env.ANDROID_APP_PACKAGE ?? 'com.magiis.app.test.driver';
-const CARD_NUMBER = process.env.CARD_NUMBER         ?? '4000002760003184';
-const CARD_EXPIRY = process.env.CARD_EXPIRY         ?? '12/34';
-const CARD_CVC    = process.env.CARD_CVC            ?? '123';
-const CARD_NAME   = process.env.CARD_NAME           ?? 'Emanuel Restrepo';
-const CARD_ZIP    = process.env.CARD_ZIP            ?? '1000';
+const UDID = process.env.ANDROID_UDID ?? 'R92XB0B8F3J';
+const PACKAGE = process.env.ANDROID_APP_PACKAGE ?? 'com.magiis.app.test.driver';
+const CARD_NUMBER = process.env.CARD_NUMBER ?? '4000002760003184';
+const CARD_EXPIRY = process.env.CARD_EXPIRY ?? '12/34';
+const CARD_CVC = process.env.CARD_CVC ?? '123';
+const CARD_NAME = process.env.CARD_NAME ?? 'Emanuel Restrepo';
+const CARD_ZIP = process.env.CARD_ZIP ?? '1000';
 
 const log = (m: string) => console.log(`[viaje-calle] ${m}`);
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function save(label: string, content: string): void {
 	mkdirSync('evidence/dom-dump', { recursive: true });
-	const ts   = new Date().toISOString().replace(/[:.]/g, '-');
+	const ts = new Date().toISOString().replace(/[:.]/g, '-');
 	const path = join('evidence/dom-dump', `viaje-calle-${label}-${ts}.txt`);
 	writeFileSync(path, content, 'utf-8');
 	log(`  ✓ Dump: ${path}`);
@@ -70,9 +70,12 @@ function addStep(step: string, status: StepStatus, detail = ''): void {
 async function switchWV(driver: WebdriverIO.Browser, timeout = 8_000): Promise<void> {
 	const deadline = Date.now() + timeout;
 	while (Date.now() < deadline) {
-		const ctxs = await driver.getContexts() as string[];
+		const ctxs = (await driver.getContexts()) as string[];
 		const wv = ctxs.find((c: string) => c.startsWith('WEBVIEW'));
-		if (wv) { await driver.switchContext(wv); return; }
+		if (wv) {
+			await driver.switchContext(wv);
+			return;
+		}
 		await driver.pause(500);
 	}
 	throw new Error('WebView no disponible');
@@ -93,34 +96,49 @@ async function waitForUrl(driver: WebdriverIO.Browser, token: string, timeout = 
 }
 
 async function dumpScreen(driver: WebdriverIO.Browser, label: string): Promise<string> {
-	const dump = await driver.execute<string, []>(() => {
-		const lines = [`URL: ${window.location.href}`, ''];
-		(document.querySelectorAll('button, ion-button, [role="button"], img[class*="home"]') as NodeListOf<HTMLElement>)
-			.forEach(el => {
+	const dump = await driver
+		.execute<string, []>(() => {
+			const lines = [`URL: ${window.location.href}`, ''];
+			(
+				document.querySelectorAll(
+					'button, ion-button, [role="button"], img[class*="home"]'
+				) as NodeListOf<HTMLElement>
+			).forEach(el => {
 				const text = (el.innerText ?? el.getAttribute('alt') ?? '').replace(/\s+/g, ' ').trim().slice(0, 100);
-				const cls  = (el.className ?? '').toString().slice(0, 100);
-				const vis  = el.offsetParent !== null;
-				const dis  = (el as HTMLButtonElement).disabled ?? false;
+				const cls = (el.className ?? '').toString().slice(0, 100);
+				const vis = el.offsetParent !== null;
+				const dis = (el as HTMLButtonElement).disabled ?? false;
 				if (vis) lines.push(`[BTN vis=${vis} dis=${dis}] ${el.tagName} class="${cls}" text="${text}"`);
 			});
-		(document.querySelectorAll('iframe') as NodeListOf<HTMLIFrameElement>).forEach((f, i) => {
-			lines.push(`[IFRAME ${i}] name="${f.name}" src="${(f.src ?? '').slice(0, 100)}"`);
-		});
-		(document.querySelectorAll('input') as NodeListOf<HTMLInputElement>).forEach(el => {
-			const vis = el.offsetParent !== null;
-			if (vis) lines.push(`[INPUT vis=${vis}] id="${el.id}" name="${el.name}" type="${el.type}" placeholder="${el.placeholder}"`);
-		});
-		(document.querySelectorAll('span,p,h1,h2,h3,ion-label,ion-title') as NodeListOf<HTMLElement>).forEach(el => {
-			const text = (el.innerText ?? '').trim().replace(/\n/g, ' ').slice(0, 100);
-			if (text.length > 2 && el.offsetParent !== null) lines.push(`[TEXT] ${el.tagName} "${text}"`);
-		});
-		['app-confirm-modal', 'credit-card-payment-data', 'app-travel-resume', 'app-page-travel-in-progress'].forEach(sel => {
-			document.querySelectorAll(sel).forEach(el => {
-				lines.push(`[CONTAINER vis=${(el as HTMLElement).offsetParent !== null}] ${sel}`);
+			(document.querySelectorAll('iframe') as NodeListOf<HTMLIFrameElement>).forEach((f, i) => {
+				lines.push(`[IFRAME ${i}] name="${f.name}" src="${(f.src ?? '').slice(0, 100)}"`);
 			});
-		});
-		return lines.join('\n');
-	}).catch(e => `JS error: ${e}`);
+			(document.querySelectorAll('input') as NodeListOf<HTMLInputElement>).forEach(el => {
+				const vis = el.offsetParent !== null;
+				if (vis)
+					lines.push(
+						`[INPUT vis=${vis}] id="${el.id}" name="${el.name}" type="${el.type}" placeholder="${el.placeholder}"`
+					);
+			});
+			(document.querySelectorAll('span,p,h1,h2,h3,ion-label,ion-title') as NodeListOf<HTMLElement>).forEach(
+				el => {
+					const text = (el.innerText ?? '').trim().replace(/\n/g, ' ').slice(0, 100);
+					if (text.length > 2 && el.offsetParent !== null) lines.push(`[TEXT] ${el.tagName} "${text}"`);
+				}
+			);
+			[
+				'app-confirm-modal',
+				'credit-card-payment-data',
+				'app-travel-resume',
+				'app-page-travel-in-progress'
+			].forEach(sel => {
+				document.querySelectorAll(sel).forEach(el => {
+					lines.push(`[CONTAINER vis=${(el as HTMLElement).offsetParent !== null}] ${sel}`);
+				});
+			});
+			return lines.join('\n');
+		})
+		.catch(e => `JS error: ${e}`);
 	save(label, dump);
 	return dump;
 }
@@ -146,10 +164,19 @@ async function fillInput(driver: WebdriverIO.Browser, selector: string, value: s
  * Busca contexto WebView externo (Stripe/Visa 3DS) y toca el botón de aprobación.
  */
 async function handle3DS(driver: WebdriverIO.Browser): Promise<'completed' | 'not-present' | 'failed'> {
-	const APPROVE = ['Complete', 'COMPLETE', 'Complete authentication', 'Completar', 'Autorizar', 'Aprobar', 'Confirm', 'Submit'];
+	const APPROVE = [
+		'Complete',
+		'COMPLETE',
+		'Complete authentication',
+		'Completar',
+		'Autorizar',
+		'Aprobar',
+		'Confirm',
+		'Submit'
+	];
 
 	await driver.pause(3_000);
-	const ctxs = await driver.getContexts() as string[];
+	const ctxs = (await driver.getContexts()) as string[];
 	log(`  3DS check — contextos: ${ctxs.join(', ')}`);
 
 	// Escenario A: contexto WebView externo (Chrome Custom Tab Visa/Stripe)
@@ -159,17 +186,23 @@ async function handle3DS(driver: WebdriverIO.Browser): Promise<'completed' | 'no
 		try {
 			await driver.switchContext(externalCtx);
 			await driver.pause(2_000);
-			const clicked = await driver.execute((texts: string[]) => {
-				const btns = Array.from(document.querySelectorAll('button, [role="button"], a, input[type="submit"]')) as HTMLElement[];
+			const clicked = (await driver.execute((texts: string[]) => {
+				const btns = Array.from(
+					document.querySelectorAll('button, [role="button"], a, input[type="submit"]')
+				) as HTMLElement[];
 				for (const txt of texts) {
-					const btn = btns.find(b =>
-						((b as HTMLInputElement).value ?? b.innerText ?? b.textContent ?? '').trim() === txt
-						&& b.offsetParent !== null
+					const btn = btns.find(
+						b =>
+							((b as HTMLInputElement).value ?? b.innerText ?? b.textContent ?? '').trim() === txt &&
+							b.offsetParent !== null
 					);
-					if (btn) { btn.click(); return txt; }
+					if (btn) {
+						btn.click();
+						return txt;
+					}
 				}
 				return '';
-			}, APPROVE) as string;
+			}, APPROVE)) as string;
 
 			if (clicked) {
 				log(`  ✓ 3DS completado: tap "${clicked}"`);
@@ -178,15 +211,17 @@ async function handle3DS(driver: WebdriverIO.Browser): Promise<'completed' | 'no
 				return 'completed';
 			}
 			// Dump del contexto 3DS para diagnóstico
-			const threeDsDump = await driver.execute<string, []>(() => {
-				const lines = [`URL: ${window.location.href}`, `TITLE: ${document.title}`];
-				(document.querySelectorAll('button, input, a') as NodeListOf<HTMLElement>).forEach(el => {
-					const text = ((el as HTMLInputElement).value ?? el.innerText ?? '').trim().slice(0, 80);
-					const vis  = el.offsetParent !== null;
-					if (text) lines.push(`[${el.tagName} vis=${vis}] "${text}"`);
-				});
-				return lines.join('\n');
-			}).catch(e => `JS error: ${e}`);
+			const threeDsDump = await driver
+				.execute<string, []>(() => {
+					const lines = [`URL: ${window.location.href}`, `TITLE: ${document.title}`];
+					(document.querySelectorAll('button, input, a') as NodeListOf<HTMLElement>).forEach(el => {
+						const text = ((el as HTMLInputElement).value ?? el.innerText ?? '').trim().slice(0, 80);
+						const vis = el.offsetParent !== null;
+						if (text) lines.push(`[${el.tagName} vis=${vis}] "${text}"`);
+					});
+					return lines.join('\n');
+				})
+				.catch(e => `JS error: ${e}`);
 			save('3DS-context', threeDsDump);
 			await switchWV(driver);
 		} catch (e) {
@@ -198,22 +233,31 @@ async function handle3DS(driver: WebdriverIO.Browser): Promise<'completed' | 'no
 	// Escenario B: ion-modal / overlay dentro del WebView principal
 	try {
 		await switchWV(driver);
-		const modalClicked = await driver.execute((texts: string[]) => {
+		const modalClicked = (await driver.execute((texts: string[]) => {
 			const modals = document.querySelectorAll('ion-modal, [id*="overlay"]');
 			for (const modal of Array.from(modals)) {
-				const btns = Array.from(modal.querySelectorAll('button, [role="button"], input[type="submit"]')) as HTMLElement[];
+				const btns = Array.from(
+					modal.querySelectorAll('button, [role="button"], input[type="submit"]')
+				) as HTMLElement[];
 				for (const txt of texts) {
-					const btn = btns.find(b => (b.innerText ?? b.textContent ?? '').trim() === txt && b.offsetParent !== null);
-					if (btn) { btn.click(); return txt; }
+					const btn = btns.find(
+						b => (b.innerText ?? b.textContent ?? '').trim() === txt && b.offsetParent !== null
+					);
+					if (btn) {
+						btn.click();
+						return txt;
+					}
 				}
 			}
 			return '';
-		}, APPROVE) as string;
+		}, APPROVE)) as string;
 		if (modalClicked) {
 			log(`  ✓ 3DS modal completado: "${modalClicked}"`);
 			return 'completed';
 		}
-	} catch { /* noop */ }
+	} catch {
+		/* noop */
+	}
 
 	log('  3DS no detectado');
 	return 'not-present';
@@ -222,20 +266,23 @@ async function handle3DS(driver: WebdriverIO.Browser): Promise<'completed' | 'no
 // ── Flujo principal ────────────────────────────────────────────────────────────
 async function run(): Promise<void> {
 	const driver = await remote({
-		protocol: 'http', hostname: 'localhost', port: 4723, path: '/',
+		protocol: 'http',
+		hostname: 'localhost',
+		port: 4723,
+		path: '/',
 		logLevel: 'warn',
 		capabilities: {
-			platformName:                      'Android',
-			'appium:automationName':           'UiAutomator2',
-			'appium:deviceName':               'SM-A055M',
-			'appium:udid':                     UDID,
-			'appium:appPackage':               PACKAGE,
-			'appium:appActivity':              '.MainActivity',
-			'appium:noReset':                  true,
-			'appium:forceAppLaunch':           false,
-			'appium:newCommandTimeout':        180,
-			'appium:chromedriverAutodownload': true,
-		} as Record<string, unknown>,
+			platformName: 'Android',
+			'appium:automationName': 'UiAutomator2',
+			'appium:deviceName': 'SM-A055M',
+			'appium:udid': UDID,
+			'appium:appPackage': PACKAGE,
+			'appium:appActivity': '.MainActivity',
+			'appium:noReset': true,
+			'appium:forceAppLaunch': false,
+			'appium:newCommandTimeout': 180,
+			'appium:chromedriverAutodownload': true
+		} as Record<string, unknown>
 	});
 	log('✓ Sesión Appium adjuntada');
 
@@ -247,19 +294,27 @@ async function run(): Promise<void> {
 		log(`URL inicial: ${startUrl}`);
 
 		if (startUrl.includes('TravelConfirmPage')) {
-			addStep('PRECONDICION home limpio', 'FAIL',
+			addStep(
+				'PRECONDICION home limpio',
+				'FAIL',
 				`App está en TravelConfirmPage con viaje asignado. ` +
-				`Precondición: el driver debe estar en home sin viajes pendientes. ` +
-				`Completar o rechazar el viaje asignado antes de correr este script.`
+					`Precondición: el driver debe estar en home sin viajes pendientes. ` +
+					`Completar o rechazar el viaje asignado antes de correr este script.`
 			);
 			await dumpScreen(driver, 'precondicion-fail');
 			throw new Error('Precondición fallida: hay un viaje asignado pendiente en TravelConfirmPage');
 		}
 
-		if (startUrl.includes('TravelToStartPage') || startUrl.includes('TravelInProgressPage') || startUrl.includes('TravelResumePage')) {
-			addStep('PRECONDICION home limpio', 'FAIL',
+		if (
+			startUrl.includes('TravelToStartPage') ||
+			startUrl.includes('TravelInProgressPage') ||
+			startUrl.includes('TravelResumePage')
+		) {
+			addStep(
+				'PRECONDICION home limpio',
+				'FAIL',
 				`App está en medio de un viaje activo (${startUrl.split('/').pop()?.split(';')[0]}). ` +
-				`Completar el viaje actual antes de iniciar flujo viaje calle.`
+					`Completar el viaje actual antes de iniciar flujo viaje calle.`
 			);
 			await dumpScreen(driver, 'precondicion-fail');
 			throw new Error('Precondición fallida: hay un viaje en curso');
@@ -278,17 +333,19 @@ async function run(): Promise<void> {
 		// El tap es sobre el IMG dentro de div.driver-pass.home-icon
 		// Hay múltiples instancias en el DOM — buscar el primero visible
 		const tappedImg = await driver.execute<boolean, []>(() => {
-			const imgs = Array.from(
-				document.querySelectorAll('div.driver-pass.home-icon img')
-			) as HTMLImageElement[];
+			const imgs = Array.from(document.querySelectorAll('div.driver-pass.home-icon img')) as HTMLImageElement[];
 			const visible = imgs.find(img => img.offsetParent !== null);
-			if (visible) { visible.click(); return true; }
+			if (visible) {
+				visible.click();
+				return true;
+			}
 			// Fallback: tap el div contenedor
-			const divs = Array.from(
-				document.querySelectorAll('div.driver-pass.home-icon')
-			) as HTMLElement[];
+			const divs = Array.from(document.querySelectorAll('div.driver-pass.home-icon')) as HTMLElement[];
 			const visibleDiv = divs.find(d => d.offsetParent !== null);
-			if (visibleDiv) { visibleDiv.click(); return true; }
+			if (visibleDiv) {
+				visibleDiv.click();
+				return true;
+			}
 			return false;
 		});
 
@@ -319,7 +376,10 @@ async function run(): Promise<void> {
 				}
 				return false;
 			});
-			if (tapped) { tappedSiViajeCalleArr.push(true); break; }
+			if (tapped) {
+				tappedSiViajeCalleArr.push(true);
+				break;
+			}
 			await driver.pause(600);
 		}
 
@@ -344,8 +404,12 @@ async function run(): Promise<void> {
 				// Empezar viaje → modal Si → esperar InProgress
 				log('  Detectado TravelToStartPage — pasando...');
 				await driver.execute<void, []>(() => {
-					const btns = Array.from(document.querySelectorAll('app-page-travel-to-start button')) as HTMLButtonElement[];
-					const empezar = btns.find(b => (b.innerText ?? '').trim() === 'Empezar Viaje' && b.offsetParent !== null);
+					const btns = Array.from(
+						document.querySelectorAll('app-page-travel-to-start button')
+					) as HTMLButtonElement[];
+					const empezar = btns.find(
+						b => (b.innerText ?? '').trim() === 'Empezar Viaje' && b.offsetParent !== null
+					);
 					if (empezar) empezar.click();
 				});
 				await driver.pause(1_500);
@@ -372,12 +436,22 @@ async function run(): Promise<void> {
 			const containers = Array.from(document.querySelectorAll('app-page-travel-in-progress')) as HTMLElement[];
 			const active = containers.find(c => c.offsetParent !== null);
 			if (!active) return false;
-			const btn = active.querySelector('ion-footer ion-toolbar div.btn-finish-container button') as HTMLButtonElement | null;
-			if (btn && btn.offsetParent !== null && !btn.disabled) { btn.click(); return true; }
+			const btn = active.querySelector(
+				'ion-footer ion-toolbar div.btn-finish-container button'
+			) as HTMLButtonElement | null;
+			if (btn && btn.offsetParent !== null && !btn.disabled) {
+				btn.click();
+				return true;
+			}
 			// Fallback: cualquier button.btn.finish visible
 			const btns = Array.from(active.querySelectorAll('button')) as HTMLButtonElement[];
-			const finish = btns.find(b => (b.innerText ?? '').trim() === 'Finalizar Viaje' && b.offsetParent !== null && !b.disabled);
-			if (finish) { finish.click(); return true; }
+			const finish = btns.find(
+				b => (b.innerText ?? '').trim() === 'Finalizar Viaje' && b.offsetParent !== null && !b.disabled
+			);
+			if (finish) {
+				finish.click();
+				return true;
+			}
 			return false;
 		});
 
@@ -398,10 +472,16 @@ async function run(): Promise<void> {
 				const visible = modals.find(m => m.offsetParent !== null);
 				if (!visible) return false;
 				const btn = visible.querySelector('button.btn.primary') as HTMLButtonElement | null;
-				if (btn && btn.offsetParent !== null && !btn.disabled) { btn.click(); return true; }
+				if (btn && btn.offsetParent !== null && !btn.disabled) {
+					btn.click();
+					return true;
+				}
 				return false;
 			});
-			if (tapped) { tappedSiFin.push(true); break; }
+			if (tapped) {
+				tappedSiFin.push(true);
+				break;
+			}
 			await driver.pause(600);
 		}
 		if (!tappedSiFin.length) {
@@ -437,14 +517,20 @@ async function run(): Promise<void> {
 			const resumeUrl = await getUrl(driver);
 
 			// Si ya salió de TravelResumePage → el modal de tarjeta debería aparecer
-			if (!resumeUrl.includes('TravelResumePage')) { resumeDone = true; break; }
+			if (!resumeUrl.includes('TravelResumePage')) {
+				resumeDone = true;
+				break;
+			}
 
 			// Verificar si credit-card-payment-data ya está visible
 			const modalVisible = await driver.execute<boolean, []>(() => {
 				const m = document.querySelector('credit-card-payment-data') as HTMLElement | null;
 				return !!(m && m.offsetParent !== null);
 			});
-			if (modalVisible) { resumeDone = true; break; }
+			if (modalVisible) {
+				resumeDone = true;
+				break;
+			}
 
 			// Paso A: tap button.payment si está visible (habilita "Cerrar Viaje")
 			const tappedPayBtn = await driver.execute<boolean, []>(() => {
@@ -452,11 +538,16 @@ async function run(): Promise<void> {
 				const active = containers.find(c => c.offsetParent !== null) ?? containers[0];
 				if (!active) return false;
 				// Buscar cualquier button.payment visible (con o sin texto)
-				const payBtns = Array.from(active.querySelectorAll(
-					'button.payment, button[class*="payment"], div.travel-payment button, ion-col button'
-				)) as HTMLButtonElement[];
+				const payBtns = Array.from(
+					active.querySelectorAll(
+						'button.payment, button[class*="payment"], div.travel-payment button, ion-col button'
+					)
+				) as HTMLButtonElement[];
 				const visible = payBtns.find(b => b.offsetParent !== null);
-				if (visible) { visible.click(); return true; }
+				if (visible) {
+					visible.click();
+					return true;
+				}
 				return false;
 			});
 			if (tappedPayBtn) {
@@ -479,8 +570,13 @@ async function run(): Promise<void> {
 				const CLOSE_TEXTS = ['Cerrar Viaje', 'Firmar y Cerrar viaje', 'Finalizar Viaje'];
 				const btns = Array.from(active.querySelectorAll('button')) as HTMLButtonElement[];
 				for (const txt of CLOSE_TEXTS) {
-					const btn = btns.find(b => (b.innerText ?? '').trim() === txt && b.offsetParent !== null && !b.disabled);
-					if (btn) { btn.click(); return txt; }
+					const btn = btns.find(
+						b => (b.innerText ?? '').trim() === txt && b.offsetParent !== null && !b.disabled
+					);
+					if (btn) {
+						btn.click();
+						return txt;
+					}
 				}
 				return '';
 			});
@@ -511,12 +607,20 @@ async function run(): Promise<void> {
 		const urlAfterLoop = await getUrl(driver);
 		if (urlAfterLoop.includes('/navigator/home') || urlAfterLoop.includes('FROM_TRAVEL_CLOSED')) {
 			// Viaje cerrado con tarjeta guardada — no se necesita ingreso de tarjeta
-			addStep('P7 modal credit-card-payment-data', 'SKIP', 'viaje cerrado con tarjeta guardada — sin ingreso manual');
+			addStep(
+				'P7 modal credit-card-payment-data',
+				'SKIP',
+				'viaje cerrado con tarjeta guardada — sin ingreso manual'
+			);
 			addStep('P8 tap Cobrar', 'SKIP', 'no aplica');
 			addStep('P9 3DS', 'SKIP', 'no aplica');
 			// Saltar directo a P10
 			const closedFlag = urlAfterLoop.includes('FROM_TRAVEL_CLOSED');
-			addStep('P10 home post-cierre', 'OK', closedFlag ? 'FROM_TRAVEL_CLOSED ✓' : urlAfterLoop.split('/').pop() ?? '');
+			addStep(
+				'P10 home post-cierre',
+				'OK',
+				closedFlag ? 'FROM_TRAVEL_CLOSED ✓' : (urlAfterLoop.split('/').pop() ?? '')
+			);
 			await dumpScreen(driver, 'P10-home-final');
 			return; // Fin del flujo — salir del try
 		}
@@ -536,7 +640,11 @@ async function run(): Promise<void> {
 		}
 
 		if (!cardFormVisible) {
-			addStep('P7 modal credit-card-payment-data', 'FAIL', 'modal no apareció — verificar que el pasajero tenga "tarjeta a bordo" como método de pago');
+			addStep(
+				'P7 modal credit-card-payment-data',
+				'FAIL',
+				'modal no apareció — verificar que el pasajero tenga "tarjeta a bordo" como método de pago'
+			);
 			await dumpScreen(driver, 'P7-fail-no-modal');
 			throw new Error('P7 fallido — modal de tarjeta no apareció');
 		}
@@ -554,10 +662,14 @@ async function run(): Promise<void> {
 		} else {
 			// Fallback: buscar por posición en el formulario
 			const filled = await driver.execute<boolean, []>(() => {
-				const form = document.querySelector('#root form, credit-card-payment-data form') as HTMLFormElement | null;
+				const form = document.querySelector(
+					'#root form, credit-card-payment-data form'
+				) as HTMLFormElement | null;
 				if (!form) return false;
 				const inputs = Array.from(form.querySelectorAll('input')) as HTMLInputElement[];
-				const numInput = inputs.find(i => i.offsetParent !== null && (i.type === 'text' || i.type === 'tel' || i.type === 'number'));
+				const numInput = inputs.find(
+					i => i.offsetParent !== null && (i.type === 'text' || i.type === 'tel' || i.type === 'number')
+				);
 				if (numInput) {
 					numInput.focus();
 					numInput.value = '';
@@ -582,8 +694,11 @@ async function run(): Promise<void> {
 			'input[placeholder*="MM"], input[placeholder*="mes"], input[autocomplete*="exp"], input[name*="exp"]',
 			CARD_EXPIRY
 		);
-		addStep('P7b vencimiento', filledExpiry ? 'OK' : 'SKIP',
-			filledExpiry ? CARD_EXPIRY : 'input no encontrado — revisar dump P7-card-form');
+		addStep(
+			'P7b vencimiento',
+			filledExpiry ? 'OK' : 'SKIP',
+			filledExpiry ? CARD_EXPIRY : 'input no encontrado — revisar dump P7-card-form'
+		);
 		await driver.pause(500);
 
 		// P7c. CVC
@@ -593,8 +708,11 @@ async function run(): Promise<void> {
 			'input[placeholder*="CVC"], input[placeholder*="cvc"], input[placeholder*="CVV"], input[autocomplete*="csc"]',
 			CARD_CVC
 		);
-		addStep('P7c CVC', filledCvc ? 'OK' : 'SKIP',
-			filledCvc ? '***' : 'input no encontrado — revisar dump P7-card-form');
+		addStep(
+			'P7c CVC',
+			filledCvc ? 'OK' : 'SKIP',
+			filledCvc ? '***' : 'input no encontrado — revisar dump P7-card-form'
+		);
 		await driver.pause(500);
 
 		// P7d. Titular — selector confirmado: #cardholderName > input
@@ -632,7 +750,11 @@ async function run(): Promise<void> {
 		}
 
 		if (!tappedCobrar) {
-			addStep('P8 tap Cobrar', 'FAIL', 'botón deshabilitado o no encontrado — datos de tarjeta inválidos o campos sin llenar');
+			addStep(
+				'P8 tap Cobrar',
+				'FAIL',
+				'botón deshabilitado o no encontrado — datos de tarjeta inválidos o campos sin llenar'
+			);
 			await dumpScreen(driver, 'P8-fail-cobrar');
 			throw new Error('P8 fallido — Cobrar no habilitado');
 		}
@@ -642,8 +764,11 @@ async function run(): Promise<void> {
 		// ── P9. 3DS (si aplica) ────────────────────────────────────────────────
 		log('\n── P9. Verificar 3DS ──');
 		const threeDsResult = await handle3DS(driver);
-		addStep('P9 3DS', threeDsResult === 'completed' ? 'OK' : 'SKIP',
-			threeDsResult === 'completed' ? 'popup Visa completado' : 'no detectado');
+		addStep(
+			'P9 3DS',
+			threeDsResult === 'completed' ? 'OK' : 'SKIP',
+			threeDsResult === 'completed' ? 'popup Visa completado' : 'no detectado'
+		);
 		await driver.pause(3_000);
 
 		// ── P10. Verificar home post-cierre ────────────────────────────────────
@@ -651,10 +776,12 @@ async function run(): Promise<void> {
 		const onHome = await waitForUrl(driver, '/navigator/home', 25_000);
 		const finalUrl = await getUrl(driver);
 		const closedFlag = finalUrl.includes('FROM_TRAVEL_CLOSED');
-		addStep('P10 home post-cierre', onHome ? 'OK' : 'FAIL',
-			onHome ? (closedFlag ? 'FROM_TRAVEL_CLOSED ✓' : `home sin flag — ${finalUrl.split('/').pop()}`) : finalUrl);
+		addStep(
+			'P10 home post-cierre',
+			onHome ? 'OK' : 'FAIL',
+			onHome ? (closedFlag ? 'FROM_TRAVEL_CLOSED ✓' : `home sin flag — ${finalUrl.split('/').pop()}`) : finalUrl
+		);
 		await dumpScreen(driver, 'P10-home-final');
-
 	} finally {
 		// ── Reporte ────────────────────────────────────────────────────────────
 		log('\n════════════════════════════════════════');
@@ -664,7 +791,7 @@ async function run(): Promise<void> {
 			const icon = r.status === 'OK' ? '✓' : r.status === 'SKIP' ? '⚠' : '✗';
 			log(`${icon} ${r.step}${r.detail ? ` — ${r.detail}` : ''}`);
 		}
-		const ok   = report.filter(r => r.status === 'OK').length;
+		const ok = report.filter(r => r.status === 'OK').length;
 		const fail = report.filter(r => r.status === 'FAIL').length;
 		const skip = report.filter(r => r.status === 'SKIP').length;
 		log(`\nResultado: ${ok} OK | ${fail} FAIL | ${skip} SKIP de ${report.length} pasos`);
