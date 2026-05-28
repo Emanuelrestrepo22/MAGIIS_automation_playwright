@@ -19,7 +19,7 @@ const APPLY = process.argv.includes('--apply');
 const JSON_PATH = 'docs/gateway-pg/stripe/normalized-test-cases.json';
 const XLSX_PATHS = [
   'docs/gateway-pg/stripe/STRIPE_Test_Suite_Matriz_Sincronizado.xlsx',
-  '.claude/skills/magiis-playwright-docs-to-drafts/references/STRIPE_Test_Suite_Matriz_Sincronizado.xlsx',
+  '.claude/skills/qa-gateway-magiis-docs-to-drafts/references/STRIPE_Test_Suite_Matriz_Sincronizado.xlsx',
 ];
 // Sheets que contienen TCs con formato "ID – título" en columna 1.
 const ID_SHEETS = ['TEST_SUITE', 'TEST_SUITE 2.0'];

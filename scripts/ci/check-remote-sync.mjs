@@ -67,7 +67,7 @@ function shortSha(ref) {
   }
 }
 
-console.log(`${c.bold}check-remote-sync — magiis-playwright${c.reset}`);
+console.log(`${c.bold}check-remote-sync — qa-gateway-magiis${c.reset}`);
 console.log(`${c.gray}Threshold: ${DRIFT_THRESHOLD} commits${c.reset}\n`);
 
 if (!hasRemote('gitlab') || !hasRemote('github')) {
