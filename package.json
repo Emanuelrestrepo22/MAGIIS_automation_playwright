@@ -1,5 +1,5 @@
 {
-  "name": "magiiss-playwright",
+  "name": "qa-gateway-magiis",
   "version": "1.0.0",
   "description": "Proyecto de automatización E2E para MAGIIS con Playwright + TypeScript",
   "main": "index.js",
