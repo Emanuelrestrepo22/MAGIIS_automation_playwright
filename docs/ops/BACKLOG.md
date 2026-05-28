@@ -949,6 +949,73 @@
 - **Próxima acción:** rama `scripts/tags-canonical`, taggear suite gateway primero (mayor impacto), reducir 50 scripts → 15.
 - **Referencias:** <https://playwright.dev/docs/test-annotations#tag-tests>, sección "Convenciones de test cases" en `CLAUDE.md`, BL-042 (sharding — beneficio compuesto cuando el matrix CI usa grep en lugar de scripts)
 
+### BL-046 — Rename del proyecto a `qa-gateway-magiis` (completo)
+
+- **Estado:** 🟡 En progreso — capa interna (paquete + docs + scripts) aplicada en rama `scripts/rename-qa-gateway-magiis`. Rename de repos remotos + integraciones pendientes (acción humana).
+- **Prioridad:** **P1 (crítico)**
+- **Tipo:** Refactor / branding / infra
+- **Reportado:** 2026-05-28
+- **Motivación:** alinear el nombre del paquete con el alcance real (focalizado en gateway de pagos MAGIIS, no automatización genérica). Aprovechar para corregir el typo histórico `magiiss-playwright` (doble 's') en `package.json`.
+- **Alcance acordado:** "rename completo (incluye repos)".
+
+#### Capa 1 — Interno (aplicado por agente)
+
+- ✅ `package.json` + `package-lock.json` — campo `name` actualizado a `qa-gateway-magiis`
+- ✅ 18 archivos en `docs/`, `.env.example`, `.gitattributes`, `.husky/`, `commitlint.config.cjs`, `.github/CODEOWNERS` — 22 refs reemplazadas
+- ✅ 6 archivos en `scripts/` + `tests/` — 11 refs reemplazadas
+- ❌ `.claude/agents/**` y `.claude/skills/**` — **NO se tocaron**. Las refs en estos archivos apuntan a la identidad de la skill canónica `magiis-playwright-docs-to-drafts` (nombre del directorio + frontmatter `name:`), que es identidad propia, no del paquete. Renombrarlas rompería el contrato agent ↔ skill.
+- ❌ `plugins/magiis-playwright-explorer/**` — **NO se tocó**. Plugin con identidad propia (displayName, brandColor).
+- ❌ URLs `github.com/Emanuelrestrepo22/MAGIIS_automation_playwright` y `gitlab.com/repo.magiis/magiis-testing` — **NO se tocaron**. Esperan al rename del repo remoto (Capa 2).
+- ❌ `docs/reports/CI-WEEKLY-*.md` + `docs/gateway-pg/stripe/CHANGELOG.md` — **NO se tocaron**. Snapshots históricos.
+
+#### Capa 2 — Repos remotos (acción humana requerida)
+
+Checklist (en orden):
+
+1. **GitHub UI** → repo `MAGIIS_automation_playwright` → Settings → Rename → `qa-gateway-magiis`. Confirmar que GitHub configura redirect automático desde el nombre viejo.
+2. **GitLab UI** → proyecto `magiis-testing` → Settings → General → Advanced → Change path → `qa-gateway-magiis`. Confirmar que GitLab configura redirect desde el path viejo.
+3. **Local — actualizar remotes:**
+
+   ```bash
+   git remote set-url github https://github.com/Emanuelrestrepo22/qa-gateway-magiis.git
+   git remote set-url gitlab https://gitlab.com/repo.magiis/qa-gateway-magiis.git
+   git fetch --all  # verifica que los redirects funcionan
+   ```
+
+4. **Mirror push GitLab → GitHub:** GitLab Settings → Repository → Mirroring repositories → editar la URL de destino con el nuevo nombre. Probar con "Update now".
+5. **GitHub Actions secrets:** revisar si algún workflow hardcodea el nombre del repo (`${{ github.repository }}` se actualiza solo, pero strings literales no).
+6. **GitLab CI variables:** mismo chequeo en `.gitlab-ci.yml`.
+7. **Integraciones externas:** verificar que sigan apuntando al repo correcto:
+   - Trello board nombre / descripción
+   - Slack / Teams channels asociados
+   - Cualquier dashboard externo (Grafana, etc.)
+8. **README badges:** las URLs de los badges (`actions/workflows/*.yml/badge.svg`) tendrán que regenerarse si los workflows ven el repo nuevo. Posiblemente actualizar las URLs en `README.md` Capa 1 después del rename UI.
+9. **Carpeta local (opcional):** renombrar `magiis-playwright/` → `qa-gateway-magiis/`. Pausar OneDrive antes para evitar reparse points. No urgente — Git no depende del nombre del directorio.
+10. **Verificación final:**
+
+    ```bash
+    git config --get remote.github.url    # debe contener qa-gateway-magiis
+    git config --get remote.gitlab.url    # idem
+    pnpm install                          # debe pasar sin warnings de "name"
+    pnpm exec tsc --noEmit                # debe pasar
+    ```
+
+#### Riesgos
+
+- Si las MRs/PRs abiertos al momento del rename usaban el path viejo, GitLab/GitHub deberían replicarlos via redirect. Si alguna integración usa la URL hardcoded de la API (no `${{ github.repository }}`), puede romperse.
+- El mirror GitLab → GitHub puede dejar de funcionar hasta que se actualice la URL de destino (paso 4).
+- Si `.gitlab-ci.yml` o GitHub Actions usan paths absolutos con el nombre del repo, deben actualizarse.
+
+#### Próxima acción
+
+- **Humano:** ejecutar Capa 2 (pasos 1-10). Estimación: 30-45 min si nada se rompe.
+- **Agente:** abrir issue de seguimiento si surge fricción en algún paso, o agregar tarea de cleanup para URLs hardcoded en README después del rename del repo.
+
+#### Referencias
+
+- Rama: `scripts/rename-qa-gateway-magiis`
+- PR GitHub / MR GitLab pendientes de abrir post-merge
+
 ---
 
 ## Resuelto recientemente (últimos 30 días)
