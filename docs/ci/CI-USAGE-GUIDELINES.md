@@ -1,4 +1,4 @@
-# CI/CD Usage Guidelines — magiis-playwright
+# CI/CD Usage Guidelines — qa-gateway-magiis
 
 Guía obligatoria de uso del sistema CI/CD para el equipo. Lectura requerida en onboarding.
 

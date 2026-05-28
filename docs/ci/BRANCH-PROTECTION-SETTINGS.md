@@ -1,6 +1,6 @@
 # Branch protection — Settings de GitLab y GitHub
 
-Configuración objetivo de branch protection para magiis-playwright.
+Configuración objetivo de branch protection para qa-gateway-magiis.
 Parte aplicada hoy via API (BL-017a), parte requiere triggers externos (BL-017b).
 
 **Última actualización:** 2026-04-20

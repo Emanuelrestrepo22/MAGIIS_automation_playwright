@@ -6,7 +6,7 @@
 
 ## Context
 
-Repository: `magiis-playwright` (Playwright + TypeScript + Appium/WebdriverIO v9).
+Repository: `qa-gateway-magiis` (Playwright + TypeScript + Appium/WebdriverIO v9).
 This prompt covers the **Passenger App** side of the mobile journey.
 The historical pivot is **Flow 2: Passenger App -> Driver App**.
 

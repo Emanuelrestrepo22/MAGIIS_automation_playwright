@@ -1,4 +1,4 @@
-# Reportes técnicos — magiis-playwright
+# Reportes técnicos — qa-gateway-magiis
 
 Índice de reportes de diagnóstico, migraciones y mitigaciones generados durante la consolidación TIER 1-3.
 

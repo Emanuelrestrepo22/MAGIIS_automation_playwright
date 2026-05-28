@@ -8,7 +8,7 @@
  *   // → TestCase[]
  *
  * Ver estructura esperada de columnas en:
- *   .claude/skills/magiis-playwright-docs-to-drafts/references/excel-schema.md
+ *   .claude/skills/qa-gateway-magiis-docs-to-drafts/references/excel-schema.md
  */
 
 import * as XLSX from 'xlsx';
@@ -143,7 +143,7 @@ export async function readTestCases(
 
 /**
  * Convierte un TestCase en el bloque TypeScript de un test Playwright.
- * Usado por el pipeline magiis-playwright-docs-to-drafts para generar spec drafts.
+ * Usado por el pipeline qa-gateway-magiis-docs-to-drafts para generar spec drafts.
  */
 export function testCaseToPlaywrightBlock(tc: TestCase): string {
   const stepsComments = tc.steps

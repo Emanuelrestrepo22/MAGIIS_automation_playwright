@@ -1,4 +1,4 @@
-# Scripts mobile / Appium — magiis-playwright
+# Scripts mobile / Appium — qa-gateway-magiis
 
 > Referencia centralizada de scripts npm relacionados con automatización Appium
 > Android (driver y passenger apps). Estos scripts ejecutan harnesses ad-hoc

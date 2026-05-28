@@ -65,7 +65,7 @@
  * Archivos objetivo (default)
  * ─────────────────────────────────────────────────────────────────────────────
  *   1. docs/gateway-pg/stripe/STRIPE_Test_Suite_Matriz_Sincronizado.xlsx
- *   2. .claude/skills/magiis-playwright-docs-to-drafts/references/
+ *   2. .claude/skills/qa-gateway-magiis-docs-to-drafts/references/
  *      STRIPE_Test_Suite_Matriz_Sincronizado.xlsx
  *
  * ─────────────────────────────────────────────────────────────────────────────
@@ -602,7 +602,7 @@ function truncate(s: string, n: number): string {
 
 const DEFAULT_TARGETS = [
   'docs/gateway-pg/stripe/STRIPE_Test_Suite_Matriz_Sincronizado.xlsx',
-  '.claude/skills/magiis-playwright-docs-to-drafts/references/STRIPE_Test_Suite_Matriz_Sincronizado.xlsx',
+  '.claude/skills/qa-gateway-magiis-docs-to-drafts/references/STRIPE_Test_Suite_Matriz_Sincronizado.xlsx',
 ];
 
 async function main(): Promise<void> {

@@ -23,7 +23,7 @@ Actualizar SPECS_COMPLETADAS y SPECS_PENDIENTES a medida que se completan. Al fi
 
 ## Contexto del proyecto
 
-Repositorio: `magiis-playwright` — Playwright + TypeScript, portal carrier de MAGIIS.
+Repositorio: `qa-gateway-magiis` — Playwright + TypeScript, portal carrier de MAGIIS.
 
 El framework usa:
 - `tests/TestBase.ts` — fixture base con `test.use({ role: 'carrier' })`

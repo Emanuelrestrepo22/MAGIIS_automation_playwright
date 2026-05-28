@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * pre-push.mjs — Ritual pre-push para magiis-playwright
+ * pre-push.mjs — Ritual pre-push para qa-gateway-magiis
  *
  * 11 checks + 1 check opcional (gitleaks si instalado) en <30s antes de cada git push.
  * Previene pushes con errores evitables (tsc roto, .only olvidado, secrets,
@@ -124,7 +124,7 @@ function grepForbidden(pattern, paths, { excludeFiles = [], flags = '' } = {}) {
   }
 }
 
-console.log(`${c.bold}${c.cyan}Pre-push ritual — magiis-playwright${c.reset}`);
+console.log(`${c.bold}${c.cyan}Pre-push ritual — qa-gateway-magiis${c.reset}`);
 console.log(`${c.gray}11 checks + gitleaks opcional${c.reset}`);
 console.log(`${c.gray}--------------------------------------------${c.reset}\n`);
 

@@ -32,7 +32,7 @@ winget install Genymobile.scrcpy
 ### Terminal roles
 
 - Global terminal: any PowerShell window, even outside the repo.
-- Project terminal: PowerShell opened at the root of `magiis-playwright`.
+- Project terminal: PowerShell opened at the root of `qa-gateway-magiis`.
 
 ### Sanity checks
 
@@ -93,7 +93,7 @@ Passenger:
 From the repo root:
 
 ```powershell
-cd "C:\Users\Erika\OneDrive - MAGIIS USA LLC (1)\Escritorio\magiis-playwright"
+cd "C:\Users\Erika\OneDrive - MAGIIS USA LLC (1)\Escritorio\qa-gateway-magiis"
 $env:ANDROID_UDID="R92XB0B8F3J"
 pnpm mobile:driver:home-dump
 ```
@@ -112,7 +112,7 @@ pnpm mobile:driver:login-smoke
 From the repo root:
 
 ```powershell
-cd "C:\Users\Erika\OneDrive - MAGIIS USA LLC (1)\Escritorio\magiis-playwright"
+cd "C:\Users\Erika\OneDrive - MAGIIS USA LLC (1)\Escritorio\qa-gateway-magiis"
 $env:ANDROID_UDID="R92XB0B8F3J"
 pnpm mobile:passenger:home-dump
 ```
