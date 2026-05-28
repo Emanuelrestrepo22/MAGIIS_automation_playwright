@@ -178,20 +178,6 @@
 		},
 		{
 			"files": [
-				"tests/specs/gateway-pg/stripe/**/*.ts",
-				"tests/pages/gateway-pg/**/*.ts",
-				"tests/pages/gateway-pg/*.ts",
-				"tests/data/gateway-pg/**/*.ts",
-				"tests/data/gateway-pg/*.ts",
-				"tests/pages/LoginPage.ts",
-				"tests/utils/apiClient.ts"
-			],
-			"rules": {
-				"no-restricted-imports": "off"
-			}
-		},
-		{
-			"files": [
 				"tests/features/gateway-pg/data/stripe-cards.ts"
 			],
 			"rules": {

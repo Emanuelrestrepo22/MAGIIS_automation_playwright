@@ -9,7 +9,16 @@
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
     "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "paths": {
+      "@pages/*": ["./tests/pages/*"],
+      "@helpers/*": ["./tests/helpers/*"],
+      "@fixtures/*": ["./tests/fixtures/*"],
+      "@features/*": ["./tests/features/*"],
+      "@config/*": ["./tests/config/*"],
+      "@utils/*": ["./tests/utils/*"],
+      "@TestBase": ["./tests/TestBase.ts"]
+    }
   },
   "include": [
     "./**/*.ts",

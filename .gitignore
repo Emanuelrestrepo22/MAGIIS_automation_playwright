@@ -18,9 +18,10 @@ coverage/
 # ─── Credenciales y variables de entorno ───────────────────
 # NUNCA subir archivos .env al repositorio
 .env
-.env.example
 .env.*
 .env.*.local
+# .env.example es la plantilla pública sin valores — debe quedar trackeada.
+!.env.example
 
 # ─── Evidencia y artefactos de ejecución ───────────────────
 # Screenshots, videos y reportes generados por los tests
