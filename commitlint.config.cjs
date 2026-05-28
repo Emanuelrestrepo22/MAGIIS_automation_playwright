@@ -1,5 +1,5 @@
 /**
- * Config commitlint — magiis-playwright
+ * Config commitlint — qa-gateway-magiis
  *
  * Formato esperado: <tipo>(<scope>): [TC-ID?] descripcion corta
  *

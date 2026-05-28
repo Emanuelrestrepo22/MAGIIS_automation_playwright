@@ -1,4 +1,4 @@
 #!/usr/bin/env sh
-# pre-commit hook — magiis-playwright
+# pre-commit hook — qa-gateway-magiis
 # Las validaciones corren en pre-push (pnpm pp).
 # Este hook queda vacio intencionalmente.

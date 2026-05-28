@@ -2,7 +2,7 @@
 
 ## Contexto del proyecto
 
-Repositorio: `magiis-playwright` — automatización E2E Playwright + TypeScript para plataforma MAGIIS.
+Repositorio: `qa-gateway-magiis` — automatización E2E Playwright + TypeScript para plataforma MAGIIS.
 
 MAGIIS tiene 4 portales:
 - **Carrier** y **Contractor**: portales web (Playwright). Contractor comparte ~90% de la UI de Carrier.

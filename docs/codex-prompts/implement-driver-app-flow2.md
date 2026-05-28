@@ -5,7 +5,7 @@
 > Keep this prompt as historical reference until App Driver work is reactivated explicitly.
 
 ## Contexto
-Repositorio: `magiis-playwright` (Playwright + TypeScript + Appium/WebdriverIO v9).
+Repositorio: `qa-gateway-magiis` (Playwright + TypeScript + Appium/WebdriverIO v9).
 Este prompt cubre la capa **App Driver** del flujo híbrido E2E.
 El pivote historico es **Flow 2: App Passenger → App Driver**.
 Todos los Screen Objects del Driver están confirmados con dumps reales de DOM.

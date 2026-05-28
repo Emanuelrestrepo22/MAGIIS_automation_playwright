@@ -96,7 +96,7 @@ Abrir la terminal integrada del IDE (VS Code: Ctrl + `) **o** una PowerShell nue
 
 Navegar a la raíz del proyecto:
 ```powershell
-cd "C:\Users\Erika\OneDrive - MAGIIS USA LLC (1)\Escritorio\magiis-playwright"
+cd "C:\Users\Erika\OneDrive - MAGIIS USA LLC (1)\Escritorio\qa-gateway-magiis"
 ```
 
 Habilitar ejecución de scripts:

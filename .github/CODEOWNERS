@@ -1,4 +1,4 @@
-# CODEOWNERS — magiis-playwright
+# CODEOWNERS — qa-gateway-magiis
 #
 # Asigna reviewers automaticamente segun archivos tocados en PR.
 # Cuando Erika sea la unica dev, todos apuntan a su user.

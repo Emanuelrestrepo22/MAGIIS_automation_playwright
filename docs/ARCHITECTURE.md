@@ -1,4 +1,4 @@
-# Architecture — magiis-playwright
+# Architecture — qa-gateway-magiis
 
 > Documento canónico de arquitectura del proyecto. Define principios heredados, escalamientos aplicados, y convenciones de evolución.
 
@@ -6,7 +6,7 @@
 
 El proyecto sigue los 8 principios universales de testing automation:
 
-| Principio | Implementación en magiis-playwright |
+| Principio | Implementación en qa-gateway-magiis |
 |---|---|
 | **Page Object Model** | `tests/pages/` jerárquico (shared + carrier + contractor) |
 | **Separación tests/pages/utilidades** | `tests/features/**/specs/` + `tests/pages/` + `tests/helpers/` |
@@ -21,7 +21,7 @@ Estos principios están alineados con la referencia `Emanuelrestrepo22/selenium-
 
 ## 2. Escalamientos aplicados (por tamaño del proyecto)
 
-La referencia cubre 1 web app con 1 portal. magiis-playwright cubre 4 portales + 2 apps móviles + flows híbridos. Los escalamientos:
+La referencia cubre 1 web app con 1 portal. qa-gateway-magiis cubre 4 portales + 2 apps móviles + flows híbridos. Los escalamientos:
 
 ### Eje 1 — Portales múltiples
 
@@ -86,7 +86,7 @@ Los scripts de sincronización viven en `scripts/ai/matriz-coherencia/`.
 .claude/
 ├── agents/             5 agentes especializados con modelos asignados
 ├── docs/model-policy.md (tiers Crítico/Medium/Bajo)
-└── skills/             magiis-playwright-docs-to-drafts, magiis-appium-hybrid-e2e
+└── skills/             qa-gateway-magiis-docs-to-drafts, magiis-appium-hybrid-e2e
 ```
 
 ### Eje 6 — Datos de prueba con taxonomía SoT + scenarios
@@ -338,7 +338,7 @@ Ver `docs/` → skill `magiis-branch-convention`:
 
 ## 10. Diferencias con la referencia `selenium-py-POM`
 
-| Aspecto | selenium-py-POM | magiis-playwright | Razón |
+| Aspecto | selenium-py-POM | qa-gateway-magiis | Razón |
 |---|---|---|---|
 | Stack | Python + Selenium + Pytest | TypeScript + Playwright + Appium | Stack actual del equipo |
 | Portales | 1 (saucedemo) | 4 + 2 apps | Producto más complejo |

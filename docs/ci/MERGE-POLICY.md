@@ -1,4 +1,4 @@
-# Merge Policy — magiis-playwright
+# Merge Policy — qa-gateway-magiis
 
 > Política operativa para mergear cambios a `main` sin conflicts estructurales y manteniendo GitLab ↔ GitHub sincronizados. Fuente: resolución BL-023.
 

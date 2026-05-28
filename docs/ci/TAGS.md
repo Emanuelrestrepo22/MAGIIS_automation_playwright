@@ -1,4 +1,4 @@
-# Convención de tags Playwright — magiis-playwright (BL-045)
+# Convención de tags Playwright — qa-gateway-magiis (BL-045)
 
 > Tags `@` en `test.describe()` para filtrado con `--grep`. Reemplazan la proliferación de scripts `test:*` con criterio declarativo de cobertura.
 

@@ -1,6 +1,6 @@
 # CI Gates — Plan de Implementación Progresivo
 
-**Proyecto:** magiis-playwright
+**Proyecto:** qa-gateway-magiis
 **Owner:** Emanuel Restrepo (QA Automation)
 **Inicio:** 2026-04-20
 **Horizonte:** 12-18 meses
