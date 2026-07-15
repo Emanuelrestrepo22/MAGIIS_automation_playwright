@@ -1,87 +1,83 @@
-# ============================================================================
-# GitLab CI DESHABILITADO (contenido comentado) — política MAGIIS 2026-07-15:
-#   La CI corre LOCAL / en DOCKER / Jenkins / GitHub Actions (github personal),
-#   NUNCA en GitLab CI. Se comenta todo el pipeline para que NO se ejecute
-#   (ni siquiera manualmente desde la UI). Presets de CI real:
-#     - Jenkinsfile              (agente Docker + Playwright, target de trabajo)
-#     - .github/workflows/playwright-uat-e2e.yml  (GitHub Actions, github personal)
-# ============================================================================
-#
-# stages:
-#   - test
-# 
-# # ⚠️ CI DESACTIVADO 2026-04-27 — decisión BL-035
-# # La regla `when: never` skip TODOS los pipelines GitLab automáticos.
-# # Solo se pueden disparar manualmente desde la UI con "Run pipeline".
-# # Para reactivar: restaurar `auto_cancel: on_new_commit: interruptible`.
-# workflow:
-#   rules:
-#     - when: never
-# 
-# variables:
-#   PNPM_CACHE_FOLDER: "$CI_PROJECT_DIR/.pnpm-store"
-# 
-# .e2e_template:
-#   stage: test
-#   image: node:20
-#   # interruptible: cancela pipelines previos del mismo ref cuando llega uno nuevo.
-#   # Evita 3 jobs concurrentes chocando contra estado compartido del entorno TEST
-#   # (preferencias operativas, viajes previos, wallet del passenger de prueba).
-#   interruptible: true
-#   cache:
-#     key:
-#       files:
-#         - pnpm-lock.yaml
-#     paths:
-#       - .pnpm-store
-#   before_script:
-#     - corepack enable
-#     - corepack prepare pnpm@latest --activate
-#     - pnpm config set store-dir $PNPM_CACHE_FOLDER
-#     - pnpm install --frozen-lockfile
-#     - npx playwright install --with-deps chromium
-#   script:
-#     - mkdir -p storage
-#     - |
-#       # Usar variables de GitLab con fallback a valores de TEST conocidos
-#       BASE_URL=${BASE_URL:-"https://apps-test.magiis.com"}
-#       AUTH_API_URL=${AUTH_API_URL:-""}
-#       
-#       echo "ENV=${ENV}" > .env.test
-#       echo "BASE_URL=${BASE_URL}" >> .env.test
-#       echo "AUTH_API_URL=${AUTH_API_URL:-\"\"}" >> .env.test
-#       echo "LOGIN_PATH=${LOGIN_PATH:-\"/#/authentication/login/carrier\"}" >> .env.test
-#       echo "DASHBOARD_URL_PATTERN=${DASHBOARD_URL_PATTERN:-\"dashboard\"}" >> .env.test
-#       echo "USER_CARRIER=${USER_CARRIER}" >> .env.test
-#       echo "PASS_CARRIER=${PASS_CARRIER}" >> .env.test
-#       echo "USER_CONTRACTOR=${USER_CONTRACTOR:-\"\"}" >> .env.test
-#       echo "PASS_CONTRACTOR=${PASS_CONTRACTOR:-\"\"}" >> .env.test
-#       echo "HEADLESS=true" >> .env.test
-#     - pnpm run test:test:smoke
-#     - pnpm run cleanup:test:travels || true
-#   artifacts:
-#     when: always
-#     paths:
-#       - evidence/test/
-#     reports:
-#       junit: evidence/test/junit.xml
-#     expire_in: 14 days
-# 
-# e2e-test:
+# 🚨 NO COMENTAR NI VACIAR ESTE ARCHIVO. El bloque `workflow: rules: - when: never` de abajo
+#    es lo que BLOQUEA los pipelines de GitLab. Un .gitlab-ci.yml vacío/comentado hace que GitLab
+#    dispare Auto DevOps o un pipeline de config inválida (incidente 2026-07-15, pipeline fallido).
+#    Política MAGIIS: CI corre local/Docker/Jenkins/GitHub Actions, NUNCA GitLab CI. Dejar when:never.
+# ─────────────────────────────────────────────────────────────────────────────────────────────
+stages:
+  - test
+
+# ⚠️ CI DESACTIVADO 2026-04-27 — decisión BL-035
+# La regla `when: never` skip TODOS los pipelines GitLab automáticos.
+# Solo se pueden disparar manualmente desde la UI con "Run pipeline".
+# Para reactivar: restaurar `auto_cancel: on_new_commit: interruptible`.
+workflow:
+  rules:
+    - when: never
+
+variables:
+  PNPM_CACHE_FOLDER: "$CI_PROJECT_DIR/.pnpm-store"
+
+.e2e_template:
+  stage: test
+  image: node:20
+  # interruptible: cancela pipelines previos del mismo ref cuando llega uno nuevo.
+  # Evita 3 jobs concurrentes chocando contra estado compartido del entorno TEST
+  # (preferencias operativas, viajes previos, wallet del passenger de prueba).
+  interruptible: true
+  cache:
+    key:
+      files:
+        - pnpm-lock.yaml
+    paths:
+      - .pnpm-store
+  before_script:
+    - corepack enable
+    - corepack prepare pnpm@latest --activate
+    - pnpm config set store-dir $PNPM_CACHE_FOLDER
+    - pnpm install --frozen-lockfile
+    - npx playwright install --with-deps chromium
+  script:
+    - mkdir -p storage
+    - |
+      # Usar variables de GitLab con fallback a valores de TEST conocidos
+      BASE_URL=${BASE_URL:-"https://apps-test.magiis.com"}
+      AUTH_API_URL=${AUTH_API_URL:-""}
+      
+      echo "ENV=${ENV}" > .env.test
+      echo "BASE_URL=${BASE_URL}" >> .env.test
+      echo "AUTH_API_URL=${AUTH_API_URL:-\"\"}" >> .env.test
+      echo "LOGIN_PATH=${LOGIN_PATH:-\"/#/authentication/login/carrier\"}" >> .env.test
+      echo "DASHBOARD_URL_PATTERN=${DASHBOARD_URL_PATTERN:-\"dashboard\"}" >> .env.test
+      echo "USER_CARRIER=${USER_CARRIER}" >> .env.test
+      echo "PASS_CARRIER=${PASS_CARRIER}" >> .env.test
+      echo "USER_CONTRACTOR=${USER_CONTRACTOR:-\"\"}" >> .env.test
+      echo "PASS_CONTRACTOR=${PASS_CONTRACTOR:-\"\"}" >> .env.test
+      echo "HEADLESS=true" >> .env.test
+    - pnpm run test:test:smoke
+    - pnpm run cleanup:test:travels || true
+  artifacts:
+    when: always
+    paths:
+      - evidence/test/
+    reports:
+      junit: evidence/test/junit.xml
+    expire_in: 14 days
+
+e2e-test:
+  extends: .e2e_template
+  environment:
+    name: test
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+  variables:
+    ENV: test
+
+# e2e-uat:
 #   extends: .e2e_template
-#   environment:
-#     name: test
 #   rules:
-#     - if: '$CI_COMMIT_BRANCH == "main"'
+#     - when: manual
 #   variables:
-#     ENV: test
-# 
-# # e2e-uat:
-# #   extends: .e2e_template
-# #   rules:
-# #     - when: manual
-# #   variables:
-# #     ENV: uat
-# 
-# # e2e-prod: deshabilitado — PROD no está definido aún como scope de pruebas.
-# # Habilitarlo solo cuando se defina el alcance de ejecución en PROD.
+#     ENV: uat
+
+# e2e-prod: deshabilitado — PROD no está definido aún como scope de pruebas.
+# Habilitarlo solo cuando se defina el alcance de ejecución en PROD.
