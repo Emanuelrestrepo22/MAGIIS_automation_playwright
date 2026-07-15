@@ -81,7 +81,9 @@
     "ci:report": "node scripts/ci/weekly-ci-report.mjs",
     "ci:sync-check": "node scripts/ci/check-remote-sync.mjs",
     "sync:trello": "node --no-warnings --loader ts-node/esm scripts/trello/sync-backlog-to-trello.ts",
-    "sync:trello:dry": "node --no-warnings --loader ts-node/esm scripts/trello/sync-backlog-to-trello.ts --dry"
+    "sync:trello:dry": "node --no-warnings --loader ts-node/esm scripts/trello/sync-backlog-to-trello.ts --dry",
+    "scaffold:feature": "node --no-warnings --loader ts-node/esm scripts/scaffold-feature.ts",
+    "scaffold:feature:dry": "node --no-warnings --loader ts-node/esm scripts/scaffold-feature.ts --dry-run"
   },
   "keywords": [
     "playwright",
