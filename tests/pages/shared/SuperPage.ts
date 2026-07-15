@@ -1,15 +1,15 @@
 // tests/pages/shared/SuperPage.ts
 import type { Locator, Page } from '@playwright/test';
 import { expect } from '@playwright/test';
+import { BasePage } from './BasePage';
 
-export abstract class SuperPage {
-	protected readonly page: Page;
+export abstract class SuperPage extends BasePage {
 	private readonly bannerNewTravelLink: Locator;
 	private readonly bannerNewTravelText: Locator;
 	private readonly sidebarNewTravelLink: Locator;
 
 	constructor(page: Page) {
-		this.page = page;
+		super(page);
 		// Carrier: link en el banner.
 		// Contractor: a veces se pinta como texto/cta en el banner.
 		// Mantenemos candidatos separados para evitar strict mode con locators compuestos.
