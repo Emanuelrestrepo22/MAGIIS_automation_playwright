@@ -14,7 +14,12 @@ export class DashboardPage extends SuperPage {
 	async ensureDashboardLoaded(): Promise<void> {
 		const dashboardUrl = /#\/home\/(?:carrier|contractor)(?:\/dashboard)?(?:[?#].*)?$/;
 		console.log('[DashboardPage.ensureDashboardLoaded][S00] Validando shell /home/carrier o /home/contractor...');
-		await expect(this.page).toHaveURL(dashboardUrl, { timeout: 15_000 });
+		// Hash-routed SPA: `expect(page).toHaveURL` a veces NO dispara aunque la URL ya matchee
+		// (el navigation event no se emite en cambios de hash). Se poll-ea `page.url()` en vivo
+		// (mismo patrón que global-setup.multi-role.ts) para no flakear en el login.
+		await expect
+			.poll(() => this.page.url(), { timeout: 20_000, message: `dashboard URL no alcanzada (patrón ${dashboardUrl})` })
+			.toMatch(dashboardUrl);
 		console.log('[DashboardPage.ensureDashboardLoaded][S01] Shell portal OK');
 
 		console.log('[DashboardPage.ensureDashboardLoaded][S02] Validando ancla básica (Nuevo Viaje)...');
