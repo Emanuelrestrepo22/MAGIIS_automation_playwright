@@ -35,9 +35,10 @@ export default defineConfig({
     ["list"],
     ["html", { open: "never", outputFolder: `evidence/${env}/report` }],
     ["junit", { outputFile: `evidence/${env}/junit.xml` }],
-    ["allure-playwright", { resultsDir: "allure-results", detail: true }],
+    // Allure OPT-IN (ALLURE=1) — condicional para no romper el runner default.
+    ...(process.env.ALLURE ? [["allure-playwright", { resultsDir: "allure-results", detail: true }]] : []),
     ["./tests/utils/reporters/custom-reporter.ts"],
-  ],
+  ] as import("@playwright/test").ReporterDescription[],
 
   use: {
     // Config base compartida por cada test si la spec no la sobreescribe.
