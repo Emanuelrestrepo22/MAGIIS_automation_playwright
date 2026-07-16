@@ -36,7 +36,7 @@ export default defineConfig({
     ["html", { open: "never", outputFolder: `evidence/${env}/report` }],
     ["junit", { outputFile: `evidence/${env}/junit.xml` }],
     // Allure OPT-IN (ALLURE=1) — condicional para no romper el runner default.
-    ...(process.env.ALLURE ? [["allure-playwright", { resultsDir: "allure-results", detail: true }]] : []),
+    ...(process.env.ALLURE ? [["allure-playwright", { resultsDir: "allure-results", detail: true, links: [{ type: "tms", urlTemplate: "https://magiis.atlassian.net/browse/%s" }, { type: "issue", urlTemplate: "https://magiis.atlassian.net/browse/%s" }] }]] : []),
     ["./tests/utils/reporters/custom-reporter.ts"],
   ] as import("@playwright/test").ReporterDescription[],
 
