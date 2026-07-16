@@ -35,6 +35,7 @@ export default defineConfig({
     ["list"],
     ["html", { open: "never", outputFolder: `evidence/${env}/report` }],
     ["junit", { outputFile: `evidence/${env}/junit.xml` }],
+    ["allure-playwright", { resultsDir: "allure-results", detail: true }],
     ["./tests/utils/reporters/custom-reporter.ts"],
   ],
 
