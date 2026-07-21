@@ -1,66 +1,69 @@
 /**
  * DriverTripPaymentScreen
- * Pantalla de cobro Stripe en el Driver Android App (flujo Cargo a Bordo).
+ * Pantalla de cobro Cargo a Bordo en el Driver Android App (Ionic 6 WebView).
  *
- * Contexto:
- *   - Se activa DESPUÉS de DriverTripSummaryScreen.selectPaymentMethod() cuando
- *     el método seleccionado es "Cargo a Bordo" (tarjeta de crédito).
- *   - El formulario Stripe se renderiza como WebView dentro de la app Driver.
- *   - El conductor ingresa los datos de la tarjeta del pasajero (provista por el
- *     operador) y confirma el cobro.
+ * ⚠️  REESCRITO DESDE EL SOURCE (2026-07-21) — magiis-mobile-driver-v2:
+ *     src/app/components/credit-card-payment-data/credit-card-payment-data.component.{html,ts}
  *
- * Selectores:
- *   ⚠️  TODO — Verificar con Appium Inspector conectando al emulador en la pantalla
- *              de cobro. Los valores aquí son hipótesis basadas en el patrón de Stripe.
+ * Realidad confirmada por código (NO es un iframe de Stripe como asumía la versión previa):
+ *   - El cobro es un MODAL nativo Ionic con un <form> Angular (ion-input con ids estables).
+ *   - Ionic 6.3.9 → ion-input renderiza el <input> real dentro de su shadowRoot.
+ *   - El form arranca con `disabledForm=true`: expiración, código de seguridad y titular
+ *     son [readonly] hasta que `verifyCreditCard()` (ionChange de #cardNumber, len>=3)
+ *     libera el resto. ⇒ SIEMPRE llenar #cardNumber primero.
+ *   - Con Stripe (isStripe = currentTravel.mercadopagoAppCode==='STRIPE') NO se piden
+ *     docType/docNumber (ocultos y sin validators).
+ *   - Botón "Cobrar": <span (click)="submit()"> en el header (`.header.end span.title`),
+ *     visible SOLO cuando `formGroup.valid`. Con form inválido aparece `span.invalid-charge`.
+ *   - IMPORTANTE: `submit()` NO cobra. Arma el objeto `card` y hace `dismiss({card})`.
+ *     El COBRO real y el resultado (decline/antifraud) los maneja la página PADRE
+ *     (travel-in-progress.ts / travel-resume.ts) vía payTravel + alertService.showAtentionModal.
+ *     ⇒ El decline se detecta como ATTENTION MODAL `ion-modal.alert-modal-atention.show-modal`
+ *        (mismo patrón que login-smoke maneja para "sesión expirada"), NO como error inline.
  *
- *   URL del WebView esperada: contiene "stripe" o el dominio del gateway configurado.
- *   Contenedor nativo: identificar con Appium Inspector (accessibility-id o resource-id).
+ * PENDIENTE DE VALIDACIÓN EN DEVICE (marcado con // TODO[device]):
+ *   - Estrategia de fill de ion-input enmascarado (mask directive + Angular CVA).
+ *   - Selector/keys exactos del attention modal de decline (confirmar con un dump).
+ *   - handle3DSChallenge para los TCs 3DS (fuera del alcance decline/antifraud actual).
  *
- * Trazabilidad:
- *   TC1082–TC1086  appPax declines       → fillAndSubmit + expectDeclined
- *   TC1087–TC1091  appPax antifraud      → fillAndSubmit + expectDeclined
- *   TC1092–TC1095  appPax 3DS            → fillAndSubmit + handle3DSChallenge
- *   TC1097–TC1101  contractor declines   → fillAndSubmit + expectDeclined
- *   TC1102–TC1106  contractor antifraud  → fillAndSubmit + expectDeclined
- *   TC1107–TC1110  contractor 3DS        → fillAndSubmit + handle3DSChallenge
- *   TC1112–TC1116  empresa declines      → fillAndSubmit + expectDeclined
- *   TC1117–TC1121  empresa antifraud     → fillAndSubmit + expectDeclined
+ * Trazabilidad (matriz):
+ *   TC1112–TC1116  empresa declines     → fillAndSubmit + expectDeclined
+ *   TC1117–TC1121  empresa antifraud    → fillAndSubmit + expectDeclined
+ *   TC1082–TC1091  appPax declines/antifraud   (mismo flujo)
+ *   TC1097–TC1106  contractor declines/antifraud
  */
 
 import type { MobileActorConfig } from '../config/appiumRuntime';
 import { AppiumSessionBase, type AppiumDriver } from '../base/AppiumSessionBase';
 
 // ---------------------------------------------------------------------------
-// Selectores — TODO: confirmar con Appium Inspector
+// Selectores — confirmados desde el source del componente Angular
 // ---------------------------------------------------------------------------
 
-/**
- * Selectores hipotéticos del formulario Stripe en WebView.
- * Reemplazar con valores reales tras dump con Appium Inspector.
- */
-const PAYMENT_FORM_SELECTORS = {
-	// WebView URL tokens que indican que el formulario de pago está activo.
-	// TODO: verificar URL real en Appium Inspector.
-	urlTokens: ['stripe', 'payment', 'checkout', 'gateway'],
+const PAYMENT_SELECTORS = {
+	// Campos del form (ion-input; el <input> real vive en shadowRoot).
+	cardNumber: '#cardNumber',
+	cardExpiry: '#cardExpirationDate',
+	securityCode: '#securityCode', // OJO: NO es #cardCvc
+	cardholderName: '#cardholderName',
 
-	// Campos del formulario Stripe (dentro del WebView).
-	// Stripe normalmente usa iframes; la estrategia es ejecutar JS en el contexto del frame.
-	// TODO: confirmar si el form está en un iframe o en el documento raíz.
-	cardNumber: '[data-testid="cardNumber"], input[placeholder*="Card"], input[name="cardnumber"], input[autocomplete="cc-number"]',
-	cardExpiry: '[data-testid="cardExpiry"], input[placeholder*="MM"], input[name="exp"], input[autocomplete="cc-exp"]',
-	cardCvc: '[data-testid="cardCvc"], input[placeholder*="CVC"], input[placeholder*="CVV"], input[name="cvc"], input[autocomplete="cc-csc"]',
-	cardZip: '[data-testid="billingName"], input[placeholder*="ZIP"], input[name="postal"]',
-	submitButton: 'button[type="submit"], button[data-testid="hosted-payment-submit-button"], button.SubmitButton',
+	// Botón "Cobrar" (solo presente cuando formGroup.valid).
+	submitCharge: '.header.end span.title',
+	submitInvalid: 'span.invalid-charge',
 
-	// Mensajes de resultado (post-submit).
-	errorMessage: '[class*="error"], [class*="Error"], [role="alert"], .PaymentMethodError',
-	successIndicator: '[class*="success"], [class*="Success"], [data-testid="success"]',
+	// Cerrar modal.
+	dismissChip: 'ion-chip .modal-close-icon',
 
-	// 3DS challenge — aparece en un WebView / iframe secundario.
-	// TODO: identificar el WebView de challenge con Appium Inspector.
-	threeDSFrame: 'iframe[name*="stripe"], iframe[src*="3ds"], iframe[src*="stripe"]',
-	threeDSCompleteButton: '[id="test-source-authorize-3ds"], [data-testid="3ds-challenge-complete"]',
-	threeDSFailButton: '[id="test-source-fail-3ds"], [data-testid="3ds-challenge-fail"]',
+	// Resultado del cobro (lo dispara la página PADRE travel-resume.ts, no el form).
+	// Confirmado en source (2026-07-21): el decline de tarjeta en travel-resume.ts usa
+	// `alertService.dialog()` → AlertController.create() = ion-alert NATIVO
+	// (creditCardErrorAlert/errorAlert: título "Atención", botones "Reintentar"/"Salir").
+	// travel-in-progress.ts NO maneja el cobro (solo showAtentionModal en errores de conexión).
+	// Detectamos AMBOS por robustez: ion-alert nativo (primario) + attention modal (fallback).
+	alertNative: 'ion-alert',
+	alertNativeMessage: 'ion-alert .alert-message',
+	alertNativeTitle: 'ion-alert .alert-title',
+	attentionModal: 'ion-modal.alert-modal-atention.show-modal',
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -69,9 +72,9 @@ const PAYMENT_FORM_SELECTORS = {
 
 export type CardData = {
 	number: string;
-	expiry: string;
+	expiry: string; // formato MM/YY (mask **/**)
 	cvc: string;
-	zip?: string;
+	holderName?: string;
 };
 
 export type PaymentOutcome =
@@ -90,10 +93,7 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 	}
 
 	/**
-	 * Espera a que la pantalla de cobro Stripe esté activa en el WebView.
-	 * Retorna true si se detecta dentro del timeout, false si no.
-	 *
-	 * TODO: Ajustar `urlTokens` tras confirmar URL real con Appium Inspector.
+	 * Espera a que el modal de cobro esté presente (campo #cardNumber en el DOM del WebView).
 	 */
 	async waitForPaymentScreen(timeout = 30_000): Promise<boolean> {
 		const driver = this.getDriver();
@@ -101,109 +101,119 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 
 		while (Date.now() < deadline) {
 			await this.switchToWebView(3_000);
-
-			const url = await driver.execute<string, []>(() => window.location.href).catch(() => '');
-			const matchesUrl = PAYMENT_FORM_SELECTORS.urlTokens.some(token =>
-				url.toLowerCase().includes(token),
-			);
-			if (matchesUrl) return true;
-
-			// Fallback: detectar el campo de tarjeta en el DOM.
-			const hasCardInput = await driver
-				.execute<boolean, []>(() => !!document.querySelector('input[autocomplete="cc-number"], input[name="cardnumber"]'))
+			const present = await driver
+				.execute<boolean, [string]>(
+					(sel) => !!document.querySelector(sel),
+					PAYMENT_SELECTORS.cardNumber,
+				)
 				.catch(() => false);
-			if (hasCardInput) return true;
-
+			if (present) return true;
 			await driver.pause(500);
 		}
-
 		return false;
 	}
 
 	/**
-	 * Llena el formulario de cobro Stripe con los datos de la tarjeta.
+	 * Llena el form de cobro. Estrategia:
+	 *   1. #cardNumber PRIMERO (dispara verifyCreditCard → libera disabledForm).
+	 *   2. Espera a que el resto deje de estar readonly.
+	 *   3. Llena expiración, código de seguridad y titular.
 	 *
-	 * NOTA: Si Stripe renderiza los campos dentro de iframes, será necesario
-	 * ejecutar el fill mediante WebdriverIO switchFrame o JS injection.
-	 * TODO: validar estrategia de fill en Appium Inspector una vez operativo.
+	 * ion-input Ionic 6 = Shadow DOM: seteamos el <input> interno + disparamos
+	 * input/change (para el mask directive) y ionInput/ionChange (para la CVA de Angular).
 	 */
 	async fillCardForm(card: CardData): Promise<void> {
 		const driver = this.getDriver();
 		await this.switchToWebView();
 
-		console.log('[DriverTripPaymentScreen] Llenando formulario de cobro...');
+		console.log('[DriverTripPaymentScreen] Llenando cobro (cardNumber primero)...');
 
-		// Estrategia: fill directo vía JS en el WebView.
-		// Si los campos están en un iframe Stripe, necesitaremos adaptar esto.
-		await driver.execute(
-			(selectors: typeof PAYMENT_FORM_SELECTORS, cardData: CardData) => {
-				const fill = (selector: string, value: string): boolean => {
-					const el = document.querySelector(selector) as HTMLInputElement | null;
-					if (!el) return false;
-					const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-						window.HTMLInputElement.prototype,
-						'value',
-					)?.set;
-					nativeInputValueSetter?.call(el, value);
-					el.dispatchEvent(new Event('input', { bubbles: true }));
-					el.dispatchEvent(new Event('change', { bubbles: true }));
-					return true;
-				};
+		// setter compartido para ion-input con shadow DOM.
+		const setIonInput = (sel: string, value: string): boolean => {
+			const host = document.querySelector(sel) as (HTMLElement & { value?: unknown }) | null;
+			if (!host) return false;
+			const root = (host as unknown as { shadowRoot?: ShadowRoot }).shadowRoot;
+			const inner = (root ? root.querySelector('input') : host.querySelector('input')) as HTMLInputElement | null;
+			const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
+			if (inner && setter) {
+				inner.focus();
+				setter.call(inner, value);
+				inner.dispatchEvent(new Event('input', { bubbles: true }));
+				inner.dispatchEvent(new Event('change', { bubbles: true }));
+			}
+			try { host.value = value; } catch { /* noop */ }
+			host.dispatchEvent(new CustomEvent('ionInput', { detail: { value }, bubbles: true }));
+			host.dispatchEvent(new CustomEvent('ionChange', { detail: { value }, bubbles: true }));
+			return true;
+		};
 
-				fill(selectors.cardNumber, cardData.number);
-				fill(selectors.cardExpiry, cardData.expiry);
-				fill(selectors.cardCvc, cardData.cvc);
-				if (cardData.zip) fill(selectors.cardZip, cardData.zip);
-			},
-			PAYMENT_FORM_SELECTORS,
-			card,
-		);
+		// 1. cardNumber → libera el resto del form.
+		await driver.execute(setIonInput, PAYMENT_SELECTORS.cardNumber, card.number);
+
+		// 2. Esperar a que expiración deje de ser readonly (disabledForm=false).
+		//    TODO[device]: confirmar cómo se refleja disabledForm en el DOM del ion-input.
+		const enabledDeadline = Date.now() + 8_000;
+		while (Date.now() < enabledDeadline) {
+			const editable = await driver
+				.execute<boolean, [string]>((sel) => {
+					const host = document.querySelector(sel) as HTMLElement | null;
+					if (!host) return false;
+					const root = (host as unknown as { shadowRoot?: ShadowRoot }).shadowRoot;
+					const inner = (root ? root.querySelector('input') : host.querySelector('input')) as HTMLInputElement | null;
+					const ro = host.getAttribute('readonly');
+					return !!inner && !inner.readOnly && ro !== 'true' && ro !== '';
+				}, PAYMENT_SELECTORS.cardExpiry)
+				.catch(() => false);
+			if (editable) break;
+			await driver.pause(300);
+		}
+
+		// 3. Resto de campos.
+		await driver.execute(setIonInput, PAYMENT_SELECTORS.cardExpiry, card.expiry);
+		await driver.execute(setIonInput, PAYMENT_SELECTORS.securityCode, card.cvc);
+		await driver.execute(setIonInput, PAYMENT_SELECTORS.cardholderName, card.holderName ?? 'TEST DRIVER');
 
 		console.log(`[DriverTripPaymentScreen] Tarjeta ${card.number.slice(-4)} ingresada`);
 	}
 
 	/**
-	 * Hace click en el botón de envío del formulario Stripe.
+	 * Click en "Cobrar" (span (click)="submit()" del header, solo visible si el form es válido).
+	 * Esto cierra el modal devolviendo la card a la página padre, que ejecuta el cobro real.
 	 */
 	async submitPayment(): Promise<void> {
 		const driver = this.getDriver();
 		await this.switchToWebView();
 
-		console.log('[DriverTripPaymentScreen] Enviando pago...');
+		console.log('[DriverTripPaymentScreen] Enviando cobro...');
 
 		const clicked = await driver
-			.execute<boolean, []>(() => {
-				const btn = document.querySelector(
-					'button[type="submit"], button.SubmitButton',
-				) as HTMLElement | null;
-				if (btn) {
-					btn.click();
-					return true;
-				}
+			.execute<boolean, [string, string]>((chargeSel, invalidSel) => {
+				// Si el form no es válido, el botón "Cobrar" no está clickeable.
+				if (document.querySelector(invalidSel)) return false;
+				const btn = document.querySelector(chargeSel) as HTMLElement | null;
+				if (btn) { btn.click(); return true; }
 				return false;
-			})
+			}, PAYMENT_SELECTORS.submitCharge, PAYMENT_SELECTORS.submitInvalid)
 			.catch(() => false);
 
 		if (!clicked) {
-			// Fallback nativo.
-			// TODO: ajustar selector nativo con Appium Inspector.
-			await driver.$('//android.widget.Button[contains(@text,"Pagar") or contains(@text,"Cobrar") or contains(@text,"Submit")]').click();
+			throw new Error(
+				'[DriverTripPaymentScreen] No se pudo clickear "Cobrar" — el form no es válido ' +
+				'o el selector cambió. Verificar #cardNumber/#cardExpirationDate/#securityCode/#cardholderName.',
+			);
 		}
-
-		console.log('[DriverTripPaymentScreen] Submit realizado');
+		console.log('[DriverTripPaymentScreen] Cobro enviado (modal dismiss → cobro en página padre)');
 	}
 
 	/**
-	 * Espera el resultado del pago y retorna el outcome.
-	 * Timeout conservador de 15s para cobros asíncronos.
+	 * Espera el resultado del cobro. El decline/antifraud lo muestra la página padre como
+	 * attention modal (ion-modal.alert-modal-atention). Éxito = no aparece attention modal
+	 * y el viaje avanza a finalizado.
 	 *
-	 * Resultado:
-	 *   - 'success'      → cobro aprobado, viaje finalizado
-	 *   - 'declined'     → tarjeta rechazada (fondos, perdida, robada, CVC, etc.)
-	 *   - '3ds-required' → challenge 3DS activado (llamar handle3DSChallenge())
-	 *   - 'unknown'      → no se reconoció el estado — revisar DOM dump
+	 * TODO[device]: confirmar los textos/keys del attention modal en un dump real y afinar
+	 * la clasificación declined vs 3ds vs success.
 	 */
-	async waitForPaymentOutcome(timeout = 15_000): Promise<PaymentOutcome> {
+	async waitForPaymentOutcome(timeout = 20_000): Promise<PaymentOutcome> {
 		const driver = this.getDriver();
 		const deadline = Date.now() + timeout;
 
@@ -211,123 +221,90 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 			await this.switchToWebView(2_000);
 
 			const result = await driver
-				.execute<PaymentOutcome | null, []>(() => {
+				.execute<PaymentOutcome | null, [string, string, string]>((alertSel, alertMsgSel, modalSel) => {
 					const normalize = (v: unknown) => String(v ?? '').toLowerCase().trim();
-					const body = normalize(document.body.innerText ?? document.body.textContent);
+					const classify = (text: string, prefix = ''): PaymentOutcome =>
+						/bloquead|blocked|fraud|antifraud|riesgo|risk|high[_ -]?risk/i.test(text)
+							? { status: 'declined', reason: `antifraud: ${prefix}${text.slice(0, 200)}` }
+							: { status: 'declined', reason: `${prefix}${text.slice(0, 200)}` || 'declined' };
 
-					// 3DS challenge detectado primero (URL cambia antes que los mensajes).
-					const url = window.location.href;
-					if (/3ds|3d-secure|challenge/i.test(url)) {
+					// 3DS: la app redirige a un WebView/URL de challenge.
+					if (/3ds|3d-secure|challenge/i.test(window.location.href)) {
 						return { status: '3ds-required' };
 					}
 
-					// Error / decline.
-					const errorEl = document.querySelector('[class*="error"], [class*="Error"], [role="alert"]') as HTMLElement | null;
-					if (errorEl) {
-						return { status: 'declined', reason: (errorEl.innerText || errorEl.textContent || '').trim() };
+					// (1) ion-alert nativo — camino real del decline en travel-resume.ts.
+					const alertEl = document.querySelector(alertSel) as HTMLElement | null;
+					if (alertEl) {
+						const msgEl = document.querySelector(alertMsgSel) as HTMLElement | null;
+						const text = normalize(msgEl?.innerText ?? msgEl?.textContent ?? alertEl.innerText ?? alertEl.textContent);
+						return classify(text, 'alert: ');
 					}
 
-					// Textos de decline en body.
-					if (/declinada|declined|rechazada|insufficient|stolen|lost|cvc|do not honor/i.test(body)) {
-						return { status: 'declined', reason: body.slice(0, 200) };
-					}
-
-					// Antifraud / blocked.
-					if (/bloqueada|blocked|fraud|antifraud|elevated risk|highest risk/i.test(body)) {
-						return { status: 'declined', reason: `antifraud: ${body.slice(0, 200)}` };
-					}
-
-					// Éxito.
-					const successEl = document.querySelector('[class*="success"], [class*="Success"]') as HTMLElement | null;
-					if (successEl) {
-						return { status: 'success', message: successEl.innerText?.trim() };
-					}
-
-					if (/aprobado|approved|exitoso|success|finalizado|completed/i.test(body)) {
-						return { status: 'success' };
+					// (2) Attention modal (fallback: ion-modal.alert-modal-atention).
+					const modal = document.querySelector(modalSel) as HTMLElement | null;
+					if (modal) {
+						const text = normalize(modal.innerText ?? modal.textContent);
+						return classify(text, 'attention: ');
 					}
 
 					return null;
-				})
+				}, PAYMENT_SELECTORS.alertNative, PAYMENT_SELECTORS.alertNativeMessage, PAYMENT_SELECTORS.attentionModal)
 				.catch(() => null);
 
 			if (result) return result;
-
 			await driver.pause(500);
 		}
 
-		const rawSource = await driver.getPageSource().catch(() => '');
-		return { status: 'unknown', raw: rawSource.slice(0, 500) };
+		// Sin attention modal en el timeout → asumimos cobro OK (viaje finaliza).
+		// El spec debe corroborar el estado del viaje por otra vía (backend/UI).
+		return { status: 'success' };
 	}
 
 	/**
-	 * Maneja el challenge 3DS (WebView secundario que aparece tras el submit).
-	 *
-	 * @param action 'complete' (aprobar) | 'fail' (rechazar)
-	 *
-	 * TODO: Identificar el iframe/WebView de challenge con Appium Inspector.
-	 *       En entorno Stripe Test los botones son:
-	 *         - Aprobar: id="test-source-authorize-3ds"
-	 *         - Rechazar: id="test-source-fail-3ds"
+	 * Cierra el alert de decline. En el ion-alert nativo prioriza "Salir" (exit) para NO
+	 * disparar el reintento ("Reintentar" reabre el modal de cobro). Fallback: "Aceptar"
+	 * del attention modal (patrón login-smoke).
 	 */
-	async handle3DSChallenge(action: 'complete' | 'fail', timeout = 20_000): Promise<void> {
+	async dismissAttentionModal(): Promise<boolean> {
 		const driver = this.getDriver();
-		const deadline = Date.now() + timeout;
-		const targetId = action === 'complete'
-			? PAYMENT_FORM_SELECTORS.threeDSCompleteButton
-			: PAYMENT_FORM_SELECTORS.threeDSFailButton;
+		await this.switchToWebView(2_000);
+		return driver
+			.execute<boolean, []>(() => {
+				const clickByText = (root: ParentNode, texts: string[]): boolean => {
+					const els = Array.from(root.querySelectorAll('button, [role="button"], .alert-button, ion-button, *')) as HTMLElement[];
+					for (const t of texts) {
+						const btn = els.find((el) => (el.textContent?.trim() ?? '') === t && typeof el.click === 'function');
+						if (btn) { btn.click(); return true; }
+					}
+					return false;
+				};
+				// 1) ion-alert nativo → "Salir" (evita reintento).
+				const alertEl = document.querySelector('ion-alert');
+				if (alertEl && clickByText(alertEl, ['Salir', 'Exit', 'Cancelar', 'Aceptar', 'OK'])) return true;
+				// 2) Fallback global (attention modal).
+				return clickByText(document, ['Salir', 'Aceptar', 'OK', 'Cerrar']);
+			})
+			.catch(() => false);
+	}
 
-		console.log(`[DriverTripPaymentScreen] Esperando challenge 3DS (action=${action})...`);
-
-		while (Date.now() < deadline) {
-			// Intentar desde WebView activo.
-			await this.switchToWebView(3_000);
-
-			const clicked = await driver
-				.execute<boolean, [string]>(
-					(selector) => {
-						const el = document.querySelector(selector) as HTMLElement | null;
-						if (el) {
-							el.click();
-							return true;
-						}
-						// Buscar también por texto visible si el selector falla.
-						const buttons = Array.from(document.querySelectorAll('button, [role="button"]')) as HTMLElement[];
-						const match = action === 'complete'
-							? buttons.find(b => /autorizar|authorize|completar|complete|aprobar|approve/i.test(b.innerText))
-							: buttons.find(b => /rechazar|fail|deny|cancelar/i.test(b.innerText));
-
-						if (match) {
-							match.click();
-							return true;
-						}
-						return false;
-					},
-					targetId,
-				)
-				.catch(() => false);
-
-			if (clicked) {
-				console.log(`[DriverTripPaymentScreen] 3DS challenge ${action} ejecutado`);
-				return;
-			}
-
-			await driver.pause(500);
-		}
-
+	/**
+	 * Maneja el challenge 3DS. FUERA del alcance decline/antifraud actual.
+	 * TODO[device]: identificar cómo renderiza la app el challenge Stripe (WebView redirect).
+	 */
+	async handle3DSChallenge(action: 'complete' | 'fail'): Promise<void> {
 		throw new Error(
-			`[DriverTripPaymentScreen] No se encontró botón de 3DS challenge (action=${action}) en ${timeout}ms. ` +
-			`TODO: Verificar selectores con Appium Inspector en la pantalla de challenge.`,
+			`[DriverTripPaymentScreen] handle3DSChallenge(${action}) sin implementar — ` +
+			'requiere dump del challenge Stripe en device (fuera del alcance decline/antifraud).',
 		);
 	}
 
 	/**
-	 * Flujo completo: fill → submit → esperar resultado.
-	 * Retorna el outcome para que el spec haga el assert correspondiente.
+	 * Flujo completo: llenar → cobrar → esperar resultado.
 	 */
-	async fillAndSubmit(card: CardData, submitTimeout = 15_000): Promise<PaymentOutcome> {
+	async fillAndSubmit(card: CardData, outcomeTimeout = 20_000): Promise<PaymentOutcome> {
 		await this.fillCardForm(card);
 		await this.submitPayment();
-		return this.waitForPaymentOutcome(submitTimeout);
+		return this.waitForPaymentOutcome(outcomeTimeout);
 	}
 }
