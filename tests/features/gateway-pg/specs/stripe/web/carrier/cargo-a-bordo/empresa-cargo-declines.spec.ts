@@ -14,8 +14,9 @@
  *   vía `driverAppStep` (test.fixme). ATCs → MG-161 / MG-158 (mapeo por área aceptado).
  */
 import { test } from '@TestFixture';
-import { CargoABordoSteps, type CargoScenario } from '@steps/index';
+import { CargoABordoSteps, type CargoScenario, type DriverChargeSpec } from '@steps/index';
 import { TEST_DATA } from '@features/gateway-pg/fixtures/gateway.fixtures';
+import { STRIPE_TEST_CARDS_RAW } from '@fixtures/gateways/stripe/cards';
 
 test.use({ storageState: undefined });
 test.describe.configure({ timeout: 120_000 });
@@ -29,6 +30,15 @@ const empresaScenario: CargoScenario = {
 
 const APPIUM_NOTE = 'PENDIENTE: fase Driver App — requiere Appium.';
 
+/**
+ * Charge de decline para la fase Driver App (solo se ejecuta con APPIUM=1).
+ * Cards desde la SoT canónica `@fixtures/gateways/stripe/cards` — NO inventar números.
+ */
+const decline = (raw: { number: string; exp: string; cvc: string; holderName: string }): DriverChargeSpec => ({
+	card: { number: raw.number, expiry: raw.exp, cvc: raw.cvc, holderName: raw.holderName },
+	expectedOutcome: 'declined',
+});
+
 test.describe('Gateway PG · Carrier · Empresa Individuo — Cargo a Bordo · Declines @gateway @stripe @cargo-a-bordo @hold @decline @regression', () => {
 
 	test('[TS-STRIPE-TC1112] @regression @cargo-a-bordo pago rechazado genérico desde Driver App', async ({ page }) => {
@@ -36,6 +46,7 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Cargo a Bordo · D
 			driverAppStep: {
 				title: '[DRIVER APP] Conductor cobra → tarjeta declinada genéricamente → rechazo',
 				note: 'PENDIENTE: fase Driver App — requiere Appium + DriverTripPaymentScreen.',
+				charge: decline(STRIPE_TEST_CARDS_RAW.declined_generic),
 			},
 		});
 	});
@@ -45,6 +56,7 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Cargo a Bordo · D
 			driverAppStep: {
 				title: '[DRIVER APP] Conductor cobra → fondos insuficientes → rechazo',
 				note: APPIUM_NOTE,
+				charge: decline(STRIPE_TEST_CARDS_RAW.declined_funds),
 			},
 		});
 	});
@@ -54,6 +66,7 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Cargo a Bordo · D
 			driverAppStep: {
 				title: '[DRIVER APP] Conductor cobra → tarjeta perdida → rechazo',
 				note: APPIUM_NOTE,
+				charge: decline(STRIPE_TEST_CARDS_RAW.lost_card),
 			},
 		});
 	});
@@ -63,6 +76,7 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Cargo a Bordo · D
 			driverAppStep: {
 				title: '[DRIVER APP] Conductor cobra → CVC incorrecto → rechazo',
 				note: APPIUM_NOTE,
+				charge: decline(STRIPE_TEST_CARDS_RAW.incorrect_cvc),
 			},
 		});
 	});
@@ -72,6 +86,7 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Cargo a Bordo · D
 			driverAppStep: {
 				title: '[DRIVER APP] Conductor cobra → tarjeta robada → rechazo',
 				note: APPIUM_NOTE,
+				charge: decline(STRIPE_TEST_CARDS_RAW.stolen_card),
 			},
 		});
 	});

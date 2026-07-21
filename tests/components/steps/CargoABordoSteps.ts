@@ -40,12 +40,30 @@ export type CargoScenario = {
 	cardPrecondition?: { apiSearchQuery: string; requiredLast4: string; tcLabel: string };
 };
 
+/**
+ * Especificación del cobro que ejecuta la fase Driver App (Appium) al finalizar el viaje.
+ * Cuando está presente Y Appium habilitado (APPIUM=1), se corre la fase driver real:
+ * recibir/aceptar viaje → finalizar → abrir modal Cargo a Bordo → fillAndSubmit(card) → assert outcome.
+ */
+export type DriverChargeSpec = {
+	card: { number: string; expiry: string; cvc: string; holderName?: string };
+	expectedOutcome: 'declined' | 'success';
+};
+
 export type CargoRunOptions = {
 	/** Timeout del poll de creación (POST /travels). Default 15_000. */
 	createTimeout?: number;
-	/** Paso Driver App (Appium pendiente) — se renderiza como `test.fixme`. */
-	driverAppStep?: { title: string; note?: string };
+	/**
+	 * Paso Driver App. Sin `charge` o sin Appium (APPIUM=1) → `test.fixme` (fallback histórico).
+	 * Con `charge` + APPIUM=1 → ejecuta la fase driver real vía DriverCargoDeclineHarness.
+	 */
+	driverAppStep?: { title: string; note?: string; charge?: DriverChargeSpec };
 };
+
+/** Flag para habilitar la fase Driver App (Appium sobre dispositivo físico). */
+function isAppiumEnabled(): boolean {
+	return process.env.APPIUM === '1' || process.env.RUN_DRIVER_APPIUM === 'true';
+}
 
 export class CargoABordoSteps extends UiBase {
 	readonly dashboard: CarrierDashboardPage;
@@ -142,8 +160,30 @@ export class CargoABordoSteps extends UiBase {
 			});
 
 			if (options.driverAppStep) {
-				await test.step(options.driverAppStep.title, async () => {
-					test.fixme(true, options.driverAppStep!.note ?? 'PENDIENTE: fase Driver App — requiere Appium.');
+				const step = options.driverAppStep;
+				await test.step(step.title, async () => {
+					// Fallback histórico: sin Appium habilitado o sin card de cobro → fixme (web ya validado).
+					if (!isAppiumEnabled() || !step.charge) {
+						test.fixme(true, step.note ?? 'PENDIENTE: fase Driver App — requiere Appium (APPIUM=1) + charge card.');
+						return;
+					}
+
+					// La fase driver (esperar viaje + navegar + cobrar) excede 2 min: extender timeout.
+					test.setTimeout(360_000);
+
+					// Import dinámico: evita cargar webdriverio en runs web-only.
+					const { getDriverAppConfig } = await import('../../mobile/appium/config/appiumRuntime');
+					const { runDriverCargoDeclinePhase } = await import('../../mobile/appium/harness/DriverCargoDeclineHarness');
+
+					const config = getDriverAppConfig();
+					const result = await runDriverCargoDeclinePhase(config, step.charge.card);
+					const reason = 'reason' in result.outcome ? result.outcome.reason : '';
+					debugLog('gateway-pg:driver', `[driver-app] outcome=${result.outcome.status} reason="${reason}" total=${result.totalAmount}`);
+
+					// Debería alcanzar el modal de cobro Cargo a Bordo en la Driver App.
+					expect(result.reachedPaymentModal, 'Debería abrir el modal de cobro en la Driver App').toBe(true);
+					// Debería rechazar el cobro con la tarjeta declinada (outcome esperado).
+					expect(result.outcome.status, 'Debería rechazar el cobro con la tarjeta declinada').toBe(step.charge.expectedOutcome);
 				});
 			}
 		} finally {

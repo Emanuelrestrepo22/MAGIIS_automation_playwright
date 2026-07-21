@@ -11,6 +11,7 @@ export {
 	CargoABordoSteps,
 	type CargoScenario,
 	type CargoRunOptions,
+	type DriverChargeSpec,
 } from './CargoABordoSteps';
 export { CarrierTravelEditSteps } from './CarrierTravelEditSteps';
 export {
