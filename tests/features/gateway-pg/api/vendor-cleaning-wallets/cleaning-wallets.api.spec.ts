@@ -21,7 +21,7 @@
 
 import { test, expect } from '@TestBase';
 import { VendorApi, type VendorProvider } from '@api/VendorApi';
-import { oracleConfigFromEnv } from '@features/gateway-pg/helpers/oracle-wallet';
+import { oracleConfigFromEnv, countWalletsByCarrierAndApp, countCardsByCarrierAndApp } from '@features/gateway-pg/helpers/oracle-wallet';
 import { LoginPage } from '@pages/shared/LoginPage';
 import { extractAuthToken } from '@features/gateway-pg/helpers/card-precondition';
 
@@ -30,6 +30,8 @@ import { extractAuthToken } from '@features/gateway-pg/helpers/card-precondition
 const PROVIDER = (process.env.MG25_PROVIDER as VendorProvider) ?? 'STRIPE';
 const CARRIER_USER_ID = Number(process.env.MG25_CARRIER_USER_ID ?? 0); // admin userId de 1521 [confirmar]
 const APP_ID = Number(process.env.MG25_APP_ID ?? 0); // appId STRIPE en TEST [confirmar]
+// carrier_account.id (dueño de wallets/cards) — para la aserción de invariancia del caso provider inválido.
+const CARRIER_ACCOUNT_ID = process.env.CARRIER_ID ?? '1521';
 const USER_NONEXISTENT = 99_999_999;
 
 const CREDS_READY = Boolean(process.env.USER_CARRIER && process.env.PASS_CARRIER && process.env.BASE_URL);
@@ -77,10 +79,19 @@ test.describe('[MG · G][API] vendor/cleaningWallets @regression @gateway-unlink
 		expect(res.status, `esperado 404, body=${res.body}`).toBe(404);
 	});
 
-	test('[G-NEG-PROVIDER] provider inválido → 400 VENDOR_INVALID_CODE', {
+	test('[G-NEG-PROVIDER] provider inválido → 400 VENDOR_INVALID_CODE (sin mutar el carrier)', {
 		annotation: [{ type: 'tms', description: 'MG-166' }]
 	}, async ({ request }) => {
-		// No destructivo: un provider fuera del enum es rechazado antes de tocar datos.
+		// ⚠ El backend valida el provider DESPUÉS de la fase-1 (mutación): resuelve carrier →
+		// mgwLinkedService.cleaningWallets(carrier, provider) → recién el switch lanza 400. Un provider
+		// fuera del enum ("FOO") es no-op SOLO porque no existe MercadopagoApp.appCode="FOO" (seguridad
+		// data-driven, no un guard de input). Para no depender de esa suerte con un carrier real,
+		// asertamos INVARIANCIA de wallets/cards (pre == post) cuando hay Oracle.
+		const filter = { carrierAccountId: CARRIER_ACCOUNT_ID, appId: APP_ID || 1 };
+		const before = ORACLE
+			? { wallets: await countWalletsByCarrierAndApp(ORACLE, filter), cards: await countCardsByCarrierAndApp(ORACLE, filter) }
+			: null;
+
 		const res = await new VendorApi({ request }).cleaningWallets({
 			provider: 'FOO' as VendorProvider,
 			carrierUserId: CARRIER_USER_ID || USER_NONEXISTENT,
@@ -88,6 +99,15 @@ test.describe('[MG · G][API] vendor/cleaningWallets @regression @gateway-unlink
 			authToken
 		});
 		expect(res.status, `esperado 400, body=${res.body}`).toBe(400);
+
+		if (ORACLE && before) {
+			const after = {
+				wallets: await countWalletsByCarrierAndApp(ORACLE, filter),
+				cards: await countCardsByCarrierAndApp(ORACLE, filter)
+			};
+			expect(after.wallets, 'provider inválido NO debe borrar wallets del carrier').toBe(before.wallets);
+			expect(after.cards, 'provider inválido NO debe borrar cards del carrier').toBe(before.cards);
+		}
 	});
 
 	test('[G-HAPPY] desvinculación de pasarela → 200 (DESTRUCTIVO — triple gate)', {
