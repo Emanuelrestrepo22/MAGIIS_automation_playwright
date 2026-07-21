@@ -219,8 +219,33 @@ export abstract class NewTravelPageBase extends BasePage {
 		await this.selectAutocompleteOption(this.clientSelect, this.clientSearchInput, name, 'client');
 	}
 
+	/**
+	 * Detecta si un `app-autocomplete-input`/`ng-select` está deshabilitado de forma
+	 * INDEPENDIENTE DEL BUILD. `ng-reflect-is-disabled` solo existe en builds no-prod de Angular;
+	 * en TEST/UAT con build optimizado ese atributo no aparece y la detección previa daba falso
+	 * negativo → se intentaba abrir un dropdown deshabilitado y fallaba como "select-dropdown".
+	 * La clase `.disabled` en el contenedor y el atributo `[disabled]` sí existen en todo build.
+	 */
+	private async isAutocompleteDisabled(select: Locator): Promise<boolean> {
+		return select
+			.evaluate(el => {
+				const ngSelect = el.querySelector('ng-select') ?? el;
+				if (ngSelect.getAttribute('ng-reflect-is-disabled') === 'true') return true;
+				if (ngSelect.getAttribute('ng-reflect-disabled') === 'true') return true;
+				if (ngSelect.hasAttribute('disabled')) return true;
+				return !!el.querySelector('.disabled');
+			})
+			.catch(() => false);
+	}
+
 	async selectPassenger(name: string): Promise<void> {
-		await expect(this.passengerSelect).not.toHaveAttribute('ng-reflect-is-disabled', 'true', { timeout: 10_000 });
+		// El pasajero habilita async tras elegir el cliente (FE add-travel: [disabled]="!isClientSelect || !isContractor").
+		await expect
+			.poll(() => this.isAutocompleteDisabled(this.passengerSelect), {
+				timeout: 10_000,
+				message: 'El autocomplete de pasajero no se habilitó (¿cliente seleccionado? ¿contexto contractor?)',
+			})
+			.toBe(false);
 		await this.selectAutocompleteOption(this.passengerSelect, this.passengerSearchInput, name, 'passenger');
 	}
 
@@ -863,6 +888,12 @@ export abstract class NewTravelPageBase extends BasePage {
 		await this.waitForEnabledButton(this.vehicleButton, timeout);
 	}
 
+	/** True si el botón "Seleccionar Vehículo" ya está visible+habilitado (form válido, flujo avanzó sin challenge). */
+	async isVehicleSelectionReady(): Promise<boolean> {
+		const visible = await this.vehicleButton.isVisible().catch(() => false);
+		return visible ? this.vehicleButton.isEnabled().catch(() => false) : false;
+	}
+
 	async clickSelectVehicle(): Promise<void> {
 		await this.waitForEnabledButton(this.vehicleButton);
 		await this.waitForLoadingOverlayToDisappear();
@@ -882,10 +913,7 @@ export abstract class NewTravelPageBase extends BasePage {
 		// En carrier, algunos clientes auto-completan el pasajero y otros requieren pax distinto.
 		await this.selectClient(clientName);
 
-		const passengerIsDisabled = await this.passengerSelect
-			.getAttribute('ng-reflect-is-disabled')
-			.then(value => value === 'true')
-			.catch(() => false);
+		const passengerIsDisabled = await this.isAutocompleteDisabled(this.passengerSelect);
 
 		if (!passengerIsDisabled && normalizeText(opts.passenger) !== normalizeText(clientName)) {
 			await this.selectPassenger(opts.passenger);
