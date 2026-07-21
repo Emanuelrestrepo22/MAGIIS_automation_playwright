@@ -9,14 +9,23 @@
  *
  * Draft coverage still pending passenger post-trip evidence / driver handoff:
  *   - assigned driver
+ *
+ * KATA conformance: DEFERRED a Fase 4 (capa mobile KATA). Runner = shell Playwright,
+ * device automation = Appium/WebdriverIO (PassengerTripHappyPathHarness · tests/mobile/appium/*).
+ * @TestFixture sólo expone Page/API/DB de Playwright — no existe tests/components/ui/mobile +
+ * fixture Appium; forzarlo inventaría arquitectura, así que se preserva TestBase + fixme.
+ * Normalizado no-destructivo: imports por alias (@TestBase/@features/@fixtures); los de
+ * tests/mobile/appium quedan relativos (no hay alias @mobile — Fase 4).
+ * @atc idmap: wallet pax (business/colaborador) -> área H (MG-172..174, MG-495-496).
+ *   PENDIENTE REASIGNAR (idmap API-level, sin 1:1 con e2e-mobile UI).
  */
 
-import { expect, test } from '../../../../../TestBase';
-import { GatewayPgJourneyOrchestrator } from '../../../helpers/GatewayPgJourneyOrchestrator';
-import { PASSENGER_BUSINESS_NO3DS_SCENARIOS } from '../../../data/passenger-business-scenarios';
+import { expect, test } from '@TestBase';
+import { GatewayPgJourneyOrchestrator } from '@features/gateway-pg/helpers/GatewayPgJourneyOrchestrator';
+import { PASSENGER_BUSINESS_NO3DS_SCENARIOS } from '@features/gateway-pg/data/passenger-business-scenarios';
 import { getPassengerAppConfig } from '../../../../../mobile/appium/config/appiumRuntime';
 import { PassengerTripHappyPathHarness } from '../../../../../mobile/appium/harness/PassengerTripHappyPathHarness';
-import { resolveCard } from '../../../../../fixtures/stripe/card-resolver';
+import { resolveCard } from '@fixtures/stripe/card-resolver';
 
 const orchestrator = new GatewayPgJourneyOrchestrator();
 
