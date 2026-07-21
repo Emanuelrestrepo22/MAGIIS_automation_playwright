@@ -88,11 +88,32 @@ export class TravelManagementPage {
 		throw new Error(`No travel row found for passenger "${passenger}"${destination ? ` and destination "${destination}"` : ''}`);
 	}
 
+	/**
+	 * Activa la pestaña "Por Asignar". En este FE (Angular, release/v1.72.x) el tablero NO es
+	 * Kanban ni expone `data-testid`: es un `<tabset>` de ngx-bootstrap cuya pestaña se identifica
+	 * por el heading traducido (`carrier.travels.management.table_tab_to_assign` = "Asignar"). Mismo
+	 * patrón que `expectPassengerInEnConflicto`.
+	 */
+	async openPorAsignarTab(): Promise<void> {
+		const tab = this.page.locator('tabset ul li a').filter({ hasText: /asignar/i }).first();
+		if (await tab.count()) {
+			await expect(tab).toBeVisible({ timeout: 10_000 });
+			await tab.click();
+			await this.page.waitForSelector('table tbody', { state: 'visible', timeout: 15_000 }).catch(() => {});
+		}
+	}
+
+	/**
+	 * Tabla de viajes de la pestaña activa. Antes usaba `getByTestId('column-por-asignar')`, un
+	 * testid que NO existe en el FE → el locator nunca matcheaba. El tablero comparte una única
+	 * `<table>` cuyo contenido cambia según la pestaña seleccionada (no hay columnas Kanban).
+	 */
 	porAsignarColumn() {
-		return this.page.getByTestId('column-por-asignar');
+		return this.page.locator('table.table, table').first();
 	}
 
 	async expectPassengerInPorAsignar(passenger: string, destination?: string, status?: string): Promise<void> {
+		await this.openPorAsignarTab();
 		const row = await this.tripRow(passenger, destination);
 		await expect(row).toBeVisible({ timeout: 10_000 });
 		await expect.poll(
