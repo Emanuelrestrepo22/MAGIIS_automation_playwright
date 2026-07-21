@@ -12,8 +12,13 @@
  */
 import type { Page } from '@playwright/test';
 import { getApiHeaders } from './card-precondition';
+import { retryAsync } from '../../../helpers/retry';
 
 const DEFAULT_CARRIER_ID = process.env.CARRIER_ID ?? '1521';
+
+// Status HTTP transitorios observados en TEST (403 intermitente 1× en MG-178, además de
+// rate-limit y 5xx). Solo estos se reintentan; 400/401/404/422 son permanentes → fallan directo.
+const RETRYABLE_STATUS = new Set([403, 429, 500, 502, 503, 504]);
 
 function apiBase(page: Page): string {
 	const base = process.env.BASE_URL ?? new URL(page.url()).origin;
@@ -54,7 +59,19 @@ export async function setHoldViaApi(
 		params.ccHoldCoverage = opts.ccHoldCoverage ?? 10;
 	}
 
-	const res = await page.request.post(`${apiBase(page)}/carriers/${carrierId}/parameters`, { headers, data: params });
+	// El POST de parámetros mostró 403 transitorio en TEST (MG-178, workaround hold-enable).
+	// Reintentamos SOLO en status transitorios; un status permanente devuelve la Response y
+	// cae al throw detallado de abajo (retryAsync no la reintenta porque no lanzamos).
+	const res = await retryAsync(
+		async () => {
+			const r = await page.request.post(`${apiBase(page)}/carriers/${carrierId}/parameters`, { headers, data: params });
+			if (!r.ok() && RETRYABLE_STATUS.has(r.status())) {
+				throw new Error(`[parameters-api] POST parameters ${r.status()} ${r.statusText()} (transitorio) — reintentando`);
+			}
+			return r;
+		},
+		{ attempts: 3, delayMs: 800, onRetry: (attempt, err) => console.warn(`[parameters-api] retry ${attempt}/2: ${err.message}`) },
+	);
 	if (!res.ok()) {
 		const body = await res.text().catch(() => '');
 		throw new Error(`[parameters-api] POST parameters ${res.status()} ${res.statusText()} — ${body.slice(0, 200)}`);
