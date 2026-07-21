@@ -16,6 +16,7 @@
  *   - Verificación de hold decorada con @atc; navegación trazada con @step.
  */
 
+import type { Locator } from '@playwright/test';
 import type { TestContextOptions } from '@TestContext';
 
 import { TravelManagementPage as LegacyTravelManagementPage } from '@pages/carrier';
@@ -56,5 +57,10 @@ export class CarrierTravelManagementPage extends UiBase {
 	@atc('MG-158', { severity: 'critical', description: 'Verificar viaje en "Por Asignar" tras hold aprobado' })
 	async expectPassengerInPorAsignar(passenger: string, destination?: string, status?: string): Promise<void> {
 		await this.legacy.expectPassengerInPorAsignar(passenger, destination, status);
+	}
+
+	/** Columna "Por Asignar" del tablero de gestión (para aserciones not-contains). */
+	porAsignarColumn(): Locator {
+		return this.legacy.porAsignarColumn();
 	}
 }

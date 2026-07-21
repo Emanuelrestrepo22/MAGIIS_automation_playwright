@@ -5,23 +5,30 @@
  *
  * TC1039 – Hold ON + cliente contractor + pasajero app pax invitado + tarjeta threeDSRequired + fallo autenticación:
  *          pop-up de error visible, URL permanece en formulario de alta sin crear viaje
+ *
+ * KATA conformance (feature/kata-conformance):
+ *   - test/expect vienen del fixture unificado KATA (@TestFixture); sustrato carrier vía componentes
+ *     @ui/carrier (granulares selectClient/selectGuestPassenger/setOrigin/setDestination/selectCardByLast4),
+ *     modal 3DS vía @ui/ThreeDsChallengePage y el popup de error vía @ui/ThreeDsErrorPopup.
+ *   @atc idmap (mapeo por área): fallo 3DS + pop-up de error (pre-autorización) → área D (MG-157).
  */
-import { expect } from '@playwright/test';
-import { test } from '../../../../../../../TestBase';
-import { DashboardPage, NewTravelPage, OperationalPreferencesPage, ThreeDSModal, ThreeDSErrorPopup } from '../../../../../../../pages/carrier';
-import { loginAsDispatcher, STRIPE_TEST_CARDS, TEST_DATA } from '../../../../../fixtures/gateway.fixtures';
+import { test, expect } from '@TestFixture';
+import { CarrierDashboardPage, CarrierNewTravelPage, CarrierOperationalPreferencesPage } from '@ui/carrier';
+import { ThreeDsChallengePage } from '@ui/ThreeDsChallengePage';
+import { ThreeDsErrorPopup } from '@ui/ThreeDsErrorPopup';
+import { loginAsDispatcher, STRIPE_TEST_CARDS, TEST_DATA } from '@features/gateway-pg/fixtures/gateway.fixtures';
 
-test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
+test.use({ storageState: undefined });
 
 test.describe('[TS-STRIPE-TC1039] Hold ON + cliente contractor + pasajero app pax invitado + threeDSRequired + fallo 3DS — pop-up de error, URL permanece en formulario @gateway @stripe @hold @3ds @decline @regression', () => {
 	test('muestra pop-up de error de autenticación 3DS y no crea el viaje cuando la autenticación falla', async ({ page }) => {
 		test.setTimeout(90_000);
 
-		const dashboard = new DashboardPage(page);
-		const preferences = new OperationalPreferencesPage(page);
-		const travel = new NewTravelPage(page);
-		const threeDS = new ThreeDSModal(page);
-		const popup = new ThreeDSErrorPopup(page);
+		const dashboard = new CarrierDashboardPage({ page });
+		const preferences = new CarrierOperationalPreferencesPage({ page });
+		const travel = new CarrierNewTravelPage({ page });
+		const threeDS = new ThreeDsChallengePage({ page });
+		const popup = new ThreeDsErrorPopup({ page });
 
 		await test.step('Login carrier', async () => {
 			await loginAsDispatcher(page);

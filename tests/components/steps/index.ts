@@ -19,3 +19,4 @@ export {
 	type ContractorThreeDsMode,
 	type ContractorHoldScenario,
 } from './ContractorHoldSteps';
+export { RecoverySteps, type RecoveryScenario } from './RecoverySteps';

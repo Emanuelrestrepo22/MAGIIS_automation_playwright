@@ -27,6 +27,12 @@ export class CarrierDashboardPage extends UiBase {
 		this.legacy = new LegacyDashboardPage(this.page);
 	}
 
+	/** Espera a que el shell del dashboard esté cargado (post-login). */
+	@step
+	async ensureDashboardLoaded(): Promise<void> {
+		await this.legacy.ensureDashboardLoaded();
+	}
+
 	/** Navega desde el dashboard al formulario de nuevo viaje. */
 	@step
 	async openNewTravel(): Promise<void> {

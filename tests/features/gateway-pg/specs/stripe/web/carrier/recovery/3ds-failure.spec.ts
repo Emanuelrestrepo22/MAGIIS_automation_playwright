@@ -12,16 +12,34 @@
  * Tras el rechazo, el viaje se crea en NO_AUTORIZADO → "En conflicto". El fallo es RECUPERABLE:
  * el retry con completeSuccess recupera el viaje (TC1061). Popup B (MAGIIS error) NO aparece.
  * NOTA: 3220 (recuperable), no fail3DS/1629 (decline nativo irrecuperable) ni 9235 (sin 3DS).
+ *
+ * KATA conformance (feature/kata-conformance):
+ *   - test/expect vienen del fixture unificado KATA (@TestFixture); los POMs del sustrato carrier
+ *     se consumen vía sus componentes @ui/carrier (extends UiBase) y el modal 3DS vía @ui/ThreeDsChallengePage.
+ *   - el setup del fallo 3DS se orquesta con `RecoverySteps.setupFailedThreeDs` (@steps).
+ *   @atc idmap (mapeo por área — el idmap es API-level, sin 1:1 con los TS-STRIPE-TC10xx UI):
+ *     challenge 3DS → área D (MG-152 success / MG-153 fail); reintento desde detalle → área D (MG-154);
+ *     viaje en "Por Asignar" → área E (MG-158).
  */
 
-import { test, expect } from '../../../../../../../TestBase';
-import { loginAsDispatcher, setupTravelWithFailed3DS, TEST_DATA, STRIPE_TEST_CARDS } from '../../../../../fixtures/gateway.fixtures';
-import { DashboardPage, NewTravelPage, OperationalPreferencesPage, ThreeDSModal, TravelDetailPage, TravelManagementPage } from '../../../../../../../pages/carrier';
+import { test, expect } from '@TestFixture';
+import {
+	CarrierDashboardPage,
+	CarrierNewTravelPage,
+	CarrierOperationalPreferencesPage,
+	CarrierTravelDetailPage,
+	CarrierTravelManagementPage,
+} from '@ui/carrier';
+import { ThreeDsChallengePage } from '@ui/ThreeDsChallengePage';
+import { RecoverySteps } from '@steps/index';
+import { loginAsDispatcher, STRIPE_TEST_CARDS, TEST_DATA } from '@features/gateway-pg/fixtures/gateway.fixtures';
 
 test.describe.configure({ mode: 'serial' });
 
+// El fixture KATA no define la opción `role` (login explícito vía loginAsDispatcher(page)).
+test.use({ storageState: undefined });
+
 test.describe('Gateway PG · Carrier · App Pax — Fallo 3DS, red flag y reintento @gateway @stripe @hold @3ds @decline @regression', () => {
-	test.use({ role: 'carrier', storageState: undefined });
 
 	test.beforeEach(async ({ page }) => {
 		await loginAsDispatcher(page);
@@ -29,12 +47,12 @@ test.describe('Gateway PG · Carrier · App Pax — Fallo 3DS, red flag y reinte
 
 	test.describe('[TS-STRIPE-TC1057] Hold ON + 3DS recuperable (4000 0000 0000 3220) — challenge rechazado → NO_AUTORIZADO en "En conflicto" (sin pop-up MAGIIS post-fallo)', () => {
 		test('tras rechazar challenge 3DS el viaje queda en NO_AUTORIZADO y fuera de "Por asignar"', async ({ page }) => {
-			const dashboard = new DashboardPage(page);
-			const preferences = new OperationalPreferencesPage(page);
-			const travel = new NewTravelPage(page);
-			const threeDS = new ThreeDSModal(page);
-			const detail = new TravelDetailPage(page);
-			const management = new TravelManagementPage(page);
+			const dashboard = new CarrierDashboardPage({ page });
+			const preferences = new CarrierOperationalPreferencesPage({ page });
+			const travel = new CarrierNewTravelPage({ page });
+			const threeDS = new ThreeDsChallengePage({ page });
+			const detail = new CarrierTravelDetailPage({ page });
+			const management = new CarrierTravelManagementPage({ page });
 
 			await test.step('Activar hold en preferencias operativas', async () => {
 				await preferences.goto();
@@ -53,9 +71,6 @@ test.describe('Gateway PG · Carrier · App Pax — Fallo 3DS, red flag y reinte
 					passenger: TEST_DATA.appPaxPassenger,
 					origin: TEST_DATA.origin,
 					destination: TEST_DATA.destination,
-					// FIX 2026-07-21: threeDSRequired (3220) → el challenge aparece y es RECUPERABLE;
-					// el "fallo" se logra rechazando con completeFail(). No fail3DS/1629 (decline nativo
-					// irrecuperable) ni 9235 (decline SIN 3DS → nunca mostraba challenge).
 					cardLast4: STRIPE_TEST_CARDS.threeDSRequired.slice(-4), // 4000000000003220 (3DS requerido, recuperable)
 				});
 				await travel.submit();
@@ -83,26 +98,29 @@ test.describe('Gateway PG · Carrier · App Pax — Fallo 3DS, red flag y reinte
 
 	test.describe('[TS-STRIPE-TC1051] Hold ON + 3DS recuperable (4000 0000 0000 3220) — red flag "Validación 3DS pendiente" y botón "Reintentar" visibles en detalle, estado "No autorizado"', () => {
 		test('muestra red flag "Validacion 3DS pendiente" en la sección de forma de pago', async ({ page }) => {
-			await setupTravelWithFailed3DS(page, TEST_DATA);
+			const recovery = new RecoverySteps({ page });
+			await recovery.setupFailedThreeDs(TEST_DATA);
 			await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
 
-			const detail = new TravelDetailPage(page);
+			const detail = new CarrierTravelDetailPage({ page });
 			await detail.expectRedFlagVisible();
 		});
 
 		test('muestra botón "Reintentar autenticación" junto al red flag', async ({ page }) => {
-			await setupTravelWithFailed3DS(page, TEST_DATA);
+			const recovery = new RecoverySteps({ page });
+			await recovery.setupFailedThreeDs(TEST_DATA);
 			await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
 
-			const detail = new TravelDetailPage(page);
+			const detail = new CarrierTravelDetailPage({ page });
 			await expect(detail.retryButton()).toBeVisible({ timeout: 10_000 });
 		});
 
 		test('estado del viaje es "No autorizado" — no aparece "Buscando conductor" mientras 3DS está pendiente', async ({ page }) => {
-			await setupTravelWithFailed3DS(page, TEST_DATA);
+			const recovery = new RecoverySteps({ page });
+			await recovery.setupFailedThreeDs(TEST_DATA);
 			await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
 
-			const detail = new TravelDetailPage(page);
+			const detail = new CarrierTravelDetailPage({ page });
 			await detail.expectStatus('No autorizado');
 			await expect(detail.statusBadge()).not.toContainText('Buscando conductor');
 		});
@@ -110,11 +128,12 @@ test.describe('Gateway PG · Carrier · App Pax — Fallo 3DS, red flag y reinte
 
 	test.describe('[TS-STRIPE-TC1061] Hold ON + fallo 3DS inicial + reintento exitoso desde detalle — viaje pasa a "Buscando conductor", red flag y botón "Reintentar" desaparecen', () => {
 		test('al reintentar exitosamente el viaje pasa a "Buscando conductor"', async ({ page }) => {
-			await setupTravelWithFailed3DS(page, TEST_DATA);
+			const recovery = new RecoverySteps({ page });
+			await recovery.setupFailedThreeDs(TEST_DATA);
 			await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
 
-			const detail = new TravelDetailPage(page);
-			const threeDS = new ThreeDSModal(page);
+			const detail = new CarrierTravelDetailPage({ page });
+			const threeDS = new ThreeDsChallengePage({ page });
 
 			await detail.clickRetry();
 			await threeDS.waitForVisible();
@@ -125,11 +144,12 @@ test.describe('Gateway PG · Carrier · App Pax — Fallo 3DS, red flag y reinte
 		});
 
 		test('el red flag desaparece tras el reintento exitoso de 3DS', async ({ page }) => {
-			await setupTravelWithFailed3DS(page, TEST_DATA);
+			const recovery = new RecoverySteps({ page });
+			await recovery.setupFailedThreeDs(TEST_DATA);
 			await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
 
-			const detail = new TravelDetailPage(page);
-			const threeDS = new ThreeDSModal(page);
+			const detail = new CarrierTravelDetailPage({ page });
+			const threeDS = new ThreeDsChallengePage({ page });
 
 			await detail.clickRetry();
 			await threeDS.waitForVisible();
@@ -140,11 +160,12 @@ test.describe('Gateway PG · Carrier · App Pax — Fallo 3DS, red flag y reinte
 		});
 
 		test('el botón "Reintentar" desaparece tras el reintento exitoso de 3DS', async ({ page }) => {
-			await setupTravelWithFailed3DS(page, TEST_DATA);
+			const recovery = new RecoverySteps({ page });
+			await recovery.setupFailedThreeDs(TEST_DATA);
 			await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
 
-			const detail = new TravelDetailPage(page);
-			const threeDS = new ThreeDSModal(page);
+			const detail = new CarrierTravelDetailPage({ page });
+			const threeDS = new ThreeDsChallengePage({ page });
 
 			await detail.clickRetry();
 			await threeDS.waitForVisible();

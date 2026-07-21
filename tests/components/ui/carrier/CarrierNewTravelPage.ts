@@ -131,4 +131,39 @@ export class CarrierNewTravelPage extends UiBase {
 	async clickValidateCardAllowingReject(timeout = 8_000): Promise<ValidateCardResult> {
 		return this.legacy.clickValidateCardAllowingReject(timeout);
 	}
+
+	// ── Granulares del alta (para flujos que no usan `fillMinimum`) ──────────────
+	// Los consume el spec de preauth-failure (cliente contractor + pasajero app pax
+	// invitado), donde el formulario se completa campo a campo. Additive: no alteran
+	// `fillMinimum`/`fillCargoABordo`. Delegación directa al POM legacy → @step.
+
+	/** Selecciona el cliente del viaje (autocompletar). */
+	@step
+	async selectClient(name: string): Promise<void> {
+		await this.legacy.selectClient(name);
+	}
+
+	/** Selecciona el pasajero app pax invitado y completa su nombre. */
+	@step
+	async selectGuestPassenger(name: string): Promise<void> {
+		await this.legacy.selectGuestPassenger(name);
+	}
+
+	/** Fija la dirección de origen del viaje. */
+	@step
+	async setOrigin(address: string): Promise<void> {
+		await this.legacy.setOrigin(address);
+	}
+
+	/** Fija la dirección de destino del viaje. */
+	@step
+	async setDestination(address: string): Promise<void> {
+		await this.legacy.setDestination(address);
+	}
+
+	/** Vincula/valida la tarjeta preautorizada por sus últimos 4 dígitos. */
+	@step
+	async selectCardByLast4(last4: string, skipValidate = false, allowDecline = false): Promise<void> {
+		await this.legacy.selectCardByLast4(last4, skipValidate, allowDecline);
+	}
 }
