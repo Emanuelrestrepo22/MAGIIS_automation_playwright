@@ -3,6 +3,6 @@
  * Versiones KATA (extends UiBase) de los POMs del sustrato carrier, para specs amoldados.
  */
 export { CarrierDashboardPage } from './CarrierDashboardPage';
-export { CarrierNewTravelPage, type NewTravelFormInput } from './CarrierNewTravelPage';
+export { CarrierNewTravelPage, type NewTravelFormInput, type CargoTravelInput } from './CarrierNewTravelPage';
 export { CarrierOperationalPreferencesPage } from './CarrierOperationalPreferencesPage';
 export { CarrierTravelManagementPage } from './CarrierTravelManagementPage';

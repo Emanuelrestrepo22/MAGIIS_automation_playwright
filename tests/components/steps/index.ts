@@ -7,3 +7,8 @@ export {
 	type HoldScenario,
 	type HoldRunOptions,
 } from './CarrierHoldSteps';
+export {
+	CargoABordoSteps,
+	type CargoScenario,
+	type CargoRunOptions,
+} from './CargoABordoSteps';

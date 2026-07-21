@@ -22,11 +22,24 @@
 import type { TestContextOptions } from '@TestContext';
 import type { NewTravelFormInput } from '@pages/carrier';
 
+import { expect } from '@playwright/test';
 import { NewTravelPage as LegacyNewTravelPage } from '@pages/carrier';
 import { atc, step } from '@utils/decorators';
 import { UiBase } from '@ui/UiBase';
 
 export type { NewTravelFormInput } from '@pages/carrier';
+
+/**
+ * Entrada del alta de viaje con método "Cargo a Bordo".
+ * `passenger` opcional: cuando el cliente auto-asigna el pasajero (app pax /
+ * empresa individuo, `#passenger` con `ng-reflect-is-disabled="true"`) se omite.
+ */
+export type CargoTravelInput = {
+	client: string;
+	passenger?: string;
+	origin: string;
+	destination: string;
+};
 
 export class CarrierNewTravelPage extends UiBase {
 	private readonly legacy: LegacyNewTravelPage;
@@ -49,6 +62,34 @@ export class CarrierNewTravelPage extends UiBase {
 	@atc('MG-148', { severity: 'critical', description: 'Alta de viaje: completar formulario + validar tarjeta preautorizada' })
 	async fillMinimum(opts: NewTravelFormInput): Promise<void> {
 		await this.legacy.fillMinimum(opts);
+	}
+
+	/**
+	 * Mini-flujo ATC: completa el formulario de alta con método "Cargo a Bordo" (sin
+	 * tarjeta ni formulario Stripe en carrier — el cobro ocurre luego en la Driver App).
+	 * Maneja el pasajero de forma adaptativa: si el cliente lo auto-asigna (`#passenger`
+	 * deshabilitado), valida su contenido; si no, lo selecciona explícitamente; si no se
+	 * pasa `passenger` (app pax), lo omite.
+	 *
+	 * @atc MG-161 (área F — cobro). PENDIENTE REASIGNAR: el idmap `atp-mg-gateway-idmap.md`
+	 * es API-level (TC-PAY-F-*); los TS-STRIPE-TC10xx UI de Cargo a Bordo no tienen 1:1.
+	 * MG-161 (TC-PAY-F-01) es el MG más cercano del área de cobro.
+	 */
+	@atc('MG-161', { severity: 'critical', description: 'Alta de viaje Cargo a Bordo: completar formulario + método Cargo a Bordo' })
+	async fillCargoABordo(opts: CargoTravelInput): Promise<void> {
+		await this.legacy.selectClient(opts.client);
+		if (opts.passenger) {
+			const passengerField = this.page.locator('#passenger');
+			const autoAssigned = (await passengerField.getAttribute('ng-reflect-is-disabled')) === 'true';
+			if (autoAssigned) {
+				await expect(passengerField).not.toHaveText('', { timeout: 10_000 });
+			} else {
+				await this.legacy.selectPassenger(opts.passenger);
+			}
+		}
+		await this.legacy.setOrigin(opts.origin);
+		await this.legacy.setDestination(opts.destination);
+		await this.legacy.selectPaymentMethod('CargoABordo');
 	}
 
 	/** Espera a que el botón "Seleccionar Vehículo" esté habilitado. */
