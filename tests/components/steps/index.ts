@@ -13,3 +13,9 @@ export {
 	type CargoRunOptions,
 } from './CargoABordoSteps';
 export { CarrierTravelEditSteps } from './CarrierTravelEditSteps';
+export {
+	ContractorHoldSteps,
+	type ContractorCardFlow,
+	type ContractorThreeDsMode,
+	type ContractorHoldScenario,
+} from './ContractorHoldSteps';

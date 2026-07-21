@@ -20,7 +20,7 @@
  */
 
 import type { TestContextOptions } from '@TestContext';
-import type { NewTravelFormInput } from '@pages/carrier';
+import type { NewTravelFormInput, ValidateCardResult } from '@pages/carrier';
 
 import { expect } from '@playwright/test';
 import { NewTravelPage as LegacyNewTravelPage } from '@pages/carrier';
@@ -47,6 +47,12 @@ export class CarrierNewTravelPage extends UiBase {
 	constructor(options: TestContextOptions) {
 		super(options);
 		this.legacy = new LegacyNewTravelPage(this.page);
+	}
+
+	/** Navega directo al formulario de alta de viaje. */
+	@step
+	async goto(): Promise<void> {
+		await this.legacy.goto();
 	}
 
 	/** Espera a que el formulario de alta de viaje esté cargado. */
@@ -108,5 +114,21 @@ export class CarrierNewTravelPage extends UiBase {
 	@step
 	async clickSendService(): Promise<void> {
 		await this.legacy.clickSendService();
+	}
+
+	/** Envía el alta de viaje (validar + seleccionar vehículo + enviar servicio). */
+	@step
+	async submit(): Promise<void> {
+		await this.legacy.submit();
+	}
+
+	/**
+	 * Click en "Validar" tolerando el rechazo de la tarjeta (fondos insuficientes,
+	 * declinada). Retorna `{ success, errorMessage }` sin lanzar cuando la tarjeta
+	 * es rechazada — el spec decide la aserción.
+	 */
+	@step
+	async clickValidateCardAllowingReject(timeout = 8_000): Promise<ValidateCardResult> {
+		return this.legacy.clickValidateCardAllowingReject(timeout);
 	}
 }
