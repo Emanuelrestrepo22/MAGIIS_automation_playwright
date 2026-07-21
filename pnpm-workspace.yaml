@@ -1,3 +1,6 @@
 # oracledb se usa en Thin mode (JS puro) → NO se ejecuta su build script nativo (Thick mode).
+# edgedriver/geckodriver: binarios de Selenium (transitivos de webdriverio); no se descargan build scripts.
 allowBuilds:
+  edgedriver: false
+  geckodriver: false
   oracledb: false
