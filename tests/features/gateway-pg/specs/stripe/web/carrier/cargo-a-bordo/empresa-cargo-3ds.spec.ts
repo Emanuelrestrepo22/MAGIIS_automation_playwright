@@ -15,16 +15,15 @@
  */
 import { test } from '@TestFixture';
 import { CargoABordoSteps, type CargoScenario, type DriverChargeSpec } from '@steps/index';
-import { TEST_DATA } from '@features/gateway-pg/fixtures/gateway.fixtures';
 import { STRIPE_TEST_CARDS_RAW } from '@fixtures/gateways/stripe/cards';
 
 test.use({ storageState: undefined });
 test.describe.configure({ timeout: 420_000 });
 
-// Pickup DENTRO del radio de geocerca (device en Ciudad de la Paz 2238, Belgrano CABA).
+// Viaje PLANO con cliente directo (rider) para asignación manual (ref: test-5). Pickup DENTRO
+// del radio de geocerca (device físico en Ciudad de la Paz 2238, Belgrano CABA — a ~14m).
 const scenario3ds: CargoScenario = {
-	client: TEST_DATA.client,
-	passenger: TEST_DATA.passenger,
+	client: 'Restrepo, Emanuel',
 	origin: 'Ciudad de la Paz 2238, Buenos Aires, Argentina',
 	destination: 'Reconquista 661, Buenos Aires, Argentina',
 };

@@ -151,13 +151,20 @@ export class CargoABordoSteps extends UiBase {
 				await this.travel.ensureLoaded();
 			});
 
-			await test.step('Completar formulario — método Cargo a Bordo', async () => {
-				await this.travel.fillCargoABordo({
+			await test.step(options.manualAssign ? 'Completar formulario — VIAJE PLANO (sin método; para Send Manual)' : 'Completar formulario — método Cargo a Bordo', async () => {
+				const formInput = {
 					client: scenario.client,
 					passenger: scenario.passenger,
 					origin: scenario.origin,
 					destination: scenario.destination,
-				});
+				};
+				// Asignación manual (Send Manual → Assign) REQUIERE viaje plano: seleccionar "Cargo a
+				// Bordo" oculta "Send Manual". El conductor elige tarjeta (CREDIT_CARD) en el Resumen.
+				if (options.manualAssign) {
+					await this.travel.fillPlain(formInput);
+				} else {
+					await this.travel.fillCargoABordo(formInput);
+				}
 			});
 
 			await test.step(options.manualAssign ? 'Seleccionar vehículo y ASIGNAR (Send Manual → Assign)' : 'Seleccionar vehículo y enviar el viaje', async () => {

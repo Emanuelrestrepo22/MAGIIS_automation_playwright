@@ -98,6 +98,28 @@ export class CarrierNewTravelPage extends UiBase {
 		await this.legacy.selectPaymentMethod('CargoABordo');
 	}
 
+	/**
+	 * VIAJE PLANO (para asignación manual): cliente + pasajero (adaptativo) + direcciones, SIN
+	 * seleccionar método de pago. Requerido por el flujo Send Manual → Assign (ref: test-5);
+	 * seleccionar "Cargo a Bordo" oculta el botón "Send Manual". El conductor elige tarjeta
+	 * (CREDIT_CARD) recién en el Resumen de la Driver App.
+	 */
+	@step
+	async fillPlain(opts: CargoTravelInput): Promise<void> {
+		await this.legacy.selectClient(opts.client);
+		if (opts.passenger) {
+			const passengerField = this.page.locator('#passenger');
+			const autoAssigned = (await passengerField.getAttribute('ng-reflect-is-disabled')) === 'true';
+			if (autoAssigned) {
+				await expect(passengerField).not.toHaveText('', { timeout: 10_000 });
+			} else {
+				await this.legacy.selectPassenger(opts.passenger);
+			}
+		}
+		await this.legacy.setOrigin(opts.origin);
+		await this.legacy.setDestination(opts.destination);
+	}
+
 	/** Espera a que el botón "Seleccionar Vehículo" esté habilitado. */
 	@step
 	async waitForVehicleSelectionReady(timeout = 45_000): Promise<void> {

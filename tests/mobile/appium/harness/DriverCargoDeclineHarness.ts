@@ -181,19 +181,14 @@ export class DriverCargoDeclineHarness {
 			mark('modal Stripe presente → fill iframe + COBRAR');
 			await this.getPayment().fillCardForm(card);
 			await this.getPayment().submitPayment();
-			mark('COBRAR enviado');
+			mark('COBRAR enviado → state-machine post-cobro');
 
-			// 6. 3DS: completar el challenge que emerge tras COBRAR (caso always-3DS).
-			if (expect3ds) {
-				await this.getPayment().handle3DSChallenge('complete').catch((e) => {
-					console.warn('[DriverCargoDeclineHarness] handle3DSChallenge:', e instanceof Error ? e.message : e);
-				});
-				mark('3DS challenge manejado');
-			}
-
-			const outcome = await this.getPayment().waitForPaymentOutcome(DEFAULTS.outcomeTimeoutMs);
+			// 6. STATE MACHINE post-COBRAR (orden NO determinista): reacciona a lo presente en bucle
+			//    hasta estado terminal — challenge 3DS (completar), firma del pasajero (dibujar+Guardar),
+			//    éxito (home/viaje cerrado), o alert de error/cancelación. El 3DS puede aparecer antes
+			//    o después de la firma.
+			const outcome = await this.resolvePostCharge(mark, expect3ds);
 			mark(`outcome=${outcome.status}`);
-			await this.getPayment().dismissAttentionModal().catch(() => false);
 
 			return { outcome, totalAmount: '', reachedPaymentModal };
 		} catch (error) {
@@ -530,6 +525,136 @@ export class DriverCargoDeclineHarness {
 
 	private async getDriverPause(ms: number): Promise<void> {
 		await this.home.getDriver().pause(ms);
+	}
+
+	/**
+	 * STATE MACHINE post-COBRAR. Polea (hasta timeout) y despacha por la pantalla PRESENTE, en
+	 * bucle, hasta estado terminal. El orden es NO determinista (3DS→firma, firma→3DS, o cierre
+	 * directo) — reacciona a lo que haya, no asume secuencia.
+	 */
+	private async resolvePostCharge(mark: (m: string) => void, expect3ds: boolean, timeout = 120_000): Promise<PaymentOutcome> {
+		const driver = this.home.getDriver();
+		const deadline = Date.now() + timeout;
+		let signed = false;
+		let did3ds = false;
+		while (Date.now() < deadline) {
+			await this.switchToWebView();
+
+			// (a) Éxito: volvió al home / viaje cerrado.
+			const url = await driver.execute<string, []>(() => window.location.href).catch(() => '');
+			if (/\/navigator\/home/i.test(url) || /FROM_TRAVEL_CLOSED/i.test(url)) {
+				mark(`éxito: ${url} (3ds=${did3ds}, firma=${signed})`);
+				return { status: 'success', message: `home/closed (3ds=${did3ds}, firma=${signed})` };
+			}
+
+			// (b) Challenge 3DS presente → COMPLETE.
+			if (await this.getPayment().tryComplete3DS('complete')) {
+				did3ds = true;
+				mark('3DS COMPLETE clickeado');
+				await driver.pause(3_000);
+				continue;
+			}
+
+			// (c) Firma del pasajero → dibujar + Guardar (el 3DS puede aparecer DESPUÉS).
+			if (await this.trySignIfPresent()) {
+				signed = true;
+				mark('firma dibujada + Guardar');
+				await driver.pause(3_000);
+				continue;
+			}
+
+			// (d) Alert bloqueante (error/cancelación).
+			const alertText = await this.detectBlockingAlert();
+			if (alertText) {
+				mark(`alert: ${alertText.slice(0, 100)}`);
+				await this.getPayment().dismissAttentionModal().catch(() => false);
+				if (/cancelad|rechaz|no autoriz|declin|error|fALL|falló|fallo/i.test(alertText)) {
+					return { status: 'declined', reason: alertText.slice(0, 200) };
+				}
+				if (/perdid|expir/i.test(alertText)) {
+					return { status: 'trip-lost', reason: alertText.slice(0, 200) };
+				}
+				// alert informativo no terminal → seguir.
+				await driver.pause(1_000);
+				continue;
+			}
+
+			await driver.pause(1_500);
+		}
+		return { status: 'unknown', raw: `state-machine timeout (3ds=${did3ds}, firma=${signed}, expect3ds=${expect3ds})` };
+	}
+
+	/**
+	 * Si la pantalla de firma (app-page-signer) está presente, dibuja una firma freehand en el
+	 * canvas (W3C pointer actions) y toca Guardar. Devuelve true si actuó.
+	 * Selectores: canvas `app-page-signer ion-content div canvas`; Guardar
+	 * `app-page-signer ion-footer ion-row button.btn.primary`.
+	 */
+	private async trySignIfPresent(): Promise<boolean> {
+		const driver = this.home.getDriver();
+		await this.switchToWebView();
+		type SignerInfo = { present: boolean; rect?: { x: number; y: number; w: number; h: number } };
+		const info: SignerInfo = await driver
+			.execute<SignerInfo, []>(() => {
+				const signer = document.querySelector('app-page-signer');
+				if (!signer) return { present: false } as SignerInfo;
+				const canvas = signer.querySelector('ion-content div canvas, canvas') as HTMLCanvasElement | null;
+				if (!canvas) return { present: true } as SignerInfo;
+				const r = canvas.getBoundingClientRect();
+				return { present: true, rect: { x: r.left, y: r.top, w: r.width, h: r.height } } as SignerInfo;
+			})
+			.catch((): SignerInfo => ({ present: false }));
+
+		if (!info.present) return false;
+		if (!info.rect || info.rect.w < 5) { await driver.pause(1_000); return true; }
+
+		const { x, y, w, h } = info.rect;
+		const px = (fx: number) => Math.round(x + w * fx);
+		const py = (fy: number) => Math.round(y + h * fy);
+		const stroke = [[0.2, 0.5], [0.35, 0.3], [0.5, 0.7], [0.65, 0.35], [0.8, 0.6]] as const;
+		try {
+			await driver.performActions([
+				{
+					type: 'pointer',
+					id: 'finger1',
+					parameters: { pointerType: 'touch' },
+					actions: [
+						{ type: 'pointerMove', duration: 0, x: px(stroke[0][0]), y: py(stroke[0][1]) },
+						{ type: 'pointerDown', button: 0 },
+						...stroke.slice(1).map(([fx, fy]) => ({ type: 'pointerMove' as const, duration: 120, x: px(fx), y: py(fy) })),
+						{ type: 'pointerUp', button: 0 },
+					],
+				},
+			]);
+			await (driver as unknown as { releaseActions?: () => Promise<void> }).releaseActions?.().catch(() => undefined);
+		} catch (e) {
+			console.warn('[DriverCargoDeclineHarness] firma performActions error:', e instanceof Error ? e.message : e);
+		}
+		await driver.pause(700);
+
+		// Guardar.
+		await driver
+			.execute<boolean, []>(() => {
+				const btn = document.querySelector('app-page-signer ion-footer ion-row button.btn.primary, app-page-signer ion-footer button.btn.primary') as HTMLElement | null;
+				if (btn && (btn as HTMLButtonElement).offsetParent !== null) { btn.click(); return true; }
+				return false;
+			})
+			.catch(() => false);
+		return true;
+	}
+
+	private async detectBlockingAlert(): Promise<string> {
+		const driver = this.home.getDriver();
+		await this.switchToWebView();
+		return driver
+			.execute<string, []>(() => {
+				const norm = (v: unknown) => String(v ?? '').replace(/\s+/g, ' ').trim();
+				const a = document.querySelector('app-alert-modal') as HTMLElement | null;
+				const m = document.querySelector('ion-modal.alert-modal-atention.show-modal') as HTMLElement | null;
+				const el = (a && a.offsetParent !== null) ? a : (m && m.offsetParent !== null ? m : null);
+				return el ? norm(el.innerText ?? el.textContent) : '';
+			})
+			.catch(() => '');
 	}
 
 	/**

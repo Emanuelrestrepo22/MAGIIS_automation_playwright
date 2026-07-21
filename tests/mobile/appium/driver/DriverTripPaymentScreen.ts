@@ -251,6 +251,61 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 	}
 
 	/**
+	 * SINGLE-PASS: si el challenge 3DS de Stripe está presente (en el top o en algún iframe
+	 * anidado), clickea el botón COMPLETE (`#test-source-authorize-3ds`) o FAIL
+	 * (`#test-source-fail-3ds`) y devuelve true. Si no está presente, devuelve false (para que
+	 * el state-machine externo siga poleando). Selectores confirmados por el humano en vivo.
+	 */
+	async tryComplete3DS(action: 'complete' | 'fail' = 'complete'): Promise<boolean> {
+		const driver = this.getDriver();
+		const targetId = action === 'complete' ? 'test-source-authorize-3ds' : 'test-source-fail-3ds';
+		const wordRe = action === 'complete' ? 'complete|completar|authorize|autoriz' : 'fail|rechaz';
+
+		const anyDriver = driver as unknown as {
+			switchFrame?: (el: unknown) => Promise<void>;
+			switchToFrame?: (el: unknown) => Promise<void>;
+		};
+		const enter = async (el: unknown): Promise<void> => {
+			if (typeof anyDriver.switchFrame === 'function') { await anyDriver.switchFrame(el); return; }
+			if (typeof anyDriver.switchToFrame === 'function') { await anyDriver.switchToFrame(el); return; }
+		};
+		const clickHere = async (): Promise<boolean> =>
+			driver
+				.execute<boolean, [string, string]>((id, re) => {
+					const byId = document.getElementById(id) as HTMLElement | null;
+					if (byId && byId.offsetParent !== null) { byId.click(); return true; }
+					const rx = new RegExp(re, 'i');
+					const els = Array.from(document.querySelectorAll('button, [role="button"], a, input[type="button"], input[type="submit"]')) as HTMLElement[];
+					const m = els.find((b) => b.offsetParent !== null && (rx.test(b.textContent ?? '') || rx.test((b as HTMLInputElement).value ?? '')));
+					if (m) { m.click(); return true; }
+					return false;
+				}, targetId, wordRe)
+				.catch(() => false);
+
+		await this.switchToWebView(2_000);
+		if (await clickHere()) return true;
+
+		const iframeCount = await driver.execute<number, []>(() => document.querySelectorAll('iframe').length).catch(() => 0);
+		for (let i = 0; i < iframeCount; i++) {
+			try {
+				await enter(null);
+				await this.switchToWebView(800);
+				const frame = driver.$(`iframe:nth-of-type(${i + 1})`);
+				if (!(await frame.isExisting().catch(() => false))) continue;
+				await enter(frame);
+				if (await clickHere()) { await enter(null); return true; }
+				const inner = driver.$('iframe');
+				if (await inner.isExisting().catch(() => false)) {
+					await enter(inner);
+					if (await clickHere()) { await enter(null); return true; }
+				}
+			} catch { /* siguiente iframe */ }
+			finally { await enter(null).catch(() => undefined); }
+		}
+		return false;
+	}
+
+	/**
 	 * Completa (o falla) el challenge 3DS de Stripe que emerge tras COBRAR (card always-3DS).
 	 * El challenge es una página hosted de Stripe dentro de iframe(s) anidados (stripe frame →
 	 * challenge/acs frame). Estrategia: recorrer todos los iframes, entrar a cada uno y buscar el
