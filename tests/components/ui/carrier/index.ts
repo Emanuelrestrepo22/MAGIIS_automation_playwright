@@ -5,4 +5,5 @@
 export { CarrierDashboardPage } from './CarrierDashboardPage';
 export { CarrierNewTravelPage, type NewTravelFormInput, type CargoTravelInput } from './CarrierNewTravelPage';
 export { CarrierOperationalPreferencesPage } from './CarrierOperationalPreferencesPage';
+export { CarrierTravelDetailPage } from './CarrierTravelDetailPage';
 export { CarrierTravelManagementPage } from './CarrierTravelManagementPage';

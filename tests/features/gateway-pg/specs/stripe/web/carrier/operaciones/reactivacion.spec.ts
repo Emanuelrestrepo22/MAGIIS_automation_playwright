@@ -2,10 +2,15 @@
  * TCs: TS-STRIPE-P2-TC060–TC065
  * Feature: Reactivación de Viajes Cancelados — Carrier — Empresa Individuo
  * Tags: @regression @web-only
+ *
+ * KATA conformance (feature/kata-conformance): specs de placeholder (fixme). test del
+ * fixture KATA (@TestFixture). Sin ATC aún (no hay flujo implementado). Al implementar,
+ * mapear al área REACT del idmap (MG-440+, Level UI) — PENDIENTE REASIGNAR.
  */
-import { test } from '../../../../../../../TestBase';
+import { test } from '@TestFixture';
 
-test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
+// El fixture KATA no define la opción `role` (login explícito en el flujo cuando se implemente).
+test.use({ storageState: undefined });
 
 test.describe('Gateway PG · Carrier · Empresa Individuo — Reactivación de Viajes @gateway @stripe @hold @3ds @regression', () => {
 

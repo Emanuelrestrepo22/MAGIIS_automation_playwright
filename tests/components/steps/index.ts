@@ -12,3 +12,4 @@ export {
 	type CargoScenario,
 	type CargoRunOptions,
 } from './CargoABordoSteps';
+export { CarrierTravelEditSteps } from './CarrierTravelEditSteps';

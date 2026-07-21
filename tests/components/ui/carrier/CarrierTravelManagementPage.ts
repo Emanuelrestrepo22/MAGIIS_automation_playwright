@@ -36,6 +36,18 @@ export class CarrierTravelManagementPage extends UiBase {
 		await this.legacy.goto();
 	}
 
+	/** Abre la pestaña "Programados" dentro de Gestión de Viajes. */
+	@step
+	async openScheduledTrips(): Promise<void> {
+		await this.legacy.openScheduledTrips();
+	}
+
+	/** Abre el detalle del primer viaje programado visible. */
+	@step
+	async openFirstScheduledTripDetail(): Promise<void> {
+		await this.legacy.openFirstScheduledTripDetail();
+	}
+
 	/**
 	 * Mini-flujo ATC de verificación: confirma que el viaje del pasajero quedó en la
 	 * columna "Por Asignar" (hold aprobado / Stripe pre-autorizó). @atc MG-158 (área E —
