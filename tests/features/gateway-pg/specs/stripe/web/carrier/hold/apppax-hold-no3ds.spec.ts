@@ -8,7 +8,7 @@
  *   - orquestación compartida extraída al Step `CarrierHoldSteps.runHoldScenario` (@steps).
  *   - Page components KATA (@ui/carrier) en vez de los POMs del sustrato carrier.
  * ATCs mapeados en las Page components: fillMinimum → MG-148 (área C),
- *   expectPassengerInPorAsignar → MG-158 (área E). PENDIENTE REASIGNAR (idmap API-level,
+ *   expectPassengerInPorAsignar → MG-158 (área E). mapeo por área aceptado (idmap API-level,
  *   sin 1:1 con TS-STRIPE-TC10xx).
  */
 import { test } from '@TestFixture';

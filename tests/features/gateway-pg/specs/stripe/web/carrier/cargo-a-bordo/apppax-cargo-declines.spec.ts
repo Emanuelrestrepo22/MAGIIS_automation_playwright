@@ -13,7 +13,7 @@
  *
  * KATA conformance (feature/kata-conformance): fase web extraída a
  *   `CargoABordoSteps.runCargoScenario` (@steps); test desde @TestFixture; fase Driver App
- *   vía `driverAppStep` (test.fixme). ATCs → MG-161 / MG-158 (PENDIENTE REASIGNAR).
+ *   vía `driverAppStep` (test.fixme). ATCs → MG-161 / MG-158 (mapeo por área aceptado).
  */
 import { test } from '@TestFixture';
 import { CargoABordoSteps, type CargoScenario } from '@steps/index';

@@ -9,7 +9,7 @@
  * fixture Appium; forzarlo inventaría arquitectura, así que se preserva TestBase + fixme.
  * Normalizado no-destructivo: imports por alias (@TestBase/@features); los de
  * tests/mobile/appium quedan relativos (no hay alias @mobile — Fase 4).
- * @atc idmap: wallet pax -> área H (MG-172..174, MG-495-496). PENDIENTE REASIGNAR
+ * @atc idmap: wallet pax -> área H (MG-172..174, MG-495-496). mapeo por área aceptado
  *   (idmap API-level, sin 1:1 con e2e-mobile UI).
  */
 

@@ -11,7 +11,7 @@
  * (origen, destino, tarjeta, validar, vehículo) se hereda del POM carrier vía el
  * legacy contractor.
  *
- * NOTA @atc — MAPEO PENDIENTE REASIGNAR: el idmap `atp-mg-gateway-idmap.md` es
+ * NOTA @atc — MAPEO POR ÁREA (aceptado): el idmap `atp-mg-gateway-idmap.md` es
  * API-level (TC-PAY-*); los TS-STRIPE-P2-TC00x (UI) no tienen 1:1. `fillMinimum`
  * (alta + validación tarjeta preautorizada) → MG-148 (área C, TC-PAY-C-01), mismo
  * mapeo que el carrier. `selectSavedCard` (selección de tarjeta guardada, UI) →

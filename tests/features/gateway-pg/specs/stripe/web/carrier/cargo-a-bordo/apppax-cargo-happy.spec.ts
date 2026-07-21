@@ -8,7 +8,7 @@
  *   - fase web compartida extraída al Step `CargoABordoSteps.runCargoScenario` (@steps).
  *   - Page components KATA (@ui/carrier) en vez de los POMs del sustrato carrier.
  * ATCs mapeados en las Page components: fillCargoABordo → MG-161 (área F cobro),
- *   expectPassengerInPorAsignar → MG-158 (área E hold). PENDIENTE REASIGNAR (idmap
+ *   expectPassengerInPorAsignar → MG-158 (área E hold). mapeo por área aceptado (idmap
  *   API-level, sin 1:1 con TS-STRIPE-TC10xx UI).
  *
  * Notas de comportamiento:

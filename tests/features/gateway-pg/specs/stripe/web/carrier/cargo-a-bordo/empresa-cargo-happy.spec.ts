@@ -14,7 +14,7 @@
  *
  * KATA conformance (feature/kata-conformance): fase web extraída a
  *   `CargoABordoSteps.runCargoScenario` (@steps); test desde @TestFixture. ATCs →
- *   MG-161 (área F cobro) / MG-158 (área E hold). PENDIENTE REASIGNAR (idmap API-level).
+ *   MG-161 (área F cobro) / MG-158 (área E hold). mapeo por área aceptado (idmap API-level).
  */
 import { test } from '@TestFixture';
 import { CargoABordoSteps, type CargoScenario } from '@steps/index';

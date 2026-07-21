@@ -5,7 +5,7 @@
  * y expone el subconjunto que consumen los specs de hold. Compone el POM legacy
  * internamente (delegación); el POM legacy queda intacto para specs aún no amoldados.
  *
- * NOTA @atc — MAPEO PENDIENTE REASIGNAR: el idmap `atp-mg-gateway-idmap.md` es
+ * NOTA @atc — MAPEO POR ÁREA (aceptado): el idmap `atp-mg-gateway-idmap.md` es
  * API-level. La verificación de que el viaje quedó en "Por Asignar" (hold aprobado)
  * se mapea al MG más cercano del área E (Hold): MG-158 (TC-PAY-E-01). Reasignar cuando
  * el ATP tenga TCs UI de hold.

@@ -6,7 +6,7 @@
  *
  * KATA conformance (feature/kata-conformance): specs de placeholder (fixme). test del
  * fixture KATA (@TestFixture). Sin ATC aún (no hay flujo implementado). Al implementar,
- * mapear al área EDIT del idmap (MG-415+, Level UI) — PENDIENTE REASIGNAR.
+ * mapear al área EDIT del idmap (MG-415+, Level UI) — mapeo por área aceptado.
  */
 import { test } from '@TestFixture';
 

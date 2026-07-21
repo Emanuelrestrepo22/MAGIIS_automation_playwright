@@ -11,7 +11,7 @@
  * (@TestBase/@features); los de tests/mobile/appium quedan relativos (no hay alias
  * @mobile — Fase 4).
  *
- * @atc idmap (área -> key más cercana, PENDIENTE REASIGNAR — idmap API-level, sin 1:1
+ * @atc idmap (área -> key más cercana, mapeo por área aceptado — idmap API-level, sin 1:1
  *   con e2e-mobile UI): carrier->driver hold/cobro -> área E (MG-158..160) / F (MG-161..164).
  */
 import { test, expect } from '@TestBase';

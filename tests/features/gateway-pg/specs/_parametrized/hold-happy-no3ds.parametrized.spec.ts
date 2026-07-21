@@ -20,7 +20,7 @@
  *   - El journey se delega a `CarrierHoldSteps.runHoldScenario` (@steps); sólo el dato
  *     de tarjeta lo aporta `resolveCard`, preservando la naturaleza cross-gateway del piloto.
  *   - Los ATC viven en las Page components que orquesta el Step (fillMinimum → MG-148,
- *     expectPassengerInPorAsignar → MG-158). PENDIENTE REASIGNAR (idmap API-level, sin 1:1
+ *     expectPassengerInPorAsignar → MG-158). mapeo por área aceptado (idmap API-level, sin 1:1
  *     con TS-STRIPE-TC10xx).
  *
  * Trazabilidad:

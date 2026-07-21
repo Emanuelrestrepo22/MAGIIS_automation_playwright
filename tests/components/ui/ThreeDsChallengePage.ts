@@ -11,7 +11,7 @@
  *   - Métodos públicos fail-fast; helpers de espera decorados con @step; el mini-flujo
  *     de aprobación decorado con @atc.
  *
- * NOTA @atc — MAPEO PENDIENTE REASIGNAR: el idmap `atp-mg-gateway-idmap.md` es API-level
+ * NOTA @atc — MAPEO POR ÁREA (aceptado): el idmap `atp-mg-gateway-idmap.md` es API-level
  * (TC-PAY-*); los TS-STRIPE-TC10xx (UI/3DS) no tienen 1:1. Se usa el MG más cercano del
  * área D (3DS / validación tarjeta): MG-152 (TC-PAY-D-01) para el success y MG-153
  * (TC-PAY-D-02) para el fail. Reasignar cuando el ATP tenga TCs UI del challenge 3DS.

@@ -17,7 +17,7 @@
  *
  * NOTA @atc — los ATC mapeados a MG viven en las Page components; este Step orquesta,
  * no mapea TCs directamente. MG-161 (área F cobro) / MG-158 (área E hold), ambos
- * PENDIENTE REASIGNAR (idmap API-level, sin 1:1 con TS-STRIPE-TC10xx UI).
+ * mapeo por área aceptado (idmap API-level, sin 1:1 con TS-STRIPE-TC10xx UI).
  */
 
 import type { TestContextOptions } from '@TestContext';

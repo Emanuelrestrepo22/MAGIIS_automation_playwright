@@ -10,7 +10,7 @@
  * (@TestFixture) en vez de TestBase; el fixture no define `role` (login explícito en el
  * flujo cuando se implemente el baseline). Placeholder fixme — sin ATC aún (no hay flujo
  * disparado). Al implementar, reutilizar `ThreeDsChallengePage` (@ui) para localizar el
- * frame del challenge y mapear al área 3DS del idmap (MG-152/153, Level UI) — PENDIENTE REASIGNAR.
+ * frame del challenge y mapear al área 3DS del idmap (MG-152/153, Level UI) — mapeo por área aceptado.
  */
 import { test, expect } from '@TestFixture';
 

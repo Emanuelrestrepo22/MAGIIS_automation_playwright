@@ -17,7 +17,7 @@
  * Normalizado no-destructivo: imports por alias (@TestBase/@features/@fixtures); los de
  * tests/mobile/appium quedan relativos (no hay alias @mobile — Fase 4).
  * @atc idmap: wallet pax (business/colaborador) -> área H (MG-172..174, MG-495-496).
- *   PENDIENTE REASIGNAR (idmap API-level, sin 1:1 con e2e-mobile UI).
+ *   mapeo por área aceptado (idmap API-level, sin 1:1 con e2e-mobile UI).
  */
 
 import { expect, test } from '@TestBase';

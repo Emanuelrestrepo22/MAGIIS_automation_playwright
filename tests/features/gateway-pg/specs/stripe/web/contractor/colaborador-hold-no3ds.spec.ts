@@ -8,7 +8,7 @@
  *   - orquestación compartida extraída al Step `ContractorHoldSteps.runColaboradorScenario` (@steps).
  *   - Page components KATA (@ui/contractor + @ui/carrier) en vez de los POMs del sustrato.
  * ATCs mapeados en las Page components: fillMinimum → MG-148 (área C),
- *   selectSavedCard → MG-482 (área C UI). PENDIENTE REASIGNAR (idmap API-level,
+ *   selectSavedCard → MG-482 (área C UI). mapeo por área aceptado (idmap API-level,
  *   sin 1:1 con TS-STRIPE-P2-TC00x).
  *
  * Precondiciones:

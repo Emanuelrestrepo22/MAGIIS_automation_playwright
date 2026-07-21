@@ -27,7 +27,7 @@
  * KATA conformance (feature/kata-conformance): test/expect del fixture unificado KATA
  * (@TestFixture) en vez de TestBase; Page components KATA (@ui/carrier) en vez de los POMs
  * del sustrato carrier. El mocking de red (`page.route`) es orquestación propia del spec.
- * ATCs mapeados en las Page components: fillMinimum → MG-148 (área C). PENDIENTE REASIGNAR
+ * ATCs mapeados en las Page components: fillMinimum → MG-148 (área C). mapeo por área aceptado
  * (idmap API-level, sin 1:1 con TS-STRIPE-TC10xx).
  */
 

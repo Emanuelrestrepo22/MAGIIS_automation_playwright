@@ -9,7 +9,7 @@
  *   - el modal 3DS usa el componente KATA `ThreeDsChallengePage extends UiBase` (@ui).
  * ATCs mapeados en las Page components: fillMinimum → MG-148 (área C),
  *   expectPassengerInPorAsignar → MG-158 (área E), challenge 3DS → MG-152/153 (área D).
- *   PENDIENTE REASIGNAR (idmap API-level, sin 1:1 con TS-STRIPE-TC10xx).
+ *   mapeo por área aceptado (idmap API-level, sin 1:1 con TS-STRIPE-TC10xx).
  */
 import { test } from '@TestFixture';
 import { CarrierHoldSteps, type CardFlow, type HoldScenario } from '@steps/index';

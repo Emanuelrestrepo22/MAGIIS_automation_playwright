@@ -10,7 +10,7 @@
  *     (`ThreeDsChallengePage`, `ThreeDsErrorPopup`).
  * ATCs mapeados en las Page components (área EDIT del idmap): linkAndValidatePreauthorizedCard
  *   → MG-415, confirmLinkedCardAndSave → MG-416, 3DS success/fail → MG-152/153.
- *   PENDIENTE REASIGNAR (idmap sin 1:1 entre TS-STRIPE-P2-TC078xx UI y TC-PAY-EDIT-*).
+ *   mapeo por área aceptado (idmap sin 1:1 entre TS-STRIPE-P2-TC078xx UI y TC-PAY-EDIT-*).
  */
 import { test } from '@TestFixture';
 import { CarrierTravelEditSteps } from '@steps/index';

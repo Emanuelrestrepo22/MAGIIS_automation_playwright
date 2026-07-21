@@ -16,7 +16,7 @@
  *
  * NOTA @atc — los ATC mapeados a MG viven en las Page components (linkAndValidatePreauthorizedCard
  * → MG-415, confirmLinkedCardAndSave → MG-416 (área EDIT); 3DS success/fail → MG-152/153); este
- * Step orquesta, no mapea TCs directamente. PENDIENTE REASIGNAR (idmap sin 1:1 UI).
+ * Step orquesta, no mapea TCs directamente. mapeo por área aceptado (idmap sin 1:1 UI).
  */
 
 import type { TestContextOptions } from '@TestContext';

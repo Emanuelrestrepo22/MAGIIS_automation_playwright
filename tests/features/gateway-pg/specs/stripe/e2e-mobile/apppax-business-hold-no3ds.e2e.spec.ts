@@ -27,7 +27,7 @@
  * Normalizado no-destructivo: imports por alias (@TestBase/@features); los de
  * tests/mobile/appium quedan relativos (no hay alias @mobile — Fase 4).
  * @atc idmap: wallet pax business -> área H (MG-172..174, MG-495-496); hold -> área E
- *   (MG-158..160). PENDIENTE REASIGNAR (idmap API-level, sin 1:1 con e2e-mobile UI).
+ *   (MG-158..160). mapeo por área aceptado (idmap API-level, sin 1:1 con e2e-mobile UI).
  */
 import { expect, test } from '@TestBase';
 import { GatewayPgJourneyOrchestrator } from '@features/gateway-pg/helpers/GatewayPgJourneyOrchestrator';

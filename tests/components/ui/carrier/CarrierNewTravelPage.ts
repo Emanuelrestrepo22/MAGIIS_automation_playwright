@@ -7,7 +7,7 @@
  * (~900 líneas, deuda TIER A BL-038) ni se toca el POM legacy, que sigue siendo la
  * base compartida por contractor + specs aún no amoldados (multi-session safety).
  *
- * NOTA @atc — MAPEO PENDIENTE REASIGNAR: el idmap `atp-mg-gateway-idmap.md` es
+ * NOTA @atc — MAPEO POR ÁREA (aceptado): el idmap `atp-mg-gateway-idmap.md` es
  * API-level (TC-PAY-*); los TS-STRIPE-TC10xx (UI) no tienen 1:1. `fillMinimum`
  * (alta + validación de tarjeta preautorizada) se mapea al MG más cercano del área C
  * (alta/validación tarjeta): MG-148 (TC-PAY-C-01). Reasignar cuando el ATP tenga TCs
@@ -77,7 +77,7 @@ export class CarrierNewTravelPage extends UiBase {
 	 * deshabilitado), valida su contenido; si no, lo selecciona explícitamente; si no se
 	 * pasa `passenger` (app pax), lo omite.
 	 *
-	 * @atc MG-161 (área F — cobro). PENDIENTE REASIGNAR: el idmap `atp-mg-gateway-idmap.md`
+	 * @atc MG-161 (área F — cobro). mapeo por área aceptado: el idmap `atp-mg-gateway-idmap.md`
 	 * es API-level (TC-PAY-F-*); los TS-STRIPE-TC10xx UI de Cargo a Bordo no tienen 1:1.
 	 * MG-161 (TC-PAY-F-01) es el MG más cercano del área de cobro.
 	 */

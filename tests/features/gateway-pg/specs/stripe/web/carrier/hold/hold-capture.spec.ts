@@ -8,7 +8,7 @@
  *   - Page components KATA (@ui/carrier) en vez de los POMs del sustrato carrier.
  *   - Flujos heterogéneos (hold OK vs. declinación) → orquestación inline en el spec.
  * ATCs mapeados en las Page components: fillMinimum → MG-148 (área C),
- *   expectPassengerInPorAsignar → MG-158 (área E). PENDIENTE REASIGNAR (idmap API-level).
+ *   expectPassengerInPorAsignar → MG-158 (área E). mapeo por área aceptado (idmap API-level).
  *
  * TC1049 – Hold ON exitoso, tarjeta sin 3DS (4242 4242 4242 4242)
  * TC1059 – Hold ON, tarjeta con fondos insuficientes (4000 0000 0000 9995) — viaje no se crea
