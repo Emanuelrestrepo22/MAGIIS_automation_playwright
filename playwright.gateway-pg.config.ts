@@ -14,9 +14,9 @@ export default defineConfig({
   // testDir cubre TODOS los gateways (stripe/, authorize/ cuando entre runtime,
   // _parametrized/ para specs cross-gateway). Para correr solo un gateway,
   // usar los scripts npm específicos:
-  //   - pnpm test:test:gateway-pg:stripe     → solo specs/stripe/**
-  //   - pnpm test:test:gateway-pg:authorize  → solo specs/authorize/** (BL-025)
-  //   - pnpm test:test:gateway-pg            → todos los gateways
+  //   - pnpm test:test:gateway:stripe     → solo specs/stripe/**
+  //   - pnpm test:test:gateway:authorize  → solo specs/authorize/** (BL-025)
+  //   - pnpm test:test:gateway            → todos los gateways
   testDir: "./tests/features/gateway-pg/specs",
   testMatch: /\.spec\.ts$/,
   fullyParallel: false,
@@ -47,7 +47,7 @@ export default defineConfig({
       name: "regression-web",
       // BL-044 — excluir @visual también para que la regresión web por default
       // no intente comparar baselines de visual regression (opt-in vía --project=visual).
-      grepInvert: /@mobile|@smoke|@critical|@visual/,
+      grepInvert: /@e2e-hybrid|@smoke|@critical|@visual/,
       use: {
         browserName: "chromium",
       },
@@ -61,7 +61,7 @@ export default defineConfig({
     },
     {
       name: "e2e-mobile",
-      grep: /@mobile/,
+      grep: /@e2e-hybrid/,
       use: {
         browserName: "chromium",
       },

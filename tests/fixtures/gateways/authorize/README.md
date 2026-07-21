@@ -44,23 +44,37 @@ tests/fixtures/gateways/authorize/
 
 ### Zip code (CARD-NOT-PRESENT)
 
-| ZIP | Resultado |
-|---|---|
-| `46201` | A — Address match |
-| `46203` | E — Invalid AVS |
-| `46204` | G — Non-U.S. Issuer |
-| `46205` | N — No Match |
-| `46211` | W — ZIP matched 9 digits |
-| `46214` | X — Address + 9-digit ZIP match |
-| `46217` | Z — ZIP match |
-| `46225` | Partial Auth ($1.23 authorized) |
-| `46226` | Prepaid Auth ($1.23 remaining) |
-| `46227` | Prepaid Auth (-$1.23 balance) |
-| `46228` | Prepaid Auth ($0 balance) |
-| `46282` | Response Code 2 — Declined |
+Verificado contra la guía oficial el 2026-07-20 (<https://developer.authorize.net/hello_world/testing_guide.html>).
 
-> Nota: la doc oficial define triggers por monto también, pero están marcados
-> como **deprecated** ("may cease to function without notice"). Los evitamos.
+| ZIP | AVS | Significado |
+|---|---|---|
+| `46201` | A | Address match; ZIP no match |
+| `46203` | E | AVS inválido / no permitido para el tipo de tarjeta |
+| `46204` | G | Non-U.S. bank (issuer no soporta AVS; no para Amex) |
+| `46205` | N | Address y ZIP no match |
+| `46207` | R | AVS no disponible durante el procesamiento |
+| `46208` | S | Issuer U.S. no soporta AVS |
+| `46209` | U | Info de dirección del cardholder no disponible |
+| `46211` | W | Address no match; ZIP 9 dígitos match (no Amex) |
+| `46214` | X | Address match; ZIP 9 dígitos match (no Visa/Amex) |
+| `46217` | Z | Address no match; ZIP match |
+| `46282` | — | Response Code 2 — Declined (decline genérico) |
+
+### Partial / Prepaid authorization
+
+ZIP (card-not-present) + monto (card-present). Verificado contra la sección "Partial
+authorization responses" de la guía oficial (2026-07-20).
+
+| ZIP | Monto | Resultado | Balance restante | Autorizado |
+|---|---|---|---|---|
+| `46225` | $462.25 | Partial Authorization | n/a | $1.23 |
+| `46226` | $462.26 | Prepaid Authorization | $1.23 | Full |
+| `46227` | $426.27 | Prepaid Authorization | -$1.23 | Full |
+| `46228` | $462.28 | Prepaid Authorization | $0 | Full |
+
+> Nota: la doc oficial también define triggers por **monto** (ej. $70.02, $70.40…), pero
+> están marcados **deprecated** (phased out 2011, "may cease to function without notice").
+> Los evitamos — usamos los ZIP.
 
 ## Cómo usar en specs
 

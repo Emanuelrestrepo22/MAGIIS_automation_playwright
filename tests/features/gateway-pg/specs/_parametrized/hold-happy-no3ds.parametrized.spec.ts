@@ -49,7 +49,7 @@ const ACTIVE_GATEWAYS: GatewayName[] = ['stripe'];
 test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
 test.describe.configure({ timeout: 180_000 });
 
-test.describe('[BL-028][parametrized] Hold happy path sin 3DS', () => {
+test.describe('[BL-028][parametrized] Hold happy path sin 3DS @gateway @hold @regression', () => {
 	for (const gateway of ACTIVE_GATEWAYS) {
 		test.describe(`gateway=${gateway}`, () => {
 			test('crea viaje con HAPPY_NO_AUTH y queda visible en grilla "Por asignar"', async ({ page }) => {

@@ -555,6 +555,24 @@ runCheck('12/opt', 'Gitleaks secrets scan (si instalado)',
     }
   }, { warningOnly: true });
 
+// [13] Consistencia del contrato de metodología (advisory — Nivel 2 Fase I)
+// Valida tags vs docs/ci/TAGS.md, TC-IDs reusados y trazabilidad type:'tms'.
+// warningOnly: no bloquea (las reglas son advisory por las convenciones del repo).
+runCheck('13/opt', 'Consistencia del contrato (tags/TC-IDs/tms)',
+  () => {
+    try {
+      execSync('node scripts/ci/consistency-check.mjs', {
+        stdio: ['ignore', 'pipe', 'pipe'],
+        timeout: 30000,
+      });
+      return { fail: false };
+    } catch (err) {
+      const out = (err.stdout?.toString() || '') + (err.stderr?.toString() || '');
+      const hit = out.split('\n').find(l => l.includes('error') || l.includes('warning')) || 'ver: node scripts/ci/consistency-check.mjs';
+      return { fail: true, reason: 'consistency-check reportó hallazgos', detail: hit.trim().slice(0, 200) };
+    }
+  }, { warningOnly: true });
+
 // Summary
 const totalElapsed = Math.round((performance.now() - totalStart) / 1000);
 console.log(`\n${c.gray}--------------------------------------------${c.reset}`);

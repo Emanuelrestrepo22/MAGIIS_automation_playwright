@@ -107,7 +107,7 @@ const SCENARIOS: BusinessHold3dsScenario[] = [
 	},
 ];
 
-test.describe.serial('Gateway PG · E2E Mobile · App Pax Business — Hold con 3DS @gateway @stripe @e2e-hybrid @hold @3ds', () => {
+test.describe.serial('Gateway PG · E2E Mobile · App Pax Business — Hold con 3DS @gateway @stripe @e2e-hybrid @hold @3ds @regression', () => {
 	for (const scenario of SCENARIOS) {
 		test.describe(`[${scenario.testCaseId}] ${scenario.title}`, () => {
 			test(

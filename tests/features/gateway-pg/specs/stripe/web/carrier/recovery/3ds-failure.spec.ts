@@ -52,7 +52,10 @@ test.describe('Gateway PG · Carrier · App Pax — Fallo 3DS, red flag y reinte
 					passenger: TEST_DATA.appPaxPassenger,
 					origin: TEST_DATA.origin,
 					destination: TEST_DATA.destination,
-					cardLast4: STRIPE_TEST_CARDS.fail3DS.slice(-4), // 9235
+					// FIX 2026-07-21: usar tarjeta 3DS que MUESTRA el challenge (3155) + completeFail() abajo.
+					// `fail3DS` (9235) es un DECLINE genérico SIN 3DS → nunca aparece el challenge
+					// (verificado en vivo: 0 llamadas 3DS con 9235). El "fallo 3DS" se logra rechazando el challenge.
+					cardLast4: STRIPE_TEST_CARDS.success3DS.slice(-4), // 3155 (challenge-showing)
 				});
 				await travel.submit();
 			});

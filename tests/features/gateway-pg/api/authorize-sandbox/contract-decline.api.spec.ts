@@ -11,14 +11,15 @@
 import { test, expect } from '@playwright/test';
 import { AUTHORIZE_CARDS } from '../../../../fixtures/gateways/authorize/card-policy';
 import { AuthorizeApiClient, hasAuthorizeCredentials } from '../../../../shared/utils/authorize-api-client';
+import type { AuthorizeApiResponse } from '../schemas/authorize.types';
 
-test.describe('[BL-036][API] Authorize.net sandbox — Declines (Response Code 2)', () => {
+test.describe('[BL-036][API] Authorize.net sandbox — Declines (Response Code 2) @gateway @authorize @regression', () => {
 	test.skip(!hasAuthorizeCredentials(), 'AUTHORIZE_API_LOGIN_ID/TRANSACTION_KEY no seteadas en env');
 
 	test('Visa + ZIP 46282 → Response Code 2 (declined genérico)', async ({ request }) => {
 		const client = new AuthorizeApiClient(request);
 
-		const response = await client.authOnlyTransaction(
+		const response: AuthorizeApiResponse = await client.authOnlyTransaction(
 			AUTHORIZE_CARDS.DECLINE_GENERIC,
 			'10.00',
 			`bl-036-decline-zip-${Date.now()}`,

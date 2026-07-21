@@ -14,6 +14,7 @@
  */
 import { expect, type Page } from '@playwright/test';
 import { test } from '../../../../../../../TestBase';
+import { setHoldViaApi } from '../../../../../helpers/parameters-api';
 import { debugLog } from '../../../../../../../helpers';
 import { DashboardPage, NewTravelPage, OperationalPreferencesPage, TravelDetailPage, TravelManagementPage } from '../../../../../../../pages/carrier';
 import { expectNoThreeDSModal, loginAsDispatcher, STRIPE_TEST_CARDS, TEST_DATA } from '../../../../../fixtures/gateway.fixtures';
@@ -28,48 +29,18 @@ function extractTravelId(url: string): string {
 	return match[1];
 }
 
-type ParametersSavePayload = {
-	enableCreditCardHold?: boolean;
-	ccHoldPreviousHs?: number | string;
-	ccHoldCoverage?: number | string;
-	[key: string]: unknown;
-};
-
-const PARAMETERS_SAVE_URL = /\/magiis-v0\.2\/carriers\/\d+\/parameters$/;
-
+// BL-i18n/v1.72.8: el toggle de pre-autorización en la UI no habilita "Guardar" ni
+// persiste (exploratory 2026-07-20). El setup fija el hold vía API.
 async function disableHoldAndSave(preferences: OperationalPreferencesPage): Promise<void> {
-	await preferences.goto();
-	await preferences.setHoldEnabled(false);
-
-	const saveResult = await preferences.saveAndCaptureParametersPayload();
-	expect(saveResult.url).toContain('/magiis-v0.2/carriers/1521/parameters');
-	expect(saveResult.payload.enableCreditCardHold).toBe(false);
-	expect(saveResult.payload.ccHoldPreviousHs).toBe(2);
-	expect(saveResult.payload.ccHoldCoverage).toBe(10);
-
-	await preferences.assertHoldDisabled();
+	const params = await setHoldViaApi(preferences.getPage(), false);
+	expect(params.enableCreditCardHold).toBe(false);
 }
 
-async function restoreHoldAndSave(page: Page, preferences: OperationalPreferencesPage): Promise<void> {
-	await preferences.goto();
-	await preferences.setHoldEnabled(true);
-
-	const responsePromise = page.waitForResponse(
-		(response) => response.request().method() === 'POST' && PARAMETERS_SAVE_URL.test(response.url()),
-		{ timeout: 15_000 }
-	);
-
-	await preferences.save();
-
-	const response = await responsePromise;
-	expect(response.ok()).toBeTruthy();
-
-	const payload = response.request().postDataJSON() as ParametersSavePayload;
-	expect(payload.enableCreditCardHold).toBe(true);
-	expect(payload.ccHoldPreviousHs).toBe(2);
-	expect(payload.ccHoldCoverage).toBe(10);
-
-	await preferences.assertHoldEnabled();
+async function restoreHoldAndSave(page: Page, _preferences: OperationalPreferencesPage): Promise<void> {
+	const params = await setHoldViaApi(page, true);
+	expect(params.enableCreditCardHold).toBe(true);
+	expect(params.ccHoldPreviousHs).toBe(2);
+	expect(params.ccHoldCoverage).toBe(10);
 }
 
 type CardFlow = 'new' | 'existing';

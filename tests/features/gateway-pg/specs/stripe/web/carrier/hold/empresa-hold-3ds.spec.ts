@@ -5,6 +5,7 @@
  */
 import { expect, type Page } from '@playwright/test';
 import { test } from '../../../../../../../TestBase';
+import { setHoldViaApi } from '../../../../../helpers/parameters-api';
 import { DashboardPage, NewTravelPage, OperationalPreferencesPage, ThreeDSModal, TravelManagementPage } from '../../../../../../../pages/carrier';
 import { loginAsDispatcher, STRIPE_TEST_CARDS, TEST_DATA } from '../../../../../fixtures/gateway.fixtures';
 import { waitForTravelCreation } from '../../../../../helpers/stripe.helpers';
@@ -19,16 +20,18 @@ function shortDestination(destination: string): string {
 
 // Usa los métodos del POM (ensureHoldDisabled/Enabled) que solo llaman save si hubo cambio,
 // evitando el waitForResponse timeout cuando el toggle ya estaba en el estado correcto.
+// BL-i18n/v1.72.8: el toggle de pre-autorización en la UI no habilita "Guardar" ni
+// persiste (exploratory 2026-07-20). El setup fija el hold vía API.
 async function disableHoldAndSave(preferences: OperationalPreferencesPage): Promise<void> {
-	await preferences.goto();
-	await preferences.ensureHoldDisabled();
-	await preferences.assertHoldDisabled();
+	const params = await setHoldViaApi(preferences.getPage(), false);
+	expect(params.enableCreditCardHold).toBe(false);
 }
 
-async function restoreHoldAndSave(_page: Page, preferences: OperationalPreferencesPage): Promise<void> {
-	await preferences.goto();
-	await preferences.ensureHoldEnabled();
-	await preferences.assertHoldEnabled();
+async function restoreHoldAndSave(page: Page, _preferences: OperationalPreferencesPage): Promise<void> {
+	const params = await setHoldViaApi(page, true);
+	expect(params.enableCreditCardHold).toBe(true);
+	expect(params.ccHoldPreviousHs).toBe(2);
+	expect(params.ccHoldCoverage).toBe(10);
 }
 
 type CardFlow = 'new' | 'existing';

@@ -30,6 +30,14 @@ on:
         description: 'Playwright -g pattern extra (vacío = según scope)'
         required: false
         default: ''
+      xray_execution:
+        description: 'Xray: key del Test Execution (ATR) destino. Vacío = crea uno nuevo con la versión.'
+        required: false
+        default: ''
+      xray_version:
+        description: 'Xray: fixVersion para la ejecución nueva (solo si xray_execution vacío)'
+        required: false
+        default: ''
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -77,6 +85,9 @@ jobs:
     environment: UAT
     env:
       ENV: uat
+      # HAS_XRAY habilita el reporter+import solo si el proyecto tiene creds Xray.
+      # (los secrets no se pueden usar directo en `if:`; se mapean a env aquí)
+      HAS_XRAY: ${{ secrets.XRAY_CLIENT_ID != '' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -136,6 +147,12 @@ jobs:
             exit 1
           fi
       - name: Run E2E (scope=${{ inputs.scope }})
+        env:
+          # XRAY=1 activa el xray-reporter (opt-in) → emite evidence/uat/xray-results.json
+          XRAY: ${{ env.HAS_XRAY == 'true' && '1' || '' }}
+          XRAY_EXECUTION_KEY: ${{ inputs.xray_execution }}
+          XRAY_VERSION: ${{ inputs.xray_version }}
+          XRAY_SUMMARY: "E2E UAT ${{ inputs.scope }} — run ${{ github.run_number }}"
         run: |
           set -e
           FILTER='${{ inputs.test_filter }}'
@@ -150,6 +167,44 @@ jobs:
             flights)    run_flights ;;
             all)        run_regression; run_gateway; run_flights ;;
           esac
+      - name: Import results to Xray Cloud
+        if: ${{ always() && env.HAS_XRAY == 'true' }}
+        continue-on-error: true
+        env:
+          XRAY_CLIENT_ID: ${{ secrets.XRAY_CLIENT_ID }}
+          XRAY_CLIENT_SECRET: ${{ secrets.XRAY_CLIENT_SECRET }}
+          RESULTS_FILE: evidence/uat/xray-results.json
+        run: |
+          set -e
+          if [ ! -f "$RESULTS_FILE" ]; then
+            echo "⚠️  No existe $RESULTS_FILE (¿la corrida no mapeó ningún test_key?). Skip import."
+            exit 0
+          fi
+          echo "🔑 Autenticando contra Xray Cloud..."
+          TOKEN=$(curl -sf -H "Content-Type: application/json" -X POST \
+            --data "{\"client_id\":\"${XRAY_CLIENT_ID}\",\"client_secret\":\"${XRAY_CLIENT_SECRET}\"}" \
+            https://xray.cloud.getxray.app/api/v2/authenticate | tr -d '"')
+          if [ -z "$TOKEN" ]; then echo "❌ Falló autenticación Xray"; exit 1; fi
+          echo "📤 Importando $(jq '.tests | length' "$RESULTS_FILE") resultado(s)..."
+          HTTP=$(curl -s -o xray-import-response.json -w "%{http_code}" \
+            -H "Content-Type: application/json" -H "Authorization: Bearer ${TOKEN}" \
+            -X POST --data @"$RESULTS_FILE" \
+            https://xray.cloud.getxray.app/api/v2/import/execution)
+          echo "HTTP ${HTTP}:"; cat xray-import-response.json; echo
+          [ "$HTTP" = "200" ] || { echo "❌ Import devolvió ${HTTP}"; exit 1; }
+          echo "✅ Resultados importados a Xray."
+
+      - name: Upload Xray results + response
+        if: ${{ always() && env.HAS_XRAY == 'true' }}
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: xray-results-uat-${{ github.run_number }}
+          path: |
+            evidence/uat/xray-results.json
+            xray-import-response.json
+          retention-days: 14
+
       - name: Generate Allure report
         if: always()
         continue-on-error: true

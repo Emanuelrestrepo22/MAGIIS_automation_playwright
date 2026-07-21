@@ -98,6 +98,18 @@ export const AUTHORIZE_CARDS = {
 	 */
 	CVV_NOT_PROCESSED: AUTHORIZE_TEST_CARDS.cvvNotProcessed,
 
+	/**
+	 * CVV "S: Should be on card, but is not indicated".
+	 * Authorize: CVV `902`.
+	 */
+	CVV_SHOULD_BE_PRESENT: AUTHORIZE_TEST_CARDS.cvvShouldBePresent,
+
+	/**
+	 * CVV "U: Issuer not certified / no encryption key".
+	 * Authorize: CVV `903`.
+	 */
+	CVV_ISSUER_NOT_CERTIFIED: AUTHORIZE_TEST_CARDS.cvvIssuerNotCertified,
+
 	// ═══════════════════════════════════════════════════════════════════
 	// UNHAPPY PATHS — AVS
 	// ═══════════════════════════════════════════════════════════════════
@@ -114,6 +126,15 @@ export const AUTHORIZE_CARDS = {
 	 */
 	AVS_NON_US: AUTHORIZE_TEST_CARDS.avsNonUsIssuer,
 
+	/** AVS "R: system unavailable during processing". Authorize: zip `46207`. */
+	AVS_UNAVAILABLE: AUTHORIZE_TEST_CARDS.avsUnavailable,
+
+	/** AVS "S: U.S. issuer does not support AVS". Authorize: zip `46208`. */
+	AVS_NOT_SUPPORTED: AUTHORIZE_TEST_CARDS.avsNotSupported,
+
+	/** AVS "U: cardholder address information unavailable". Authorize: zip `46209`. */
+	AVS_ADDRESS_UNAVAILABLE: AUTHORIZE_TEST_CARDS.avsAddressUnavailable,
+
 	// ═══════════════════════════════════════════════════════════════════
 	// EDGE CASES — PARTIAL / PREPAID AUTHORIZATIONS
 	// ═══════════════════════════════════════════════════════════════════
@@ -128,7 +149,7 @@ export const AUTHORIZE_CARDS = {
 	 * Prepaid con balance cero — la tarjeta prepaga no tiene fondos.
 	 * Authorize: zip `46228` → Prepaid Auth, $0 balance.
 	 */
-	PREPAID_ZERO: AUTHORIZE_TEST_CARDS.prepaidZeroBalance,
+	PREPAID_ZERO: AUTHORIZE_TEST_CARDS.prepaidZeroBalance
 } as const satisfies Record<string, AuthorizeTestCard>;
 
 export type AuthorizeCardPolicyKey = keyof typeof AUTHORIZE_CARDS;

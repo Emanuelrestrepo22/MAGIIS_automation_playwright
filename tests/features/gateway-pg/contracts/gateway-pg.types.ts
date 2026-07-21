@@ -54,7 +54,10 @@ export type JourneyActor = 'carrier-dispatcher' | 'driver' | 'passenger';
 /**
  * Tipo de flujo E2E. Define cuál es la secuencia de actores.
  */
-export type E2EFlowType = 'carrier-web-driver-app' | 'passenger-app-driver-app';
+export type E2EFlowType =
+	| 'carrier-web-driver-app'
+	| 'passenger-app-driver-app'
+	| 'contractor-web-driver-app'; // flow3 (existía como código sin tipo declarado)
 
 export type PaymentValidationSource =
 	| 'web-ui'

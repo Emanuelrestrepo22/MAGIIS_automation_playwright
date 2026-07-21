@@ -438,10 +438,11 @@
 
 ### BL-026 — Test data MercadoPago (holderName-based outcomes)
 
-- **Estado:** 🔴 Pendiente — slot `tests/fixtures/gateways/mercado-pago/` reservado con README (BL-024 Fase 3, 2026-05-13). Resolver cross-gateway lanza "no soportado" hasta que se pueble.
+- **Estado:** 🟡 Datos + docs QA listos (2026-07-20). Runtime (POM/specs) pendiente — bloqueado por modelo de integración backend + confirmación de uso en PROD LATAM.
 - **Prioridad:** P2
 - **Tipo:** Investigación
 - **Reportado:** 2026-04-27
+- **Avance 2026-07-20 (análisis doc oficial + poblado del slot):** analizada <https://www.mercadopago.com.ar/developers/es/docs/your-integrations/test/cards>. **Hallazgo:** el outcome lo determina el **nombre del titular** (keyword: APRO/OTHE/SECU/FUND…); número/CVV/exp fijos (`11/30`); approved usa DNI `12345678`; sin 3DS. Poblados `tests/fixtures/gateways/mercado-pago/{cards.ts, card-policy.ts, card-resolver.ts, README.md}` (16 keywords de estado + catálogo de 5 tarjetas). Conectado `_shared/resolver.ts` (`MERCADO_PAGO_INTENT_MAP`: `HAPPY_NO_AUTH`→APRO, `DECLINE_AUTHORIZE`→OTHE, `DECLINE_INVALID_CVC`→SECU + `normalizeMercadoPagoCard`, que pasa `holderName` como trigger). Doc QA completa en `docs/gateway-pg/mercado-pago/`. `tsc --noEmit` OK. **Falta runtime** — ver `docs/gateway-pg/mercado-pago/EXTERNAL-BLOCKERS.md`.
 - **Contexto:** MercadoPago sandbox usa el **nombre del titular** como trigger de outcome (`APRO` → approved, `OTHE` → other_error, `CONT` → pending, etc), combinado con un set fijo de tarjetas de prueba por marca. No requiere 3DS para los flujos MAGIIS habituales.
 - **Próxima acción:**
   1. Recolectar matriz holderName→outcome de la doc oficial MP (sección "Probar integración").
@@ -454,10 +455,11 @@
 
 ### BL-027 — Test data eBizCharge (matriz a investigar)
 
-- **Estado:** 🔴 Pendiente — slot `tests/fixtures/gateways/ebizcharge/` reservado con README (BL-024 Fase 3, 2026-05-13). Resolver cross-gateway lanza "no soportado" hasta que se pueble.
+- **Estado:** 🟡 Datos + docs QA listos (2026-07-20). Runtime (POM/specs) pendiente — bloqueado por modelo de integración backend + confirmación de uso en PROD.
 - **Prioridad:** P3
 - **Tipo:** Investigación
 - **Reportado:** 2026-04-27
+- **Avance 2026-07-20 (análisis doc oficial + poblado del slot):** analizada <https://developer.ebizcharge.net/connect/docs/test-credit-card-numbers>. **Hallazgo:** el outcome lo determina el **número de tarjeta** (como Stripe, NO CVV/ZIP como Authorize); exp fija `0930`; sin 3DS. Poblados `tests/fixtures/gateways/ebizcharge/{cards.ts, card-policy.ts, card-resolver.ts, README.md}` (registry con outcome de negocio + tablas de referencia completas AVS/CVV2/CAVV/Card Level). Conectado `_shared/resolver.ts` (`EBIZCHARGE_INTENT_MAP`: `HAPPY_NO_AUTH`/`DECLINE_AUTHORIZE`/`DECLINE_INVALID_CVC` + `normalizeEbizchargeCard`). Doc QA completa en `docs/gateway-pg/ebizcharge/{README,ARCHITECTURE,matriz_cases,TRACEABILITY,EXTERNAL-BLOCKERS,CHANGELOG}.md`. `tsc --noEmit` OK. **Falta runtime** (POM+specs) — ver `docs/gateway-pg/ebizcharge/EXTERNAL-BLOCKERS.md`.
 - **Contexto:** eBizCharge es el menos documentado de los 4 gateways. Hay que investigar:
   - ¿Qué dispara cada outcome? (CVC, número, otro)
   - ¿Requiere 3DS o es flat charge/hold?
@@ -735,7 +737,21 @@
   5. Documentar en `docs/gateway-pg/authorize/matriz_cases.md` (sección admin) los TCs nuevos.
 - **Bloqueantes:** captura humana del flujo + URL real del panel admin + credenciales admin sandbox.
 - **Marker propuesto:** `@gateway-switching` (smoke crítico operacional, no concurrente con suites de cards).
-- **Referencias:** `docs/gateway-pg/authorize/ARCHITECTURE.md` §1.bis (modelo exclusivo), BL-025 (runtime Authorize), BL-036 (API frente alternativo para validar el switch sin UI)
+- **Actualización 2026-07-20 (release Stripe 3DS, owner Emanuel):** el flujo de desvincular se está desarrollando como ticket de producto **MG-25** `[Stripe][Carrier v1] Modal de desvinculación` (`cleaningWallets(provider)`, estado `CLEANING_WALLETS→UNLINKED`). MG-25 **es el insumo** de este BL: la captura del modal de desvinculación y su cobertura alimentan el helper `ensureActiveGateway()`. La regresión UI cross-gateway con switching real es la **meta elegida** para el portafolio, con gate interino (sin switching) para esta release. **Toda prueba de pago corre en TEST** (UAT usa tarjetas reales). Detalle en `docs/gateway-pg/RELEASE-3DS-multigateway-test-plan.md` + matriz maestra por intents `docs/gateway-pg/MATRIZ-MAESTRA-multigateway.md`. Capa API: `magiis-api-e2e/docs/RELEASE-MG3-payments-api-plan.md`.
+- **Referencias:** `docs/gateway-pg/authorize/ARCHITECTURE.md` §1.bis (modelo exclusivo), BL-025 (runtime Authorize), BL-036 (API frente alternativo para validar el switch sin UI), MG-25 (desvinculación = insumo del switching), `docs/gateway-pg/RELEASE-3DS-multigateway-test-plan.md`
+
+### BL-048 — POMs gateway bilingües (EN|ES) — quitar el puente "forzar ES"
+
+- **Estado:** 🟡 Puente aplicado (2026-07-20); hardening bilingüe pendiente.
+- **Prioridad:** P2
+- **Tipo:** Deuda técnica / robustez de automatización
+- **Contexto (hallazgo del review Stripe 2026-07-20):** la cuenta TEST canónica es **"Remises EEUU" (US1000, país United States)** → el portal arranca en **inglés**. Los POMs/specs de `gateway-pg` hardcodean texto en **español** (`'Configuración Parámetros'`, `'Usuario a Buscar'`, `'Por asignar'`, `'Buscando chofer'`, `/^Guardar$/`…), así que fallaban en masa por idioma (no por bug de producto). La app cachea las traducciones i18n en `localStorage` y el idioma se cambia por un toggle "EN/ES" en el banner (dropdown).
+- **Puente aplicado (para desbloquear el review):**
+  - `ensureSpanishLanguage(page)` en `tests/pages/shared/i18n.ts` — abre el toggle del banner y selecciona "ES". Llamado desde `loginAsDispatcher`/`loginAsContractor` (`tests/features/auth/helpers/login.helpers.ts`) tras `ensureDashboardLoaded`.
+  - `OperationalPreferencesPage` migrado a selectores bilingües (`CARRIER_L` en `tests/pages/shared/i18n.ts`).
+- **Pendiente (hardening durable):** migrar los POMs compartidos restantes a bilingüe EN|ES (patrón `service-type-quota/pages/i18n.ts` + `pages/shared/i18n.ts`): `NewTravelPageBase` (placeholders cliente/pasajero/dirección, botones vehículo/enviar), `TravelManagementPage` (grilla "Por asignar"/"Buscando chofer"), `ThreeDSModal`, `ErrorPopup`, y los strings ES hardcodeados en los specs. Al completar, **eliminar el puente `ensureSpanishLanguage`** (o dejarlo solo como opt-in). Confirmar los EN reales en vivo (varios marcados `TODO(i18n)`).
+- **Relación:** el review Stripe (Anexo B del plan) corre hoy gracias al puente; BL-002 (auth intermitente en TEST) sigue afectando la estabilidad de las corridas.
+- **Referencias:** `tests/pages/shared/i18n.ts`, `tests/features/service-type-quota/pages/i18n.ts` (patrón previo), `tests/features/auth/helpers/login.helpers.ts`.
 
 ### BL-039 — ESLint Playwright plugin + reglas anti-anti-pattern
 
@@ -1042,6 +1058,26 @@ Checklist (en orden):
 
 - **Estado:** 🟢 Hecho (2026-04-20, MR !40)
 - **Resolución:** Eliminada mención errónea a "límite diario" en TC1081. Agregadas secciones TC1096 y TC1111 con diagnóstico real. Tabla de estado actualizada.
+
+### BL-046 — MX-6057: verificación de efecto vía endpoint de lectura de uso (alternativa a la capa DB)
+
+- **Estado:** 🔴 Pendiente
+- **Prioridad:** P2
+- **Tipo:** Mejora / Validación
+- **Reportado:** 2026-07-16
+- **Contexto:** La capa DB del cupo (`oracledb` Thin mode) quedó implementada (`tests/features/gateway-pg/helpers/oracle-service-usage.ts` + `counts-reset-db.api.spec.ts`), pero requiere una conexión Oracle **alcanzable** — el Oracle de UAT probablemente esté firewalleado desde local. Alternativa sin Oracle: descubrir el endpoint de lectura de uso del app (el que alimenta el contador en Gestión de Empresas → Associates) y aseverar el efecto real (uso → 0, aislamiento) vía API.
+- **Próxima acción:** Capturar por red el endpoint de lectura de uso (en Associates o al chequear cupo en alta de viaje, en un entorno estable), agregar helper de lectura API + aserción de efecto que complemente/reemplace la capa DB.
+- **Referencias:** ATR MX-6122, `oracle-service-usage.ts`, `counts-reset-db.api.spec.ts`, BL-047
+
+### BL-047 — MX-6057: discovery + validación del blueprint UI en CI estable
+
+- **Estado:** 🔴 Pendiente
+- **Prioridad:** P3
+- **Tipo:** Infra / Validación
+- **Reportado:** 2026-07-16
+- **Contexto:** La captura en vivo de selectores/endpoints (tabla Associates, mensaje "sin cupo", endpoint de lectura de uso) es inestable localmente por OneDrive + lentitud del SPA (dropdowns que no abren, form vacío, búsqueda de empresas que no filtra). En un runner CI limpio la discovery y la validación del blueprint UI `TS-MX6057-E2E-CUPO` serían confiables.
+- **Próxima acción:** Ejecutar la discovery + completar los `TODO(codegen)` del blueprint UI (`tests/features/service-type-quota/`) en CI; quitar el `test.fixme` una vez validado.
+- **Referencias:** `tests/features/service-type-quota/specs/cupo.e2e.spec.ts`, BL-046
 
 ---
 

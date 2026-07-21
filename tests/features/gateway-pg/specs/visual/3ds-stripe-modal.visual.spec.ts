@@ -8,7 +8,7 @@
  */
 import { test, expect } from '../../../../TestBase';
 
-test.describe('[BL-044] Visual regression — Modal 3DS Stripe @visual @stripe @3ds', () => {
+test.describe('[BL-044] Visual regression — Modal 3DS Stripe @gateway @visual @stripe @3ds @regression', () => {
 	test.use({ role: 'carrier' });
 
 	test('modal 3DS challenge — layout visual', async ({ page }) => {

@@ -19,6 +19,7 @@
     "test:test:gateway:3ds": "cross-env ENV=test npx playwright test -c playwright.gateway-pg.config.ts --grep=@3ds --workers=1",
     "test:test:gateway:unit": "cross-env ENV=test npx playwright test -c playwright.gateway-pg.config.ts --project=unit",
     "test:test:gateway:api": "cross-env ENV=test npx playwright test -c playwright.gateway-pg.config.ts --project=api",
+    "test:uat:mx6057:api": "cross-env ENV=uat npx playwright test --project=api tests/features/gateway-pg/api/service-type-counts-reset -c playwright.gateway-pg.config.ts",
     "test:e2e:flow1": "cross-env ENV=test npx playwright test tests/e2e/gateway/flow1-carrier-driver/flow1.e2e.spec.ts --project=chromium --workers=1",
     "test:e2e:flow1:web-only": "cross-env ENV=test E2E_WEB_ONLY=true npx playwright test tests/e2e/gateway/flow1-carrier-driver/flow1.e2e.spec.ts --project=chromium --workers=1",
     "test:e2e:flow1:mobile": "cross-env ENV=test npx ts-node --esm tests/e2e/gateway/flow1-carrier-driver/mobile-phase.ts",
@@ -102,6 +103,7 @@
     "@faker-js/faker": "^10.1.0",
     "@playwright/test": "^1.56.1",
     "@types/node": "^24.10.1",
+    "@types/oracledb": "^7.0.1",
     "@typescript-eslint/eslint-plugin": "^8.47.0",
     "@typescript-eslint/parser": "^8.47.0",
     "@wdio/globals": "^9.27.0",
@@ -127,6 +129,7 @@
   },
   "dependencies": {
     "dotenv": "^17.2.3",
-    "openai": "^6.33.0"
+    "openai": "^6.33.0",
+    "oracledb": "^7.0.1"
   }
 }

@@ -1,6 +1,10 @@
 import type { Locator, Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 import { getPortalUrl } from '../../config/gatewayPortalRuntime';
+import { CARRIER_L } from '../shared/i18n';
+// BL-i18n/v1.72.8: el guardado de preferencias por UI (toggle pre-autorización) no
+// habilita "Guardar" ni persiste; el estado de hold se fija por API. Ver parameters-api.ts.
+import { setHoldViaApi, readHoldEnabled } from '../../features/gateway-pg/helpers/parameters-api';
 
 type ParametersSavePayload = {
 	enableCreditCardHold?: boolean;
@@ -29,13 +33,18 @@ export class OperationalPreferencesPage {
 	constructor(page: Page) {
 		this.page = page;
 		this.holdCard = page.locator('app-general-parameters div.card').filter({
-			has: page.getByText('Cobros con Tarjeta', { exact: false }),
+			has: page.getByText(CARRIER_L.holdCardText),
 		}).first();
 		this.holdCardHeader = this.holdCard.locator('.title-flex');
 		this.holdToggle = this.holdCard.locator('input.switch-input[type="checkbox"]').first();
 		this.holdPreviousHoursInput = this.holdCard.locator('input[formcontrolname="ccHoldPreviousHs"]');
 		this.holdCoverageInput = this.holdCard.locator('input[formcontrolname="ccHoldCoverage"]');
-		this.saveButton = page.getByRole('button', { name: /^Guardar$/i }).first();
+		this.saveButton = page.getByRole('button', { name: CARRIER_L.save }).first();
+	}
+
+	/** Acceso al `page` para helpers que fijan preferencias por API (BL-i18n / v1.72.8). */
+	getPage(): Page {
+		return this.page;
 	}
 
 	async goto(): Promise<void> {
@@ -48,7 +57,7 @@ export class OperationalPreferencesPage {
 		const portal = currentUrl.includes('/contractor') ? 'contractor' : 'carrier';
 		const baseUrl = getPortalUrl('carrier');
 		await this.page.goto(`${baseUrl}/#/home/${portal}/settings/parameters`);
-		await expect(this.page.getByRole('heading', { name: 'Configuración Parámetros' })).toBeVisible({ timeout: 15_000 });
+		await expect(this.page.getByRole('heading', { name: CARRIER_L.preferencesHeading })).toBeVisible({ timeout: 15_000 });
 
 		this._parametersResponse = await responsePromise;
 	}
@@ -79,19 +88,11 @@ export class OperationalPreferencesPage {
 	}
 
 	async assertHoldEnabled(): Promise<void> {
-		const apiState = await this.readHoldStateFromApi();
-		if (apiState === true) return;
-		await this.expandHoldCard();
-		await expect(this.holdToggle).toBeChecked();
-		await expect(this.holdPreviousHoursInput).toHaveValue('2');
-		await expect(this.holdCoverageInput).toHaveValue('10');
+		expect(await readHoldEnabled(this.page)).toBe(true);
 	}
 
 	async assertHoldDisabled(): Promise<void> {
-		const apiState = await this.readHoldStateFromApi();
-		if (apiState === false) return;
-		await this.expandHoldCard();
-		await expect(this.holdToggle).not.toBeChecked();
+		expect(await readHoldEnabled(this.page)).toBe(false);
 	}
 
 	async setHoldEnabled(enabled: boolean): Promise<boolean> {
@@ -123,19 +124,11 @@ export class OperationalPreferencesPage {
 	}
 
 	async ensureHoldEnabled(): Promise<void> {
-		const apiState = await this.readHoldStateFromApi();
-		if (apiState === true) return;
-		const changed = await this.setHoldEnabled(true);
-		if (changed) {
-			await this.saveAndCaptureParametersPayload();
-		}
+		await setHoldViaApi(this.page, true);
 	}
 
 	async ensureHoldDisabled(): Promise<void> {
-		const changed = await this.setHoldEnabled(false);
-		if (changed) {
-			await this.saveAndCaptureParametersPayload();
-		}
+		await setHoldViaApi(this.page, false);
 	}
 
 	async saveAndCaptureParametersPayload(timeout = 15_000): Promise<ParametersSaveResult> {

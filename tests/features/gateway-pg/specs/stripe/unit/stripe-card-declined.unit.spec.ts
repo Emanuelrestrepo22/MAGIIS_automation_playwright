@@ -36,7 +36,7 @@ const STRIPE_INTENTS_PATTERN = '**/v1/payment_intents/**';
 
 test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
 
-test.describe('[BL-043][unit] Stripe network mocking — card_declined response', () => {
+test.describe('[BL-043][unit] Stripe network mocking — card_declined response @gateway @stripe @unit @regression', () => {
 	test('@unit @stripe @decline backend Stripe responde card_declined → MAGIIS muestra estado NO_AUTORIZADO sin pasar por sandbox real', async ({ page }) => {
 		// ── Setup mocking ANTES de cualquier navigation ─────────────────────────
 		// Intercepta TODAS las requests a Stripe API y devuelve un PaymentIntent
