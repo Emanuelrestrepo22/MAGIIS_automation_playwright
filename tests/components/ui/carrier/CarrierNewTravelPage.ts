@@ -116,6 +116,12 @@ export class CarrierNewTravelPage extends UiBase {
 		await this.legacy.clickSendService();
 	}
 
+	/** Asignación MANUAL directa al conductor: Send Manual → Assign → Assign (ref: test-5). */
+	@step
+	async clickSendManualAndAssign(): Promise<void> {
+		await this.legacy.clickSendManualAndAssign();
+	}
+
 	/** Envía el alta de viaje (validar + seleccionar vehículo + enviar servicio). */
 	@step
 	async submit(): Promise<void> {

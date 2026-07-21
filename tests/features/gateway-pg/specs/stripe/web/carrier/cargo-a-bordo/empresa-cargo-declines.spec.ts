@@ -21,10 +21,16 @@ import { STRIPE_TEST_CARDS_RAW } from '@fixtures/gateways/stripe/cards';
 test.use({ storageState: undefined });
 test.describe.configure({ timeout: 120_000 });
 
+// E2E DRIVER: el pickup DEBE estar dentro del radio (500m) de la ubicación física del
+// teléfono (Ciudad de la Paz 2238, Belgrano, CABA — GPS device -34.5616,-58.4590), si no
+// el driver queda fuera de rango y no puede iniciar el viaje (geocerca). Scopeado a estos
+// 5 tests (no toca JOURNEY_DEFAULTS.origin que usan ~399 web tests, y estos no asertan origin).
+const DRIVER_E2E_PICKUP = 'Ciudad de la Paz 2238, Buenos Aires, Argentina';
+
 const empresaScenario: CargoScenario = {
 	client: TEST_DATA.client,
 	passenger: TEST_DATA.passenger,
-	origin: TEST_DATA.origin,
+	origin: DRIVER_E2E_PICKUP,
 	destination: TEST_DATA.destination,
 };
 

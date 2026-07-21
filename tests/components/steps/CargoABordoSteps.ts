@@ -29,6 +29,8 @@ import { debugLog } from '@helpers/index';
 import { expectNoThreeDSModal, loginAsDispatcher } from '@features/gateway-pg/fixtures/gateway.fixtures';
 import { validateCardPrecondition } from '@features/gateway-pg/helpers/card-precondition';
 import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '@features/gateway-pg/helpers/travel-cleanup';
+// Type-only (se borra en runtime; el módulo real se carga por import() dinámico solo con Appium).
+import type { DriverCargoDeclineHarness } from '../../mobile/appium/harness/DriverCargoDeclineHarness';
 
 export type CargoScenario = {
 	client: string;
@@ -46,13 +48,20 @@ export type CargoScenario = {
  * recibir/aceptar viaje → finalizar → abrir modal Cargo a Bordo → fillAndSubmit(card) → assert outcome.
  */
 export type DriverChargeSpec = {
-	card: { number: string; expiry: string; cvc: string; holderName?: string };
+	card: { number: string; expiry: string; cvc: string; holderName?: string; postal?: string };
 	expectedOutcome: 'declined' | 'success';
+	/** Card always-3DS: tras COBRAR completar el challenge 3DS. */
+	is3ds?: boolean;
 };
 
 export type CargoRunOptions = {
 	/** Timeout del poll de creación (POST /travels). Default 15_000. */
 	createTimeout?: number;
+	/**
+	 * Asignación MANUAL directa al conductor (Send Manual → Assign → Assign) en vez de Send Service.
+	 * Elimina el timer de oferta-candidato. Requerido para el e2e driver estable (ver test-5).
+	 */
+	manualAssign?: boolean;
 	/**
 	 * Paso Driver App. Sin `charge` o sin Appium (APPIUM=1) → `test.fixme` (fallback histórico).
 	 * Con `charge` + APPIUM=1 → ejecuta la fase driver real vía DriverCargoDeclineHarness.
@@ -96,6 +105,9 @@ export class CargoABordoSteps extends UiBase {
 	async runCargoScenario(scenario: CargoScenario, options: CargoRunOptions = {}): Promise<void> {
 		const createTimeout = options.createTimeout ?? 15_000;
 		let travelIdRef: TravelIdRef | null = null;
+		// Fase driver activa ⟺ Appium habilitado + card de cobro presente.
+		const driverPhaseActive = isAppiumEnabled() && !!options.driverAppStep?.charge;
+		let driverHarness: DriverCargoDeclineHarness | null = null;
 
 		await test.step('Login carrier', async () => {
 			await this.login();
@@ -118,6 +130,20 @@ export class CargoABordoSteps extends UiBase {
 		}
 
 		try {
+			// PRE-WARM: abrir la sesión Appium del driver + dejarlo Disponible ANTES de crear el
+			// viaje, para sacar el arranque de sesión (~10s) del camino crítico y ganarle al timer
+			// de cancelación del driver-candidato. La sesión queda viva (newCommandTimeout alto)
+			// esperando el request mientras corre la fase web.
+			if (driverPhaseActive) {
+				await test.step('[PRE-WARM] Sesión driver Appium + Disponible', async () => {
+					test.setTimeout(420_000);
+					const { getDriverAppConfig } = await import('../../mobile/appium/config/appiumRuntime');
+					const { DriverCargoDeclineHarness } = await import('../../mobile/appium/harness/DriverCargoDeclineHarness');
+					driverHarness = new DriverCargoDeclineHarness(getDriverAppConfig());
+					await driverHarness.prewarm();
+				});
+			}
+
 			travelIdRef = await captureCreatedTravelId(this.page);
 
 			await test.step('Ir al formulario de nuevo viaje', async () => {
@@ -134,9 +160,13 @@ export class CargoABordoSteps extends UiBase {
 				});
 			});
 
-			await test.step('Seleccionar vehículo y enviar el viaje', async () => {
+			await test.step(options.manualAssign ? 'Seleccionar vehículo y ASIGNAR (Send Manual → Assign)' : 'Seleccionar vehículo y enviar el viaje', async () => {
 				await this.travel.clickSelectVehicle();
-				await this.travel.clickSendService();
+				if (options.manualAssign) {
+					await this.travel.clickSendManualAndAssign();
+				} else {
+					await this.travel.clickSendService();
+				}
 			});
 
 			await test.step('Verificar que no aparece modal 3DS', async () => {
@@ -154,7 +184,18 @@ export class CargoABordoSteps extends UiBase {
 					.not.toBeNull();
 			});
 
+			// Con la fase driver ACTIVA (APPIUM + charge) hay un conductor online real (pre-warm)
+			// que consume el despacho: el viaje puede salir de "Buscando chofer" (asignado/aceptado)
+			// antes de esta aserción. El alta ya quedó confirmada por el POST /travels interceptado.
+			// ⇒ NO hacemos hard-fail aquí en ese modo. En runs web-only la aserción estricta se mantiene.
 			await test.step('Validar estado del viaje — Buscando chofer en gestión', async () => {
+				if (driverPhaseActive) {
+					debugLog(
+						'gateway-pg:carrier',
+						'[cargo] fase driver activa: se omite la aserción estricta "Buscando chofer" (un conductor online consume el despacho; alta ya confirmada por POST /travels).',
+					);
+					return;
+				}
 				await this.management.goto();
 				await this.management.expectPassengerInPorAsignar(scenario.passenger ?? scenario.client, undefined, 'Buscando chofer');
 			});
@@ -162,31 +203,29 @@ export class CargoABordoSteps extends UiBase {
 			if (options.driverAppStep) {
 				const step = options.driverAppStep;
 				await test.step(step.title, async () => {
-					// Fallback histórico: sin Appium habilitado o sin card de cobro → fixme (web ya validado).
-					if (!isAppiumEnabled() || !step.charge) {
+					// Fallback histórico: sin fase driver activa (sin Appium o sin card) → fixme (web ya validado).
+					if (!driverPhaseActive || !driverHarness || !step.charge) {
 						test.fixme(true, step.note ?? 'PENDIENTE: fase Driver App — requiere Appium (APPIUM=1) + charge card.');
 						return;
 					}
 
-					// La fase driver (esperar viaje + navegar + cobrar) excede 2 min: extender timeout.
-					test.setTimeout(360_000);
-
-					// Import dinámico: evita cargar webdriverio en runs web-only.
-					const { getDriverAppConfig } = await import('../../mobile/appium/config/appiumRuntime');
-					const { runDriverCargoDeclinePhase } = await import('../../mobile/appium/harness/DriverCargoDeclineHarness');
-
-					const config = getDriverAppConfig();
-					const result = await runDriverCargoDeclinePhase(config, step.charge.card);
+					// Sesión driver YA pre-warm: reaccionar al request entrante y cobrar INMEDIATO.
+					const result = await driverHarness.reactAndCharge(step.charge.card, { expect3ds: step.charge.is3ds });
 					const reason = 'reason' in result.outcome ? result.outcome.reason : '';
-					debugLog('gateway-pg:driver', `[driver-app] outcome=${result.outcome.status} reason="${reason}" total=${result.totalAmount}`);
+					debugLog('gateway-pg:driver', `[driver-app] outcome=${result.outcome.status} reason="${reason}" reachedModal=${result.reachedPaymentModal}`);
 
-					// Debería alcanzar el modal de cobro Cargo a Bordo en la Driver App.
+					// Debería alcanzar el modal de cobro Cargo a Bordo (Stripe Elements) en la Driver App.
 					expect(result.reachedPaymentModal, 'Debería abrir el modal de cobro en la Driver App').toBe(true);
 					// Debería rechazar el cobro con la tarjeta declinada (outcome esperado).
 					expect(result.outcome.status, 'Debería rechazar el cobro con la tarjeta declinada').toBe(step.charge.expectedOutcome);
 				});
 			}
 		} finally {
+			if (driverHarness) {
+				await test.step('Cerrar sesión driver Appium', async () => {
+					await driverHarness!.endSession().catch(() => undefined);
+				});
+			}
 			if (travelIdRef) {
 				await test.step('Cleanup: cancelar viaje creado', async () => {
 					await cancelTravelIfCreated(this.page, travelIdRef!);

@@ -383,7 +383,57 @@ export class DriverHomeScreen extends AppiumSessionBase {
 		return false;
 	}
 
+	/**
+	 * App reinstalada 2026-07: tras login la app cae en `/pre-home` (overlay de bienvenida,
+	 * driver OFFLINE). `#availability` NO existe ahí; vive en `/navigator/home`. Para pasar,
+	 * hay que tap en `.carrier-overlay` → `hideOverlay()` navega a home cuando terminó de
+	 * cargar servicios. Source: src/app/pages/pre-home/pre-home.page.ts (hideOverlay →
+	 * router.navigate(['/navigator/home', {FROM_LOGIN:true}])).
+	 *
+	 * Idempotente: si ya estamos en /navigator/home (o en apps viejas que van directo), retorna true.
+	 */
+	async dismissPreHomeOverlayIfPresent(timeout = 25_000): Promise<boolean> {
+		const driver = this.getDriver();
+		const deadline = Date.now() + timeout;
+
+		const urlNow = async (): Promise<string> => {
+			await this.switchToWebView(3_000);
+			return driver.execute<string, []>(() => window.location.href).catch(() => '');
+		};
+
+		while (Date.now() < deadline) {
+			const url = await urlNow();
+			// Cualquier ruta /navigator/* (home, TravelConfirmPage, etc.) = ya pasamos el overlay pre-home.
+			if (/\/navigator\//i.test(url)) return true;
+			if (/pre-home/i.test(url)) {
+				// hideOverlay() sólo navega si finishLoadService=true; el overlay muestra
+				// "continue_message" (listo) vs "loading_services" (aún cargando).
+				const ready = await driver
+					.execute<boolean, []>(() => {
+						const msgs = Array.from(document.querySelectorAll('.continue-msg')) as HTMLElement[];
+						return msgs.some((m) => m.offsetParent !== null && (m.innerText ?? '').trim().length > 0);
+					})
+					.catch(() => false);
+				// Angular (click)="hideOverlay()" requiere tap REAL (no execute()).
+				const overlay = driver.$('.carrier-overlay');
+				if (await overlay.isDisplayed().catch(() => false)) {
+					await overlay.click().catch(() => undefined);
+				}
+				if (!ready) {
+					// servicios aún cargando: dar tiempo antes de reintentar.
+					await driver.pause(1_500);
+				}
+			}
+			await driver.pause(1_000);
+		}
+
+		return /\/navigator\//i.test(await urlNow());
+	}
+
 	async goOnline(): Promise<void> {
+		// Nuevo flujo: asegurar que salimos del overlay /pre-home antes de buscar #availability.
+		await this.dismissPreHomeOverlayIfPresent().catch(() => false);
+
 		if (await this.isDriverOnline()) {
 			return;
 		}

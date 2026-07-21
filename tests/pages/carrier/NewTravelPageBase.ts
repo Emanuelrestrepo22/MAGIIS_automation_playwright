@@ -877,6 +877,26 @@ export abstract class NewTravelPageBase extends BasePage {
 		await this.submitButton.click({ force: true });
 	}
 
+	/**
+	 * ASIGNACIÓN MANUAL (ref: tests/test-5.spec.ts). En vez de "Send Service" (que despacha al
+	 * pool de conductores con un timer de oferta), asigna el viaje DIRECTO a un conductor:
+	 *   "Send Manual" → "Assign" (fila del conductor) → "Assign" (confirmar).
+	 * Elimina el timer de oferta-candidato: el driver queda dueño del viaje.
+	 */
+	async clickSendManualAndAssign(): Promise<void> {
+		await this.waitForLoadingOverlayToDisappear();
+		await this.page.getByRole('button', { name: 'Send Manual' }).click();
+		// Modal con lista de conductores: "Assign" de la fila (nth(1) según el recorder).
+		const assignRow = this.page.getByText('Assign', { exact: false });
+		await assignRow.nth(1).waitFor({ state: 'visible', timeout: 15_000 });
+		await assignRow.nth(1).click();
+		// Confirmar la asignación.
+		const assignConfirm = this.page.getByRole('button', { name: 'Assign' });
+		await assignConfirm.waitFor({ state: 'visible', timeout: 15_000 });
+		await assignConfirm.click();
+		await this.waitForLoadingOverlayToDisappear();
+	}
+
 	async fillMinimum(opts: NewTravelFormInput): Promise<void> {
 		const clientName = opts.client ?? opts.passenger;
 		// En carrier, algunos clientes auto-completan el pasajero y otros requieren pax distinto.
