@@ -13,6 +13,9 @@ export {
 	type CargoRunOptions,
 } from './CargoABordoSteps';
 export { CarrierTravelEditSteps } from './CarrierTravelEditSteps';
+// Scaffolding MG-178 (áreas quote/recurrentes).
+export { QuoteSteps } from './QuoteSteps';
+export { RecurrentesSteps } from './RecurrentesSteps';
 export {
 	ContractorHoldSteps,
 	type ContractorCardFlow,

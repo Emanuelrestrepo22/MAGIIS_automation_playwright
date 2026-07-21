@@ -15,7 +15,7 @@ test.use({ storageState: undefined });
 test.describe('Gateway PG · Carrier · Empresa Individuo — Viajes Recurrentes @gateway @stripe @hold @regression', () => {
 
   test('[TS-STRIPE-P2-TC054] @regression @recurrente @hold vinculación + recurrente hold+cobro empresa', async () => {
-    test.fixme(true, 'PENDIENTE: Page Object RecurrentTravelPage no implementado');
+    test.fixme(true, 'MG-178 scaffolding: CarrierRecurrentTravelPage/RecurrentesSteps creados; alta recurrente + hold pendiente de validación live en TEST.');
   });
   test('[TS-STRIPE-P2-TC055] @regression @recurrente sin hold vinculación + recurrente empresa', async () => {
     test.fixme(true, 'PENDIENTE: depende de P2-TC054');

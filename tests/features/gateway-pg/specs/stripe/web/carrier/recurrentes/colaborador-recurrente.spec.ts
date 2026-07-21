@@ -17,7 +17,7 @@ test.describe('Gateway PG · Carrier · Colaborador — Viajes Recurrentes @gate
 
   test.describe('Vinculación de tarjeta', () => {
     test('[TS-STRIPE-P2-TC041] @regression @recurrente @hold vinculación + recurrente hold+cobro', async () => {
-      test.fixme(true, 'PENDIENTE: Page Object RecurrentTravelPage no implementado');
+      test.fixme(true, 'MG-178 scaffolding: CarrierRecurrentTravelPage/RecurrentesSteps creados; alta recurrente + hold pendiente de validación live en TEST.');
     });
     test('[TS-STRIPE-P2-TC042] @regression @recurrente sin hold vinculación + recurrente', async () => {
       test.fixme(true, 'PENDIENTE: depende de P2-TC041');

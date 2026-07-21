@@ -7,3 +7,7 @@ export { CarrierNewTravelPage, type NewTravelFormInput, type CargoTravelInput } 
 export { CarrierOperationalPreferencesPage } from './CarrierOperationalPreferencesPage';
 export { CarrierTravelDetailPage } from './CarrierTravelDetailPage';
 export { CarrierTravelManagementPage } from './CarrierTravelManagementPage';
+// Scaffolding MG-178 (áreas quote/recurrentes/config sin POM previo).
+export { CarrierQuotePage, type QuoteContact } from './CarrierQuotePage';
+export { CarrierRecurrentTravelPage } from './CarrierRecurrentTravelPage';
+export { CarrierGlobalIntegrationsPage } from './CarrierGlobalIntegrationsPage';
