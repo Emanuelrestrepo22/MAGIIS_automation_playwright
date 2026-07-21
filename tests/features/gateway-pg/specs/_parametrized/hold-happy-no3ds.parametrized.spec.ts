@@ -6,13 +6,22 @@
  * Carrier corre contra múltiples gateways de pago; sólo cambia el dato
  * resuelto por `resolveCard({ gateway, intent })`. El resto del journey
  * (login dispatcher, alta de viaje, selección de vehículo, validación en
- * grilla "Por asignar") es agnóstico del gateway porque consume
- * `JOURNEY_DEFAULTS` (dominio MAGIIS, no del SDK de pago).
+ * grilla "Por asignar") es agnóstico del gateway porque se delega al Step
+ * KATA `CarrierHoldSteps.runHoldScenario` (dominio MAGIIS, no del SDK de pago).
  *
  * `ACTIVE_GATEWAYS` queda preparado para sumar `'authorize'` cuando BL-025
  * implemente el runtime (POMs y login del portal Authorize). Hoy sólo
  * compila/ejecuta `'stripe'` porque es el único gateway con runtime web
  * disponible.
+ *
+ * KATA conformance (feature/kata-conformance): amoldado al patrón cross-gateway
+ * sobre el Step KATA.
+ *   - test/expect vienen del fixture unificado KATA (@TestFixture) en vez de TestBase.
+ *   - El journey se delega a `CarrierHoldSteps.runHoldScenario` (@steps); sólo el dato
+ *     de tarjeta lo aporta `resolveCard`, preservando la naturaleza cross-gateway del piloto.
+ *   - Los ATC viven en las Page components que orquesta el Step (fillMinimum → MG-148,
+ *     expectPassengerInPorAsignar → MG-158). PENDIENTE REASIGNAR (idmap API-level, sin 1:1
+ *     con TS-STRIPE-TC10xx).
  *
  * Trazabilidad:
  *   - Mismo dato lógico que TS-STRIPE-TC1049 (hold ON + tarjeta 4242, sin 3DS),
@@ -29,24 +38,31 @@
  *      (`HAPPY_AUTH`, `FAIL_AUTH`, `DECLINE_AUTHORIZE`, etc.) siguiendo el
  *      mismo esqueleto.
  */
-import { expect } from '@playwright/test';
-import { test } from '../../../../TestBase';
-import { resolveCard, type GatewayName } from '../../../../fixtures/gateways/_shared';
-import { JOURNEY_DEFAULTS } from '../../data/journey-defaults';
-import {
-	expectNoThreeDSModal,
-	loginAsDispatcher,
-	NewTravelPage,
-	TravelManagementPage,
-} from '../../fixtures/gateway.fixtures';
-import { DashboardPage, OperationalPreferencesPage } from '../../../../pages/carrier';
+import { test, expect } from '@TestFixture';
+import { resolveCard, type GatewayName } from '@fixtures/gateways/_shared';
+import { JOURNEY_DEFAULTS } from '@features/gateway-pg/data/journey-defaults';
+import { CarrierHoldSteps, type HoldScenario, type HoldRunOptions } from '@steps/index';
 
 /**
  * Gateways activos en el piloto. Sumar 'authorize' cuando BL-025 termine.
  */
 const ACTIVE_GATEWAYS: GatewayName[] = ['stripe'];
 
-test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
+// App pax sin 3DS: sin cardFlow ni cleanup de travelId; valida por estado 'Buscando chofer'
+// (sin filtrar por destino) y espera la habilitación del botón de vehículo. Mismo perfil que
+// apppax-hold-no3ds.spec.ts, pero con la tarjeta resuelta cross-gateway.
+const HAPPY_NO_AUTH_OPTIONS: Omit<HoldRunOptions, 'hold'> = {
+	threeDs: false,
+	useCardFlow: false,
+	trackTravelId: false,
+	waitForCreation: false,
+	waitForVehicleReady: true,
+	matchDestination: false,
+	expectStatus: 'Buscando chofer',
+};
+
+// El fixture KATA no define la opción `role` (login explícito vía CarrierHoldSteps.login()).
+test.use({ storageState: undefined });
 test.describe.configure({ timeout: 180_000 });
 
 test.describe('[BL-028][parametrized] Hold happy path sin 3DS @gateway @hold @regression', () => {
@@ -60,54 +76,15 @@ test.describe('[BL-028][parametrized] Hold happy path sin 3DS @gateway @hold @re
 				expect(card.requires3ds).toBe(false);
 				expect(card.last4).toHaveLength(4);
 
-				const dashboard = new DashboardPage(page);
-				const preferences = new OperationalPreferencesPage(page);
-				const travel = new NewTravelPage(page);
-				const management = new TravelManagementPage(page);
+				const scenario: HoldScenario = {
+					client: JOURNEY_DEFAULTS.appPaxPassenger,
+					passenger: JOURNEY_DEFAULTS.appPaxPassenger,
+					origin: JOURNEY_DEFAULTS.origin,
+					destination: JOURNEY_DEFAULTS.destination,
+					cardLast4: card.last4,
+				};
 
-				await test.step('Login carrier', async () => {
-					await loginAsDispatcher(page);
-				});
-
-				await test.step('Validar que el hold esté activado en preferencias operativas', async () => {
-					await preferences.goto();
-					await preferences.ensureHoldEnabled();
-					await preferences.assertHoldEnabled();
-				});
-
-				await test.step('Ir al formulario de nuevo viaje', async () => {
-					await dashboard.openNewTravel();
-					await travel.ensureLoaded();
-				});
-
-				await test.step(`Completar formulario con tarjeta ${gateway} HAPPY_NO_AUTH (last4=${card.last4})`, async () => {
-					await travel.fillMinimum({
-						client: JOURNEY_DEFAULTS.appPaxPassenger,
-						passenger: JOURNEY_DEFAULTS.appPaxPassenger,
-						origin: JOURNEY_DEFAULTS.origin,
-						destination: JOURNEY_DEFAULTS.destination,
-						cardLast4: card.last4,
-					});
-				});
-
-				await test.step('Seleccionar vehículo y enviar el viaje', async () => {
-					await travel.waitForVehicleSelectionReady();
-					await travel.clickSelectVehicle();
-					await travel.clickSendService();
-				});
-
-				await test.step('Verificar que no aparece modal 3DS', async () => {
-					await expectNoThreeDSModal(page);
-				});
-
-				await test.step('Validar viaje en gestión — columna "Por asignar"', async () => {
-					await management.goto();
-					await management.expectPassengerInPorAsignar(
-						JOURNEY_DEFAULTS.appPaxPassenger,
-						undefined,
-						'Buscando chofer',
-					);
-				});
+				await new CarrierHoldSteps({ page }).runHoldScenario(scenario, { hold: 'on', ...HAPPY_NO_AUTH_OPTIONS });
 			});
 		});
 	}

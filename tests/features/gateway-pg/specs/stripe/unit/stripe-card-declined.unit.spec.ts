@@ -23,18 +23,25 @@
  *   pnpm test:test:gateway-pg --project=unit --grep "card_declined"
  *
  * Referencia: <https://playwright.dev/docs/mock>
+ *
+ * KATA conformance (feature/kata-conformance): test/expect del fixture unificado KATA
+ * (@TestFixture) en vez de TestBase; Page components KATA (@ui/carrier) en vez de los POMs
+ * del sustrato carrier. El mocking de red (`page.route`) es orquestación propia del spec.
+ * ATCs mapeados en las Page components: fillMinimum → MG-148 (área C). PENDIENTE REASIGNAR
+ * (idmap API-level, sin 1:1 con TS-STRIPE-TC10xx).
  */
 
-import { test, expect } from '../../../../../TestBase';
-import { loginAsDispatcher, TEST_DATA } from '../../../fixtures/gateway.fixtures';
-import { DashboardPage, NewTravelPage, OperationalPreferencesPage } from '../../../../../pages/carrier';
+import { test, expect } from '@TestFixture';
+import { loginAsDispatcher, TEST_DATA } from '@features/gateway-pg/fixtures/gateway.fixtures';
+import { CarrierDashboardPage, CarrierNewTravelPage, CarrierOperationalPreferencesPage } from '@ui/carrier';
 
 // Stripe API URLs que el SDK frontend de MAGIIS contacta durante el flow
 // de hold. Bloqueamos estos endpoints con responses controladas.
 const STRIPE_API_PATTERN = '**/api.stripe.com/**';
 const STRIPE_INTENTS_PATTERN = '**/v1/payment_intents/**';
 
-test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
+// El fixture KATA no define la opción `role` (login explícito vía loginAsDispatcher).
+test.use({ storageState: { cookies: [], origins: [] } });
 
 test.describe('[BL-043][unit] Stripe network mocking — card_declined response @gateway @stripe @unit @regression', () => {
 	test('@unit @stripe @decline backend Stripe responde card_declined → MAGIIS muestra estado NO_AUTORIZADO sin pasar por sandbox real', async ({ page }) => {
@@ -117,9 +124,9 @@ test.describe('[BL-043][unit] Stripe network mocking — card_declined response 
 
 		// ── Flow MAGIIS estándar ────────────────────────────────────────────────
 		await loginAsDispatcher(page);
-		const preferences = new OperationalPreferencesPage(page);
-		const dashboard = new DashboardPage(page);
-		const travel = new NewTravelPage(page);
+		const preferences = new CarrierOperationalPreferencesPage({ page });
+		const dashboard = new CarrierDashboardPage({ page });
+		const travel = new CarrierNewTravelPage({ page });
 
 		await preferences.goto();
 		await preferences.ensureHoldEnabled();
