@@ -17,7 +17,7 @@ test.describe('Gateway PG · Quote · Colaborador @gateway @stripe @hold @3ds @r
   test.describe('Via número de teléfono — sin 3DS', () => {
     test('[TS-STRIPE-P2-TC011] @regression @quote @hold quote colaborador teléfono hold+cobro', async () => {
       // MG-178: POM scaffolded → CarrierQuotePage (@ui/carrier) + QuoteSteps (@steps), selectores reales del FE.
-      test.fixme(true, 'MG-178 scaffolding: CarrierQuotePage/QuoteSteps creados; hold+cobro end-to-end pendiente de validación live en TEST (completeQuoteWithHold TODO).');
+      test.fixme(true, 'DEUDA TÉCNICA MG-178: cotización con pasarela preautorizada no desarrollada/estable para validación en esta release (el form /quote usa MercadoPago, sin challenge 3DS Stripe); diferido a próxima iteración de cambios en pasarelas de pago. POM scaffolded: CarrierQuotePage/QuoteSteps.');
     });
     test('[TS-STRIPE-P2-TC012] @regression @quote sin hold quote colaborador teléfono', async () => {
       test.fixme(true, 'PENDIENTE: depende de P2-TC011');

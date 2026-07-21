@@ -17,7 +17,7 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Edición en Confli
 
   test.describe('Sin 3DS', () => {
     test('[TS-STRIPE-P2-TC084] @regression @hold alta + edición conflicto hold+cobro', async () => {
-      test.fixme(true, 'PENDIENTE: requiere viaje en conflicto — hold fallido previo');
+      test.fixme(true, 'DEUDA TÉCNICA MG-178: edición en conflicto no desarrollada/estable para pasarela preautorizada en esta release; diferido a próxima iteración de cambios en pasarelas de pago.');
     });
     test('[TS-STRIPE-P2-TC085] @regression sin hold alta + edición conflicto', async () => {
       test.fixme(true, 'PENDIENTE: depende de P2-TC084');

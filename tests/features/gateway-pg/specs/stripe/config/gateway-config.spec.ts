@@ -17,7 +17,7 @@ test.describe('Gateway PG · Configuración Pasarela Stripe @gateway @stripe @wa
   test.describe('Visualización y estado inicial', () => {
     test('[TS-STRIPE-TC1001] @smoke @web-only visualizar pasarela Stripe no vinculada', async () => {
       // MG-178: POM scaffolded → CarrierGlobalIntegrationsPage (@ui/carrier), ruta /integrations, card "Stripe".
-      test.fixme(true, 'MG-178 scaffolding: CarrierGlobalIntegrationsPage creado (expectUnlinked); validar estado inicial en vivo.');
+      test.fixme(true, 'DEUDA TÉCNICA MG-178: configuración de pasarela Stripe (OAuth redirect) no lista para validación automatizada en esta release; diferido a próxima iteración de cambios en pasarelas de pago. POM scaffolded: CarrierGlobalIntegrationsPage.');
     });
     test('[TS-STRIPE-TC1007] @regression persistencia estado vinculado tras recarga', async () => {
       test.fixme(true, 'PENDIENTE: depende de TC1002');

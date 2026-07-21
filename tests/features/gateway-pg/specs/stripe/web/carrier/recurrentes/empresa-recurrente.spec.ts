@@ -15,7 +15,7 @@ test.use({ storageState: undefined });
 test.describe('Gateway PG · Carrier · Empresa Individuo — Viajes Recurrentes @gateway @stripe @hold @regression', () => {
 
   test('[TS-STRIPE-P2-TC054] @regression @recurrente @hold vinculación + recurrente hold+cobro empresa', async () => {
-    test.fixme(true, 'MG-178 scaffolding: CarrierRecurrentTravelPage/RecurrentesSteps creados; alta recurrente + hold pendiente de validación live en TEST.');
+    test.fixme(true, 'DEUDA TÉCNICA MG-178: viajes recurrentes con pasarela preautorizada no desarrollados/estables para validación en esta release; diferido a próxima iteración de cambios en pasarelas de pago. POM scaffolded: CarrierRecurrentTravelPage/RecurrentesSteps.');
   });
   test('[TS-STRIPE-P2-TC055] @regression @recurrente sin hold vinculación + recurrente empresa', async () => {
     test.fixme(true, 'PENDIENTE: depende de P2-TC054');

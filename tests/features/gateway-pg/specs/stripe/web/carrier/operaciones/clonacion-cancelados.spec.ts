@@ -16,7 +16,7 @@ test.describe('Gateway PG · Carrier · Empresa Individuo — Clonación de Viaj
 
   test.describe('Sin 3DS', () => {
     test('[TS-STRIPE-P2-TC066] @regression @hold clonación cancelado hold+cobro', async () => {
-      test.fixme(true, 'PENDIENTE: requiere viaje cancelado en TEST');
+      test.fixme(true, 'DEUDA TÉCNICA MG-178: clonación de cancelados no desarrollada/estable para pasarela preautorizada en esta release; diferido a próxima iteración de cambios en pasarelas de pago.');
     });
     test('[TS-STRIPE-P2-TC067] @regression sin hold clonación cancelado', async () => {
       test.fixme(true, 'PENDIENTE: depende de P2-TC066');
