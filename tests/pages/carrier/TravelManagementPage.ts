@@ -129,6 +129,28 @@ export class TravelManagementPage {
 		}
 	}
 
+	/** Abre la pestaña "Cancelados" (i18n; tab idx 5 en el FE). Mismo patrón que las demás tabs. */
+	async openCanceladosTab(): Promise<void> {
+		const tab = this.page.locator('tabset ul li a').filter({ hasText: /cancelad/i }).first();
+		await expect(tab).toBeVisible({ timeout: 10_000 });
+		await tab.click();
+		await this.page.waitForSelector('table tbody', { state: 'visible', timeout: 15_000 }).catch(() => {});
+	}
+
+	/**
+	 * Reactiva un viaje cancelado desde la fila del pasajero (pestaña Cancelados).
+	 * FE `travel-dashboard.component`: botón `button.action-btn-primary` con `i.fa-refresh`
+	 * (`shouldCloneTravel` para CANCELLED/LOST) → `cloneTravel(travelId)` = API + navegación a
+	 * `listDriverOnline`. Se ancla a la fila del pasajero para evitar el `fa-refresh` del footer.
+	 */
+	async reactivate(passenger: string, destination?: string): Promise<void> {
+		await this.openCanceladosTab();
+		const row = await this.tripRow(passenger, destination);
+		const reactivateBtn = row.locator('button.action-btn-primary:has(i.fa-refresh)').first();
+		await expect(reactivateBtn).toBeVisible({ timeout: 10_000 });
+		await reactivateBtn.click();
+	}
+
 	async expectPassengerInEnConflicto(passenger: string, destination?: string): Promise<void> {
 		const enConflictoTab = this.page.locator('tabset ul li a').filter({ hasText: /en conflicto/i }).first();
 		await expect(enConflictoTab).toBeVisible({ timeout: 10_000 });
