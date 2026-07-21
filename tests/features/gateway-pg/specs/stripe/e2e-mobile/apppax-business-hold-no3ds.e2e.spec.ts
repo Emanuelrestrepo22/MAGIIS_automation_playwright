@@ -115,10 +115,15 @@ const SCENARIOS: BusinessHoldScenario[] = [
 ];
 
 test.describe.serial('Gateway PG · E2E Mobile · App Pax Business — Hold sin 3DS @gateway @stripe @e2e-hybrid @hold @regression', () => {
+	// Gate a nivel describe (uniforme con el resto de specs apppax): sin servidor Appium
+	// el harness no se puede construir (getPassengerAppConfig lanza) — el grupo SKIPea, no ERRORA.
+	test.skip(() => !process.env.APPIUM_SERVER_URL, 'Requiere servidor Appium Android activo (APPIUM_SERVER_URL).');
+
 	for (const scenario of SCENARIOS) {
 		test.describe(`[${scenario.testCaseId}] ${scenario.title}`, () => {
 			test(
 				`hold=${scenario.holdMode} · card=${scenario.cardFlow}`,
+				{ annotation: [{ type: 'tms', description: 'MG-158' }] },
 				async () => {
 					// Test productivo habilitado (fixme levantado Fase P3).
 					// Skip condicional: si no hay servidor Appium disponible el test no

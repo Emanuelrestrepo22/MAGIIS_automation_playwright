@@ -44,8 +44,20 @@ function createJourney(testCaseId: string) {
 }
 
 test.describe.serial('Gateway PG · E2E Mobile · App Pax Personal @gateway @stripe @e2e-hybrid @3ds @wallet @regression', () => {
+	// Gate a nivel describe: sin servidor Appium el harness no se puede construir
+	// (getPassengerAppConfig lanza). El grupo SKIPea (no ERRORA) cuando no hay device.
+	test.skip(() => !process.env.APPIUM_SERVER_URL, 'Requiere servidor Appium Android activo (APPIUM_SERVER_URL).');
+
 	for (const scenario of PASSENGER_FLOW2_SCENARIOS) {
-		test(`[${scenario.testCaseId}] ${scenario.title} (${scenario.sourceCaseIds.join(' / ')})`, async () => {
+		test(`[${scenario.testCaseId}] ${scenario.title} (${scenario.sourceCaseIds.join(' / ')})`, {
+			annotation: [
+				{ type: 'tms', description: 'MG-148' },
+				{ type: 'tms', description: 'MG-152' },
+				{ type: 'tms', description: 'MG-153' },
+				{ type: 'tms', description: 'MG-158' },
+				{ type: 'tms', description: 'MG-161' },
+			],
+		}, async () => {
 			if (!scenario.active) {
 				test.fixme(true, scenario.requiresDriverPhase ? 'Passenger wallet and trip setup are ready, but driver handoff/post-trip evidence is still pending.' : 'Passenger negative evidence is still pending validation.');
 				return;

@@ -54,6 +54,13 @@ export interface MgwLinkFilter {
 	provider: string;
 }
 
+export interface PassengerCardFilter {
+	/** user_wallet.user_id dueño del wallet (el passengerUserId del pax). */
+	passengerUserId: number | string;
+	/** Opcional: restringe el count a las cards con estos últimos 4 dígitos. */
+	last4?: string;
+}
+
 /** Count de user_wallet del carrier bajo un appId. Read-only. */
 export async function countWalletsByCarrierAndApp(cfg: OracleReadConfig, filter: WalletCarrierAppFilter): Promise<number> {
 	const table = process.env.ORACLE_WALLET_TABLE ?? 'USER_WALLET';
@@ -73,6 +80,32 @@ export async function countCardsByCarrierAndApp(cfg: OracleReadConfig, filter: W
 		`SELECT COUNT(*) AS "cnt" FROM ${cardTable} c JOIN ${walletTable} w ON c.user_wallet_id = w.id
 		  WHERE w.carrieraccount_id = :carrierId AND w.mercadopago_app_id = :appId`;
 	const rows = await new OracleDb(cfg).query<{ cnt: number }>(sql, { carrierId: filter.carrierAccountId, appId: filter.appId });
+	return Number(rows[0]?.cnt ?? 0);
+}
+
+/**
+ * Count de cards de un pasajero (JOIN card → user_wallet por user_id). Read-only.
+ * Opcionalmente filtra por last4. Cierra la brecha de la capa UI del borrado de tarjeta:
+ * la UI confirma que la card desaparece del wallet; este count confirma el efecto físico en DB.
+ *
+ * Overridable por env (mismo patrón que las otras fns):
+ *   ORACLE_CARD_TABLE        (default CARD)
+ *   ORACLE_WALLET_TABLE      (default USER_WALLET)
+ *   ORACLE_CARD_BY_PAX_SQL   (query completa; binds :pax [y :last4] — debe alias "cnt")
+ */
+export async function countCardsByPassenger(cfg: OracleReadConfig, filter: PassengerCardFilter): Promise<number> {
+	const cardTable = process.env.ORACLE_CARD_TABLE ?? 'CARD';
+	const walletTable = process.env.ORACLE_WALLET_TABLE ?? 'USER_WALLET';
+	const filterByLast4 = filter.last4 != null && filter.last4 !== '';
+	const defaultSql =
+		`SELECT COUNT(*) AS "cnt" FROM ${cardTable} c JOIN ${walletTable} w ON c.user_wallet_id = w.id
+		  WHERE w.user_id = :pax` + (filterByLast4 ? ' AND c.last_four_digits = :last4' : '');
+	const sql = process.env.ORACLE_CARD_BY_PAX_SQL ?? defaultSql;
+	const binds: Record<string, unknown> = { pax: filter.passengerUserId };
+	if (filterByLast4) {
+		binds.last4 = filter.last4;
+	}
+	const rows = await new OracleDb(cfg).query<{ cnt: number }>(sql, binds);
 	return Number(rows[0]?.cnt ?? 0);
 }
 

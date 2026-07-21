@@ -41,9 +41,22 @@ function createJourney(testCaseId: string) {
 }
 
 test.describe.serial('Gateway PG · E2E Mobile · App Pax Business / Collaborator 3DS @gateway @stripe @e2e-hybrid @3ds @wallet @regression', () => {
+	// Gate a nivel describe: sin servidor Appium el harness no se puede construir
+	// (getPassengerAppConfig lanza). El grupo SKIPea (no ERRORA) cuando no hay device.
+	test.skip(() => !process.env.APPIUM_SERVER_URL, 'Requiere servidor Appium Android activo (APPIUM_SERVER_URL).');
+
 	for (const scenario of PASSENGER_BUSINESS_3DS_SCENARIOS) {
 		test(
 			`[${scenario.testCaseId}] ${scenario.title} (${scenario.sourceCaseIds.join(' / ')})`,
+			{
+				annotation: [
+					{ type: 'tms', description: 'MG-148' },
+					{ type: 'tms', description: 'MG-152' },
+					{ type: 'tms', description: 'MG-153' },
+					{ type: 'tms', description: 'MG-158' },
+					{ type: 'tms', description: 'MG-161' },
+				],
+			},
 			async () => {
 				if (!scenario.active) {
 					test.fixme(
