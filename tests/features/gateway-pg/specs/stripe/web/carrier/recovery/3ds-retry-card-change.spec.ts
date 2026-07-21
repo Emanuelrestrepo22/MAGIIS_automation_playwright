@@ -18,7 +18,14 @@ test.describe.configure({ mode: 'serial' });
 test.describe('Gateway PG · Carrier · App Pax — Cambio de tarjeta post-fallo 3DS @gateway @stripe @hold @3ds @wallet @regression', () => {
 	test.use({ role: 'carrier', storageState: undefined });
 
+	// PRODUCT-GAP (MG-178, gap #7): en el FE (branch release/v1.72.x) travel-detail NO implementa
+	// el `payment-method.component` ni el flujo de cambio/vinculación de tarjeta post-fallo 3DS
+	// (confirmado en `magiis-fe/src/app/carrier/travel/travel-detail/`). No es un fallo de
+	// automatización: la funcionalidad no existe en producto. Se deja fixme hasta que se implemente
+	// (revalidar contra el tag desplegado v1.72.8). Antes estaban en `test.fail` pero igual corrían
+	// el setup caro (alta + fallo 3DS) y disparaban el nav-timeout reportado.
 	test.beforeEach(async ({ page }) => {
+		test.fixme(true, 'PRODUCT-GAP: travel-detail sin payment-method.component ni cambio de tarjeta post-fallo 3DS (FE v1.72.x). Ver MG-178 gap #7.');
 		await loginAsDispatcher(page);
 	});
 

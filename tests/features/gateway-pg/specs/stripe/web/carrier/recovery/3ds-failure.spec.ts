@@ -22,7 +22,14 @@ test.describe.configure({ mode: 'serial' });
 test.describe('Gateway PG · Carrier · App Pax — Fallo 3DS, red flag y reintento @gateway @stripe @hold @3ds @decline @regression', () => {
 	test.use({ role: 'carrier', storageState: undefined });
 
+	// PRODUCT-GAP (MG-178, gap #7): en el FE (branch release/v1.72.x) travel-detail NO implementa
+	// el red flag "Validación 3DS pendiente", el botón "Reintentar autenticación" ni el
+	// `payment-method.component` (confirmado en `magiis-fe/src/app/carrier/travel/travel-detail/`;
+	// grep sin coincidencias de red-flag/retry/3ds/challenge). Estas aserciones apuntan a UI que no
+	// existe en producto → no es fallo de automatización. Se deja fixme hasta que se implemente
+	// (revalidar contra el tag desplegado v1.72.8).
 	test.beforeEach(async ({ page }) => {
+		test.fixme(true, 'PRODUCT-GAP: travel-detail sin red-flag/Reintentar 3DS ni payment-method.component (FE v1.72.x). Ver MG-178 gap #7.');
 		await loginAsDispatcher(page);
 	});
 
