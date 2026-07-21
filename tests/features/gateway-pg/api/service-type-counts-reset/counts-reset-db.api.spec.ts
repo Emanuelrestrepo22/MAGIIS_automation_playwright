@@ -12,11 +12,11 @@
 
 /* eslint-disable playwright/no-skipped-test */
 
-import { test, expect } from '../../../../TestBase';
-import { resetCarrierServiceTypeCounts } from '../../helpers/carrier-service-type-counts-reset';
-import { oracleConfigFromEnv, readServiceUsageByEmployee } from '../../helpers/oracle-service-usage';
-import { LoginPage } from '../../../../pages/shared/LoginPage';
-import { extractAuthToken } from '../../helpers/card-precondition';
+import { test, expect } from '@TestBase';
+import { ServiceTypeCountsApi } from '@api/ServiceTypeCountsApi';
+import { oracleConfigFromEnv, readServiceUsageByEmployee } from '@features/gateway-pg/helpers/oracle-service-usage';
+import { LoginPage } from '@pages/shared/LoginPage';
+import { extractAuthToken } from '@features/gateway-pg/helpers/card-precondition';
 
 const CARRIER_ID = process.env.CARRIER_ID ?? '1040';
 const USER_ID = Number(process.env.CARRIER_USER_ID ?? 1380);
@@ -59,7 +59,7 @@ test.describe('[MX-6057][DB] countsReset — verificación de efecto @regression
 		const config = ORACLE!;
 		const before = await readServiceUsageByEmployee(config, EMP_A);
 
-		const res = await resetCarrierServiceTypeCounts(request, {
+		const res = await new ServiceTypeCountsApi({ request }).resetCounts({
 			carrierId: CARRIER_ID,
 			serviceTypeId: ST_QUOTA,
 			contractorEmployeeId: EMP_A,

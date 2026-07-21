@@ -13,22 +13,22 @@
  * Se auto-skipean si faltan AUTHORIZE_API_LOGIN_ID / AUTHORIZE_TRANSACTION_KEY.
  */
 
-import { test, expect } from '@playwright/test';
-import { AUTHORIZE_CARDS } from '../../../../fixtures/gateways/authorize/card-policy';
-import { AuthorizeApiClient, hasAuthorizeCredentials } from '../../../../shared/utils/authorize-api-client';
-import type { AuthorizeApiResponse } from '../schemas/authorize.types';
+import { test, expect } from '@TestFixture';
+import { AUTHORIZE_CARDS } from '@fixtures/gateways/authorize/card-policy';
+import { AuthorizeSandboxApi, hasAuthorizeCredentials } from '@api/AuthorizeSandboxApi';
+import type { AuthorizeApiResponse } from '@schemas/authorize.types';
 
 test.describe('[BL-036][API] Authorize.net sandbox — Edge triggers @gateway @authorize @regression', () => {
 	test.skip(!hasAuthorizeCredentials(), 'AUTHORIZE_API_LOGIN_ID/TRANSACTION_KEY no seteadas en env');
 
 	test('Discover + CVV 900 → Response Code 1 (Approved)', async ({ request }) => {
-		const client = new AuthorizeApiClient(request);
+		const api = new AuthorizeSandboxApi({ request });
 
-		const response: AuthorizeApiResponse = await client.authOnlyTransaction(
-			AUTHORIZE_CARDS.SUCCESS_DISCOVER,
-			'10.00',
-			`bl-036-edge-discover-${Date.now()}`,
-		);
+		const response: AuthorizeApiResponse = await api.authorizeOnly({
+			card: AUTHORIZE_CARDS.SUCCESS_DISCOVER,
+			amount: '10.00',
+			refId: `bl-036-edge-discover-${Date.now()}`,
+		});
 
 		expect(response.messages.resultCode).toBe('Ok');
 		expect(response.transactionResponse?.responseCode).toBe('1');
@@ -36,13 +36,13 @@ test.describe('[BL-036][API] Authorize.net sandbox — Edge triggers @gateway @a
 	});
 
 	test('AVS issuer no-USA (ZIP 46204) → avsResultCode "G"', async ({ request }) => {
-		const client = new AuthorizeApiClient(request);
+		const api = new AuthorizeSandboxApi({ request });
 
-		const response: AuthorizeApiResponse = await client.authOnlyTransaction(
-			AUTHORIZE_CARDS.AVS_NON_US,
-			'10.00',
-			`bl-036-edge-avs-nonus-${Date.now()}`,
-		);
+		const response: AuthorizeApiResponse = await api.authorizeOnly({
+			card: AUTHORIZE_CARDS.AVS_NON_US,
+			amount: '10.00',
+			refId: `bl-036-edge-avs-nonus-${Date.now()}`,
+		});
 
 		expect(response.messages.resultCode).toBe('Ok');
 		// El determinístico es el código AVS; responseCode puede variar por política.
@@ -50,13 +50,13 @@ test.describe('[BL-036][API] Authorize.net sandbox — Edge triggers @gateway @a
 	});
 
 	test('Partial authorization (ZIP 46225) → aprobación parcial', async ({ request }) => {
-		const client = new AuthorizeApiClient(request);
+		const api = new AuthorizeSandboxApi({ request });
 
-		const response: AuthorizeApiResponse = await client.authOnlyTransaction(
-			AUTHORIZE_CARDS.PARTIAL_AUTH,
-			'10.00',
-			`bl-036-edge-partial-${Date.now()}`,
-		);
+		const response: AuthorizeApiResponse = await api.authorizeOnly({
+			card: AUTHORIZE_CARDS.PARTIAL_AUTH,
+			amount: '10.00',
+			refId: `bl-036-edge-partial-${Date.now()}`,
+		});
 
 		// Conservador: el sandbox procesa la operación (Ok) y devuelve un responseCode;
 		// el monto parcial exacto ($1.23) depende de la config del sandbox.
@@ -65,13 +65,13 @@ test.describe('[BL-036][API] Authorize.net sandbox — Edge triggers @gateway @a
 	});
 
 	test('Prepaid balance cero (ZIP 46228) → procesado', async ({ request }) => {
-		const client = new AuthorizeApiClient(request);
+		const api = new AuthorizeSandboxApi({ request });
 
-		const response: AuthorizeApiResponse = await client.authOnlyTransaction(
-			AUTHORIZE_CARDS.PREPAID_ZERO,
-			'10.00',
-			`bl-036-edge-prepaid-${Date.now()}`,
-		);
+		const response: AuthorizeApiResponse = await api.authorizeOnly({
+			card: AUTHORIZE_CARDS.PREPAID_ZERO,
+			amount: '10.00',
+			refId: `bl-036-edge-prepaid-${Date.now()}`,
+		});
 
 		expect(response.messages.resultCode).toBe('Ok');
 		expect(response.transactionResponse?.responseCode).toBeTruthy();

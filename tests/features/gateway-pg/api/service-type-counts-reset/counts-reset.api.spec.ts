@@ -17,10 +17,10 @@
 // pendientes) son intencionales en este pack de regresión.
 /* eslint-disable playwright/no-skipped-test, playwright/expect-expect */
 
-import { test, expect } from '../../../../TestBase';
-import { resetCarrierServiceTypeCounts } from '../../helpers/carrier-service-type-counts-reset';
-import { LoginPage } from '../../../../pages/shared/LoginPage';
-import { extractAuthToken } from '../../helpers/card-precondition';
+import { test, expect } from '@TestBase';
+import { ServiceTypeCountsApi } from '@api/ServiceTypeCountsApi';
+import { LoginPage } from '@pages/shared/LoginPage';
+import { extractAuthToken } from '@features/gateway-pg/helpers/card-precondition';
 
 // Datos UAT (ATR MX-6122 / ATP MX-6115) — overridables por env.
 const CARRIER_ID = process.env.CARRIER_ID ?? '1040'; // carrier UAT del ATR
@@ -74,7 +74,7 @@ test.describe('[MX-6057][API] serviceTypes/countsReset @regression @service-type
 		]
 	}, async ({ request }) => {
 		// Gate de regresión: la operación responde 200 en lugar de 500/SQLGrammarException.
-		const res = await resetCarrierServiceTypeCounts(request, {
+		const res = await new ServiceTypeCountsApi({ request }).resetCounts({
 			carrierId: CARRIER_ID,
 			serviceTypeId: ST_HAPPY,
 			userId: USER_ID,
@@ -85,7 +85,7 @@ test.describe('[MX-6057][API] serviceTypes/countsReset @regression @service-type
 	});
 
 	test('[EC-EP-01] serviceTypeId inexistente → 200 + "true" (no-op, sin validación de input)', async ({ request }) => {
-		const res = await resetCarrierServiceTypeCounts(request, {
+		const res = await new ServiceTypeCountsApi({ request }).resetCounts({
 			carrierId: CARRIER_ID,
 			serviceTypeId: ST_NONEXISTENT,
 			userId: USER_ID,
@@ -97,7 +97,7 @@ test.describe('[MX-6057][API] serviceTypes/countsReset @regression @service-type
 
 	test('[EC-ISO-01] serviceType de otro carrier bajo carrierId propio → 200 (aislamiento cross-carrier)', async ({ request }) => {
 		// API confirma 200; la NO-afectación del carrier ajeno es aserción DB (manual — ATR).
-		const res = await resetCarrierServiceTypeCounts(request, {
+		const res = await new ServiceTypeCountsApi({ request }).resetCounts({
 			carrierId: CARRIER_ID,
 			serviceTypeId: ST_OTHER_CARRIER,
 			userId: USER_ID,
@@ -108,7 +108,7 @@ test.describe('[MX-6057][API] serviceTypes/countsReset @regression @service-type
 
 	test('[EC-NEG-CARRIER] carrierId inexistente → 404 CARRIER_NOT_FOUND', async ({ request }) => {
 		// Único error real del endpoint (BaseController: CARRIER_NOT_FOUND).
-		const res = await resetCarrierServiceTypeCounts(request, {
+		const res = await new ServiceTypeCountsApi({ request }).resetCounts({
 			carrierId: CARRIER_NONEXISTENT,
 			serviceTypeId: ST_HAPPY,
 			userId: USER_ID,
@@ -144,7 +144,7 @@ test.describe('[MX-6057][API] serviceTypes/countsReset @regression @service-type
 	];
 	for (const c of COMBOS) {
 		test(`[${c.id}] ${c.desc} → 200`, async ({ request }) => {
-			const res = await resetCarrierServiceTypeCounts(request, {
+			const res = await new ServiceTypeCountsApi({ request }).resetCounts({
 				carrierId: CARRIER_ID,
 				userId: USER_ID,
 				authToken,
