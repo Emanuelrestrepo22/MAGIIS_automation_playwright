@@ -18,13 +18,18 @@ import { STRIPE_TEST_CARDS } from '../../data/stripeTestData';
 import { extractTravelIdFromUrl } from '../journey-url.helpers';
 
 /**
- * Crea un viaje con tarjeta 3DS que dispara FAIL_3DS y completa el fallo.
+ * Crea un viaje con fallo 3DS RECUPERABLE y completa el fallo.
  *
- * Regla de negocio card 9235 + Hold ON: tras `completeFail`, el viaje se crea
- * directamente en NO_AUTORIZADO (visible en columna "En conflicto" del dashboard).
- * No aparece pop-up MAGIIS. El retry 3DS se dispara desde el detalle del viaje.
+ * Regla de negocio card threeDSRequired (4000000000003220) + Hold ON: el challenge
+ * 3DS emerge y se RECHAZA vía botón FAIL → el viaje se crea directamente en
+ * NO_AUTORIZADO (visible en columna "En conflicto" del dashboard). No aparece pop-up
+ * MAGIIS. El retry 3DS se dispara desde el detalle del viaje y, al COMPLETAR el
+ * challenge, el viaje se recupera → "Buscando conductor" (cf. TC1061).
  *
- * Stripe-specific: usa `STRIPE_TEST_CARDS.fail3DS` + `ThreeDSModal` (iframe Stripe).
+ * Se usa 3220 (recuperable, resultado según COMPLETE/FAIL) — NO fail3DS/1629, que
+ * declina el cobro de forma nativa e irrecuperable (el retry volvería a declinar).
+ *
+ * Stripe-specific: usa `STRIPE_TEST_CARDS.threeDSRequired` + `ThreeDSModal` (iframe Stripe).
  *
  * @returns travelId del viaje creado en estado NO_AUTORIZADO.
  */
@@ -41,7 +46,11 @@ export async function setupTravelWithFailed3DS(
 	await travel.goto();
 	await travel.fillMinimum({
 		...opts,
-		cardLast4: STRIPE_TEST_CARDS.fail3DS.slice(-4)
+		// FIX 2026-07-21: threeDSRequired = 4000000000003220 (exige 3DS; recuperable vía
+		// COMPLETE/FAIL). El fallo se logra rechazando el challenge (completeFail); el retry
+		// posterior con completeSuccess recupera el viaje. (9235 no mostraba challenge; 1629
+		// declina nativo → irrecuperable, romperia TC1061).
+		cardLast4: STRIPE_TEST_CARDS.threeDSRequired.slice(-4)
 	});
 	await travel.submit();
 

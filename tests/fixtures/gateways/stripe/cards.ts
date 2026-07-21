@@ -66,8 +66,9 @@ export const STRIPE_TEST_CARDS_RAW = {
 	visa_success: createStripeTestCard('4242424242424242'),
 	/** 3DS requerido -> autenticacion exitosa (requires_action) */
 	visa_3ds_success: createStripeTestCard('4000002500003155'),
-	/** 3DS requerido -> autenticacion falla */
-	visa_3ds_fail: createStripeTestCard('4000000000009235'),
+	/** 3DS requerido -> el challenge aparece y el pago/autenticación FALLA (NO_AUTORIZADO).
+	 *  FIX 2026-07-21: era 4000000000009235 (decline genérico SIN 3DS → nunca mostraba challenge). */
+	visa_3ds_fail: createStripeTestCard('4000008400001629'),
 	/** Fondos insuficientes */
 	declined_funds: createStripeTestCard('4000000000009995'),
 	/** Declinada generica */

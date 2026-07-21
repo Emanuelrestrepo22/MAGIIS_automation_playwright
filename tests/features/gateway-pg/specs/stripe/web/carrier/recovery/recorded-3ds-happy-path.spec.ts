@@ -47,7 +47,7 @@ test.describe('[TS-STRIPE-TC1053] Hold ON + success3DS (4000 0025 0000 3155) —
         passenger:   TEST_DATA.passenger,
         origin:      TEST_DATA.origin,
         destination: TEST_DATA.destination,
-        cardLast4:   STRIPE_TEST_CARDS.success3DS.slice(-4), // 3155
+        cardLast4:   STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4), // 4000002760003184 (always 3DS)
       });
     });
 

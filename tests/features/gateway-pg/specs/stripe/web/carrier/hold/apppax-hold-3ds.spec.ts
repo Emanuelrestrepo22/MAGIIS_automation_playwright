@@ -62,7 +62,7 @@ async function runHoldOnScenario(page: Page, scenario: Hold3dsScenario): Promise
 	const travel = new NewTravelPage(page);
 	const management = new TravelManagementPage(page);
 	const threeDS = new ThreeDsChallengePage({ page });
-	const cardLast4 = scenario.cardLast4 || STRIPE_TEST_CARDS.success3DS.slice(-4);
+	const cardLast4 = scenario.cardLast4 || STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4);
 	let travelIdRef: TravelIdRef | null = null;
 
 	await test.step('Login carrier', async () => {
@@ -153,7 +153,7 @@ async function runHoldOffScenario(page: Page, scenario: Hold3dsScenario): Promis
 	const travel = new NewTravelPage(page);
 	const management = new TravelManagementPage(page);
 	const threeDS = new ThreeDsChallengePage({ page });
-	const cardLast4 = scenario.cardLast4 || STRIPE_TEST_CARDS.success3DS.slice(-4);
+	const cardLast4 = scenario.cardLast4 || STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4);
 	let travelIdRef: TravelIdRef | null = null;
 
 	await loginAsDispatcher(page);
