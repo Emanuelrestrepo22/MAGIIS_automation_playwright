@@ -293,6 +293,15 @@
 | TS-STRIPE-TC1120 | Validar Alta de viaje desde carrier para usuario empresa individuo – cargo a bordo – **falla código postal con riesgo elevado** (antifraude) |
 | TS-STRIPE-TC1121 | Validar Alta de viaje desde carrier para usuario empresa individuo – cargo a bordo – **dirección no disponible** (antifraude)                |
 
+### 9.3 Con validación 3D Secure
+
+| ID               | Descripción                                                                                                                        |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| TS-STRIPE-TC1123 | Validar Alta de viaje desde carrier para usuario empresa individuo – cargo a bordo – **pago exitoso con 3D Secure obligatorio**         |
+| TS-STRIPE-TC1124 | Validar Alta de viaje desde carrier para usuario empresa individuo – cargo a bordo – **pago rechazado con 3D Secure obligatorio**       |
+| TS-STRIPE-TC1125 | Validar Alta de viaje desde carrier para usuario empresa individuo – cargo a bordo – **error con 3D Secure obligatorio**                |
+| TS-STRIPE-TC1126 | Validar Alta de viaje desde carrier para usuario empresa individuo – cargo a bordo – **falla 3D Secure**                               |
+
 > **Nota:** El ID TS-STRIPE-TC1122 queda asignado al caso DBTS-STRIPE-TC003 de eliminacion desde wallet de una tarjeta 3D Secure ya vinculada desde app pax para usuario personal. Si la wallet arranca vacia, el runner de ejecucion puede sembrar primero una tarjeta `always_authenticate` de prueba y luego eliminarla; la cobertura objetivo sigue siendo la eliminacion de una tarjeta 3DS ya enlazada.
 
 ---

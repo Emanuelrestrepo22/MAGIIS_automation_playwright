@@ -1,73 +1,87 @@
-# Driver App — Mapa de flujos y backlog de automatización
+# Driver App — Mapa de flujos y backlog de automatización (canónico)
 
-> Fuente: análisis del source `magiis-mobile-driver-v2` (Ionic 6 / Angular 14 / Cordova) cruzado con el framework Appium/Playwright existente.
-> Generado: 2026-07-21 (workflow autónomo de mapeo, 7 lectores + síntesis). 54 flujos crudos → consolidados.
+> **Doc canónico** del feature Driver App. Fusiona el análisis del source `magiis-mobile-driver-v2`
+> (Ionic 6 / Angular 14 / Cordova) con la **validación en device físico** `R92XB0B8F3J` (Appium 3.5.2).
+> Detalle device-validado (selectores reales por pantalla + transiciones): **[`driver-app-appium-flow-map.md`](./driver-app-appium-flow-map.md)**.
+> Última actualización: 2026-07-22.
 
-**Convención de cobertura:** **DONE** = validado en device / spec verde · **PARCIAL** = piezas listas y compilando, falta validar o cablear · **SCRIPT** = utilitario suelto, no integrado a spec · **NONE** = sin automatización.
+**Convención de cobertura:** **DONE** = validado en device / spec verde · **PARCIAL** = piezas listas y compilando, falta validar o cablear · **SCRIPT** = utilitario suelto, no integrado a spec · **NONE** = sin automatización · **BLOCKED** = no automatizable en el entorno actual (ver gaps).
 
 ## Mapa de flujos
 
 | Flujo (unificado) | Área | Criticidad | Cobertura | Ramas principales |
 |---|---|---|---|---|
-| Login driver (email+pwd, ROLE_DRIVER) | auth | crítica | **SCRIPT** — `driver-login-*.ts`; harness asume sesión logueada (`noReset`). Sin spec ni assert token | ok → RequiredPermission · vacío/rechazo → modal · rememberPassword |
-| Bootstrap / redirección de root | routing-shell | media | **NONE** | storageVersion vieja → logout+alerta MG-001/002/003 · isLogged → pre-home vs login |
+| Login driver (email+pwd, ROLE_DRIVER) | auth | crítica | **SCRIPT** — `driver-login-*.ts`, `driver-relogin-and-home.ts`; harness asume sesión (`noReset`). Sin spec/assert | ok → pre-home · vacío/rechazo → modal · restore-pass |
+| Bootstrap / redirección de root | routing | media | **NONE** | storageVersion vieja → logout+alerta MG-001/002/003 · isLogged → pre-home vs login |
 | Gate de permisos (ubicación + movimiento) | routing/auth | alta | **NONE** — prompts nativos; se asume `autoGrantPermissions`/adb | android vs iOS · v≥10 exige movimiento · denegado → goToSettings |
-| Pre-home: init servicios + overlay bienvenida | routing/auth | alta | **PARCIAL** — `dismissPreHomeOverlayIfPresent()` en `prewarm()`. Sin spec | allowed → home(FROM_LOGIN) · error init → pegado en overlay |
-| Navigator: tab shell inferior | routing-shell | media | **NONE** | canTouch invierte Home · Call → CALL_CARRIER · Account → menú |
-| Menú lateral: cuenta / fuera de servicio / logout | routing-shell | media | **NONE** | logout → OFFLINE+clear+login · toggle out_of_service |
-| Gate de versión desactualizada | routing-shell | baja | **NONE** | required → update obligatorio · opcional → update_later |
-| Recuperar contraseña (RestorePass) | auth | media | **NONE** | email inválido → disabled · 401/403/0 → modales · 404 → éxito |
+| Pre-home: init servicios + overlay bienvenida | routing/auth | alta | **PARCIAL** — continue = `button.btn.primary` "Aceptar" (validado); sin spec | servicios OK → home(FROM_LOGIN) · stale → rebota a /login (re-login) |
+| Navigator: tab-bar (4 tabs) | routing | media | **PARCIAL (device)** — Home/Notificaciones/Viajes/Llamar validados; sin spec | Llamar → CALL_CARRIER (no navega sin viaje) |
+| Menú lateral (Preferencias/Estadísticas/Cambiar Vehículo/Fuera de servicio/Cerrar sesión) | routing | media | **DONE (device)** — navegación validada `[2026-07-22]`; sin spec | logout → OFFLINE+/login · toggle out_of_service |
+| Gate de versión desactualizada | routing | baja | **NONE** | required → update obligatorio · opcional → update_later |
+| Recuperar contraseña (`/RestorePassPage`) | auth | media | **DONE (device)** — apertura+retorno validados `[2026-07-22]` | input "Correo" + "Recuperar"/"Aceptar" |
 | Selección de ambiente / showHost | auth | baja | **NONE** — flag `ENVIROMENT_SELECTION_ENABLED=false` | PROD/DEMO/TEST · 5 taps → toast host |
-| Toggle Disponible / No disponible (ONLINE↔OFFLINE) | home | crítica | **PARCIAL** — `goOnline()/isDriverOnline()` + `driver-go-online.ts` en `prewarm()`. Sin spec de ramas | version REQUIRED → OutdatedVersion · errores 400/428/409 → modales |
-| Recepción / render viajes disponibles (RTDB) | home | crítica | **PARCIAL** — `waitForTripRequest/…ConfirmPage`; render/distancia no asertados; depende de dispatch real | notif null → vacío · length>0 → setNextAssignedTravel |
-| Tomar / aceptar viaje asignado | home/trip | crítica | **DONE** — `acceptTrip()`/`acceptTripRobust()` validado en device (t+1.7s con pre-warm) | appDrvAssign bloquea disponibles |
-| Auto-asignación (appDrvAssign) | home | alta | **NONE** | true → reduce por cercanía → auto-navega |
+| Toggle Disponible / No disponible (ONLINE↔OFFLINE) | home | crítica | **PARCIAL** — `goOnline()/isDriverOnline()` + `driver-go-online.ts`; sin spec de ramas de error | version REQUIRED → OutdatedVersion · errores 400/428/409 → modales |
+| Recepción / render viajes disponibles (RTDB) | home | crítica | **PARCIAL** — `waitForTripRequest`; depende de dispatch real | notif null → vacío · length>0 → setNextAssignedTravel |
+| Tomar / aceptar viaje asignado | home/trip | crítica | **DONE** — `acceptTrip()`/`acceptTripRobust()` en device (request t≈2.3s con pre-warm) | appDrvAssign bloquea disponibles |
 | Aceptar → goingToClient (confirm) | trip | crítica | **DONE** — `waitForTripConfirmPage` + accept | goingToClient POST confirm · createChat |
-| Empezar viaje + gate de geocerca | trip | crítica | **DONE (in-range)** — `startTripHandlingGeofence` (14m). Código out-of-range NO validado | en-rango → Si → InProgress · fuera → "Ingresar código" (last4 travelId) |
+| Empezar viaje + gate de geocerca | trip | crítica | **DONE (in-range)** — in-range validado (14m, origin Ciudad de la Paz 2238). Out-of-range = **BLOCKED** (ver gaps) | en-rango → "Si" → InProgress · fuera → "Ingresar código" (last4 travelId) |
 | Viaje en progreso → Finalizar | trip | crítica | **DONE** — `DriverTripNavigationScreen` | Finalizar → "¿Finalizar Viaje?" → Si → Resume |
-| Resumen: método de pago + cerrar viaje | trip | crítica | **DONE** — `selectPaymentMethod/confirmAndFinish` (happy path → `closed`) | "Cerrar Viaje" vs "Firmar y Cerrar" · botón disabled hasta seleccionar método |
-| **Cobro Cargo a Bordo (Stripe Elements: fill + COBRAR + decline + 3DS)** | trip | **crítica** | **PARCIAL** — harness+selectores+3DS handler listos y compilando, **NO validados en device**. Reescrito 2026-07-21 para iframe `elements-inner-card` | decline → `alert-modal-atention` · 3DS → challenge en iframes anidados (`#test-source-authorize-3ds`) · firma → `app-page-signer` · trip-lost → `app-alert-modal` |
-| Extras: peaje / estacionamiento | trip | baja | **PARCIAL** — `addToll/addParking` sólo tap; modal de monto = TODO | tap → modal monto (sin implementar) |
-| Viaje de calle / pasajero (startStreetTravel) | home | alta | **SCRIPT** — `start-viaje-calle-flow.ts`, `viaje-calle-unhappy-paths.ts`. No en spec | ONLINE/OFFLINE → inicia · IN_TRAVEL → driverOnTripAlert |
-| Toggle En Base / En Calle (sub-state + cola) | home | media | **NONE** | fuera de rango → botón inactivo · refreshToken/GPS error → modales |
+| Resumen: método de pago + cerrar viaje | trip | crítica | **DONE** — `selectPaymentMethod/confirmAndFinish` | "Cerrar Viaje" disabled hasta seleccionar método (`.travel-payment button.payment`) |
+| **Cobro Cargo a Bordo 3DS (Stripe Elements + firma + challenge)** | trip | **crítica** | **DONE (device)** — E2E 3DS verde `[2026-07-22]` (travelId 66699); spec `empresa-cargo-3ds.spec.ts` (TS-STRIPE-TC1123) | decline → `ion-modal.alert-modal-atention` · 3DS → `#test-source-authorize-3ds` · firma → `app-page-signer` · trip-lost → `app-alert-modal` |
+| Viaje de calle / pasajero (startStreetTravel) | home | alta | **DONE (device)** — trigger validado `[2026-07-22]`: `div.driver-pass.home-icon` → confirm "Empezar Viaje" → InProgress. `tapViajeCalleButton()` corregido | ONLINE/OFFLINE → inicia · IN_TRAVEL → driverOnTripAlert |
+| "En Base" (botón central home) | home | baja | **DONE (device)** — `button.driver-home.home-icon-base` abre `app-bases-information-modal` (Bases Cercanas), **NO es toggle** `[2026-07-22]` | seleccionar fila cambiaría base (no exercitado) |
 | Restauración de estado / fault-tolerance (getAppStatus) | home | alta | **SCRIPT** — `driver-free-stale-trip.ts` + `prewarm` home-check. Sin spec | IN_TRAVEL → navega al viaje · PAX canceló → reset · DONE/CANCELLED → modal |
-| Geocerca de base — refresco 60s | home | baja | **NONE** | in-range → habilita En Base · sale de rango IN_BASE → salida automática |
-| Conectividad de red / salida de app | home | baja | **NONE** | NONE/UNKNOWN → modales · backButton → exitApp |
+| Extras: peaje / estacionamiento | trip | baja | **PARCIAL** — `addToll/addParking` sólo tap; modal de monto = TODO | tap → modal monto (sin implementar) |
+| Geocerca de base / conectividad de red | home | baja | **NONE** | in-range → habilita base · red NONE/UNKNOWN → modales · backButton → exitApp |
+
+## Selectores device-validados (resumen) `[LIVE 2026-07-22]`
+Detalle completo por pantalla + transiciones en **[`driver-app-appium-flow-map.md`](./driver-app-appium-flow-map.md)**.
+
+| Pantalla / control | Selector real | Nota |
+|---|---|---|
+| Home (componente) | `page-home` (no `app-page-home`) | rutas `/navigator/home;FROM_LOGIN=true` / `;FROM_TRAVEL_CLOSED=true` |
+| Disponibilidad | `#availability` | ONLINE↔OFFLINE |
+| Botón "Pasajero" (viaje calle) | `div.driver-pass.home-icon` | → confirm `button.btn.primary` "Empezar Viaje" → InProgress |
+| Botón central "En Base" | `button.driver-home.home-icon-base` | abre `app-bases-information-modal` (NO toggle) |
+| Menú | `ion-menu-toggle` (icon `person-circle-outline`); ítems `ion-item.menu-link-url` | clickear el `ion-item`, no el wrapper |
+| Tabs | `#tab-button-home` / `#tab-button-notifications` / `#tab-button-TravelListPage` / tab `call` (sin id) | tab-bar = 4 tabs |
+| Rutas menú | `/Settings` · `/Stats` · `/Vehicles?fromPreHome=false` · `/RestorePassPage` | capitalizadas fuera de `/navigator/` |
+| Fuera de servicio / Logout | `ion-toggle` (drawer) · `button.log-out-menu` | |
+| Cobro (Stripe Elements clásico) | 1 iframe/campo por `title` ES (número/vencimiento/CVC), input real `input.InputElement`; titular/postal = ion-input nativo | COBRAR = `credit-card-payment-data ion-content form button` |
+| 3DS challenge | `#test-source-authorize-3ds` (COMPLETE) / `#test-source-fail-3ds` (FAIL) | en iframes anidados |
+| Firma | canvas `app-page-signer ion-content div canvas` · Guardar `app-page-signer ion-footer ion-row button.btn.primary` | |
 
 ## Backlog priorizado
-
-### P1 — camino crítico viaje + cobro (desbloquear el E2E casi listo)
-1. **Cerrar el cobro Cargo a Bordo en device (Stripe Elements)** — único eslabón crítico PARCIAL con todo el código escrito; 12 specs web verdes cuelgan de esto vía `test.fixme`. Acción: validar `withStripeFrame`/`switchFrame`+`addValue` contra iframe `elements-inner-card` con **viaje sostenido manual** (`driver-cargo-payment-validate.ts`/`dump-resume-payment.ts`, sin carrera); confirmar `TODO[device]` de `switchFrame` en WDIO v9; cerrar assert.
-2. **Resolver bloqueo web `Send Manual` con Cargo a Bordo** — bloquea `manualAssign`. Acción: (confirmado con debugger) el manual-assign requiere **viaje plano** (sin seleccionar método); el driver elige tarjeta en el resumen.
-3. **Validar 3DS del cobro en device** — `handle3DSChallenge` recorre iframes; botón real `#test-source-authorize-3ds`. Acción: ejecutar con card `4000000000003220`.
-4. **Spec de login driver con assertions** — hoy sólo scripts; promover `driver-login-smoke.ts` a spec (assert URL `/navigator/*` + `#availability`).
-5. **Spec toggle Disponible/No disponible con ramas** — cubrir ramas de error (400/428/409) + gate de versión.
+### P1 — camino crítico (lo que falta del núcleo viaje+cobro)
+1. **Geocerca pickup out-of-range** — handler listo (`startTripHandlingGeofence` + `driver-geocerca-out-of-range.ts`) pero **BLOCKED en device** (el backend no entrega un viaje out-of-range al device driver, ni con asignación manual). Desbloqueo: pickup moderado dentro del radio de push / mover device / forzar entrega backend. (Ver gaps.)
+2. **Spec de login driver con assertions** — hoy sólo scripts; promover a spec (assert URL `/navigator/*` + `#availability`).
+3. **Spec toggle Disponible/No disponible con ramas** — cubrir ramas de error (400/428/409) + gate de versión.
+4. **Extender el patrón validado (manual-assign plano + resume-gate + state-machine)** a decline/antifraud Cargo a Bordo (cambiar card + `expectedOutcome`). El 3DS ya está verde.
 
 ### P2 — generación/recuperación y negativos
-6. Integrar **Viaje de Calle** a spec (harness análogo a `DriverCargoDeclineHarness`).
-7. Spec de **recuperación de estado** (getAppStatus): matar app / cancelación PAX / viaje finalizado.
-8. **Gate de permisos**: forzar `autoGrantPermissions` + `adb grant` + smoke sin `RequiredPermissionPage`.
-9. **Auto-asignación (appDrvAssign)**: spec parametrizado por flag.
-10. **En Base/En Calle + código geocerca out-of-range** (mock de ubicación fuera de radio).
-11. **RestorePass + menú lateral** (logout/out-of-service).
-12. **Extras peaje/estacionamiento**: modal de monto.
+5. Integrar **Viaje de Calle** a spec (trigger + confirm ya validados; harness análogo a `DriverCargoDeclineHarness`).
+6. Spec de **recuperación de estado** (getAppStatus): matar app / cancelación PAX / viaje finalizado (apoyarse en `driver-free-stale-trip.ts`).
+7. **Gate de permisos**: forzar `autoGrantPermissions` + `adb grant` + smoke sin `RequiredPermissionPage`.
+8. **Auto-asignación (appDrvAssign)**: spec parametrizado por flag.
+9. **Extras peaje/estacionamiento**: modal de monto.
+10. **Cleanup automático**: integrar `driver-free-stale-trip.ts` al pre-warm (el home-check ya detecta el stale) o limpiar por API en `finally`.
 
 ### P3 — bordes e infraestructura
-13. Bootstrap/redirección root (alertas MG-001/002/003). 14. Gate de versión. 15. Navigator tabs. 16. Geocerca base 60s. 17. Conectividad/salida. 18. Selección de ambiente (desactivado por flag).
+11. Bootstrap/redirección root (MG-001/002/003). 12. Gate de versión. 13. Geocerca base 60s. 14. Conectividad/salida de app. 15. Selección de ambiente (desactivado por flag). 16. Semántica de toggles/selects de Settings, métricas de Stats.
 
 ## Gaps y riesgos
-1. **Cobro + 3DS nunca ejecutados end-to-end en device** — todo el fill Stripe Elements / `submitPayment` / `handle3DSChallenge` está verificado por typecheck, no por ejecución. `switchFrame` WDIO v9 = `TODO[device]`.
-2. **Modelo de dominio del gate de cobro** — RESUELTO por walkthrough en vivo del dev (2026-07-21): el cobro está **al FINAL** (Resumen → "Ingresar tarjeta"), no al inicio. (La caracterización "gate al inicio" de una iteración previa fue un artefacto y quedó superada.)
-3. **Timing del driver-candidato** — ventana corta; mitigado por pre-warm + asignación manual (viaje plano), no eliminado si el fill del iframe es lento.
-4. **Dependencia de dispatch real / RTDB / GPS** — recepción, geocerca y street travel dependen de Firebase RTDB + ubicación real; sin mocks → no deterministas en CI; requieren backend TEST + device físico en pickup (~500m).
-5. **Login no determinista** — harness asume `noReset` con sesión abierta; tras reinstall cae en pre-home (overlay "Cargando Servicios") que hoy se pasa manual. Sin spec de login robusto, toda corrida limpia falla.
-6. **Sin route guards** — el gating es imperativo (`initializeApp`/`ionViewDidEnter`), no `canActivate`; recuperación exige controlar background→foreground (`platform.resume`) en Appium.
-7. **Cobertura concentrada en happy path** — ramas negativas (declines, 3DS-fail, trip-lost, 409) en `test.fixme` o sin cablear.
-8. **Ramas post-COBRAR no deterministas** — 3DS puede emerger tras COBRAR o tras Guardar (firma); puede cerrar directo. Requiere state-machine de polling (3DS→complete `#test-source-authorize-3ds` / signer→firmar+guardar / success / alert).
+1. **Geocerca out-of-range = BLOCKED en device (chicken-and-egg).** Pickup lejano (>500 m) para gatillar "Ingresar código" **impide** que el backend entregue el viaje al device driver fijo en Belgrano (asignación manual ordena por proximidad; no hay push fuera de rango). 3 corridas (travelId 66776/66782/66787) confirmaron: viaje "Chofer Asignado" carrier-side pero nunca llega al device. Desbloqueo fuera de scope. Detalle: `driver-app-appium-flow-map.md` §6.1.
+2. **Cobro + 3DS: RESUELTO** — validado end-to-end en device `[2026-07-22]` (travelId 66699; firma + challenge 3DS `#test-source-authorize-3ds` + cierre). El cobro es **Stripe Elements CLÁSICO (1 iframe por campo)**, NO un iframe único; el gate de cobro está **al FINAL** (Resumen → "Ingresar tarjeta").
+3. **Dependencia de dispatch real / RTDB / GPS** — recepción, geocerca y street-travel dependen de Firebase RTDB + GPS real (Transistor; el mock GPS NO es viable). No deterministas en CI; requieren backend TEST + device físico en el pickup.
+4. **Login no determinista** — `noReset` con sesión abierta; tras reinstall/idle cae en pre-home ("Cargando Servicios") y rebota a /login. Mitigación: `driver-relogin-and-home.ts`.
+5. **Sin route guards** — el gating es imperativo (`initializeApp`/`ionViewDidEnter`), no `canActivate`; recuperación exige controlar background→foreground en Appium.
+6. **Cobertura concentrada en el núcleo viaje+cobro** — ramas negativas (declines, 3DS-fail, trip-lost, 409) aún sin spec cableado (el 3DS success ya está verde).
+7. **`ion-menu-toggle` ambiguo** — envuelve la hamburguesa y cada ítem; con drawer abierto targetear `ion-item.menu-link-url`.
 
 ## Archivos clave del framework
-- `tests/mobile/appium/harness/DriverCargoDeclineHarness.ts`
-- `tests/mobile/appium/driver/DriverTripPaymentScreen.ts`
-- `tests/components/steps/CargoABordoSteps.ts`
-- `tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/` (12 specs)
-- `tests/mobile/appium/harness/DriverTripHappyPathHarness.ts`
+- Screens: `tests/mobile/appium/driver/{DriverHomeScreen,DriverTripRequestScreen,DriverTripNavigationScreen,DriverTripSummaryScreen,DriverTripPaymentScreen}.ts`
+- Harness: `tests/mobile/appium/harness/{DriverCargoDeclineHarness,DriverTripHappyPathHarness}.ts`
+- Steps: `tests/components/steps/CargoABordoSteps.ts`
+- Spec 3DS: `tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-3ds.spec.ts` (TS-STRIPE-TC1123)
+- Scripts device: `tests/mobile/appium/scripts/{driver-go-online,driver-free-stale-trip,driver-relogin-and-home,driver-validate-home-street-base,driver-validate-menu-destructive,driver-geocerca-out-of-range}.ts`
+- Detalle device-validado: `docs/mobile/driver-app-appium-flow-map.md`

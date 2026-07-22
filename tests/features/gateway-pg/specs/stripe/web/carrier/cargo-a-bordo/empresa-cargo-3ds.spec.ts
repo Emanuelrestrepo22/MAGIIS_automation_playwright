@@ -1,5 +1,5 @@
 /**
- * TC: [SIN-ID-MATRIZ] — proponer ID en matriz (empresa Cargo a Bordo 3DS no tenía archivo).
+ * TC: TS-STRIPE-TC1123 — empresa Cargo a Bordo · pago exitoso con 3D Secure obligatorio (matriz §9.3).
  * Feature: Cargo a Bordo — Empresa Individuo — Cobro con 3DS desde Driver App (E2E híbrido).
  * Tags: @gateway @stripe @cargo-a-bordo @3ds @e2e-hybrid
  *
@@ -42,7 +42,7 @@ const charge3ds: DriverChargeSpec = {
 };
 
 test.describe('Gateway PG · Carrier · Empresa — Cargo a Bordo · 3DS (asignación manual) @gateway @stripe @cargo-a-bordo @3ds @e2e-hybrid', () => {
-	test('[SIN-ID-MATRIZ] @3ds @cargo-a-bordo cobro con challenge 3DS completado desde Driver App', async ({ page }) => {
+	test('[TS-STRIPE-TC1123] @3ds @cargo-a-bordo cobro con challenge 3DS completado desde Driver App', async ({ page }) => {
 		await new CargoABordoSteps({ page }).runCargoScenario(scenario3ds, {
 			manualAssign: true,
 			driverAppStep: {
