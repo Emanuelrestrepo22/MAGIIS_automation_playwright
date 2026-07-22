@@ -70,7 +70,9 @@ export async function setHoldViaApi(
 			}
 			return r;
 		},
-		{ attempts: 3, delayMs: 800, onRetry: (attempt, err) => console.warn(`[parameters-api] retry ${attempt}/2: ${err.message}`) },
+		// El 403 en TEST puede persistir varios segundos (bug v1.72.8 preauth-save / ventana de permisos):
+		// 5 intentos con backoff incremental (~1.5+3+4.5+6 ≈ 15s) para tolerar la ventana antes de fallar.
+		{ attempts: 5, delayMs: 1500, onRetry: (attempt, err) => console.warn(`[parameters-api] retry ${attempt}/4: ${err.message}`) },
 	);
 	if (!res.ok()) {
 		const body = await res.text().catch(() => '');
