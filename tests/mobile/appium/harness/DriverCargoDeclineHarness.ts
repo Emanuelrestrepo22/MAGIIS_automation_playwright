@@ -101,15 +101,71 @@ export class DriverCargoDeclineHarness {
 		const contexts = (await driver.getContexts().catch(() => [])) as string[];
 		const wv = contexts.find((c) => c.startsWith('WEBVIEW'));
 		if (wv) await driver.switchContext(wv);
-		const url = await driver.execute<string, []>(() => window.location.href).catch(() => '');
+		let url = await driver.execute<string, []>(() => window.location.href).catch(() => '');
 		if (/Travel(InProgress|ToStart|Resume|Confirm)Page/i.test(url)) {
-			throw new Error(
-				`[PRE-WARM] El driver NO está libre en /navigator/home — está en ${url}. ` +
-				`Quedó un viaje stale de una corrida previa (el driver ocupado no recibe offers nuevos). ` +
-				`Limpiar/cancelar ese viaje (app o API PUT travels/cancel) para liberar al conductor antes de reintentar.`,
-			);
+			// Self-heal: un viaje stale de una corrida previa deja al driver OCUPADO (no recibe
+			// offers). En lugar de abortar, lo liberamos in-situ para que cada test sea independiente.
+			console.warn(`[PRE-WARM] Driver ocupado en ${url} — liberando viaje stale para no bloquear el test...`);
+			await this.freeStaleTrip();
+			url = await driver.execute<string, []>(() => window.location.href).catch(() => '');
+			if (/Travel(InProgress|ToStart|Resume|Confirm)Page/i.test(url)) {
+				throw new Error(
+					`[PRE-WARM] No se pudo liberar al driver del viaje stale (sigue en ${url}). ` +
+					`Cancelar manualmente (app o API PUT travels/cancel) antes de reintentar.`,
+				);
+			}
+			console.log(`[PRE-WARM] Driver liberado → ${url}`);
 		}
 		console.log(`[DriverCargoDeclineHarness] PRE-WARM listo (driver online en ${url}, esperando viaje).`);
+	}
+
+	/**
+	 * Libera al driver de un viaje stale atascado en TravelResumePage, sobre la sesión ya abierta:
+	 * cicla los payment buttons y cierra el viaje con el botón de cierre que se habilite
+	 * ("Cerrar Viaje"/"Firmar y Cerrar"). NO usa "Ingresar tarjeta" (queda disabled si total=0).
+	 * Deja al driver de vuelta en /navigator/home. Espeja tests/mobile/appium/scripts/driver-free-stale-trip.ts
+	 * pero sin abrir/cerrar sesión (reutiliza la del harness).
+	 */
+	private async freeStaleTrip(): Promise<void> {
+		const driver = this.home.getDriver();
+		await this.switchToWebView();
+		const footer = async (): Promise<{ text: string; disabled: boolean }> =>
+			driver.execute<{ text: string; disabled: boolean }, []>(() => {
+				const norm = (v: unknown) => String(v ?? '').replace(/\s+/g, ' ').trim();
+				const r = document.querySelector('app-travel-resume:not(.ion-page-hidden)') || document.querySelector('app-travel-resume');
+				const b = r?.querySelector('ion-footer button.btn.finish') as HTMLButtonElement | null;
+				return { text: b ? norm(b.innerText) : '', disabled: b ? (b.disabled || b.getAttribute('disabled') !== null) : true };
+			}).catch(() => ({ text: '', disabled: true }));
+
+		const u = await driver.execute<string, []>(() => window.location.href).catch(() => '');
+		if (!/TravelResumePage/i.test(u)) return;
+
+		const payCount = await driver.execute<number, []>(() => {
+			const r = document.querySelector('app-travel-resume:not(.ion-page-hidden)') || document.querySelector('app-travel-resume');
+			return Array.from(r?.querySelectorAll('.travel-payment button.payment') || []).filter(b => (b as HTMLElement).offsetParent !== null).length;
+		}).catch(() => 0);
+
+		for (let i = 0; i < Math.max(payCount, 2); i++) {
+			await driver.execute<boolean, [number]>((idx) => {
+				const r = document.querySelector('app-travel-resume:not(.ion-page-hidden)') || document.querySelector('app-travel-resume');
+				const pays = Array.from(r?.querySelectorAll('.travel-payment button.payment') || []).filter(b => (b as HTMLElement).offsetParent !== null) as HTMLElement[];
+				if (!pays.length) return false;
+				pays[idx % pays.length].click();
+				return true;
+			}, i).catch(() => false);
+			await driver.pause(3_000);
+			const fs = await footer();
+			if (!/ingresar tarjeta/i.test(fs.text) && !fs.disabled && fs.text.length > 0) {
+				await driver.execute<boolean, []>(() => {
+					const r = document.querySelector('app-travel-resume:not(.ion-page-hidden)') || document.querySelector('app-travel-resume');
+					const b = r?.querySelector('ion-footer button.btn.finish') as HTMLElement | null;
+					if (b) { b.click(); return true; }
+					return false;
+				}).catch(() => false);
+				await driver.pause(4_000);
+				break;
+			}
+		}
 	}
 
 	/**
@@ -571,7 +627,7 @@ export class DriverCargoDeclineHarness {
 				if (/cancelad|rechaz|no autoriz|declin|error|fALL|falló|fallo/i.test(alertText)) {
 					return { status: 'declined', reason: alertText.slice(0, 200) };
 				}
-				if (/perdid|expir/i.test(alertText)) {
+				if (/perdid|expir|no est[áa] disponible|ya no.*disponible/i.test(alertText)) {
 					return { status: 'trip-lost', reason: alertText.slice(0, 200) };
 				}
 				// alert informativo no terminal → seguir.
