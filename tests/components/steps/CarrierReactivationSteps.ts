@@ -95,8 +95,10 @@ export class CarrierReactivationSteps extends UiBase {
 				await this.management.reactivate(scenario.passenger, shortDest);
 			});
 
-			await test.step('Verificar reactivación — navega al despacho de conductores', async () => {
-				await expect(this.page).toHaveURL(/listDriverOnline/i, { timeout: 15_000 });
+			await test.step('Verificar reactivación — navega al despacho/asignación de conductores', async () => {
+				// URL real observada en TEST v1.72.8: /#/home/carrier/driver/list/Assign?id=<nuevoTravelId>
+				// (el análisis FE mencionaba `listDriverOnline`; el runtime navega a `driver/list/Assign`).
+				await expect(this.page).toHaveURL(/driver\/list\/Assign|listDriverOnline/i, { timeout: 15_000 });
 			});
 		} finally {
 			// Cleanup best-effort: el ref pudo re-capturar el travelId del viaje reactivado.

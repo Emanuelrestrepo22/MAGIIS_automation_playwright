@@ -25,6 +25,7 @@ test.describe('Gateway PG · Carrier — Reactivación de Viajes Cancelados @gat
 
 	test.describe('Sin 3DS', () => {
 		test('[TS-STRIPE-P2-TC060] @regression @hold reactivación cancelado hold+cobro', async ({ page }) => {
+			test.setTimeout(240_000); // flujo real (alta + hold + cancelación + reactivación) es lento en TEST
 			await new CarrierReactivationSteps({ page }).runReactivateCancelledPreauth({
 				client: TEST_DATA.appPaxPassenger,
 				passenger: TEST_DATA.appPaxPassenger,
