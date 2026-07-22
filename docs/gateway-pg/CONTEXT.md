@@ -19,8 +19,8 @@ Sirve como referencia para:
 | --- | --- | --- | --- | --- | --- |
 | **Stripe** | 🟢 Producción | `tests/fixtures/gateways/stripe/` | Completo | [`docs/gateway-pg/stripe/`](./stripe/) | `tests/features/gateway-pg/specs/stripe/**` |
 | **Authorize.net** | 🟡 Docs + datos listos | `tests/fixtures/gateways/authorize/` | Pendiente BL-025 | [`docs/gateway-pg/authorize/`](./authorize/) | Slot reservado en `specs/authorize/` |
-| **MercadoPago** | 🔴 Investigación | Slot reservado | — | — | — |
-| **eBizCharge** | 🔴 Investigación | Slot reservado | — | — | — |
+| **MercadoPago** | 🟡 Docs + datos listos | `tests/fixtures/gateways/mercado-pago/` | Pendiente BL-026 | [`docs/gateway-pg/mercado-pago/`](./mercado-pago/) | Slot reservado en `specs/mercado-pago/` |
+| **eBizCharge** | 🟡 Docs + datos listos | `tests/fixtures/gateways/ebizcharge/` | Pendiente BL-027 | [`docs/gateway-pg/ebizcharge/`](./ebizcharge/) | Slot reservado en `specs/ebizcharge/` |
 
 ## Modelo arquitectónico (umbrella multi-gateway)
 

@@ -16,21 +16,22 @@
  * Si no están seteadas, los tests se skipean automáticamente.
  */
 
-import { test, expect } from '@playwright/test';
-import { AUTHORIZE_CARDS } from '../../../../fixtures/gateways/authorize/card-policy';
-import { AuthorizeApiClient, hasAuthorizeCredentials } from '../../../../shared/utils/authorize-api-client';
+import { test, expect } from '@TestFixture';
+import { AUTHORIZE_CARDS } from '@fixtures/gateways/authorize/card-policy';
+import { AuthorizeSandboxApi, hasAuthorizeCredentials } from '@api/AuthorizeSandboxApi';
+import type { AuthorizeApiResponse } from '@schemas/authorize.types';
 
-test.describe('[BL-036][API] Authorize.net sandbox — Happy paths (Response Code 1)', () => {
+test.describe('[BL-036][API] Authorize.net sandbox — Happy paths (Response Code 1) @gateway @authorize @regression', () => {
 	test.skip(!hasAuthorizeCredentials(), 'AUTHORIZE_API_LOGIN_ID/TRANSACTION_KEY no seteadas en env');
 
 	test('Visa + CVV 900 + ZIP neutro → Response Code 1 (Approved)', async ({ request }) => {
-		const client = new AuthorizeApiClient(request);
+		const api = new AuthorizeSandboxApi({ request });
 
-		const response = await client.authOnlyTransaction(
-			AUTHORIZE_CARDS.SUCCESS,
-			'10.00',
-			`bl-036-happy-visa-${Date.now()}`,
-		);
+		const response: AuthorizeApiResponse = await api.authorizeOnly({
+			card: AUTHORIZE_CARDS.SUCCESS,
+			amount: '10.00',
+			refId: `bl-036-happy-visa-${Date.now()}`,
+		});
 
 		expect(response.messages.resultCode).toBe('Ok');
 		expect(response.transactionResponse?.responseCode).toBe('1');
@@ -42,13 +43,13 @@ test.describe('[BL-036][API] Authorize.net sandbox — Happy paths (Response Cod
 	});
 
 	test('Mastercard + CVV 900 + ZIP neutro → Response Code 1 (Approved)', async ({ request }) => {
-		const client = new AuthorizeApiClient(request);
+		const api = new AuthorizeSandboxApi({ request });
 
-		const response = await client.authOnlyTransaction(
-			AUTHORIZE_CARDS.SUCCESS_MASTERCARD,
-			'10.00',
-			`bl-036-happy-mc-${Date.now()}`,
-		);
+		const response: AuthorizeApiResponse = await api.authorizeOnly({
+			card: AUTHORIZE_CARDS.SUCCESS_MASTERCARD,
+			amount: '10.00',
+			refId: `bl-036-happy-mc-${Date.now()}`,
+		});
 
 		expect(response.messages.resultCode).toBe('Ok');
 		expect(response.transactionResponse?.responseCode).toBe('1');
@@ -57,13 +58,13 @@ test.describe('[BL-036][API] Authorize.net sandbox — Happy paths (Response Cod
 	});
 
 	test('Amex + CVV 4-dígitos + ZIP neutro → Response Code 1 (Approved)', async ({ request }) => {
-		const client = new AuthorizeApiClient(request);
+		const api = new AuthorizeSandboxApi({ request });
 
-		const response = await client.authOnlyTransaction(
-			AUTHORIZE_CARDS.SUCCESS_AMEX,
-			'10.00',
-			`bl-036-happy-amex-${Date.now()}`,
-		);
+		const response: AuthorizeApiResponse = await api.authorizeOnly({
+			card: AUTHORIZE_CARDS.SUCCESS_AMEX,
+			amount: '10.00',
+			refId: `bl-036-happy-amex-${Date.now()}`,
+		});
 
 		expect(response.messages.resultCode).toBe('Ok');
 		expect(response.transactionResponse?.responseCode).toBe('1');

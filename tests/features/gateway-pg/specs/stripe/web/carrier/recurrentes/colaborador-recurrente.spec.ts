@@ -3,10 +3,15 @@
  * Feature: Viajes Recurrentes — Portal Carrier — Usuario Colaboradores
  * Tags: @regression @recurrente @web-only
  * Nota: TC047 marcado como CASO CRÍTICO en la fuente
+ *
+ * KATA conformance (feature/kata-conformance): specs de placeholder (fixme). test del
+ * fixture KATA (@TestFixture). Sin ATC aún (no hay flujo implementado). Al implementar,
+ * mapear al área REC del idmap (MG-390+, Level UI) — mapeo por área aceptado.
  */
-import { test } from '../../../../../../../TestBase';
+import { test } from '@TestFixture';
 
-test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
+// El fixture KATA no define la opción `role` (login explícito en el flujo cuando se implemente).
+test.use({ storageState: undefined });
 
 test.describe('Gateway PG · Carrier · Colaborador — Viajes Recurrentes @gateway @stripe @hold @wallet @regression', () => {
 

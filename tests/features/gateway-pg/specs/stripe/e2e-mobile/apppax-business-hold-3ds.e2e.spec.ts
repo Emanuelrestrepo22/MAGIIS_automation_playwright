@@ -18,12 +18,22 @@
  *      apppax-business-3ds.e2e.spec.ts pero sin separar hold ON / hold OFF.
  *   3. Precondicion "card-new" (wallet sin la tarjeta) vs "card-existing"
  *      (wallet con la tarjeta 3DS ya vinculada).
+ *
+ * KATA conformance: DEFERRED a Fase 4 (capa mobile KATA). Runner = shell Playwright,
+ * device automation = Appium/WebdriverIO (PassengerTripHappyPathHarness · tests/mobile/appium/*).
+ * @TestFixture sólo expone Page/API/DB de Playwright — no existe tests/components/ui/mobile +
+ * fixture Appium; forzarlo inventaría arquitectura, así que se preserva TestBase + skip Appium.
+ * Normalizado no-destructivo: imports por alias (@TestBase/@features/@fixtures); los de
+ * tests/mobile/appium quedan relativos (no hay alias @mobile — Fase 4).
+ * @atc idmap: wallet pax business -> área H (MG-172..174, MG-495-496); hold -> área E
+ *   (MG-158..160); 3DS -> área D (MG-152..157). mapeo por área aceptado (idmap API-level,
+ *   sin 1:1 con e2e-mobile UI).
  */
-import { expect, test } from '../../../../../TestBase';
-import { GatewayPgJourneyOrchestrator } from '../../../helpers/GatewayPgJourneyOrchestrator';
-import { STRIPE_TEST_CARD_FIXTURES } from '../../../../../fixtures/stripe/cards';
-import { TEST_DATA } from '../../../data/stripeTestData';
-import { PASSENGERS } from '../../../data/passengers';
+import { expect, test } from '@TestBase';
+import { GatewayPgJourneyOrchestrator } from '@features/gateway-pg/helpers/GatewayPgJourneyOrchestrator';
+import { STRIPE_TEST_CARD_FIXTURES } from '@fixtures/stripe/cards';
+import { TEST_DATA } from '@features/gateway-pg/data/stripeTestData';
+import { PASSENGERS } from '@features/gateway-pg/data/passengers';
 import { getPassengerAppConfig } from '../../../../../mobile/appium/config/appiumRuntime';
 import { PassengerTripHappyPathHarness } from '../../../../../mobile/appium/harness/PassengerTripHappyPathHarness';
 
@@ -107,11 +117,16 @@ const SCENARIOS: BusinessHold3dsScenario[] = [
 	},
 ];
 
-test.describe.serial('Gateway PG · E2E Mobile · App Pax Business — Hold con 3DS @gateway @stripe @e2e-hybrid @hold @3ds', () => {
+test.describe.serial('Gateway PG · E2E Mobile · App Pax Business — Hold con 3DS @gateway @stripe @e2e-hybrid @hold @3ds @regression', () => {
+	// Gate a nivel describe (uniforme con el resto de specs apppax): sin servidor Appium
+	// el harness no se puede construir (getPassengerAppConfig lanza) — el grupo SKIPea, no ERRORA.
+	test.skip(() => !process.env.APPIUM_SERVER_URL, 'Requiere servidor Appium Android activo (APPIUM_SERVER_URL).');
+
 	for (const scenario of SCENARIOS) {
 		test.describe(`[${scenario.testCaseId}] ${scenario.title}`, () => {
 			test(
 				`hold=${scenario.holdMode} · 3ds · card=${scenario.cardFlow}`,
+				{ annotation: [{ type: 'tms', description: 'MG-158' }] },
 				async () => {
 					// Test productivo habilitado (fixme levantado Fase P3).
 					// Skip condicional: si no hay servidor Appium disponible el test no

@@ -3,31 +3,39 @@
  * Feature: Alta de Viaje desde Carrier – Usuario App Pax – Hold y declinación sin 3DS
  * Tags: @smoke @regression @hold @web-only
  *
+ * KATA conformance (feature/kata-conformance): amoldado al fixture unificado.
+ *   - test/expect del fixture KATA (@TestFixture) en vez de TestBase.
+ *   - Page components KATA (@ui/carrier) en vez de los POMs del sustrato carrier.
+ *   - Flujos heterogéneos (hold OK vs. declinación) → orquestación inline en el spec.
+ * ATCs mapeados en las Page components: fillMinimum → MG-148 (área C),
+ *   expectPassengerInPorAsignar → MG-158 (área E). mapeo por área aceptado (idmap API-level).
+ *
  * TC1049 – Hold ON exitoso, tarjeta sin 3DS (4242 4242 4242 4242)
  * TC1059 – Hold ON, tarjeta con fondos insuficientes (4000 0000 0000 9995) — viaje no se crea
  */
 
-import { test, expect } from '../../../../../../../TestBase';
-import { loginAsDispatcher, expectNoThreeDSModal, TEST_DATA, STRIPE_TEST_CARDS } from '../../../../../fixtures/gateway.fixtures';
-import { NewTravelPage, OperationalPreferencesPage, TravelManagementPage } from '../../../../../../../pages/carrier';
+import { test, expect } from '@TestFixture';
+import { CarrierNewTravelPage, CarrierOperationalPreferencesPage, CarrierTravelManagementPage } from '@ui/carrier';
+import { loginAsDispatcher, expectNoThreeDSModal, TEST_DATA, STRIPE_TEST_CARDS } from '@features/gateway-pg/fixtures/gateway.fixtures';
 
 test.describe.configure({ mode: 'serial' });
 test.describe.configure({ timeout: 120_000 });
 
 test.describe('Gateway PG · Carrier · App Pax — Hold sin 3DS @gateway @stripe @hold @capture @decline @regression', () => {
-	test.use({ role: 'carrier', storageState: undefined });
+	// El fixture KATA no define la opción `role` (login explícito vía loginAsDispatcher(page)).
+	test.use({ storageState: undefined });
 
 	test.beforeEach(async ({ page }) => {
 		await loginAsDispatcher(page);
-		const preferences = new OperationalPreferencesPage(page);
+		const preferences = new CarrierOperationalPreferencesPage({ page });
 		await preferences.goto();
 		await preferences.ensureHoldEnabled();
 	});
 
 	test.describe('[TS-STRIPE-TC1049] Hold ON exitoso — tarjeta preautorizada sin 3DS (4242 4242 4242 4242)', () => {
 		test('viaje pasa a "Buscando conductor" inmediatamente tras el hold', async ({ page }) => {
-			const travel = new NewTravelPage(page);
-			const management = new TravelManagementPage(page);
+			const travel = new CarrierNewTravelPage({ page });
+			const management = new CarrierTravelManagementPage({ page });
 
 			await travel.goto();
 			await travel.fillMinimum({
@@ -43,7 +51,7 @@ test.describe('Gateway PG · Carrier · App Pax — Hold sin 3DS @gateway @strip
 		});
 
 		test('no aparece modal 3DS cuando el hold es directo', async ({ page }) => {
-			const travel = new NewTravelPage(page);
+			const travel = new CarrierNewTravelPage({ page });
 
 			await travel.goto();
 			await travel.fillMinimum({
@@ -58,8 +66,8 @@ test.describe('Gateway PG · Carrier · App Pax — Hold sin 3DS @gateway @strip
 		});
 
 		test('viaje aparece en columna "Por asignar" de gestión de viajes', async ({ page }) => {
-			const travel = new NewTravelPage(page);
-			const management = new TravelManagementPage(page);
+			const travel = new CarrierNewTravelPage({ page });
+			const management = new CarrierTravelManagementPage({ page });
 
 			await travel.goto();
 			await travel.fillMinimum({
@@ -77,7 +85,7 @@ test.describe('Gateway PG · Carrier · App Pax — Hold sin 3DS @gateway @strip
 
 	test.describe('[TS-STRIPE-TC1059] Hold ON declinado — tarjeta fondos insuficientes (4000 0000 0000 9995), viaje no se crea', () => {
 		test('muestra error de declinación cuando la tarjeta tiene fondos insuficientes', async ({ page }) => {
-			const travel = new NewTravelPage(page);
+			const travel = new CarrierNewTravelPage({ page });
 
 			await travel.goto();
 			await travel.fillMinimum({
@@ -94,7 +102,7 @@ test.describe('Gateway PG · Carrier · App Pax — Hold sin 3DS @gateway @strip
 		});
 
 		test('el viaje no se crea — URL no redirige a /travels/... cuando la tarjeta es declinada', async ({ page }) => {
-			const travel = new NewTravelPage(page);
+			const travel = new CarrierNewTravelPage({ page });
 
 			await travel.goto();
 			await travel.fillMinimum({

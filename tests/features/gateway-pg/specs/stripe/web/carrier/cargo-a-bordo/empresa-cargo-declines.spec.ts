@@ -8,129 +8,93 @@
  * - DRIVER APP (Appium): conductor finaliza viaje e intenta cobrar → tarjeta rechazada
  *
  * TEST_DATA.client = 'Marcelle Stripe' (empresa individuo), TEST_DATA.passenger = 'Emanuel Restrepo' (appPax)
+ *
+ * KATA conformance (feature/kata-conformance): fase web extraída a
+ *   `CargoABordoSteps.runCargoScenario` (@steps); test desde @TestFixture; fase Driver App
+ *   vía `driverAppStep` (test.fixme). ATCs → MG-161 / MG-158 (mapeo por área aceptado).
  */
-import { expect, type Page } from '@playwright/test';
-import { test } from '../../../../../../../TestBase';
-import { DashboardPage, NewTravelPage, TravelDetailPage, TravelManagementPage } from '../../../../../../../pages/carrier';
-import { expectNoThreeDSModal, loginAsDispatcher, TEST_DATA } from '../../../../../fixtures/gateway.fixtures';
-import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../../../../helpers/travel-cleanup';
+import { test } from '@TestFixture';
+import { CargoABordoSteps, type CargoScenario, type DriverChargeSpec } from '@steps/index';
+import { TEST_DATA } from '@features/gateway-pg/fixtures/gateway.fixtures';
+import { STRIPE_TEST_CARDS_RAW } from '@fixtures/gateways/stripe/cards';
 
-test.use({ role: 'carrier', storageState: undefined });
+test.use({ storageState: undefined });
 test.describe.configure({ timeout: 120_000 });
 
-async function webPhaseCargoEmpresa(page: Page): Promise<TravelIdRef> {
-	const dashboard = new DashboardPage(page);
-	const travel = new NewTravelPage(page);
-	const management = new TravelManagementPage(page);
-	const detail = new TravelDetailPage(page);
+// E2E DRIVER: el pickup DEBE estar dentro del radio (500m) de la ubicación física del
+// teléfono (Ciudad de la Paz 2238, Belgrano, CABA — GPS device -34.5616,-58.4590), si no
+// el driver queda fuera de rango y no puede iniciar el viaje (geocerca). Scopeado a estos
+// 5 tests (no toca JOURNEY_DEFAULTS.origin que usan ~399 web tests, y estos no asertan origin).
+const DRIVER_E2E_PICKUP = 'Ciudad de la Paz 2238, Buenos Aires, Argentina';
 
-	await test.step('Login carrier', async () => {
-		await loginAsDispatcher(page);
-	});
+const empresaScenario: CargoScenario = {
+	client: TEST_DATA.client,
+	passenger: TEST_DATA.passenger,
+	origin: DRIVER_E2E_PICKUP,
+	destination: TEST_DATA.destination,
+};
 
-	const travelIdRef = await captureCreatedTravelId(page);
+const APPIUM_NOTE = 'PENDIENTE: fase Driver App — requiere Appium.';
 
-	await test.step('Ir al formulario de nuevo viaje', async () => {
-		await dashboard.openNewTravel();
-		await travel.ensureLoaded();
-	});
-
-	await test.step('Completar formulario — empresa individuo + método Cargo a Bordo', async () => {
-		await travel.selectClient(TEST_DATA.client);
-		await travel.selectPassenger(TEST_DATA.passenger);
-		await travel.setOrigin(TEST_DATA.origin);
-		await travel.setDestination(TEST_DATA.destination);
-		await travel.selectPaymentMethod('CargoABordo');
-	});
-
-	await test.step('Seleccionar vehículo y enviar el viaje', async () => {
-		await travel.clickSelectVehicle();
-		await travel.clickSendService();
-	});
-
-	await test.step('Verificar que no aparece modal 3DS', async () => {
-		await expectNoThreeDSModal(page);
-	});
-
-	await test.step('Confirmar creación del viaje via network interception', async () => {
-		// Cargo a Bordo post-submit puede quedarse en /travel/create?limitExceeded=false
-		// como comportamiento normal. Fuente de verdad: POST /travels interceptado.
-		await expect
-			.poll(() => travelIdRef?.travelId, {
-				timeout: 15_000,
-				message: '[Cargo a Bordo empresa] POST /travels no capturó travelId tras el submit',
-			})
-			.not.toBeNull();
-	});
-
-	await test.step('Validar estado del viaje - Buscando chofer en gestión', async () => {
-		await management.goto();
-		await management.expectPassengerInPorAsignar(TEST_DATA.passenger, undefined, 'Buscando chofer');
-	});
-
-	return travelIdRef;
-}
+/**
+ * Charge de decline para la fase Driver App (solo se ejecuta con APPIUM=1).
+ * Cards desde la SoT canónica `@fixtures/gateways/stripe/cards` — NO inventar números.
+ */
+const decline = (raw: { number: string; exp: string; cvc: string; holderName: string }): DriverChargeSpec => ({
+	card: { number: raw.number, expiry: raw.exp, cvc: raw.cvc, holderName: raw.holderName },
+	expectedOutcome: 'declined',
+});
 
 test.describe('Gateway PG · Carrier · Empresa Individuo — Cargo a Bordo · Declines @gateway @stripe @cargo-a-bordo @hold @decline @regression', () => {
 
 	test('[TS-STRIPE-TC1112] @regression @cargo-a-bordo pago rechazado genérico desde Driver App', async ({ page }) => {
-		let travelIdRef: TravelIdRef | null = null;
-		try {
-			travelIdRef = await webPhaseCargoEmpresa(page);
-			await test.step('[DRIVER APP] Conductor cobra → tarjeta declinada genéricamente → rechazo', async () => {
-				test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium + DriverTripPaymentScreen.');
-			});
-		} finally {
-			if (travelIdRef) await cancelTravelIfCreated(page, travelIdRef);
-		}
+		await new CargoABordoSteps({ page }).runCargoScenario(empresaScenario, {
+			driverAppStep: {
+				title: '[DRIVER APP] Conductor cobra → tarjeta declinada genéricamente → rechazo',
+				note: 'PENDIENTE: fase Driver App — requiere Appium + DriverTripPaymentScreen.',
+				charge: decline(STRIPE_TEST_CARDS_RAW.declined_generic),
+			},
+		});
 	});
 
 	test('[TS-STRIPE-TC1113] @regression @cargo-a-bordo fondos insuficientes desde Driver App', async ({ page }) => {
-		let travelIdRef: TravelIdRef | null = null;
-		try {
-			travelIdRef = await webPhaseCargoEmpresa(page);
-			await test.step('[DRIVER APP] Conductor cobra → fondos insuficientes → rechazo', async () => {
-				test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium.');
-			});
-		} finally {
-			if (travelIdRef) await cancelTravelIfCreated(page, travelIdRef);
-		}
+		await new CargoABordoSteps({ page }).runCargoScenario(empresaScenario, {
+			driverAppStep: {
+				title: '[DRIVER APP] Conductor cobra → fondos insuficientes → rechazo',
+				note: APPIUM_NOTE,
+				charge: decline(STRIPE_TEST_CARDS_RAW.declined_funds),
+			},
+		});
 	});
 
 	test('[TS-STRIPE-TC1114] @regression @cargo-a-bordo tarjeta perdida desde Driver App', async ({ page }) => {
-		let travelIdRef: TravelIdRef | null = null;
-		try {
-			travelIdRef = await webPhaseCargoEmpresa(page);
-			await test.step('[DRIVER APP] Conductor cobra → tarjeta perdida → rechazo', async () => {
-				test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium.');
-			});
-		} finally {
-			if (travelIdRef) await cancelTravelIfCreated(page, travelIdRef);
-		}
+		await new CargoABordoSteps({ page }).runCargoScenario(empresaScenario, {
+			driverAppStep: {
+				title: '[DRIVER APP] Conductor cobra → tarjeta perdida → rechazo',
+				note: APPIUM_NOTE,
+				charge: decline(STRIPE_TEST_CARDS_RAW.lost_card),
+			},
+		});
 	});
 
 	test('[TS-STRIPE-TC1115] @regression @cargo-a-bordo CVC incorrecto desde Driver App', async ({ page }) => {
-		let travelIdRef: TravelIdRef | null = null;
-		try {
-			travelIdRef = await webPhaseCargoEmpresa(page);
-			await test.step('[DRIVER APP] Conductor cobra → CVC incorrecto → rechazo', async () => {
-				test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium.');
-			});
-		} finally {
-			if (travelIdRef) await cancelTravelIfCreated(page, travelIdRef);
-		}
+		await new CargoABordoSteps({ page }).runCargoScenario(empresaScenario, {
+			driverAppStep: {
+				title: '[DRIVER APP] Conductor cobra → CVC incorrecto → rechazo',
+				note: APPIUM_NOTE,
+				charge: decline(STRIPE_TEST_CARDS_RAW.incorrect_cvc),
+			},
+		});
 	});
 
 	test('[TS-STRIPE-TC1116] @regression @cargo-a-bordo tarjeta robada desde Driver App', async ({ page }) => {
-		let travelIdRef: TravelIdRef | null = null;
-		try {
-			travelIdRef = await webPhaseCargoEmpresa(page);
-			await test.step('[DRIVER APP] Conductor cobra → tarjeta robada → rechazo', async () => {
-				test.fixme(true, 'PENDIENTE: fase Driver App — requiere Appium.');
-			});
-		} finally {
-			if (travelIdRef) await cancelTravelIfCreated(page, travelIdRef);
-		}
+		await new CargoABordoSteps({ page }).runCargoScenario(empresaScenario, {
+			driverAppStep: {
+				title: '[DRIVER APP] Conductor cobra → tarjeta robada → rechazo',
+				note: APPIUM_NOTE,
+				charge: decline(STRIPE_TEST_CARDS_RAW.stolen_card),
+			},
+		});
 	});
 
 });

@@ -31,47 +31,57 @@ const SERVICE_NAME_NULL_RE = /\/getFlights\/[^/]+\/null(?:[/?]|$)/i;
 test.describe(`[FLIGHT][${env.toUpperCase()}] getFlights no manda serviceName null (app-link) — Portal Carrier`, () => {
 	test.describe.configure({ mode: 'serial' });
 	test.describe.configure({ timeout: 180_000 });
-	test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
+	test.use({ role: 'carrier', storageState: { cookies: [], origins: [] }, locale: 'es-AR' });
 
-	test('@flight @carrier @regression [TS-MX5825-GETFLIGHTS-NOTNULL] getFlights lleva serviceName real (no "null") y no responde 404', async ({ page, dashboard, travel, flightModal }) => {
-		await test.step(`Given: dispatcher logueado en carrier (${env.toUpperCase()})`, async () => {
-			await loginAsDispatcher(page);
-		});
-
-		await test.step('And: formulario de nuevo viaje con destino = aeropuerto', async () => {
-			await dashboard.openNewTravel();
-			await travel.ensureLoaded();
-			await travel.selectClient(FLIGHT_TEST_DATA.client);
-			await travel.setOrigin(FLIGHT_TEST_DATA.origin);
-			await travel.setDestination(FLIGHT_TEST_DATA.airportDestination);
-		});
-
-		let url = '';
-		let status = 0;
-
-		await test.step('When: se abre el modal y se busca una aerolínea (dispara getFlights)', async () => {
-			await flightModal.open();
-			// Registrar la espera del response ANTES de disparar la búsqueda.
-			const responsePromise = page.waitForResponse(r => GET_FLIGHTS_RE.test(r.url()), { timeout: 30_000 });
-			await flightModal.searchAirline(FLIGHT_TEST_DATA.airlineQuery, FLIGHT_TEST_DATA.airlineLabel);
-			const response = await responsePromise;
-			url = response.url();
-			status = response.status();
-
-			// Evidencia (regla payload): request URL + status.
-			debugLog('flight', `[TS-MX5825] getFlights → ${status} ${url}`);
-			await test.info().attach('getFlights-request', {
-				body: JSON.stringify({ url, method: response.request().method(), status }, null, 2),
-				contentType: 'application/json'
+	// Trazabilidad Allure↔Jira: tms = Xray Test MX-6136, issue = ticket MX-5825 (render como links vía config allure `links`).
+	test(
+		'@flight @carrier @regression [TS-MX5825-GETFLIGHTS-NOTNULL] getFlights lleva serviceName real (no "null") y no responde 404',
+		{
+			annotation: [
+				{ type: 'tms', description: 'MX-6136' },
+				{ type: 'issue', description: 'MX-5825' }
+			]
+		},
+		async ({ page, dashboard, travel, flightModal }) => {
+			await test.step(`Given: dispatcher logueado en carrier (${env.toUpperCase()})`, async () => {
+				await loginAsDispatcher(page);
 			});
-		});
 
-		await test.step('Then: el serviceName NO es "null" (defecto MX-5825)', async () => {
-			expect(url, `getFlights envió serviceName "null": ${url}`).not.toMatch(SERVICE_NAME_NULL_RE);
-		});
+			await test.step('And: formulario de nuevo viaje con destino = aeropuerto', async () => {
+				await dashboard.openNewTravel();
+				await travel.ensureLoaded();
+				await travel.selectClient(FLIGHT_TEST_DATA.client);
+				await travel.setOrigin(FLIGHT_TEST_DATA.origin);
+				await travel.setDestination(FLIGHT_TEST_DATA.airportDestination);
+			});
 
-		await test.step('And: el status NO es 404', async () => {
-			expect(status, `getFlights respondió ${status} para ${url}`).not.toBe(404);
-		});
-	});
+			let url = '';
+			let status = 0;
+
+			await test.step('When: se abre el modal y se busca una aerolínea (dispara getFlights)', async () => {
+				await flightModal.open();
+				// Registrar la espera del response ANTES de disparar la búsqueda.
+				const responsePromise = page.waitForResponse(r => GET_FLIGHTS_RE.test(r.url()), { timeout: 30_000 });
+				await flightModal.searchAirline(FLIGHT_TEST_DATA.airlineQuery, FLIGHT_TEST_DATA.airlineLabel);
+				const response = await responsePromise;
+				url = response.url();
+				status = response.status();
+
+				// Evidencia (regla payload): request URL + status.
+				debugLog('flight', `[TS-MX5825] getFlights → ${status} ${url}`);
+				await test.info().attach('getFlights-request', {
+					body: JSON.stringify({ url, method: response.request().method(), status }, null, 2),
+					contentType: 'application/json'
+				});
+			});
+
+			await test.step('Then: el serviceName NO es "null" (defecto MX-5825)', async () => {
+				expect(url, `getFlights envió serviceName "null": ${url}`).not.toMatch(SERVICE_NAME_NULL_RE);
+			});
+
+			await test.step('And: el status NO es 404', async () => {
+				expect(status, `getFlights respondió ${status} para ${url}`).not.toBe(404);
+			});
+		}
+	);
 });

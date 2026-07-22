@@ -5,11 +5,18 @@
  * Ver tests/features/gateway-pg/specs/visual/README.md para política de baselines.
  *
  * NO ejecutar sin haber generado baseline previamente con --update-snapshots.
+ *
+ * KATA conformance (feature/kata-conformance): test/expect del fixture unificado KATA
+ * (@TestFixture) en vez de TestBase; el fixture no define `role` (login explícito en el
+ * flujo cuando se implemente el baseline). Placeholder fixme — sin ATC aún (no hay flujo
+ * disparado). Al implementar, reutilizar `ThreeDsChallengePage` (@ui) para localizar el
+ * frame del challenge y mapear al área 3DS del idmap (MG-152/153, Level UI) — mapeo por área aceptado.
  */
-import { test, expect } from '../../../../TestBase';
+import { test, expect } from '@TestFixture';
 
-test.describe('[BL-044] Visual regression — Modal 3DS Stripe @visual @stripe @3ds', () => {
-	test.use({ role: 'carrier' });
+test.describe('[BL-044] Visual regression — Modal 3DS Stripe @gateway @visual @stripe @3ds @regression', () => {
+	// El fixture KATA no define la opción `role` (login explícito en el flujo cuando se implemente).
+	test.use({ storageState: undefined });
 
 	test('modal 3DS challenge — layout visual', async ({ page }) => {
 		test.fixme(true, 'BL-044 piloto: requiere baseline generado en ambiente live. Ver tests/features/gateway-pg/specs/visual/README.md §"Política de baselines".');

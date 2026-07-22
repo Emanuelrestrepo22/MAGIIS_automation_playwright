@@ -7,6 +7,27 @@ IDs canónicos: ver [`matriz_cases.md`](./matriz_cases.md) y [`matriz_cases2.md`
 
 ---
 
+## [2026-07-20] Reconciliación fixtures ↔ guía oficial
+
+Verificación de `tests/fixtures/gateways/authorize/` contra <https://developer.authorize.net/hello_world/testing_guide.html>.
+
+### Verified
+
+- ZIP `46225-46228` (partial/prepaid) **confirmados** contra la sección "Partial authorization responses" de la guía oficial (46225 → Partial $1.23; 46226/46227 → Prepaid $1.23/-$1.23; 46228 → Prepaid $0). Datos correctos — se conservan.
+- Core CVV (900/901/904) y AVS (46204/46205/46282) ya coincidían con la fuente.
+
+### Added (fixtures code — alineados a lo que ARCHITECTURE/matriz ya documentaban)
+
+- `cards.ts` + `card-policy.ts`: promovidas a objetos de card las CVV `902` (S → `CVV_SHOULD_BE_PRESENT`) y `903` (U → `CVV_ISSUER_NOT_CERTIFIED`), y los AVS ZIP `46207` (R → `AVS_UNAVAILABLE`), `46208` (S → `AVS_NOT_SUPPORTED`), `46209` (U → `AVS_ADDRESS_UNAVAILABLE`). Antes solo estaban en la doc; ahora existen en la SoT ejecutable.
+- `README.md` (fixture): tabla AVS/ZIP reconciliada con significados oficiales + tabla partial/prepaid con montos verificados.
+
+### Note
+
+- Los TCs `TS-AUTHORIZE-TC1023/1024/1036` que usaban "`SUCCESS` (override CVV/ZIP)" ahora pueden referenciar las keys dedicadas del policy.
+- Triggers por **monto** ($70.xx) siguen **deprecados** (phased out 2011) — no se usan; se prefieren los ZIP.
+
+---
+
 ## [2026-05-13] BL-025 Fase 1 — Documentación oficial creada
 
 ### Added

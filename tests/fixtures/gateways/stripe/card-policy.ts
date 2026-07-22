@@ -35,7 +35,8 @@
  *   | Happy path 3DS genérico                  | CARDS.HAPPY_3DS              | 3184  |
  *   | Happy path 3DS + hold/capture separados  | CARDS.HAPPY_3DS_HOLD_CAPTURE | 3184  |
  *   | Happy path 3DS single-shot (simple)      | CARDS.HAPPY_3DS_SINGLE       | 3220  |
- *   | 3DS con fallo de autenticación           | CARDS.FAIL_3DS               | 9235  |
+ *   | 3DS requerido → pago declinado nativo    | CARDS.FAIL_3DS               | 1629  |
+ *   | Fallo 3DS RECUPERABLE (retry → éxito)    | CARDS.HAPPY_3DS_SINGLE (3220)| 3220  |
  *   | Decline en authorize (rechazo inmediato) | CARDS.DECLINE_AUTHORIZE      | 0002  |
  *   | Decline en capture (falla al cobrar)     | CARDS.DECLINE_CAPTURE        | 9995  |
  *
@@ -97,9 +98,11 @@ export const CARDS = {
 	// ═══════════════════════════════════════════════════════════════════
 
 	/**
-	 * Fallo en autenticación 3DS — usuario rechaza el challenge o falla.
-	 * Stripe: `4000 0000 0000 9235`, visa_3ds_fail.
-	 * Resultado: challenge 3DS aparece pero la autenticación falla → NO_AUTORIZADO.
+	 * 3DS requerido → el pago se declina de forma nativa post-autenticación.
+	 * Stripe: `4000 0084 0000 1629`, visa_3ds_fail (= mismo número que declinedAfter3DS).
+	 * Resultado: challenge 3DS aparece, se completa, y el cobro es rechazado → NO_AUTORIZADO.
+	 * Es IRRECUPERABLE (el retry vuelve a declinar). Para fallo RECUPERABLE (fail→retry→éxito)
+	 * usar HAPPY_3DS_SINGLE (3220) rechazando el challenge con completeFail(). Cf. recovery specs.
 	 */
 	FAIL_3DS: STRIPE_TEST_CARDS.fail3DS,
 

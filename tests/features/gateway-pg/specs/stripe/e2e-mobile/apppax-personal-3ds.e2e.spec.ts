@@ -12,14 +12,23 @@
  *   - assigned driver
  *   - trip completed
  *   - negative wallet validation
+ *
+ * KATA conformance: DEFERRED a Fase 4 (capa mobile KATA). Runner = shell Playwright,
+ * device automation = Appium/WebdriverIO (PassengerTripHappyPathHarness · tests/mobile/appium/*).
+ * @TestFixture sólo expone Page/API/DB de Playwright — no existe tests/components/ui/mobile +
+ * fixture Appium; forzarlo inventaría arquitectura, así que se preserva TestBase + fixme.
+ * Normalizado no-destructivo: imports por alias (@TestBase/@features/@fixtures); los de
+ * tests/mobile/appium quedan relativos (no hay alias @mobile — Fase 4).
+ * @atc idmap: wallet pax -> área H (MG-172..174, MG-495-496); 3DS -> área D (MG-152..157).
+ *   mapeo por área aceptado (idmap API-level, sin 1:1 con e2e-mobile UI).
  */
 
-import { expect, test } from '../../../../../TestBase';
-import { GatewayPgJourneyOrchestrator } from '../../../helpers/GatewayPgJourneyOrchestrator';
-import { PASSENGER_FLOW2_SCENARIOS } from '../../../data/passenger-flow2-scenarios';
+import { expect, test } from '@TestBase';
+import { GatewayPgJourneyOrchestrator } from '@features/gateway-pg/helpers/GatewayPgJourneyOrchestrator';
+import { PASSENGER_FLOW2_SCENARIOS } from '@features/gateway-pg/data/passenger-flow2-scenarios';
 import { getPassengerAppConfig } from '../../../../../mobile/appium/config/appiumRuntime';
 import { PassengerTripHappyPathHarness } from '../../../../../mobile/appium/harness/PassengerTripHappyPathHarness';
-import { resolveCard } from '../../../../../fixtures/stripe/card-resolver';
+import { resolveCard } from '@fixtures/stripe/card-resolver';
 
 const orchestrator = new GatewayPgJourneyOrchestrator();
 
@@ -34,9 +43,21 @@ function createJourney(testCaseId: string) {
 	});
 }
 
-test.describe.serial('Gateway PG · E2E Mobile · App Pax Personal @gateway @stripe @e2e-hybrid @3ds @wallet', () => {
+test.describe.serial('Gateway PG · E2E Mobile · App Pax Personal @gateway @stripe @e2e-hybrid @3ds @wallet @regression', () => {
+	// Gate a nivel describe: sin servidor Appium el harness no se puede construir
+	// (getPassengerAppConfig lanza). El grupo SKIPea (no ERRORA) cuando no hay device.
+	test.skip(() => !process.env.APPIUM_SERVER_URL, 'Requiere servidor Appium Android activo (APPIUM_SERVER_URL).');
+
 	for (const scenario of PASSENGER_FLOW2_SCENARIOS) {
-		test(`[${scenario.testCaseId}] ${scenario.title} (${scenario.sourceCaseIds.join(' / ')})`, async () => {
+		test(`[${scenario.testCaseId}] ${scenario.title} (${scenario.sourceCaseIds.join(' / ')})`, {
+			annotation: [
+				{ type: 'tms', description: 'MG-148' },
+				{ type: 'tms', description: 'MG-152' },
+				{ type: 'tms', description: 'MG-153' },
+				{ type: 'tms', description: 'MG-158' },
+				{ type: 'tms', description: 'MG-161' },
+			],
+		}, async () => {
 			if (!scenario.active) {
 				test.fixme(true, scenario.requiresDriverPhase ? 'Passenger wallet and trip setup are ready, but driver handoff/post-trip evidence is still pending.' : 'Passenger negative evidence is still pending validation.');
 				return;

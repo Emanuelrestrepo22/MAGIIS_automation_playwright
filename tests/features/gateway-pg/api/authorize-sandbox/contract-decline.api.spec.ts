@@ -8,21 +8,22 @@
  * Variables de entorno requeridas: AUTHORIZE_API_LOGIN_ID + AUTHORIZE_TRANSACTION_KEY.
  */
 
-import { test, expect } from '@playwright/test';
-import { AUTHORIZE_CARDS } from '../../../../fixtures/gateways/authorize/card-policy';
-import { AuthorizeApiClient, hasAuthorizeCredentials } from '../../../../shared/utils/authorize-api-client';
+import { test, expect } from '@TestFixture';
+import { AUTHORIZE_CARDS } from '@fixtures/gateways/authorize/card-policy';
+import { AuthorizeSandboxApi, hasAuthorizeCredentials } from '@api/AuthorizeSandboxApi';
+import type { AuthorizeApiResponse } from '@schemas/authorize.types';
 
-test.describe('[BL-036][API] Authorize.net sandbox — Declines (Response Code 2)', () => {
+test.describe('[BL-036][API] Authorize.net sandbox — Declines (Response Code 2) @gateway @authorize @regression', () => {
 	test.skip(!hasAuthorizeCredentials(), 'AUTHORIZE_API_LOGIN_ID/TRANSACTION_KEY no seteadas en env');
 
 	test('Visa + ZIP 46282 → Response Code 2 (declined genérico)', async ({ request }) => {
-		const client = new AuthorizeApiClient(request);
+		const api = new AuthorizeSandboxApi({ request });
 
-		const response = await client.authOnlyTransaction(
-			AUTHORIZE_CARDS.DECLINE_GENERIC,
-			'10.00',
-			`bl-036-decline-zip-${Date.now()}`,
-		);
+		const response: AuthorizeApiResponse = await api.authorizeOnly({
+			card: AUTHORIZE_CARDS.DECLINE_GENERIC,
+			amount: '10.00',
+			refId: `bl-036-decline-zip-${Date.now()}`,
+		});
 
 		// resultCode puede ser "Ok" porque el request fue procesado correctamente,
 		// pero el transactionResponse.responseCode = "2" indica decline.

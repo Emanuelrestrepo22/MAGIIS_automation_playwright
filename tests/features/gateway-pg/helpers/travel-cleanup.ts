@@ -73,11 +73,12 @@ export async function captureCreatedTravelId(
 		},
 	};
 
-	// Acepta tanto /carriers/{id}/travels como /contractors/{id}/travels
-	// para cubrir el portal contractor que puede usar su propio prefijo.
-	const endpointPattern = new RegExp(
-		`/magiis-v0\\.2/(carriers|contractors)/${carrierId}/travels(?:[/?]|$)`,
-	);
+	// Acepta /carriers/{id}/travels y /contractors/{id}/travels con CUALQUIER id.
+	// El portal contractor postea a /contractors/{contractorId}/travels con un id
+	// propio (≠ carrierId 1521); fijar el id al carrier hacía que el POST del
+	// contractor nunca matcheara y `travelId` quedara null pese a crearse el viaje.
+	void carrierId;
+	const endpointPattern = /\/magiis-v0\.2\/(carriers|contractors)\/\d+\/travels(?:[/?]|$)/;
 
 	const handler = async (response: Response) => {
 		try {

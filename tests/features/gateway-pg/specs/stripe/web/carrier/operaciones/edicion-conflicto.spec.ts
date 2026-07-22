@@ -3,10 +3,15 @@
  * Feature: Edición en Conflicto — Carrier — Empresa Individuo
  * Precondición: Fallo de 3DS u otro error impide el hold (tarjeta bloqueada, sin fondos)
  * Tags: @regression @3ds @web-only
+ *
+ * KATA conformance (feature/kata-conformance): specs de placeholder (fixme). test del
+ * fixture KATA (@TestFixture). Sin ATC aún (no hay flujo implementado). Al implementar,
+ * mapear al área EDIT del idmap (MG-415+, Level UI) — mapeo por área aceptado.
  */
-import { test } from '../../../../../../../TestBase';
+import { test } from '@TestFixture';
 
-test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
+// El fixture KATA no define la opción `role` (login explícito en el flujo cuando se implemente).
+test.use({ storageState: undefined });
 
 test.describe('Gateway PG · Carrier · Empresa Individuo — Edición en Conflicto @gateway @stripe @hold @3ds @decline @regression', () => {
 

@@ -17,7 +17,18 @@
       "@features/*": ["./tests/features/*"],
       "@config/*": ["./tests/config/*"],
       "@utils/*": ["./tests/utils/*"],
-      "@TestBase": ["./tests/TestBase.ts"]
+      "@TestBase": ["./tests/TestBase.ts"],
+      "@components/*": ["./tests/components/*"],
+      "@ui/*": ["./tests/components/ui/*"],
+      "@api/*": ["./tests/components/api/*"],
+      "@steps/*": ["./tests/components/steps/*"],
+      "@db/*": ["./tests/components/db/*"],
+      "@schemas/*": ["./tests/features/gateway-pg/api/schemas/*"],
+      "@TestContext": ["./tests/components/TestContext.ts"],
+      "@UiFixture": ["./tests/components/UiFixture.ts"],
+      "@ApiFixture": ["./tests/components/ApiFixture.ts"],
+      "@TestFixture": ["./tests/components/TestFixture.ts"],
+      "@DbFixture": ["./tests/components/DbFixture.ts"]
     }
   },
   "include": [

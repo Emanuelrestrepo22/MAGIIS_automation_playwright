@@ -185,14 +185,15 @@ export class DriverHomeScreen extends AppiumSessionBase {
 	}
 
 	/**
-	 * Tap en el botón amarillo de "viaje calle" del home.
-	 * Selector confirmado DOM dump 2026-04-13:
-	 *   button.driver-home.home-icon-base  (clase completa: "driver-home home-icon-base general-position")
-	 *   text="O X.X mi"  ← distancia al pasajero más cercano disponible
+	 * Tap en el botón "Pasajero" del home → dispara startStreetTravel() (viaje de calle).
+	 * Selector real (source home.page.html:54-57, validado en device 2026-07):
+	 *   div.driver-pass.home-icon  (contiene <img> passenger-icon.svg + <span.pass-label> "Pasajero")
+	 *   (click) = driverStatusClosed ONLINE/OFFLINE ? startStreetTravel() : driverOnTripAlert()
 	 *
-	 * Este botón existe SOLO en el home screen (URL: /navigator/home).
-	 * Al taparlo navega a TravelConfirmPage con el viaje disponible más cercano.
-	 * Precondición: driver en estado "Disponible" con al menos un viaje calle disponible.
+	 * OJO — NO es `button.driver-home.home-icon-base`: ESE es el indicador "En Base"
+	 * (→ setInBase(), togglea sub-estado En Base/En Calle), NO el disparador del viaje de calle.
+	 * Selector alineado con scripts/start-viaje-calle-flow.ts (div.driver-pass.home-icon img).
+	 * Precondición: driver "Disponible" en /navigator/home.
 	 */
 	async tapViajeCalleButton(): Promise<boolean> {
 		await this.switchToWebView();
@@ -201,7 +202,7 @@ export class DriverHomeScreen extends AppiumSessionBase {
 			// Buscar en la página activa (no ion-page-hidden)
 			const activePage = document.querySelector('page-home:not(.ion-page-hidden), .ion-page:not(.ion-page-hidden)');
 			const scope: Document | Element = activePage ?? document;
-			const btn = scope.querySelector('button.driver-home.home-icon-base') as HTMLButtonElement | null;
+			const btn = scope.querySelector('div.driver-pass.home-icon') as HTMLElement | null;
 			if (btn && btn.offsetParent !== null) {
 				btn.click();
 				return true;
@@ -209,9 +210,9 @@ export class DriverHomeScreen extends AppiumSessionBase {
 			return false;
 		});
 		if (clicked) {
-			console.log('[DriverHomeScreen] ✓ Tap botón viaje calle (button.driver-home.home-icon-base)');
+			console.log('[DriverHomeScreen] ✓ Tap botón "Pasajero"/viaje calle (div.driver-pass.home-icon → startStreetTravel)');
 		} else {
-			console.warn('[DriverHomeScreen] tapViajeCalleButton: botón no encontrado o no visible');
+			console.warn('[DriverHomeScreen] tapViajeCalleButton: botón "Pasajero" (div.driver-pass.home-icon) no encontrado o no visible');
 		}
 		return clicked as boolean;
 	}
@@ -234,7 +235,9 @@ export class DriverHomeScreen extends AppiumSessionBase {
 					};
 					const textOf = (element: Element): string => normalize((element as HTMLElement).innerText || element.textContent);
 
-					// Selector confirmado: button.driver-home.home-icon-base (DOM dump 2026-04-09)
+					// Heurística amplia por texto para ubicar la card del viaje asignado.
+					// NOTA: button.driver-home.home-icon-base es el indicador "En Base" (no la card);
+					// se incluye solo como uno más de la lista de candidatos, no como selector confirmado.
 					const candidates = Array.from(document.querySelectorAll(
 						'button.driver-home.home-icon-base, [id*="trip"], [class*="trip-card"], [role="button"], button, ion-card, a, article, li'
 					)) as HTMLElement[];
@@ -323,7 +326,8 @@ export class DriverHomeScreen extends AppiumSessionBase {
 
 	/**
 	 * Espera a que el driver vuelva al home después de cerrar un viaje.
-	 * Selector confirmado del dump: button.driver-home.home-icon-base.
+	 * Marcador de home: componente `page-home` (fallback: indicador "En Base"
+	 * button.driver-home.home-icon-base, que vive en el home) + URL de home.
 	 * URL confirmada: /navigator/home;FROM_TRAVEL_CLOSED=true
 	 */
 	async waitForReturnedHomeAfterTripClosed(timeout = 30_000): Promise<boolean> {
@@ -338,7 +342,8 @@ export class DriverHomeScreen extends AppiumSessionBase {
 			}
 
 			const url = await driver.execute<string, []>(() => window.location.href).catch(() => '');
-			const homeVisible = await driver.$('button.driver-home.home-icon-base').isDisplayed().catch(() => false);
+			const homeVisible = (await driver.$('page-home').isDisplayed().catch(() => false))
+				|| (await driver.$('button.driver-home.home-icon-base').isDisplayed().catch(() => false));
 			const isHomeUrl = /\/navigator\/home(?:[;?].*)?/i.test(url);
 			const closedFlag = /FROM_TRAVEL_CLOSED=true/i.test(url);
 
@@ -383,7 +388,57 @@ export class DriverHomeScreen extends AppiumSessionBase {
 		return false;
 	}
 
+	/**
+	 * App reinstalada 2026-07: tras login la app cae en `/pre-home` (overlay de bienvenida,
+	 * driver OFFLINE). `#availability` NO existe ahí; vive en `/navigator/home`. Para pasar,
+	 * hay que tap en `.carrier-overlay` → `hideOverlay()` navega a home cuando terminó de
+	 * cargar servicios. Source: src/app/pages/pre-home/pre-home.page.ts (hideOverlay →
+	 * router.navigate(['/navigator/home', {FROM_LOGIN:true}])).
+	 *
+	 * Idempotente: si ya estamos en /navigator/home (o en apps viejas que van directo), retorna true.
+	 */
+	async dismissPreHomeOverlayIfPresent(timeout = 25_000): Promise<boolean> {
+		const driver = this.getDriver();
+		const deadline = Date.now() + timeout;
+
+		const urlNow = async (): Promise<string> => {
+			await this.switchToWebView(3_000);
+			return driver.execute<string, []>(() => window.location.href).catch(() => '');
+		};
+
+		while (Date.now() < deadline) {
+			const url = await urlNow();
+			// Cualquier ruta /navigator/* (home, TravelConfirmPage, etc.) = ya pasamos el overlay pre-home.
+			if (/\/navigator\//i.test(url)) return true;
+			if (/pre-home/i.test(url)) {
+				// hideOverlay() sólo navega si finishLoadService=true; el overlay muestra
+				// "continue_message" (listo) vs "loading_services" (aún cargando).
+				const ready = await driver
+					.execute<boolean, []>(() => {
+						const msgs = Array.from(document.querySelectorAll('.continue-msg')) as HTMLElement[];
+						return msgs.some((m) => m.offsetParent !== null && (m.innerText ?? '').trim().length > 0);
+					})
+					.catch(() => false);
+				// Angular (click)="hideOverlay()" requiere tap REAL (no execute()).
+				const overlay = driver.$('.carrier-overlay');
+				if (await overlay.isDisplayed().catch(() => false)) {
+					await overlay.click().catch(() => undefined);
+				}
+				if (!ready) {
+					// servicios aún cargando: dar tiempo antes de reintentar.
+					await driver.pause(1_500);
+				}
+			}
+			await driver.pause(1_000);
+		}
+
+		return /\/navigator\//i.test(await urlNow());
+	}
+
 	async goOnline(): Promise<void> {
+		// Nuevo flujo: asegurar que salimos del overlay /pre-home antes de buscar #availability.
+		await this.dismissPreHomeOverlayIfPresent().catch(() => false);
+
 		if (await this.isDriverOnline()) {
 			return;
 		}

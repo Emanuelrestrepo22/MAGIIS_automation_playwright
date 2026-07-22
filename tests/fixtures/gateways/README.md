@@ -27,10 +27,16 @@ fixtures/gateways/
 │   ├── card-policy.ts       — namespace AUTHORIZE_CARDS
 │   ├── card-resolver.ts     — resolver Authorize-specific
 │   └── README.md            — tabla de triggers CVV/ZIP
-├── mercadopago/             ← 🔴 investigación pendiente (BL-026)
-│   └── README.md
-└── ebizcharge/              ← 🔴 investigación pendiente (BL-027)
-    └── README.md
+├── mercado-pago/            ← 🟡 SoT datos + docs listas, runtime pendiente (BL-026)
+│   ├── cards.ts             — SoT canónica MercadoPago (outcome por holderName)
+│   ├── card-policy.ts       — namespace MP_CARDS
+│   ├── card-resolver.ts     — resolver MP-specific
+│   └── README.md            — keywords de estado + catálogo
+└── ebizcharge/              ← 🟡 SoT datos + docs listas, runtime pendiente (BL-027)
+    ├── cards.ts             — SoT canónica eBizCharge (outcome por número)
+    ├── card-policy.ts       — namespace EBIZ_CARDS
+    ├── card-resolver.ts     — resolver eBiz-specific
+    └── README.md            — tabla de tarjetas + triggers
 ```
 
 ## Cómo cada gateway dispara outcomes
@@ -39,8 +45,8 @@ fixtures/gateways/
 |---------------|----------------------------------------------------|--------------|---------------------------------|
 | **Stripe**    | El **número de tarjeta** determina el resultado    | Sí           | 🟢 Producción activa            |
 | **Authorize** | El **CVV o ZIP** sobre tarjeta fija determina      | No           | 🟡 SoT lista, sin runtime        |
-| **MercadoPago** | El **`holderName`** + tarjetas fijas             | No           | 🔴 Investigación pendiente      |
-| **eBizCharge** | A investigar                                      | A investigar | 🔴 Investigación pendiente      |
+| **MercadoPago** | El **`holderName`** (keyword) + tarjetas fijas   | No           | 🟡 SoT datos + docs, sin runtime |
+| **eBizCharge** | El **número de tarjeta** determina el resultado    | No           | 🟡 SoT datos + docs, sin runtime |
 
 ## Cómo agregar un nuevo gateway (checklist de 5 pasos)
 

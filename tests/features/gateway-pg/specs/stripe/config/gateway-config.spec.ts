@@ -2,10 +2,15 @@
  * TCs: TS-STRIPE-TC1001 – TC1008
  * Feature: Configuración de Pasarela Stripe en Magiis App Store
  * Tags: @smoke @critical @web-only
+ *
+ * KATA conformance (feature/kata-conformance): specs de placeholder (fixme). test del
+ * fixture KATA (@TestFixture). Sin ATC aún (no hay flujo implementado). Al implementar,
+ * mapear al área CFG del idmap (MG-211+, Level UI) — mapeo por área aceptado.
  */
-import { test } from '../../../../../TestBase';
+import { test } from '@TestFixture';
 
-test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
+// El fixture KATA no define la opción `role` (login explícito en el flujo cuando se implemente).
+test.use({ storageState: undefined });
 
 test.describe('Gateway PG · Configuración Pasarela Stripe @gateway @stripe @wallet @regression', () => {
 

@@ -19,6 +19,7 @@
     "test:test:gateway:3ds": "cross-env ENV=test npx playwright test -c playwright.gateway-pg.config.ts --grep=@3ds --workers=1",
     "test:test:gateway:unit": "cross-env ENV=test npx playwright test -c playwright.gateway-pg.config.ts --project=unit",
     "test:test:gateway:api": "cross-env ENV=test npx playwright test -c playwright.gateway-pg.config.ts --project=api",
+    "test:uat:mx6057:api": "cross-env ENV=uat npx playwright test --project=api tests/features/gateway-pg/api/service-type-counts-reset -c playwright.gateway-pg.config.ts",
     "test:e2e:flow1": "cross-env ENV=test npx playwright test tests/e2e/gateway/flow1-carrier-driver/flow1.e2e.spec.ts --project=chromium --workers=1",
     "test:e2e:flow1:web-only": "cross-env ENV=test E2E_WEB_ONLY=true npx playwright test tests/e2e/gateway/flow1-carrier-driver/flow1.e2e.spec.ts --project=chromium --workers=1",
     "test:e2e:flow1:mobile": "cross-env ENV=test npx ts-node --esm tests/e2e/gateway/flow1-carrier-driver/mobile-phase.ts",
@@ -66,8 +67,8 @@
     "appium:passenger:login-dump": "pnpm exec ts-node --esm tests/mobile/appium/scripts/passenger-login-and-dump.ts",
     "clean:evidence": "rm -rf evidence",
     "clean:all": "rm -rf evidence test-results playwright-report allure-results allure-report",
-    "allure:gen": "allure generate --clean -o allure-report",
-    "allure:open": "npx http-server allure-report -p 7070",
+    "allure:gen": "allure generate ./allure-results -o allure-report",
+    "allure:open": "allure open allure-report",
     "lint": "cross-env ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts",
     "lint:fix": "cross-env ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts --fix",
     "prettier:check": "npx prettier --check tests/**/*.ts",
@@ -102,10 +103,11 @@
     "@faker-js/faker": "^10.1.0",
     "@playwright/test": "^1.56.1",
     "@types/node": "^24.10.1",
+    "@types/oracledb": "^7.0.1",
     "@typescript-eslint/eslint-plugin": "^8.47.0",
     "@typescript-eslint/parser": "^8.47.0",
     "@wdio/globals": "^9.27.0",
-    "allure-commandline": "^2.33.0",
+    "allure": "^3.14.3",
     "allure-playwright": "^3.2.0",
     "cross-env": "^7.0.3",
     "eslint": "^9.39.1",
@@ -127,6 +129,7 @@
   },
   "dependencies": {
     "dotenv": "^17.2.3",
-    "openai": "^6.33.0"
+    "openai": "^6.33.0",
+    "oracledb": "^7.0.1"
   }
 }

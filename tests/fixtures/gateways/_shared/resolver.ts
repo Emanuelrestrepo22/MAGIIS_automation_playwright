@@ -26,6 +26,10 @@ import type { StripeTestCard } from '../stripe/cards';
 import { AUTHORIZE_CARDS } from '../authorize/card-policy';
 import { resolveCard as authorizeResolveCard, type AuthorizeCardId } from '../authorize/card-resolver';
 import type { AuthorizeTestCard } from '../authorize/cards';
+import { resolveCard as ebizResolveCard, type EbizCardId } from '../ebizcharge/card-resolver';
+import type { EbizTestCard } from '../ebizcharge/cards';
+import { resolveCard as mpResolveCard, type MercadoPagoCardId } from '../mercado-pago/card-resolver';
+import type { MercadoPagoTestCard } from '../mercado-pago/cards';
 import type { CardIntent, GenericTestCard, ResolveCardArgs } from './types';
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -42,7 +46,7 @@ const STRIPE_INTENT_MAP: Record<CardIntent, keyof typeof CARDS> = {
 	FAIL_AUTH: 'FAIL_3DS',
 	DECLINE_AUTHORIZE: 'DECLINE_AUTHORIZE',
 	DECLINE_CAPTURE: 'DECLINE_CAPTURE',
-	DECLINE_INVALID_CVC: 'DECLINE_INVALID_CVC',
+	DECLINE_INVALID_CVC: 'DECLINE_INVALID_CVC'
 };
 
 /**
@@ -53,7 +57,28 @@ const STRIPE_INTENT_MAP: Record<CardIntent, keyof typeof CARDS> = {
 const AUTHORIZE_INTENT_MAP: Partial<Record<CardIntent, AuthorizeCardId>> = {
 	HAPPY_NO_AUTH: 'SUCCESS',
 	DECLINE_AUTHORIZE: 'DECLINE_GENERIC',
-	DECLINE_INVALID_CVC: 'DECLINE_CVV',
+	DECLINE_INVALID_CVC: 'DECLINE_CVV'
+};
+
+/**
+ * Mapping eBizCharge — soporte parcial (BL-027). eBiz no expone 3DS
+ * (HAPPY_AUTH/FAIL_AUTH) ni un decline específico de capture (DECLINE_CAPTURE).
+ * El outcome lo determina el número de tarjeta (como Stripe).
+ */
+const EBIZCHARGE_INTENT_MAP: Partial<Record<CardIntent, EbizCardId>> = {
+	HAPPY_NO_AUTH: 'SUCCESS',
+	DECLINE_AUTHORIZE: 'DECLINE_DO_NOT_HONOR',
+	DECLINE_INVALID_CVC: 'DECLINE_CVV'
+};
+
+/**
+ * Mapping MercadoPago — soporte parcial (BL-026). MP dispara el outcome por el NOMBRE
+ * del titular (keyword). No expone 3DS (HAPPY_AUTH/FAIL_AUTH) ni decline de capture.
+ */
+const MERCADO_PAGO_INTENT_MAP: Partial<Record<CardIntent, MercadoPagoCardId>> = {
+	HAPPY_NO_AUTH: 'APPROVED',
+	DECLINE_AUTHORIZE: 'REJECTED_OTHER',
+	DECLINE_INVALID_CVC: 'REJECTED_INVALID_CVV'
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -71,7 +96,7 @@ function normalizeStripeCard(card: StripeTestCard, intent: CardIntent): GenericT
 		holderName: card.holderName,
 		zip: card.zip_code,
 		expectedOutcome: intent.toLowerCase().replace(/_/g, '-'),
-		requires3ds: intentsRequiring3DS.includes(intent),
+		requires3ds: intentsRequiring3DS.includes(intent)
 	};
 }
 
@@ -85,7 +110,37 @@ function normalizeAuthorizeCard(card: AuthorizeTestCard): GenericTestCard {
 		holderName: card.holderName,
 		zip: card.zip,
 		expectedOutcome: card.expectedOutcome,
-		requires3ds: false,
+		requires3ds: false
+	};
+}
+
+function normalizeEbizchargeCard(card: EbizTestCard): GenericTestCard {
+	// card.exp viene en formato MMYY (ej. '0930'); el shape común usa 'MM/YY'.
+	const expiry = `${card.exp.slice(0, 2)}/${card.exp.slice(2)}`;
+	return {
+		gateway: 'ebizcharge',
+		number: card.number,
+		last4: card.number.slice(-4),
+		expiry,
+		cvc: card.cvc,
+		holderName: card.holderName,
+		expectedOutcome: card.expectedOutcome,
+		requires3ds: false
+	};
+}
+
+function normalizeMercadoPagoCard(card: MercadoPagoTestCard): GenericTestCard {
+	// En MP `holderName` es el TRIGGER del outcome (keyword de estado), no un dato inerte.
+	// card.exp ya viene en formato MM/YY ('11/30').
+	return {
+		gateway: 'mercado-pago',
+		number: card.number,
+		last4: card.number.slice(-4),
+		expiry: card.exp,
+		cvc: card.cvc,
+		holderName: card.holderName,
+		expectedOutcome: card.expectedOutcome,
+		requires3ds: false
 	};
 }
 
@@ -96,7 +151,8 @@ function normalizeAuthorizeCard(card: AuthorizeTestCard): GenericTestCard {
 /**
  * Resuelve una tarjeta cross-gateway por intención.
  *
- * @throws Si el gateway no está soportado todavía (mercadopago, ebizcharge).
+ * Los 4 gateways (stripe, authorize, mercado-pago, ebizcharge) tienen datos; el soporte
+ * de intents por gateway es parcial (ver *_INTENT_MAP).
  * @throws Si el intent no aplica para ese gateway específico.
  */
 export function resolveCard({ gateway, intent }: ResolveCardArgs): GenericTestCard {
@@ -104,9 +160,7 @@ export function resolveCard({ gateway, intent }: ResolveCardArgs): GenericTestCa
 		case 'stripe': {
 			const policyKey = STRIPE_INTENT_MAP[intent];
 			if (!policyKey) {
-				throw new Error(
-					`Intent '${intent}' no soportado por gateway 'stripe' — agregar mapping en STRIPE_INTENT_MAP.`,
-				);
+				throw new Error(`Intent '${intent}' no soportado por gateway 'stripe' — agregar mapping en STRIPE_INTENT_MAP.`);
 			}
 			const cardNumber = CARDS[policyKey] as StripeCardId;
 			const stripeCard = stripeResolveCard(cardNumber);
@@ -116,23 +170,29 @@ export function resolveCard({ gateway, intent }: ResolveCardArgs): GenericTestCa
 		case 'authorize': {
 			const policyKey = AUTHORIZE_INTENT_MAP[intent];
 			if (!policyKey) {
-				throw new Error(
-					`Intent '${intent}' no soportado por gateway 'authorize' — el sandbox no expone ese comportamiento (verificar AUTHORIZE_INTENT_MAP).`,
-				);
+				throw new Error(`Intent '${intent}' no soportado por gateway 'authorize' — el sandbox no expone ese comportamiento (verificar AUTHORIZE_INTENT_MAP).`);
 			}
 			const authorizeCard = authorizeResolveCard(policyKey);
 			return normalizeAuthorizeCard(authorizeCard);
 		}
 
-		case 'mercado-pago':
-			throw new Error(
-				"Gateway 'mercado-pago' aún no soportado — investigación pendiente (BL-026).",
-			);
+		case 'mercado-pago': {
+			const policyKey = MERCADO_PAGO_INTENT_MAP[intent];
+			if (!policyKey) {
+				throw new Error(`Intent '${intent}' no soportado por gateway 'mercado-pago' — MP no expone ese comportamiento (sin 3DS ni decline de capture; verificar MERCADO_PAGO_INTENT_MAP).`);
+			}
+			const mpCard = mpResolveCard(policyKey);
+			return normalizeMercadoPagoCard(mpCard);
+		}
 
-		case 'ebizcharge':
-			throw new Error(
-				"Gateway 'ebizcharge' aún no soportado — investigación pendiente (BL-027).",
-			);
+		case 'ebizcharge': {
+			const policyKey = EBIZCHARGE_INTENT_MAP[intent];
+			if (!policyKey) {
+				throw new Error(`Intent '${intent}' no soportado por gateway 'ebizcharge' — eBiz no expone ese comportamiento (sin 3DS ni decline de capture; verificar EBIZCHARGE_INTENT_MAP).`);
+			}
+			const ebizCard = ebizResolveCard(policyKey);
+			return normalizeEbizchargeCard(ebizCard);
+		}
 
 		default: {
 			const exhaustive: never = gateway;
@@ -147,6 +207,6 @@ export function resolveCard({ gateway, intent }: ResolveCardArgs): GenericTestCa
 export const SUPPORTED_INTENTS_BY_GATEWAY = {
 	stripe: Object.keys(STRIPE_INTENT_MAP) as CardIntent[],
 	authorize: Object.keys(AUTHORIZE_INTENT_MAP) as CardIntent[],
-	'mercado-pago': [] as CardIntent[],
-	ebizcharge: [] as CardIntent[],
+	'mercado-pago': Object.keys(MERCADO_PAGO_INTENT_MAP) as CardIntent[],
+	ebizcharge: Object.keys(EBIZCHARGE_INTENT_MAP) as CardIntent[]
 } as const;

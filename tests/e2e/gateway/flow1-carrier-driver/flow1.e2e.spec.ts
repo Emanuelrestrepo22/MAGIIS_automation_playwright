@@ -144,6 +144,26 @@ function runFlow1Test(tcId: string, config: GatewayFlowConfig) {
 			console.log(`[flow1.spec][${tcId}] ✓ JourneyContext listo — ${ctx.status}`);
 		});
 
+		// ── VALIDACIÓN DB (trifuerza UI+DB) — opt-in vía ORACLE_TRIP_SQL ─────────
+		await test.step('[VALIDATE-DB] Trifuerza — el viaje existe en Oracle', async () => {
+			const tripSql = process.env.ORACLE_TRIP_SQL;
+			if (!tripSql || !tripId) {
+				console.warn(
+					`[flow1.spec][${tcId}] Trifuerza DB omitida ` +
+					'(ORACLE_TRIP_SQL sin setear o tripId vacío).',
+				);
+				return;
+			}
+			// OracleDb (componente KATA, guard SELECT-only). Import dinámico + opt-in para
+			// no exigir Oracle cuando el step no aplica. Materializa la capa DB de la trifuerza.
+			// La query se resuelve por env (ORACLE_TRIP_SQL, bind :tripId) para no hardcodear esquema.
+			const { OracleDb } = await import('../../../components/db/OracleDb');
+			const rows = await new OracleDb().query(tripSql, { tripId });
+			// Debería existir la fila del viaje creado por la fase web.
+			expect(rows.length, `El viaje ${tripId} debería existir en Oracle`).toBeGreaterThan(0);
+			console.log(`[flow1.spec][${tcId}] ✓ Trifuerza DB — viaje ${tripId} presente en Oracle`);
+		});
+
 		// ── FASE MOBILE ────────────────────────────────────────────────────────
 		if (WEB_ONLY) {
 			test.fixme(

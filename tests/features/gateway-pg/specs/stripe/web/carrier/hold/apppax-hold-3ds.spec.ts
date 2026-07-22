@@ -11,12 +11,20 @@
  *
  * Ejecución: ENV=test npx playwright test apppax-hold-3ds -c playwright.gateway-pg.config.ts --workers=1
  */
-import { expect, type Page } from '@playwright/test';
-import { test } from '../../../../../../../TestBase';
-import { DashboardPage, NewTravelPage, OperationalPreferencesPage, ThreeDSModal, TravelManagementPage } from '../../../../../../../pages/carrier';
+import type { Page } from '@playwright/test';
+// KATA conformance (feature/kata-conformance): este spec es la prueba de patrón del refactor a KATA.
+//   - test/expect vienen del fixture unificado KATA (@TestFixture) en vez de TestBase.
+//   - el modal 3DS usa el componente KATA `ThreeDsChallengePage extends UiBase` (@ui) en vez del POM ThreeDSModal.
+//   - los POMs del sustrato carrier (Dashboard/NewTravel/OperationalPreferences/TravelManagement) siguen intactos.
+// Mapeo TS-STRIPE-TC10xx → MG: no hay 1:1 en el idmap (API-level). ATCs del challenge 3DS mapeados
+// al área D (MG-152/MG-153) dentro del componente — PENDIENTE REASIGNAR cuando el ATP tenga TCs UI 3DS.
+import { test, expect } from '@TestFixture';
+import { DashboardPage, NewTravelPage, OperationalPreferencesPage, TravelManagementPage } from '../../../../../../../pages/carrier';
+import { ThreeDsChallengePage } from '@ui/ThreeDsChallengePage';
 import { loginAsDispatcher, STRIPE_TEST_CARDS, TEST_DATA } from '../../../../../fixtures/gateway.fixtures';
 import { waitForTravelCreation } from '../../../../../helpers/stripe.helpers';
 import { validateCardPrecondition, type CardPreconditionResult } from '../../../../../helpers/card-precondition';
+import { setHoldViaApi } from '../../../../../helpers/parameters-api';
 import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../../../../helpers/travel-cleanup';
 import { PASSENGERS } from '../../../../../data/passengers';
 import { debugLog } from '../../../../../../../helpers';
@@ -25,48 +33,18 @@ function shortDestination(destination: string): string {
 	return destination.split(',')[0].trim();
 }
 
-type ParametersSavePayload = {
-	enableCreditCardHold?: boolean;
-	ccHoldPreviousHs?: number | string;
-	ccHoldCoverage?: number | string;
-	[key: string]: unknown;
-};
-
-const PARAMETERS_SAVE_URL = /\/magiis-v0\.2\/carriers\/\d+\/parameters$/;
-
+// BL-i18n/v1.72.8: en v1.72.8 el toggle de pre-autorización en la UI no habilita
+// "Guardar" ni persiste (exploratory 2026-07-20). El setup fija el hold vía API.
 async function disableHoldAndSave(preferences: OperationalPreferencesPage): Promise<void> {
-	await preferences.goto();
-	await preferences.setHoldEnabled(false);
-
-	const saveResult = await preferences.saveAndCaptureParametersPayload();
-	expect(saveResult.url).toContain('/magiis-v0.2/carriers/1521/parameters');
-	expect(saveResult.payload.enableCreditCardHold).toBe(false);
-	expect(saveResult.payload.ccHoldPreviousHs).toBe(2);
-	expect(saveResult.payload.ccHoldCoverage).toBe(10);
-
-	await preferences.assertHoldDisabled();
+	const params = await setHoldViaApi(preferences.getPage(), false);
+	expect(params.enableCreditCardHold).toBe(false);
 }
 
-async function restoreHoldAndSave(page: Page, preferences: OperationalPreferencesPage): Promise<void> {
-	await preferences.goto();
-	await preferences.setHoldEnabled(true);
-
-	const responsePromise = page.waitForResponse(
-		(response) => response.request().method() === 'POST' && PARAMETERS_SAVE_URL.test(response.url()),
-		{ timeout: 15_000 }
-	);
-
-	await preferences.save();
-
-	const response = await responsePromise;
-	expect(response.ok()).toBeTruthy();
-
-	const payload = response.request().postDataJSON() as ParametersSavePayload;
-	expect(payload.enableCreditCardHold).toBe(true);
-	expect(payload.ccHoldPreviousHs).toBe(2);
-	expect(payload.ccHoldCoverage).toBe(10);
-
-	await preferences.assertHoldEnabled();
+async function restoreHoldAndSave(page: Page, _preferences: OperationalPreferencesPage): Promise<void> {
+	const params = await setHoldViaApi(page, true);
+	expect(params.enableCreditCardHold).toBe(true);
+	expect(params.ccHoldPreviousHs).toBe(2);
+	expect(params.ccHoldCoverage).toBe(10);
 }
 
 type Hold3dsScenario = {
@@ -83,8 +61,8 @@ async function runHoldOnScenario(page: Page, scenario: Hold3dsScenario): Promise
 	const preferences = new OperationalPreferencesPage(page);
 	const travel = new NewTravelPage(page);
 	const management = new TravelManagementPage(page);
-	const threeDS = new ThreeDSModal(page);
-	const cardLast4 = scenario.cardLast4 || STRIPE_TEST_CARDS.success3DS.slice(-4);
+	const threeDS = new ThreeDsChallengePage({ page });
+	const cardLast4 = scenario.cardLast4 || STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4);
 	let travelIdRef: TravelIdRef | null = null;
 
 	await test.step('Login carrier', async () => {
@@ -174,8 +152,8 @@ async function runHoldOffScenario(page: Page, scenario: Hold3dsScenario): Promis
 	const preferences = new OperationalPreferencesPage(page);
 	const travel = new NewTravelPage(page);
 	const management = new TravelManagementPage(page);
-	const threeDS = new ThreeDSModal(page);
-	const cardLast4 = scenario.cardLast4 || STRIPE_TEST_CARDS.success3DS.slice(-4);
+	const threeDS = new ThreeDsChallengePage({ page });
+	const cardLast4 = scenario.cardLast4 || STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4);
 	let travelIdRef: TravelIdRef | null = null;
 
 	await loginAsDispatcher(page);
@@ -257,7 +235,8 @@ async function runHoldOffScenario(page: Page, scenario: Hold3dsScenario): Promis
 	}
 }
 
-test.use({ role: 'carrier', storageState: undefined });
+// El fixture KATA no define la opción `role` (login explícito vía loginAsDispatcher(page)).
+test.use({ storageState: undefined });
 
 test.describe('Gateway PG · Carrier · App Pax — Hold con 3DS @gateway @stripe @hold @3ds @critical @regression', () => {
 

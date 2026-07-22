@@ -275,6 +275,30 @@ export abstract class NewTravelPageBase extends BasePage {
 		return false;
 	}
 
+	/**
+	 * Clickea una opción de dirección y VERIFICA el commit (la lista de opciones se cierra).
+	 * Reintenta el click 1 vez si no confirmó. Reemplaza el click fire-and-forget
+	 * (`click()` + `waitForTimeout`) que en headless dejaba el dropdown abierto y el valor sin
+	 * commitear, bloqueando el campo siguiente (origen→destino). Ver scope release 17080.
+	 */
+	private async commitPlaceOption(place: Locator, option: Locator): Promise<boolean> {
+		for (let attempt = 0; attempt < 2; attempt += 1) {
+			if (!(await option.isVisible().catch(() => false))) {
+				return false;
+			}
+			await option.click();
+			const committed = await expect
+				.poll(async () => place.getByRole('listitem').count(), { timeout: 3_000 })
+				.toBe(0)
+				.then(() => true)
+				.catch(() => false);
+			if (committed) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	private async searchPlace(place: Locator, address: string, options: { keepExistingOnNoResults: boolean; avoidText?: string } = { keepExistingOnNoResults: false }): Promise<void> {
 		const currentText = normalizeText(await place.textContent());
 		const desiredText = normalizeText(address);
@@ -291,20 +315,14 @@ export abstract class NewTravelPageBase extends BasePage {
 		await this.waitForAutocompleteOptionsReady(place, { timeoutMs: 4_000 });
 
 		const suggestionText = address.split(',').slice(0, -1).join(',').trim() || address;
-		const suggestion = place.getByText(new RegExp(escapeRegExp(suggestionText), 'i')).first();
+		const suggestion = place.getByRole('listitem').filter({ hasText: new RegExp(escapeRegExp(suggestionText), 'i') }).first();
 		const fallbackOption = place.getByRole('listitem').filter({ hasText: /\S/ }).first();
 
-		if (await suggestion.isVisible().catch(() => false)) {
-			await suggestion.click();
-			// NOTE(tier3-kept): post-click re-render Angular — campo actualiza async; no hay señal DOM inmediata
-			await this.page.waitForTimeout(500);
+		if (await this.commitPlaceOption(place, suggestion)) {
 			return;
 		}
 
-		if (await fallbackOption.isVisible().catch(() => false)) {
-			await fallbackOption.click();
-			// NOTE(tier3-kept): post-click re-render Angular — mismo patrón que suggestion path
-			await this.page.waitForTimeout(500);
+		if (await this.commitPlaceOption(place, fallbackOption)) {
 			return;
 		}
 
@@ -321,17 +339,11 @@ export abstract class NewTravelPageBase extends BasePage {
 		// BL-012 Fase 1: debounce Angular retry path — mismo patrón determinista que la primera pasada.
 		await this.waitForAutocompleteOptionsReady(place, { timeoutMs: 4_000 });
 
-		if (await suggestion.isVisible().catch(() => false)) {
-			await suggestion.click();
-			// NOTE(tier3-kept): post-click re-render Angular — retry path
-			await this.page.waitForTimeout(500);
+		if (await this.commitPlaceOption(place, suggestion)) {
 			return;
 		}
 
-		if (await fallbackOption.isVisible().catch(() => false)) {
-			await fallbackOption.click();
-			// NOTE(tier3-kept): post-click re-render Angular — retry path fallback
-			await this.page.waitForTimeout(500);
+		if (await this.commitPlaceOption(place, fallbackOption)) {
 			return;
 		}
 
@@ -863,6 +875,27 @@ export abstract class NewTravelPageBase extends BasePage {
 		await this.waitForEnabledButton(this.submitButton);
 		await this.waitForLoadingOverlayToDisappear();
 		await this.submitButton.click({ force: true });
+	}
+
+	/**
+	 * ASIGNACIÓN MANUAL (ref: tests/test-5.spec.ts). En vez de "Send Service" (que despacha al
+	 * pool de conductores con un timer de oferta), asigna el viaje DIRECTO a un conductor:
+	 *   "Send Manual" → "Assign" (fila del conductor) → "Assign" (confirmar).
+	 * Elimina el timer de oferta-candidato: el driver queda dueño del viaje.
+	 */
+	async clickSendManualAndAssign(): Promise<void> {
+		await this.waitForLoadingOverlayToDisappear();
+		// Locale-robusto: el ambiente puede estar en ES ("Enviar Manual"/"Asignar") o EN ("Send Manual"/"Assign").
+		await this.page.getByRole('button', { name: /Enviar Manual|Send Manual/i }).click();
+		// Modal con lista de conductores: "Asignar"/"Assign" de la fila (nth(1) según el recorder).
+		const assignRow = this.page.getByText(/Asignar|Assign/i);
+		await assignRow.nth(1).waitFor({ state: 'visible', timeout: 15_000 });
+		await assignRow.nth(1).click();
+		// Confirmar la asignación.
+		const assignConfirm = this.page.getByRole('button', { name: /Asignar|Assign/i });
+		await assignConfirm.waitFor({ state: 'visible', timeout: 15_000 });
+		await assignConfirm.click();
+		await this.waitForLoadingOverlayToDisappear();
 	}
 
 	async fillMinimum(opts: NewTravelFormInput): Promise<void> {

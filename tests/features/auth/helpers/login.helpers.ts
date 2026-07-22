@@ -17,6 +17,7 @@ import {
 } from '../../../fixtures/users';
 import { DashboardPage } from '../../../pages/carrier';
 import { LoginPage } from '../../../pages/shared';
+import { ensureSpanishLanguage } from '../../../pages/shared/i18n';
 
 type LoginPhase = 'goto' | 'submit' | 'dashboard';
 
@@ -52,6 +53,8 @@ export async function loginAsDispatcher(page: Page): Promise<void> {
 	await runLoginPhase('carrier', 'goto', () => loginPage.goto());
 	await runLoginPhase('carrier', 'submit', () => loginPage.login(dispatcher.email, dispatcher.password));
 	await runLoginPhase('carrier', 'dashboard', () => dashboardPage.ensureDashboardLoaded());
+	// BL-i18n: forzar ES (cuentas US arrancan en inglés y rompen selectores por texto).
+	await ensureSpanishLanguage(page);
 }
 
 /**
@@ -70,6 +73,8 @@ export async function loginAsContractor(page: Page): Promise<void> {
 	await runLoginPhase('contractor', 'goto', () => loginPage.goto());
 	await runLoginPhase('contractor', 'submit', () => loginPage.login(collaborator.email, collaborator.password));
 	await runLoginPhase('contractor', 'dashboard', () => dashboardPage.ensureDashboardLoaded());
+	// BL-i18n: forzar ES (cuentas US arrancan en inglés y rompen selectores por texto).
+	await ensureSpanishLanguage(page);
 }
 
 /**

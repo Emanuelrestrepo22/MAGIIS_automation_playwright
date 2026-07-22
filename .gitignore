@@ -72,3 +72,7 @@ GATEWAY_PG_ARCHITECTURE.md
 !docs/gateway-pg/ebizcharge/ARCHITECTURE.md
 !docs/ARCHITECTURE.md
 .mcp.json
+
+# Allure reporting
+allure-results/
+allure-report/

@@ -1,0 +1,3 @@
+# oracledb se usa en Thin mode (JS puro) → NO se ejecuta su build script nativo (Thick mode).
+allowBuilds:
+  oracledb: false

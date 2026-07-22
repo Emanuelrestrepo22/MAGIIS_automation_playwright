@@ -1,3 +1,11 @@
+> ⚠️ **SUPERSEDED / LEGACY (2026-07-17).** Este mapa usa el esquema viejo `TS-GATEWAY-TCnn`
+> y referencia rutas de specs que **ya no existen** (`stripe/hold-capture.spec.ts`,
+> `stripe/3ds-success.spec.ts`, `stripe/scheduled-hold.spec.ts`, `stripe/3ds-failure.spec.ts`,
+> `stripe/3ds-retry-card-change.spec.ts` — hoy reubicadas bajo `specs/stripe/web/carrier/{hold,recovery}/`).
+> **SoT de trazabilidad/IDs = `docs/gateway-pg/stripe/matriz_cases.md` + `matriz_cases2.md`** (esquema
+> `TS-STRIPE-TCxxxx` / `TS-STRIPE-P2-TCxxx`). No usar este archivo para nuevos specs; se conserva solo
+> como referencia histórica. Cobertura actual: `docs/reports/STOCK-REQUERIMIENTOS-GATEWAY-2026-07-17.md`.
+
 # gateway-pg Traceability Map
 
 ## TS-GATEWAY Stripe flows

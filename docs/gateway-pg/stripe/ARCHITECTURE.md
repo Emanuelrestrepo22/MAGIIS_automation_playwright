@@ -149,7 +149,7 @@ test.describe('Gateway PG · Carrier · App Pax — Hold con 3DS', () => {
 | `@hold` | Flujos con preautorización Stripe | Todos los TC con "Hold desde Alta de Viaje y Cobro desde App Driver" |
 | `@cargo-a-bordo` | Flujos de pago directo sin hold | TC1081–TC1121 |
 | `@antifraud` | Escenarios de tarjetas bloqueadas/antifraude | TC1087–TC1091, TC1102–TC1106, TC1117–TC1121 |
-| `@mobile` | Requiere Appium (fase mobile) | TC1009–TC1032, todos E2E híbridos |
+| `@e2e-hybrid` | Requiere Appium (fase mobile) | TC1009–TC1032, todos E2E híbridos |
 | `@web-only` | Solo Playwright, sin Appium | TC1001–TC1008, TC1033–TC1080, P2-TC001–P2-TC089 |
 | `@contractor` | Portal contractor | P2-TC001–TC006, P2-TC035–TC040 |
 | `@quote` | Flujo quote | P2-TC007–TC034 |
@@ -164,7 +164,7 @@ Ejecución por tag:
 ```bash
 npx playwright test --grep @smoke           # solo smoke
 npx playwright test --grep "@critical.*@3ds" # críticos con 3DS
-npx playwright test --grep-invert @mobile   # todo menos mobile
+npx playwright test --grep-invert @e2e-hybrid   # todo menos mobile
 ```
 
 ---
@@ -202,7 +202,7 @@ projects: [
   },
   {
     name: 'e2e-mobile',
-    grep: /@mobile/,
+    grep: /@e2e-hybrid/,
     use: { browserName: 'chromium' },
     // fase web solamente; la fase Appium se dispara desde el orquestador
   },
@@ -279,10 +279,10 @@ export const PASSENGERS = {
 | `carrier/operaciones/edicion-conflicto.spec.ts` | P2-TC084–TC089 | P2 | `@regression @3ds` | Playwright | ⬜ pendiente |
 | `contractor/vinculacion-tarjeta.spec.ts` | P2-TC001–TC006 | P2 | `@smoke @contractor` | Playwright | ⬜ pendiente |
 | `quote/quote-colaborador.spec.ts` | P2-TC011–TC018 | P3 | `@quote` | Playwright | ⬜ pendiente |
-| `e2e-mobile/apppax-personal-no3ds.e2e.spec.ts` | TC1009–TC1012 | P1 | `@mobile @hold` | Playwright+Appium | 🟡 draft active |
-| `e2e-mobile/apppax-personal-3ds.e2e.spec.ts` | TC1013–TC1016 | P1 | `@mobile @3ds @hold` | Playwright+Appium | 🟡 draft active |
-| `e2e-mobile/apppax-business-no3ds.e2e.spec.ts` | TC1017–TC1020, TC1025–TC1028 | P1 | `@mobile @hold` | Playwright+Appium | 🟡 draft active |
-| `e2e-mobile/apppax-business-3ds.e2e.spec.ts` | TC1021–TC1024, TC1029–TC1032 | P1 | `@mobile @3ds @hold` | Playwright+Appium | 🟡 draft active |
+| `e2e-mobile/apppax-personal-no3ds.e2e.spec.ts` | TC1009–TC1012 | P1 | `@e2e-hybrid @hold` | Playwright+Appium | 🟡 draft active |
+| `e2e-mobile/apppax-personal-3ds.e2e.spec.ts` | TC1013–TC1016 | P1 | `@e2e-hybrid @3ds @hold` | Playwright+Appium | 🟡 draft active |
+| `e2e-mobile/apppax-business-no3ds.e2e.spec.ts` | TC1017–TC1020, TC1025–TC1028 | P1 | `@e2e-hybrid @hold` | Playwright+Appium | 🟡 draft active |
+| `e2e-mobile/apppax-business-3ds.e2e.spec.ts` | TC1021–TC1024, TC1029–TC1032 | P1 | `@e2e-hybrid @3ds @hold` | Playwright+Appium | 🟡 draft active |
 
 **Leyenda:** ✅ verde · 🟡 parcial/draft · ⬜ pendiente · 🔴 bloqueado
 

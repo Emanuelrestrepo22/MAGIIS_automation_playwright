@@ -31,27 +31,13 @@
  *   <https://developer.authorize.net/hello_world/testing_guide.html>
  */
 
-export type AuthorizeCardBrand =
-	| 'visa'
-	| 'mastercard'
-	| 'amex'
-	| 'discover'
-	| 'diners'
-	| 'jcb';
+export type AuthorizeCardBrand = 'visa' | 'mastercard' | 'amex' | 'discover' | 'diners' | 'jcb';
 
 /**
  * Outcomes esperados del sandbox Authorize.net.
  * Cada uno está disparado por una combinación específica de CVV y/o ZIP.
  */
-export type AuthorizeOutcome =
-	| 'approved'
-	| 'declined-generic'
-	| 'cvv-mismatch'
-	| 'cvv-not-processed'
-	| 'avs-no-match'
-	| 'avs-non-us-issuer'
-	| 'partial-authorization'
-	| 'prepaid-zero-balance';
+export type AuthorizeOutcome = 'approved' | 'declined-generic' | 'cvv-mismatch' | 'cvv-not-processed' | 'cvv-should-be-present' | 'cvv-issuer-not-certified' | 'avs-no-match' | 'avs-non-us-issuer' | 'avs-unavailable' | 'avs-not-supported' | 'avs-address-unavailable' | 'partial-authorization' | 'prepaid-zero-balance';
 
 export type AuthorizeTestCard = {
 	number: string;
@@ -92,7 +78,7 @@ export const AUTHORIZE_TEST_CARDS = {
 		zip: '90210',
 		holderName: AUTHORIZE_DEFAULT_HOLDER,
 		expectedOutcome: 'approved',
-		description: 'Visa + CVV 900 (match) + ZIP neutro → approved (Response Code 1)',
+		description: 'Visa + CVV 900 (match) + ZIP neutro → approved (Response Code 1)'
 	},
 
 	mastercardSuccess: {
@@ -103,7 +89,7 @@ export const AUTHORIZE_TEST_CARDS = {
 		zip: '90210',
 		holderName: AUTHORIZE_DEFAULT_HOLDER,
 		expectedOutcome: 'approved',
-		description: 'Mastercard + CVV 900 + ZIP neutro → approved',
+		description: 'Mastercard + CVV 900 + ZIP neutro → approved'
 	},
 
 	amexSuccess: {
@@ -114,7 +100,7 @@ export const AUTHORIZE_TEST_CARDS = {
 		zip: '90210',
 		holderName: AUTHORIZE_DEFAULT_HOLDER,
 		expectedOutcome: 'approved',
-		description: 'Amex + CVV 9000 (4 dígitos) + ZIP neutro → approved',
+		description: 'Amex + CVV 9000 (4 dígitos) + ZIP neutro → approved'
 	},
 
 	discoverSuccess: {
@@ -125,7 +111,7 @@ export const AUTHORIZE_TEST_CARDS = {
 		zip: '90210',
 		holderName: AUTHORIZE_DEFAULT_HOLDER,
 		expectedOutcome: 'approved',
-		description: 'Discover + CVV 900 + ZIP neutro → approved',
+		description: 'Discover + CVV 900 + ZIP neutro → approved'
 	},
 
 	// ═══════════════════════════════════════════════════════════════════
@@ -140,7 +126,7 @@ export const AUTHORIZE_TEST_CARDS = {
 		zip: '46282', // trigger declined
 		holderName: AUTHORIZE_DEFAULT_HOLDER,
 		expectedOutcome: 'declined-generic',
-		description: 'Visa + ZIP 46282 → Response Code 2 (declined genérico)',
+		description: 'Visa + ZIP 46282 → Response Code 2 (declined genérico)'
 	},
 
 	// ═══════════════════════════════════════════════════════════════════
@@ -155,7 +141,7 @@ export const AUTHORIZE_TEST_CARDS = {
 		zip: '90210',
 		holderName: AUTHORIZE_DEFAULT_HOLDER,
 		expectedOutcome: 'cvv-mismatch',
-		description: 'Visa + CVV 901 → CVV "N: Does NOT Match"',
+		description: 'Visa + CVV 901 → CVV "N: Does NOT Match"'
 	},
 
 	cvvNotProcessed: {
@@ -166,7 +152,29 @@ export const AUTHORIZE_TEST_CARDS = {
 		zip: '90210',
 		holderName: AUTHORIZE_DEFAULT_HOLDER,
 		expectedOutcome: 'cvv-not-processed',
-		description: 'Visa + CVV 904 → CVV "P: Is NOT Processed"',
+		description: 'Visa + CVV 904 → CVV "P: Is NOT Processed"'
+	},
+
+	cvvShouldBePresent: {
+		number: '4111111111111111',
+		brand: 'visa',
+		exp: AUTHORIZE_DEFAULT_EXPIRY,
+		cvc: '902', // trigger CVV "should be on card, but not indicated"
+		zip: '90210',
+		holderName: AUTHORIZE_DEFAULT_HOLDER,
+		expectedOutcome: 'cvv-should-be-present',
+		description: 'Visa + CVV 902 → CVV "S: Should be on card, but is not indicated"'
+	},
+
+	cvvIssuerNotCertified: {
+		number: '4111111111111111',
+		brand: 'visa',
+		exp: AUTHORIZE_DEFAULT_EXPIRY,
+		cvc: '903', // trigger CVV "issuer not certified"
+		zip: '90210',
+		holderName: AUTHORIZE_DEFAULT_HOLDER,
+		expectedOutcome: 'cvv-issuer-not-certified',
+		description: 'Visa + CVV 903 → CVV "U: Issuer not certified / no encryption key"'
 	},
 
 	// ═══════════════════════════════════════════════════════════════════
@@ -181,7 +189,7 @@ export const AUTHORIZE_TEST_CARDS = {
 		zip: '46205', // trigger AVS no match
 		holderName: AUTHORIZE_DEFAULT_HOLDER,
 		expectedOutcome: 'avs-no-match',
-		description: 'Visa + ZIP 46205 → AVS "N: No Match"',
+		description: 'Visa + ZIP 46205 → AVS "N: No Match"'
 	},
 
 	avsNonUsIssuer: {
@@ -192,7 +200,40 @@ export const AUTHORIZE_TEST_CARDS = {
 		zip: '46204',
 		holderName: AUTHORIZE_DEFAULT_HOLDER,
 		expectedOutcome: 'avs-non-us-issuer',
-		description: 'Visa + ZIP 46204 → AVS "G: Non-U.S. Issuer"',
+		description: 'Visa + ZIP 46204 → AVS "G: Non-U.S. Issuer"'
+	},
+
+	avsUnavailable: {
+		number: '4111111111111111',
+		brand: 'visa',
+		exp: AUTHORIZE_DEFAULT_EXPIRY,
+		cvc: '900',
+		zip: '46207', // trigger AVS "R: system unavailable"
+		holderName: AUTHORIZE_DEFAULT_HOLDER,
+		expectedOutcome: 'avs-unavailable',
+		description: 'Visa + ZIP 46207 → AVS "R: system unavailable during processing"'
+	},
+
+	avsNotSupported: {
+		number: '4111111111111111',
+		brand: 'visa',
+		exp: AUTHORIZE_DEFAULT_EXPIRY,
+		cvc: '900',
+		zip: '46208', // trigger AVS "S: U.S. issuer does not support AVS"
+		holderName: AUTHORIZE_DEFAULT_HOLDER,
+		expectedOutcome: 'avs-not-supported',
+		description: 'Visa + ZIP 46208 → AVS "S: U.S. issuer does not support AVS"'
+	},
+
+	avsAddressUnavailable: {
+		number: '4111111111111111',
+		brand: 'visa',
+		exp: AUTHORIZE_DEFAULT_EXPIRY,
+		cvc: '900',
+		zip: '46209', // trigger AVS "U: cardholder address unavailable"
+		holderName: AUTHORIZE_DEFAULT_HOLDER,
+		expectedOutcome: 'avs-address-unavailable',
+		description: 'Visa + ZIP 46209 → AVS "U: cardholder address information unavailable"'
 	},
 
 	// ═══════════════════════════════════════════════════════════════════
@@ -207,7 +248,7 @@ export const AUTHORIZE_TEST_CARDS = {
 		zip: '46225',
 		holderName: AUTHORIZE_DEFAULT_HOLDER,
 		expectedOutcome: 'partial-authorization',
-		description: 'Visa + ZIP 46225 → Partial Auth ($1.23 authorized)',
+		description: 'Visa + ZIP 46225 → Partial Auth ($1.23 authorized)'
 	},
 
 	prepaidZeroBalance: {
@@ -218,8 +259,8 @@ export const AUTHORIZE_TEST_CARDS = {
 		zip: '46228',
 		holderName: AUTHORIZE_DEFAULT_HOLDER,
 		expectedOutcome: 'prepaid-zero-balance',
-		description: 'Visa + ZIP 46228 → Prepaid Auth con $0 de balance',
-	},
+		description: 'Visa + ZIP 46228 → Prepaid Auth con $0 de balance'
+	}
 } as const satisfies Record<string, AuthorizeTestCard>;
 
 export type AuthorizeTestCardKey = keyof typeof AUTHORIZE_TEST_CARDS;

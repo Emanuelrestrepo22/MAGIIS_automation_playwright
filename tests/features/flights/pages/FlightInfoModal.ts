@@ -41,9 +41,13 @@ export class FlightInfoModal extends BasePage {
 		// Coexisten varios botones "Aceptar" en el DOM (modales Angular ocultos: Notas, Otro Costo,
 		// Pasajero); solo el del modal de vuelo es visible. Se resuelve el visible+enabled en accept().
 		this.acceptButtons = page.getByRole('button', { name: 'Aceptar' });
-		// El botón papelera es un icon-button: el tooltip "Eliminar vuelo" vive en title/aria-label/
-		// aria-description (Playwright 1.56 no soporta la opción `description` de getByRole).
-		this.deleteFlightButton = page.locator('button[title="Eliminar vuelo"], button[aria-label="Eliminar vuelo"], button[aria-description="Eliminar vuelo"]').first();
+		// El botón papelera es un icon-button. Dos variantes según contexto (confirmado UAT v1.72.6):
+		//  - DETALLE: tooltip "Eliminar vuelo" en title/aria-label/aria-description.
+		//  - ALTA (post-vinculación): icon-button SIN title, dentro de `div.flight-trip-delete`
+		//    (wrapper específico de la card del vuelo) → se materializa al hacer hover sobre la card.
+		//    Se scopea a `flight-trip-delete` para no colisionar con los `fic-remove-external`
+		//    ocultos de nota/otro-costo/pax. Ver deleteAssociatedFlight() para el hover-reveal.
+		this.deleteFlightButton = page.locator('button[title="Eliminar vuelo"], button[aria-label="Eliminar vuelo"], button[aria-description="Eliminar vuelo"], div.flight-trip-delete button').first();
 		this.flightNumberInput = page.getByRole('textbox', { name: 'Número de Vuelo:' });
 		// "Ingreso Manual" aparece cuando getFlights devuelve 200 [] (sin resultados) — validado UAT.
 		this.manualEntryButton = page.getByRole('button', { name: /Ingreso Manual/i });
@@ -94,7 +98,7 @@ export class FlightInfoModal extends BasePage {
 					if (!selected) await card.click().catch(() => undefined);
 					return card.evaluate(el => el.className.includes('tr-select')).catch(() => false);
 				},
-				{ timeout: 15_000, message: 'esperando tr-select en la card de vuelo tras el click' },
+				{ timeout: 15_000, message: 'esperando tr-select en la card de vuelo tras el click' }
 			)
 			.toBe(true);
 	}
@@ -121,6 +125,15 @@ export class FlightInfoModal extends BasePage {
 	 * Tras esto el flujo de edición suele requerir Recalcular + Guardar (ver TravelDetailPage).
 	 */
 	async deleteAssociatedFlight(): Promise<void> {
+		// En el ALTA la papelera vive en `div.flight-trip-delete` dentro de la card del vuelo
+		// (`div.row` que contiene el delete) y se materializa al hacer HOVER sobre la card.
+		// Hover al contenedor antes de clickear; en DETALLE (title="Eliminar vuelo") el hover es
+		// un no-op inocuo si la estructura no existe. Ver discovery UAT 2026-07-16.
+		const flightCard = this.page.locator('div.row', { has: this.page.locator('div.flight-trip-delete') }).first();
+		if (await flightCard.count()) {
+			await flightCard.scrollIntoViewIfNeeded().catch(() => undefined);
+			await flightCard.hover().catch(() => undefined);
+		}
 		await expect(this.deleteFlightButton).toBeVisible({ timeout: 10_000 });
 		await this.deleteFlightButton.click();
 		await this.waitForLoadingOverlayToDisappear();
@@ -180,5 +193,35 @@ export class FlightInfoModal extends BasePage {
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * Lee la fecha/hora que muestra el modal "Información de Vuelo" (`departReturnSchedule`,
+	 * formato dd/MM/yyyy HH:mm). Prioriza el input datetime del modal; si no, extrae el patrón
+	 * dd/MM/yyyy del cuerpo del modal.
+	 * NOTE(verify-uat): confirmar el selector del input de fecha del modal en la 1ª corrida verde.
+	 */
+	async getFlightDate(): Promise<string> {
+		const input = this.page.locator('.modal input[type="datetime-local"], .modal .inputs-programmed input, ngb-modal-window input[type="datetime-local"]').first();
+		const val = await input.inputValue().catch(() => '');
+		if (val) return val;
+		const body = await this.page
+			.locator('.modal-body, ngb-modal-window .modal-body')
+			.first()
+			.innerText()
+			.catch(() => '');
+		const m = body.match(/(\d{2}\/\d{2}\/\d{4}(?:\s+\d{2}:\d{2})?)/);
+		return m ? m[1] : body.trim();
+	}
+
+	/**
+	 * VA-4 — regresión del bug "fecha del modal" (MX-5826, fixeado + validado manual en v1.72.6):
+	 * al abrir el modal desde el detalle/edición, la fecha debe reflejar la del VIAJE PROGRAMADO,
+	 * NO la fecha actual ni la del día anterior.
+	 * @param expectedTripDate fragmento dd/MM/yyyy de la fecha del viaje programado.
+	 */
+	async expectFlightDateMatchesTrip(expectedTripDate: string): Promise<void> {
+		const shown = await this.getFlightDate();
+		expect(shown, `el modal abrió con "${shown}"; se esperaba la fecha del viaje "${expectedTripDate}" (regresión bug fecha-modal)`).toContain(expectedTripDate);
 	}
 }

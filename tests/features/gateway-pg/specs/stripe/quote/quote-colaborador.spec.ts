@@ -2,10 +2,15 @@
  * TCs: TS-STRIPE-P2-TC011–TC018
  * Feature: Flujo Quote — Colaborador (teléfono + mail)
  * Tags: @regression @quote @web-only
+ *
+ * KATA conformance (feature/kata-conformance): specs de placeholder (fixme). test del
+ * fixture KATA (@TestFixture). Sin ATC aún (no hay flujo implementado). Al implementar,
+ * mapear al área QUOTE del idmap (MG-361+, Level UI) — mapeo por área aceptado.
  */
-import { test } from '../../../../../TestBase';
+import { test } from '@TestFixture';
 
-test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
+// El fixture KATA no define la opción `role` (login explícito en el flujo cuando se implemente).
+test.use({ storageState: undefined });
 
 test.describe('Gateway PG · Quote · Colaborador @gateway @stripe @hold @3ds @regression', () => {
 

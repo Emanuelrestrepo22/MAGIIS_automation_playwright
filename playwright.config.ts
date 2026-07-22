@@ -35,8 +35,12 @@ export default defineConfig({
     ["list"],
     ["html", { open: "never", outputFolder: `evidence/${env}/report` }],
     ["junit", { outputFile: `evidence/${env}/junit.xml` }],
+    // Allure OPT-IN (ALLURE=1) — condicional para no romper el runner default.
+    ...(process.env.ALLURE ? [["allure-playwright", { resultsDir: "allure-results", detail: true, links: [{ type: "tms", urlTemplate: "https://magiis.atlassian.net/browse/%s" }, { type: "issue", urlTemplate: "https://magiis.atlassian.net/browse/%s" }] }]] : []),
+    // Xray OPT-IN (XRAY=1) — emite evidence/<env>/xray-results.json para import a Xray (fase B/C).
+    ...(process.env.XRAY ? [["./tests/utils/reporters/xray-reporter.ts", { outputFile: `evidence/${env}/xray-results.json` }]] : []),
     ["./tests/utils/reporters/custom-reporter.ts"],
-  ],
+  ] as import("@playwright/test").ReporterDescription[],
 
   use: {
     // Config base compartida por cada test si la spec no la sobreescribe.
@@ -57,6 +61,14 @@ export default defineConfig({
     // Timeouts para flujos con 3DS (modales bancarios pueden tardar)
     actionTimeout: 15_000,
     navigationTimeout: 30_000,
+
+    // Pre-concedemos geolocalización para que el prompt nativo de Chrome
+    // ("¿Deseas usar tu ubicación?") no aparezca y bloquee la página en modo headed.
+    // Sin esto, la app llama a navigator.geolocation y el diálogo nativo (fuera del DOM)
+    // congela la interacción hasta un click manual → timeouts/"browser has been closed".
+    // Coords = origin canónico de los datos de prueba (Buenos Aires).
+    permissions: ["geolocation"],
+    geolocation: { latitude: -34.60014, longitude: -58.37217 },
   },
 
   // Directorio de salida de artefactos por entorno
