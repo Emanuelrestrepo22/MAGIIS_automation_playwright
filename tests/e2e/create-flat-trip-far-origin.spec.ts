@@ -19,6 +19,9 @@ test.describe('[E2E][2a] Flat trip · far pickup · manual assign to device driv
   test.use({ role: 'carrier', storageState: undefined });
 
   test('create flat trip far origin and assign to device driver', async ({ page }) => {
+    // DRAFT TASK 2a (geocerca out-of-range): requiere driver-geocerca-out-of-range.ts en background + device driver "argento".
+    // Sin eso rompe determinísticamente al colectarse en `pnpm test` full → gated por GEOCERCA_2A=1.
+    test.fixme(process.env.GEOCERCA_2A !== '1', 'DRAFT TASK 2a — requiere Appium geocerca script + device (correr con GEOCERCA_2A=1)');
     test.setTimeout(160_000);
     const travel = new NewTravelPage(page);
 

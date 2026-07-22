@@ -246,6 +246,8 @@ async function dismissPreHome(driver: Driver, timeout = 30_000): Promise<boolean
     await switchWv(driver);
     const url = await getUrl(driver);
     if (/\/navigator\//i.test(url)) return true;
+    // Rebote pre-home→login (sesión stale con noReset): re-loguear y reintentar el overlay.
+    if (/login|signin/i.test(url)) { log('pre-home rebound to /login — re-login'); await loginIfNeeded(driver); await driver.pause(1500); continue; }
     if (/pre-home/i.test(url)) {
       if (!captured) { await enumerate(driver, 'pre-home', 'Overlay de bienvenida + init servicios (wifi/perfil/ubicación)'); captured = true; }
       // The continue trigger is the teal "Aceptar"/continue button (hideOverlay) once services loaded.
@@ -351,7 +353,7 @@ async function run(): Promise<void> {
         if (!m) return false; const r = (m as HTMLElement).getBoundingClientRect();
         return r.width > 0 && getComputedStyle(m as HTMLElement).visibility !== 'hidden' && (m as HTMLElement).classList.contains('show-menu') || (m as HTMLElement).getAttribute('aria-hidden') === 'false';
       }).catch(() => false);
-      return ok && (shown as boolean || ok);
+      return ok && (shown as boolean);
     };
     let menuOpened = await openMenu();
     if (menuOpened) {

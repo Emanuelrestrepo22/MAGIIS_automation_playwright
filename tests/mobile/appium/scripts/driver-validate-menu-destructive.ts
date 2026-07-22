@@ -21,8 +21,9 @@ import { join } from 'path';
 const APPIUM_URL = process.env.APPIUM_SERVER_URL ?? 'http://localhost:4723';
 const UDID = process.env.ANDROID_UDID ?? 'R92XB0B8F3J';
 const PKG = process.env.ANDROID_DRIVER_APP_PACKAGE ?? 'com.magiis.app.test.driver';
-const EMAIL = process.env.DRIVER_EMAIL ?? 'nuevoemailyo12312213@yopmail.com';
-const PASSWORD = process.env.DRIVER_PASSWORD ?? '123';
+const EMAIL = process.env.DRIVER_EMAIL ?? '';
+const PASSWORD = process.env.DRIVER_PASSWORD ?? '';
+if (!EMAIL || !PASSWORD) { console.error('[menu-destr] ❌ Definir DRIVER_EMAIL y DRIVER_PASSWORD como variables de entorno.'); process.exit(1); }
 const log = (m: string): void => console.log(`[menu-destr] ${m}`);
 type Driver = Awaited<ReturnType<typeof remote>>;
 
