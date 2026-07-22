@@ -8,7 +8,7 @@
 
 - Se usa un **keyword de estado** como nombre: `APRO`, `OTHE`, `CONT`, `SECU`, `FUND`, etc.
 - Número, CVV y expiración son **fijos**: CVV `123` (Amex `1234`), exp `11/30`, tarjeta del catálogo.
-- **Documento:** approved usa DNI `12345678`; la mayoría de rechazos no requieren documento.
+- **Documento:** `APRO` y `OTHE` usan DNI `12345678`; el resto de rechazos no requieren documento (doc oficial).
 - **3DS/SCA:** no aplica en el flujo MAGIIS (`mercadoPagoGatewayAdapter.requires3ds = false`).
 
 > ⚠️ A diferencia de las demás pasarelas, en MP `holderName` **es el trigger** — el spec debe llenar el nombre con el keyword exacto.
@@ -44,6 +44,8 @@
 | `ATTE` | rejected | cc_rejected_max_attempts |
 | `BLAC` | rejected | cc_rejected_blacklist |
 | `UNSU` | not-supported | not_supported |
+
+> **Keyword especial `TEST`** (doc oficial): "usado para aplicar regla de montos" — el outcome lo determina el **monto** de la transacción, no el `holderName`. Por eso **no** vive en el registro determinista `MP_TEST_CARDS` (que mapea un outcome fijo por keyword). Si se necesita para probar reglas de monto, usar `holderName = TEST` y variar el importe. Fuera de alcance del smoke keyword-driven.
 
 Datos en [`tests/fixtures/gateways/mercado-pago/cards.ts`](../../../tests/fixtures/gateways/mercado-pago/cards.ts) (`MP_TEST_CARDS` + catálogo `MP_CARD_CATALOG`).
 
