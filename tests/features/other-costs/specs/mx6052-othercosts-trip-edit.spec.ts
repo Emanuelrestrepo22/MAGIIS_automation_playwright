@@ -52,7 +52,7 @@ test.describe(`[OTHER-COSTS][${env.toUpperCase()}] Otros Costos en edición de v
 				await management.openScheduledTrips();
 				// Botón "Editar" de la fila (icon-button; el tooltip expone aria-description="Editar").
 				// getByRole({description}) lo captura (CSS [aria-description] no, si usa aria-describedby). Ex test-9.
-				await page.getByRole('button', { description: 'Editar', exact: true }).first().click();
+				await page.locator('button[title="Editar"], button[aria-label="Editar"], button[aria-description="Editar"]').first().click();
 			});
 
 			await test.step('When: se abre "Editar Otros Costos" → "Agregar Otro Costo"', async () => {
