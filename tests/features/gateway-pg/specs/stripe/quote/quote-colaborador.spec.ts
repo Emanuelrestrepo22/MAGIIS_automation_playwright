@@ -12,7 +12,7 @@ import { test } from '@TestFixture';
 // El fixture KATA no define la opción `role` (login explícito en el flujo cuando se implemente).
 test.use({ storageState: undefined });
 
-test.describe('Gateway PG · Quote · Colaborador @gateway @stripe @hold @3ds @regression', () => {
+test.describe('Gateway PG · Quote · Colaborador @gateway @stripe @hold @3ds @regression', { annotation: [{ type: 'tms', description: 'MG-361' }] }, () => {
 
   test.describe('Via número de teléfono — sin 3DS', () => {
     test('[TS-STRIPE-P2-TC011] @regression @quote @hold quote colaborador teléfono hold+cobro', async () => {

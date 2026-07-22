@@ -19,7 +19,7 @@ import { CarrierTravelEditSteps } from '@steps/index';
 test.use({ storageState: undefined });
 test.describe.configure({ mode: 'serial' });
 
-test.describe('Gateway PG · Carrier · Empresa Individuo - Edicion de Viajes Programados @gateway @stripe @hold @3ds @regression', () => {
+test.describe('Gateway PG · Carrier · Empresa Individuo - Edicion de Viajes Programados @gateway @stripe @hold @3ds @regression', { annotation: [{ type: 'tms', description: 'MG-415' }] }, () => {
 	test('[TS-STRIPE-P2-TC078] @regression @hold alta + edicion hold+cobro', async ({ page }) => {
 		test.setTimeout(180_000);
 		await new CarrierTravelEditSteps({ page }).runScheduledTripCardEdit();

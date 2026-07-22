@@ -45,7 +45,7 @@ const decline = (raw: { number: string; exp: string; cvc: string; holderName: st
 	expectedOutcome: 'declined',
 });
 
-test.describe('Gateway PG · Carrier · Empresa Individuo — Cargo a Bordo · Declines @gateway @stripe @cargo-a-bordo @hold @decline @regression', () => {
+test.describe('Gateway PG · Carrier · Empresa Individuo — Cargo a Bordo · Declines @gateway @stripe @cargo-a-bordo @hold @decline @regression', { annotation: [{ type: 'tms', description: 'MG-161' }] }, () => {
 
 	test('[TS-STRIPE-TC1112] @regression @cargo-a-bordo pago rechazado genérico desde Driver App', async ({ page }) => {
 		await new CargoABordoSteps({ page }).runCargoScenario(empresaScenario, {

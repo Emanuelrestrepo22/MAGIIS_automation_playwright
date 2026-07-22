@@ -41,7 +41,7 @@ const charge3ds: DriverChargeSpec = {
 	is3ds: true,
 };
 
-test.describe('Gateway PG · Carrier · Empresa — Cargo a Bordo · 3DS (asignación manual) @gateway @stripe @cargo-a-bordo @3ds @e2e-hybrid', () => {
+test.describe('Gateway PG · Carrier · Empresa — Cargo a Bordo · 3DS (asignación manual) @gateway @stripe @cargo-a-bordo @3ds @e2e-hybrid', { annotation: [{ type: 'tms', description: 'MG-161' }] }, () => {
 	test('[TS-STRIPE-TC1123] @3ds @cargo-a-bordo cobro con challenge 3DS completado desde Driver App', async ({ page }) => {
 		await new CargoABordoSteps({ page }).runCargoScenario(scenario3ds, {
 			manualAssign: true,

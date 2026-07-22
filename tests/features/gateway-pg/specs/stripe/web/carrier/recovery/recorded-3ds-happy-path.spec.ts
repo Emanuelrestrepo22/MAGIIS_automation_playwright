@@ -21,7 +21,7 @@ import { loginAsDispatcher, STRIPE_TEST_CARDS, TEST_DATA } from '@features/gatew
 
 test.use({ storageState: undefined });
 
-test.describe('[TS-STRIPE-TC1053] Hold ON + success3DS (4000 0025 0000 3155) — modal 3DS se presenta, pasajero aprueba, viaje pasa a "Buscando conductor" @gateway @stripe @hold @3ds @critical', () => {
+test.describe('[TS-STRIPE-TC1053] Hold ON + success3DS (4000 0025 0000 3155) — modal 3DS se presenta, pasajero aprueba, viaje pasa a "Buscando conductor" @gateway @stripe @hold @3ds @critical', { annotation: [{ type: 'tms', description: 'MG-158' }] }, () => {
 	test('crear viaje con tarjeta 3DS, aprobar autenticación y validar viaje activo', async ({ page }) => {
 		test.setTimeout(90_000);
 

@@ -30,7 +30,7 @@ const contractorScenario: CargoScenario = {
 
 const APPIUM_NOTE = 'PENDIENTE: fase Driver App — requiere Appium.';
 
-test.describe('Gateway PG · Carrier · Colaborador/Contractor — Cargo a Bordo · 3DS @gateway @stripe @cargo-a-bordo @hold @3ds @critical', () => {
+test.describe('Gateway PG · Carrier · Colaborador/Contractor — Cargo a Bordo · 3DS @gateway @stripe @cargo-a-bordo @hold @3ds @critical', { annotation: [{ type: 'tms', description: 'MG-161' }] }, () => {
 
 	test('[TS-STRIPE-TC1107] @critical @3ds @cargo-a-bordo pago exitoso con 3DS desde Driver App', async ({ page }) => {
 		await new CargoABordoSteps({ page }).runCargoScenario(contractorScenario, {

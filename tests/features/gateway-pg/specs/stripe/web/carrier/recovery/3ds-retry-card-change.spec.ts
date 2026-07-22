@@ -25,7 +25,7 @@ test.describe.configure({ mode: 'serial' });
 
 test.use({ storageState: undefined });
 
-test.describe('Gateway PG · Carrier · App Pax — Cambio de tarjeta post-fallo 3DS @gateway @stripe @hold @3ds @wallet @regression', () => {
+test.describe('Gateway PG · Carrier · App Pax — Cambio de tarjeta post-fallo 3DS @gateway @stripe @hold @3ds @wallet @regression', { annotation: [{ type: 'tms', description: 'MG-155' }] }, () => {
 
 	test.beforeEach(async ({ page }) => {
 		await loginAsDispatcher(page);

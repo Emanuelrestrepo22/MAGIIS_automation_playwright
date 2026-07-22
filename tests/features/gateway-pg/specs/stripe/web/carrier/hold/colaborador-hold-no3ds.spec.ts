@@ -35,7 +35,7 @@ const CUSTOM_ADDRESS = { origin: 'Av. Corrientes 1234, Buenos Aires', destinatio
 test.use({ storageState: undefined });
 test.describe.configure({ timeout: 180_000 });
 
-test.describe('Gateway PG · Carrier · Colaborador — Hold sin 3DS @gateway @stripe @hold @critical @smoke @regression', () => {
+test.describe('Gateway PG · Carrier · Colaborador — Hold sin 3DS @gateway @stripe @hold @critical @smoke @regression', { annotation: [{ type: 'tms', description: 'MG-158' }] }, () => {
 
 	test.describe('Hold ON', () => {
 		// TC1033 es el smoke legacy pre-fase2; no tiene par -CARD-EXISTING en JSON.

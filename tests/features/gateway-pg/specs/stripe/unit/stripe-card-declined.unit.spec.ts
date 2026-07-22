@@ -43,7 +43,7 @@ const STRIPE_INTENTS_PATTERN = '**/v1/payment_intents/**';
 // El fixture KATA no define la opción `role` (login explícito vía loginAsDispatcher).
 test.use({ storageState: { cookies: [], origins: [] } });
 
-test.describe('[BL-043][unit] Stripe network mocking — card_declined response @gateway @stripe @unit @regression', () => {
+test.describe('[BL-043][unit] Stripe network mocking — card_declined response @gateway @stripe @unit @regression', { annotation: [{ type: 'tms', description: 'MG-148' }] }, () => {
 	test('@unit @stripe @decline backend Stripe responde card_declined → MAGIIS muestra estado NO_AUTORIZADO sin pasar por sandbox real', async ({ page }) => {
 		// ── Setup mocking ANTES de cualquier navigation ─────────────────────────
 		// Intercepta TODAS las requests a Stripe API y devuelve un PaymentIntent

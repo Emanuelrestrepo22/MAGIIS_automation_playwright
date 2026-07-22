@@ -16,8 +16,9 @@ import type { Page } from '@playwright/test';
 //   - test/expect vienen del fixture unificado KATA (@TestFixture) en vez de TestBase.
 //   - el modal 3DS usa el componente KATA `ThreeDsChallengePage extends UiBase` (@ui) en vez del POM ThreeDSModal.
 //   - los POMs del sustrato carrier (Dashboard/NewTravel/OperationalPreferences/TravelManagement) siguen intactos.
-// Mapeo TS-STRIPE-TC10xx → MG: no hay 1:1 en el idmap (API-level). ATCs del challenge 3DS mapeados
-// al área D (MG-152/MG-153) dentro del componente — PENDIENTE REASIGNAR cuando el ATP tenga TCs UI 3DS.
+// Mapeo TS-STRIPE-TC10xx → MG: no hay 1:1 en el idmap (API-level). Key primaria del spec = MG-158
+// (área E · hold, anotada a nivel describe); los ATC del challenge 3DS mapean al área D (MG-152/MG-153)
+// dentro del componente. Mapeo por área aceptado (idmap API-level, sin 1:1 con los TS-STRIPE-TC10xx UI).
 import { test, expect } from '@TestFixture';
 import { DashboardPage, NewTravelPage, OperationalPreferencesPage, TravelManagementPage } from '../../../../../../../pages/carrier';
 import { ThreeDsChallengePage } from '@ui/ThreeDsChallengePage';
@@ -238,7 +239,7 @@ async function runHoldOffScenario(page: Page, scenario: Hold3dsScenario): Promis
 // El fixture KATA no define la opción `role` (login explícito vía loginAsDispatcher(page)).
 test.use({ storageState: undefined });
 
-test.describe('Gateway PG · Carrier · App Pax — Hold con 3DS @gateway @stripe @hold @3ds @critical @regression', () => {
+test.describe('Gateway PG · Carrier · App Pax — Hold con 3DS @gateway @stripe @hold @3ds @critical @regression', { annotation: [{ type: 'tms', description: 'MG-158' }] }, () => {
 
 	test.describe('Hold ON — autenticación 3DS exitosa', () => {
 

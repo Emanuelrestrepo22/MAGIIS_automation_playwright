@@ -12,7 +12,7 @@ import { test } from '@TestFixture';
 // El fixture KATA no define la opción `role` (login explícito en el flujo cuando se implemente).
 test.use({ storageState: undefined });
 
-test.describe('Gateway PG · Configuración Pasarela Stripe @gateway @stripe @wallet @regression', () => {
+test.describe('Gateway PG · Configuración Pasarela Stripe @gateway @stripe @wallet @regression', { annotation: [{ type: 'tms', description: 'MG-211' }] }, () => {
 
   test.describe('Visualización y estado inicial', () => {
     test('[TS-STRIPE-TC1001] @smoke @web-only visualizar pasarela Stripe no vinculada', async () => {

@@ -14,7 +14,7 @@
  */
 import { test, expect } from '@TestFixture';
 
-test.describe('[BL-044] Visual regression — Modal 3DS Stripe @gateway @visual @stripe @3ds @regression', () => {
+test.describe('[BL-044] Visual regression — Modal 3DS Stripe @gateway @visual @stripe @3ds @regression', { annotation: [{ type: 'tms', description: 'MG-152' }] }, () => {
 	// El fixture KATA no define la opción `role` (login explícito en el flujo cuando se implemente).
 	test.use({ storageState: undefined });
 

@@ -39,7 +39,7 @@ test.describe.configure({ mode: 'serial' });
 // El fixture KATA no define la opción `role` (login explícito vía loginAsDispatcher(page)).
 test.use({ storageState: undefined });
 
-test.describe('Gateway PG · Carrier · App Pax — Fallo 3DS, red flag y reintento @gateway @stripe @hold @3ds @decline @regression', () => {
+test.describe('Gateway PG · Carrier · App Pax — Fallo 3DS, red flag y reintento @gateway @stripe @hold @3ds @decline @regression', { annotation: [{ type: 'tms', description: 'MG-154' }] }, () => {
 
 	test.beforeEach(async ({ page }) => {
 		await loginAsDispatcher(page);

@@ -42,7 +42,7 @@ function colaboradorScenario(overrides: Partial<ContractorHoldScenario> = {}): C
 test.use({ storageState: undefined });
 test.describe.configure({ timeout: 180_000 });
 
-test.describe('Gateway PG · Contractor · Colaborador — Hold sin 3DS (tarjeta 4242 4242 4242 4242) @gateway @stripe @hold @critical @smoke @regression', () => {
+test.describe('Gateway PG · Contractor · Colaborador — Hold sin 3DS (tarjeta 4242 4242 4242 4242) @gateway @stripe @hold @critical @smoke @regression', { annotation: [{ type: 'tms', description: 'MG-158' }] }, () => {
 
 	test.describe('Hold ON', () => {
 		test('[TS-STRIPE-P2-TC001] @smoke @contractor @hold Hold ON + nueva vinculación tarjeta 4242 + alta colaborador → viaje a "Buscando conductor"', async ({ page }) => {

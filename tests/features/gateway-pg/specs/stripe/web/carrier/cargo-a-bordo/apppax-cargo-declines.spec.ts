@@ -30,7 +30,7 @@ const appPaxScenario: CargoScenario = {
 
 const APPIUM_NOTE = 'PENDIENTE: fase Driver App — requiere Appium.';
 
-test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo · Declines @gateway @stripe @cargo-a-bordo @hold @decline @regression', () => {
+test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo · Declines @gateway @stripe @cargo-a-bordo @hold @decline @regression', { annotation: [{ type: 'tms', description: 'MG-161' }] }, () => {
 
 	test('[TS-STRIPE-TC1082] @regression @cargo-a-bordo pago rechazado genérico desde Driver App', async ({ page }) => {
 		await new CargoABordoSteps({ page }).runCargoScenario(appPaxScenario, {

@@ -12,7 +12,7 @@ import { test } from '@TestFixture';
 // El fixture KATA no define la opción `role` (login explícito en el flujo cuando se implemente).
 test.use({ storageState: undefined });
 
-test.describe('Gateway PG · Carrier · App Pax — Viajes Recurrentes @gateway @stripe @hold @regression', () => {
+test.describe('Gateway PG · Carrier · App Pax — Viajes Recurrentes @gateway @stripe @hold @regression', { annotation: [{ type: 'tms', description: 'MG-390' }] }, () => {
 
   test('[TS-STRIPE-P2-TC048] @regression @recurrente @hold vinculación + recurrente hold+cobro app pax', async () => {
     test.fixme(true, 'PENDIENTE: Page Object RecurrentTravelPage no implementado');

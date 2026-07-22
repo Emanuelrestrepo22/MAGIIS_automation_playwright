@@ -39,7 +39,7 @@ function empresaScenario(cardFlow: CardFlow, overrides: Partial<HoldScenario> = 
 test.use({ storageState: undefined });
 test.describe.configure({ timeout: 180_000 });
 
-test.describe('Gateway PG · Carrier · Empresa Individuo — Hold sin 3DS @gateway @stripe @hold @critical @smoke @regression', () => {
+test.describe('Gateway PG · Carrier · Empresa Individuo — Hold sin 3DS @gateway @stripe @hold @critical @smoke @regression', { annotation: [{ type: 'tms', description: 'MG-158' }] }, () => {
 
 	test.describe('Hold ON', () => {
 		// TC1065 — canónico card-new (smoke). Ver par card-existing en TC1067.

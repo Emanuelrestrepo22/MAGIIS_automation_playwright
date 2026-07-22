@@ -58,6 +58,19 @@ export function atc(testId: string, options: AtcOptions = {}) {
 				/* Allure puede no estar disponible en todos los contextos */
 			}
 
+			// Trazabilidad canónica: bind ATC → Test de Xray. El xray-reporter
+			// (tests/utils/reporters/xray-reporter.ts) lee la annotation type:'tms'. Dedup por
+			// key para no repetir cuando el mismo ATC corre más de una vez en el test.
+			// Idéntico al @atc de magiis-api-e2e (consistencia del portafolio).
+			try {
+				const annotations = test.info().annotations;
+				if (!annotations.some(a => a.type === 'tms' && a.description === testId)) {
+					annotations.push({ type: 'tms', description: testId });
+				}
+			} catch {
+				/* test.info() sólo existe dentro de un test en ejecución */
+			}
+
 			try {
 				const stepTitle = `ATC [${testId}]: ${methodName}${formatArgs(args)}`;
 				const returnValue = await test.step(stepTitle, async () => originalMethod.apply(this, args));

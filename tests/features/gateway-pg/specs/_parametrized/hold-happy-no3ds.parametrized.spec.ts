@@ -65,7 +65,7 @@ const HAPPY_NO_AUTH_OPTIONS: Omit<HoldRunOptions, 'hold'> = {
 test.use({ storageState: undefined });
 test.describe.configure({ timeout: 180_000 });
 
-test.describe('[BL-028][parametrized] Hold happy path sin 3DS @gateway @hold @regression', () => {
+test.describe('[BL-028][parametrized] Hold happy path sin 3DS @gateway @hold @regression', { annotation: [{ type: 'tms', description: 'MG-158' }] }, () => {
 	for (const gateway of ACTIVE_GATEWAYS) {
 		test.describe(`gateway=${gateway}`, () => {
 			test('crea viaje con HAPPY_NO_AUTH y queda visible en grilla "Por asignar"', async ({ page }) => {

@@ -32,7 +32,7 @@ function empresaScenario(cardFlow: CardFlow, overrides: Partial<HoldScenario> = 
 test.use({ storageState: undefined });
 test.describe.configure({ timeout: 180_000 });
 
-test.describe('Gateway PG · Carrier · Empresa Individuo — Hold con 3DS @gateway @stripe @hold @3ds @critical @regression', () => {
+test.describe('Gateway PG · Carrier · Empresa Individuo — Hold con 3DS @gateway @stripe @hold @3ds @critical @regression', { annotation: [{ type: 'tms', description: 'MG-158' }] }, () => {
 
 	test.describe('Hold ON', () => {
 		test('[TS-STRIPE-TC1069] @critical @3ds @hold @card-new hold+cobro empresa 3DS — Vincular tarjeta nueva', async ({ page }) => {

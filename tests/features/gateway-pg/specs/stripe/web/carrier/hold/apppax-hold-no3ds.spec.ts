@@ -41,7 +41,7 @@ function appPaxScenario(overrides: Partial<HoldScenario> = {}): HoldScenario {
 test.use({ storageState: undefined });
 test.describe.configure({ timeout: 180_000 });
 
-test.describe('Gateway PG · Carrier · App Pax — Hold sin 3DS @gateway @stripe @hold @critical @smoke @regression', () => {
+test.describe('Gateway PG · Carrier · App Pax — Hold sin 3DS @gateway @stripe @hold @critical @smoke @regression', { annotation: [{ type: 'tms', description: 'MG-158' }] }, () => {
 
 	test.describe('Hold ON', () => {
 		test('[TS-STRIPE-TC1049] @smoke @hold hold+cobro app pax sin 3DS', async ({ page }) => {

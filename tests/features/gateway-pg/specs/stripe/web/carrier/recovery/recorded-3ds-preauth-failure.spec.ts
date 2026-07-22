@@ -20,7 +20,7 @@ import { loginAsDispatcher, STRIPE_TEST_CARDS, TEST_DATA } from '@features/gatew
 
 test.use({ storageState: undefined });
 
-test.describe('[TS-STRIPE-TC1039] Hold ON + cliente contractor + pasajero app pax invitado + threeDSRequired + fallo 3DS — pop-up de error, URL permanece en formulario @gateway @stripe @hold @3ds @decline @regression', () => {
+test.describe('[TS-STRIPE-TC1039] Hold ON + cliente contractor + pasajero app pax invitado + threeDSRequired + fallo 3DS — pop-up de error, URL permanece en formulario @gateway @stripe @hold @3ds @decline @regression', { annotation: [{ type: 'tms', description: 'MG-157' }] }, () => {
 	test('muestra pop-up de error de autenticación 3DS y no crea el viaje cuando la autenticación falla', async ({ page }) => {
 		test.setTimeout(90_000);
 
