@@ -22,7 +22,7 @@ test.describe('[BL-036][API] Authorize.net sandbox — Declines (Response Code 2
 		const response: AuthorizeApiResponse = await api.authorizeOnly({
 			card: AUTHORIZE_CARDS.DECLINE_GENERIC,
 			amount: '10.00',
-			refId: `bl-036-decline-zip-${Date.now()}`,
+			refId: `bl-036-decline-zip-${Date.now()}`
 		});
 
 		// resultCode puede ser "Ok" porque el request fue procesado correctamente,

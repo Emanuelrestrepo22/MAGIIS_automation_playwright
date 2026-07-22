@@ -28,19 +28,18 @@ const appPaxScenario: CargoScenario = {
 	client: TEST_DATA.appPaxPassenger,
 	origin: TEST_DATA.origin,
 	destination: TEST_DATA.destination,
-	cardPrecondition: { apiSearchQuery: PASSENGERS.appPax.apiSearchQuery!, requiredLast4: '3155', tcLabel: 'TC1092' },
+	cardPrecondition: { apiSearchQuery: PASSENGERS.appPax.apiSearchQuery!, requiredLast4: '3155', tcLabel: 'TC1092' }
 };
 
 const APPIUM_NOTE = 'PENDIENTE: fase Driver App — requiere Appium.';
 
 test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo · 3DS @gateway @stripe @cargo-a-bordo @hold @3ds @critical', () => {
-
 	test('[TS-STRIPE-TC1092] @critical @3ds @cargo-a-bordo pago exitoso con 3DS desde Driver App', async ({ page }) => {
 		await new CargoABordoSteps({ page }).runCargoScenario(appPaxScenario, {
 			driverAppStep: {
 				title: '[DRIVER APP] Conductor finaliza viaje → 3DS requerido → pasajero completa challenge → cobro exitoso',
-				note: 'PENDIENTE: fase Driver App — requiere Appium + DriverTripPaymentScreen + manejo de WebView 3DS.',
-			},
+				note: 'PENDIENTE: fase Driver App — requiere Appium + DriverTripPaymentScreen + manejo de WebView 3DS.'
+			}
 		});
 	});
 
@@ -48,8 +47,8 @@ test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo · 3DS @gatewa
 		await new CargoABordoSteps({ page }).runCargoScenario(appPaxScenario, {
 			driverAppStep: {
 				title: '[DRIVER APP] Conductor finaliza viaje → 3DS requerido → pasajero rechaza challenge → cobro fallido',
-				note: APPIUM_NOTE,
-			},
+				note: APPIUM_NOTE
+			}
 		});
 	});
 
@@ -57,8 +56,8 @@ test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo · 3DS @gatewa
 		await new CargoABordoSteps({ page }).runCargoScenario(appPaxScenario, {
 			driverAppStep: {
 				title: '[DRIVER APP] Conductor finaliza viaje → 3DS con error de autenticación → cobro fallido',
-				note: APPIUM_NOTE,
-			},
+				note: APPIUM_NOTE
+			}
 		});
 	});
 
@@ -66,9 +65,8 @@ test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo · 3DS @gatewa
 		await new CargoABordoSteps({ page }).runCargoScenario(appPaxScenario, {
 			driverAppStep: {
 				title: '[DRIVER APP] Conductor finaliza viaje → 3DS falla completamente → cobro no procesado',
-				note: APPIUM_NOTE,
-			},
+				note: APPIUM_NOTE
+			}
 		});
 	});
-
 });

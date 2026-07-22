@@ -6,35 +6,42 @@
 
 import { remote } from 'webdriverio';
 
-const UDID        = process.env.ANDROID_UDID        ?? 'R92XB0B8F3J';
-const PACKAGE     = process.env.ANDROID_APP_PACKAGE ?? 'com.magiis.app.test.driver';
-const PASSWORD    = process.env.DRIVER_PASSWORD     ?? '123';
+const UDID = process.env.ANDROID_UDID ?? 'R92XB0B8F3J';
+const PACKAGE = process.env.ANDROID_APP_PACKAGE ?? 'com.magiis.app.test.driver';
+const PASSWORD = process.env.DRIVER_PASSWORD ?? '123';
 
 const log = (msg: string) => console.log(`[login] ${msg}`);
 
 async function run(): Promise<void> {
 	const driver = await remote({
-		protocol: 'http', hostname: 'localhost', port: 4723, path: '/',
+		protocol: 'http',
+		hostname: 'localhost',
+		port: 4723,
+		path: '/',
 		logLevel: 'warn',
 		capabilities: {
-			platformName:                      'Android',
-			'appium:automationName':           'UiAutomator2',
-			'appium:deviceName':               'SM-A055M',
-			'appium:udid':                     UDID,
-			'appium:appPackage':               PACKAGE,
-			'appium:appActivity':              '.MainActivity',
-			'appium:noReset':                  true,
-			'appium:forceAppLaunch':           false,
-			'appium:newCommandTimeout':        120,
-			'appium:chromedriverAutodownload': true,
-		} as Record<string, unknown>,
+			platformName: 'Android',
+			'appium:automationName': 'UiAutomator2',
+			'appium:deviceName': 'SM-A055M',
+			'appium:udid': UDID,
+			'appium:appPackage': PACKAGE,
+			'appium:appActivity': '.MainActivity',
+			'appium:noReset': true,
+			'appium:forceAppLaunch': false,
+			'appium:newCommandTimeout': 120,
+			'appium:chromedriverAutodownload': true
+		} as Record<string, unknown>
 	});
 	log('✓ Sesión adjuntada');
 
 	// Cambiar a WebView
-	const contexts = await driver.getContexts() as string[];
+	const contexts = (await driver.getContexts()) as string[];
 	const wv = contexts.find((c: string) => c.startsWith('WEBVIEW'));
-	if (!wv) { log('⚠ Sin WebView'); await driver.deleteSession(); return; }
+	if (!wv) {
+		log('⚠ Sin WebView');
+		await driver.deleteSession();
+		return;
+	}
 	await driver.switchContext(wv);
 	log(`✓ Contexto → ${wv}`);
 
@@ -50,7 +57,7 @@ async function run(): Promise<void> {
 	// Buscar campo contraseña (el email ya está completado)
 	log('Buscando campo contraseña...');
 	const pwdInput = await driver.$('input[type="password"]');
-	if (!await pwdInput.isDisplayed().catch(() => false)) {
+	if (!(await pwdInput.isDisplayed().catch(() => false))) {
 		log('⚠ Campo contraseña no encontrado');
 		await driver.deleteSession();
 		return;
@@ -66,7 +73,10 @@ async function run(): Promise<void> {
 	const clicked = await driver.execute<boolean, []>(() => {
 		const btns = Array.from(document.querySelectorAll('button')) as HTMLButtonElement[];
 		const btn = btns.find(b => b.innerText?.trim() === 'Entrar');
-		if (btn) { btn.click(); return true; }
+		if (btn) {
+			btn.click();
+			return true;
+		}
 		return false;
 	});
 	if (clicked) {

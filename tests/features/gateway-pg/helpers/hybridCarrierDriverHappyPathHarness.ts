@@ -3,12 +3,9 @@ import { OperationalPreferencesPage, NewTravelPage, TravelDetailPage } from '../
 import { getDriverAppConfig } from '../../../mobile/appium/config/appiumRuntime';
 import {
 	DriverTripHappyPathHarness,
-	type DriverTripHappyPathResult,
+	type DriverTripHappyPathResult
 } from '../../../mobile/appium/harness/DriverTripHappyPathHarness';
-import {
-	expectNoThreeDSModal,
-	loginAsDispatcher,
-} from '../fixtures/gateway.fixtures';
+import { expectNoThreeDSModal, loginAsDispatcher } from '../fixtures/gateway.fixtures';
 import type { CarrierDriverHappyPathScenario } from '../data/driver-happy-path-scenarios';
 
 export type CarrierDriverWebResult = {
@@ -108,7 +105,7 @@ export class HybridCarrierDriverHappyPathHarness {
 
 		return {
 			tripId,
-			statusText,
+			statusText
 		};
 	}
 }

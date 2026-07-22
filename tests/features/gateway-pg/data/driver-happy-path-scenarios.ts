@@ -37,8 +37,8 @@ export const CARRIER_DRIVER_HAPPY_PATH_SCENARIOS: CarrierDriverHappyPathScenario
 		rules: {
 			holdEnabled: true,
 			threeDSMode: 'none',
-			active: true,
-		},
+			active: true
+		}
 	},
 	{
 		testCaseId: 'TS-STRIPE-TC1013',
@@ -51,8 +51,8 @@ export const CARRIER_DRIVER_HAPPY_PATH_SCENARIOS: CarrierDriverHappyPathScenario
 		rules: {
 			holdEnabled: true,
 			threeDSMode: 'challenge-accept',
-			active: false,
-		},
+			active: false
+		}
 	},
 	{
 		testCaseId: 'TS-STRIPE-TC1014',
@@ -65,7 +65,7 @@ export const CARRIER_DRIVER_HAPPY_PATH_SCENARIOS: CarrierDriverHappyPathScenario
 		rules: {
 			holdEnabled: false,
 			threeDSMode: 'challenge-accept',
-			active: false,
-		},
-	},
+			active: false
+		}
+	}
 ];

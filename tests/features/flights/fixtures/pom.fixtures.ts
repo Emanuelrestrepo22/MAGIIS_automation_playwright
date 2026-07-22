@@ -39,7 +39,7 @@ export const test = base.extend<FlightsFixtures>({
 	},
 	travelForm: async ({ page }, use) => {
 		await use(new CarrierTravelForm(page));
-	},
+	}
 });
 
 export { expect };

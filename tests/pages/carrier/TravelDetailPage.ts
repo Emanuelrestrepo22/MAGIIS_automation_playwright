@@ -4,7 +4,7 @@ import {
 	STRIPE_BILLING_ZIP,
 	STRIPE_CARD_HOLDER_NAME,
 	STRIPE_CVC,
-	STRIPE_EXPIRY,
+	STRIPE_EXPIRY
 } from '../../features/gateway-pg/data/stripeTestData';
 
 type StripeComponentName = 'cardNumber' | 'cardExpiry' | 'cardCvc';
@@ -30,7 +30,10 @@ export class TravelDetailPage {
 		this.recalculateButton = page.getByRole('button', { name: /^Recalcular$/i });
 		this.saveButton = page.getByRole('button', { name: /^Guardar$/i });
 		// TODO: el recorder usa nth(3) sobre el acordeon del viaje; reemplazar por un selector estable cuando exista.
-		this.activeTripAccordion = page.locator('div').filter({ hasText: /Viaje \d+ Tu viaje del/i }).nth(3);
+		this.activeTripAccordion = page
+			.locator('div')
+			.filter({ hasText: /Viaje \d+ Tu viaje del/i })
+			.nth(3);
 	}
 
 	async goto(travelId: string): Promise<void> {
@@ -39,14 +42,14 @@ export class TravelDetailPage {
 	}
 
 	private async waitForStripeFrame(component: StripeComponentName, timeoutMs = 15_000): Promise<Frame> {
-		const existing = this.page.frames().find((candidate) => candidate.url().includes(`componentName=${component}`));
+		const existing = this.page.frames().find(candidate => candidate.url().includes(`componentName=${component}`));
 		if (existing) {
 			return existing;
 		}
 
 		return this.page.waitForEvent('framenavigated', {
 			timeout: timeoutMs,
-			predicate: (frame) => frame.url().includes(`componentName=${component}`),
+			predicate: frame => frame.url().includes(`componentName=${component}`)
 		});
 	}
 
@@ -134,7 +137,9 @@ export class TravelDetailPage {
 	statusBadge() {
 		// TODO: validar selector real con recorder — magiis-fe no expone data-testid
 		// Candidatos: badge de estado dentro de travel-detail component
-		return this.page.locator('app-travel-detail .travel-status, [class*="status-badge"], [class*="travel-state"]').first();
+		return this.page
+			.locator('app-travel-detail .travel-status, [class*="status-badge"], [class*="travel-state"]')
+			.first();
 	}
 
 	getTravelStatus() {

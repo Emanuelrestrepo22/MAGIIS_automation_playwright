@@ -1,8 +1,4 @@
-import type {
-	JourneyPortal,
-	PaymentGateway,
-	PaymentValidationSource
-} from '../../contracts/gateway-pg.types';
+import type { JourneyPortal, PaymentGateway, PaymentValidationSource } from '../../contracts/gateway-pg.types';
 
 export type GatewayPgAdapter = {
 	gateway: PaymentGateway;

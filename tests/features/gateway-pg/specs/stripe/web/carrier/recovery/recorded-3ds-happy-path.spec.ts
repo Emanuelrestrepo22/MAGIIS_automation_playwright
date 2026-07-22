@@ -26,8 +26,8 @@ test.describe('[TS-STRIPE-TC1053] Hold ON + success3DS (4000 0025 0000 3155) —
 		test.setTimeout(90_000);
 
 		const dashboardPage = new CarrierDashboardPage({ page });
-		const preferences   = new CarrierOperationalPreferencesPage({ page });
-		const travelPage    = new CarrierNewTravelPage({ page });
+		const preferences = new CarrierOperationalPreferencesPage({ page });
+		const travelPage = new CarrierNewTravelPage({ page });
 
 		await test.step('Login carrier', async () => {
 			await loginAsDispatcher(page);
@@ -47,10 +47,10 @@ test.describe('[TS-STRIPE-TC1053] Hold ON + success3DS (4000 0025 0000 3155) —
 
 		await test.step('Completar formulario con pasajero app pax y tarjeta success3DS (4000 0025 0000 3155)', async () => {
 			await travelPage.fillMinimum({
-				passenger:   TEST_DATA.passenger,
-				origin:      TEST_DATA.origin,
+				passenger: TEST_DATA.passenger,
+				origin: TEST_DATA.origin,
 				destination: TEST_DATA.destination,
-				cardLast4:   STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4), // 4000002760003184 (always 3DS)
+				cardLast4: STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4) // 4000002760003184 (always 3DS)
 			});
 		});
 

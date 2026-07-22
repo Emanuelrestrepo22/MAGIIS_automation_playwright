@@ -25,19 +25,18 @@ test.describe.configure({ timeout: 120_000 });
 const appPaxScenario: CargoScenario = {
 	client: TEST_DATA.appPaxPassenger,
 	origin: TEST_DATA.origin,
-	destination: TEST_DATA.destination,
+	destination: TEST_DATA.destination
 };
 
 const APPIUM_NOTE = 'PENDIENTE: fase Driver App — requiere Appium.';
 
 test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo · Declines @gateway @stripe @cargo-a-bordo @hold @decline @regression', () => {
-
 	test('[TS-STRIPE-TC1082] @regression @cargo-a-bordo pago rechazado genérico desde Driver App', async ({ page }) => {
 		await new CargoABordoSteps({ page }).runCargoScenario(appPaxScenario, {
 			driverAppStep: {
 				title: '[DRIVER APP] Conductor finaliza viaje → cobra con tarjeta declinada → pago rechazado genérico',
-				note: 'PENDIENTE: fase Driver App — requiere Appium + DriverTripPaymentScreen implementado.',
-			},
+				note: 'PENDIENTE: fase Driver App — requiere Appium + DriverTripPaymentScreen implementado.'
+			}
 		});
 	});
 
@@ -45,8 +44,8 @@ test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo · Declines @g
 		await new CargoABordoSteps({ page }).runCargoScenario(appPaxScenario, {
 			driverAppStep: {
 				title: '[DRIVER APP] Conductor finaliza viaje → cobra con tarjeta sin fondos → pago rechazado',
-				note: APPIUM_NOTE,
-			},
+				note: APPIUM_NOTE
+			}
 		});
 	});
 
@@ -54,8 +53,8 @@ test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo · Declines @g
 		await new CargoABordoSteps({ page }).runCargoScenario(appPaxScenario, {
 			driverAppStep: {
 				title: '[DRIVER APP] Conductor finaliza viaje → cobra con tarjeta reportada como perdida → rechazo',
-				note: APPIUM_NOTE,
-			},
+				note: APPIUM_NOTE
+			}
 		});
 	});
 
@@ -63,8 +62,8 @@ test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo · Declines @g
 		await new CargoABordoSteps({ page }).runCargoScenario(appPaxScenario, {
 			driverAppStep: {
 				title: '[DRIVER APP] Conductor finaliza viaje → cobra con CVC incorrecto → rechazo',
-				note: APPIUM_NOTE,
-			},
+				note: APPIUM_NOTE
+			}
 		});
 	});
 
@@ -72,9 +71,8 @@ test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo · Declines @g
 		await new CargoABordoSteps({ page }).runCargoScenario(appPaxScenario, {
 			driverAppStep: {
 				title: '[DRIVER APP] Conductor finaliza viaje → cobra con tarjeta reportada como robada → rechazo',
-				note: APPIUM_NOTE,
-			},
+				note: APPIUM_NOTE
+			}
 		});
 	});
-
 });

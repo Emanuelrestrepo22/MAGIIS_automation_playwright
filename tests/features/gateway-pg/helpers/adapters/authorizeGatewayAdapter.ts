@@ -26,12 +26,6 @@ export const authorizeGatewayAdapter: GatewayPgAdapter = {
 		'Confirm Authorize.Net-specific branch after shared card-linking form',
 		'Capture payment token or reference when available'
 	],
-	mobileTodos: [
-		'Finish trip from Android app',
-		'Confirm charge event reaches Authorize flow'
-	],
-	validationTodos: [
-		'Confirm backend payment state',
-		'Validate Authorize transaction visibility when required'
-	]
+	mobileTodos: ['Finish trip from Android app', 'Confirm charge event reaches Authorize flow'],
+	validationTodos: ['Confirm backend payment state', 'Validate Authorize transaction visibility when required']
 };

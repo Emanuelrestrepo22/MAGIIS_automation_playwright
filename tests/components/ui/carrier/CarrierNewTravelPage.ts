@@ -65,7 +65,10 @@ export class CarrierNewTravelPage extends UiBase {
 	 * Mini-flujo ATC: completa el formulario mínimo (cliente/pasajero/origen/destino) y
 	 * vincula/valida la tarjeta preautorizada. @atc MG-148 (área C — pendiente reasignar).
 	 */
-	@atc('MG-148', { severity: 'critical', description: 'Alta de viaje: completar formulario + validar tarjeta preautorizada' })
+	@atc('MG-148', {
+		severity: 'critical',
+		description: 'Alta de viaje: completar formulario + validar tarjeta preautorizada'
+	})
 	async fillMinimum(opts: NewTravelFormInput): Promise<void> {
 		await this.legacy.fillMinimum(opts);
 	}
@@ -81,7 +84,10 @@ export class CarrierNewTravelPage extends UiBase {
 	 * es API-level (TC-PAY-F-*); los TS-STRIPE-TC10xx UI de Cargo a Bordo no tienen 1:1.
 	 * MG-161 (TC-PAY-F-01) es el MG más cercano del área de cobro.
 	 */
-	@atc('MG-161', { severity: 'critical', description: 'Alta de viaje Cargo a Bordo: completar formulario + método Cargo a Bordo' })
+	@atc('MG-161', {
+		severity: 'critical',
+		description: 'Alta de viaje Cargo a Bordo: completar formulario + método Cargo a Bordo'
+	})
 	async fillCargoABordo(opts: CargoTravelInput): Promise<void> {
 		await this.legacy.selectClient(opts.client);
 		if (opts.passenger) {

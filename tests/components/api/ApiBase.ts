@@ -70,7 +70,10 @@ export class ApiBase extends TestContext {
 		}
 	}
 
-	async apiGET<TBody = Record<string, unknown>>(endpoint: string, options: RequestOptions = {}): Promise<[APIResponse, TBody]> {
+	async apiGET<TBody = Record<string, unknown>>(
+		endpoint: string,
+		options: RequestOptions = {}
+	): Promise<[APIResponse, TBody]> {
 		const response = await this.request.get(this.apiEndpoint(endpoint), {
 			headers: this.buildHeaders(options.headers),
 			params: options.params,
@@ -121,7 +124,10 @@ export class ApiBase extends TestContext {
 		return [response, await this.getResponseJson<TBody>(response), data];
 	}
 
-	async apiDELETE<TBody = Record<string, unknown>>(endpoint: string, options: RequestOptions = {}): Promise<[APIResponse, TBody]> {
+	async apiDELETE<TBody = Record<string, unknown>>(
+		endpoint: string,
+		options: RequestOptions = {}
+	): Promise<[APIResponse, TBody]> {
 		const response = await this.request.delete(this.apiEndpoint(endpoint), {
 			headers: this.buildHeaders(options.headers),
 			params: options.params,

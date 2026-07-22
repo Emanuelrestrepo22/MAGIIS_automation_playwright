@@ -10,13 +10,13 @@ import { remote } from 'webdriverio';
 import { writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 
-const UDID    = process.env.ANDROID_UDID        ?? 'R92XB0B8F3J';
+const UDID = process.env.ANDROID_UDID ?? 'R92XB0B8F3J';
 const PACKAGE = process.env.ANDROID_APP_PACKAGE ?? 'com.magiis.app.test.driver';
-const log     = (m: string) => console.log(`[home-viaje-calle] ${m}`);
+const log = (m: string) => console.log(`[home-viaje-calle] ${m}`);
 
 function save(label: string, content: string): void {
 	mkdirSync('evidence/dom-dump', { recursive: true });
-	const ts   = new Date().toISOString().replace(/[:.]/g, '-');
+	const ts = new Date().toISOString().replace(/[:.]/g, '-');
 	const path = join('evidence/dom-dump', `home-viaje-calle-${label}-${ts}.txt`);
 	writeFileSync(path, content, 'utf-8');
 	log(`✓ Guardado: ${path}`);
@@ -24,25 +24,28 @@ function save(label: string, content: string): void {
 
 async function run(): Promise<void> {
 	const driver = await remote({
-		protocol: 'http', hostname: 'localhost', port: 4723, path: '/',
+		protocol: 'http',
+		hostname: 'localhost',
+		port: 4723,
+		path: '/',
 		logLevel: 'warn',
 		capabilities: {
-			platformName:                      'Android',
-			'appium:automationName':           'UiAutomator2',
-			'appium:deviceName':               'SM-A055M',
-			'appium:udid':                     UDID,
-			'appium:appPackage':               PACKAGE,
-			'appium:appActivity':              '.MainActivity',
-			'appium:noReset':                  true,
-			'appium:forceAppLaunch':           false,
-			'appium:newCommandTimeout':        120,
-			'appium:chromedriverAutodownload': true,
-		} as Record<string, unknown>,
+			platformName: 'Android',
+			'appium:automationName': 'UiAutomator2',
+			'appium:deviceName': 'SM-A055M',
+			'appium:udid': UDID,
+			'appium:appPackage': PACKAGE,
+			'appium:appActivity': '.MainActivity',
+			'appium:noReset': true,
+			'appium:forceAppLaunch': false,
+			'appium:newCommandTimeout': 120,
+			'appium:chromedriverAutodownload': true
+		} as Record<string, unknown>
 	});
 
 	log('✓ Sesión adjuntada');
 
-	const ctxs = await driver.getContexts() as string[];
+	const ctxs = (await driver.getContexts()) as string[];
 	log(`Contextos: ${ctxs.join(', ')}`);
 	const wv = ctxs.find((c: string) => c.startsWith('WEBVIEW'));
 	if (wv) await driver.switchContext(wv);
@@ -61,16 +64,17 @@ async function run(): Promise<void> {
 	const allBtnsDump = await driver.execute<string, []>(() => {
 		const lines = [`URL: ${window.location.href}`, ''];
 		lines.push('=== TODOS LOS BOTONES EN DOM (incluyendo ion-page-hidden) ===');
-		(document.querySelectorAll('button, ion-button, [role="button"], ion-fab-button') as NodeListOf<HTMLElement>)
-			.forEach(el => {
-				const text    = (el.innerText ?? el.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 80);
-				const cls     = (el.className ?? '').toString().slice(0, 100);
-				const id      = el.id ?? '';
-				const visible = el.offsetParent !== null;
-				const page    = el.closest('ion-page, page-home, app-navigator');
-				const pageHidden = page?.classList.contains('ion-page-hidden') ?? false;
-				lines.push(`[BTN visible=${visible} hidden=${pageHidden}] id="${id}" class="${cls}" text="${text}"`);
-			});
+		(
+			document.querySelectorAll('button, ion-button, [role="button"], ion-fab-button') as NodeListOf<HTMLElement>
+		).forEach(el => {
+			const text = (el.innerText ?? el.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 80);
+			const cls = (el.className ?? '').toString().slice(0, 100);
+			const id = el.id ?? '';
+			const visible = el.offsetParent !== null;
+			const page = el.closest('ion-page, page-home, app-navigator');
+			const pageHidden = page?.classList.contains('ion-page-hidden') ?? false;
+			lines.push(`[BTN visible=${visible} hidden=${pageHidden}] id="${id}" class="${cls}" text="${text}"`);
+		});
 		return lines.join('\n');
 	});
 	save('01-all-buttons', allBtnsDump);
@@ -86,13 +90,15 @@ async function run(): Promise<void> {
 			'page-home:not(.ion-page-hidden)',
 			'app-home:not(.ion-page-hidden)',
 			'ion-page:not(.ion-page-hidden)',
-			'.ion-page:not(.ion-page-hidden)',
+			'.ion-page:not(.ion-page-hidden)'
 		];
 		let activePage: Element | null = null;
 		for (const sel of selectors) {
 			activePage = document.querySelector(sel);
 			if (activePage) {
-				lines.push(`[ACTIVE CONTAINER] ${activePage.tagName} id="${activePage.id}" class="${(activePage.className ?? '').toString().slice(0, 80)}"`);
+				lines.push(
+					`[ACTIVE CONTAINER] ${activePage.tagName} id="${activePage.id}" class="${(activePage.className ?? '').toString().slice(0, 80)}"`
+				);
 				break;
 			}
 		}
@@ -101,41 +107,43 @@ async function run(): Promise<void> {
 
 		// Botones en página activa
 		lines.push('\n--- Botones visibles ---');
-		(scope.querySelectorAll('button, ion-button, [role="button"], ion-fab-button') as NodeListOf<HTMLElement>)
-			.forEach(el => {
-				const text    = (el.innerText ?? el.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 80);
-				const cls     = (el.className ?? '').toString().slice(0, 100);
-				const id      = el.id ?? '';
-				const visible = el.offsetParent !== null;
-				if (visible || text) lines.push(`[BTN vis=${visible}] id="${id}" class="${cls}" text="${text}"`);
-			});
+		(
+			scope.querySelectorAll('button, ion-button, [role="button"], ion-fab-button') as NodeListOf<HTMLElement>
+		).forEach(el => {
+			const text = (el.innerText ?? el.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 80);
+			const cls = (el.className ?? '').toString().slice(0, 100);
+			const id = el.id ?? '';
+			const visible = el.offsetParent !== null;
+			if (visible || text) lines.push(`[BTN vis=${visible}] id="${id}" class="${cls}" text="${text}"`);
+		});
 
 		// ion-fab y ion-fab-button (botones flotantes de acción)
 		lines.push('\n--- FABs (floating action buttons) ---');
 		document.querySelectorAll('ion-fab, ion-fab-button').forEach(el => {
-			const text    = ((el as HTMLElement).innerText ?? '').replace(/\s+/g, ' ').trim().slice(0, 80);
-			const cls     = (el.className ?? '').toString().slice(0, 100);
-			const icon    = el.querySelector('ion-icon')?.getAttribute('name') ?? '';
-			const vis     = (el as HTMLElement).offsetParent !== null;
+			const text = ((el as HTMLElement).innerText ?? '').replace(/\s+/g, ' ').trim().slice(0, 80);
+			const cls = (el.className ?? '').toString().slice(0, 100);
+			const icon = el.querySelector('ion-icon')?.getAttribute('name') ?? '';
+			const vis = (el as HTMLElement).offsetParent !== null;
 			lines.push(`[FAB vis=${vis}] ${el.tagName} class="${cls}" icon="${icon}" text="${text}"`);
 		});
 
 		// Textos visibles (para identificar qué pantalla es)
 		lines.push('\n--- Textos visibles ---');
-		(scope.querySelectorAll('h1, h2, h3, ion-title, ion-label, span, p') as NodeListOf<HTMLElement>)
-			.forEach(el => {
-				const text = (el.innerText ?? '').trim().replace(/\n/g, ' ').slice(0, 120);
-				if (text.length > 2 && el.offsetParent !== null)
-					lines.push(`[TEXT] ${el.tagName} "${text}"`);
-			});
+		(scope.querySelectorAll('h1, h2, h3, ion-title, ion-label, span, p') as NodeListOf<HTMLElement>).forEach(el => {
+			const text = (el.innerText ?? '').trim().replace(/\n/g, ' ').slice(0, 120);
+			if (text.length > 2 && el.offsetParent !== null) lines.push(`[TEXT] ${el.tagName} "${text}"`);
+		});
 
 		// Elementos con clase que contenga "home", "viaje", "calle", "trip", "passenger", "pax"
 		lines.push('\n--- Elementos con clase home/viaje/trip/pax ---');
-		document.querySelectorAll('[class*="home"],[class*="viaje"],[class*="calle"],[class*="trip"],[class*="pax"],[class*="passenger"]')
+		document
+			.querySelectorAll(
+				'[class*="home"],[class*="viaje"],[class*="calle"],[class*="trip"],[class*="pax"],[class*="passenger"]'
+			)
 			.forEach(el => {
 				const text = ((el as HTMLElement).innerText ?? '').replace(/\s+/g, ' ').trim().slice(0, 80);
-				const cls  = (el.className ?? '').toString().slice(0, 100);
-				const vis  = (el as HTMLElement).offsetParent !== null;
+				const cls = (el.className ?? '').toString().slice(0, 100);
+				const vis = (el as HTMLElement).offsetParent !== null;
 				lines.push(`[HOME/PAX vis=${vis}] ${el.tagName} class="${cls}" text="${text}"`);
 			});
 

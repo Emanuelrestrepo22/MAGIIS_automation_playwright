@@ -36,11 +36,12 @@ function createJourney(testCaseId: string) {
 		portal: 'pax',
 		role: 'passenger',
 		flowType: 'passenger-app-driver-app',
-		passengerProfileMode: 'business',
+		passengerProfileMode: 'business'
 	});
 }
 
-test.describe.serial('Gateway PG · E2E Mobile · App Pax Business / Collaborator No 3DS @gateway @stripe @e2e-hybrid @wallet @regression', () => {
+test.describe
+	.serial('Gateway PG · E2E Mobile · App Pax Business / Collaborator No 3DS @gateway @stripe @e2e-hybrid @wallet @regression', () => {
 	// Gate a nivel describe: sin servidor Appium el harness no se puede construir
 	// (getPassengerAppConfig lanza). El grupo SKIPea (no ERRORA) cuando no hay device.
 	test.skip(() => !process.env.APPIUM_SERVER_URL, 'Requiere servidor Appium Android activo (APPIUM_SERVER_URL).');
@@ -52,8 +53,8 @@ test.describe.serial('Gateway PG · E2E Mobile · App Pax Business / Collaborato
 				annotation: [
 					{ type: 'tms', description: 'MG-148' },
 					{ type: 'tms', description: 'MG-158' },
-					{ type: 'tms', description: 'MG-161' },
-				],
+					{ type: 'tms', description: 'MG-161' }
+				]
 			},
 			async () => {
 				if (!scenario.active) {
@@ -67,7 +68,7 @@ test.describe.serial('Gateway PG · E2E Mobile · App Pax Business / Collaborato
 				}
 
 				const harness = new PassengerTripHappyPathHarness(getPassengerAppConfig(), undefined, {
-					profileMode: 'business',
+					profileMode: 'business'
 				});
 				let journey = createJourney(scenario.testCaseId);
 				const resolvedCard = resolveCard(scenario.cardId);
@@ -75,7 +76,7 @@ test.describe.serial('Gateway PG · E2E Mobile · App Pax Business / Collaborato
 					number: resolvedCard.number,
 					expiry: resolvedCard.exp,
 					cvc: resolvedCard.cvc,
-					holderName: resolvedCard.holderName,
+					holderName: resolvedCard.holderName
 				};
 
 				try {
@@ -117,11 +118,15 @@ test.describe.serial('Gateway PG · E2E Mobile · App Pax Business / Collaborato
 						case 'trip-create':
 							await test.step(`[${scenario.testCaseId}] create passenger trip`, async () => {
 								await harness.ensureWalletCard(card);
-								const tripId = await harness.createTrip(scenario.origin, scenario.destination, cardLast4);
+								const tripId = await harness.createTrip(
+									scenario.origin,
+									scenario.destination,
+									cardLast4
+								);
 								expect(tripId).toBeTruthy();
 
 								journey = orchestrator.attachTripData(journey, {
-									tripId: tripId ?? 'TODO',
+									tripId: tripId ?? 'TODO'
 								});
 								journey = orchestrator.prepareMobileHandoff(
 									journey,
@@ -132,7 +137,10 @@ test.describe.serial('Gateway PG · E2E Mobile · App Pax Business / Collaborato
 							break;
 
 						default:
-							test.fixme(true, 'Unhandled passenger business flow step. Update the scenario mapping first.');
+							test.fixme(
+								true,
+								'Unhandled passenger business flow step. Update the scenario mapping first.'
+							);
 					}
 				} catch (error) {
 					journey = orchestrator.fail(

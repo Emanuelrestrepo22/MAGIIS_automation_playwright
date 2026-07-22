@@ -43,7 +43,10 @@ export interface AtcOptions {
  */
 export function atc(testId: string, options: AtcOptions = {}) {
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any -- flexibilidad del decorador con strict
-	return function <T extends (...args: any[]) => Promise<any>>(originalMethod: T, context: ClassMethodDecoratorContext): T {
+	return function <T extends (...args: any[]) => Promise<any>>(
+		originalMethod: T,
+		context: ClassMethodDecoratorContext
+	): T {
 		const methodName = String(context.name);
 
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any -- coincide con la firma genérica T
@@ -89,7 +92,10 @@ export function atc(testId: string, options: AtcOptions = {}) {
  * Usar en queries read-only. NO usar sobre métodos @atc ni sobre helpers de Layer 2.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- flexibilidad del decorador con strict
-export function step<T extends (...args: any[]) => Promise<any>>(originalMethod: T, context: ClassMethodDecoratorContext): T {
+export function step<T extends (...args: any[]) => Promise<any>>(
+	originalMethod: T,
+	context: ClassMethodDecoratorContext
+): T {
 	const methodName = String(context.name);
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any -- coincide con la firma genérica T
@@ -113,7 +119,8 @@ function formatValue(value: unknown, key?: string): string {
 	if (value === null) return 'null';
 	if (value === undefined) return 'undefined';
 	if (typeof value === 'function') return '[Function]';
-	if (typeof value === 'string') return value.length > MAX_STRING_LEN ? `"${value.slice(0, MAX_STRING_LEN)}..."` : `"${value}"`;
+	if (typeof value === 'string')
+		return value.length > MAX_STRING_LEN ? `"${value.slice(0, MAX_STRING_LEN)}..."` : `"${value}"`;
 	if (typeof value === 'number' || typeof value === 'boolean') return String(value);
 	if (Array.isArray(value)) return `[Array(${value.length})]`;
 

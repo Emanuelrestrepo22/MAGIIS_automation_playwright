@@ -9,12 +9,7 @@ import type { Page } from '@playwright/test';
 import { getPortalUrl } from '../../../config/gatewayPortalRuntime';
 import { resolveLoginPath } from '../../../config/runtime';
 import { debugLog } from '../../../helpers/debug';
-import {
-	CONTRACTOR_COLLABORATOR,
-	DISPATCHER,
-	PAX_WEB,
-	getCurrentUserEnvironment,
-} from '../../../fixtures/users';
+import { CONTRACTOR_COLLABORATOR, DISPATCHER, PAX_WEB, getCurrentUserEnvironment } from '../../../fixtures/users';
 import { DashboardPage } from '../../../pages/carrier';
 import { LoginPage } from '../../../pages/shared';
 import { ensureSpanishLanguage } from '../../../pages/shared/i18n';

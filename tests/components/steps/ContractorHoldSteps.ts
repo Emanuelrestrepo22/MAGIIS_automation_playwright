@@ -24,12 +24,14 @@ import { ThreeDsChallengePage } from '@ui/ThreeDsChallengePage';
 import { CarrierDashboardPage } from '@ui/carrier';
 import { ContractorNewTravelPage } from '@ui/contractor';
 import { expectNoThreeDSModal, loginAsContractor } from '@features/gateway-pg/fixtures/gateway.fixtures';
-import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '@features/gateway-pg/helpers/travel-cleanup';
+import {
+	captureCreatedTravelId,
+	cancelTravelIfCreated,
+	type TravelIdRef
+} from '@features/gateway-pg/helpers/travel-cleanup';
 
 /** Flujo de tarjeta: nueva vinculación por last4, o tarjeta guardada del colaborador. */
-export type ContractorCardFlow =
-	| { kind: 'new'; last4: string }
-	| { kind: 'saved' };
+export type ContractorCardFlow = { kind: 'new'; last4: string } | { kind: 'saved' };
 
 /**
  * Modo de 3DS del escenario:
@@ -108,7 +110,7 @@ export class ContractorHoldSteps extends UiBase {
 						passenger: scenario.user,
 						origin: scenario.origin,
 						destination: scenario.destination,
-						cardLast4,
+						cardLast4
 					});
 				});
 			} else {
@@ -120,7 +122,10 @@ export class ContractorHoldSteps extends UiBase {
 
 				await test.step('Seleccionar tarjeta VISA guardada del colaborador', async () => {
 					const hasCard = await this.travel.hasHighlightedSavedCard();
-					test.skip(!hasCard, 'Precondición: colaborador no tiene tarjeta guardada en TEST. Vincular tarjeta primero.');
+					test.skip(
+						!hasCard,
+						'Precondición: colaborador no tiene tarjeta guardada en TEST. Vincular tarjeta primero.'
+					);
 					await this.travel.selectSavedCard();
 				});
 			}
@@ -156,10 +161,10 @@ export class ContractorHoldSteps extends UiBase {
 
 			await test.step('Esperar redirección fuera del formulario de alta', async () => {
 				// El portal contractor redirige a /dashboard tras crear el viaje (no a /travels/xxx).
-				await this.page.waitForURL(
-					url => !url.href.includes('/travel/create'),
-					{ timeout: 30_000, waitUntil: 'commit' },
-				);
+				await this.page.waitForURL(url => !url.href.includes('/travel/create'), {
+					timeout: 30_000,
+					waitUntil: 'commit'
+				});
 			});
 
 			// Validación API: el POST /travels devolvió un travelId — viaje creado en backend.

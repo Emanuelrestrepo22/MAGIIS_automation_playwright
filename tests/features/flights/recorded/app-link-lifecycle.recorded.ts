@@ -21,7 +21,9 @@
 
 import { expect, test } from '@playwright/test';
 
-test('recorded — app-link lifecycle: manual vs API, vincular/desvincular, nota, aeropuerto-parada, despacho (referencia)', async ({ page }) => {
+test('recorded — app-link lifecycle: manual vs API, vincular/desvincular, nota, aeropuerto-parada, despacho (referencia)', async ({
+	page
+}) => {
 	await page.goto('https://apps-uat.magiis.com/#/authentication/login/carrier');
 	await page.getByRole('textbox', { name: 'Email' }).fill('remiseriamagiis@gmail.com');
 	await page.getByRole('textbox', { name: 'Contraseña' }).fill('Mag11s2022');
@@ -38,7 +40,11 @@ test('recorded — app-link lifecycle: manual vs API, vincular/desvincular, nota
 	await page.getByText('Cazadores 1987, Buenos Aires').click();
 	await page.getByRole('textbox', { name: 'Ingrese una dirección' }).fill('eze');
 	await page.getByText('Aeropuerto Internacional').click();
-	await page.locator('.multiple-destination-container > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder').click();
+	await page
+		.locator(
+			'.multiple-destination-container > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder'
+		)
+		.click();
 	await page.getByRole('textbox', { name: 'Ingrese una dirección' }).fill('reconquista');
 	await page.getByText('Reconquista, Ciudad Autónoma de Buenos Aires, Argentina', { exact: true }).click();
 	// Modo MANUAL (sin API): Número de Vuelo + Arribos/Partidas, sin getFlights.
@@ -71,10 +77,19 @@ test('recorded — app-link lifecycle: manual vs API, vincular/desvincular, nota
 	await page.getByText('Seleccione Usuario').click();
 	await page.getByRole('textbox', { name: 'Usuario a Buscar' }).fill('ana');
 	await page.locator('.highlighted > .data-with-icon-col').click();
-	await page.locator('.ng-tns-c37-12.ng-untouched > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder').first().click();
+	await page
+		.locator(
+			'.ng-tns-c37-12.ng-untouched > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder'
+		)
+		.first()
+		.click();
 	await page.getByRole('textbox', { name: 'Ingrese una dirección' }).fill('ezeiza');
 	await page.getByText('Aeropuerto Internacional').click();
-	await page.locator('.multiple-destination-container > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder').click();
+	await page
+		.locator(
+			'.multiple-destination-container > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder'
+		)
+		.click();
 	await page.getByRole('textbox', { name: 'Ingrese una dirección' }).fill('reconquista 661');
 	await page.getByText('Reconquista 661, Ciudad Autó').click();
 	await page.getByText('Aeropuerto Internacional').click();
@@ -98,7 +113,10 @@ test('recorded — app-link lifecycle: manual vs API, vincular/desvincular, nota
 	// Edición del programado: vincular vuelo por API (Buscar), Recalcular + Guardar.
 	await page.getByRole('banner').getByRole('link', { name: 'Gestión de Viajes' }).click();
 	await page.getByRole('link', { name: 'Programados (1)' }).click();
-	await page.locator('button[title="Editar"], button[aria-label="Editar"], button[aria-description="Editar"]').first().click();
+	await page
+		.locator('button[title="Editar"], button[aria-label="Editar"], button[aria-description="Editar"]')
+		.first()
+		.click();
 	await page.locator('button').nth(5).click();
 	await page.getByText('Partidas').click();
 	await page.getByText('Arribos').click();
@@ -113,7 +131,10 @@ test('recorded — app-link lifecycle: manual vs API, vincular/desvincular, nota
 	await page.getByRole('button', { name: 'Guardar' }).click();
 	// Edición con aeropuerto como parada + vinculación GOL + fecha DÍA ACTUAL → despacho OK.
 	await page.getByRole('link', { name: 'Programados (1)' }).click();
-	await page.locator('button[title="Editar"], button[aria-label="Editar"], button[aria-description="Editar"]').first().click();
+	await page
+		.locator('button[title="Editar"], button[aria-label="Editar"], button[aria-description="Editar"]')
+		.first()
+		.click();
 	await page.locator('.btn.btn-primary.rounded-btn.btn-flight-round').click();
 	await page.getByText('Seleccione Aerolínea').click();
 	await page.getByRole('textbox', { name: 'Aerolínea a buscar' }).fill('gol');

@@ -51,9 +51,11 @@ export class DriverTripSummaryScreen extends AppiumSessionBase {
 			const url = await driver.execute<string, []>(() => window.location.href).catch(() => '');
 			// URL confirmada: /TravelResumePage — también verificar por contenedor como fallback
 			if (url.includes('TravelResumePage')) return true;
-			const hasResume = await driver.execute<boolean, []>(() => {
-				return !!document.querySelector('app-travel-resume');
-			}).catch(() => false);
+			const hasResume = await driver
+				.execute<boolean, []>(() => {
+					return !!document.querySelector('app-travel-resume');
+				})
+				.catch(() => false);
 			if (hasResume) return true;
 			await driver.pause(500);
 		}
@@ -67,7 +69,10 @@ export class DriverTripSummaryScreen extends AppiumSessionBase {
 		try {
 			await this.switchToWebView();
 			return await this.getDriver().execute<TripSummarySnapshot, []>(() => {
-				const normalize = (v: unknown) => String(v ?? '').replace(/\s+/g, ' ').trim();
+				const normalize = (v: unknown) =>
+					String(v ?? '')
+						.replace(/\s+/g, ' ')
+						.trim();
 				const isVisible = (el: Element) => {
 					const h = el as HTMLElement;
 					const r = h.getBoundingClientRect();
@@ -89,14 +94,11 @@ export class DriverTripSummaryScreen extends AppiumSessionBase {
 				const totalMatch = rawTexts.find(t => /\$\s*[\d,.]+/.test(t)) ?? '';
 
 				// Forma de pago seleccionada — buscar tarjeta o efectivo
-				const paymentMatch = rawTexts.find(t =>
-					/tarjeta|card|efectivo|cash|wallet|\*{2,}|\d{4}$/i.test(t)
-				) ?? '';
+				const paymentMatch =
+					rawTexts.find(t => /tarjeta|card|efectivo|cash|wallet|\*{2,}|\d{4}$/i.test(t)) ?? '';
 
 				// Extras: peaje, estacionamiento
-				const extras = rawTexts.filter(t =>
-					/peaje|estacionamiento|toll|parking|extra/i.test(t)
-				);
+				const extras = rawTexts.filter(t => /peaje|estacionamiento|toll|parking|extra/i.test(t));
 
 				return {
 					url: window.location.href,
@@ -104,7 +106,7 @@ export class DriverTripSummaryScreen extends AppiumSessionBase {
 					paymentMethod: paymentMatch,
 					extras,
 					buttons,
-					rawTexts: rawTexts.slice(0, 60),
+					rawTexts: rawTexts.slice(0, 60)
 				};
 			});
 		} catch (e) {
@@ -134,7 +136,7 @@ export class DriverTripSummaryScreen extends AppiumSessionBase {
 			// Buscar botón de pago por clase o dentro del bloque div.travel-payment
 			const candidates = [
 				...Array.from(container.querySelectorAll('button.payment, button[class*="payment"]')),
-				...Array.from(container.querySelectorAll('div.travel-payment button')),
+				...Array.from(container.querySelectorAll('div.travel-payment button'))
 			] as HTMLButtonElement[];
 			let target: HTMLButtonElement | undefined;
 			if (digits) {
@@ -143,7 +145,10 @@ export class DriverTripSummaryScreen extends AppiumSessionBase {
 			if (!target) {
 				target = candidates.find(b => b.offsetParent !== null);
 			}
-			if (target) { target.click(); return (target.innerText ?? '').trim(); }
+			if (target) {
+				target.click();
+				return (target.innerText ?? '').trim();
+			}
 			return '';
 		}, last4);
 
@@ -172,7 +177,7 @@ export class DriverTripSummaryScreen extends AppiumSessionBase {
 		// Textos posibles del botón de cierre, en orden de prioridad
 		const CLOSE_TEXTS = ['Cerrar Viaje', 'Firmar y Cerrar viaje', 'Finalizar Viaje'];
 
-		const clicked = await driver.execute((candidates: string[]) => {
+		const clicked = (await driver.execute((candidates: string[]) => {
 			const container = document.querySelector('app-travel-resume');
 			if (!container) return '';
 			const btns = Array.from(container.querySelectorAll('button')) as HTMLButtonElement[];
@@ -180,17 +185,20 @@ export class DriverTripSummaryScreen extends AppiumSessionBase {
 				const btn = btns.find(
 					b => (b.innerText ?? '').trim() === txt && b.offsetParent !== null && !b.disabled
 				);
-				if (btn) { btn.click(); return txt; }
+				if (btn) {
+					btn.click();
+					return txt;
+				}
 			}
 			return '';
-		}, CLOSE_TEXTS) as string;
+		}, CLOSE_TEXTS)) as string;
 
 		if (!clicked) {
 			const snapshot = await this.getSnapshot();
-			const details  = snapshot
-				? `Botones visibles: ${snapshot.buttons.join(' | ')}`
-				: 'snapshot unavailable';
-			throw new Error(`[DriverTripSummaryScreen] confirmAndFinish: botón de cierre no encontrado o deshabilitado. ${details}\nVerificar que selectPaymentMethod() fue llamado antes.`);
+			const details = snapshot ? `Botones visibles: ${snapshot.buttons.join(' | ')}` : 'snapshot unavailable';
+			throw new Error(
+				`[DriverTripSummaryScreen] confirmAndFinish: botón de cierre no encontrado o deshabilitado. ${details}\nVerificar que selectPaymentMethod() fue llamado antes.`
+			);
 		}
 
 		console.log(`[DriverTripSummaryScreen] ✓ Tap "${clicked}"`);
@@ -207,9 +215,9 @@ export class DriverTripSummaryScreen extends AppiumSessionBase {
 		await this.switchToWebView();
 		const driver = this.getDriver();
 		try {
-			const allBtns = await driver.$$('app-travel-resume button') as unknown as any[];
+			const allBtns = (await driver.$$('app-travel-resume button')) as unknown as any[];
 			for (const btn of allBtns) {
-				const text    = (await btn.getText().catch(() => '')).trim();
+				const text = (await btn.getText().catch(() => '')).trim();
 				const visible = await btn.isDisplayed().catch(() => false);
 				if (text === 'Peaje' && visible) {
 					await btn.click();
@@ -235,9 +243,9 @@ export class DriverTripSummaryScreen extends AppiumSessionBase {
 		await this.switchToWebView();
 		const driver = this.getDriver();
 		try {
-			const allBtns = await driver.$$('app-travel-resume button') as unknown as any[];
+			const allBtns = (await driver.$$('app-travel-resume button')) as unknown as any[];
 			for (const btn of allBtns) {
-				const text    = (await btn.getText().catch(() => '')).trim();
+				const text = (await btn.getText().catch(() => '')).trim();
 				const visible = await btn.isDisplayed().catch(() => false);
 				if (text === 'Estac.' && visible) {
 					await btn.click();
@@ -263,7 +271,9 @@ export class DriverTripSummaryScreen extends AppiumSessionBase {
 			return await this.getDriver().execute<string, []>(() => {
 				const container = document.querySelector('app-travel-resume');
 				if (!container) return '';
-				const btns = Array.from(container.querySelectorAll('button.payment, button[class*="payment"]')) as HTMLButtonElement[];
+				const btns = Array.from(
+					container.querySelectorAll('button.payment, button[class*="payment"]')
+				) as HTMLButtonElement[];
 				const visible = btns.find(b => b.offsetParent !== null);
 				return (visible?.innerText ?? '').trim();
 			});

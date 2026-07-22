@@ -14,7 +14,8 @@ import type { PassengerProfileMode } from '../../../features/gateway-pg/contract
 
 process.env.APPIUM_SERVER_URL = process.env.APPIUM_SERVER_URL ?? 'http://localhost:4723';
 process.env.ENV = process.env.ENV ?? 'test';
-process.env.ANDROID_PASSENGER_APP_PACKAGE = process.env.ANDROID_PASSENGER_APP_PACKAGE ?? 'com.magiis.app.test.passenger';
+process.env.ANDROID_PASSENGER_APP_PACKAGE =
+	process.env.ANDROID_PASSENGER_APP_PACKAGE ?? 'com.magiis.app.test.passenger';
 process.env.ANDROID_UDID = process.env.ANDROID_UDID ?? 'R92XB0B8F3J';
 
 const targetMode = (process.env.TARGET_PROFILE_MODE ?? 'personal') as PassengerProfileMode;

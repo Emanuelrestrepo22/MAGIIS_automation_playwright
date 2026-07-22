@@ -9,11 +9,7 @@ export type GeminiRuntimeConfig = {
 	};
 };
 
-const GEMINI_API_KEY_SOURCES: GeminiApiKeySource[] = [
-	'GEMINI_API_KEY',
-	'AI_STUDIO_GEMINI_MAGIIS',
-	'GOOGLE_API_KEY'
-];
+const GEMINI_API_KEY_SOURCES: GeminiApiKeySource[] = ['GEMINI_API_KEY', 'AI_STUDIO_GEMINI_MAGIIS', 'GOOGLE_API_KEY'];
 
 function readApiKeyFromEnv(source: GeminiApiKeySource): string | undefined {
 	const value = process.env[source];
@@ -25,8 +21,8 @@ export function resolveGeminiApiKey(): GeminiRuntimeConfig {
 		const apiKey = readApiKeyFromEnv(source);
 
 		if (apiKey) {
-			return { 
-				apiKey, 
+			return {
+				apiKey,
 				apiKeySource: source,
 				models: {
 					flash: process.env.GEMINI_MODEL_FLASH || 'gemini-2.5-flash-preview-04-17',
@@ -36,7 +32,9 @@ export function resolveGeminiApiKey(): GeminiRuntimeConfig {
 		}
 	}
 
-	throw new Error('Missing Gemini API key. Define GEMINI_API_KEY or AI_STUDIO_GEMINI_MAGIIS in the active .env file.');
+	throw new Error(
+		'Missing Gemini API key. Define GEMINI_API_KEY or AI_STUDIO_GEMINI_MAGIIS in the active .env file.'
+	);
 }
 
 export function mirrorGeminiApiKeyToStandardEnv(): GeminiRuntimeConfig {

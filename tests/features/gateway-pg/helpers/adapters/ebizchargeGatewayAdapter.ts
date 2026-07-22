@@ -13,12 +13,6 @@ export const ebizchargeGatewayAdapter: GatewayPgAdapter = {
 		'Confirm eBizCharge-specific fields that diverge after common card-linking form',
 		'Capture payment reference emitted from eBizCharge flow'
 	],
-	mobileTodos: [
-		'Validate trip completion and charge trigger in Android app',
-		'Confirm mobile state after charge'
-	],
-	validationTodos: [
-		'Confirm backend payment state',
-		'Confirm eBizCharge response or transaction ID if exposed'
-	]
+	mobileTodos: ['Validate trip completion and charge trigger in Android app', 'Confirm mobile state after charge'],
+	validationTodos: ['Confirm backend payment state', 'Confirm eBizCharge response or transaction ID if exposed']
 };

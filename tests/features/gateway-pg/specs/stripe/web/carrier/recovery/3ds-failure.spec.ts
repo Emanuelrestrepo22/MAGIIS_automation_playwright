@@ -28,7 +28,7 @@ import {
 	CarrierNewTravelPage,
 	CarrierOperationalPreferencesPage,
 	CarrierTravelDetailPage,
-	CarrierTravelManagementPage,
+	CarrierTravelManagementPage
 } from '@ui/carrier';
 import { ThreeDsChallengePage } from '@ui/ThreeDsChallengePage';
 import { RecoverySteps } from '@steps/index';
@@ -40,13 +40,14 @@ test.describe.configure({ mode: 'serial' });
 test.use({ storageState: undefined });
 
 test.describe('Gateway PG · Carrier · App Pax — Fallo 3DS, red flag y reintento @gateway @stripe @hold @3ds @decline @regression', () => {
-
 	test.beforeEach(async ({ page }) => {
 		await loginAsDispatcher(page);
 	});
 
 	test.describe('[TS-STRIPE-TC1057] Hold ON + 3DS recuperable (4000 0000 0000 3220) — challenge rechazado → NO_AUTORIZADO en "En conflicto" (sin pop-up MAGIIS post-fallo)', () => {
-		test('tras rechazar challenge 3DS el viaje queda en NO_AUTORIZADO y fuera de "Por asignar"', async ({ page }) => {
+		test('tras rechazar challenge 3DS el viaje queda en NO_AUTORIZADO y fuera de "Por asignar"', async ({
+			page
+		}) => {
 			const dashboard = new CarrierDashboardPage({ page });
 			const preferences = new CarrierOperationalPreferencesPage({ page });
 			const travel = new CarrierNewTravelPage({ page });
@@ -71,7 +72,7 @@ test.describe('Gateway PG · Carrier · App Pax — Fallo 3DS, red flag y reinte
 					passenger: TEST_DATA.appPaxPassenger,
 					origin: TEST_DATA.origin,
 					destination: TEST_DATA.destination,
-					cardLast4: STRIPE_TEST_CARDS.threeDSRequired.slice(-4), // 4000000000003220 (3DS requerido, recuperable)
+					cardLast4: STRIPE_TEST_CARDS.threeDSRequired.slice(-4) // 4000000000003220 (3DS requerido, recuperable)
 				});
 				await travel.submit();
 			});
@@ -91,7 +92,9 @@ test.describe('Gateway PG · Carrier · App Pax — Fallo 3DS, red flag y reinte
 
 			await test.step('Validar gestión — viaje no aparece en columna "Por asignar"', async () => {
 				await management.goto();
-				await expect.soft(management.porAsignarColumn()).not.toContainText(TEST_DATA.appPaxPassenger, { timeout: 10_000 });
+				await expect
+					.soft(management.porAsignarColumn())
+					.not.toContainText(TEST_DATA.appPaxPassenger, { timeout: 10_000 });
 			});
 		});
 	});
@@ -115,7 +118,9 @@ test.describe('Gateway PG · Carrier · App Pax — Fallo 3DS, red flag y reinte
 			await expect(detail.retryButton()).toBeVisible({ timeout: 10_000 });
 		});
 
-		test('estado del viaje es "No autorizado" — no aparece "Buscando conductor" mientras 3DS está pendiente', async ({ page }) => {
+		test('estado del viaje es "No autorizado" — no aparece "Buscando conductor" mientras 3DS está pendiente', async ({
+			page
+		}) => {
 			const recovery = new RecoverySteps({ page });
 			await recovery.setupFailedThreeDs(TEST_DATA);
 			await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });

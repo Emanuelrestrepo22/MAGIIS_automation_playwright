@@ -66,7 +66,13 @@ export const MP_CARD_CATALOG = {
 const DEFAULT = MP_CARD_CATALOG.visaCredit;
 
 /** Helper para construir un entry keyword-driven sobre la tarjeta default. */
-function mpCard(holderName: string, status: MercadoPagoStatus, statusDetail: string, description: string, withDoc = false): MercadoPagoTestCard {
+function mpCard(
+	holderName: string,
+	status: MercadoPagoStatus,
+	statusDetail: string,
+	description: string,
+	withDoc = false
+): MercadoPagoTestCard {
 	return {
 		number: DEFAULT.number,
 		brand: DEFAULT.brand,
@@ -91,18 +97,73 @@ export const MP_TEST_CARDS = {
 	pending: mpCard('CONT', 'pending', 'pending_contingency', 'CONT → pago pendiente.'),
 
 	// ── Rejected ────────────────────────────────────────────────────────
-	rejectedOther: mpCard('OTHE', 'rejected', 'cc_rejected_other_reason', 'OTHE → rechazo por error general. Decline canónico MAGIIS.'),
-	rejectedCallValidation: mpCard('CALL', 'rejected', 'cc_rejected_call_for_authorize', 'CALL → rechazo, requiere validación para autorizar.'),
-	rejectedInsufficientFunds: mpCard('FUND', 'rejected', 'cc_rejected_insufficient_amount', 'FUND → rechazo por fondos insuficientes.'),
-	rejectedInvalidCvv: mpCard('SECU', 'rejected', 'cc_rejected_bad_filled_security_code', 'SECU → rechazo por código de seguridad inválido.'),
-	rejectedExpired: mpCard('EXPI', 'rejected', 'cc_rejected_bad_filled_date', 'EXPI → rechazo por problema de fecha de expiración.'),
+	rejectedOther: mpCard(
+		'OTHE',
+		'rejected',
+		'cc_rejected_other_reason',
+		'OTHE → rechazo por error general. Decline canónico MAGIIS.'
+	),
+	rejectedCallValidation: mpCard(
+		'CALL',
+		'rejected',
+		'cc_rejected_call_for_authorize',
+		'CALL → rechazo, requiere validación para autorizar.'
+	),
+	rejectedInsufficientFunds: mpCard(
+		'FUND',
+		'rejected',
+		'cc_rejected_insufficient_amount',
+		'FUND → rechazo por fondos insuficientes.'
+	),
+	rejectedInvalidCvv: mpCard(
+		'SECU',
+		'rejected',
+		'cc_rejected_bad_filled_security_code',
+		'SECU → rechazo por código de seguridad inválido.'
+	),
+	rejectedExpired: mpCard(
+		'EXPI',
+		'rejected',
+		'cc_rejected_bad_filled_date',
+		'EXPI → rechazo por problema de fecha de expiración.'
+	),
 	rejectedForm: mpCard('FORM', 'rejected', 'cc_rejected_bad_filled_other', 'FORM → rechazo por error de formulario.'),
-	rejectedMissingCardNumber: mpCard('CARD', 'rejected', 'cc_rejected_bad_filled_card_number', 'CARD → rechazo por número de tarjeta faltante.'),
-	rejectedInvalidInstallments: mpCard('INST', 'rejected', 'cc_rejected_invalid_installments', 'INST → rechazo por cuotas inválidas.'),
-	rejectedDuplicate: mpCard('DUPL', 'rejected', 'cc_rejected_duplicated_payment', 'DUPL → rechazo por pago duplicado.'),
-	rejectedCardDisabled: mpCard('LOCK', 'rejected', 'cc_rejected_card_disabled', 'LOCK → rechazo, tarjeta deshabilitada.'),
-	rejectedCardTypeNotAllowed: mpCard('CTNA', 'rejected', 'cc_rejected_card_type_not_allowed', 'CTNA → rechazo, tipo de tarjeta no permitido.'),
-	rejectedPinAttempts: mpCard('ATTE', 'rejected', 'cc_rejected_max_attempts', 'ATTE → rechazo, intentos de PIN excedidos.'),
+	rejectedMissingCardNumber: mpCard(
+		'CARD',
+		'rejected',
+		'cc_rejected_bad_filled_card_number',
+		'CARD → rechazo por número de tarjeta faltante.'
+	),
+	rejectedInvalidInstallments: mpCard(
+		'INST',
+		'rejected',
+		'cc_rejected_invalid_installments',
+		'INST → rechazo por cuotas inválidas.'
+	),
+	rejectedDuplicate: mpCard(
+		'DUPL',
+		'rejected',
+		'cc_rejected_duplicated_payment',
+		'DUPL → rechazo por pago duplicado.'
+	),
+	rejectedCardDisabled: mpCard(
+		'LOCK',
+		'rejected',
+		'cc_rejected_card_disabled',
+		'LOCK → rechazo, tarjeta deshabilitada.'
+	),
+	rejectedCardTypeNotAllowed: mpCard(
+		'CTNA',
+		'rejected',
+		'cc_rejected_card_type_not_allowed',
+		'CTNA → rechazo, tipo de tarjeta no permitido.'
+	),
+	rejectedPinAttempts: mpCard(
+		'ATTE',
+		'rejected',
+		'cc_rejected_max_attempts',
+		'ATTE → rechazo, intentos de PIN excedidos.'
+	),
 	rejectedBlacklisted: mpCard('BLAC', 'rejected', 'cc_rejected_blacklist', 'BLAC → rechazo, en lista negra.'),
 
 	// ── No soportado ────────────────────────────────────────────────────

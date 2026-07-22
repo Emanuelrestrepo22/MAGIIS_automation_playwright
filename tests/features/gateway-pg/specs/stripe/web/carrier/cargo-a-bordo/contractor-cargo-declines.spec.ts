@@ -24,19 +24,18 @@ const contractorScenario: CargoScenario = {
 	client: TEST_DATA.contractorClient,
 	passenger: TEST_DATA.contractorPassenger,
 	origin: TEST_DATA.origin,
-	destination: TEST_DATA.destination,
+	destination: TEST_DATA.destination
 };
 
 const APPIUM_NOTE = 'PENDIENTE: fase Driver App — requiere Appium.';
 
 test.describe('Gateway PG · Carrier · Colaborador/Contractor — Cargo a Bordo · Declines @gateway @stripe @cargo-a-bordo @hold @decline @regression', () => {
-
 	test('[TS-STRIPE-TC1097] @regression @cargo-a-bordo pago rechazado genérico desde Driver App', async ({ page }) => {
 		await new CargoABordoSteps({ page }).runCargoScenario(contractorScenario, {
 			driverAppStep: {
 				title: '[DRIVER APP] Conductor cobra → tarjeta declinada genéricamente → rechazo',
-				note: 'PENDIENTE: fase Driver App — requiere Appium + DriverTripPaymentScreen.',
-			},
+				note: 'PENDIENTE: fase Driver App — requiere Appium + DriverTripPaymentScreen.'
+			}
 		});
 	});
 
@@ -44,8 +43,8 @@ test.describe('Gateway PG · Carrier · Colaborador/Contractor — Cargo a Bordo
 		await new CargoABordoSteps({ page }).runCargoScenario(contractorScenario, {
 			driverAppStep: {
 				title: '[DRIVER APP] Conductor cobra → fondos insuficientes → rechazo',
-				note: APPIUM_NOTE,
-			},
+				note: APPIUM_NOTE
+			}
 		});
 	});
 
@@ -53,8 +52,8 @@ test.describe('Gateway PG · Carrier · Colaborador/Contractor — Cargo a Bordo
 		await new CargoABordoSteps({ page }).runCargoScenario(contractorScenario, {
 			driverAppStep: {
 				title: '[DRIVER APP] Conductor cobra → tarjeta reportada como perdida → rechazo',
-				note: APPIUM_NOTE,
-			},
+				note: APPIUM_NOTE
+			}
 		});
 	});
 
@@ -62,8 +61,8 @@ test.describe('Gateway PG · Carrier · Colaborador/Contractor — Cargo a Bordo
 		await new CargoABordoSteps({ page }).runCargoScenario(contractorScenario, {
 			driverAppStep: {
 				title: '[DRIVER APP] Conductor cobra → CVC incorrecto → rechazo',
-				note: APPIUM_NOTE,
-			},
+				note: APPIUM_NOTE
+			}
 		});
 	});
 
@@ -71,9 +70,8 @@ test.describe('Gateway PG · Carrier · Colaborador/Contractor — Cargo a Bordo
 		await new CargoABordoSteps({ page }).runCargoScenario(contractorScenario, {
 			driverAppStep: {
 				title: '[DRIVER APP] Conductor cobra → tarjeta robada → rechazo',
-				note: APPIUM_NOTE,
-			},
+				note: APPIUM_NOTE
+			}
 		});
 	});
-
 });

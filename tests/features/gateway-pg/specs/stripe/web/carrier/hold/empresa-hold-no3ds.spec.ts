@@ -31,7 +31,7 @@ function empresaScenario(cardFlow: CardFlow, overrides: Partial<HoldScenario> = 
 		destination: TEST_DATA.destination,
 		apiSearchQuery: PASSENGERS.empresaIndividuo.apiSearchQuery,
 		cardFlow,
-		...overrides,
+		...overrides
 	};
 }
 
@@ -40,48 +40,78 @@ test.use({ storageState: undefined });
 test.describe.configure({ timeout: 180_000 });
 
 test.describe('Gateway PG · Carrier · Empresa Individuo — Hold sin 3DS @gateway @stripe @hold @critical @smoke @regression', () => {
-
 	test.describe('Hold ON', () => {
 		// TC1065 — canónico card-new (smoke). Ver par card-existing en TC1067.
-		test('[TS-STRIPE-TC1065] @smoke @hold @card-new hold+cobro empresa sin 3DS — Vincular tarjeta nueva', async ({ page }) => {
-			await new CarrierHoldSteps({ page }).runHoldScenario(empresaScenario('new'), { hold: 'on', threeDs: false });
+		test('[TS-STRIPE-TC1065] @smoke @hold @card-new hold+cobro empresa sin 3DS — Vincular tarjeta nueva', async ({
+			page
+		}) => {
+			await new CarrierHoldSteps({ page }).runHoldScenario(empresaScenario('new'), {
+				hold: 'on',
+				threeDs: false
+			});
 		});
 
 		// Par card-existing de TC1065 — canonical_ref TS-STRIPE-TC1065 en normalized-test-cases.json
-		test('[TS-STRIPE-TC1067] @regression @hold @card-existing hold+cobro empresa sin 3DS — Usar tarjeta vinculada existente', async ({ page }) => {
-			await new CarrierHoldSteps({ page }).runHoldScenario(empresaScenario('existing'), { hold: 'on', threeDs: false });
+		test('[TS-STRIPE-TC1067] @regression @hold @card-existing hold+cobro empresa sin 3DS — Usar tarjeta vinculada existente', async ({
+			page
+		}) => {
+			await new CarrierHoldSteps({ page }).runHoldScenario(empresaScenario('existing'), {
+				hold: 'on',
+				threeDs: false
+			});
 		});
 
 		// DEPRECATED: ver TC canónico TS-STRIPE-TC1065 (fase 2 — duplicado sin card-flow diferenciado)
 		test('[TS-STRIPE-TC1073] @regression @hold hold+cobro empresa sin 3DS (set 2)', async ({ page }) => {
-			await new CarrierHoldSteps({ page }).runHoldScenario(empresaScenario('new'), { hold: 'on', threeDs: false });
+			await new CarrierHoldSteps({ page }).runHoldScenario(empresaScenario('new'), {
+				hold: 'on',
+				threeDs: false
+			});
 		});
 
 		// DEPRECATED: ver TC canónico TS-STRIPE-TC1065 (fase 2 — duplicado sin card-flow diferenciado)
 		test('[TS-STRIPE-TC1075] @regression @hold hold+cobro empresa sin 3DS variante set 2', async ({ page }) => {
-			await new CarrierHoldSteps({ page }).runHoldScenario(empresaScenario('new'), { hold: 'on', threeDs: false });
+			await new CarrierHoldSteps({ page }).runHoldScenario(empresaScenario('new'), {
+				hold: 'on',
+				threeDs: false
+			});
 		});
 	});
 
 	test.describe('Hold OFF', () => {
-		test('[TS-STRIPE-TC1066] @regression @hold @card-new sin hold empresa sin 3DS — Vincular tarjeta nueva', async ({ page }) => {
-			await new CarrierHoldSteps({ page }).runHoldScenario(empresaScenario('new'), { hold: 'off', threeDs: false });
+		test('[TS-STRIPE-TC1066] @regression @hold @card-new sin hold empresa sin 3DS — Vincular tarjeta nueva', async ({
+			page
+		}) => {
+			await new CarrierHoldSteps({ page }).runHoldScenario(empresaScenario('new'), {
+				hold: 'off',
+				threeDs: false
+			});
 		});
 
 		// Par card-existing de TC1066 — canonical_ref TS-STRIPE-TC1066 en normalized-test-cases.json
-		test('[TS-STRIPE-TC1068] @regression @hold @card-existing sin hold empresa sin 3DS — Usar tarjeta vinculada existente', async ({ page }) => {
-			await new CarrierHoldSteps({ page }).runHoldScenario(empresaScenario('existing'), { hold: 'off', threeDs: false });
+		test('[TS-STRIPE-TC1068] @regression @hold @card-existing sin hold empresa sin 3DS — Usar tarjeta vinculada existente', async ({
+			page
+		}) => {
+			await new CarrierHoldSteps({ page }).runHoldScenario(empresaScenario('existing'), {
+				hold: 'off',
+				threeDs: false
+			});
 		});
 
 		// DEPRECATED: ver TC canónico TS-STRIPE-TC1066 (fase 2 — duplicado sin card-flow diferenciado)
 		test('[TS-STRIPE-TC1074] @regression @hold sin hold empresa sin 3DS (set 2)', async ({ page }) => {
-			await new CarrierHoldSteps({ page }).runHoldScenario(empresaScenario('new'), { hold: 'off', threeDs: false });
+			await new CarrierHoldSteps({ page }).runHoldScenario(empresaScenario('new'), {
+				hold: 'off',
+				threeDs: false
+			});
 		});
 
 		// DEPRECATED: ver TC canónico TS-STRIPE-TC1066 (fase 2 — duplicado sin card-flow diferenciado)
 		test('[TS-STRIPE-TC1076] @regression @hold sin hold empresa sin 3DS variante set 2', async ({ page }) => {
-			await new CarrierHoldSteps({ page }).runHoldScenario(empresaScenario('new'), { hold: 'off', threeDs: false });
+			await new CarrierHoldSteps({ page }).runHoldScenario(empresaScenario('new'), {
+				hold: 'off',
+				threeDs: false
+			});
 		});
 	});
-
 });

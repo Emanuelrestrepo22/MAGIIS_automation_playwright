@@ -25,20 +25,19 @@ const contractorScenario: CargoScenario = {
 	client: TEST_DATA.contractorClient,
 	passenger: TEST_DATA.contractorPassenger,
 	origin: TEST_DATA.origin,
-	destination: TEST_DATA.destination,
+	destination: TEST_DATA.destination
 };
 
 const APPIUM_NOTE = 'PENDIENTE: fase Driver App — requiere Appium.';
 
 test.describe('Gateway PG · Carrier · Colaborador/Contractor — Cargo a Bordo · 3DS @gateway @stripe @cargo-a-bordo @hold @3ds @critical', () => {
-
 	test('[TS-STRIPE-TC1107] @critical @3ds @cargo-a-bordo pago exitoso con 3DS desde Driver App', async ({ page }) => {
 		await new CargoABordoSteps({ page }).runCargoScenario(contractorScenario, {
 			createTimeout: 30_000,
 			driverAppStep: {
 				title: '[DRIVER APP] Conductor cobra → 3DS requerido → pasajero aprueba → cobro exitoso',
-				note: 'PENDIENTE: fase Driver App — requiere Appium + DriverTripPaymentScreen + manejo de WebView 3DS.',
-			},
+				note: 'PENDIENTE: fase Driver App — requiere Appium + DriverTripPaymentScreen + manejo de WebView 3DS.'
+			}
 		});
 	});
 
@@ -47,8 +46,8 @@ test.describe('Gateway PG · Carrier · Colaborador/Contractor — Cargo a Bordo
 			createTimeout: 30_000,
 			driverAppStep: {
 				title: '[DRIVER APP] Conductor cobra → 3DS rechazado → cobro fallido → viaje En conflicto',
-				note: APPIUM_NOTE,
-			},
+				note: APPIUM_NOTE
+			}
 		});
 	});
 
@@ -57,8 +56,8 @@ test.describe('Gateway PG · Carrier · Colaborador/Contractor — Cargo a Bordo
 			createTimeout: 30_000,
 			driverAppStep: {
 				title: '[DRIVER APP] Conductor cobra → 3DS error de autenticación → viaje En conflicto',
-				note: APPIUM_NOTE,
-			},
+				note: APPIUM_NOTE
+			}
 		});
 	});
 
@@ -67,9 +66,8 @@ test.describe('Gateway PG · Carrier · Colaborador/Contractor — Cargo a Bordo
 			createTimeout: 30_000,
 			driverAppStep: {
 				title: '[DRIVER APP] Conductor cobra → 3DS falla completamente → cobro no procesado',
-				note: APPIUM_NOTE,
-			},
+				note: APPIUM_NOTE
+			}
 		});
 	});
-
 });

@@ -15,13 +15,12 @@
  */
 
 import type { Page } from '@playwright/test';
+import { DashboardPage, NewTravelPage, OperationalPreferencesPage, ThreeDSModal } from '../../../pages/carrier';
 import {
-	DashboardPage,
-	NewTravelPage,
-	OperationalPreferencesPage,
-	ThreeDSModal,
-} from '../../../pages/carrier';
-import { loginAsDispatcher, STRIPE_TEST_CARDS, TEST_DATA } from '../../../features/gateway-pg/fixtures/gateway.fixtures';
+	loginAsDispatcher,
+	STRIPE_TEST_CARDS,
+	TEST_DATA
+} from '../../../features/gateway-pg/fixtures/gateway.fixtures';
 import { CARDS } from '../../../fixtures/stripe/card-policy';
 import { waitForTravelCreation } from '../../../features/gateway-pg/helpers/stripe.helpers';
 import { initJourneyContext, markReadyForDriver } from '../shared/JourneyBridge';
@@ -29,9 +28,8 @@ import type { GatewayFlowConfig } from '../shared/e2eFlowConfig';
 
 export type WebPhaseResult = {
 	journeyId: string;
-	tripId:    string;
+	tripId: string;
 };
-
 
 /**
  * Ejecuta la fase web completa del Flow 1.
@@ -41,14 +39,10 @@ export type WebPhaseResult = {
  * @param tcId      - ID del test case para trazabilidad en el JourneyContext.
  * @returns         - { journeyId, tripId } para pasar a la fase mobile.
  */
-export async function runWebPhase(
-	page:   Page,
-	config: GatewayFlowConfig,
-	tcId:   string,
-): Promise<WebPhaseResult> {
-	const dashboard   = new DashboardPage(page);
+export async function runWebPhase(page: Page, config: GatewayFlowConfig, tcId: string): Promise<WebPhaseResult> {
+	const dashboard = new DashboardPage(page);
 	const preferences = new OperationalPreferencesPage(page);
-	const travel      = new NewTravelPage(page);
+	const travel = new NewTravelPage(page);
 
 	// ── Paso 1: Login carrier ────────────────────────────────────────────────
 	console.log('[web-phase] Paso 1: Login carrier dispatcher');
@@ -79,10 +73,10 @@ export async function runWebPhase(
 	// ── Paso 5: Completar formulario ─────────────────────────────────────────
 	console.log(`[web-phase] Paso 5: Completar formulario — tarjeta ${config.cardLast4}`);
 	await travel.fillMinimum({
-		passenger:   TEST_DATA.appPaxPassenger,
-		origin:      TEST_DATA.origin,
+		passenger: TEST_DATA.appPaxPassenger,
+		origin: TEST_DATA.origin,
 		destination: TEST_DATA.destination,
-		cardLast4:   config.cardLast4,
+		cardLast4: config.cardLast4
 	});
 
 	// ── Paso 6: Enviar viaje ─────────────────────────────────────────────────

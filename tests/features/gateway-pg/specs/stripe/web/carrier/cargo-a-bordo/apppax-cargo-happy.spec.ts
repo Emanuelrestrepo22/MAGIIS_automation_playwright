@@ -32,13 +32,11 @@ const appPaxScenario: CargoScenario = {
 	client: TEST_DATA.appPaxPassenger,
 	origin: TEST_DATA.origin,
 	destination: TEST_DATA.destination,
-	cardPrecondition: { apiSearchQuery: PASSENGERS.appPax.apiSearchQuery!, requiredLast4: '4242', tcLabel: 'TC1081' },
+	cardPrecondition: { apiSearchQuery: PASSENGERS.appPax.apiSearchQuery!, requiredLast4: '4242', tcLabel: 'TC1081' }
 };
 
 test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo @gateway @stripe @cargo-a-bordo @hold @critical @smoke', () => {
-
 	test('[TS-STRIPE-TC1081] @smoke @cargo-a-bordo pago exitoso sin 3DS', async ({ page }) => {
 		await new CargoABordoSteps({ page }).runCargoScenario(appPaxScenario);
 	});
-
 });
