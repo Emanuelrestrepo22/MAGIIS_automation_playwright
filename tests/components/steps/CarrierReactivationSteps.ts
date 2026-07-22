@@ -22,7 +22,7 @@ import {
 } from '@ui/carrier';
 import { loginAsDispatcher, STRIPE_TEST_CARDS } from '@features/gateway-pg/fixtures/gateway.fixtures';
 import { setHoldViaApi } from '@features/gateway-pg/helpers/parameters-api';
-import { captureCreatedTravelId, cancelTravel, cancelTravelIfCreated, type TravelIdRef } from '@features/gateway-pg/helpers/travel-cleanup';
+import { captureCreatedTravelId, cancelTravel, type TravelIdRef } from '@features/gateway-pg/helpers/travel-cleanup';
 import { waitForTravelCreation } from '@features/gateway-pg/helpers/stripe.helpers';
 
 export type ReactivationScenario = {
@@ -54,6 +54,7 @@ export class CarrierReactivationSteps extends UiBase {
 		const cardLast4 = scenario.cardLast4 ?? STRIPE_TEST_CARDS.successDirect.slice(-4);
 		const shortDest = scenario.destination.split(',')[0].trim();
 		let travelIdRef: TravelIdRef | null = null;
+		let reactivatedId: number | null = null;
 
 		await test.step('Login carrier', async () => {
 			await loginAsDispatcher(this.page);
@@ -99,12 +100,17 @@ export class CarrierReactivationSteps extends UiBase {
 				// URL real observada en TEST v1.72.8: /#/home/carrier/driver/list/Assign?id=<nuevoTravelId>
 				// (el análisis FE mencionaba `listDriverOnline`; el runtime navega a `driver/list/Assign`).
 				await expect(this.page).toHaveURL(/driver\/list\/Assign|listDriverOnline/i, { timeout: 15_000 });
+				// El id del viaje reactivado viaja en la URL → lo capturamos para el cleanup.
+				const match = this.page.url().match(/[?&]id=(\d+)/);
+				if (match) reactivatedId = Number(match[1]);
 			});
 		} finally {
-			// Cleanup best-effort: el ref pudo re-capturar el travelId del viaje reactivado.
-			if (travelIdRef) {
-				await test.step('Cleanup: cancelar viaje (re)creado', async () => {
-					await cancelTravelIfCreated(this.page, travelIdRef!);
+			// El viaje original ya se canceló en la precondición; acá cancelamos el REACTIVADO
+			// (queda activo en despacho tras reactivar). Best-effort — no debe romper el test.
+			await travelIdRef?.dispose();
+			if (reactivatedId !== null) {
+				await test.step('Cleanup: cancelar viaje reactivado', async () => {
+					await cancelTravel(this.page, reactivatedId as number).catch(() => undefined);
 				});
 			}
 		}
