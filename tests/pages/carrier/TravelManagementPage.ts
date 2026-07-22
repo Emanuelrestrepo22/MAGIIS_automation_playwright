@@ -129,24 +129,39 @@ export class TravelManagementPage {
 		}
 	}
 
-	/** Abre la pestaña "Cancelados" (i18n; tab idx 5 en el FE). Mismo patrón que las demás tabs. */
+	/**
+	 * Abre la pestaña "Cancelados". Selector verificado por codegen contra TEST v1.72.8: la pestaña
+	 * es un `link` cuyo nombre incluye el contador (p.ej. "Cancelados (68)") → match por regex.
+	 */
 	async openCanceladosTab(): Promise<void> {
-		const tab = this.page.locator('tabset ul li a').filter({ hasText: /cancelad/i }).first();
+		const tab = this.page.getByRole('link', { name: /Cancelados/i }).first();
 		await expect(tab).toBeVisible({ timeout: 10_000 });
 		await tab.click();
 		await this.page.waitForSelector('table tbody', { state: 'visible', timeout: 15_000 }).catch(() => {});
 	}
 
 	/**
-	 * Reactiva un viaje cancelado desde la fila del pasajero (pestaña Cancelados).
-	 * FE `travel-dashboard.component`: botón `button.action-btn-primary` con `i.fa-refresh`
-	 * (`shouldCloneTravel` para CANCELLED/LOST) → `cloneTravel(travelId)` = API + navegación a
-	 * `listDriverOnline`. Se ancla a la fila del pasajero para evitar el `fa-refresh` del footer.
+	 * Reactiva un viaje cancelado (pestaña Cancelados → filtrar → botón Reactivar).
+	 * Locators verificados por codegen contra TEST v1.72.8: buscador `textbox "Buscar..."` para aislar
+	 * la fila y botón `Reactivar Viaje` (tooltip → `getByRole('button', { description })`). FE:
+	 * `cloneTravel(travelId)` = API + navegación a `listDriverOnline`.
+	 * Nota: tras filtrar se reactiva la primera coincidencia (el viaje recién cancelado suele ser el más reciente).
 	 */
 	async reactivate(passenger: string, destination?: string): Promise<void> {
 		await this.openCanceladosTab();
-		const row = await this.tripRow(passenger, destination);
-		const reactivateBtn = row.locator('button.action-btn-primary:has(i.fa-refresh)').first();
+
+		const search = this.page.getByRole('textbox', { name: 'Buscar...' });
+		if (await search.count()) {
+			await search.fill(destination ?? passenger);
+			await this.page.waitForTimeout(500); // debounce del filtro de la grilla
+		}
+
+		// El codegen (PW nuevo) lo grabó como `getByRole('button', { description: 'Reactivar Viaje' })`,
+		// opción no soportada en PW 1.56 → equivalente por atributo (tooltip title/aria-description) con
+		// fallback al ícono `fa-refresh` confirmado en el FE (robusto a versión y locale).
+		const reactivateBtn = this.page
+			.locator('button[title="Reactivar Viaje"], button[aria-description="Reactivar Viaje"], button.action-btn-primary:has(i.fa-refresh)')
+			.first();
 		await expect(reactivateBtn).toBeVisible({ timeout: 10_000 });
 		await reactivateBtn.click();
 	}
