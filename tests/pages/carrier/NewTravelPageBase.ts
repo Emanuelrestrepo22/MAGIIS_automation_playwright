@@ -644,16 +644,48 @@ export abstract class NewTravelPageBase extends BasePage {
 		// NOTE(tier3-kept): Stripe monta 3 iframes (cardNumber/cardExpiry/cardCvc) sin evento DOM de "ready"; reducir causa waitForStripeFrame timeout
 		await this.page.waitForTimeout(2_500);
 
+		// card-new (MG-178): Stripe Elements en TEST v1.72.8 a veces NO registra el primer llenado con fill()
+		// → el botón "Validar" no habilita y el test falla (bucket card-new). Tipeamos char-por-char
+		// (pressSequentially dispara los listeners internos de Stripe) y reintentamos hasta que "Validar" habilite.
+		const CARD_FILL_RETRIES = 3;
+		for (let attempt = 1; attempt <= CARD_FILL_RETRIES; attempt++) {
+			await this.typeStripeCardFields(cardNumber);
+			if (await this.waitForValidateEnabled(attempt < CARD_FILL_RETRIES ? 4_000 : 8_000)) break;
+		}
+		await this.assertPaymentMethodPreauthorizedSelected();
+	}
+
+	/**
+	 * Tipea los 3 campos de Stripe Elements (número/exp/cvc) + owner/zip. Limpia y usa `pressSequentially`
+	 * en vez de `fill()` porque Stripe Elements no siempre registra el `fill()` programático (deja el campo
+	 * "incompleto" y "Validar" no habilita).
+	 */
+	private async typeStripeCardFields(cardNumber: string): Promise<void> {
 		const numberFrame = await this.waitForStripeFrame('cardNumber');
 		const expiryFrame = await this.waitForStripeFrame('cardExpiry');
 		const cvcFrame = await this.waitForStripeFrame('cardCvc');
-
-		await numberFrame.locator('input[name="cardnumber"]').fill(cardNumber);
-		await expiryFrame.locator('input[name="exp-date"]').fill(STRIPE_EXPIRY);
-		await cvcFrame.locator('input[name="cvc"]').fill(STRIPE_CVC);
+		const fields: Array<[Locator, string]> = [
+			[numberFrame.locator('input[name="cardnumber"]'), cardNumber],
+			[expiryFrame.locator('input[name="exp-date"]'), STRIPE_EXPIRY],
+			[cvcFrame.locator('input[name="cvc"]'), STRIPE_CVC],
+		];
+		for (const [input, value] of fields) {
+			await input.click();
+			await input.fill('');
+			await input.pressSequentially(value, { delay: 30 });
+		}
 		await this.cardOwnerNameInput.fill(STRIPE_CARD_HOLDER_NAME);
 		await this.billingZipInput.fill(STRIPE_BILLING_ZIP);
-		await this.assertPaymentMethodPreauthorizedSelected();
+	}
+
+	/** Poll hasta que el botón "Validar" habilite (tarjeta completa en Stripe). */
+	private async waitForValidateEnabled(timeoutMs: number): Promise<boolean> {
+		const deadline = Date.now() + timeoutMs;
+		while (Date.now() < deadline) {
+			if (await this.validateCardButton.isEnabled().catch(() => false)) return true;
+			await this.page.waitForTimeout(400);
+		}
+		return false;
 	}
 
 	async selectCardByLast4(last4: string, skipValidate = false, allowDecline = false): Promise<void> {
