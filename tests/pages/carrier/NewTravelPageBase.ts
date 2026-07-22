@@ -885,13 +885,14 @@ export abstract class NewTravelPageBase extends BasePage {
 	 */
 	async clickSendManualAndAssign(): Promise<void> {
 		await this.waitForLoadingOverlayToDisappear();
-		await this.page.getByRole('button', { name: 'Send Manual' }).click();
-		// Modal con lista de conductores: "Assign" de la fila (nth(1) según el recorder).
-		const assignRow = this.page.getByText('Assign', { exact: false });
+		// Locale-robusto: el ambiente puede estar en ES ("Enviar Manual"/"Asignar") o EN ("Send Manual"/"Assign").
+		await this.page.getByRole('button', { name: /Enviar Manual|Send Manual/i }).click();
+		// Modal con lista de conductores: "Asignar"/"Assign" de la fila (nth(1) según el recorder).
+		const assignRow = this.page.getByText(/Asignar|Assign/i);
 		await assignRow.nth(1).waitFor({ state: 'visible', timeout: 15_000 });
 		await assignRow.nth(1).click();
 		// Confirmar la asignación.
-		const assignConfirm = this.page.getByRole('button', { name: 'Assign' });
+		const assignConfirm = this.page.getByRole('button', { name: /Asignar|Assign/i });
 		await assignConfirm.waitFor({ state: 'visible', timeout: 15_000 });
 		await assignConfirm.click();
 		await this.waitForLoadingOverlayToDisappear();

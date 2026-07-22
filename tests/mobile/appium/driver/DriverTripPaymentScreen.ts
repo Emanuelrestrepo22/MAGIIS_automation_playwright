@@ -38,13 +38,17 @@ const SEL = {
 	stripeCardIframe: 'iframe[src*="elements-inner-card"]',
 	stripeAnyIframe: 'iframe[name^="__privateStripeFrame"]',
 	// Campos dentro del iframe Stripe.
-	fCardNumber: '.CardNumberField-input-wrapper input, input[name="cardnumber"], input[autocomplete="cc-number"]',
-	fExpiry: '.CardExpiryField-input-wrapper input, input[name="exp-date"], input[autocomplete="cc-exp"]',
-	fCvc: '.CardCvcField-input-wrapper input, input[name="cvc"], input[autocomplete="cc-csc"]',
-	fPostal: '.PostalCodeField-input-wrapper input, input[name="postal"], input[autocomplete="postal-code"]',
-	// Campos MAGIIS que pueden emerger fuera del iframe Stripe (nombre titular / postal).
-	fHolderNameOutside: 'credit-card-payment-data input[formcontrolname="cardholderName"], credit-card-payment-data #cardholderName, credit-card-payment-data input[name="cardholderName"]',
-	fPostalOutside: 'credit-card-payment-data input[formcontrolname="postalCode"], credit-card-payment-data input[name="postalCode"], credit-card-payment-data #postalCode',
+	// Stripe Elements CLÁSICO: CADA campo en SU PROPIO iframe __privateStripeFrame (confirmado
+	// por dump 2026-07-21). Se identifican por el title (i18n ES).
+	iframeNumber: 'iframe[title="Cuadro de entrada seguro del número de tarjeta"]',
+	iframeExpiry: 'iframe[title="Cuadro de entrada seguro de la fecha de vencimiento"]',
+	iframeCvc: 'iframe[title="Cuadro de entrada seguro del CVC"]',
+	// Dentro de cada iframe Stripe hay un input DECOY oculto (input.StripeField--fake,
+	// aria-hidden/disabled) + el input REAL (input.InputElement). Targetear el real.
+	stripeInput: 'input.InputElement, input:not(.StripeField--fake):not([aria-hidden="true"]):not([disabled])',
+	// Campos NATIVOS del form MAGIIS (WebView principal, fuera de iframe).
+	fHolderNameOutside: 'credit-card-payment-data input[formcontrolname="cardholderName"], #cardholderName, input[formcontrolname="cardholderName"]',
+	fPostalOutside: 'credit-card-payment-data input[formcontrolname="zipCode"], input[formcontrolname="zipCode"]',
 	// Botón COBRAR (WebView MAGIIS, fuera del iframe) — selector real del build.
 	cobrar: 'credit-card-payment-data ion-content form button, credit-card-payment-data button.btn.primary',
 	// Resultado / alerts.
@@ -82,7 +86,7 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 				.execute<boolean, [string, string]>(
 					(modalSel, iframeSel) => !!document.querySelector(modalSel) || !!document.querySelector(iframeSel),
 					SEL.modal,
-					SEL.stripeCardIframe,
+					SEL.iframeNumber,
 				)
 				.catch(() => false);
 			if (present) return true;
@@ -92,69 +96,96 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 	}
 
 	/**
-	 * Llena la tarjeta en el Stripe Element (dentro del iframe) con TYPING REAL.
-	 * Orden: número (dispara emerger de expiry/cvc) → expiry → cvc → postal (si existe).
+	 * Llena la tarjeta. Stripe Elements CLÁSICO ⇒ CADA campo en SU PROPIO iframe → hay que
+	 * switchFrame a cada uno por separado (llenar número+expiry+cvc en un solo iframe falla con
+	 * "element not interactable"). Nombre y código postal son inputs NATIVOS del form MAGIIS.
 	 */
 	async fillCardForm(card: CardData): Promise<void> {
 		const driver = this.getDriver();
-		await this.switchToWebView();
-
 		const digits = (v: string) => v.replace(/\D/g, '');
 		const number = digits(card.number);
 		const exp = digits(card.expiry); // "12/34" → "1234"
 		const cvc = digits(card.cvc);
 
-		const entered = await this.withStripeFrame(async () => {
-			// Número (cardNumber-first).
-			const numEl = driver.$(SEL.fCardNumber);
-			await numEl.waitForExist({ timeout: 10_000 });
-			await numEl.click().catch(() => undefined);
-			await numEl.addValue(number);
-			await driver.pause(600);
-
-			// Expiry (emerge tras número válido).
-			const expEl = driver.$(SEL.fExpiry);
-			if (await expEl.waitForExist({ timeout: 6_000 }).then(() => true).catch(() => false)) {
-				await expEl.click().catch(() => undefined);
-				await expEl.addValue(exp);
-			}
-			// CVC.
-			const cvcEl = driver.$(SEL.fCvc);
-			if (await cvcEl.waitForExist({ timeout: 6_000 }).then(() => true).catch(() => false)) {
-				await cvcEl.click().catch(() => undefined);
-				await cvcEl.addValue(cvc);
-			}
-			// Postal dentro del Stripe Element (si el Element lo incluye).
-			const postalEl = driver.$(SEL.fPostal);
-			if (await postalEl.isExisting().catch(() => false)) {
-				await postalEl.click().catch(() => undefined);
-				await postalEl.addValue(card.postal ?? '1234567');
-			}
-			return true;
-		}).catch((e) => {
-			console.warn('[DriverTripPaymentScreen] fillCardForm iframe error:', e instanceof Error ? e.message : e);
-			return false;
-		});
-
-		if (!entered) {
-			throw new Error(
-				'[DriverTripPaymentScreen] No se pudo llenar el Stripe Element (iframe). ' +
-				'Verificar switchFrame + selector .CardNumberField-input-wrapper input en device.',
-			);
+		// 1) Cada campo Stripe en SU iframe.
+		const okNum = await this.typeInStripeIframe(SEL.iframeNumber, number);
+		if (!okNum) {
+			throw new Error('[DriverTripPaymentScreen] No se pudo llenar el número (iframe Stripe). Verificar title del iframe.');
 		}
+		await driver.pause(400);
+		await this.typeInStripeIframe(SEL.iframeExpiry, exp);
+		await driver.pause(300);
+		await this.typeInStripeIframe(SEL.iframeCvc, cvc);
 
-		// Campos que emergen FUERA del iframe (MAGIIS form): nombre del titular / postal.
+		// 2) Campos NATIVOS del form MAGIIS: cardholderName / zipCode son ION-INPUT (no input raw).
+		//    Setear el <input> interno (shadow) + disparar input/change + ionInput/ionChange para
+		//    que el FormControl de Angular se actualice (addValue sobre el host ion-input no basta).
 		await this.switchToWebView();
 		const holder = card.holderName ?? 'RESTREPO EMANUEL';
 		const postal = card.postal ?? '1234567';
-		for (const [sel, value] of [[SEL.fHolderNameOutside, holder], [SEL.fPostalOutside, postal]] as const) {
-			const el = driver.$(sel);
-			if (await el.isExisting().catch(() => false) && await el.isDisplayed().catch(() => false)) {
-				await el.click().catch(() => undefined);
-				await el.addValue(value).catch(() => undefined);
-			}
+		await driver
+			.execute<boolean, [string, string]>((holderName, zip) => {
+				const setIon = (id: string, value: string): void => {
+					const host = document.getElementById(id) as (HTMLElement & { value?: unknown }) | null;
+					if (!host) return;
+					const root = (host as unknown as { shadowRoot?: ShadowRoot }).shadowRoot;
+					const inner = (root ? root.querySelector('input') : host.querySelector('input')) as HTMLInputElement | null;
+					const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
+					if (inner && setter) {
+						inner.focus();
+						setter.call(inner, value);
+						inner.dispatchEvent(new Event('input', { bubbles: true }));
+						inner.dispatchEvent(new Event('change', { bubbles: true }));
+					}
+					try { host.value = value; } catch { /* noop */ }
+					host.dispatchEvent(new CustomEvent('ionInput', { detail: { value }, bubbles: true }));
+					host.dispatchEvent(new CustomEvent('ionChange', { detail: { value }, bubbles: true }));
+				};
+				setIon('cardholderName', holderName);
+				setIon('zipCode', zip);
+				return true;
+			}, holder, postal)
+			.catch(() => false);
+		console.log(`[DriverTripPaymentScreen] Tarjeta ${number.slice(-4)} ingresada (Stripe classic: iframe por campo) + titular/postal (ion-input)`);
+	}
+
+	/**
+	 * Escribe `value` en el input del iframe Stripe identificado por `iframeSelector` (title).
+	 * Vuelve al top del WebView al terminar. Typing REAL (addValue) — Stripe escucha key events.
+	 */
+	private async typeInStripeIframe(iframeSelector: string, value: string): Promise<boolean> {
+		const driver = this.getDriver();
+		const anyDriver = driver as unknown as {
+			switchFrame?: (el: unknown) => Promise<void>;
+			switchToFrame?: (el: unknown) => Promise<void>;
+		};
+		const enter = async (el: unknown): Promise<void> => {
+			if (typeof anyDriver.switchFrame === 'function') { await anyDriver.switchFrame(el); return; }
+			if (typeof anyDriver.switchToFrame === 'function') { await anyDriver.switchToFrame(el); return; }
+			throw new Error('switchFrame/switchToFrame no disponible');
+		};
+
+		await this.switchToWebView();
+		await enter(null).catch(() => undefined); // GARANTIZAR top-frame antes de buscar el iframe
+		const frame = driver.$(iframeSelector);
+		if (!(await frame.waitForExist({ timeout: 8_000 }).then(() => true).catch(() => false))) {
+			console.warn(`[DriverTripPaymentScreen] iframe no encontrado: ${iframeSelector}`);
+			return false;
 		}
-		console.log(`[DriverTripPaymentScreen] Tarjeta ${number.slice(-4)} ingresada (Stripe Elements) + titular/postal si aplican`);
+		try {
+			await enter(frame);
+			const input = driver.$(SEL.stripeInput);
+			await input.waitForExist({ timeout: 6_000 });
+			await input.click().catch(() => undefined);
+			// addValue = typing real (NO retry por-valor: re-tipear en Stripe hace append → inválido).
+			await input.addValue(value);
+			return true;
+		} catch (e) {
+			console.warn(`[DriverTripPaymentScreen] typeInStripeIframe(${iframeSelector}) error:`, e instanceof Error ? e.message : e);
+			return false;
+		} finally {
+			await enter(null).catch(() => undefined); // volver al top-frame para el próximo campo
+		}
 	}
 
 	/** Tap COBRAR (WebView MAGIIS). Espera a que deje de estar disabled (form Stripe válido). */
