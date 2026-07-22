@@ -27,7 +27,7 @@ test.describe('[BL-036][API] Authorize.net sandbox — Edge triggers @gateway @a
 		const response: AuthorizeApiResponse = await api.authorizeOnly({
 			card: AUTHORIZE_CARDS.SUCCESS_DISCOVER,
 			amount: '10.00',
-			refId: `bl-036-edge-discover-${Date.now()}`,
+			refId: `bl-036-edge-discover-${Date.now()}`
 		});
 
 		expect(response.messages.resultCode).toBe('Ok');
@@ -41,7 +41,7 @@ test.describe('[BL-036][API] Authorize.net sandbox — Edge triggers @gateway @a
 		const response: AuthorizeApiResponse = await api.authorizeOnly({
 			card: AUTHORIZE_CARDS.AVS_NON_US,
 			amount: '10.00',
-			refId: `bl-036-edge-avs-nonus-${Date.now()}`,
+			refId: `bl-036-edge-avs-nonus-${Date.now()}`
 		});
 
 		expect(response.messages.resultCode).toBe('Ok');
@@ -55,7 +55,7 @@ test.describe('[BL-036][API] Authorize.net sandbox — Edge triggers @gateway @a
 		const response: AuthorizeApiResponse = await api.authorizeOnly({
 			card: AUTHORIZE_CARDS.PARTIAL_AUTH,
 			amount: '10.00',
-			refId: `bl-036-edge-partial-${Date.now()}`,
+			refId: `bl-036-edge-partial-${Date.now()}`
 		});
 
 		// Conservador: el sandbox procesa la operación (Ok) y devuelve un responseCode;
@@ -70,7 +70,7 @@ test.describe('[BL-036][API] Authorize.net sandbox — Edge triggers @gateway @a
 		const response: AuthorizeApiResponse = await api.authorizeOnly({
 			card: AUTHORIZE_CARDS.PREPAID_ZERO,
 			amount: '10.00',
-			refId: `bl-036-edge-prepaid-${Date.now()}`,
+			refId: `bl-036-edge-prepaid-${Date.now()}`
 		});
 
 		expect(response.messages.resultCode).toBe('Ok');

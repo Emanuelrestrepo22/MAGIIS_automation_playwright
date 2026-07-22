@@ -77,44 +77,45 @@ async function collectWebDump(driver: WebdriverIO.Browser, travelId: string): Pr
 		await driver.pause(2_000);
 	}
 
-	const dump = await driver.execute((targetTravelId: string) => {
-		const normalize = (value: unknown): string => String(value ?? '').replace(/\s+/g, ' ').trim();
+	const dump = (await driver.execute((targetTravelId: string) => {
+		const normalize = (value: unknown): string =>
+			String(value ?? '')
+				.replace(/\s+/g, ' ')
+				.trim();
 		const isVisible = (element: Element): boolean => {
 			const html = element as HTMLElement;
 			const rect = html.getBoundingClientRect();
 			const style = window.getComputedStyle(html);
 			return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
 		};
-		const textOf = (element: Element): string => normalize((element as HTMLElement).innerText || element.textContent);
+		const textOf = (element: Element): string =>
+			normalize((element as HTMLElement).innerText || element.textContent);
 		const attrOf = (element: Element, name: string): string => normalize(element.getAttribute(name));
 
-		const elements = Array.from(document.querySelectorAll('*')).map(element => {
-			const html = element as HTMLElement;
-			return {
-				tag: html.tagName.toLowerCase(),
-				id: normalize(html.id),
-				accessibilityId: attrOf(html, 'aria-label') || attrOf(html, 'content-desc') || attrOf(html, 'data-testid'),
-				text: textOf(html),
-				className: normalize(typeof html.className === 'string' ? html.className : ''),
-				role: attrOf(html, 'role'),
-				visible: isVisible(html),
-			};
-		}).filter(item => item.id || item.accessibilityId || item.text || item.className || item.role);
+		const elements = Array.from(document.querySelectorAll('*'))
+			.map(element => {
+				const html = element as HTMLElement;
+				return {
+					tag: html.tagName.toLowerCase(),
+					id: normalize(html.id),
+					accessibilityId:
+						attrOf(html, 'aria-label') || attrOf(html, 'content-desc') || attrOf(html, 'data-testid'),
+					text: textOf(html),
+					className: normalize(typeof html.className === 'string' ? html.className : ''),
+					role: attrOf(html, 'role'),
+					visible: isVisible(html)
+				};
+			})
+			.filter(item => item.id || item.accessibilityId || item.text || item.className || item.role);
 
-		const focusTerms = [
-			'iniciar',
-			'cerrar',
-			'finalizar',
-			'viaje',
-			'trip',
-			'status',
-			'state',
-			targetTravelId,
-		].map(term => term.toLowerCase());
+		const focusTerms = ['iniciar', 'cerrar', 'finalizar', 'viaje', 'trip', 'status', 'state', targetTravelId].map(
+			term => term.toLowerCase()
+		);
 
 		const highlights = elements.filter(item => {
-			const haystacks = [item.id, item.accessibilityId, item.text, item.className, item.role]
-				.map(value => value.toLowerCase());
+			const haystacks = [item.id, item.accessibilityId, item.text, item.className, item.role].map(value =>
+				value.toLowerCase()
+			);
 			return focusTerms.some(term => haystacks.some(value => value.includes(term)));
 		});
 
@@ -123,13 +124,26 @@ async function collectWebDump(driver: WebdriverIO.Browser, travelId: string): Pr
 			.filter(Boolean);
 
 		const keywordMatches = elements
-			.filter(item => /iniciar|cerrar|finalizar|viaje|trip|status|state/i.test(`${item.id} ${item.accessibilityId} ${item.text} ${item.className} ${item.role}`))
-			.map(item => `${item.tag} | id=${item.id} | aria=${item.accessibilityId} | text=${item.text} | class=${item.className} | role=${item.role} | visible=${item.visible}`);
+			.filter(item =>
+				/iniciar|cerrar|finalizar|viaje|trip|status|state/i.test(
+					`${item.id} ${item.accessibilityId} ${item.text} ${item.className} ${item.role}`
+				)
+			)
+			.map(
+				item =>
+					`${item.tag} | id=${item.id} | aria=${item.accessibilityId} | text=${item.text} | class=${item.className} | role=${item.role} | visible=${item.visible}`
+			);
 
 		const travelIdMatches = elements
-			.filter(item => [item.id, item.accessibilityId, item.text, item.className, item.role]
-				.some(value => value.toLowerCase().includes(targetTravelId.toLowerCase())))
-			.map(item => `${item.tag} | id=${item.id} | aria=${item.accessibilityId} | text=${item.text} | class=${item.className} | role=${item.role} | visible=${item.visible}`);
+			.filter(item =>
+				[item.id, item.accessibilityId, item.text, item.className, item.role].some(value =>
+					value.toLowerCase().includes(targetTravelId.toLowerCase())
+				)
+			)
+			.map(
+				item =>
+					`${item.tag} | id=${item.id} | aria=${item.accessibilityId} | text=${item.text} | class=${item.className} | role=${item.role} | visible=${item.visible}`
+			);
 
 		return {
 			url: window.location.href,
@@ -137,9 +151,9 @@ async function collectWebDump(driver: WebdriverIO.Browser, travelId: string): Pr
 			highlights,
 			buttonTexts,
 			keywordMatches,
-			travelIdMatches,
+			travelIdMatches
 		};
-	}, travelId) as TravelConfirmWebDump;
+	}, travelId)) as TravelConfirmWebDump;
 
 	return dump;
 }
@@ -147,32 +161,31 @@ async function collectWebDump(driver: WebdriverIO.Browser, travelId: string): Pr
 async function collectNativeDump(driver: WebdriverIO.Browser): Promise<string> {
 	await switchToNative(driver);
 	const source = await driver.getPageSource();
-	const lines = source.split('\n').filter((line: string) =>
-		(line.includes('text="') || line.includes('content-desc="')) &&
-		!line.includes('text=""') &&
-		!line.includes('content-desc=""')
-	);
+	const lines = source
+		.split('\n')
+		.filter(
+			(line: string) =>
+				(line.includes('text="') || line.includes('content-desc="')) &&
+				!line.includes('text=""') &&
+				!line.includes('content-desc=""')
+		);
 
-	return [
-		'=== NATIVE PAGE SOURCE (filtered) ===',
-		...lines,
-	].join('\n');
+	return ['=== NATIVE PAGE SOURCE (filtered) ===', ...lines].join('\n');
 }
 
 function formatWebDump(dump: TravelConfirmWebDump | null): string {
 	if (!dump) {
-		return [
-			'=== WEBVIEW DUMP ===',
-			'No WEBVIEW context found.',
-		].join('\n');
+		return ['=== WEBVIEW DUMP ===', 'No WEBVIEW context found.'].join('\n');
 	}
 
-	const elementLines = dump.elements.map((item, index) =>
-		`${String(index + 1).padStart(4, '0')} | tag=${item.tag} | visible=${item.visible} | id=${item.id} | aria=${item.accessibilityId} | text=${item.text} | class=${item.className} | role=${item.role}`
+	const elementLines = dump.elements.map(
+		(item, index) =>
+			`${String(index + 1).padStart(4, '0')} | tag=${item.tag} | visible=${item.visible} | id=${item.id} | aria=${item.accessibilityId} | text=${item.text} | class=${item.className} | role=${item.role}`
 	);
 
-	const highlightLines = dump.highlights.map(item =>
-		`${item.tag} | id=${item.id} | aria=${item.accessibilityId} | text=${item.text} | class=${item.className} | role=${item.role} | visible=${item.visible}`
+	const highlightLines = dump.highlights.map(
+		item =>
+			`${item.tag} | id=${item.id} | aria=${item.accessibilityId} | text=${item.text} | class=${item.className} | role=${item.role} | visible=${item.visible}`
 	);
 
 	return [
@@ -191,13 +204,15 @@ function formatWebDump(dump: TravelConfirmWebDump | null): string {
 		highlightLines.length ? highlightLines.join('\n') : '(none)',
 		'',
 		'--- All Elements ---',
-		elementLines.join('\n'),
+		elementLines.join('\n')
 	].join('\n');
 }
 
 async function run(): Promise<void> {
 	const appiumUrl = new URL(APPIUM_URL);
-	console.log(`[dump-travel-confirm] Connecting to ${APPIUM_URL} | device=${DEVICE_NAME} | udid=${UDID} | travelId=${TRAVEL_ID}`);
+	console.log(
+		`[dump-travel-confirm] Connecting to ${APPIUM_URL} | device=${DEVICE_NAME} | udid=${UDID} | travelId=${TRAVEL_ID}`
+	);
 
 	const driver = await remote({
 		protocol: appiumUrl.protocol.replace(':', '') as 'http' | 'https',
@@ -218,8 +233,8 @@ async function run(): Promise<void> {
 			'appium:noReset': true,
 			'appium:forceAppLaunch': false,
 			'appium:autoLaunch': false,
-			'appium:newCommandTimeout': 120,
-		} as Record<string, unknown>,
+			'appium:newCommandTimeout': 120
+		} as Record<string, unknown>
 	});
 
 	try {
@@ -229,11 +244,7 @@ async function run(): Promise<void> {
 
 		const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
 		const outputPath = path.join(OUTPUT_DIR, `travel-confirm-${timestamp}.txt`);
-		const contents = [
-			formatWebDump(webDump),
-			'',
-			nativeDump,
-		].join('\n');
+		const contents = [formatWebDump(webDump), '', nativeDump].join('\n');
 
 		await writeFile(outputPath, contents, 'utf-8');
 

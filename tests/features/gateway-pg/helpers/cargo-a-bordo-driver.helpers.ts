@@ -56,7 +56,10 @@ export function cargoAboardDriverFinish(context: GatewayPgJourneyContext, note?:
 	);
 }
 
-export function simulateCargoAboardDriverCloseout(context: GatewayPgJourneyContext, note: DriverCloseoutStepNote = {}): GatewayPgJourneyContext {
+export function simulateCargoAboardDriverCloseout(
+	context: GatewayPgJourneyContext,
+	note: DriverCloseoutStepNote = {}
+): GatewayPgJourneyContext {
 	const accepted = cargoAboardDriverAccept(context, note.accept);
 	const arrived = cargoAboardDriverArrive(accepted, note.arrive);
 	return cargoAboardDriverFinish(arrived, note.finish);

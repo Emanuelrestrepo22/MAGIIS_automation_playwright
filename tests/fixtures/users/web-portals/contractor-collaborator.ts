@@ -25,29 +25,23 @@ import type { EnvironmentMap, WebUser } from '../types';
 const LABEL = 'contractor collaborator (contractor portal)';
 
 function buildCollaborator(envSuffix: 'TEST' | 'UAT' | 'PROD', environment: WebUser['environment']): WebUser {
-  const emailEnv = lazyEnv(
-    [`USER_CONTRACTOR_${envSuffix}`, 'USER_CONTRACTOR'],
-    `${LABEL} [${environment}] email`,
-  );
-  const passEnv = lazyEnv(
-    [`PASS_CONTRACTOR_${envSuffix}`, 'PASS_CONTRACTOR'],
-    `${LABEL} [${environment}] password`,
-  );
+	const emailEnv = lazyEnv([`USER_CONTRACTOR_${envSuffix}`, 'USER_CONTRACTOR'], `${LABEL} [${environment}] email`);
+	const passEnv = lazyEnv([`PASS_CONTRACTOR_${envSuffix}`, 'PASS_CONTRACTOR'], `${LABEL} [${environment}] password`);
 
-  return {
-    role: 'contractor-collaborator',
-    environment,
-    get email() {
-      return emailEnv.value;
-    },
-    get password() {
-      return passEnv.value;
-    },
-    notes:
-      `Usuario "collaborator" del portal Contractor en ${environment}. ` +
-      `Equivale a resolveRoleCredentials('contractor'). ` +
-      `Cliente de referencia en TEST: "fast car" (ver features/gateway-pg/data/passengers.ts).`,
-  };
+	return {
+		role: 'contractor-collaborator',
+		environment,
+		get email() {
+			return emailEnv.value;
+		},
+		get password() {
+			return passEnv.value;
+		},
+		notes:
+			`Usuario "collaborator" del portal Contractor en ${environment}. ` +
+			`Equivale a resolveRoleCredentials('contractor'). ` +
+			`Cliente de referencia en TEST: "fast car" (ver features/gateway-pg/data/passengers.ts).`
+	};
 }
 
 /**
@@ -58,7 +52,7 @@ function buildCollaborator(envSuffix: 'TEST' | 'UAT' | 'PROD', environment: WebU
  *   const { email, password } = CONTRACTOR_COLLABORATOR.test;
  */
 export const CONTRACTOR_COLLABORATOR = {
-  test: buildCollaborator('TEST', 'test'),
-  uat: buildCollaborator('UAT', 'uat'),
-  prod: buildCollaborator('PROD', 'prod'),
+	test: buildCollaborator('TEST', 'test'),
+	uat: buildCollaborator('UAT', 'uat'),
+	prod: buildCollaborator('PROD', 'prod')
 } as const satisfies EnvironmentMap<WebUser>;

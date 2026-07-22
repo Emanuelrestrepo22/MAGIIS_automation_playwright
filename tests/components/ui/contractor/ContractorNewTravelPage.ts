@@ -50,7 +50,10 @@ export class ContractorNewTravelPage extends UiBase {
 	 * Mini-flujo ATC: completa el formulario mínimo (usuario/origen/destino) y
 	 * vincula/valida la tarjeta preautorizada. @atc MG-148 (área C — pendiente reasignar).
 	 */
-	@atc('MG-148', { severity: 'critical', description: 'Alta de viaje contractor: completar formulario + validar tarjeta preautorizada' })
+	@atc('MG-148', {
+		severity: 'critical',
+		description: 'Alta de viaje contractor: completar formulario + validar tarjeta preautorizada'
+	})
 	async fillMinimum(opts: NewTravelFormInput): Promise<void> {
 		await this.legacy.fillMinimum(opts);
 	}
@@ -79,9 +82,7 @@ export class ContractorNewTravelPage extends UiBase {
 	 * usa como precondición para `test.skip`.
 	 */
 	async hasHighlightedSavedCard(timeout = 5_000): Promise<boolean> {
-		const highlighted = this.page
-			.locator('.ng-star-inserted.highlighted > .data-with-icon-col')
-			.first();
+		const highlighted = this.page.locator('.ng-star-inserted.highlighted > .data-with-icon-col').first();
 		return highlighted.isVisible({ timeout }).catch(() => false);
 	}
 
@@ -89,7 +90,10 @@ export class ContractorNewTravelPage extends UiBase {
 	 * Mini-flujo ATC: selecciona la tarjeta guardada resaltada del colaborador.
 	 * @atc MG-482 (área C UI — pendiente reasignar).
 	 */
-	@atc('MG-482', { severity: 'critical', description: 'Alta de viaje contractor: seleccionar tarjeta guardada del colaborador' })
+	@atc('MG-482', {
+		severity: 'critical',
+		description: 'Alta de viaje contractor: seleccionar tarjeta guardada del colaborador'
+	})
 	async selectSavedCard(): Promise<void> {
 		await this.legacy.selectSavedCard();
 	}

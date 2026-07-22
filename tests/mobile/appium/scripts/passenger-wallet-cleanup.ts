@@ -16,7 +16,8 @@ import type { PassengerProfileMode } from '../../../features/gateway-pg/contract
 
 process.env.APPIUM_SERVER_URL = process.env.APPIUM_SERVER_URL ?? 'http://localhost:4723';
 process.env.ENV = process.env.ENV ?? 'test';
-process.env.ANDROID_PASSENGER_APP_PACKAGE = process.env.ANDROID_PASSENGER_APP_PACKAGE ?? 'com.magiis.app.test.passenger';
+process.env.ANDROID_PASSENGER_APP_PACKAGE =
+	process.env.ANDROID_PASSENGER_APP_PACKAGE ?? 'com.magiis.app.test.passenger';
 process.env.ANDROID_UDID = process.env.ANDROID_UDID ?? 'R92XB0B8F3J';
 
 const targetMode = (process.env.TARGET_PROFILE_MODE ?? 'personal') as PassengerProfileMode;
@@ -27,12 +28,16 @@ function isPassengerProfileMode(value: string): value is PassengerProfileMode {
 }
 
 if (!isPassengerProfileMode(targetMode)) {
-	console.error(`[passenger-wallet-cleanup] Invalid TARGET_PROFILE_MODE="${targetMode}". Use "personal" or "business".`);
+	console.error(
+		`[passenger-wallet-cleanup] Invalid TARGET_PROFILE_MODE="${targetMode}". Use "personal" or "business".`
+	);
 	process.exit(1);
 }
 
 if (!Number.isFinite(maxIterations) || maxIterations <= 0) {
-	console.error(`[passenger-wallet-cleanup] Invalid PASSENGER_WALLET_CLEANUP_LIMIT="${process.env.PASSENGER_WALLET_CLEANUP_LIMIT ?? ''}".`);
+	console.error(
+		`[passenger-wallet-cleanup] Invalid PASSENGER_WALLET_CLEANUP_LIMIT="${process.env.PASSENGER_WALLET_CLEANUP_LIMIT ?? ''}".`
+	);
 	process.exit(1);
 }
 

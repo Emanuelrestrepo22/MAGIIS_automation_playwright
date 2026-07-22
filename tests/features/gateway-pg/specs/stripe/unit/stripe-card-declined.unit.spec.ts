@@ -44,13 +44,15 @@ const STRIPE_INTENTS_PATTERN = '**/v1/payment_intents/**';
 test.use({ storageState: { cookies: [], origins: [] } });
 
 test.describe('[BL-043][unit] Stripe network mocking — card_declined response @gateway @stripe @unit @regression', () => {
-	test('@unit @stripe @decline backend Stripe responde card_declined → MAGIIS muestra estado NO_AUTORIZADO sin pasar por sandbox real', async ({ page }) => {
+	test('@unit @stripe @decline backend Stripe responde card_declined → MAGIIS muestra estado NO_AUTORIZADO sin pasar por sandbox real', async ({
+		page
+	}) => {
 		// ── Setup mocking ANTES de cualquier navigation ─────────────────────────
 		// Intercepta TODAS las requests a Stripe API y devuelve un PaymentIntent
 		// con last_payment_error.code = 'card_declined'. Esto fuerza al frontend
 		// MAGIIS a tratar la card como rechazada sin que Stripe sandbox sea
 		// invocado.
-		await page.route(STRIPE_API_PATTERN, async (route) => {
+		await page.route(STRIPE_API_PATTERN, async route => {
 			const url = route.request().url();
 
 			// PaymentIntent confirm/update → simular decline post-auth
@@ -71,11 +73,11 @@ test.describe('[BL-043][unit] Stripe network mocking — card_declined response 
 									type: 'card_error',
 									code: 'card_declined',
 									decline_code: 'generic_decline',
-									message: 'Your card was declined.',
-								},
-							},
-						},
-					}),
+									message: 'Your card was declined.'
+								}
+							}
+						}
+					})
 				});
 				return;
 			}
@@ -90,8 +92,8 @@ test.describe('[BL-043][unit] Stripe network mocking — card_declined response 
 						id: `seti_test_mocked_${Date.now()}`,
 						object: 'setup_intent',
 						status: 'succeeded',
-						payment_method: `pm_test_mocked_${Date.now()}`,
-					}),
+						payment_method: `pm_test_mocked_${Date.now()}`
+					})
 				});
 				return;
 			}
@@ -104,7 +106,7 @@ test.describe('[BL-043][unit] Stripe network mocking — card_declined response 
 		// Filtro adicional específico para v1/payment_intents (defensivo).
 		// Si el SDK Stripe muta la URL exacta entre versiones, este pattern
 		// alternativo captura el caso.
-		await page.route(STRIPE_INTENTS_PATTERN, async (route) => {
+		await page.route(STRIPE_INTENTS_PATTERN, async route => {
 			if (route.request().method() === 'POST') {
 				await route.fulfill({
 					status: 402,
@@ -113,9 +115,9 @@ test.describe('[BL-043][unit] Stripe network mocking — card_declined response 
 						error: {
 							type: 'card_error',
 							code: 'card_declined',
-							message: 'Your card was declined.',
-						},
-					}),
+							message: 'Your card was declined.'
+						}
+					})
 				});
 				return;
 			}
@@ -143,7 +145,7 @@ test.describe('[BL-043][unit] Stripe network mocking — card_declined response 
 			origin: TEST_DATA.origin,
 			destination: TEST_DATA.destination,
 			cardLast4: '4242', // Cualquier last4 — el mock dispara siempre card_declined.
-			skipCardValidation: true, // Evita el throw del POM por timeout del botón Validar.
+			skipCardValidation: true // Evita el throw del POM por timeout del botón Validar.
 		});
 
 		// ── Assertions del comportamiento MAGIIS frente a card_declined ─────────

@@ -3,11 +3,16 @@ import path from 'node:path';
 import type { Browser } from 'webdriverio';
 
 function normalize(value: unknown): string {
-	return String(value ?? '').replace(/\s+/g, ' ').trim();
+	return String(value ?? '')
+		.replace(/\s+/g, ' ')
+		.trim();
 }
 
 function safeLabel(label: string): string {
-	return label.replace(/[^a-zA-Z0-9._-]+/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+	return label
+		.replace(/[^a-zA-Z0-9._-]+/g, '_')
+		.replace(/_+/g, '_')
+		.replace(/^_|_$/g, '');
 }
 
 function contextToLabel(context: unknown): string {
@@ -32,12 +37,9 @@ function contextToLabel(context: unknown): string {
 async function captureWebViewState(driver: Browser, context: string): Promise<string> {
 	const url = await driver.execute<string, []>(() => window.location.href).catch(() => '');
 	const source = await driver.getPageSource().catch(() => '');
-	return [
-		`[WEBVIEW] ${context}`,
-		`URL: ${url || '<unavailable>'}`,
-		'--- PAGE SOURCE ---',
-		source || '<empty>',
-	].join('\n');
+	return [`[WEBVIEW] ${context}`, `URL: ${url || '<unavailable>'}`, '--- PAGE SOURCE ---', source || '<empty>'].join(
+		'\n'
+	);
 }
 
 /**
@@ -61,7 +63,7 @@ export async function dumpAppiumState(driver: Browser, label: string): Promise<s
 		`Original context: ${originalContext || '<unavailable>'}`,
 		`Contexts: ${contexts.join(', ') || '<none>'}`,
 		'=== NATIVE PAGE SOURCE ===',
-		nativeSource || '<empty>',
+		nativeSource || '<empty>'
 	];
 
 	const webviews = contexts.filter(context => context.startsWith('WEBVIEW'));

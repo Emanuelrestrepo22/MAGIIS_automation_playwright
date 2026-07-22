@@ -15,61 +15,66 @@ export class PassengerNewTripScreen extends AppiumSessionBase {
 	private async clickVisibleMatchingElement(
 		selector: string,
 		candidates: string[],
-		timeout = 10_000,
+		timeout = 10_000
 	): Promise<boolean> {
 		const driver = this.getDriver();
 		const deadline = Date.now() + timeout;
-		const normalizedCandidates = Array.from(
-			new Set(
-				candidates
-					.map(candidate => candidate.trim())
-					.filter(Boolean),
-			),
-		);
+		const normalizedCandidates = Array.from(new Set(candidates.map(candidate => candidate.trim()).filter(Boolean)));
 
 		while (Date.now() < deadline) {
-			const clicked = await this.executeInWebView((querySelector: string, texts: string[]) => {
-				const normalize = (value: unknown): string =>
-					String(value ?? '')
-						.replace(/\s+/g, ' ')
-						.trim()
-						.toLowerCase()
-						.normalize('NFD')
-						.replace(/[\u0300-\u036f]/g, '');
+			const clicked = (await this.executeInWebView(
+				(querySelector: string, texts: string[]) => {
+					const normalize = (value: unknown): string =>
+						String(value ?? '')
+							.replace(/\s+/g, ' ')
+							.trim()
+							.toLowerCase()
+							.normalize('NFD')
+							.replace(/[\u0300-\u036f]/g, '');
 
-				const isVisible = (element: Element): boolean => {
-					const html = element as HTMLElement;
-					const rect = html.getBoundingClientRect();
-					const style = window.getComputedStyle(html);
-					return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
-				};
+					const isVisible = (element: Element): boolean => {
+						const html = element as HTMLElement;
+						const rect = html.getBoundingClientRect();
+						const style = window.getComputedStyle(html);
+						return (
+							style.display !== 'none' &&
+							style.visibility !== 'hidden' &&
+							rect.width > 0 &&
+							rect.height > 0
+						);
+					};
 
-				const targets = texts.map(normalize).filter(Boolean);
-				const elements = Array.from(document.querySelectorAll(querySelector)) as HTMLElement[];
-				const match = elements.find(element => {
-					if (!isVisible(element)) {
+					const targets = texts.map(normalize).filter(Boolean);
+					const elements = Array.from(document.querySelectorAll(querySelector)) as HTMLElement[];
+					const match = elements.find(element => {
+						if (!isVisible(element)) {
+							return false;
+						}
+
+						const haystack = normalize(
+							[
+								element.innerText,
+								element.textContent,
+								element.getAttribute('aria-label'),
+								element.getAttribute('content-desc'),
+								element.getAttribute('title'),
+								element.getAttribute('class')
+							].join(' ')
+						);
+
+						return targets.some(target => haystack.includes(target));
+					});
+
+					if (!match) {
 						return false;
 					}
 
-					const haystack = normalize([
-						element.innerText,
-						element.textContent,
-						element.getAttribute('aria-label'),
-						element.getAttribute('content-desc'),
-						element.getAttribute('title'),
-						element.getAttribute('class'),
-					].join(' '));
-
-					return targets.some(target => haystack.includes(target));
-				});
-
-				if (!match) {
-					return false;
-				}
-
-				match.click();
-				return true;
-			}, selector, normalizedCandidates) as boolean;
+					match.click();
+					return true;
+				},
+				selector,
+				normalizedCandidates
+			)) as boolean;
 
 			if (clicked) {
 				return true;
@@ -102,26 +107,29 @@ export class PassengerNewTripScreen extends AppiumSessionBase {
 
 	private async fillAndChooseAddress(inputSelector: string, address: string): Promise<void> {
 		const input = await this.findVisibleInput(inputSelector);
-		await this.executeInWebView((element: HTMLElement, value: string) => {
-			const target =
-				((element as unknown as { shadowRoot?: ShadowRoot | null }).shadowRoot?.querySelector('input') as HTMLInputElement | null) ??
-				(element as unknown as HTMLInputElement);
+		await this.executeInWebView(
+			(element: HTMLElement, value: string) => {
+				const target =
+					((element as unknown as { shadowRoot?: ShadowRoot | null }).shadowRoot?.querySelector(
+						'input'
+					) as HTMLInputElement | null) ?? (element as unknown as HTMLInputElement);
 
-			const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
-			setter?.call(target, value);
-			target.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
-			target.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
-			target.dispatchEvent(new Event('ionInput', { bubbles: true, composed: true } as EventInit));
-			target.focus?.();
-		}, input, address);
+				const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+				setter?.call(target, value);
+				target.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+				target.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
+				target.dispatchEvent(new Event('ionInput', { bubbles: true, composed: true } as EventInit));
+				target.focus?.();
+			},
+			input,
+			address
+		);
 
 		await this.pause(500);
 
-		const candidates = Array.from(new Set([
-			address.trim(),
-			address.split(',')[0]?.trim() ?? '',
-			address.split(' - ')[0]?.trim() ?? '',
-		])).filter(Boolean);
+		const candidates = Array.from(
+			new Set([address.trim(), address.split(',')[0]?.trim() ?? '', address.split(' - ')[0]?.trim() ?? ''])
+		).filter(Boolean);
 
 		for (const candidate of candidates) {
 			if (await this.tapWebText(candidate, 2_500, true)) {
@@ -134,13 +142,9 @@ export class PassengerNewTripScreen extends AppiumSessionBase {
 
 	private cardCandidates(last4: string): string[] {
 		const digits = last4.replace(/\D/g, '').slice(-4);
-		return Array.from(new Set([
-			`VISA ****${digits}`,
-			`VISA ${digits}`,
-			`**** ${digits}`,
-			`...${digits}`,
-			digits,
-		])).filter(Boolean);
+		return Array.from(
+			new Set([`VISA ****${digits}`, `VISA ${digits}`, `**** ${digits}`, `...${digits}`, digits])
+		).filter(Boolean);
 	}
 
 	private async extractTripCode(): Promise<string | undefined> {
@@ -151,9 +155,7 @@ export class PassengerNewTripScreen extends AppiumSessionBase {
 			return tripCodeMatch[1];
 		}
 
-		const travelIdMatch =
-			pageSource.match(/"travelId":(\d+)/) ??
-			pageSource.match(/travelId=(\d+)/i);
+		const travelIdMatch = pageSource.match(/"travelId":(\d+)/) ?? pageSource.match(/travelId=(\d+)/i);
 		if (travelIdMatch?.[1]) {
 			return travelIdMatch[1];
 		}
@@ -164,9 +166,7 @@ export class PassengerNewTripScreen extends AppiumSessionBase {
 			return urlTripCodeMatch[1];
 		}
 
-		const urlTravelIdMatch =
-			url.match(/"travelId":(\d+)/) ??
-			url.match(/travelId=(\d+)/i);
+		const urlTravelIdMatch = url.match(/"travelId":(\d+)/) ?? url.match(/travelId=(\d+)/i);
 		if (urlTravelIdMatch?.[1]) {
 			return urlTravelIdMatch[1];
 		}
@@ -198,7 +198,9 @@ export class PassengerNewTripScreen extends AppiumSessionBase {
 					const html = element as HTMLElement;
 					const rect = html.getBoundingClientRect();
 					const style = window.getComputedStyle(html);
-					return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+					return (
+						style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0
+					);
 				};
 
 				const modals = Array.from(document.querySelectorAll('app-confirm-modal')) as HTMLElement[];
@@ -238,7 +240,9 @@ export class PassengerNewTripScreen extends AppiumSessionBase {
 					const html = element as HTMLElement;
 					const rect = html.getBoundingClientRect();
 					const style = window.getComputedStyle(html);
-					return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+					return (
+						style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0
+					);
 				};
 
 				const modals = Array.from(document.querySelectorAll('app-confirm-modal')) as HTMLElement[];
@@ -266,7 +270,9 @@ export class PassengerNewTripScreen extends AppiumSessionBase {
 			await driver.pause(250);
 		}
 
-		throw new Error('PassengerNewTripScreen.dismissTripAlreadyCreatedModal() - modal not found or "Aceptar" not clickable');
+		throw new Error(
+			'PassengerNewTripScreen.dismissTripAlreadyCreatedModal() - modal not found or "Aceptar" not clickable'
+		);
 	}
 
 	/**
@@ -276,8 +282,8 @@ export class PassengerNewTripScreen extends AppiumSessionBase {
 		await this.tapWebText('Inicio', 3_000).catch(() => false);
 
 		const ready =
-			await this.waitForWebUrlContains('HomePage', 10_000) ||
-			await this.waitForWebText('Seleccionar Vehiculo', 10_000, true);
+			(await this.waitForWebUrlContains('HomePage', 10_000)) ||
+			(await this.waitForWebText('Seleccionar Vehiculo', 10_000, true));
 
 		if (!ready) {
 			throw new Error('PassengerNewTripScreen.openNewTrip() - home screen not visible');
@@ -312,15 +318,8 @@ export class PassengerNewTripScreen extends AppiumSessionBase {
 
 		const openedCardDialog = await this.clickVisibleMatchingElement(
 			'ion-col.payment-method, ion-col.payment-method-selected, .payment-method',
-			[
-				'tarjeta de crédito',
-				'credit card',
-				'visa',
-				`visa ...${digits}`,
-				`...${digits}`,
-				digits,
-			],
-			10_000,
+			['tarjeta de crédito', 'credit card', 'visa', `visa ...${digits}`, `...${digits}`, digits],
+			10_000
 		);
 
 		if (openedCardDialog) {
@@ -331,7 +330,7 @@ export class PassengerNewTripScreen extends AppiumSessionBase {
 					await this.clickVisibleMatchingElement(
 						'ion-modal ion-item.card-item, app-credit-card-dialog ion-item.card-item, ion-modal .card-item',
 						[candidate, `VISA ${digits}`, `...${digits}`, digits],
-						5_000,
+						5_000
 					)
 				) {
 					return;
@@ -346,7 +345,9 @@ export class PassengerNewTripScreen extends AppiumSessionBase {
 			return;
 		}
 
-		console.warn(`[PassengerNewTripScreen] card ending ${digits} not explicitly selectable on this screen; continuing with current default card`);
+		console.warn(
+			`[PassengerNewTripScreen] card ending ${digits} not explicitly selectable on this screen; continuing with current default card`
+		);
 	}
 
 	/**
@@ -399,11 +400,15 @@ export class PassengerNewTripScreen extends AppiumSessionBase {
 
 					const rect = html.getBoundingClientRect();
 					const style = window.getComputedStyle(html);
-					return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+					return (
+						style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0
+					);
 				};
 
 				const overlays = Array.from(
-					document.querySelectorAll('ion-alert, ion-modal, ion-toast, app-confirm-modal, .alert-wrapper, .toast-wrapper')
+					document.querySelectorAll(
+						'ion-alert, ion-modal, ion-toast, app-confirm-modal, .alert-wrapper, .toast-wrapper'
+					)
 				) as HTMLElement[];
 
 				const patterns = [
@@ -413,7 +418,7 @@ export class PassengerNewTripScreen extends AppiumSessionBase {
 					/credit.*limit/,
 					/saldo.*insuficient/,
 					/supero.*limite/,
-					/excede.*limite/,
+					/excede.*limite/
 				];
 
 				for (const overlay of overlays) {

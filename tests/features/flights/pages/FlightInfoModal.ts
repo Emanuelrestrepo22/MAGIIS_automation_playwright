@@ -47,7 +47,11 @@ export class FlightInfoModal extends BasePage {
 		//    (wrapper específico de la card del vuelo) → se materializa al hacer hover sobre la card.
 		//    Se scopea a `flight-trip-delete` para no colisionar con los `fic-remove-external`
 		//    ocultos de nota/otro-costo/pax. Ver deleteAssociatedFlight() para el hover-reveal.
-		this.deleteFlightButton = page.locator('button[title="Eliminar vuelo"], button[aria-label="Eliminar vuelo"], button[aria-description="Eliminar vuelo"], div.flight-trip-delete button').first();
+		this.deleteFlightButton = page
+			.locator(
+				'button[title="Eliminar vuelo"], button[aria-label="Eliminar vuelo"], button[aria-description="Eliminar vuelo"], div.flight-trip-delete button'
+			)
+			.first();
 		this.flightNumberInput = page.getByRole('textbox', { name: 'Número de Vuelo:' });
 		// "Ingreso Manual" aparece cuando getFlights devuelve 200 [] (sin resultados) — validado UAT.
 		this.manualEntryButton = page.getByRole('button', { name: /Ingreso Manual/i });
@@ -144,7 +148,11 @@ export class FlightInfoModal extends BasePage {
 	 * devuelva 200 `[]`: el modal muestra "No se encontraron vuelos" y ofrece el botón "Ingreso
 	 * Manual" (validado contra UAT v1.72.6). El resultado vacío es un 200 normal, no un error.
 	 */
-	async searchExpectingNoResults(airlineQuery: string, airlineOptionLabel: string, missingFlightNumber: string): Promise<void> {
+	async searchExpectingNoResults(
+		airlineQuery: string,
+		airlineOptionLabel: string,
+		missingFlightNumber: string
+	): Promise<void> {
 		await this.airlineSelect.click();
 		await this.airlineSearchInput.click();
 		await this.airlineSearchInput.pressSequentially(airlineQuery, { delay: 110 });
@@ -202,7 +210,11 @@ export class FlightInfoModal extends BasePage {
 	 * NOTE(verify-uat): confirmar el selector del input de fecha del modal en la 1ª corrida verde.
 	 */
 	async getFlightDate(): Promise<string> {
-		const input = this.page.locator('.modal input[type="datetime-local"], .modal .inputs-programmed input, ngb-modal-window input[type="datetime-local"]').first();
+		const input = this.page
+			.locator(
+				'.modal input[type="datetime-local"], .modal .inputs-programmed input, ngb-modal-window input[type="datetime-local"]'
+			)
+			.first();
 		const val = await input.inputValue().catch(() => '');
 		if (val) return val;
 		const body = await this.page
@@ -222,6 +234,9 @@ export class FlightInfoModal extends BasePage {
 	 */
 	async expectFlightDateMatchesTrip(expectedTripDate: string): Promise<void> {
 		const shown = await this.getFlightDate();
-		expect(shown, `el modal abrió con "${shown}"; se esperaba la fecha del viaje "${expectedTripDate}" (regresión bug fecha-modal)`).toContain(expectedTripDate);
+		expect(
+			shown,
+			`el modal abrió con "${shown}"; se esperaba la fecha del viaje "${expectedTripDate}" (regresión bug fecha-modal)`
+		).toContain(expectedTripDate);
 	}
 }

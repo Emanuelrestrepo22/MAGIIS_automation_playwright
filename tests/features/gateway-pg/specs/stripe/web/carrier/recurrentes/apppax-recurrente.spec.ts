@@ -13,24 +13,22 @@ import { test } from '@TestFixture';
 test.use({ storageState: undefined });
 
 test.describe('Gateway PG · Carrier · App Pax — Viajes Recurrentes @gateway @stripe @hold @regression', () => {
-
-  test('[TS-STRIPE-P2-TC048] @regression @recurrente @hold vinculación + recurrente hold+cobro app pax', async () => {
-    test.fixme(true, 'PENDIENTE: Page Object RecurrentTravelPage no implementado');
-  });
-  test('[TS-STRIPE-P2-TC049] @regression @recurrente sin hold vinculación + recurrente app pax', async () => {
-    test.fixme(true, 'PENDIENTE: depende de P2-TC048');
-  });
-  test('[TS-STRIPE-P2-TC050] @regression @recurrente @hold selección tarjeta + recurrente hold+cobro', async () => {
-    test.fixme(true, 'PENDIENTE: depende de P2-TC048');
-  });
-  test('[TS-STRIPE-P2-TC051] @regression @recurrente sin hold selección tarjeta + recurrente', async () => {
-    test.fixme(true, 'PENDIENTE: depende de P2-TC048');
-  });
-  test('[TS-STRIPE-P2-TC052] @regression @recurrente @3ds vinculación + recurrente hold+cobro 3DS', async () => {
-    test.fixme(true, 'PENDIENTE: depende de P2-TC048');
-  });
-  test('[TS-STRIPE-P2-TC053] @regression @recurrente @3ds sin hold vinculación + recurrente 3DS', async () => {
-    test.fixme(true, 'PENDIENTE: depende de P2-TC048');
-  });
-
+	test('[TS-STRIPE-P2-TC048] @regression @recurrente @hold vinculación + recurrente hold+cobro app pax', async () => {
+		test.fixme(true, 'PENDIENTE: Page Object RecurrentTravelPage no implementado');
+	});
+	test('[TS-STRIPE-P2-TC049] @regression @recurrente sin hold vinculación + recurrente app pax', async () => {
+		test.fixme(true, 'PENDIENTE: depende de P2-TC048');
+	});
+	test('[TS-STRIPE-P2-TC050] @regression @recurrente @hold selección tarjeta + recurrente hold+cobro', async () => {
+		test.fixme(true, 'PENDIENTE: depende de P2-TC048');
+	});
+	test('[TS-STRIPE-P2-TC051] @regression @recurrente sin hold selección tarjeta + recurrente', async () => {
+		test.fixme(true, 'PENDIENTE: depende de P2-TC048');
+	});
+	test('[TS-STRIPE-P2-TC052] @regression @recurrente @3ds vinculación + recurrente hold+cobro 3DS', async () => {
+		test.fixme(true, 'PENDIENTE: depende de P2-TC048');
+	});
+	test('[TS-STRIPE-P2-TC053] @regression @recurrente @3ds sin hold vinculación + recurrente 3DS', async () => {
+		test.fixme(true, 'PENDIENTE: depende de P2-TC048');
+	});
 });

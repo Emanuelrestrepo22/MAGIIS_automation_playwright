@@ -50,7 +50,7 @@ function createStripeTestCard(number: string): StripeTestCard {
 		exp: TEST_STRIPE_CARD_EXPIRY,
 		cvc: TEST_STRIPE_CARD_CVC,
 		zip_code: TEST_STRIPE_CARD_ZIP_CODE,
-		holderName: TEST_STRIPE_CARD_HOLDER_NAME,
+		holderName: TEST_STRIPE_CARD_HOLDER_NAME
 	};
 }
 
@@ -135,7 +135,7 @@ export const STRIPE_TEST_CARDS_RAW = {
 	 * el cargo es rechazado con card_declined después de la autenticación.
 	 * Fuente: Stripe docs — https://stripe.com/docs/testing#cards
 	 */
-	declined_after_3ds: createStripeTestCard('4000008400001629'),
+	declined_after_3ds: createStripeTestCard('4000008400001629')
 } as const satisfies Record<string, StripeTestCard>;
 
 export function getStripeCardLast4(cardNumber: string): string {
@@ -175,7 +175,10 @@ export const STRIPE_TEST_CARDS = {
 	insufficientFunds: resolveCardNumber('STRIPE_CARD_INSUFFICIENT_FUNDS', STRIPE_TEST_CARDS_RAW.declined_funds.number),
 	declined: resolveCardNumber('STRIPE_CARD_DECLINED', STRIPE_TEST_CARDS_RAW.declined_generic.number),
 	threeDSRequired: resolveCardNumber('STRIPE_CARD_3DS_REQUIRED', STRIPE_TEST_CARDS_RAW.three_ds_required.number),
-	alwaysAuthenticate: resolveCardNumber('STRIPE_CARD_ALWAYS_AUTHENTICATE', STRIPE_TEST_CARDS_RAW.always_authenticate.number),
+	alwaysAuthenticate: resolveCardNumber(
+		'STRIPE_CARD_ALWAYS_AUTHENTICATE',
+		STRIPE_TEST_CARDS_RAW.always_authenticate.number
+	),
 	mastercardDebit: resolveCardNumber('STRIPE_CARD_MASTERCARD_DEBIT', STRIPE_TEST_CARDS_RAW.mastercard_debit.number),
 	lostCard: resolveCardNumber('STRIPE_CARD_LOST', STRIPE_TEST_CARDS_RAW.lost_card.number),
 	stolenCard: resolveCardNumber('STRIPE_CARD_STOLEN', STRIPE_TEST_CARDS_RAW.stolen_card.number),
@@ -186,15 +189,24 @@ export const STRIPE_TEST_CARDS = {
 	/** TC1087 — cvc_check falla post-auth (4000 0000 0000 0101) */
 	cvcCheckFail: resolveCardNumber('STRIPE_CARD_CVC_CHECK_FAIL', STRIPE_TEST_CARDS_RAW.cvc_check_fail.number),
 	/** TC1089 — cvc check fail elevated (4000 0000 0000 4954) */
-	cvcCheckFailElevated: resolveCardNumber('STRIPE_CARD_CVC_CHECK_FAIL_ELEVATED', STRIPE_TEST_CARDS_RAW.cvc_check_fail_elevated.number),
+	cvcCheckFailElevated: resolveCardNumber(
+		'STRIPE_CARD_CVC_CHECK_FAIL_ELEVATED',
+		STRIPE_TEST_CARDS_RAW.cvc_check_fail_elevated.number
+	),
 	/** TC1090 — zip fail elevated (4000 0000 0000 0036) */
 	zipFailElevated: resolveCardNumber('STRIPE_CARD_ZIP_FAIL_ELEVATED', STRIPE_TEST_CARDS_RAW.zip_fail_elevated.number),
 	/** TC1091 — address_line1 check falla (4000 0000 0000 0028) */
-	addressUnavailable: resolveCardNumber('STRIPE_CARD_ADDRESS_UNAVAILABLE', STRIPE_TEST_CARDS_RAW.address_unavailable.number),
+	addressUnavailable: resolveCardNumber(
+		'STRIPE_CARD_ADDRESS_UNAVAILABLE',
+		STRIPE_TEST_CARDS_RAW.address_unavailable.number
+	),
 	/** TC1094 — error autenticacion 3DS (4000 0084 2000 1629) */
 	error3DS: resolveCardNumber('STRIPE_CARD_ERROR_3DS', STRIPE_TEST_CARDS_RAW.error_3ds.number),
 	/** 3DS obligatorio → pago rechazado post-autenticación card_declined (4000 0084 0000 1629) */
-	declinedAfter3DS: resolveCardNumber('STRIPE_CARD_DECLINED_AFTER_3DS', STRIPE_TEST_CARDS_RAW.declined_after_3ds.number),
+	declinedAfter3DS: resolveCardNumber(
+		'STRIPE_CARD_DECLINED_AFTER_3DS',
+		STRIPE_TEST_CARDS_RAW.declined_after_3ds.number
+	)
 } as const;
 
 export const STRIPE_EXPIRY = isTestEnv ? TEST_STRIPE_CARD_EXPIRY : requireEnv('STRIPE_CARD_EXPIRY');

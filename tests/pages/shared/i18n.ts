@@ -31,7 +31,7 @@ export const CARRIER_L = {
 	// Preferencias operativas — EN "Preferences Config" verificado en vivo (cuenta US, 2026-07-20); ES verificado histórico.
 	preferencesHeading: rx('Configuración Parámetros', 'Preferences Config'),
 	holdCardText: rx('Cobros con Tarjeta', 'Credit Card Charges'), // TODO(i18n): confirmar EN exacto en vivo
-	save: rxExact('Guardar', 'Save'),
+	save: rxExact('Guardar', 'Save')
 } as const;
 
 /**
@@ -55,14 +55,22 @@ export async function ensureSpanishLanguage(page: Page): Promise<void> {
 	if (current.startsWith('ES')) return; // ya en español
 
 	// Click en el toggle. Puede togglear directo o abrir un dropdown con opciones ES/EN.
-	await dropdown.locator('a').first().click().catch(() => undefined);
+	await dropdown
+		.locator('a')
+		.first()
+		.click()
+		.catch(() => undefined);
 	const switchedDirect = await expect(label)
 		.toHaveText(/ES/i, { timeout: 1_500 })
 		.then(() => true)
 		.catch(() => false);
 	if (!switchedDirect) {
 		// No fue toggle directo → elegir la opción "ES" del menú desplegado (sin re-clickear el label).
-		await dropdown.getByText('ES', { exact: true }).first().click({ timeout: 3_000 }).catch(() => undefined);
+		await dropdown
+			.getByText('ES', { exact: true })
+			.first()
+			.click({ timeout: 3_000 })
+			.catch(() => undefined);
 		await expect(label).toHaveText(/ES/i, { timeout: 10_000 });
 	}
 }

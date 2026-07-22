@@ -27,9 +27,18 @@ test('recorded — alta de viaje con vuelo satisfactoria (referencia)', async ({
 	await page.getByText('Seleccione Usuario').click();
 	await page.getByRole('textbox', { name: 'Usuario a Buscar' }).fill('eman');
 	await page.getByText('Restrepo, Emanuel (+').click();
-	await page.locator('.ng-tns-c28-3.ng-untouched > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder').first().click();
+	await page
+		.locator(
+			'.ng-tns-c28-3.ng-untouched > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder'
+		)
+		.first()
+		.click();
 	await page.getByText('Reconquista 661, C1002 Cdad.').click();
-	await page.locator('.multiple-destination-container > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder').click();
+	await page
+		.locator(
+			'.multiple-destination-container > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder'
+		)
+		.click();
 	await page.getByRole('textbox', { name: 'Ingrese una dirección' }).fill('eze');
 	await page.getByText('Aeropuerto Internacional').click();
 	await page.locator('.btn.btn-primary.rounded-btn.btn-flight-round').click();
@@ -39,16 +48,27 @@ test('recorded — alta de viaje con vuelo satisfactoria (referencia)', async ({
 	await page.getByRole('button', { name: 'Buscar' }).click();
 	await page.locator('.table-responsive > div:nth-child(20)').click();
 	await page.getByRole('table').filter({ hasText: 'LY8836 - EL AL 2026-07-14' }).click();
-	await page.locator('.card.card-widget.card-flight.ng-star-inserted.tr-select > table > tbody > tr:nth-child(2) > .text-left').click();
+	await page
+		.locator(
+			'.card.card-widget.card-flight.ng-star-inserted.tr-select > table > tbody > tr:nth-child(2) > .text-left'
+		)
+		.click();
 	await page.getByRole('cell', { name: 'LY8836 - EL AL' }).click();
-	await page.locator('.card.card-widget.card-flight.ng-star-inserted.tr-select > table > tbody > tr:nth-child(3) > td:nth-child(3)').click();
+	await page
+		.locator(
+			'.card.card-widget.card-flight.ng-star-inserted.tr-select > table > tbody > tr:nth-child(3) > td:nth-child(3)'
+		)
+		.click();
 	await page.locator('div:nth-child(23) > table > tbody > tr:nth-child(3) > td:nth-child(3)').click();
 	await page.getByRole('button', { name: 'Aceptar' }).click();
 	await page.getByRole('button', { name: 'Seleccionar Vehículo' }).click();
 	await page.getByRole('button', { name: 'Enviar Servicio' }).click();
 	await page.getByRole('banner').getByRole('link', { name: 'Gestión de Viajes' }).click();
 	await page.getByRole('link', { name: 'Programados (8)' }).click();
-	await page.locator('button[title="Editar"], button[aria-label="Editar"], button[aria-description="Editar"]').first().click();
+	await page
+		.locator('button[title="Editar"], button[aria-label="Editar"], button[aria-description="Editar"]')
+		.first()
+		.click();
 	await page.getByText('Vuelo Asociado Sin vuelo').click();
 	await page.getByRole('banner').getByRole('link', { name: 'Gestión de Viajes' }).click();
 	await page.getByRole('link', { name: 'En curso (0)' }).click();

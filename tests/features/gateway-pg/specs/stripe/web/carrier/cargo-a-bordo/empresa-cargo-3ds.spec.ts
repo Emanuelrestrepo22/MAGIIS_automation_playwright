@@ -25,7 +25,7 @@ test.describe.configure({ timeout: 420_000 });
 const scenario3ds: CargoScenario = {
 	client: 'Restrepo, Emanuel',
 	origin: 'Ciudad de la Paz 2238, Buenos Aires, Argentina',
-	destination: 'Reconquista 661, Buenos Aires, Argentina',
+	destination: 'Reconquista 661, Buenos Aires, Argentina'
 };
 
 // Card 3DS-required (SoT fixtures: STRIPE_TEST_CARDS_RAW.three_ds_required = 4000000000003220).
@@ -35,21 +35,23 @@ const charge3ds: DriverChargeSpec = {
 		expiry: '12/34',
 		cvc: '123',
 		holderName: 'RESTREPO EMANUEL',
-		postal: '1234567',
+		postal: '1234567'
 	},
 	expectedOutcome: 'success', // challenge 3DS completado → cobro aprobado
-	is3ds: true,
+	is3ds: true
 };
 
 test.describe('Gateway PG · Carrier · Empresa — Cargo a Bordo · 3DS (asignación manual) @gateway @stripe @cargo-a-bordo @3ds @e2e-hybrid', () => {
-	test('[TS-STRIPE-TC1123] @3ds @cargo-a-bordo cobro con challenge 3DS completado desde Driver App', async ({ page }) => {
+	test('[TS-STRIPE-TC1123] @3ds @cargo-a-bordo cobro con challenge 3DS completado desde Driver App', async ({
+		page
+	}) => {
 		await new CargoABordoSteps({ page }).runCargoScenario(scenario3ds, {
 			manualAssign: true,
 			driverAppStep: {
 				title: '[DRIVER APP] Conductor cobra (always-3DS) → challenge 3DS → completar → cobro OK',
 				note: 'PENDIENTE: fase Driver App 3DS — requiere Appium (APPIUM=1) + device.',
-				charge: charge3ds,
-			},
+				charge: charge3ds
+			}
 		});
 	});
 });

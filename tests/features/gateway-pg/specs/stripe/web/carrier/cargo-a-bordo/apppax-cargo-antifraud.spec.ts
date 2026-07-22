@@ -23,28 +23,29 @@ test.describe.configure({ timeout: 120_000 });
 const appPaxScenario: CargoScenario = {
 	client: TEST_DATA.appPaxPassenger,
 	origin: TEST_DATA.origin,
-	destination: TEST_DATA.destination,
+	destination: TEST_DATA.destination
 };
 
 const APPIUM_NOTE = 'PENDIENTE: fase Driver App — requiere Appium.';
 
 test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo · Antifraud @gateway @stripe @cargo-a-bordo @hold @decline @regression', () => {
-
 	test('[TS-STRIPE-TC1087] @regression @cargo-a-bordo tarjeta alto riesgo desde Driver App', async ({ page }) => {
 		await new CargoABordoSteps({ page }).runCargoScenario(appPaxScenario, {
 			driverAppStep: {
 				title: '[DRIVER APP] Conductor finaliza viaje → cobra con tarjeta de alto riesgo → bloqueado',
-				note: 'PENDIENTE: fase Driver App — requiere Appium + DriverTripPaymentScreen implementado.',
-			},
+				note: 'PENDIENTE: fase Driver App — requiere Appium + DriverTripPaymentScreen implementado.'
+			}
 		});
 	});
 
-	test('[TS-STRIPE-TC1088] @regression @cargo-a-bordo tarjeta siempre bloqueada desde Driver App', async ({ page }) => {
+	test('[TS-STRIPE-TC1088] @regression @cargo-a-bordo tarjeta siempre bloqueada desde Driver App', async ({
+		page
+	}) => {
 		await new CargoABordoSteps({ page }).runCargoScenario(appPaxScenario, {
 			driverAppStep: {
 				title: '[DRIVER APP] Conductor finaliza viaje → cobra con tarjeta always_blocked → bloqueado',
-				note: APPIUM_NOTE,
-			},
+				note: APPIUM_NOTE
+			}
 		});
 	});
 
@@ -52,8 +53,8 @@ test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo · Antifraud @
 		await new CargoABordoSteps({ page }).runCargoScenario(appPaxScenario, {
 			driverAppStep: {
 				title: '[DRIVER APP] Conductor finaliza viaje → CVC check fail con riesgo elevado → bloqueado',
-				note: APPIUM_NOTE,
-			},
+				note: APPIUM_NOTE
+			}
 		});
 	});
 
@@ -61,8 +62,8 @@ test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo · Antifraud @
 		await new CargoABordoSteps({ page }).runCargoScenario(appPaxScenario, {
 			driverAppStep: {
 				title: '[DRIVER APP] Conductor finaliza viaje → ZIP check fail con riesgo elevado → bloqueado',
-				note: APPIUM_NOTE,
-			},
+				note: APPIUM_NOTE
+			}
 		});
 	});
 
@@ -70,9 +71,8 @@ test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo · Antifraud @
 		await new CargoABordoSteps({ page }).runCargoScenario(appPaxScenario, {
 			driverAppStep: {
 				title: '[DRIVER APP] Conductor finaliza viaje → dirección no disponible → bloqueado por antifraud',
-				note: APPIUM_NOTE,
-			},
+				note: APPIUM_NOTE
+			}
 		});
 	});
-
 });

@@ -29,7 +29,7 @@ const appiumUrl = new URL(APPIUM_URL);
 const log = (msg: string): void => console.log(`[passenger-login] ${msg}`);
 
 async function switchToWebView(driver: WebdriverIO.Browser): Promise<string | null> {
-	const contexts = await driver.getContexts() as string[];
+	const contexts = (await driver.getContexts()) as string[];
 	log(`Contextos: ${contexts.join(', ')}`);
 	const webview = contexts.find((c: string) => c.startsWith('WEBVIEW'));
 	if (!webview) return null;
@@ -39,53 +39,65 @@ async function switchToWebView(driver: WebdriverIO.Browser): Promise<string | nu
 }
 
 async function closeExpiredModalIfPresent(driver: WebdriverIO.Browser): Promise<string> {
-	return driver.execute<string, []>(() => {
-		const modal = Array.from(document.querySelectorAll('ion-modal')).find(el =>
-			(el.textContent ?? '').includes('Su sesión ha expirado')
-		);
-		if (!modal) return 'no-modal';
+	return driver
+		.execute<string, []>(() => {
+			const modal = Array.from(document.querySelectorAll('ion-modal')).find(el =>
+				(el.textContent ?? '').includes('Su sesión ha expirado')
+			);
+			if (!modal) return 'no-modal';
 
-		const buttons = Array.from(document.querySelectorAll('button, ion-button, [role="button"]'));
-		const aceptar = buttons.find(el => el.textContent?.trim() === 'Aceptar') as HTMLElement | undefined;
-		if (aceptar) {
-			aceptar.click();
-			return 'clicked-aceptar';
-		}
+			const buttons = Array.from(document.querySelectorAll('button, ion-button, [role="button"]'));
+			const aceptar = buttons.find(el => el.textContent?.trim() === 'Aceptar') as HTMLElement | undefined;
+			if (aceptar) {
+				aceptar.click();
+				return 'clicked-aceptar';
+			}
 
-		return 'modal-without-aceptar';
-	}).catch(() => 'error');
+			return 'modal-without-aceptar';
+		})
+		.catch(() => 'error');
 }
 
 async function fillLoginAndSubmit(driver: WebdriverIO.Browser): Promise<string> {
-	return driver.execute<string, [string, string]>((email: string, password: string): string => {
-		const emailInput = document.querySelector('input[type="email"], input[placeholder="Email"]') as HTMLInputElement | null;
-		const passwordInput = document.querySelector('input[type="password"], input[placeholder="Contraseña"]') as HTMLInputElement | null;
+	return driver
+		.execute<string, [string, string]>(
+			(email: string, password: string): string => {
+				const emailInput = document.querySelector(
+					'input[type="email"], input[placeholder="Email"]'
+				) as HTMLInputElement | null;
+				const passwordInput = document.querySelector(
+					'input[type="password"], input[placeholder="Contraseña"]'
+				) as HTMLInputElement | null;
 
-		if (!emailInput || !passwordInput) return 'missing-fields';
+				if (!emailInput || !passwordInput) return 'missing-fields';
 
-		const setValue = (el: HTMLInputElement, value: string): void => {
-			const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
-			setter?.call(el, value);
-			el.dispatchEvent(new Event('input', { bubbles: true }));
-			el.dispatchEvent(new Event('change', { bubbles: true }));
-		};
+				const setValue = (el: HTMLInputElement, value: string): void => {
+					const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+					setter?.call(el, value);
+					el.dispatchEvent(new Event('input', { bubbles: true }));
+					el.dispatchEvent(new Event('change', { bubbles: true }));
+				};
 
-		setValue(emailInput, email);
-		setValue(passwordInput, password);
+				setValue(emailInput, email);
+				setValue(passwordInput, password);
 
-		const buttons = Array.from(document.querySelectorAll('button, ion-button, [role="button"]'));
-		const submit = buttons.find(el => {
-			const text = el.textContent?.trim();
-			return text === 'Ingresar' || text === 'Entrar' || text === 'Login' || text === 'Iniciar sesión';
-		}) as HTMLElement | undefined;
+				const buttons = Array.from(document.querySelectorAll('button, ion-button, [role="button"]'));
+				const submit = buttons.find(el => {
+					const text = el.textContent?.trim();
+					return text === 'Ingresar' || text === 'Entrar' || text === 'Login' || text === 'Iniciar sesión';
+				}) as HTMLElement | undefined;
 
-		if (submit) {
-			submit.click();
-			return 'clicked-submit';
-		}
+				if (submit) {
+					submit.click();
+					return 'clicked-submit';
+				}
 
-		return 'fields-filled-no-button';
-	}, EMAIL, PASSWORD).catch((error: Error) => `error:${error.message}`);
+				return 'fields-filled-no-button';
+			},
+			EMAIL,
+			PASSWORD
+		)
+		.catch((error: Error) => `error:${error.message}`);
 }
 
 async function waitForPassengerHome(driver: WebdriverIO.Browser, timeoutMs = 20_000): Promise<string> {
@@ -108,38 +120,40 @@ async function dumpWebView(driver: WebdriverIO.Browser): Promise<string> {
 	const url = await driver.execute<string, []>(() => window.location.href).catch(() => '');
 	log(`URL: ${url}`);
 
-	const dom = await driver.execute<string, []>(() => {
-		const out: string[] = [];
+	const dom = await driver
+		.execute<string, []>(() => {
+			const out: string[] = [];
 
-		document.querySelectorAll('[id]').forEach(el => {
-			const text = (el as HTMLElement).innerText?.trim().slice(0, 100) ?? '';
-			out.push(`[id="${el.id}"] tag=${el.tagName.toLowerCase()} text="${text}"`);
-		});
+			document.querySelectorAll('[id]').forEach(el => {
+				const text = (el as HTMLElement).innerText?.trim().slice(0, 100) ?? '';
+				out.push(`[id="${el.id}"] tag=${el.tagName.toLowerCase()} text="${text}"`);
+			});
 
-		document.querySelectorAll('button, ion-button, [role="button"]').forEach(el => {
-			const text = (el as HTMLElement).innerText?.trim().slice(0, 100) ?? '';
-			const id = el.id ?? '';
-			const cls = el.className?.toString().slice(0, 80) ?? '';
-			if (text) out.push(`[BTN] id="${id}" class="${cls}" text="${text}"`);
-		});
+			document.querySelectorAll('button, ion-button, [role="button"]').forEach(el => {
+				const text = (el as HTMLElement).innerText?.trim().slice(0, 100) ?? '';
+				const id = el.id ?? '';
+				const cls = el.className?.toString().slice(0, 80) ?? '';
+				if (text) out.push(`[BTN] id="${id}" class="${cls}" text="${text}"`);
+			});
 
-		document.querySelectorAll('ion-label, ion-title, h1, h2, h3, span, p').forEach(el => {
-			const text = (el as HTMLElement).innerText?.trim().slice(0, 100) ?? '';
-			const id = el.id ?? '';
-			if (text.length > 1 && text.length < 100) {
-				out.push(`[TEXT] ${el.tagName.toLowerCase()} id="${id}" text="${text}"`);
-			}
-		});
+			document.querySelectorAll('ion-label, ion-title, h1, h2, h3, span, p').forEach(el => {
+				const text = (el as HTMLElement).innerText?.trim().slice(0, 100) ?? '';
+				const id = el.id ?? '';
+				if (text.length > 1 && text.length < 100) {
+					out.push(`[TEXT] ${el.tagName.toLowerCase()} id="${id}" text="${text}"`);
+				}
+			});
 
-		document.querySelectorAll('input, ion-input').forEach(el => {
-			const id = el.id ?? '';
-			const ph = (el as HTMLInputElement).placeholder ?? '';
-			const typ = (el as HTMLInputElement).type ?? '';
-			out.push(`[INPUT] id="${id}" type="${typ}" placeholder="${ph}"`);
-		});
+			document.querySelectorAll('input, ion-input').forEach(el => {
+				const id = el.id ?? '';
+				const ph = (el as HTMLInputElement).placeholder ?? '';
+				const typ = (el as HTMLInputElement).type ?? '';
+				out.push(`[INPUT] id="${id}" type="${typ}" placeholder="${ph}"`);
+			});
 
-		return `URL: ${window.location.href}\n\n` + out.join('\n');
-	}).catch((error: Error) => `JS error: ${error.message}`);
+			return `URL: ${window.location.href}\n\n` + out.join('\n');
+		})
+		.catch((error: Error) => `JS error: ${error.message}`);
 
 	return dom;
 }
@@ -161,8 +175,8 @@ async function run(): Promise<void> {
 			'appium:noReset': true,
 			'appium:forceAppLaunch': true,
 			'appium:newCommandTimeout': 120,
-			'appium:chromedriverAutodownload': true,
-		} as Record<string, unknown>,
+			'appium:chromedriverAutodownload': true
+		} as Record<string, unknown>
 	});
 
 	log('✓ Sesión iniciada');

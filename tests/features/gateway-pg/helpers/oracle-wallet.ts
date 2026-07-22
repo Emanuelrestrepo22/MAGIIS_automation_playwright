@@ -62,24 +62,36 @@ export interface PassengerCardFilter {
 }
 
 /** Count de user_wallet del carrier bajo un appId. Read-only. */
-export async function countWalletsByCarrierAndApp(cfg: OracleReadConfig, filter: WalletCarrierAppFilter): Promise<number> {
+export async function countWalletsByCarrierAndApp(
+	cfg: OracleReadConfig,
+	filter: WalletCarrierAppFilter
+): Promise<number> {
 	const table = process.env.ORACLE_WALLET_TABLE ?? 'USER_WALLET';
 	const sql =
 		process.env.ORACLE_WALLET_SQL ??
 		`SELECT COUNT(*) AS "cnt" FROM ${table} WHERE carrieraccount_id = :carrierId AND mercadopago_app_id = :appId`;
-	const rows = await new OracleDb(cfg).query<{ cnt: number }>(sql, { carrierId: filter.carrierAccountId, appId: filter.appId });
+	const rows = await new OracleDb(cfg).query<{ cnt: number }>(sql, {
+		carrierId: filter.carrierAccountId,
+		appId: filter.appId
+	});
 	return Number(rows[0]?.cnt ?? 0);
 }
 
 /** Count de cards del carrier bajo un appId (JOIN card → user_wallet). Read-only. */
-export async function countCardsByCarrierAndApp(cfg: OracleReadConfig, filter: WalletCarrierAppFilter): Promise<number> {
+export async function countCardsByCarrierAndApp(
+	cfg: OracleReadConfig,
+	filter: WalletCarrierAppFilter
+): Promise<number> {
 	const cardTable = process.env.ORACLE_CARD_TABLE ?? 'CARD';
 	const walletTable = process.env.ORACLE_WALLET_TABLE ?? 'USER_WALLET';
 	const sql =
 		process.env.ORACLE_CARD_SQL ??
 		`SELECT COUNT(*) AS "cnt" FROM ${cardTable} c JOIN ${walletTable} w ON c.user_wallet_id = w.id
 		  WHERE w.carrieraccount_id = :carrierId AND w.mercadopago_app_id = :appId`;
-	const rows = await new OracleDb(cfg).query<{ cnt: number }>(sql, { carrierId: filter.carrierAccountId, appId: filter.appId });
+	const rows = await new OracleDb(cfg).query<{ cnt: number }>(sql, {
+		carrierId: filter.carrierAccountId,
+		appId: filter.appId
+	});
 	return Number(rows[0]?.cnt ?? 0);
 }
 
@@ -117,7 +129,10 @@ export async function readMgwLinkStatus(cfg: OracleReadConfig, filter: MgwLinkFi
 		   FROM mgw_linked
 		  WHERE carrier_account_id = :carrierId AND provider = :provider
 		  ORDER BY id DESC`;
-	const rows = await new OracleDb(cfg).query<Record<string, unknown>>(sql, { carrierId: filter.carrierAccountId, provider: filter.provider });
+	const rows = await new OracleDb(cfg).query<Record<string, unknown>>(sql, {
+		carrierId: filter.carrierAccountId,
+		provider: filter.provider
+	});
 	return rows.map(r => ({
 		id: Number(r.id ?? 0),
 		provider: String(r.provider ?? ''),

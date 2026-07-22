@@ -33,7 +33,10 @@ const QUOTA = 2;
 test.describe('TS-MX6057-E2E-CUPO @regression @service-type-quota @carrier', () => {
 	test.fixme(true, 'Blueprint alta fidelidad — validar en vivo tabla Associates + strings ES (TODO(i18n))');
 
-	test('[TS-MX6057-E2E-CUPO] cupo de service type: consumo, bloqueo, reset por colaborador y global', async ({ page, loginPage }) => {
+	test('[TS-MX6057-E2E-CUPO] cupo de service type: consumo, bloqueo, reset por colaborador y global', async ({
+		page,
+		loginPage
+	}) => {
 		const config = new ServiceTypeQuotaConfigPage(page);
 		const travel = new NewTravelPage(page);
 		const corp = new CorporationsManagementPage(page);

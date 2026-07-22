@@ -22,13 +22,11 @@ const contractorScenario: CargoScenario = {
 	client: TEST_DATA.contractorClient,
 	passenger: TEST_DATA.contractorPassenger,
 	origin: TEST_DATA.origin,
-	destination: TEST_DATA.destination,
+	destination: TEST_DATA.destination
 };
 
 test.describe('Gateway PG · Carrier · Colaborador/Contractor — Cargo a Bordo @gateway @stripe @cargo-a-bordo @hold @critical @smoke', () => {
-
 	test('[TS-STRIPE-TC1096] @smoke @cargo-a-bordo pago exitoso sin 3DS', async ({ page }) => {
 		await new CargoABordoSteps({ page }).runCargoScenario(contractorScenario, { createTimeout: 30_000 });
 	});
-
 });

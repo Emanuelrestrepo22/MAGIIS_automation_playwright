@@ -15,7 +15,7 @@ export {
 	STRIPE_EXPIRY,
 	STRIPE_CVC,
 	STRIPE_BILLING_ZIP,
-	STRIPE_CARD_HOLDER_NAME,
+	STRIPE_CARD_HOLDER_NAME
 } from '../../../fixtures/stripe/cards';
 
 // Datos de dominio MAGIIS — agnósticos del gateway.

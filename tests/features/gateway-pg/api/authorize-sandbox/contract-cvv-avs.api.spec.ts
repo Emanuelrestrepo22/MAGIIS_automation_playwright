@@ -25,7 +25,7 @@ test.describe('[BL-036][API] Authorize.net sandbox — CVV + AVS triggers @gatew
 		const response: AuthorizeApiResponse = await api.authorizeOnly({
 			card: AUTHORIZE_CARDS.DECLINE_CVV,
 			amount: '10.00',
-			refId: `bl-036-cvv-mismatch-${Date.now()}`,
+			refId: `bl-036-cvv-mismatch-${Date.now()}`
 		});
 
 		expect(response.messages.resultCode).toBe('Ok');
@@ -40,7 +40,7 @@ test.describe('[BL-036][API] Authorize.net sandbox — CVV + AVS triggers @gatew
 		const response: AuthorizeApiResponse = await api.authorizeOnly({
 			card: AUTHORIZE_CARDS.CVV_NOT_PROCESSED,
 			amount: '10.00',
-			refId: `bl-036-cvv-notproc-${Date.now()}`,
+			refId: `bl-036-cvv-notproc-${Date.now()}`
 		});
 
 		expect(response.messages.resultCode).toBe('Ok');
@@ -53,7 +53,7 @@ test.describe('[BL-036][API] Authorize.net sandbox — CVV + AVS triggers @gatew
 		const response: AuthorizeApiResponse = await api.authorizeOnly({
 			card: AUTHORIZE_CARDS.AVS_NO_MATCH,
 			amount: '10.00',
-			refId: `bl-036-avs-nomatch-${Date.now()}`,
+			refId: `bl-036-avs-nomatch-${Date.now()}`
 		});
 
 		expect(response.messages.resultCode).toBe('Ok');

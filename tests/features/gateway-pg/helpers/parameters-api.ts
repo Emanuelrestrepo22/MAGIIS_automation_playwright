@@ -42,7 +42,7 @@ export async function getCarrierParameters(page: Page, carrierId = DEFAULT_CARRI
 export async function setHoldViaApi(
 	page: Page,
 	enabled: boolean,
-	opts: { ccHoldPreviousHs?: number; ccHoldCoverage?: number; carrierId?: string } = {},
+	opts: { ccHoldPreviousHs?: number; ccHoldCoverage?: number; carrierId?: string } = {}
 ): Promise<CarrierParameters> {
 	const carrierId = opts.carrierId ?? DEFAULT_CARRIER_ID;
 	const headers = await getApiHeaders(page);
