@@ -1,3 +1,8 @@
+# 🚨 NO COMENTAR NI VACIAR ESTE ARCHIVO. El bloque `workflow: rules: - when: never` de abajo
+#    es lo que BLOQUEA los pipelines de GitLab. Un .gitlab-ci.yml vacío/comentado hace que GitLab
+#    dispare Auto DevOps o un pipeline de config inválida (incidente 2026-07-15, pipeline fallido).
+#    Política MAGIIS: CI corre local/Docker/Jenkins/GitHub Actions, NUNCA GitLab CI. Dejar when:never.
+# ─────────────────────────────────────────────────────────────────────────────────────────────
 stages:
   - test
 

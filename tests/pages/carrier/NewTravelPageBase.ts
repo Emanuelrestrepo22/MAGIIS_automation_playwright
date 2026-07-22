@@ -5,6 +5,7 @@ import { getPortalUrl } from '../../config/gatewayPortalRuntime';
 // pero al menos las constantes y mappings centralizados en el fixture.
 import { STRIPE_BILLING_ZIP, STRIPE_CARD_HOLDER_NAME, STRIPE_CVC, STRIPE_EXPIRY } from '../../fixtures/gateways/stripe/cards';
 import { resolveStripeCardByLast4 } from '../../fixtures/gateways/stripe/card-by-last4';
+import { BasePage } from '../shared/BasePage';
 
 export type NewTravelFormInput = {
 	client?: string;
@@ -79,8 +80,7 @@ function escapeRegExp(value: string): string {
  * Centraliza locators y acciones para evitar duplicacion entre paginas
  * con distintos puntos de entrada.
  */
-export abstract class NewTravelPageBase {
-	protected readonly page: Page;
+export abstract class NewTravelPageBase extends BasePage {
 	protected readonly clientSelect: Locator;
 	protected readonly clientSearchInput: Locator;
 	protected readonly passengerSelect: Locator;
@@ -114,7 +114,7 @@ export abstract class NewTravelPageBase {
 	protected readonly cardValidationErrorText: Locator;
 
 	constructor(page: Page) {
-		this.page = page;
+		super(page);
 		this.clientSelect = page.locator('#clientSelect');
 		this.clientSearchInput = page.locator('#clientSelect input[placeholder="Usuario a Buscar"]');
 		this.passengerSelect = page.locator('#passenger');
@@ -153,53 +153,6 @@ export abstract class NewTravelPageBase {
 		this.cardValidationErrorText = page.locator(
 			'app-credit-card-payment-data-validate .error-text.ng-star-inserted',
 		);
-	}
-
-	private async waitForEnabledButton(button: Locator, timeout = 45_000): Promise<void> {
-		const deadline = Date.now() + timeout;
-
-		while (Date.now() < deadline) {
-			const visible = await button.isVisible().catch(() => false);
-			const enabled = await button.isEnabled().catch(() => false);
-
-			if (visible && enabled) {
-				return;
-			}
-
-			// NOTE(tier3-kept): polling loop con condición compuesta visible+enabled — retryAsync no modela este patrón de forma más clara
-			await this.page.waitForTimeout(500);
-		}
-
-		throw new Error('Button did not become enabled before timeout');
-	}
-
-	private async waitForLoadingOverlayToDisappear(timeout = 15_000): Promise<void> {
-		await this.page
-			.locator('.black-overlay')
-			.waitFor({ state: 'hidden', timeout })
-			.catch(() => undefined);
-	}
-
-	private async openDropdown(select: Locator, timeout = 10_000): Promise<void> {
-		const trigger = select.locator('.below > .single > .value, .below > .single > .placeholder, .below').first();
-		await expect(trigger).toBeVisible({ timeout });
-		await trigger.click({ force: true });
-
-		const dropdown = select.locator('select-dropdown').first();
-		await dropdown.waitFor({ state: 'attached', timeout });
-	}
-
-	private async chooseDropdownOption(select: Locator, optionText: string, timeout = 10_000): Promise<void> {
-		await this.openDropdown(select, timeout);
-		const option = select.locator('select-dropdown .options li').filter({ hasText: optionText }).first();
-		await expect(option).toBeVisible({ timeout });
-		await option.click();
-	}
-
-	private async clickButtonByName(name: string | RegExp, timeout = 10_000): Promise<void> {
-		const button = this.page.getByRole('button', { name });
-		await expect(button).toBeVisible({ timeout });
-		await button.click();
 	}
 
 	async goto(): Promise<void> {
@@ -945,40 +898,5 @@ export abstract class NewTravelPageBase {
 
 	async assertPaymentMethodPreauthorizedSelected(): Promise<void> {
 		await expect(this.paymentMethodValue).toContainText('Tarjeta de Crédito - Preautorizada', { timeout: 10_000 });
-	}
-
-	/**
-	 * BL-012 Fase 1 — espera a que Angular renderice al menos una opción en el
-	 * autocomplete/dropdown asociado al componente. Reemplaza `waitForTimeout`
-	 * usado como debounce ciego con polling DOM determinista. Más rápido cuando
-	 * Angular responde antes; fail-fast si el debounce no termina en `timeoutMs`.
-	 *
-	 * Detecta opciones en 3 ubicaciones (en orden):
-	 *   1. `select-dropdown .options li` — dropdown nativo del SuperPage.
-	 *   2. `getByRole('listitem')` inline dentro del componente.
-	 *   3. `getByRole('listitem')` a nivel de página (CDK overlay).
-	 *
-	 * Patrón validado en contractor commit `0299955` (Fase 1 contractor).
-	 */
-	protected async waitForAutocompleteOptionsReady(
-		component: Locator,
-		options: { timeoutMs?: number } = {},
-	): Promise<void> {
-		const timeoutMs = options.timeoutMs ?? 4_000;
-		await expect
-			.poll(
-				async () => {
-					const dropdownOptions = await component.locator('select-dropdown .options li').count();
-					if (dropdownOptions > 0) return dropdownOptions;
-					const inlineList = await component.getByRole('listitem').count();
-					if (inlineList > 0) return inlineList;
-					return await this.page.getByRole('listitem').count();
-				},
-				{
-					timeout: timeoutMs,
-					message: 'BL-012: esperando opciones de autocomplete Angular (dropdown nativo, inline o CDK overlay)',
-				},
-			)
-			.toBeGreaterThan(0);
 	}
 }
