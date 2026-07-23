@@ -61,6 +61,13 @@ export interface PassengerCardFilter {
 	last4?: string;
 }
 
+export interface MgwTransactionsByRefFilter {
+	/** transaction_ref (clave de negocio que ata los intentos de cobro del MISMO viaje). */
+	transactionRef: string;
+	/** Estados que cuentan como "cobro efectivo". Default ['APPROVED','CONFIRM']. */
+	statuses?: string[];
+}
+
 /** Count de user_wallet del carrier bajo un appId. Read-only. */
 export async function countWalletsByCarrierAndApp(cfg: OracleReadConfig, filter: WalletCarrierAppFilter): Promise<number> {
 	const table = process.env.ORACLE_WALLET_TABLE ?? 'USER_WALLET';
@@ -105,6 +112,34 @@ export async function countCardsByPassenger(cfg: OracleReadConfig, filter: Passe
 	if (filterByLast4) {
 		binds.last4 = filter.last4;
 	}
+	const rows = await new OracleDb(cfg).query<{ cnt: number }>(sql, binds);
+	return Number(rows[0]?.cnt ?? 0);
+}
+
+/**
+ * Count de filas APROBADAS en mgw_transactions para un transaction_ref dado. Read-only.
+ * Detector del gap de idempotencia (AC9 · MG-164 / F-02): tras cobrar y RE-cobrar el MISMO
+ * viaje, este count debe ser 1 (una sola fila aprobada). Si el backend NO deduplica por
+ * Idempotency-Key, aparece una 2ª fila con el mismo transaction_ref → count=2 → el test da
+ * ROJO, y ese rojo ES la evidencia del doble cobro.
+ *
+ * node-oracledb no bindea un array a un `IN (...)` directamente → los estados se expanden a
+ * binds nombrados (:st0, :st1, ...). Overridable por env (mismo patrón que las otras fns):
+ *   ORACLE_MGWTX_TABLE  (default MGW_TRANSACTIONS)
+ *   ORACLE_MGWTX_SQL    (query completa; binds :ref + :st0.. — debe alias "cnt")
+ */
+export async function countMgwTransactionsByRef(cfg: OracleReadConfig, filter: MgwTransactionsByRefFilter): Promise<number> {
+	const table = process.env.ORACLE_MGWTX_TABLE ?? 'MGW_TRANSACTIONS';
+	const statuses = filter.statuses && filter.statuses.length > 0 ? filter.statuses : ['APPROVED', 'CONFIRM'];
+	const binds: Record<string, unknown> = { ref: filter.transactionRef };
+	const placeholders = statuses.map((status, i) => {
+		const key = `st${i}`;
+		binds[key] = status;
+		return `:${key}`;
+	});
+	const sql =
+		process.env.ORACLE_MGWTX_SQL ??
+		`SELECT COUNT(*) AS "cnt" FROM ${table} WHERE transaction_ref = :ref AND status IN (${placeholders.join(', ')})`;
 	const rows = await new OracleDb(cfg).query<{ cnt: number }>(sql, binds);
 	return Number(rows[0]?.cnt ?? 0);
 }
