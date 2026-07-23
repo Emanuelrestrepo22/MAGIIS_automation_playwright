@@ -55,9 +55,21 @@ export abstract class AppiumSessionBase {
 
 	async endSession(): Promise<void> {
 		if (this.driver) {
-			await this.driver.deleteSession();
+			// Guard: deleteSession() puede colgar si el device/appium no responde (p.ej. tras
+			// interferencia de otro device). El teardown NO debe bloquear un test cuyos asserts
+			// ya pasaron → timeout de 20s y liberar el driver igual.
+			const driver = this.driver;
 			this.driver = null;
-			console.log('[AppiumSessionBase] Session closed');
+			try {
+				await Promise.race([
+					driver.deleteSession(),
+					new Promise((_, reject) => setTimeout(() => reject(new Error('deleteSession timeout (20s)')), 20_000)),
+				]);
+				console.log('[AppiumSessionBase] Session closed');
+			} catch (error) {
+				const message = error instanceof Error ? error.message : String(error);
+				console.warn(`[AppiumSessionBase] endSession: deleteSession no completó limpiamente (${message}) — driver liberado igual.`);
+			}
 		}
 	}
 

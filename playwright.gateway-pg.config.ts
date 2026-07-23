@@ -62,6 +62,16 @@ export default defineConfig({
     {
       name: "e2e-mobile",
       grep: /@e2e-hybrid/,
+      // Los flujos en device (wallet add-card + alta de viaje + polling del código) superan
+      // los 120s globales. Timeout dedicado para no cortar pasos legítimos del dispositivo.
+      timeout: 300 * 1000,
+      // El alta de tarjeta en device es flaky por selección no-determinística de página/frame
+      // del webview en Appium (el form nativo app-credit-card-payment-data SÍ monta, pero
+      // switchContext cae a veces en el iframe de firebase-auth → no se ve el form). Retries para
+      // estabilizar la regresión en device (práctica estándar de suites móviles); el retry de
+      // tapAddCard cubre el residual dentro de una misma sesión. Debug determinístico del frame
+      // pendiente vía Appium MCP.
+      retries: 2,
       use: {
         browserName: "chromium",
       },
