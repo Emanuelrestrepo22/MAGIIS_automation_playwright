@@ -49,14 +49,27 @@
 
 Datos en [`tests/fixtures/gateways/mercado-pago/cards.ts`](../../../tests/fixtures/gateways/mercado-pago/cards.ts) (`MP_TEST_CARDS` + catálogo `MP_CARD_CATALOG`).
 
-## 4. Modelo de integración (runtime — TBD)
+## 4. Modelo de integración (runtime — observado)
 
-**Pendiente de confirmar con backend MAGIIS** antes de crear el POM:
-- ¿Checkout API, Bricks (Card Payment Brick), o Wallet/Checkout Pro?
-- ¿Form propio de MP o form MAGIIS que envía el nombre al SDK?
-- ¿Endpoints Hold/Capture?
+**Observado en recording del carrier ARG en TEST (alta de viaje, 2026-07-22):** el form de tarjeta de MP en el alta de viaje es el **form NATIVO de MAGIIS** (Angular), **no** un iframe de Stripe Elements. Confirma `usesSharedCardForm: true` del adapter y que el `holderName` + DNI viajan por el form MAGIIS.
 
-Ver [EXTERNAL-BLOCKERS.md](./EXTERNAL-BLOCKERS.md).
+Campos del form (portal carrier · Nuevo Viaje · método "Tarjeta de Crédito - Preautorizada"):
+
+| Campo | Selector observado | Valor de prueba |
+|---|---|---|
+| Número de tarjeta | `getByRole('textbox', { name: 'Número de tarjeta *' })` (input nativo, no iframe) | `4509 9535 6623 3704` |
+| Expiración | `getByRole('textbox', { name: 'MM/AA' })` | `11/30` |
+| CVV | `input[type="password"]` | `123` |
+| **Titular (trigger)** | textbox de nombre del titular | `apro` |
+| Tipo de documento | `#creditCardOwnerIdType` (dropdown) → `DNI` | DNI |
+| Número de documento | textbox de documento | `12345678` |
+| Confirmar | botón `Validar` | — |
+
+**Vinculación satisfactoria (oráculo):** tras `Validar`, la tarjeta aparece **resaltada** (`.ng-star-inserted.highlighted`) en el dropdown `#add_travel_payment_methods`; seleccionarla la deja activa para el viaje (recording test-15, líneas 44-49). `Validar` puede requerir reintento antes de que quede vinculada. Helper: `validateAndSelectMercadoPagoCard()`.
+
+Pendiente aún de confirmar con backend: endpoints Hold/Capture y **por qué el cobro de tarjeta vinculada no completa desde el driver** pero Cargo a Bordo sí (gap TEST). ¿Checkout API vs Brick? — el form nativo sugiere integración server-side (Checkout API) más que Brick/Wallet, a confirmar.
+
+Ver [EXTERNAL-BLOCKERS.md](./EXTERNAL-BLOCKERS.md) y [smoke-cases-no3ds.md](./smoke-cases-no3ds.md) §"Captura del modelo".
 
 ## 5. Consistencia con el adapter
 

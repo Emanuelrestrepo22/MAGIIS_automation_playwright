@@ -62,6 +62,19 @@ export class ContractorNewTravelPage extends NewTravelPage {
 	}
 
 	/**
+	 * Journey de contractor hasta el método de pago, SIN llenar la tarjeta.
+	 * Para gateways que NO usan Stripe Elements (ej. Mercado Pago, form nativo):
+	 * el caller completa la tarjeta con su propio helper y luego `clickValidateCard()`.
+	 * Reutiliza la selección de usuario + direcciones específicas de contractor.
+	 */
+	async fillJourneyUntilPayment(opts: { client: string; origin: string; destination: string }): Promise<void> {
+		await this.selectClient(opts.client);
+		await this.assertDefaultServiceTypeRegular();
+		await this.setOriginContractor(opts.origin);
+		await this.setDestinationContractor(opts.destination);
+	}
+
+	/**
 	 * Limpia un campo app-input-search-place si tiene un valor pre-cargado.
 	 * En contractor, tras seleccionar el usuario, el origen se auto-llena con la
 	 * dirección del colaborador. Hay que limpiarla (✕) antes de escribir la nueva.

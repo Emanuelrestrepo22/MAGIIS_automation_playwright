@@ -39,6 +39,20 @@ desde el driver NO completa** en TEST — comportamiento esperado y aprobado. En
 
 ---
 
+## Specs generados (drafts — pendiente corrida viva)
+
+Convertidos de recordings del carrier ARG TEST (cliente individuo Emanuel mercadopago id=10785 / colaborador Emanuel Restrepo):
+- **Alta sin hold · cliente individuo** (test-14) → `web/carrier/no-hold/cliente-individuo-no-hold.spec.ts` (`[MP-NOHOLD-CLIENTE-INDIVIDUO]`).
+- **Alta sin hold · colaborador de empresa (carrier)** (test-16) → `web/carrier/no-hold/colaborador-no-hold.spec.ts` (`[MP-NOHOLD-02]`).
+- **Alta sin hold · colaborador de empresa (contractor)** (test-15) → `web/contractor/no-hold/colaborador-empresa-no-hold.spec.ts` (`[MP-NOHOLD-04]`).
+- **Wallet web add/delete** (test-14) → `web/carrier/wallet/cliente-individuo-add-delete-card.spec.ts` (`[MP-WALLET-WEB]`, superficie web del carrier, distinta del wallet mobile del Grupo A).
+- **Helper** → `helpers/mercadoPago.helpers.ts` (`fillMercadoPagoNativeCard` + `validateAndSelectMercadoPagoCard`, form nativo MP + oráculo de vinculación).
+- **Extensión POM** → `ContractorNewTravelPage.fillJourneyUntilPayment()` (journey contractor sin llenar tarjeta, para gateways no-Stripe).
+
+**Grupo B completo** (cliente individuo + colaborador de empresa desde ambos portales). Compilan (tsc) y Playwright los lista. ⚠️ Locators FRAGILE (CVV `input[type=password]`, número de documento `nth(4)`, trash `ng-tns`) + reintento de `Validar` requieren confirmación en corrida viva.
+
+---
+
 ## Grupo A — Wallet / administración de tarjetas (App Pax mobile · Appium)
 
 | ID | Título | `holderName` | Resultado esperado |
@@ -57,10 +71,11 @@ Termina en creación del viaje. **No** se valida el cobro (gap conocido → UAT)
 
 | ID | Portal · Actor | Resultado esperado |
 |---|---|---|
-| MP-NOHOLD-01 | Carrier · AppPax | Sin modal → viaje "Buscando chofer" (SEARCHING_DRIVER) |
-| MP-NOHOLD-02 | Carrier · Colaborador | "Buscando chofer" |
-| MP-NOHOLD-03 | Carrier · Empresa | "Buscando chofer" (visible bajo cliente empresa) |
-| MP-NOHOLD-04 | Contractor · Colaborador | Redirige a `/contractor/dashboard` |
+| MP-NOHOLD-01 | Carrier · cliente individuo (AppPax/personal) | Sin modal → viaje "Buscando chofer" (SEARCHING_DRIVER) |
+| MP-NOHOLD-02 | Carrier · colaborador de empresa | "Buscando chofer" |
+| MP-NOHOLD-04 | Contractor · colaborador de empresa | Redirige a `/contractor/dashboard` |
+
+> **Nota (contexto MP):** "empresa" y "colaborador de empresa" son el **mismo actor** — un cliente empresa/contractor se opera a través de su colaborador. Por eso no hay un caso "Empresa" separado (el antiguo MP-NOHOLD-03 se fusiona con MP-NOHOLD-02/04). Grupo B queda en 3 casos distintos: cliente individuo + colaborador de empresa desde cada portal.
 
 **Pasos base (a grabar con codegen):** login dispatcher/contractor → Hold **OFF** en preferencias operativas →
 nuevo viaje (cliente/pasajero + origen/destino Buenos Aires) → tarjeta fija + **`holderName = APRO`** (+ DNI) →
@@ -129,10 +144,9 @@ Volcar en [`ARCHITECTURE.md`](./ARCHITECTURE.md) §4 y en los `webTodos`/`mobile
 |---|---|---|---|
 | MP-WALLET-01 | | | |
 | MP-WALLET-02 | | | |
-| MP-NOHOLD-01 | | | |
-| MP-NOHOLD-02 | | | |
-| MP-NOHOLD-03 | | | |
-| MP-NOHOLD-04 | | | |
+| MP-NOHOLD-01 (cliente individuo) | | | |
+| MP-NOHOLD-02 (colaborador · carrier) | | | |
+| MP-NOHOLD-04 (colaborador · contractor) | | | |
 | MP-CARGO-01 | | | |
 | MP-CARGO-02 | | | |
 | MP-CARGO-03 | | | |
