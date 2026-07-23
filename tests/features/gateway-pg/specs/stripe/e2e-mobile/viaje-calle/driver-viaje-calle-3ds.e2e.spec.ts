@@ -27,7 +27,10 @@ const STRIPE_3DS_CARD: CardData = {
 	postal: '1343',
 };
 
-test.describe('[E2E-MOBILE][STRIPE] Viaje calle · cobro a bordo 3DS', () => {
+test.describe(
+	'[E2E-MOBILE][STRIPE] Viaje calle · cobro a bordo 3DS',
+	{ annotation: [{ type: 'tms', description: 'MG-161' }] },
+	() => {
 	test.describe.configure({ mode: 'serial' });
 	test.describe.configure({ timeout: 300_000 });
 	test.skip(() => !process.env.APPIUM_SERVER_URL, 'Requiere servidor Appium + device driver');
