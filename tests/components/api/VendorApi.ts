@@ -28,6 +28,7 @@
  */
 
 import type { TestContextOptions } from '@TestContext';
+import type { MercadopagoHttpResult } from '@schemas/mercadopago.types';
 
 import { ApiBase } from '@api/ApiBase';
 import { atc } from '@utils/decorators';
@@ -60,6 +61,17 @@ export interface CleaningWalletsResponse {
 	body: string;
 }
 
+export interface RegisterMercadopagoVendorInput {
+	/** userId del ADMIN del carrier a vincular (body `carrier`). */
+	carrierUserId: number | string;
+	/** authorization code del OAuth MP Connect (test-mode). Vacío/expirado → alta falla. */
+	code: string;
+	/** Header Authorization completo (ya incluye "Bearer "). */
+	authToken: string;
+	/** Override de base URL; default apiBaseUrl (API_URL / AUTH_API_URL / BASE_URL). */
+	baseUrl?: string;
+}
+
 export class VendorApi extends ApiBase {
 	constructor(options: TestContextOptions) {
 		super(options);
@@ -87,5 +99,52 @@ export class VendorApi extends ApiBase {
 		} catch (err) {
 			return { status: 0, ok: false, body: String(err) };
 		}
+	}
+
+	/**
+	 * Mini-flujo ATC: `POST vendor/mercadopago` — vincula la pasarela MercadoPago al carrier
+	 * (`registerMercadopagoVendor(user, code, carrier)`). Contraparte MP del alta de Stripe/Connect.
+	 *
+	 * Ruta REST confirmada por el nombre del endpoint (`POST vendor/mercadopago`); el `code` es el
+	 * authorization code del OAuth MP Connect (test-mode). Body overridable si el contrato UAT difiere.
+	 *
+	 * Contrato de negocio (grounded en reverse-engineering magiis-be):
+	 *   - 200/201 → vinculación creada.
+	 *   - 409 MERCADOPAGO_IN_USE → el carrier ya tiene MP vinculado (negativo A-04).
+	 *   - 404 USER_NOT_FOUND / CARRIER_NOT_FOUND → user/carrier inexistente.
+	 *
+	 * ⚠️ CODE-ONLY: el alta REAL requiere un `code` OAuth vivo (no automatizable en TEST) → la
+	 * ejecución real se difiere a UAT. Devuelve el contrato HTTP; NO lanza ante excepción de red.
+	 *
+	 * @atc MG-141 — área A (vinculación MP). Mapeo por área (idmap atp-mg-gateway-idmap.md);
+	 *   el negativo MERCADOPAGO_IN_USE es MG-144 (A-04), aserción a nivel spec.
+	 */
+	@atc('MG-141', {
+		severity: 'critical',
+		description: 'POST vendor/mercadopago — vincula la pasarela MercadoPago al carrier (OAuth Connect)'
+	})
+	async registerMercadopagoVendor(input: RegisterMercadopagoVendorInput): Promise<MercadopagoHttpResult> {
+		const base = (input.baseUrl ?? this.apiBaseUrl ?? process.env.BASE_URL ?? '').replace(/\/$/, '');
+		const url = `${base}/magiis-v0.2/vendor/mercadopago`;
+		try {
+			const res = await this.request.post(url, {
+				headers: { Authorization: input.authToken, 'Content-Type': 'application/json' },
+				data: { carrier: input.carrierUserId, code: input.code },
+				failOnStatusCode: false
+			});
+			const raw = (await res.text()).trim();
+			return { status: res.status(), ok: res.ok(), raw, body: safeJson(raw) };
+		} catch (err) {
+			return { status: 0, ok: false, raw: String(err), body: null };
+		}
+	}
+}
+
+/** Parseo tolerante — devuelve `null` si el body no es JSON (evita romper el contrato HTTP). */
+function safeJson(raw: string): unknown | null {
+	try {
+		return JSON.parse(raw);
+	} catch {
+		return null;
 	}
 }
