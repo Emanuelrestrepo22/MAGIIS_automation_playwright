@@ -879,22 +879,70 @@ export abstract class NewTravelPageBase extends BasePage {
 
 	/**
 	 * ASIGNACIÓN MANUAL (ref: tests/test-5.spec.ts). En vez de "Send Service" (que despacha al
-	 * pool de conductores con un timer de oferta), asigna el viaje DIRECTO a un conductor:
-	 *   "Send Manual" → "Assign" (fila del conductor) → "Assign" (confirmar).
+	 * pool de conductores con un timer de oferta), asigna el viaje DIRECTO a un conductor.
 	 * Elimina el timer de oferta-candidato: el driver queda dueño del viaje.
+	 *
+	 * Flujo real (UI v1.72.8, verificado 2026-07-23):
+	 *   1) "Enviar Manual"/"Send Manual" → navega a la PANTALLA "Gestión de Choferes / Asignar"
+	 *      (una TABLA de conductores candidatos, NO un modal).
+	 *   2) Click en el control ".driver-btn" ("Asignar"/"Assign") de la primera fila → asigna
+	 *      DIRECTO y navega a "Gestión de Viajes" con el viaje en "Chofer Asignado".
+	 * Ya NO hay tercer paso de confirmación: el antiguo `button "Asignar"` no existe. El
+	 * `link "Asignar (1)"` que aparece luego es el tab de filtro de la grilla de viajes
+	 * (post-asignación), no parte del flujo de asignación.
 	 */
-	async clickSendManualAndAssign(): Promise<void> {
+	async clickSendManualAndAssign(driverName?: string): Promise<void> {
 		await this.waitForLoadingOverlayToDisappear();
-		// Locale-robusto: el ambiente puede estar en ES ("Enviar Manual"/"Asignar") o EN ("Send Manual"/"Assign").
+		// Locale-robusto: el ambiente puede estar en ES ("Enviar Manual") o EN ("Send Manual").
 		await this.page.getByRole('button', { name: /Enviar Manual|Send Manual/i }).click();
-		// Modal con lista de conductores: "Asignar"/"Assign" de la fila (nth(1) según el recorder).
-		const assignRow = this.page.getByText(/Asignar|Assign/i);
-		await assignRow.nth(1).waitFor({ state: 'visible', timeout: 15_000 });
-		await assignRow.nth(1).click();
-		// Confirmar la asignación.
-		const assignConfirm = this.page.getByRole('button', { name: /Asignar|Assign/i });
-		await assignConfirm.waitFor({ state: 'visible', timeout: 15_000 });
-		await assignConfirm.click();
+		// Fila del conductor: control ".driver-btn" (div estilizado como botón, sin role ARIA).
+		const assignAction = this.page.locator('.driver-btn').filter({ hasText: /Asignar|Assign/i });
+		await assignAction.first().waitFor({ state: 'visible', timeout: 15_000 });
+
+		// Sin nombre: comportamiento histórico (primer candidato, el más cercano por TEA).
+		if (!driverName) {
+			await assignAction.first().click();
+			await this.waitForLoadingOverlayToDisappear();
+			return;
+		}
+
+		// Con nombre: asignación DETERMINISTA al conductor del device (E2E driver estable).
+		// Busca el `.driver-btn` cuya fila (contenedor con un único `.driver-btn`) contiene
+		// todos los tokens del nombre — robusto ante orden ("Apellido, Nombre") y clases dinámicas.
+		const clicked = await this.page.evaluate((name: string) => {
+			const tokens = name.toLowerCase().split(/\s+/).filter(Boolean);
+			const btns = Array.from(document.querySelectorAll('.driver-btn'))
+				.filter((b) => /asignar|assign/i.test(b.textContent || ''));
+			for (const btn of btns) {
+				let node: HTMLElement | null = btn.parentElement;
+				let hops = 0;
+				while (node && hops < 6) {
+					const txt = (node.textContent || '').toLowerCase();
+					if (node.querySelectorAll('.driver-btn').length === 1 && tokens.every((t) => txt.includes(t))) {
+						(btn as HTMLElement).click();
+						return true;
+					}
+					node = node.parentElement;
+					hops += 1;
+				}
+			}
+			return false;
+		}, driverName);
+
+		if (!clicked) {
+			const dump = await this.page
+				.evaluate(() => {
+					const first = document.querySelector('.driver-btn');
+					let node: HTMLElement | null = first as HTMLElement | null;
+					for (let i = 0; i < 4 && node?.parentElement; i += 1) node = node.parentElement;
+					return ((node ?? document.body) as HTMLElement).outerHTML.slice(0, 4000);
+				})
+				.catch(() => '<no-dump>');
+			throw new Error(
+				`[clickSendManualAndAssign] No se encontró el conductor "${driverName}" en los candidatos de asignación. `
+					+ `Verificar que el driver del device esté en la flota del carrier y online. DOM candidatos:\n${dump}`,
+			);
+		}
 		await this.waitForLoadingOverlayToDisappear();
 	}
 
