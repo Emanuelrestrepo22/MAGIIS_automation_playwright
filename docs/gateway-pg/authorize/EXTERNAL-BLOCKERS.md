@@ -4,8 +4,6 @@ Estos bloqueos requieren acción humana, decisión del líder o configuración d
 
 > **Estado global (2026-05-13):** SoT de fixtures lista (BL-024 ✅, fixtures bajo `tests/fixtures/gateways/authorize/`). Runtime POM y specs pendientes — bloqueado por 5 items resolverse en orden.
 
-> **✅ Resultado del probe F3 (2026-07-23) — GO condicionado (regla de exclusividad), NO un bloqueo de backend.** Probe read-only `tests/features/gateway-pg/specs/authorize/probe/appstore-gateways-probe.spec.ts` contra apps-test, carrier **1521 (Remises EEUU, US)**, v1.72.8. La card **Authorize.Net existe** y muestra **"No Disponible"** — pero NO porque el backend la deshabilite: es la **regla de exclusividad "una sola pasarela activa por carrier"** (ver ATP MG-224 / BL-037). Como **Stripe está actualmente vinculado** (card Stripe = "Desvincular"), Authorize/eBiz/MP salen "No Disponible". **Al desvincular Stripe, Authorize pasa a "Vincular"** y su modal de credenciales queda disponible. Evidencia: `evidence/test/probe/{appstore-all,authorize-card}.png`. **Consecuencia:** F4 (Authorize UI) es viable vía el **switching** (`GatewaySwitchSteps.ensureActiveGateway`): desvincular Stripe → vincular Authorize → suite → restaurar Stripe. **Prerrequisitos reales (no backend):** (1) credenciales sandbox Authorize `AUTHORIZE_*` para el modal (§1); (2) ventana exclusiva para el switching destructivo sobre 1521 (desvincular Stripe dispara cleaningWallets → borra la tarjeta 4242 del pax → teardown obligatorio: re-vincular Stripe + re-seed tarjeta + smoke Stripe como gate).
-
 ---
 
 ## 1. Sandbox keys Authorize.net

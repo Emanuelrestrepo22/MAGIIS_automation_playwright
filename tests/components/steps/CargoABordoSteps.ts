@@ -63,12 +63,6 @@ export type CargoRunOptions = {
 	 */
 	manualAssign?: boolean;
 	/**
-	 * Nombre del conductor del device al que asignar (E2E determinista). Cuando se provee con
-	 * `manualAssign`, la asignación va a la fila que matchea el nombre (no al primer candidato).
-	 * Necesario para que el viaje aterrice en el driver del dispositivo Appium.
-	 */
-	assignToDriver?: string;
-	/**
 	 * Paso Driver App. Sin `charge` o sin Appium (APPIUM=1) → `test.fixme` (fallback histórico).
 	 * Con `charge` + APPIUM=1 → ejecuta la fase driver real vía DriverCargoDeclineHarness.
 	 */
@@ -176,7 +170,7 @@ export class CargoABordoSteps extends UiBase {
 			await test.step(options.manualAssign ? 'Seleccionar vehículo y ASIGNAR (Send Manual → Assign)' : 'Seleccionar vehículo y enviar el viaje', async () => {
 				await this.travel.clickSelectVehicle();
 				if (options.manualAssign) {
-					await this.travel.clickSendManualAndAssign(options.assignToDriver);
+					await this.travel.clickSendManualAndAssign();
 				} else {
 					await this.travel.clickSendService();
 				}

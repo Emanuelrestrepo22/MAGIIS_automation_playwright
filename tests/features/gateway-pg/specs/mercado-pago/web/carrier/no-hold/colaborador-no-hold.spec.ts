@@ -31,7 +31,7 @@ test.describe(`[SMOKE][MP][${env.toUpperCase()}] Alta sin hold · Carrier colabo
 		const management = new TravelManagementPage(page);
 
 		await test.step(`Given: dispatcher logueado en carrier ARG (${env.toUpperCase()})`, async () => {
-			await loginAsDispatcher(page, { gateway: 'mercado-pago' });
+			await loginAsDispatcher(page);
 		});
 
 		await test.step('And: precondición — hold DESACTIVADO en preferencias operativas', async () => {

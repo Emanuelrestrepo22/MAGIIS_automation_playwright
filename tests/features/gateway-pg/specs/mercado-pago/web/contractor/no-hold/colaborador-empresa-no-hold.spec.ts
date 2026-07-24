@@ -30,7 +30,7 @@ test.describe(`[SMOKE][MP][${env.toUpperCase()}] Alta sin hold · Contractor col
 		const travel = new ContractorNewTravelPage(page);
 
 		await test.step(`Given: contractor logueado en portal contractor (${env.toUpperCase()})`, async () => {
-			await loginAsContractor(page, { gateway: 'mercado-pago' });
+			await loginAsContractor(page);
 		});
 
 		await test.step('When: nuevo viaje — colaborador + origen + destino', async () => {

@@ -37,7 +37,6 @@ test.describe(
 	test('[TS-STRIPE-TC1092][CARGO-ASIGNADO-3DS] alta + asignación manual → driver cobra a bordo con 3DS → success', async ({ page }) => {
 		await new CargoABordoSteps({ page }).runCargoScenario(appPaxScenario, {
 			manualAssign: true,
-			assignToDriver: process.env.DRIVER_DISPLAY_NAME ?? 'pepe argento',
 			createTimeout: 30_000,
 			driverAppStep: {
 				title: '[DRIVER APP] acepta viaje asignado → finaliza → cobra a bordo (3DS) → success',

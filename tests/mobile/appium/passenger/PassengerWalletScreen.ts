@@ -590,13 +590,11 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 				return true;
 			}
 
-			// Form NATIVO Angular/Ionic (app-credit-card-payment-data). Detección AMPLIA (diagnóstico
-			// passenger-diagnose-webview-handles): `#cardNumber` existe como HOST ion-input (NO como
-			// <input>), así que el selector estricto `input#cardNumber` / `input[formcontrolname=…]`
-			// daba falso negativo → "form no montó" pese a estar visible. Basta con detectar el
-			// COMPONENTE o el host `#cardNumber`/formcontrolname/data-checkout (cualquier tag).
+			// Form NATIVO Angular/Ionic (app-credit-card-payment-data): el campo de número es un
+			// input nativo `#cardNumber` / data-checkout. Se chequea vía JS en el webview
+			// (document.querySelector, robusto a frame-focus) — no por WDIO $$ (context-frágil).
 			const nativePresent = await this.executeInWebView(() =>
-				!!document.querySelector('app-credit-card-payment-data, #cardNumber, [formcontrolname="cardNumber"], [data-checkout="cardNumber"]')
+				!!document.querySelector('app-credit-card-payment-data input#cardNumber, input[formcontrolname="cardNumber"], input[data-checkout="cardNumber"]')
 			).catch(() => false);
 			if (nativePresent) {
 				return true;
@@ -1113,34 +1111,45 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 
 	/** Localiza y pulsa el botón AGREGAR (JS click para evitar intercepción de hit-testing). */
 	private async tapAgregarButton(): Promise<boolean> {
-		// FIX (diagnóstico passenger-diagnose-webview-handles): el tap DEBE hacerse vía
-		// executeInWebView — resetea al contexto WEBVIEW + documento principal antes de buscar/clickear.
-		// Con `driver.$$` el query corría sobre el FRAME activo, que tras "AGREGAR" queda apuntando al
-		// iframe de firebase-auth → encontraba botones pero clickeaba en el doc equivocado y el form
-		// nativo nunca montaba (candidates>0 pero "form no montó"). En vivo, este click por texto sobre
-		// `button, ion-button, [role=button]` montó `app-credit-card-payment-data` de forma determinística.
-		const clicked = await this.executeInWebView(() => {
-			const norm = (el: Element) =>
-				`${el.textContent ?? ''} ${el.getAttribute('aria-label') ?? ''} ${el.getAttribute('title') ?? ''}`;
-			const candidates = Array.from(
-				document.querySelectorAll('button, ion-button, [role="button"], a.btn, .btn')
-			) as HTMLElement[];
-			const target = candidates.find(
-				(el) => /agregar/i.test(norm(el)) && (el as HTMLElement).offsetParent !== null
-			);
-			if (!target) return false;
-			const inner = (target.querySelector('button') as HTMLElement) ?? target;
-			inner.scrollIntoView({ block: 'center', inline: 'center' });
-			inner.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, cancelable: true, composed: true, view: window }));
-			inner.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, composed: true, view: window }));
-			inner.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, composed: true, view: window }));
-			inner.click();
-			return true;
-		}).catch(() => false);
+		const driver = this.getDriver();
+		let candidates: any = [];
 
-		console.log(`[PassengerWalletScreen] AGREGAR JS-click (executeInWebView) → ${clicked}`);
-		if (clicked) {
-			return true;
+		try {
+			candidates = await driver.$$('button.btn.primary, ion-button.btn.primary, button.primary, .btn.primary');
+		} catch {
+			candidates = [];
+		}
+
+		console.log(`[PassengerWalletScreen] AGREGAR candidates: ${candidates.length}`);
+
+		for (const candidate of candidates) {
+			if (!(await candidate.isDisplayed().catch(() => false))) {
+				continue;
+			}
+
+			const text = await candidate.getText().catch(() => '');
+			const ariaLabel = await candidate.getAttribute('aria-label').catch(() => '');
+			const title = await candidate.getAttribute('title').catch(() => '');
+			if (!/agregar/i.test(`${text} ${ariaLabel} ${title}`)) {
+				continue;
+			}
+
+			await candidate.scrollIntoView().catch(() => {});
+			await driver.pause(300);
+			const clicked = await driver
+				.execute((el: HTMLElement) => {
+					el.scrollIntoView({ block: 'center', inline: 'center' });
+					el.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, cancelable: true, composed: true, view: window }));
+					el.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, composed: true, view: window }));
+					el.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, composed: true, view: window }));
+					el.click();
+					return true;
+				}, candidate)
+				.catch(() => false);
+
+			if (clicked) {
+				return true;
+			}
 		}
 
 		return this.tapWebText('AGREGAR', 10_000, true);
@@ -1152,17 +1161,14 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 	async fillCardForm(card: CardInput): Promise<void> {
 		const sanitizedNumber = card.number.replace(/\s+/g, '');
 
-		// Rama NATIVA: el form del pasajero es `app-credit-card-payment-data` (Ionic/Angular), NO un
-		// iframe Stripe. Detección AMPLIA vía executeInWebView (mismo criterio que waitForStripeCardNumber):
-		// `#cardNumber` es el HOST ion-input, no un <input>, por eso el gate estricto por findAnyElement
-		// (`input#cardNumber`) daba falso negativo y caía por error a la rama Stripe. fillNativeCardForm
-		// resuelve el <input.native-input> real internamente.
-		await this.switchToWebView().catch(() => {});
+		// Rama NATIVA: el form del pasajero es `app-credit-card-payment-data` con inputs
+		// nativos (formcontrolname/data-checkout), NO un iframe Stripe. Detectar y llenar nativo.
+		// El guard por findAnyElement (frame-gated) es intencional: solo entra a la rama nativa cuando
+		// el frame activo está ALINEADO con el documento del form → así el fill posterior también lo ve.
+		// (No usar getPageSource aquí: detectaría el form aun con el frame desalineado y el fill fallaría.)
 		await this.switchFrameTarget(null).catch(() => {});
-		const nativePresent = await this.executeInWebView(() =>
-			!!document.querySelector('app-credit-card-payment-data, #cardNumber, [formcontrolname="cardNumber"], [data-checkout="cardNumber"]')
-		).catch(() => false);
-		if (nativePresent) {
+		const nativeCardNumber = await this.findAnyElement('app-credit-card-payment-data input#cardNumber, input[formcontrolname="cardNumber"], input[data-checkout="cardNumber"]');
+		if (nativeCardNumber) {
 			await this.fillNativeCardForm(card, sanitizedNumber);
 			return;
 		}
@@ -1230,80 +1236,43 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 	/**
 	 * Llena el form NATIVO de alta de tarjeta (`app-credit-card-payment-data`, estilo MercadoPago:
 	 * inputs nativos por `formcontrolname`/`data-checkout`, NO iframe Stripe). El form es progresivo:
-	 * al tipear un número válido emergen expiry/cvv/cardholderName/zip. Mecánica: proto-setter + eventos
-	 * sobre el input.native-input interno (ver typeIntoNativeInput) → dispara validación y reveal.
+	 * al tipear un número válido emergen expiry/cvv/cardholderName/zip. Mecánica: tap #cardNumber →
+	 * tipeo real (driver.keys) para disparar validación → completar el resto por selector nativo.
 	 */
 	private async fillNativeCardForm(card: CardInput, sanitizedNumber: string): Promise<void> {
 		const driver = this.getDriver();
 		await this.switchToWebView().catch(() => {});
 		await this.switchFrameTarget(null).catch(() => {});
+		const scope = await this.getVisibleCreditCardPaymentModal().catch(() => null);
 
-		// 1) cardNumber. Mecánica confirmada en device (ver typeIntoNativeInput): proto-setter + eventos
-		// sobre el input.native-input interno. Al aplicar un número válido, Ionic revela expiry/cvv/titular/zip
-		// (todos ion-input con id/formcontrolname = cardExpirationDate/securityCode/cardholderName/zipCode).
-		const numberSelectors = ['#cardNumber', 'ion-input[formcontrolname="cardNumber"]', '[data-checkout="cardNumber"]'];
-		const typedNumber = await this.typeIntoNativeInput(numberSelectors, sanitizedNumber);
-		if (!typedNumber) {
+		// 1) cardNumber: `fillWebInputField` es context-robusto (setter nativo + dispatch de
+		// eventos input/change vía executeInWebView) → dispara la validación/reveal del form
+		// reactivo Angular sin depender de resolución de elementos WDIO (context-frágil).
+		const numberSelectors = ['input#cardNumber', 'input[formcontrolname="cardNumber"]', 'input[data-checkout="cardNumber"]'];
+		const filledNumber = await this.fillWebInputField(numberSelectors, sanitizedNumber, scope).catch(() => false);
+		if (!filledNumber) {
 			throw new Error('PassengerWalletScreen.fillNativeCardForm() - no se pudo llenar cardNumber nativo');
 		}
 		await driver.pause(2_500); // validación + reveal progresivo de los demás campos
 
 		// 2) Vencimiento (cardExpirationDate, combinado MM/AA).
 		const { combined } = this.parseExpiryParts(card.expiry);
-		await this.typeIntoNativeInput(['#cardExpirationDate', 'ion-input[formcontrolname="cardExpirationDate"]', '[data-checkout="cardExpirationDate"]'], combined);
+		await this.fillWebInputField(['input[formcontrolname="cardExpirationDate"]', 'input[data-checkout="cardExpirationDate"]', 'input[formcontrolname="cardExpiration"]'], combined, scope).catch(() => false);
 
 		// 3) CVV (securityCode).
-		await this.typeIntoNativeInput(['#securityCode', 'ion-input[formcontrolname="securityCode"]', '[data-checkout="securityCode"]'], card.cvc.replace(/\s+/g, ''));
+		await this.fillWebInputField(['input[formcontrolname="securityCode"]', 'input[data-checkout="securityCode"]', 'input[formcontrolname="cvv"]'], card.cvc.replace(/\s+/g, ''), scope).catch(() => false);
 
 		// 4) Titular.
 		const holderName = card.holderName?.trim();
 		if (holderName) {
-			await this.typeIntoNativeInput(['#cardholderName', 'ion-input[formcontrolname="cardholderName"]', '[data-checkout="cardholderName"]'], holderName);
+			await this.fillWebInputField(['input[formcontrolname="cardholderName"]', 'input[data-checkout="cardholderName"]', 'ion-input[formcontrolname="cardholderName"] input'], holderName, scope).catch(() => false);
 		}
 
 		// 5) Código postal (zipCode) — requerido por el form; default si CardInput no lo trae.
-		await this.typeIntoNativeInput(['#zipCode', 'ion-input[formcontrolname="zipCode"]', '[data-checkout="zipCode"]'], card.zip ?? '76000');
+		await this.fillWebInputField(['input[formcontrolname="zipCode"]', 'input[data-checkout="zipCode"]'], card.zip ?? '76000', scope).catch(() => false);
 
 		await driver.pause(300);
 		console.log('[PassengerWalletScreen] form NATIVO app-credit-card-payment-data completado');
-	}
-
-	/**
-	 * Setea el valor de un input nativo Ionic (`ion-input` → `input.native-input`) de forma que el
-	 * REACTIVE FORM de Angular lo tome. Mecánica confirmada en device (passenger-diagnose-webview-handles):
-	 *   - WDIO addValue/sendKeys FALLA ("did not become interactable") sobre el input Ionic.
-	 *   - `input.value = x` plano NO sirve (Ionic sobreescribe el setter de la property).
-	 *   - Funciona: setter NATIVO del prototipo (`HTMLInputElement.prototype.value`) sobre el
-	 *     `input.native-input` interno + focus + dispatch `input`/`change`/`keyup`/`blur`. Eso emite
-	 *     ionInput → el ControlValueAccessor actualiza el form y (en cardNumber) revela los demás campos.
-	 * `selectors` apunta a los HOST (ion-input por id/formcontrolname/data-checkout); se drilla al inner.
-	 * Devuelve true si el valor quedó aplicado (verificado leyendo el input).
-	 */
-	private async typeIntoNativeInput(selectors: string[], value: string): Promise<boolean> {
-		await this.switchToWebView().catch(() => {});
-		await this.switchFrameTarget(null).catch(() => {});
-
-		const result = await this.executeInWebView((sels: string[], val: string) => {
-			const proto = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value');
-			for (const sel of sels) {
-				const node = document.querySelector(sel) as HTMLElement | null;
-				if (!node) continue;
-				const input = (node.tagName === 'INPUT' ? node : node.querySelector('input.native-input, input')) as HTMLInputElement | null;
-				if (!input) continue;
-				input.scrollIntoView({ block: 'center' });
-				input.focus();
-				input.click();
-				proto?.set?.call(input, val);
-				input.dispatchEvent(new Event('input', { bubbles: true }));
-				input.dispatchEvent(new Event('change', { bubbles: true }));
-				input.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
-				input.dispatchEvent(new Event('blur', { bubbles: true }));
-				return String(input.value ?? '');
-			}
-			return '';
-		}, selectors, value).catch(() => '');
-
-		return result.replace(/\s+/g, '').length >= 2;
 	}
 
 	/**
@@ -1486,12 +1455,7 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 		// a short window, fall back to a WebDriver-trusted click. `driver.$().click()`
 		// sends a real WebDriver click (ElementClick command) which Angular/Stripe
 		// trust more than in-page `.click()` or dispatched MouseEvents.
-		// Si el submit ya se disparó vía un método Angular (ng.verifyCreditCard/doConfirmCardSetup/submit),
-		// el modal que sigue abierto = confirmación/3DS EN CURSO, no un submit fallido. Un click WDIO extra
-		// aquí es redundante y además lo intercepta el ion-content (errores "click intercepted" en loop) →
-		// se omite. El trusted-click solo tiene sentido si NINGÚN ng.* accionó el submit.
-		const ngSubmitted = strategy.startsWith('ng.');
-		const modalAfter = ngSubmitted ? null : await this.getVisibleCreditCardPaymentModal().catch(() => null);
+		const modalAfter = await this.getVisibleCreditCardPaymentModal().catch(() => null);
 		if (modalAfter) {
 			const trustedClicked = await this.webDriverClickSaveButton().catch(() => false);
 			if (trustedClicked) {

@@ -13,14 +13,8 @@ import {
 	CONTRACTOR_COLLABORATOR,
 	DISPATCHER,
 	PAX_WEB,
-	getContractorCollaborator,
 	getCurrentUserEnvironment,
-	getDispatcher,
 } from '../../../fixtures/users';
-import type { GatewayName } from '../../../fixtures/gateways/_shared';
-
-/** Opciones de login por portal. `gateway` selecciona credenciales por pasarela. */
-type LoginOptions = { gateway?: GatewayName };
 import { DashboardPage } from '../../../pages/carrier';
 import { LoginPage } from '../../../pages/shared';
 import { ensureSpanishLanguage } from '../../../pages/shared/i18n';
@@ -51,14 +45,9 @@ async function runLoginPhase<T>(role: string, phase: LoginPhase, fn: () => Promi
  * BL-009 Fase 3 (2026-05-13) — credenciales resueltas vía `DISPATCHER[env]`
  * (SoT canónica `tests/fixtures/users/web-portals/dispatcher.ts`).
  * La URL del portal viene de `gatewayPortalRuntime.ts` (config de URL, no de credenciales).
- *
- * `opts.gateway` selecciona credenciales por pasarela (`getDispatcher(gateway)`);
- * omitido = comportamiento default idéntico (carrier base vía `DISPATCHER[env]`).
  */
-export async function loginAsDispatcher(page: Page, opts?: LoginOptions): Promise<void> {
-	const dispatcher = opts?.gateway
-		? getDispatcher(opts.gateway)
-		: DISPATCHER[getCurrentUserEnvironment()];
+export async function loginAsDispatcher(page: Page): Promise<void> {
+	const dispatcher = DISPATCHER[getCurrentUserEnvironment()];
 	const loginPage = new LoginPage(page, 'carrier', getPortalUrl('carrier'));
 	const dashboardPage = new DashboardPage(page);
 	await runLoginPhase('carrier', 'goto', () => loginPage.goto());
@@ -74,14 +63,9 @@ export async function loginAsDispatcher(page: Page, opts?: LoginOptions): Promis
  * BL-009 Fase 3 (2026-05-13) — credenciales vía `CONTRACTOR_COLLABORATOR[env]`
  * (SoT `tests/fixtures/users/web-portals/contractor-collaborator.ts`). El login path
  * viene de `runtime.ts:resolveLoginPath('contractor')` (config de routing).
- *
- * `opts.gateway` selecciona credenciales por pasarela (`getContractorCollaborator(gateway)`);
- * omitido = comportamiento default idéntico (contractor base vía `CONTRACTOR_COLLABORATOR[env]`).
  */
-export async function loginAsContractor(page: Page, opts?: LoginOptions): Promise<void> {
-	const collaborator = opts?.gateway
-		? getContractorCollaborator(opts.gateway)
-		: CONTRACTOR_COLLABORATOR[getCurrentUserEnvironment()];
+export async function loginAsContractor(page: Page): Promise<void> {
+	const collaborator = CONTRACTOR_COLLABORATOR[getCurrentUserEnvironment()];
 	const baseUrl = process.env.BASE_URL ?? '';
 	const loginPath = resolveLoginPath('contractor');
 	const loginPage = new LoginPage(page, 'contractor', `${baseUrl}${loginPath}`);

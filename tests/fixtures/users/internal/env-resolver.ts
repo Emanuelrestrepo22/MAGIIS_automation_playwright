@@ -11,37 +11,6 @@
  * Importar solo desde archivos dentro de este directorio.
  */
 
-import type { UserEnvironment } from '../types';
-
-/** Sufijo de credencial por ambiente (`USER_CARRIER_TEST`, `PASS_CONTRACTOR_UAT`, …). */
-export type EnvSuffix = 'TEST' | 'UAT' | 'PROD';
-
-/**
- * SoT único del mapeo ambiente → sufijo de env-file.
- * Antes estaba inline en cada fixture (`buildDispatcher('TEST', 'test')`).
- */
-export const ENV_SUFFIX_BY_ENVIRONMENT = {
-  test: 'TEST',
-  uat: 'UAT',
-  prod: 'PROD',
-} as const satisfies Record<UserEnvironment, EnvSuffix>;
-
-/**
- * Resuelve el ambiente activo desde `process.env.ENV`.
- * Default seguro a 'test' si está ausente o tiene un valor desconocido.
- *
- * SoT único de la resolución de ambiente: consumido por los getters de fixture
- * (`getDispatcher` / `getContractorCollaborator`) y por `getCurrentUserEnvironment`
- * del barrel. No usa `console.warn` para no romper el check 6 del pre-push.
- */
-export function resolveActiveEnvironment(): UserEnvironment {
-  const env = process.env.ENV ?? 'test';
-  if (env === 'test' || env === 'uat' || env === 'prod') {
-    return env;
-  }
-  return 'test';
-}
-
 /** Devuelve el valor trimeado o undefined si está vacío / ausente. */
 function normalize(value: string | undefined): string | undefined {
   const trimmed = value?.trim();
