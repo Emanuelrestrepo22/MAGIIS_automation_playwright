@@ -7,14 +7,17 @@
  *
  *   bun xray import xray --file evidence/<env>/xray-results.json
  *
- * Binding spec ↔ Test (en este orden de prioridad):
- *   1. annotation `tms`:       test.info().annotations.push({ type: 'tms', description: 'MX-6133' })
- *      (convención existente del org — misma que usan Allure links y carrier-v2)
+ * Binding spec ↔ Test (EMIT-ALL — un test puede acreditar VARIOS Test de Xray):
+ *   1. annotation `tms`:       test.info().annotations.push({ type: 'tms', description: 'MG-158' })
+ *      (convención del org — misma que usan Allure links y carrier-v2; la empuja @atc)
  *   2. annotation `test_key`:  alias aceptado
- *   3. título:                 test('[MX-6133] ...', ...)   → se parsea la primera key AAA-123
+ *   3. título:                 test('[MG-158] ...', ...)   → fallback, primera key AAA-123
+ *   Se recogen TODAS las keys tms/test_key distinctas (estáticas del TestCase +
+ *   runtime del TestResult) → una fila de resultado por cada Test cubierto.
  *
  * Specs SIN key NO se exportan (no están mapeados a un Test de Xray); se reporta
  * el conteo al final para que el gap sea visible y no un drop silencioso.
+ * XRAY_KEY_DENYLIST (CSV) excluye keys que no son Test (Executions/Plans/Stories).
  *
  * Config (playwright.config.ts):
  *   ['./tests/utils/reporters/xray-reporter.ts', { outputFile: `evidence/${env}/xray-results.json` }]
@@ -75,13 +78,36 @@ function mapStatus(status: TestResult['status']): XrayStatus {
 // quedamos con el peor estado observado (un fallo en cualquier corrida manda).
 const SEVERITY: Record<XrayStatus, number> = { PASSED: 0, TODO: 1, ABORTED: 2, FAILED: 3 };
 
-function extractTestKey(test: TestCase): string | undefined {
+// Denylist de keys que NO son Test de Xray (Test Executions, Test Plans, Epics,
+// Stories) — se excluyen para no emitir un run contra un issue que no es Test.
+// Configurable por CI vía XRAY_KEY_DENYLIST (CSV). Default vacío (reporter genérico).
+const KEY_DENYLIST = new Set(
+	(process.env.XRAY_KEY_DENYLIST ?? '')
+		.split(',')
+		.map(s => s.trim())
+		.filter(Boolean),
+);
+
+// Emit-all: UNA automatización (un test) puede cubrir VARIOS Test de Xray — un spec
+// KATA orquesta varios @atc de componente, y cada @atc empuja su key. Devolvemos
+// TODAS las keys tms/test_key distinctas, uniendo las annotations ESTÁTICAS del
+// TestCase (declaradas en describe/test) con las de RUNTIME del TestResult (donde el
+// decorador @atc las agrega). Así la corrida acredita evidencia a cada Test cubierto.
+// Fallback al título solo si no hay ninguna annotation. Denylist filtra no-Tests.
+function extractTestKeys(test: TestCase, result: TestResult): string[] {
+	const keys = new Set<string>();
+	const all = [...test.annotations, ...(result.annotations ?? [])];
 	for (const type of KEY_ANNOTATION_TYPES) {
-		const ann = test.annotations.find(a => a.type === type);
-		if (ann?.description) return ann.description.trim();
+		for (const ann of all) {
+			if (ann.type === type && ann.description) keys.add(ann.description.trim());
+		}
 	}
-	const m = KEY_IN_TITLE.exec(test.title);
-	return m?.[1];
+	if (keys.size === 0) {
+		const m = KEY_IN_TITLE.exec(test.title);
+		if (m) keys.add(m[1]);
+	}
+	for (const k of [...keys]) if (KEY_DENYLIST.has(k)) keys.delete(k);
+	return [...keys];
 }
 
 class XrayReporter implements Reporter {
@@ -99,8 +125,8 @@ class XrayReporter implements Reporter {
 		// Ignorar corridas intermedias de retry: solo el resultado final cuenta.
 		if (result.status !== 'passed' && result.retry < test.retries) return;
 
-		const testKey = extractTestKey(test);
-		if (!testKey) {
+		const testKeys = extractTestKeys(test, result);
+		if (testKeys.length === 0) {
 			this.unmapped++;
 			return;
 		}
@@ -112,9 +138,12 @@ class XrayReporter implements Reporter {
 			? undefined
 			: clean(result.error?.message ?? `status=${result.status}`).slice(0, 2000);
 
-		const prev = this.results.get(testKey);
-		if (!prev || SEVERITY[status] > SEVERITY[prev.status]) {
-			this.results.set(testKey, { testKey, status, start, finish, comment });
+		// Una fila por cada Test cubierto (dedup por testKey, gana el peor estado).
+		for (const testKey of testKeys) {
+			const prev = this.results.get(testKey);
+			if (!prev || SEVERITY[status] > SEVERITY[prev.status]) {
+				this.results.set(testKey, { testKey, status, start, finish, comment });
+			}
 		}
 	}
 
