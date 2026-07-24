@@ -2,7 +2,6 @@
  * Barrel de componentes KATA UI del portal Carrier (@ui/carrier).
  * Versiones KATA (extends UiBase) de los POMs del sustrato carrier, para specs amoldados.
  */
-export { AppStoreGatewaysPage, type GatewayCompany, type GatewayCardState, type AuthorizeCreds } from './AppStoreGatewaysPage';
 export { CarrierDashboardPage } from './CarrierDashboardPage';
 export { CarrierNewTravelPage, type NewTravelFormInput, type CargoTravelInput } from './CarrierNewTravelPage';
 export { CarrierOperationalPreferencesPage } from './CarrierOperationalPreferencesPage';
