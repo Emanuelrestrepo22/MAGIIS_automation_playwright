@@ -27,7 +27,7 @@ test.describe(`[SMOKE][MP][${env.toUpperCase()}] Wallet web · cliente individuo
 		const paymentMethods = page.locator('#add_travel_payment_methods');
 
 		await test.step(`Given: dispatcher logueado en carrier ARG (${env.toUpperCase()})`, async () => {
-			await loginAsDispatcher(page);
+			await loginAsDispatcher(page, { gateway: 'mercado-pago' });
 		});
 
 		await test.step('When: formulario de nuevo viaje abierto con cliente y destino', async () => {
