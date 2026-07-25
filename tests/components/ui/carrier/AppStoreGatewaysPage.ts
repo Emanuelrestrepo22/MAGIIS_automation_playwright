@@ -15,12 +15,14 @@
  * pasarela activa por carrier. Con Stripe vinculado, Authorize/eBiz/MP salen "No Disponible";
  * al desvincular Stripe pasan a "Vincular" y su modal de credenciales queda disponible.
  *
- * ✅ RECONCILIADO EN VIVO (HANDOFF-live-reconciliation-2026-07-24): selectores verificados contra
- * apps-test. Modal Authorize scopeado por `input[name="apiLoginKey"]` (name = apiLoginKey, NO apiLoginId)
- * + `input[name="transactionKey"]`; acción i18n-proof `Link`/`Unlink` (inglés) / `Vincular`/`Desvincular`;
- * submit = botón `Continue` scopeado al modal (hay ~6 modales, 1 por PSP); click del Link con retry `toPass`
- * (handler Angular tardío). QUIRK: el link con creds válidas devuelve HTTP 500 = CONECTADA (400 = NO) →
- * ver `expectLinkStatusOk` (MG-226) + defect "500-en-éxito" (DEV/MX).
+ * ✅ RECONCILIADO EN VIVO (HANDOFF-live-reconciliation-2026-07-24, actualizado 2026-07-25): selectores
+ * verificados contra apps-test. Modal Authorize scopeado por `input[formcontrolname="apiLoginKey"]`
+ * (Angular Reactive Forms; el input NO tiene atributo `name`, solo `formcontrolname`+`id`) +
+ * `input[formcontrolname="transactionKey"]`; acción i18n-proof `Link`/`Unlink` (inglés) / `Vincular`/`Desvincular`;
+ * submit = botón `Continuar`/`Continue` scopeado al modal (hay ~6 modales, 1 por PSP); click del Link con retry `toPass`
+ * (handler Angular tardío). QUIRK: el link con creds válidas devuelve un status de éxito conocido — 500
+ * (estado limpio) o 409 (carrier 1521 compartido ya vinculado por otra sesión) — nunca 400 (NO conectada) →
+ * ver `expectLinkStatusOk` (MG-226) + defect "500/409-en-éxito" (DEV/MX).
  *
  * Convención KATA aplicada:
  *   - Extiende UiBase; `this.page` es getter heredado.
@@ -30,7 +32,7 @@
  *     Fixture → Page → Fixture (mismo patrón que CarrierNewTravelPage).
  */
 
-import type { Locator } from '@playwright/test';
+import type { Locator, Route } from '@playwright/test';
 import type { TestContextOptions } from '@TestContext';
 
 import { expect } from '@playwright/test';
@@ -269,6 +271,66 @@ export class AppStoreGatewaysPage extends UiBase {
 			.click();
 		await expect(this.confirmPopup(), 'el popup debe cerrarse sin desvincular').toBeHidden({ timeout: 10_000 });
 		expect(await this.readState(company), `${company} sigue vinculada tras cancelar`).toBe('linked');
+	}
+
+	/**
+	 * ATC — fuerza (mock) un fallo HTTP en `vendor/cleaningWallets` durante la desvinculación y
+	 * verifica que el FE NO reporte éxito falso: el ícono de éxito NO debe aparecer y la pasarela
+	 * debe seguir "linked" (retryable) pese al 500.
+	 *
+	 * ⚠️ NO destructivo por construcción: `page.route()` intercepta la request ANTES de que
+	 * salga del browser — el backend real de `cleaningWallets` NUNCA se contacta, a diferencia
+	 * de `unlinkGateway()` (que sí ejecuta el unlink real y por eso exige el guard
+	 * `AUTHORIZE_ALLOW_DESTRUCTIVE_SWITCH`). Esta ATC deliberadamente NO reutiliza `unlinkGateway()`
+	 * (sus aserciones esperan el ÉXITO de la desvinculación, el escenario opuesto al de este TC).
+	 *
+	 * Tampoco reutiliza los helpers privados `openUnlinkPopup`/`confirmPopup` (FRAGILE, confirmado
+	 * en vivo 2026-07-25): el selector combinado `.swal2-popup, [role="dialog"], .modal` de
+	 * `confirmPopup()` matchea `.first()` contra el elemento equivocado cuando hay más de un
+	 * `[role="dialog"]` en el DOM (esta pantalla tiene varios modales ocultos, 1 por PSP — mismo
+	 * patrón ya documentado para `authModal()`), y su `toPass` de 120s queda reintentando un click
+	 * sobre un link ya tapado por el popup real. Este ATC usa un locator propio, scopeado por el
+	 * texto real del popup ("Desvincular Mercado Pago" — ver título del modal), evitando ese bug.
+	 *
+	 * @atc MG-169 — área G (bug transversal: cleaningWallets no debe reportar éxito falso, TC-PAY-G-05).
+	 */
+	@atc('MG-169', { severity: 'critical', description: 'Fallo mockeado (500) de cleaningWallets no debe reportar éxito falso' })
+	async expectUnlinkFailureShowsRealError(company: GatewayCompany): Promise<void> {
+		await this.page.route('**/vendor/cleaningWallets/**', (route: Route) =>
+			route.fulfill({
+				status: 500,
+				contentType: 'application/json',
+				body: JSON.stringify({ message: 'Mocked failure — MG-169 (no reportar éxito falso)' })
+			})
+		);
+
+		await this.desvincularLink(company).click();
+
+		// Popup scopeado por el texto real ("Desvincular <PSP>") — más preciso que el selector
+		// genérico `confirmPopup()`, que puede matchear un modal oculto de otra pasarela.
+		const popup = this.page
+			.locator('ngb-modal-window[role="dialog"], .modal, [role="dialog"], .swal2-popup')
+			.filter({ hasText: /desvincular/i })
+			.first();
+		await expect(popup, 'debe abrirse el popup de confirmación de desvinculación').toBeVisible({ timeout: 15_000 });
+		await popup
+			.getByRole('button', { name: /^confirmar$/i })
+			.first()
+			.click();
+
+		// El bug documentado (TC-PAY-G-05) es un toast/ícono de ÉXITO INCONDICIONAL — NO debe
+		// aparecer cuando el backend respondió 500 a la desvinculación.
+		const successIcon = this.page.locator('.swal2-icon.swal2-success, .swal2-success');
+		await expect(successIcon, 'BUG MG-169: el FE mostró un ícono/toast de ÉXITO pese al 500 mockeado de cleaningWallets').toBeHidden({
+			timeout: 8_000
+		});
+
+		// Prueba funcional robusta (no depende del copy del toast): un fallo de backend NO puede
+		// dejar el FE "creyendo" que se desvinculó — la card debe seguir "linked" (y por lo tanto
+		// reintentable: el link "Desvincular" sigue visible).
+		expect(await this.readState(company), 'BUG MG-169: la pasarela quedó "no vinculada" en el FE pese al 500 mockeado — éxito falso').toBe(
+			'linked'
+		);
 	}
 
 	/**
