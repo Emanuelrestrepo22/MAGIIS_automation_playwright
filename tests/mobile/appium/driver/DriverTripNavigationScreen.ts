@@ -44,13 +44,21 @@ export class DriverTripNavigationScreen extends AppiumSessionBase {
 			}
 
 			return await this.getDriver().execute((candidateSelectors: string[]) => {
-				const normalize = (value: unknown): string => String(value ?? '').replace(/\s+/g, ' ').trim().toLowerCase();
+				const normalize = (value: unknown): string =>
+					String(value ?? '')
+						.replace(/\s+/g, ' ')
+						.trim()
+						.toLowerCase();
 				const isVisible = (element: HTMLElement): boolean => {
 					const rect = element.getBoundingClientRect();
 					const style = window.getComputedStyle(element);
-					return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+					return (
+						style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0
+					);
 				};
-				const candidates = Array.from(document.querySelectorAll('button, [role="button"], ion-button, a, [id], [class]')) as HTMLElement[];
+				const candidates = Array.from(
+					document.querySelectorAll('button, [role="button"], ion-button, a, [id], [class]')
+				) as HTMLElement[];
 				const matches = candidates.filter(element => {
 					if (!isVisible(element)) {
 						return false;
@@ -61,15 +69,21 @@ export class DriverTripNavigationScreen extends AppiumSessionBase {
 						normalize(element.id),
 						normalize(typeof element.className === 'string' ? element.className : ''),
 						normalize(element.getAttribute('aria-label')),
-						normalize(element.getAttribute('content-desc')),
+						normalize(element.getAttribute('content-desc'))
 					];
 
 					return candidateSelectors.some(selector => {
 						const normalizedSelector = normalize(selector)
 							.replace(/\[\*?@text=/g, '')
 							.replace(/["'\]]/g, '');
-						return values.some(value => value.includes(normalizedSelector)) ||
-							values.some(value => /iniciar|empezar|finalizar|cerrar|recoger|viaje|trip/.test(value) && /iniciar|empezar|finalizar|cerrar|recoger|viaje|trip/.test(normalizedSelector));
+						return (
+							values.some(value => value.includes(normalizedSelector)) ||
+							values.some(
+								value =>
+									/iniciar|empezar|finalizar|cerrar|recoger|viaje|trip/.test(value) &&
+									/iniciar|empezar|finalizar|cerrar|recoger|viaje|trip/.test(normalizedSelector)
+							)
+						);
 					});
 				});
 
@@ -87,8 +101,10 @@ export class DriverTripNavigationScreen extends AppiumSessionBase {
 
 					const text = normalize(element.innerText || element.textContent);
 					const id = normalize(element.id);
-					return /iniciar|empezar|recoger|finalizar|cerrar|viaje|trip/.test(text) ||
-						/iniciar|empezar|recoger|finalizar|cerrar|viaje|trip/.test(id);
+					return (
+						/iniciar|empezar|recoger|finalizar|cerrar|viaje|trip/.test(text) ||
+						/iniciar|empezar|recoger|finalizar|cerrar|viaje|trip/.test(id)
+					);
 				});
 
 				if (textMatches) {
@@ -99,7 +115,10 @@ export class DriverTripNavigationScreen extends AppiumSessionBase {
 				return false;
 			}, selectors);
 		} catch (error) {
-			console.warn('[DriverTripNavigationScreen] WebView click failed:', error instanceof Error ? error.message : error);
+			console.warn(
+				'[DriverTripNavigationScreen] WebView click failed:',
+				error instanceof Error ? error.message : error
+			);
 			return false;
 		}
 	}
@@ -131,8 +150,14 @@ export class DriverTripNavigationScreen extends AppiumSessionBase {
 		while (Date.now() < deadline) {
 			await this.switchToWebView(3_000);
 
-			const containerVisible = await driver.$(TRIP_IN_PROGRESS_CONTAINER_SELECTOR).isDisplayed().catch(() => false);
-			const finishVisible = await driver.$(TRIP_IN_PROGRESS_FINISH_SELECTOR).isDisplayed().catch(() => false);
+			const containerVisible = await driver
+				.$(TRIP_IN_PROGRESS_CONTAINER_SELECTOR)
+				.isDisplayed()
+				.catch(() => false);
+			const finishVisible = await driver
+				.$(TRIP_IN_PROGRESS_FINISH_SELECTOR)
+				.isDisplayed()
+				.catch(() => false);
 			const url = await driver.execute<string, []>(() => window.location.href).catch(() => '');
 
 			if ((containerVisible && finishVisible) || /travel-in-progress|travelnavigation/i.test(url)) {
@@ -176,9 +201,9 @@ export class DriverTripNavigationScreen extends AppiumSessionBase {
 
 			// Fallback: iterar btn.primary filtrando por texto
 			if (!clicked) {
-				const allBtns = await driver.$$('button.btn.primary') as unknown as any[];
+				const allBtns = (await driver.$$('button.btn.primary')) as unknown as any[];
 				for (const btn of allBtns) {
-					const text    = (await btn.getText().catch(() => '')).trim();
+					const text = (await btn.getText().catch(() => '')).trim();
 					const visible = await btn.isDisplayed().catch(() => false);
 					if (text === 'Empezar Viaje' && visible) {
 						await btn.click();
@@ -218,7 +243,7 @@ export class DriverTripNavigationScreen extends AppiumSessionBase {
 			// Buscar dentro del modal de confirmación primero
 			const allBtns = await driver.$$('app-confirm-modal button.btn.primary, ion-modal button.btn.primary');
 			for (const btn of allBtns) {
-				const text    = (await btn.getText().catch(() => '')).trim();
+				const text = (await btn.getText().catch(() => '')).trim();
 				const visible = await btn.isDisplayed().catch(() => false);
 				if (text === 'Si' && visible) {
 					await btn.click();
@@ -231,7 +256,7 @@ export class DriverTripNavigationScreen extends AppiumSessionBase {
 			if (!clicked) {
 				const fallbackBtns = await driver.$$('button.btn.primary');
 				for (const btn of fallbackBtns) {
-					const text    = (await btn.getText().catch(() => '')).trim();
+					const text = (await btn.getText().catch(() => '')).trim();
 					const visible = await btn.isDisplayed().catch(() => false);
 					if (text === 'Si' && visible) {
 						await btn.click();
@@ -294,9 +319,9 @@ export class DriverTripNavigationScreen extends AppiumSessionBase {
 
 			// Fallback: buscar por texto en todos los botones
 			if (!clicked) {
-				const allBtns = await driver.$$('button') as unknown as any[];
+				const allBtns = (await driver.$$('button')) as unknown as any[];
 				for (const b of allBtns) {
-					const text    = (await b.getText().catch(() => '')).trim();
+					const text = (await b.getText().catch(() => '')).trim();
 					const visible = await b.isDisplayed().catch(() => false);
 					if (text === 'Finalizar Viaje' && visible) {
 						await b.click();
@@ -333,9 +358,9 @@ export class DriverTripNavigationScreen extends AppiumSessionBase {
 		let clicked = false;
 		try {
 			// Buscar dentro del modal de confirmación
-			const modalBtns = await driver.$$('app-confirm-modal button, ion-modal button') as unknown as any[];
+			const modalBtns = (await driver.$$('app-confirm-modal button, ion-modal button')) as unknown as any[];
 			for (const btn of modalBtns) {
-				const text    = (await btn.getText().catch(() => '')).trim();
+				const text = (await btn.getText().catch(() => '')).trim();
 				const visible = await btn.isDisplayed().catch(() => false);
 				if (text === 'Si' && visible) {
 					await btn.click();
@@ -346,9 +371,9 @@ export class DriverTripNavigationScreen extends AppiumSessionBase {
 
 			// Fallback: cualquier btn.primary con texto "Si"
 			if (!clicked) {
-				const allBtns = await driver.$$('button.btn.primary') as unknown as any[];
+				const allBtns = (await driver.$$('button.btn.primary')) as unknown as any[];
 				for (const btn of allBtns) {
-					const text    = (await btn.getText().catch(() => '')).trim();
+					const text = (await btn.getText().catch(() => '')).trim();
 					const visible = await btn.isDisplayed().catch(() => false);
 					if (text === 'Si' && visible) {
 						await btn.click();

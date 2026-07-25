@@ -48,7 +48,7 @@ export const JOURNEY_DEFAULTS = {
 	contractorPassengerSinTarjeta: PASSENGERS.colaboradorSinTarjeta.name, // 'Nayla Smith'
 	appPaxPassenger: PASSENGERS.appPax.name,
 	origin: 'Reconquista 661, Buenos Aires, Argentina',
-	destination: 'Cazadores 1987, Buenos Aires, Argentina',
+	destination: 'Cazadores 1987, Buenos Aires, Argentina'
 } as const;
 
 /**

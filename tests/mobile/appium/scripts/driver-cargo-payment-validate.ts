@@ -33,54 +33,78 @@ const DECLINE_CARD: CardData = {
 	number: '4000000000009995',
 	expiry: '12/34',
 	cvc: '123',
-	holderName: 'TEST DRIVER',
+	holderName: 'TEST DRIVER'
 };
 
 const log = (m: string) => console.log(`[validate] ${m}`);
 
 async function currentUrl(driver: AppiumDriver): Promise<string> {
 	const contexts = (await driver.getContexts().catch(() => [])) as string[];
-	const wv = contexts.find((c) => c.startsWith('WEBVIEW'));
+	const wv = contexts.find(c => c.startsWith('WEBVIEW'));
 	if (!wv) return '';
 	await driver.switchContext(wv);
 	return driver.execute<string, []>(() => window.location.href).catch(() => '');
 }
 
 async function dumpResumePaymentInfo(driver: AppiumDriver): Promise<void> {
-	const info = await driver.execute<Record<string, unknown>, []>(() => {
-		const norm = (v: unknown) => String(v ?? '').replace(/\s+/g, ' ').trim();
-		const payBtns = Array.from(document.querySelectorAll('.travel-payment button.payment, button.payment')).map((b) => {
-			const icon = b.querySelector('ion-icon');
-			return { classes: (b as HTMLElement).className, iconSrc: icon?.getAttribute('src') ?? '', visible: (b as HTMLElement).offsetParent !== null };
-		});
-		const footer = Array.from(document.querySelectorAll('ion-footer button, button.btn.finish')).map((b) => ({
-			classes: (b as HTMLElement).className, text: norm((b as HTMLElement).innerText), disabled: (b as HTMLButtonElement).disabled,
-		}));
-		return { url: window.location.href, payBtns, footer };
-	}).catch((e) => ({ error: String(e) }));
+	const info = await driver
+		.execute<Record<string, unknown>, []>(() => {
+			const norm = (v: unknown) =>
+				String(v ?? '')
+					.replace(/\s+/g, ' ')
+					.trim();
+			const payBtns = Array.from(document.querySelectorAll('.travel-payment button.payment, button.payment')).map(
+				b => {
+					const icon = b.querySelector('ion-icon');
+					return {
+						classes: (b as HTMLElement).className,
+						iconSrc: icon?.getAttribute('src') ?? '',
+						visible: (b as HTMLElement).offsetParent !== null
+					};
+				}
+			);
+			const footer = Array.from(document.querySelectorAll('ion-footer button, button.btn.finish')).map(b => ({
+				classes: (b as HTMLElement).className,
+				text: norm((b as HTMLElement).innerText),
+				disabled: (b as HTMLButtonElement).disabled
+			}));
+			return { url: window.location.href, payBtns, footer };
+		})
+		.catch(e => ({ error: String(e) }));
 	log(`RESUME payment info: ${JSON.stringify(info, null, 1)}`);
 }
 
 async function dumpPaymentModalInfo(driver: AppiumDriver): Promise<void> {
-	const info = await driver.execute<Record<string, unknown>, []>(() => {
-		const probe = (sel: string) => {
-			const host = document.querySelector(sel) as (HTMLElement & { shadowRoot?: ShadowRoot }) | null;
-			if (!host) return { found: false };
-			const inner = (host.shadowRoot ? host.shadowRoot.querySelector('input') : host.querySelector('input')) as HTMLInputElement | null;
-			return { found: true, hasShadow: !!host.shadowRoot, hasInner: !!inner, readOnly: inner?.readOnly ?? null, value: inner?.value ?? null };
-		};
-		const chargeSpans = Array.from(document.querySelectorAll('.header.end span, ion-header span')).map((s) => ({
-			classes: (s as HTMLElement).className, text: String((s as HTMLElement).innerText ?? '').trim(),
-		}));
-		return {
-			url: window.location.href,
-			cardNumber: probe('#cardNumber'),
-			cardExpirationDate: probe('#cardExpirationDate'),
-			securityCode: probe('#securityCode'),
-			cardholderName: probe('#cardholderName'),
-			chargeSpans,
-		};
-	}).catch((e) => ({ error: String(e) }));
+	const info = await driver
+		.execute<Record<string, unknown>, []>(() => {
+			const probe = (sel: string) => {
+				const host = document.querySelector(sel) as (HTMLElement & { shadowRoot?: ShadowRoot }) | null;
+				if (!host) return { found: false };
+				const inner = (
+					host.shadowRoot ? host.shadowRoot.querySelector('input') : host.querySelector('input')
+				) as HTMLInputElement | null;
+				return {
+					found: true,
+					hasShadow: !!host.shadowRoot,
+					hasInner: !!inner,
+					readOnly: inner?.readOnly ?? null,
+					value: inner?.value ?? null
+				};
+			};
+			const chargeSpans = Array.from(document.querySelectorAll('.header.end span, ion-header span')).map(s => ({
+				classes: (s as HTMLElement).className,
+				text: String((s as HTMLElement).innerText ?? '').trim()
+			}));
+			return {
+				url: window.location.href,
+				cardNumber: probe('#cardNumber'),
+				cardExpirationDate: probe('#cardExpirationDate'),
+				securityCode: probe('#securityCode'),
+				cardholderName: probe('#cardholderName'),
+				chargeSpans
+			};
+		})
+		.catch(e => ({ error: String(e) }));
 	log(`PAYMENT MODAL info: ${JSON.stringify(info, null, 1)}`);
 }
 
@@ -106,8 +130,8 @@ async function run(): Promise<void> {
 			'appium:forceAppLaunch': false,
 			'appium:autoLaunch': false,
 			'appium:newCommandTimeout': 180,
-			'appium:chromedriverAutodownload': true,
-		} as Record<string, unknown>,
+			'appium:chromedriverAutodownload': true
+		} as Record<string, unknown>
 	});
 
 	const config = { actor: 'driver', environment: 'test' } as unknown as MobileActorConfig;
@@ -157,15 +181,22 @@ async function run(): Promise<void> {
 
 		// 4. Seleccionar CREDIT_CARD (Cargo a Bordo) por icono.
 		log('Seleccionando método CREDIT_CARD...');
-		const selected = await driver.execute<boolean, []>(() => {
-			const btns = Array.from(document.querySelectorAll('.travel-payment button.payment, button.payment')) as HTMLElement[];
-			for (const b of btns) {
-				const icon = b.querySelector('ion-icon');
-				const src = icon?.getAttribute('src') ?? '';
-				if (/CREDIT_CARD/i.test(src) && b.offsetParent !== null) { b.click(); return true; }
-			}
-			return false;
-		}).catch(() => false);
+		const selected = await driver
+			.execute<boolean, []>(() => {
+				const btns = Array.from(
+					document.querySelectorAll('.travel-payment button.payment, button.payment')
+				) as HTMLElement[];
+				for (const b of btns) {
+					const icon = b.querySelector('ion-icon');
+					const src = icon?.getAttribute('src') ?? '';
+					if (/CREDIT_CARD/i.test(src) && b.offsetParent !== null) {
+						b.click();
+						return true;
+					}
+				}
+				return false;
+			})
+			.catch(() => false);
 		log(`CREDIT_CARD seleccionado: ${selected}`);
 		await driver.pause(2_500);
 		await dumpAppiumState(driver, 'validate-04-after-select-cc');
@@ -179,7 +210,10 @@ async function run(): Promise<void> {
 		log('Tap "Ingresar tarjeta"...');
 		const enter = await driver.$$('ion-footer button.btn.finish, button.btn.finish');
 		for (const b of enter) {
-			if (await b.isDisplayed().catch(() => false)) { await b.click(); break; }
+			if (await b.isDisplayed().catch(() => false)) {
+				await b.click();
+				break;
+			}
 		}
 		await driver.pause(3_000);
 		await dumpAppiumState(driver, 'validate-05-after-enter-card');
@@ -189,7 +223,10 @@ async function run(): Promise<void> {
 		log(`Modal de cobro presente (#cardNumber): ${modalReady}`);
 		await dumpPaymentModalInfo(driver);
 		await dumpAppiumState(driver, 'validate-06-payment-modal');
-		if (!modalReady) { log('⚠ No apareció el modal de cobro. Abortando.'); return; }
+		if (!modalReady) {
+			log('⚠ No apareció el modal de cobro. Abortando.');
+			return;
+		}
 
 		// 7. Llenar + verificar submit habilitado.
 		log('Llenando tarjeta declinada...');
@@ -213,4 +250,7 @@ async function run(): Promise<void> {
 	}
 }
 
-run().catch((e) => { console.error('[validate] fatal:', e); process.exit(1); });
+run().catch(e => {
+	console.error('[validate] fatal:', e);
+	process.exit(1);
+});

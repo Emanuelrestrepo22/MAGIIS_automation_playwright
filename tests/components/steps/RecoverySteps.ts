@@ -64,7 +64,7 @@ export class RecoverySteps extends UiBase {
 			await this.travel.goto();
 			await this.travel.fillMinimum({
 				...scenario,
-				cardLast4: STRIPE_TEST_CARDS.threeDSRequired.slice(-4),
+				cardLast4: STRIPE_TEST_CARDS.threeDSRequired.slice(-4)
 			});
 			await this.travel.submit();
 		});

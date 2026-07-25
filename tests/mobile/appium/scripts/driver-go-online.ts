@@ -40,8 +40,8 @@ async function run(): Promise<void> {
 			'appium:forceAppLaunch': false,
 			'appium:autoLaunch': false,
 			'appium:newCommandTimeout': 180,
-			'appium:chromedriverAutodownload': true,
-		} as Record<string, unknown>,
+			'appium:chromedriverAutodownload': true
+		} as Record<string, unknown>
 	});
 
 	const config = { actor: 'driver', environment: 'test' } as unknown as MobileActorConfig;
@@ -50,23 +50,30 @@ async function run(): Promise<void> {
 	try {
 		await driver.pause(2_000);
 		const contexts = (await driver.getContexts().catch(() => [])) as string[];
-		const wv = contexts.find((c) => c.startsWith('WEBVIEW'));
+		const wv = contexts.find(c => c.startsWith('WEBVIEW'));
 		if (wv) await driver.switchContext(wv);
 		const urlBefore = await driver.execute<string, []>(() => window.location.href).catch(() => '');
 		log(`URL inicial: ${urlBefore}`);
 
 		// Diagnóstico pre-home: ¿servicios cargados (continue-msg) o aún cargando?
-		const preHome = await driver.execute<Record<string, unknown>, []>(() => {
-			const norm = (v: unknown) => String(v ?? '').replace(/\s+/g, ' ').trim();
-			const overlay = document.querySelector('.carrier-overlay') as HTMLElement | null;
-			const continueMsgs = Array.from(document.querySelectorAll('.continue-msg')).map((m) => norm((m as HTMLElement).innerText));
-			return {
-				overlayFound: !!overlay,
-				overlayVisible: overlay ? overlay.offsetParent !== null : false,
-				continueMsgs,
-				welcome: norm(document.querySelector('.welcome-msg')?.textContent ?? ''),
-			};
-		}).catch((e) => ({ error: String(e) }));
+		const preHome = await driver
+			.execute<Record<string, unknown>, []>(() => {
+				const norm = (v: unknown) =>
+					String(v ?? '')
+						.replace(/\s+/g, ' ')
+						.trim();
+				const overlay = document.querySelector('.carrier-overlay') as HTMLElement | null;
+				const continueMsgs = Array.from(document.querySelectorAll('.continue-msg')).map(m =>
+					norm((m as HTMLElement).innerText)
+				);
+				return {
+					overlayFound: !!overlay,
+					overlayVisible: overlay ? overlay.offsetParent !== null : false,
+					continueMsgs,
+					welcome: norm(document.querySelector('.welcome-msg')?.textContent ?? '')
+				};
+			})
+			.catch(e => ({ error: String(e) }));
 		log(`pre-home overlay: ${JSON.stringify(preHome)}`);
 
 		const atHome = await home.dismissPreHomeOverlayIfPresent(30_000);
@@ -80,19 +87,26 @@ async function run(): Promise<void> {
 		const urlAfter = await driver.execute<string, []>(() => window.location.href).catch(() => '');
 		log(`URL final: ${urlAfter}`);
 
-		const state = await driver.execute<Record<string, unknown>, []>(() => {
-			const norm = (v: unknown) => String(v ?? '').replace(/\s+/g, ' ').trim();
-			const avail = document.querySelector('#availability') as HTMLElement | null;
-			const availText = norm(avail?.querySelector('.available-label')?.textContent ?? avail?.textContent ?? '');
-			const streetBtn = document.querySelector('button.driver-home.home-icon-base') as HTMLElement | null;
-			return {
-				url: window.location.href,
-				availabilityFound: !!avail,
-				availabilityText: availText,
-				streetTripButton: streetBtn ? norm(streetBtn.innerText) : '(none)',
-				onTravelConfirm: /TravelConfirmPage/i.test(window.location.href),
-			};
-		}).catch((e) => ({ error: String(e) }));
+		const state = await driver
+			.execute<Record<string, unknown>, []>(() => {
+				const norm = (v: unknown) =>
+					String(v ?? '')
+						.replace(/\s+/g, ' ')
+						.trim();
+				const avail = document.querySelector('#availability') as HTMLElement | null;
+				const availText = norm(
+					avail?.querySelector('.available-label')?.textContent ?? avail?.textContent ?? ''
+				);
+				const streetBtn = document.querySelector('button.driver-home.home-icon-base') as HTMLElement | null;
+				return {
+					url: window.location.href,
+					availabilityFound: !!avail,
+					availabilityText: availText,
+					streetTripButton: streetBtn ? norm(streetBtn.innerText) : '(none)',
+					onTravelConfirm: /TravelConfirmPage/i.test(window.location.href)
+				};
+			})
+			.catch(e => ({ error: String(e) }));
 		log(`Estado home: ${JSON.stringify(state, null, 1)}`);
 	} catch (err) {
 		log(`ERROR: ${err instanceof Error ? err.message : String(err)}`);
@@ -102,4 +116,7 @@ async function run(): Promise<void> {
 	}
 }
 
-run().catch((e) => { console.error('[go-online] fatal:', e); process.exit(1); });
+run().catch(e => {
+	console.error('[go-online] fatal:', e);
+	process.exit(1);
+});

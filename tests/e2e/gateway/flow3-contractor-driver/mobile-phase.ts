@@ -57,8 +57,8 @@ async function run(): Promise<void> {
 	if (ctx.status !== 'ready-for-driver') {
 		throw new Error(
 			`JourneyContext status inválido: "${ctx.status}". ` +
-			`Se esperaba "ready-for-driver". ` +
-			`Verificar que la fase web de Flow 3 completó exitosamente.`,
+				`Se esperaba "ready-for-driver". ` +
+				`Verificar que la fase web de Flow 3 completó exitosamente.`
 		);
 	}
 
@@ -77,11 +77,11 @@ async function run(): Promise<void> {
 	const harnessResult = await harness.runHappyPath({
 		ensureDriverOnline: true,
 		timeoutsMs: {
-			confirm:       Math.min(TIMEOUT_MS, 90_000),
+			confirm: Math.min(TIMEOUT_MS, 90_000),
 			'in-progress': 60_000,
-			resume:        60_000,
-			closed:        60_000,
-		},
+			resume: 60_000,
+			closed: 60_000
+		}
 	});
 
 	log(`✓ Harness completado — amount: ${harnessResult.totalAmount} | method: ${harnessResult.paymentMethod}`);
@@ -89,11 +89,11 @@ async function run(): Promise<void> {
 
 	// ── 4. Serializar resultado ────────────────────────────────────────────────
 	const result: MobilePhaseResult = {
-		journeyId:     JOURNEY_ID!,
-		status:        'driver-completed',
-		totalAmount:   harnessResult.totalAmount,
+		journeyId: JOURNEY_ID!,
+		status: 'driver-completed',
+		totalAmount: harnessResult.totalAmount,
 		paymentMethod: harnessResult.paymentMethod,
-		checkpoints:   harnessResult.checkpoints.map(c => c.stage),
+		checkpoints: harnessResult.checkpoints.map(c => c.stage)
 	};
 
 	// ── 5. Actualizar JourneyContext → driver-completed ────────────────────────
@@ -114,12 +114,12 @@ run().catch((error: unknown) => {
 	console.error(`[flow3/mobile-phase] ERROR: ${message}`);
 
 	markMobileCompleted({
-		journeyId:     JOURNEY_ID!,
-		status:        'failed',
-		totalAmount:   '',
+		journeyId: JOURNEY_ID!,
+		status: 'failed',
+		totalAmount: '',
 		paymentMethod: '',
-		checkpoints:   [],
-		errorMessage:  message,
+		checkpoints: [],
+		errorMessage: message
 	}).catch(() => {});
 
 	process.exit(1);

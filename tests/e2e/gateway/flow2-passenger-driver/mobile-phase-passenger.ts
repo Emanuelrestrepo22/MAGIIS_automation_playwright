@@ -47,10 +47,10 @@ import { TEST_DATA } from '../../../features/gateway-pg/fixtures/gateway.fixture
 
 // ─── Config desde env ─────────────────────────────────────────────────────────
 
-const JOURNEY_ID  = process.env.E2E_JOURNEY_ID;
-const TIMEOUT_MS  = Number(process.env.E2E_MOBILE_TIMEOUT_MS ?? '240000');
-const CARD_LAST4  = process.env.E2E_CARD_LAST4 ?? '4242';
-const ORIGIN      = process.env.E2E_ORIGIN      ?? TEST_DATA.origin;
+const JOURNEY_ID = process.env.E2E_JOURNEY_ID;
+const TIMEOUT_MS = Number(process.env.E2E_MOBILE_TIMEOUT_MS ?? '240000');
+const CARD_LAST4 = process.env.E2E_CARD_LAST4 ?? '4242';
+const ORIGIN = process.env.E2E_ORIGIN ?? TEST_DATA.origin;
 const DESTINATION = process.env.E2E_DESTINATION ?? TEST_DATA.destination;
 
 if (!JOURNEY_ID) {
@@ -91,30 +91,25 @@ async function run(): Promise<void> {
 	// según CARD_LAST4. Actualmente hardcodeado a 4242 para tests sin 3DS.
 	// Usar STRIPE_TEST_CARDS de stripeTestData.ts cuando los selectores estén validados.
 	const cardInput = {
-		number:     '4242424242424242', // TODO: mapear desde CARD_LAST4
-		expiry:     '12/28',
-		cvc:        '123',
-		holderName: 'Test Passenger',
+		number: '4242424242424242', // TODO: mapear desde CARD_LAST4
+		expiry: '12/28',
+		cvc: '123',
+		holderName: 'Test Passenger'
 	};
 
-	const harnessResult = await harness.runHappyPath(
-		cardInput,
-		ORIGIN,
-		DESTINATION,
-		{
-			ensureWalletCard:       true,
-			waitForDriverAssigned:  true,
-			waitForTripCompleted:   true,
-			verifyPaymentProcessed: true,
-			timeoutsMs: {
-				wallet:    30_000,
-				trip:      60_000,
-				assigned:  Math.min(TIMEOUT_MS, 90_000),
-				completed: 120_000,
-				payment:   120_000,
-			},
-		},
-	);
+	const harnessResult = await harness.runHappyPath(cardInput, ORIGIN, DESTINATION, {
+		ensureWalletCard: true,
+		waitForDriverAssigned: true,
+		waitForTripCompleted: true,
+		verifyPaymentProcessed: true,
+		timeoutsMs: {
+			wallet: 30_000,
+			trip: 60_000,
+			assigned: Math.min(TIMEOUT_MS, 90_000),
+			completed: 120_000,
+			payment: 120_000
+		}
+	});
 
 	log(`✓ Harness completado — cardLast4: ${harnessResult.cardLast4}`);
 	log(`  driverAssigned: ${harnessResult.driverAssigned} | tripCompleted: ${harnessResult.tripCompleted}`);
@@ -122,17 +117,17 @@ async function run(): Promise<void> {
 
 	// ── 4. Serializar resultado ────────────────────────────────────────────────
 	const result: MobilePhaseResult = {
-		journeyId:     JOURNEY_ID!,
-		status:        harnessResult.tripCompleted ? 'driver-completed' : 'failed',
-		totalAmount:   '', // TODO: extraer desde PassengerTripStatusScreen cuando selectores estén listos
+		journeyId: JOURNEY_ID!,
+		status: harnessResult.tripCompleted ? 'driver-completed' : 'failed',
+		totalAmount: '', // TODO: extraer desde PassengerTripStatusScreen cuando selectores estén listos
 		paymentMethod: harnessResult.cardLast4 ? `card-${harnessResult.cardLast4}` : '',
-		checkpoints:   [
+		checkpoints: [
 			...(harnessResult.walletState === 'added' ? ['wallet-added'] : ['wallet-existing']),
 			'trip-created',
-			...(harnessResult.driverAssigned  ? ['driver-assigned']  : []),
-			...(harnessResult.tripCompleted   ? ['trip-completed']   : []),
-			...(harnessResult.paymentProcessed ? ['payment-processed'] : []),
-		],
+			...(harnessResult.driverAssigned ? ['driver-assigned'] : []),
+			...(harnessResult.tripCompleted ? ['trip-completed'] : []),
+			...(harnessResult.paymentProcessed ? ['payment-processed'] : [])
+		]
 	};
 
 	// ── 5. Actualizar JourneyContext si no es standalone ───────────────────────
@@ -156,12 +151,12 @@ run().catch((error: unknown) => {
 
 	if (JOURNEY_ID && JOURNEY_ID !== 'standalone') {
 		markMobileCompleted({
-			journeyId:     JOURNEY_ID!,
-			status:        'failed',
-			totalAmount:   '',
+			journeyId: JOURNEY_ID!,
+			status: 'failed',
+			totalAmount: '',
 			paymentMethod: '',
-			checkpoints:   [],
-			errorMessage:  message,
+			checkpoints: [],
+			errorMessage: message
 		}).catch(() => {});
 	}
 

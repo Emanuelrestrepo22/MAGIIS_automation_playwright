@@ -54,6 +54,8 @@ export class CarrierTravelForm extends BasePage {
 		await expect(option).toBeVisible({ timeout: 12_000 });
 		await option.click();
 		// El botón de vuelo aparece cuando el destino es aeropuerto.
-		await expect(this.page.locator('.btn.btn-primary.rounded-btn.btn-flight-round')).toBeVisible({ timeout: 10_000 });
+		await expect(this.page.locator('.btn.btn-primary.rounded-btn.btn-flight-round')).toBeVisible({
+			timeout: 10_000
+		});
 	}
 }

@@ -58,7 +58,7 @@ const HAPPY_NO_AUTH_OPTIONS: Omit<HoldRunOptions, 'hold'> = {
 	waitForCreation: false,
 	waitForVehicleReady: true,
 	matchDestination: false,
-	expectStatus: 'Buscando chofer',
+	expectStatus: 'Buscando chofer'
 };
 
 // El fixture KATA no define la opción `role` (login explícito vía CarrierHoldSteps.login()).
@@ -81,10 +81,13 @@ test.describe('[BL-028][parametrized] Hold happy path sin 3DS @gateway @hold @re
 					passenger: JOURNEY_DEFAULTS.appPaxPassenger,
 					origin: JOURNEY_DEFAULTS.origin,
 					destination: JOURNEY_DEFAULTS.destination,
-					cardLast4: card.last4,
+					cardLast4: card.last4
 				};
 
-				await new CarrierHoldSteps({ page }).runHoldScenario(scenario, { hold: 'on', ...HAPPY_NO_AUTH_OPTIONS });
+				await new CarrierHoldSteps({ page }).runHoldScenario(scenario, {
+					hold: 'on',
+					...HAPPY_NO_AUTH_OPTIONS
+				});
 			});
 		});
 	}

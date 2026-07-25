@@ -16,7 +16,12 @@
 
 import { test, expect } from '@TestFixture';
 import { CarrierNewTravelPage, CarrierOperationalPreferencesPage, CarrierTravelManagementPage } from '@ui/carrier';
-import { loginAsDispatcher, expectNoThreeDSModal, TEST_DATA, STRIPE_TEST_CARDS } from '@features/gateway-pg/fixtures/gateway.fixtures';
+import {
+	loginAsDispatcher,
+	expectNoThreeDSModal,
+	TEST_DATA,
+	STRIPE_TEST_CARDS
+} from '@features/gateway-pg/fixtures/gateway.fixtures';
 
 test.describe.configure({ mode: 'serial' });
 test.describe.configure({ timeout: 120_000 });
@@ -42,7 +47,7 @@ test.describe('Gateway PG · Carrier · App Pax — Hold sin 3DS @gateway @strip
 				passenger: TEST_DATA.passenger,
 				origin: TEST_DATA.origin,
 				destination: TEST_DATA.destination,
-				cardLast4: STRIPE_TEST_CARDS.successDirect.slice(-4), // 4242
+				cardLast4: STRIPE_TEST_CARDS.successDirect.slice(-4) // 4242
 			});
 			await travel.submit();
 
@@ -58,7 +63,7 @@ test.describe('Gateway PG · Carrier · App Pax — Hold sin 3DS @gateway @strip
 				passenger: TEST_DATA.passenger,
 				origin: TEST_DATA.origin,
 				destination: TEST_DATA.destination,
-				cardLast4: STRIPE_TEST_CARDS.successDirect.slice(-4), // 4242
+				cardLast4: STRIPE_TEST_CARDS.successDirect.slice(-4) // 4242
 			});
 			await travel.submit();
 
@@ -74,7 +79,7 @@ test.describe('Gateway PG · Carrier · App Pax — Hold sin 3DS @gateway @strip
 				passenger: TEST_DATA.passenger,
 				origin: TEST_DATA.origin,
 				destination: TEST_DATA.destination,
-				cardLast4: STRIPE_TEST_CARDS.successDirect.slice(-4), // 4242
+				cardLast4: STRIPE_TEST_CARDS.successDirect.slice(-4) // 4242
 			});
 			await travel.submit();
 
@@ -93,7 +98,7 @@ test.describe('Gateway PG · Carrier · App Pax — Hold sin 3DS @gateway @strip
 				origin: TEST_DATA.origin,
 				destination: TEST_DATA.destination,
 				cardLast4: STRIPE_TEST_CARDS.insufficientFunds.slice(-4), // 9995
-				skipCardValidation: true, // card 9995 rechaza — controlamos el click Validar
+				skipCardValidation: true // card 9995 rechaza — controlamos el click Validar
 			});
 
 			const result = await travel.clickValidateCardAllowingReject(8_000);
@@ -101,7 +106,9 @@ test.describe('Gateway PG · Carrier · App Pax — Hold sin 3DS @gateway @strip
 			expect(result.errorMessage ?? '').toMatch(/insufficient funds|fondos insuficientes|declinada|rechazada/i);
 		});
 
-		test('el viaje no se crea — URL no redirige a /travels/... cuando la tarjeta es declinada', async ({ page }) => {
+		test('el viaje no se crea — URL no redirige a /travels/... cuando la tarjeta es declinada', async ({
+			page
+		}) => {
 			const travel = new CarrierNewTravelPage({ page });
 
 			await travel.goto();
@@ -110,7 +117,7 @@ test.describe('Gateway PG · Carrier · App Pax — Hold sin 3DS @gateway @strip
 				origin: TEST_DATA.origin,
 				destination: TEST_DATA.destination,
 				cardLast4: STRIPE_TEST_CARDS.insufficientFunds.slice(-4), // 9995
-				skipCardValidation: true,
+				skipCardValidation: true
 			});
 
 			// La card 9995 rechaza en el paso de validación — nunca se llega a submit.

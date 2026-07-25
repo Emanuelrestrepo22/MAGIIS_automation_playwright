@@ -1,9 +1,4 @@
-export const SUPPORTED_PAYMENT_GATEWAYS = [
-	'mercado-pago',
-	'stripe',
-	'ebizcharge',
-	'authorize'
-] as const;
+export const SUPPORTED_PAYMENT_GATEWAYS = ['mercado-pago', 'stripe', 'ebizcharge', 'authorize'] as const;
 
 /**
  * Fases del journey E2E.
@@ -32,7 +27,7 @@ export const SUPPORTED_JOURNEY_PHASES = [
 ] as const;
 
 export type PaymentGateway = (typeof SUPPORTED_PAYMENT_GATEWAYS)[number];
-export type JourneyPhase   = (typeof SUPPORTED_JOURNEY_PHASES)[number];
+export type JourneyPhase = (typeof SUPPORTED_JOURNEY_PHASES)[number];
 
 export type JourneyPortal = 'web' | 'contractor' | 'carrier' | 'pax';
 
@@ -54,18 +49,9 @@ export type JourneyActor = 'carrier-dispatcher' | 'driver' | 'passenger';
 /**
  * Tipo de flujo E2E. Define cuál es la secuencia de actores.
  */
-export type E2EFlowType =
-	| 'carrier-web-driver-app'
-	| 'passenger-app-driver-app'
-	| 'contractor-web-driver-app'; // flow3 (existía como código sin tipo declarado)
+export type E2EFlowType = 'carrier-web-driver-app' | 'passenger-app-driver-app' | 'contractor-web-driver-app'; // flow3 (existía como código sin tipo declarado)
 
-export type PaymentValidationSource =
-	| 'web-ui'
-	| 'mobile-ui'
-	| 'api'
-	| 'db'
-	| 'gateway-dashboard'
-	| 'event-log';
+export type PaymentValidationSource = 'web-ui' | 'mobile-ui' | 'api' | 'db' | 'gateway-dashboard' | 'event-log';
 
 export type MobileHandoffStatus = 'pending' | 'ready' | 'completed';
 

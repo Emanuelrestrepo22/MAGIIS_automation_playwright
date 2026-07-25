@@ -18,7 +18,10 @@ export class DashboardPage extends SuperPage {
 		// (el navigation event no se emite en cambios de hash). Se poll-ea `page.url()` en vivo
 		// (mismo patrón que global-setup.multi-role.ts) para no flakear en el login.
 		await expect
-			.poll(() => this.page.url(), { timeout: 20_000, message: `dashboard URL no alcanzada (patrón ${dashboardUrl})` })
+			.poll(() => this.page.url(), {
+				timeout: 20_000,
+				message: `dashboard URL no alcanzada (patrón ${dashboardUrl})`
+			})
 			.toMatch(dashboardUrl);
 		console.log('[DashboardPage.ensureDashboardLoaded][S01] Shell portal OK');
 

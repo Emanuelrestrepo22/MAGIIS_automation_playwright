@@ -30,22 +30,22 @@ import type { EnvironmentMap, WebUser } from '../types';
 const LABEL = 'dispatcher (carrier portal)';
 
 function buildDispatcher(envSuffix: 'TEST' | 'UAT' | 'PROD', environment: WebUser['environment']): WebUser {
-  const emailEnv = lazyEnv([`USER_CARRIER_${envSuffix}`, 'USER_CARRIER'], `${LABEL} [${environment}] email`);
-  const passEnv = lazyEnv([`PASS_CARRIER_${envSuffix}`, 'PASS_CARRIER'], `${LABEL} [${environment}] password`);
+	const emailEnv = lazyEnv([`USER_CARRIER_${envSuffix}`, 'USER_CARRIER'], `${LABEL} [${environment}] email`);
+	const passEnv = lazyEnv([`PASS_CARRIER_${envSuffix}`, 'PASS_CARRIER'], `${LABEL} [${environment}] password`);
 
-  return {
-    role: 'dispatcher',
-    environment,
-    get email() {
-      return emailEnv.value;
-    },
-    get password() {
-      return passEnv.value;
-    },
-    notes:
-      `Dispatcher del portal Carrier en ${environment}. ` +
-      `Equivale a resolveRoleCredentials('carrier') + getPortalCredentials('carrier').`,
-  };
+	return {
+		role: 'dispatcher',
+		environment,
+		get email() {
+			return emailEnv.value;
+		},
+		get password() {
+			return passEnv.value;
+		},
+		notes:
+			`Dispatcher del portal Carrier en ${environment}. ` +
+			`Equivale a resolveRoleCredentials('carrier') + getPortalCredentials('carrier').`
+	};
 }
 
 /**
@@ -60,7 +60,7 @@ function buildDispatcher(envSuffix: 'TEST' | 'UAT' | 'PROD', environment: WebUse
  * no necesariamente usan TEST/UAT/PROD al mismo tiempo.
  */
 export const DISPATCHER = {
-  test: buildDispatcher('TEST', 'test'),
-  uat: buildDispatcher('UAT', 'uat'),
-  prod: buildDispatcher('PROD', 'prod'),
+	test: buildDispatcher('TEST', 'test'),
+	uat: buildDispatcher('UAT', 'uat'),
+	prod: buildDispatcher('PROD', 'prod')
 } as const satisfies EnvironmentMap<WebUser>;

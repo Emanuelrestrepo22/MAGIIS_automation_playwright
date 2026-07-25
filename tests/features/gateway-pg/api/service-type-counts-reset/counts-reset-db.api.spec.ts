@@ -55,7 +55,9 @@ test.describe('[MX-6057][DB] countsReset — verificación de efecto @regression
 		}
 	});
 
-	test('[EC-DT-02/AC1][EC-AUD-01] reset por colaborador → contadores en 0, reset_user_id seteado, extra_limit intacto', async ({ request }) => {
+	test('[EC-DT-02/AC1][EC-AUD-01] reset por colaborador → contadores en 0, reset_user_id seteado, extra_limit intacto', async ({
+		request
+	}) => {
 		const config = ORACLE!;
 		const before = await readServiceUsageByEmployee(config, EMP_A);
 

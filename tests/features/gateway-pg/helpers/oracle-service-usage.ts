@@ -33,7 +33,10 @@ export interface ServiceUsageRow {
  * La tabla y (opcionalmente) la query se resuelven por env para poder ajustar los identificadores
  * reales del esquema sin tocar código.
  */
-export async function readServiceUsageByEmployee(cfg: OracleReadConfig, contractorEmployeeId: number): Promise<ServiceUsageRow[]> {
+export async function readServiceUsageByEmployee(
+	cfg: OracleReadConfig,
+	contractorEmployeeId: number
+): Promise<ServiceUsageRow[]> {
 	const table = process.env.ORACLE_USAGE_TABLE ?? 'CONTRACTOR_EMPLOYEE_SERVICE_TYPE_USAGE';
 	const sql =
 		process.env.ORACLE_USAGE_SQL ??

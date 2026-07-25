@@ -22,5 +22,5 @@ export {
 	TEST_STRIPE_CARD_ZIP_CODE,
 	TEST_STRIPE_CARD_HOLDER_NAME,
 	getStripeCardLast4,
-	type StripeTestCard,
+	type StripeTestCard
 } from '../gateways/stripe/cards';

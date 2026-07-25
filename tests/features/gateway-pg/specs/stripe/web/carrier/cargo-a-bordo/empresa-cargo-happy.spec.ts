@@ -27,13 +27,15 @@ const empresaScenario: CargoScenario = {
 	client: TEST_DATA.client,
 	passenger: TEST_DATA.passenger,
 	origin: TEST_DATA.origin,
-	destination: TEST_DATA.destination,
+	destination: TEST_DATA.destination
 };
 
-test.describe('Gateway PG · Carrier · Empresa Individuo — Cargo a Bordo @gateway @stripe @cargo-a-bordo @hold @critical @smoke', { annotation: [{ type: 'tms', description: 'MG-161' }] }, () => {
-
-	test('[TS-STRIPE-TC1111] @smoke @cargo-a-bordo pago exitoso sin 3DS', async ({ page }) => {
-		await new CargoABordoSteps({ page }).runCargoScenario(empresaScenario, { createTimeout: 30_000 });
-	});
-
-});
+test.describe(
+	'Gateway PG · Carrier · Empresa Individuo — Cargo a Bordo @gateway @stripe @cargo-a-bordo @hold @critical @smoke',
+	{ annotation: [{ type: 'tms', description: 'MG-161' }] },
+	() => {
+		test('[TS-STRIPE-TC1111] @smoke @cargo-a-bordo pago exitoso sin 3DS', async ({ page }) => {
+			await new CargoABordoSteps({ page }).runCargoScenario(empresaScenario, { createTimeout: 30_000 });
+		});
+	}
+);

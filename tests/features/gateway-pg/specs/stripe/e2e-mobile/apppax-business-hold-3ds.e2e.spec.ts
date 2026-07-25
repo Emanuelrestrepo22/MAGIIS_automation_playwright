@@ -62,62 +62,58 @@ function createJourney(testCaseId: string) {
 		portal: 'pax',
 		role: 'passenger',
 		flowType: 'passenger-app-driver-app',
-		passengerProfileMode: 'business',
+		passengerProfileMode: 'business'
 	});
 }
 
 const SCENARIOS: BusinessHold3dsScenario[] = [
 	{
 		testCaseId: 'TS-STRIPE-TC1021',
-		title:
-			'Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3DS — Vincular tarjeta nueva',
+		title: 'Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3DS — Vincular tarjeta nueva',
 		holdMode: 'on',
 		cardFlow: 'new',
 		passengerName: PASSENGERS.colaborador.name,
 		origin: TEST_DATA.origin,
 		destination: TEST_DATA.destination,
 		expectedTripOutcome:
-			'Deberia crear el viaje con hold autorizado despues de completar el challenge 3DS exitosamente',
+			'Deberia crear el viaje con hold autorizado despues de completar el challenge 3DS exitosamente'
 	},
 	{
 		testCaseId: 'TS-STRIPE-TC1022',
-		title:
-			'Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS — Vincular tarjeta nueva',
+		title: 'Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS — Vincular tarjeta nueva',
 		holdMode: 'off',
 		cardFlow: 'new',
 		passengerName: PASSENGERS.colaborador.name,
 		origin: TEST_DATA.origin,
 		destination: TEST_DATA.destination,
 		expectedTripOutcome:
-			'Deberia crear el viaje sin hold (cobro diferido) despues de completar el challenge 3DS exitosamente',
+			'Deberia crear el viaje sin hold (cobro diferido) despues de completar el challenge 3DS exitosamente'
 	},
 	{
 		testCaseId: 'TS-STRIPE-TC1023',
-		title:
-			'Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3DS — Usar tarjeta vinculada existente',
+		title: 'Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver con validación 3DS — Usar tarjeta vinculada existente',
 		holdMode: 'on',
 		cardFlow: 'existing',
 		passengerName: PASSENGERS.colaborador.name,
 		origin: TEST_DATA.origin,
 		destination: TEST_DATA.destination,
 		expectedTripOutcome:
-			'Deberia reusar la tarjeta 3DS ya vinculada y crear el hold (el challenge puede o no dispararse segun la autorizacion previa)',
+			'Deberia reusar la tarjeta 3DS ya vinculada y crear el hold (el challenge puede o no dispararse segun la autorizacion previa)'
 	},
 	{
 		testCaseId: 'TS-STRIPE-TC1024',
-		title:
-			'Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS — Usar tarjeta vinculada existente',
+		title: 'Validar Alta de Viaje desde app pax para usuario app pax modo business con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver con validación 3DS — Usar tarjeta vinculada existente',
 		holdMode: 'off',
 		cardFlow: 'existing',
 		passengerName: PASSENGERS.colaborador.name,
 		origin: TEST_DATA.origin,
 		destination: TEST_DATA.destination,
-		expectedTripOutcome:
-			'Deberia reusar la tarjeta 3DS ya vinculada y crear el viaje sin hold (cobro diferido)',
-	},
+		expectedTripOutcome: 'Deberia reusar la tarjeta 3DS ya vinculada y crear el viaje sin hold (cobro diferido)'
+	}
 ];
 
-test.describe.serial('Gateway PG · E2E Mobile · App Pax Business — Hold con 3DS @gateway @stripe @e2e-hybrid @hold @3ds @regression', () => {
+test.describe
+	.serial('Gateway PG · E2E Mobile · App Pax Business — Hold con 3DS @gateway @stripe @e2e-hybrid @hold @3ds @regression', () => {
 	// Gate a nivel describe (uniforme con el resto de specs apppax): sin servidor Appium
 	// el harness no se puede construir (getPassengerAppConfig lanza) — el grupo SKIPea, no ERRORA.
 	test.skip(() => !process.env.APPIUM_SERVER_URL, 'Requiere servidor Appium Android activo (APPIUM_SERVER_URL).');
@@ -136,18 +132,18 @@ test.describe.serial('Gateway PG · E2E Mobile · App Pax Business — Hold con 
 					//   modo business y que PassengerTripHappyPathHarness expone hold toggle.
 					test.skip(
 						!process.env.APPIUM_SERVER_URL,
-						`${scenario.testCaseId} requiere servidor Appium Android activo (APPIUM_SERVER_URL).`,
+						`${scenario.testCaseId} requiere servidor Appium Android activo (APPIUM_SERVER_URL).`
 					);
 
 					const harness = new PassengerTripHappyPathHarness(getPassengerAppConfig(), undefined, {
-						profileMode: 'business',
+						profileMode: 'business'
 					});
 					let journey = createJourney(scenario.testCaseId);
 					const card = {
 						number: threeDsCard.number,
 						expiry: threeDsCard.exp,
 						cvc: threeDsCard.cvc,
-						holderName: threeDsCard.holderName,
+						holderName: threeDsCard.holderName
 					};
 					const cardLast4 = card.number.replace(/\D/g, '').slice(-4); // 3184
 
@@ -188,11 +184,11 @@ test.describe.serial('Gateway PG · E2E Mobile · App Pax Business — Hold con 
 							expect(tripId, scenario.expectedTripOutcome).toBeTruthy();
 
 							journey = orchestrator.attachTripData(journey, {
-								tripId: tripId ?? 'TODO',
+								tripId: tripId ?? 'TODO'
 							});
 							journey = orchestrator.prepareMobileHandoff(
 								journey,
-								`Passenger business 3DS trip created for ${scenario.testCaseId} (hold=${scenario.holdMode}, card=${scenario.cardFlow})`,
+								`Passenger business 3DS trip created for ${scenario.testCaseId} (hold=${scenario.holdMode}, card=${scenario.cardFlow})`
 							);
 							await orchestrator.persist(journey);
 						});
@@ -202,14 +198,14 @@ test.describe.serial('Gateway PG · E2E Mobile · App Pax Business — Hold con 
 					} catch (error) {
 						journey = orchestrator.fail(
 							journey,
-							error instanceof Error ? error.message : `Draft ${scenario.testCaseId} failed`,
+							error instanceof Error ? error.message : `Draft ${scenario.testCaseId} failed`
 						);
 						await orchestrator.persist(journey);
 						throw error;
 					} finally {
 						await harness.endSession();
 					}
-				},
+				}
 			);
 		});
 	}

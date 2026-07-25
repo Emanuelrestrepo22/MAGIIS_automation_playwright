@@ -1,6 +1,10 @@
 import { test } from '../TestBase';
 import { NewTravelPage, OperationalPreferencesPage } from '../pages/carrier';
-import { expectNoThreeDSModal, loginAsDispatcher, STRIPE_TEST_CARDS } from '../features/gateway-pg/fixtures/gateway.fixtures';
+import {
+	expectNoThreeDSModal,
+	loginAsDispatcher,
+	STRIPE_TEST_CARDS
+} from '../features/gateway-pg/fixtures/gateway.fixtures';
 
 const CLIENT = 'Usa Tres, Marcela';
 const ORIGIN = 'Cazadores 1987, Buenos Aires, Argentina';

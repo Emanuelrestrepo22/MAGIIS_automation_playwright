@@ -47,13 +47,14 @@ const SEL = {
 	// aria-hidden/disabled) + el input REAL (input.InputElement). Targetear el real.
 	stripeInput: 'input.InputElement, input:not(.StripeField--fake):not([aria-hidden="true"]):not([disabled])',
 	// Campos NATIVOS del form MAGIIS (WebView principal, fuera de iframe).
-	fHolderNameOutside: 'credit-card-payment-data input[formcontrolname="cardholderName"], #cardholderName, input[formcontrolname="cardholderName"]',
+	fHolderNameOutside:
+		'credit-card-payment-data input[formcontrolname="cardholderName"], #cardholderName, input[formcontrolname="cardholderName"]',
 	fPostalOutside: 'credit-card-payment-data input[formcontrolname="zipCode"], input[formcontrolname="zipCode"]',
 	// Botón COBRAR (WebView MAGIIS, fuera del iframe) — selector real del build.
 	cobrar: 'credit-card-payment-data ion-content form button, credit-card-payment-data button.btn.primary',
 	// Resultado / alerts.
 	attentionModal: 'ion-modal.alert-modal-atention.show-modal',
-	blockingAlert: 'app-alert-modal',
+	blockingAlert: 'app-alert-modal'
 } as const;
 
 export type CardData = {
@@ -83,11 +84,10 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 		while (Date.now() < deadline) {
 			await this.switchToWebView(3_000);
 			const present = await driver
-				.execute<boolean, [string, string]>(
-					(modalSel, iframeSel) => !!document.querySelector(modalSel) || !!document.querySelector(iframeSel),
-					SEL.modal,
-					SEL.iframeNumber,
-				)
+				.execute<
+					boolean,
+					[string, string]
+				>((modalSel, iframeSel) => !!document.querySelector(modalSel) || !!document.querySelector(iframeSel), SEL.modal, SEL.iframeNumber)
 				.catch(() => false);
 			if (present) return true;
 			await driver.pause(400);
@@ -110,7 +110,9 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 		// 1) Cada campo Stripe en SU iframe.
 		const okNum = await this.typeInStripeIframe(SEL.iframeNumber, number);
 		if (!okNum) {
-			throw new Error('[DriverTripPaymentScreen] No se pudo llenar el número (iframe Stripe). Verificar title del iframe.');
+			throw new Error(
+				'[DriverTripPaymentScreen] No se pudo llenar el número (iframe Stripe). Verificar title del iframe.'
+			);
 		}
 		await driver.pause(400);
 		await this.typeInStripeIframe(SEL.iframeExpiry, exp);
@@ -124,29 +126,41 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 		const holder = card.holderName ?? 'RESTREPO EMANUEL';
 		const postal = card.postal ?? '1234567';
 		await driver
-			.execute<boolean, [string, string]>((holderName, zip) => {
-				const setIon = (id: string, value: string): void => {
-					const host = document.getElementById(id) as (HTMLElement & { value?: unknown }) | null;
-					if (!host) return;
-					const root = (host as unknown as { shadowRoot?: ShadowRoot }).shadowRoot;
-					const inner = (root ? root.querySelector('input') : host.querySelector('input')) as HTMLInputElement | null;
-					const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
-					if (inner && setter) {
-						inner.focus();
-						setter.call(inner, value);
-						inner.dispatchEvent(new Event('input', { bubbles: true }));
-						inner.dispatchEvent(new Event('change', { bubbles: true }));
-					}
-					try { host.value = value; } catch { /* noop */ }
-					host.dispatchEvent(new CustomEvent('ionInput', { detail: { value }, bubbles: true }));
-					host.dispatchEvent(new CustomEvent('ionChange', { detail: { value }, bubbles: true }));
-				};
-				setIon('cardholderName', holderName);
-				setIon('zipCode', zip);
-				return true;
-			}, holder, postal)
+			.execute<boolean, [string, string]>(
+				(holderName, zip) => {
+					const setIon = (id: string, value: string): void => {
+						const host = document.getElementById(id) as (HTMLElement & { value?: unknown }) | null;
+						if (!host) return;
+						const root = (host as unknown as { shadowRoot?: ShadowRoot }).shadowRoot;
+						const inner = (
+							root ? root.querySelector('input') : host.querySelector('input')
+						) as HTMLInputElement | null;
+						const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
+						if (inner && setter) {
+							inner.focus();
+							setter.call(inner, value);
+							inner.dispatchEvent(new Event('input', { bubbles: true }));
+							inner.dispatchEvent(new Event('change', { bubbles: true }));
+						}
+						try {
+							host.value = value;
+						} catch {
+							/* noop */
+						}
+						host.dispatchEvent(new CustomEvent('ionInput', { detail: { value }, bubbles: true }));
+						host.dispatchEvent(new CustomEvent('ionChange', { detail: { value }, bubbles: true }));
+					};
+					setIon('cardholderName', holderName);
+					setIon('zipCode', zip);
+					return true;
+				},
+				holder,
+				postal
+			)
 			.catch(() => false);
-		console.log(`[DriverTripPaymentScreen] Tarjeta ${number.slice(-4)} ingresada (Stripe classic: iframe por campo) + titular/postal (ion-input)`);
+		console.log(
+			`[DriverTripPaymentScreen] Tarjeta ${number.slice(-4)} ingresada (Stripe classic: iframe por campo) + titular/postal (ion-input)`
+		);
 	}
 
 	/**
@@ -160,15 +174,26 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 			switchToFrame?: (el: unknown) => Promise<void>;
 		};
 		const enter = async (el: unknown): Promise<void> => {
-			if (typeof anyDriver.switchFrame === 'function') { await anyDriver.switchFrame(el); return; }
-			if (typeof anyDriver.switchToFrame === 'function') { await anyDriver.switchToFrame(el); return; }
+			if (typeof anyDriver.switchFrame === 'function') {
+				await anyDriver.switchFrame(el);
+				return;
+			}
+			if (typeof anyDriver.switchToFrame === 'function') {
+				await anyDriver.switchToFrame(el);
+				return;
+			}
 			throw new Error('switchFrame/switchToFrame no disponible');
 		};
 
 		await this.switchToWebView();
 		await enter(null).catch(() => undefined); // GARANTIZAR top-frame antes de buscar el iframe
 		const frame = driver.$(iframeSelector);
-		if (!(await frame.waitForExist({ timeout: 8_000 }).then(() => true).catch(() => false))) {
+		if (
+			!(await frame
+				.waitForExist({ timeout: 8_000 })
+				.then(() => true)
+				.catch(() => false))
+		) {
 			console.warn(`[DriverTripPaymentScreen] iframe no encontrado: ${iframeSelector}`);
 			return false;
 		}
@@ -181,7 +206,10 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 			await input.addValue(value);
 			return true;
 		} catch (e) {
-			console.warn(`[DriverTripPaymentScreen] typeInStripeIframe(${iframeSelector}) error:`, e instanceof Error ? e.message : e);
+			console.warn(
+				`[DriverTripPaymentScreen] typeInStripeIframe(${iframeSelector}) error:`,
+				e instanceof Error ? e.message : e
+			);
 			return false;
 		} finally {
 			await enter(null).catch(() => undefined); // volver al top-frame para el próximo campo
@@ -196,7 +224,7 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 		const deadline = Date.now() + enableTimeout;
 		while (Date.now() < deadline) {
 			const state = await driver
-				.execute<{ found: boolean; disabled: boolean }, [string]>((sel) => {
+				.execute<{ found: boolean; disabled: boolean }, [string]>(sel => {
 					const b = document.querySelector(sel) as HTMLButtonElement | null;
 					if (!b) return { found: false, disabled: true };
 					return { found: true, disabled: b.disabled || b.getAttribute('disabled') !== null };
@@ -205,9 +233,12 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 
 			if (state.found && !state.disabled) {
 				await driver
-					.execute<boolean, [string]>((sel) => {
+					.execute<boolean, [string]>(sel => {
 						const b = document.querySelector(sel) as HTMLElement | null;
-						if (b) { b.click(); return true; }
+						if (b) {
+							b.click();
+							return true;
+						}
 						return false;
 					}, SEL.cobrar)
 					.catch(() => false);
@@ -218,7 +249,7 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 		}
 		throw new Error(
 			'[DriverTripPaymentScreen] COBRAR quedó deshabilitado (form Stripe inválido/incompleto) ' +
-			`en ${enableTimeout}ms — el fill del iframe Stripe no habilitó el botón.`,
+				`en ${enableTimeout}ms — el fill del iframe Stripe no habilitó el botón.`
 		);
 	}
 
@@ -232,25 +263,34 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 		while (Date.now() < deadline) {
 			await this.switchToWebView(2_000);
 			const result = await driver
-				.execute<PaymentOutcome | null, [string, string]>((attentionSel, alertSel) => {
-					const norm = (v: unknown) => String(v ?? '').toLowerCase().trim();
+				.execute<PaymentOutcome | null, [string, string]>(
+					(attentionSel, alertSel) => {
+						const norm = (v: unknown) =>
+							String(v ?? '')
+								.toLowerCase()
+								.trim();
 
-					// Alert bloqueante app-alert-modal (Viaje perdido / Cancelado).
-					const alertEl = document.querySelector(alertSel) as HTMLElement | null;
-					if (alertEl) {
-						const t = norm(alertEl.innerText ?? alertEl.textContent);
-						if (/perdid|cancelad|expir/i.test(t)) return { status: 'trip-lost', reason: t.slice(0, 200) };
-					}
+						// Alert bloqueante app-alert-modal (Viaje perdido / Cancelado).
+						const alertEl = document.querySelector(alertSel) as HTMLElement | null;
+						if (alertEl) {
+							const t = norm(alertEl.innerText ?? alertEl.textContent);
+							if (/perdid|cancelad|expir/i.test(t))
+								return { status: 'trip-lost', reason: t.slice(0, 200) };
+						}
 
-					// Attention modal (decline / error de cobro).
-					const modal = document.querySelector(attentionSel) as HTMLElement | null;
-					if (modal) {
-						const t = norm(modal.innerText ?? modal.textContent);
-						if (/perdid|cancelad|expir/i.test(t)) return { status: 'trip-lost', reason: t.slice(0, 200) };
-						return { status: 'declined', reason: t.slice(0, 200) || 'attention-modal' };
-					}
-					return null;
-				}, SEL.attentionModal, SEL.blockingAlert)
+						// Attention modal (decline / error de cobro).
+						const modal = document.querySelector(attentionSel) as HTMLElement | null;
+						if (modal) {
+							const t = norm(modal.innerText ?? modal.textContent);
+							if (/perdid|cancelad|expir/i.test(t))
+								return { status: 'trip-lost', reason: t.slice(0, 200) };
+							return { status: 'declined', reason: t.slice(0, 200) || 'attention-modal' };
+						}
+						return null;
+					},
+					SEL.attentionModal,
+					SEL.blockingAlert
+				)
 				.catch(() => null);
 			if (result) return result;
 			await driver.pause(400);
@@ -270,12 +310,17 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 					if (inAlert) return inAlert;
 					const alertBtn = document.querySelector('.alert-button') as HTMLElement | null;
 					if (alertBtn) return alertBtn;
-					return (Array.from(document.querySelectorAll('button, [role="button"]')) as HTMLElement[]).find(
-						(b) => /aceptar|captar|cerrar|ok|salir/i.test(b.textContent ?? ''),
-					) ?? null;
+					return (
+						(Array.from(document.querySelectorAll('button, [role="button"]')) as HTMLElement[]).find(b =>
+							/aceptar|captar|cerrar|ok|salir/i.test(b.textContent ?? '')
+						) ?? null
+					);
 				};
 				const btn = pick();
-				if (btn) { btn.click(); return true; }
+				if (btn) {
+					btn.click();
+					return true;
+				}
 				return false;
 			})
 			.catch(() => false);
@@ -297,26 +342,52 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 			switchToFrame?: (el: unknown) => Promise<void>;
 		};
 		const enter = async (el: unknown): Promise<void> => {
-			if (typeof anyDriver.switchFrame === 'function') { await anyDriver.switchFrame(el); return; }
-			if (typeof anyDriver.switchToFrame === 'function') { await anyDriver.switchToFrame(el); return; }
+			if (typeof anyDriver.switchFrame === 'function') {
+				await anyDriver.switchFrame(el);
+				return;
+			}
+			if (typeof anyDriver.switchToFrame === 'function') {
+				await anyDriver.switchToFrame(el);
+				return;
+			}
 		};
 		const clickHere = async (): Promise<boolean> =>
 			driver
-				.execute<boolean, [string, string]>((id, re) => {
-					const byId = document.getElementById(id) as HTMLElement | null;
-					if (byId && byId.offsetParent !== null) { byId.click(); return true; }
-					const rx = new RegExp(re, 'i');
-					const els = Array.from(document.querySelectorAll('button, [role="button"], a, input[type="button"], input[type="submit"]')) as HTMLElement[];
-					const m = els.find((b) => b.offsetParent !== null && (rx.test(b.textContent ?? '') || rx.test((b as HTMLInputElement).value ?? '')));
-					if (m) { m.click(); return true; }
-					return false;
-				}, targetId, wordRe)
+				.execute<boolean, [string, string]>(
+					(id, re) => {
+						const byId = document.getElementById(id) as HTMLElement | null;
+						if (byId && byId.offsetParent !== null) {
+							byId.click();
+							return true;
+						}
+						const rx = new RegExp(re, 'i');
+						const els = Array.from(
+							document.querySelectorAll(
+								'button, [role="button"], a, input[type="button"], input[type="submit"]'
+							)
+						) as HTMLElement[];
+						const m = els.find(
+							b =>
+								b.offsetParent !== null &&
+								(rx.test(b.textContent ?? '') || rx.test((b as HTMLInputElement).value ?? ''))
+						);
+						if (m) {
+							m.click();
+							return true;
+						}
+						return false;
+					},
+					targetId,
+					wordRe
+				)
 				.catch(() => false);
 
 		await this.switchToWebView(2_000);
 		if (await clickHere()) return true;
 
-		const iframeCount = await driver.execute<number, []>(() => document.querySelectorAll('iframe').length).catch(() => 0);
+		const iframeCount = await driver
+			.execute<number, []>(() => document.querySelectorAll('iframe').length)
+			.catch(() => 0);
 		for (let i = 0; i < iframeCount; i++) {
 			try {
 				await enter(null);
@@ -324,14 +395,23 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 				const frame = driver.$(`iframe:nth-of-type(${i + 1})`);
 				if (!(await frame.isExisting().catch(() => false))) continue;
 				await enter(frame);
-				if (await clickHere()) { await enter(null); return true; }
+				if (await clickHere()) {
+					await enter(null);
+					return true;
+				}
 				const inner = driver.$('iframe');
 				if (await inner.isExisting().catch(() => false)) {
 					await enter(inner);
-					if (await clickHere()) { await enter(null); return true; }
+					if (await clickHere()) {
+						await enter(null);
+						return true;
+					}
 				}
-			} catch { /* siguiente iframe */ }
-			finally { await enter(null).catch(() => undefined); }
+			} catch {
+				/* siguiente iframe */
+			} finally {
+				await enter(null).catch(() => undefined);
+			}
 		}
 		return false;
 	}
@@ -345,7 +425,17 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 	 */
 	async handle3DSChallenge(action: 'complete' | 'fail', timeout = 30_000): Promise<void> {
 		const driver = this.getDriver();
-		const completeTexts = ['complete authentication', 'complete auth', 'complete', 'completar', 'authorize test payment', 'authorize', 'autenticar', 'finish', 'submit'];
+		const completeTexts = [
+			'complete authentication',
+			'complete auth',
+			'complete',
+			'completar',
+			'authorize test payment',
+			'authorize',
+			'autenticar',
+			'finish',
+			'submit'
+		];
 		const failTexts = ['fail authentication', 'fail auth', 'fail', 'rechazar', 'cancel', 'cancelar'];
 		const wanted = action === 'complete' ? completeTexts : failTexts;
 
@@ -354,17 +444,40 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 			switchToFrame?: (el: unknown) => Promise<void>;
 		};
 		const enter = async (el: unknown): Promise<void> => {
-			if (typeof anyDriver.switchFrame === 'function') { await anyDriver.switchFrame(el); return; }
-			if (typeof anyDriver.switchToFrame === 'function') { await anyDriver.switchToFrame(el); return; }
+			if (typeof anyDriver.switchFrame === 'function') {
+				await anyDriver.switchFrame(el);
+				return;
+			}
+			if (typeof anyDriver.switchToFrame === 'function') {
+				await anyDriver.switchToFrame(el);
+				return;
+			}
 		};
 
 		const tryClickInCurrentFrame = async (): Promise<boolean> =>
 			driver
-				.execute<boolean, [string[]]>((texts) => {
-					const norm = (v: unknown) => String(v ?? '').replace(/\s+/g, ' ').trim().toLowerCase();
-					const els = Array.from(document.querySelectorAll('button, [role="button"], a, input[type="button"], input[type="submit"]')) as HTMLElement[];
-					const m = els.find((b) => (b as HTMLElement).offsetParent !== null && texts.some((t) => norm(b.textContent).includes(t) || norm((b as HTMLInputElement).value).includes(t)));
-					if (m) { m.click(); return true; }
+				.execute<boolean, [string[]]>(texts => {
+					const norm = (v: unknown) =>
+						String(v ?? '')
+							.replace(/\s+/g, ' ')
+							.trim()
+							.toLowerCase();
+					const els = Array.from(
+						document.querySelectorAll(
+							'button, [role="button"], a, input[type="button"], input[type="submit"]'
+						)
+					) as HTMLElement[];
+					const m = els.find(
+						b =>
+							(b as HTMLElement).offsetParent !== null &&
+							texts.some(
+								t => norm(b.textContent).includes(t) || norm((b as HTMLInputElement).value).includes(t)
+							)
+					);
+					if (m) {
+						m.click();
+						return true;
+					}
 					return false;
 				}, wanted)
 				.catch(() => false);
@@ -373,10 +486,15 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 		while (Date.now() < deadline) {
 			await this.switchToWebView(3_000);
 			// 1) Intento en el documento top.
-			if (await tryClickInCurrentFrame()) { console.log(`[DriverTripPaymentScreen] 3DS ${action} (top frame)`); return; }
+			if (await tryClickInCurrentFrame()) {
+				console.log(`[DriverTripPaymentScreen] 3DS ${action} (top frame)`);
+				return;
+			}
 
 			// 2) Recorrer iframes (incluye stripe challenge/acs anidados).
-			const iframeCount = await driver.execute<number, []>(() => document.querySelectorAll('iframe').length).catch(() => 0);
+			const iframeCount = await driver
+				.execute<number, []>(() => document.querySelectorAll('iframe').length)
+				.catch(() => 0);
 			for (let i = 0; i < iframeCount; i++) {
 				try {
 					await enter(null); // top
@@ -384,19 +502,32 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 					const frame = driver.$(`iframe:nth-of-type(${i + 1})`);
 					if (!(await frame.isExisting().catch(() => false))) continue;
 					await enter(frame);
-					if (await tryClickInCurrentFrame()) { console.log(`[DriverTripPaymentScreen] 3DS ${action} (iframe ${i})`); await enter(null); return; }
+					if (await tryClickInCurrentFrame()) {
+						console.log(`[DriverTripPaymentScreen] 3DS ${action} (iframe ${i})`);
+						await enter(null);
+						return;
+					}
 					// challenge suele estar 1 nivel más adentro
 					const inner = driver.$('iframe');
 					if (await inner.isExisting().catch(() => false)) {
 						await enter(inner);
-						if (await tryClickInCurrentFrame()) { console.log(`[DriverTripPaymentScreen] 3DS ${action} (iframe ${i}>inner)`); await enter(null); return; }
+						if (await tryClickInCurrentFrame()) {
+							console.log(`[DriverTripPaymentScreen] 3DS ${action} (iframe ${i}>inner)`);
+							await enter(null);
+							return;
+						}
 					}
-				} catch { /* seguir con el próximo iframe */ }
-				finally { await enter(null).catch(() => undefined); }
+				} catch {
+					/* seguir con el próximo iframe */
+				} finally {
+					await enter(null).catch(() => undefined);
+				}
 			}
 			await driver.pause(700);
 		}
-		console.warn(`[DriverTripPaymentScreen] 3DS ${action}: no se encontró el botón de challenge en ${timeout}ms (TODO[device]: confirmar selector con debugger).`);
+		console.warn(
+			`[DriverTripPaymentScreen] 3DS ${action}: no se encontró el botón de challenge en ${timeout}ms (TODO[device]: confirmar selector con debugger).`
+		);
 	}
 
 	/** Flujo completo: llenar Stripe → COBRAR → esperar resultado. */
@@ -421,15 +552,25 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 			switchToFrame?: (el: unknown) => Promise<void>;
 		};
 		const enter = async (el: unknown): Promise<void> => {
-			if (typeof anyDriver.switchFrame === 'function') { await anyDriver.switchFrame(el); return; }
-			if (typeof anyDriver.switchToFrame === 'function') { await anyDriver.switchToFrame(el); return; }
+			if (typeof anyDriver.switchFrame === 'function') {
+				await anyDriver.switchFrame(el);
+				return;
+			}
+			if (typeof anyDriver.switchToFrame === 'function') {
+				await anyDriver.switchToFrame(el);
+				return;
+			}
 			throw new Error('switchFrame/switchToFrame no disponible en el driver');
 		};
 		try {
 			await enter(frame);
 			return await fn();
 		} finally {
-			try { await enter(null); } catch { /* noop */ }
+			try {
+				await enter(null);
+			} catch {
+				/* noop */
+			}
 		}
 	}
 }

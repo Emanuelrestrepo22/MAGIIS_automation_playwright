@@ -119,12 +119,20 @@ export class AuthorizeSandboxApi extends ApiBase {
 
 		const cleaned = (await response.text()).replace(/^﻿/, '').trim();
 		if (!cleaned) {
-			throw new AuthorizeApiError(`Authorize sandbox respondió body vacío (status ${response.status()})`, response, cleaned);
+			throw new AuthorizeApiError(
+				`Authorize sandbox respondió body vacío (status ${response.status()})`,
+				response,
+				cleaned
+			);
 		}
 		try {
 			return JSON.parse(cleaned) as AuthorizeApiResponse;
 		} catch (err) {
-			throw new AuthorizeApiError(`Authorize sandbox devolvió JSON inválido: ${(err as Error).message}`, response, cleaned);
+			throw new AuthorizeApiError(
+				`Authorize sandbox devolvió JSON inválido: ${(err as Error).message}`,
+				response,
+				cleaned
+			);
 		}
 	}
 }
