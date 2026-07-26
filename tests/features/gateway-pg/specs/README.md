@@ -54,19 +54,19 @@ Ver [`docs/gateway-pg/CONTEXT.md`](../../../../docs/gateway-pg/CONTEXT.md) §"Es
 
 ```bash
 # Todos los gateways (cubre el feature completo)
-pnpm test:test:gateway-pg
+pnpm test:test:gateway
 
 # Solo Stripe
-pnpm test:test:gateway-pg:stripe
+pnpm test:test:gateway:stripe
 
 # Solo Authorize (cuando entre runtime — hoy 0 specs)
-pnpm test:test:gateway-pg:authorize
+pnpm test:test:gateway:authorize
 
-# Solo specs parametrizados cross-gateway (BL-028 piloto)
-pnpm test:test:gateway-pg:parametrized
+# Solo specs parametrizados cross-gateway (BL-028 piloto — sin script dedicado; grep sobre el título)
+pnpm test:test:gateway --grep parametrized
 
 # Recovery 3DS Stripe (single spec recovery, workers=1)
-pnpm test:test:gateway-pg:stripe:3ds
+pnpm test:test:gateway:3ds
 ```
 
 ## Specs `_parametrized/`
