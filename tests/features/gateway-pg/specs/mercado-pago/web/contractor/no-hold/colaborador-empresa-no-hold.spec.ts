@@ -5,7 +5,7 @@
 //
 // ⚠️ DRAFT: form de tarjeta MP nativo (no Stripe). Locators FRAGILE en helpers/mercadoPago.helpers.ts.
 // Precondición hold OFF: se controla desde el portal Carrier (preferencias operativas), no desde Contractor.
-import { test, expect } from '@TestBase';
+import { test, expect } from '@TestFixture';
 import { DashboardPage } from '@pages/carrier';
 import { ContractorNewTravelPage } from '@pages/contractor/NewTravelPage';
 import { loginAsContractor } from '@features/gateway-pg/fixtures/gateway.fixtures';
@@ -23,7 +23,8 @@ const APRO = MP_TEST_CARDS.approved; // holderName 'APRO' + DNI 12345678
 test.describe(`[SMOKE][MP][${env.toUpperCase()}] Alta sin hold · Contractor colaborador`, () => {
 	test.describe.configure({ mode: 'serial' });
 	test.describe.configure({ timeout: 180_000 });
-	test.use({ role: 'contractor', storageState: { cookies: [], origins: [] } });
+	// El fixture KATA (@TestFixture) no define la opción `role` — login explícito vía loginAsContractor.
+	test.use({ storageState: { cookies: [], origins: [] } });
 
 	test('@smoke @gateway-pg @mercado-pago @contractor @no-hold @happy [MP-NOHOLD-04] Colaborador empresa · alta sin hold con tarjeta APRO → redirect dashboard', async ({ page }) => {
 		const dashboard = new DashboardPage(page);

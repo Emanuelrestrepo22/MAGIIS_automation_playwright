@@ -4,7 +4,7 @@
 //
 // ⚠️ DRAFT: locators de eliminación tomados del recorder (clases Angular dinámicas ng-tns → FRAGILE).
 // Confirmar en corrida viva. El form de alta de tarjeta MP es nativo (ver helpers/mercadoPago.helpers.ts).
-import { test, expect } from '@TestBase';
+import { test, expect } from '@TestFixture';
 import { DashboardPage, NewTravelPage } from '@pages/carrier';
 import { loginAsDispatcher } from '@features/gateway-pg/fixtures/gateway.fixtures';
 import { MP_TEST_CARDS } from '@fixtures/gateways/mercado-pago/cards';
@@ -19,7 +19,8 @@ const APRO = MP_TEST_CARDS.approved;
 test.describe(`[SMOKE][MP][${env.toUpperCase()}] Wallet web · cliente individuo`, () => {
 	test.describe.configure({ mode: 'serial' });
 	test.describe.configure({ timeout: 180_000 });
-	test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
+	// El fixture KATA (@TestFixture) no define la opción `role` — login explícito vía loginAsDispatcher.
+	test.use({ storageState: { cookies: [], origins: [] } });
 
 	test('@smoke @gateway-pg @mercado-pago @carrier @wallet [MP-WALLET-WEB] Vincular y eliminar tarjeta MP desde el alta de viaje', async ({ page }) => {
 		const dashboard = new DashboardPage(page);

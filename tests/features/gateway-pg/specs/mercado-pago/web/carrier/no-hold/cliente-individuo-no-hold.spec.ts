@@ -5,7 +5,7 @@
 //
 // ⚠️ DRAFT: el form de tarjeta MP es nativo (no Stripe). Locators FRAGILE marcados en
 // helpers/mercadoPago.helpers.ts requieren confirmación en corrida viva.
-import { test } from '@TestBase';
+import { test } from '@TestFixture';
 import { DashboardPage, NewTravelPage, OperationalPreferencesPage, TravelManagementPage } from '@pages/carrier';
 import { loginAsDispatcher } from '@features/gateway-pg/fixtures/gateway.fixtures';
 import { MP_TEST_CARDS } from '@fixtures/gateways/mercado-pago/cards';
@@ -22,7 +22,8 @@ const APRO = MP_TEST_CARDS.approved; // holderName 'APRO' + DNI 12345678 (trigge
 test.describe(`[SMOKE][MP][${env.toUpperCase()}] Alta sin hold · cliente individuo`, () => {
 	test.describe.configure({ mode: 'serial' });
 	test.describe.configure({ timeout: 180_000 });
-	test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
+	// El fixture KATA (@TestFixture) no define la opción `role` — login explícito vía loginAsDispatcher.
+	test.use({ storageState: { cookies: [], origins: [] } });
 
 	test('@smoke @gateway-pg @mercado-pago @carrier @no-hold @happy [MP-NOHOLD-CLIENTE-INDIVIDUO] Alta sin hold con tarjeta APRO → "Buscando chofer"', async ({ page }) => {
 		const dashboard = new DashboardPage(page);
