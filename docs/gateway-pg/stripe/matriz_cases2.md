@@ -1,4 +1,4 @@
-r# Test Suite – Stripe · Parte 2: Portal Contractor, Quote, Recurrentes y Operaciones de Viaje
+# Test Suite – Stripe · Parte 2: Portal Contractor, Quote, Recurrentes y Operaciones de Viaje
 
 > **Proyecto:** Automatización de pruebas – Integración Stripe (Playwright / Appium)
 > **Alcance:** Portal Contractor · Flujos Quote · Viajes Recurrentes · Reactivación · Clonación · Edición
