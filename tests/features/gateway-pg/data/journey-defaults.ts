@@ -52,6 +52,13 @@ export const JOURNEY_DEFAULTS = {
 } as const;
 
 /**
+ * Shape de los journey defaults — lo referencian los adapters (`journeyDefaults`).
+ * Seam S8 (carrier/gateway-standardization): cuando exista `JOURNEY_DEFAULTS_BY_GATEWAY`
+ * cada adapter apuntará a su entrada por pasarela; hoy las 4 comparten este set.
+ */
+export type JourneyDefaults = typeof JOURNEY_DEFAULTS;
+
+/**
  * Alias legacy. Los nuevos archivos deben importar `JOURNEY_DEFAULTS` directamente.
  * Conservado para preservar imports existentes (decenas de specs y POMs).
  */

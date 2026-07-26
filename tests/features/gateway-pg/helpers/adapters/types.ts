@@ -3,7 +3,38 @@ import type {
 	PaymentGateway,
 	PaymentValidationSource
 } from '../../contracts/gateway-pg.types';
+import type { JourneyDefaults } from '../../data/journey-defaults';
+import type { GatewayXrayRegistry } from '../../data/xray-keys';
 
+/**
+ * Tipo de formulario de tarjeta que renderiza el portal para la pasarela.
+ *   - 'stripe-elements': iframes de Stripe Elements (ver NewTravelPageBase.fillPreauthorizedCard).
+ *   - 'native-angular':  form Angular nativo compartido por MP / Authorize / eBiz
+ *     (creditCardNumber, expiryDate, creditCardCVV, creditCardOwnerName + 5° campo variable).
+ */
+export type GatewayCardFormKind = 'stripe-elements' | 'native-angular';
+
+/**
+ * Qué campo de la tarjeta sandbox dispara el outcome (approved/declined/…):
+ *   - 'number':      el número de tarjeta (Stripe, eBizCharge).
+ *   - 'cvv-zip':     la combinación CVV + ZIP (Authorize.Net).
+ *   - 'holder-name': el nombre del titular — keyword APRO/OTHE/… (Mercado Pago).
+ */
+export type GatewayOutcomeTrigger = 'number' | 'cvv-zip' | 'holder-name';
+
+/**
+ * 5° campo del form nativo Angular (además de los 4 comunes):
+ *   - 'zip':      Authorize (formcontrolname del ZIP NO confirmado live — FRAGILE).
+ *   - 'document': Mercado Pago (tipo + número de documento).
+ * Ausente para 'stripe-elements' o cuando el form nativo no pide campo extra.
+ */
+export type GatewayNativeExtraField = 'zip' | 'document';
+
+/**
+ * Adapter declarativo por pasarela — metadata estática + config operacional
+ * (S2, carrier/gateway-standardization). Los specs/factories/steps consultan
+ * el adapter para ramificar SIN if-por-pasarela dispersos.
+ */
 export type GatewayPgAdapter = {
 	gateway: PaymentGateway;
 	displayName: string;
@@ -16,4 +47,41 @@ export type GatewayPgAdapter = {
 	webTodos: string[];
 	mobileTodos: string[];
 	validationTodos: string[];
+
+	// ── Config operacional (S2) ──────────────────────────────────────────────
+
+	/** Tipo de form de tarjeta del portal (selecciona la CardFormStrategy — S3). */
+	cardForm: GatewayCardFormKind;
+	/** Campo de la tarjeta sandbox que dispara el outcome. */
+	outcomeTrigger: GatewayOutcomeTrigger;
+	/** 5° campo del form nativo Angular, si aplica. */
+	nativeExtraField?: GatewayNativeExtraField;
+	/**
+	 * Statuses HTTP de ÉXITO conocidos de la request de link.
+	 * Authorize: [500, 409] (quirk backend VERIFICADO — 500 = conectada desde estado
+	 * limpio, 409 = ya vinculada por otra sesión; 400 = NO conectada).
+	 * Resto: [200] hasta verificar live (TODO).
+	 */
+	linkSuccessStatuses: number[];
+	/** Matcher de URL de la mutación de link/unlink (solo Authorize verificado live). */
+	linkMutationUrlPattern: RegExp;
+	/**
+	 * Env vars de credenciales propias de la pasarela. Vacío = usa las credenciales
+	 * default del carrier (cadena USER_CARRIER_<GW>_<ENV> → … → USER_CARRIER).
+	 */
+	credsEnvKeys: string[];
+	/** `true` si TODAS las `credsEnvKeys` están presentes (no vacías) en el env. */
+	isConfigured(): boolean;
+	/** Registry Xray/matriz de la pasarela (referencia a `data/xray-keys.ts`). */
+	xrayKeys: GatewayXrayRegistry;
+	/** Defaults de journey MAGIIS (seam S8 — hoy las 4 comparten `JOURNEY_DEFAULTS`). */
+	journeyDefaults: JourneyDefaults;
 };
+
+/**
+ * Helper compartido de `isConfigured()`: toda key listada debe existir y no estar
+ * vacía en `process.env`. Lista vacía = configurado (usa creds default del carrier).
+ */
+export function areEnvKeysConfigured(keys: readonly string[]): boolean {
+	return keys.every((key) => Boolean(process.env[key]?.trim()));
+}
