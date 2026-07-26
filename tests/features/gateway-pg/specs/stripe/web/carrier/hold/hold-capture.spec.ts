@@ -26,7 +26,7 @@ import {
 test.describe.configure({ mode: 'serial' });
 test.describe.configure({ timeout: 120_000 });
 
-test.describe('Gateway PG · Carrier · App Pax — Hold sin 3DS @gateway @stripe @hold @capture @decline @regression', () => {
+test.describe('Gateway PG · Carrier · App Pax — Hold sin 3DS @gateway @stripe @hold @capture @decline @regression', { annotation: [{ type: 'tms', description: 'MG-158' }] }, () => {
 	// El fixture KATA no define la opción `role` (login explícito vía loginAsDispatcher(page)).
 	test.use({ storageState: undefined });
 

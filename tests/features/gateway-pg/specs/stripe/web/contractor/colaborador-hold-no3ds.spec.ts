@@ -42,36 +42,40 @@ function colaboradorScenario(overrides: Partial<ContractorHoldScenario> = {}): C
 test.use({ storageState: undefined });
 test.describe.configure({ timeout: 180_000 });
 
-test.describe('Gateway PG · Contractor · Colaborador — Hold sin 3DS (tarjeta 4242 4242 4242 4242) @gateway @stripe @hold @critical @smoke @regression', () => {
-	test.describe('Hold ON', () => {
-		test('[TS-STRIPE-P2-TC001] @smoke @contractor @hold Hold ON + nueva vinculación tarjeta 4242 + alta colaborador → viaje a "Buscando conductor"', async ({
-			page
-		}) => {
-			await new ContractorHoldSteps({ page }).runColaboradorScenario(colaboradorScenario());
+test.describe(
+	'Gateway PG · Contractor · Colaborador — Hold sin 3DS (tarjeta 4242 4242 4242 4242) @gateway @stripe @hold @critical @smoke @regression',
+	{ annotation: [{ type: 'tms', description: 'MG-158' }] },
+	() => {
+		test.describe('Hold ON', () => {
+			test('[TS-STRIPE-P2-TC001] @smoke @contractor @hold Hold ON + nueva vinculación tarjeta 4242 + alta colaborador → viaje a "Buscando conductor"', async ({
+				page
+			}) => {
+				await new ContractorHoldSteps({ page }).runColaboradorScenario(colaboradorScenario());
+			});
+
+			test('[TS-STRIPE-P2-TC003] @regression @contractor @hold Hold ON + selección tarjeta VISA guardada del colaborador + alta → viaje a "Buscando conductor"', async ({
+				page
+			}) => {
+				await new ContractorHoldSteps({ page }).runColaboradorScenario(
+					colaboradorScenario({ card: { kind: 'saved' } })
+				);
+			});
 		});
 
-		test('[TS-STRIPE-P2-TC003] @regression @contractor @hold Hold ON + selección tarjeta VISA guardada del colaborador + alta → viaje a "Buscando conductor"', async ({
-			page
-		}) => {
-			await new ContractorHoldSteps({ page }).runColaboradorScenario(
-				colaboradorScenario({ card: { kind: 'saved' } })
-			);
-		});
-	});
+		test.describe('Hold OFF', () => {
+			test('[TS-STRIPE-P2-TC002] @regression @contractor @hold Hold OFF + nueva vinculación tarjeta 4242 + alta colaborador → viaje a "Buscando conductor" sin hold', async ({
+				page
+			}) => {
+				await new ContractorHoldSteps({ page }).runColaboradorScenario(colaboradorScenario());
+			});
 
-	test.describe('Hold OFF', () => {
-		test('[TS-STRIPE-P2-TC002] @regression @contractor @hold Hold OFF + nueva vinculación tarjeta 4242 + alta colaborador → viaje a "Buscando conductor" sin hold', async ({
-			page
-		}) => {
-			await new ContractorHoldSteps({ page }).runColaboradorScenario(colaboradorScenario());
+			test('[TS-STRIPE-P2-TC004] @regression @contractor @hold Hold OFF + selección tarjeta VISA guardada del colaborador + alta → viaje a "Buscando conductor" sin hold', async ({
+				page
+			}) => {
+				await new ContractorHoldSteps({ page }).runColaboradorScenario(
+					colaboradorScenario({ card: { kind: 'saved' } })
+				);
+			});
 		});
-
-		test('[TS-STRIPE-P2-TC004] @regression @contractor @hold Hold OFF + selección tarjeta VISA guardada del colaborador + alta → viaje a "Buscando conductor" sin hold', async ({
-			page
-		}) => {
-			await new ContractorHoldSteps({ page }).runColaboradorScenario(
-				colaboradorScenario({ card: { kind: 'saved' } })
-			);
-		});
-	});
-});
+	}
+);

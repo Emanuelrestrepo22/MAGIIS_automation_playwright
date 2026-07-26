@@ -11,7 +11,7 @@
  *     Se usa un keyword de estado como nombre: APRO (approved), OTHE (rechazo general),
  *     CONT (pending), SECU (CVV inválido), FUND (fondos insuficientes), etc.
  *   - Número, CVV y expiración son **fijos** (CVV 123 / Amex 1234, exp `11/30`).
- *   - Para approved se envía documento DNI `12345678`; la mayoría de los rechazos no requieren documento.
+ *   - `APRO` y `OTHE` se envían con DNI `12345678`; el resto de rechazos no requieren documento (doc oficial).
  *   - **No requiere 3DS** en el flujo MAGIIS (`mercadoPagoGatewayAdapter.requires3ds = false`).
  *
  * ⚠️ Importante para el normalizer cross-gateway: en MercadoPago `holderName` **NO es inerte** —
@@ -101,7 +101,8 @@ export const MP_TEST_CARDS = {
 		'OTHE',
 		'rejected',
 		'cc_rejected_other_reason',
-		'OTHE → rechazo por error general. Decline canónico MAGIIS.'
+		'OTHE → rechazo por error general. Decline canónico MAGIIS (con DNI 12345678).',
+		true
 	),
 	rejectedCallValidation: mpCard(
 		'CALL',

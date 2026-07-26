@@ -47,6 +47,8 @@ export class PassengerTripHappyPathHarness {
 	private newTripScreen: PassengerNewTripScreen;
 	private statusScreen: PassengerTripStatusScreen;
 	private readonly profileMode: PassengerProfileMode;
+	/** Tope de tarjetas a dejar en el wallet antes de adicionar (evita el límite que impide persistir). */
+	private readonly walletKeepMax = 5;
 
 	constructor(
 		private readonly config: MobileActorConfig,
@@ -110,6 +112,11 @@ export class PassengerTripHappyPathHarness {
 				return 'already-present';
 			}
 
+			// Precondición: un wallet lleno impide que el gateway persista una tarjeta nueva.
+			// Limpieza PARCIAL (deja keepMax) antes de adicionar. (Confirmado con el usuario:
+			// "3184 no persiste porque el cliente tiene demasiadas tarjetas".)
+			await this.trimWallet(this.walletKeepMax);
+
 			await this.walletScreen.tapAddCard();
 			await this.walletScreen.fillCardForm(card);
 			await this.walletScreen.saveCard();
@@ -142,6 +149,36 @@ export class PassengerTripHappyPathHarness {
 			await this.ensurePassengerShell();
 			await this.walletScreen.openWallet();
 			return this.walletScreen.deleteAllVisibleCards(maxIterations);
+		});
+	}
+
+	/**
+	 * Limpieza PARCIAL del wallet: borra tarjetas hasta dejar `keepMax`. Asume el wallet ya abierto
+	 * (uso interno desde ensureWalletCard). Precondición para adicionar cuando el wallet está lleno.
+	 */
+	private async trimWallet(keepMax: number = this.walletKeepMax, maxDeletes = 40): Promise<number> {
+		let deleted = 0;
+		let count = await this.walletScreen.countCards().catch(() => 0);
+		while (count > keepMax && deleted < maxDeletes) {
+			const removed = await this.walletScreen.deleteFirstVisibleCard().catch(() => null);
+			if (!removed) {
+				break;
+			}
+			deleted += 1;
+			count = await this.walletScreen.countCards().catch(() => 0);
+		}
+		if (deleted > 0) {
+			console.log(`[PassengerTripHappyPathHarness] limpieza parcial wallet: ${deleted} tarjetas borradas (quedan ~${count}, keepMax=${keepMax})`);
+		}
+		return deleted;
+	}
+
+	/** Versión pública auto-contenida (abre el wallet) de la limpieza parcial. */
+	async partialWalletCleanup(keepMax: number = this.walletKeepMax): Promise<number> {
+		return this.withFailureDump('passenger-wallet-partial-cleanup', async () => {
+			await this.ensurePassengerShell();
+			await this.walletScreen.openWallet();
+			return this.trimWallet(keepMax);
 		});
 	}
 

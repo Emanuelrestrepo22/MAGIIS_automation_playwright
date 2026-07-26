@@ -10,6 +10,8 @@ export interface CardInput {
 	expiry: string;
 	cvc: string;
 	holderName?: string;
+	/** Código postal para el form nativo (app-credit-card-payment-data zipCode). Default '76000'. */
+	zip?: string;
 }
 
 export class PassengerWalletScreen extends AppiumSessionBase {
@@ -642,7 +644,25 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 		const deadline = Date.now() + timeout;
 
 		while (Date.now() < deadline) {
+			// Reset al webview/top-document: tras "AGREGAR" el foco puede quedar en el iframe
+			// de firebase-auth, y findAnyElement (driver.$$) no vería el form del doc principal.
+			await this.switchToWebView().catch(() => {});
+			await this.switchFrameTarget(null).catch(() => {});
+
 			if (await this.findAnyElement('input[name="cardnumber"]')) {
+				return true;
+			}
+
+			// Form NATIVO Angular/Ionic (app-credit-card-payment-data): el campo de número es un
+			// input nativo `#cardNumber` / data-checkout. Se chequea vía JS en el webview
+			// (document.querySelector, robusto a frame-focus) — no por WDIO $$ (context-frágil).
+			const nativePresent = await this.executeInWebView(
+				() =>
+					!!document.querySelector(
+						'app-credit-card-payment-data input#cardNumber, input[formcontrolname="cardNumber"], input[data-checkout="cardNumber"]'
+					)
+			).catch(() => false);
+			if (nativePresent) {
 				return true;
 			}
 
@@ -1234,14 +1254,44 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 	 * Taps the add card button.
 	 */
 	async tapAddCard(): Promise<void> {
-		const dismissedBlockingModal = await this.confirmDeleteDialogIfPresent();
-		if (dismissedBlockingModal) {
-			console.log('[PassengerWalletScreen] Blocking confirm modal dismissed before AGREGAR');
+		// El form nativo (app-credit-card-payment-data) a veces no monta a la 1ª pulsación de
+		// AGREGAR (queda solo el iframe de auth firebase) → flake. Reintentamos tap+espera.
+		const maxAttempts = 3;
+		let lastMetadata: unknown = [];
+
+		for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+			const dismissedBlockingModal = await this.confirmDeleteDialogIfPresent();
+			if (dismissedBlockingModal) {
+				console.log('[PassengerWalletScreen] Blocking confirm modal dismissed before AGREGAR');
+			}
+
+			console.log(`[PassengerWalletScreen] Tapping AGREGAR (intento ${attempt}/${maxAttempts})`);
+			const tapped = await this.tapAgregarButton();
+			if (!tapped) {
+				throw new Error('PassengerWalletScreen.tapAddCard() - "AGREGAR" not found');
+			}
+
+			console.log('[PassengerWalletScreen] AGREGAR tapped, waiting for card form');
+			const formReady = await this.waitForStripeCardNumber(20_000);
+			if (formReady) {
+				console.log('[PassengerWalletScreen] card form rendered after AGREGAR');
+				await this.pause(500);
+				return;
+			}
+
+			lastMetadata = await this.listIframeMetadata().catch(() => []);
+			console.warn(`[PassengerWalletScreen] form no montó en intento ${attempt}; reintentando…`);
+			await this.pause(1_500);
 		}
 
-		console.log('[PassengerWalletScreen] Tapping AGREGAR');
+		throw new Error(
+			`PassengerWalletScreen.tapAddCard() - Stripe card form did not render after "AGREGAR" (${maxAttempts} intentos). Iframes: ${JSON.stringify(lastMetadata)}`
+		);
+	}
+
+	/** Localiza y pulsa el botón AGREGAR (JS click para evitar intercepción de hit-testing). */
+	private async tapAgregarButton(): Promise<boolean> {
 		const driver = this.getDriver();
-		let tapped = false;
 		let candidates: any = [];
 
 		try {
@@ -1264,8 +1314,6 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 				continue;
 			}
 
-			// Use JS click to bypass coordinate-based hit-testing that causes
-			// "element click intercepted" when ion-item.card-number overlaps the button.
 			await candidate.scrollIntoView().catch(() => {});
 			await driver.pause(300);
 			const clicked = await driver
@@ -1286,29 +1334,11 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 				.catch(() => false);
 
 			if (clicked) {
-				tapped = true;
-				break;
+				return true;
 			}
 		}
 
-		if (!tapped) {
-			tapped = await this.tapWebText('AGREGAR', 10_000, true);
-		}
-		if (!tapped) {
-			throw new Error('PassengerWalletScreen.tapAddCard() - "AGREGAR" not found');
-		}
-
-		console.log('[PassengerWalletScreen] AGREGAR tapped, waiting for Stripe card form');
-		const formReady = await this.waitForStripeCardNumber(20_000);
-		if (!formReady) {
-			const metadata = await this.listIframeMetadata().catch(() => []);
-			throw new Error(
-				`PassengerWalletScreen.tapAddCard() - Stripe card form did not render after "AGREGAR". Iframes: ${JSON.stringify(metadata)}`
-			);
-		}
-
-		console.log('[PassengerWalletScreen] Stripe card form rendered after AGREGAR');
-		await this.pause(500);
+		return this.tapWebText('AGREGAR', 10_000, true);
 	}
 
 	/**
@@ -1316,6 +1346,21 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 	 */
 	async fillCardForm(card: CardInput): Promise<void> {
 		const sanitizedNumber = card.number.replace(/\s+/g, '');
+
+		// Rama NATIVA: el form del pasajero es `app-credit-card-payment-data` con inputs
+		// nativos (formcontrolname/data-checkout), NO un iframe Stripe. Detectar y llenar nativo.
+		// El guard por findAnyElement (frame-gated) es intencional: solo entra a la rama nativa cuando
+		// el frame activo está ALINEADO con el documento del form → así el fill posterior también lo ve.
+		// (No usar getPageSource aquí: detectaría el form aun con el frame desalineado y el fill fallaría.)
+		await this.switchFrameTarget(null).catch(() => {});
+		const nativeCardNumber = await this.findAnyElement(
+			'app-credit-card-payment-data input#cardNumber, input[formcontrolname="cardNumber"], input[data-checkout="cardNumber"]'
+		);
+		if (nativeCardNumber) {
+			await this.fillNativeCardForm(card, sanitizedNumber);
+			return;
+		}
+
 		const frameIndex = await this.findStripeCardFrameIndex(20_000);
 		if (frameIndex < 0) {
 			const metadata = await this.listIframeMetadata().catch(() => []);
@@ -1412,6 +1457,80 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 				.catch(() => {});
 			await this.getDriver().pause(250);
 		}
+	}
+
+	/**
+	 * Llena el form NATIVO de alta de tarjeta (`app-credit-card-payment-data`, estilo MercadoPago:
+	 * inputs nativos por `formcontrolname`/`data-checkout`, NO iframe Stripe). El form es progresivo:
+	 * al tipear un número válido emergen expiry/cvv/cardholderName/zip. Mecánica: tap #cardNumber →
+	 * tipeo real (driver.keys) para disparar validación → completar el resto por selector nativo.
+	 */
+	private async fillNativeCardForm(card: CardInput, sanitizedNumber: string): Promise<void> {
+		const driver = this.getDriver();
+		await this.switchToWebView().catch(() => {});
+		await this.switchFrameTarget(null).catch(() => {});
+		const scope = await this.getVisibleCreditCardPaymentModal().catch(() => null);
+
+		// 1) cardNumber: `fillWebInputField` es context-robusto (setter nativo + dispatch de
+		// eventos input/change vía executeInWebView) → dispara la validación/reveal del form
+		// reactivo Angular sin depender de resolución de elementos WDIO (context-frágil).
+		const numberSelectors = [
+			'input#cardNumber',
+			'input[formcontrolname="cardNumber"]',
+			'input[data-checkout="cardNumber"]'
+		];
+		const filledNumber = await this.fillWebInputField(numberSelectors, sanitizedNumber, scope).catch(() => false);
+		if (!filledNumber) {
+			throw new Error('PassengerWalletScreen.fillNativeCardForm() - no se pudo llenar cardNumber nativo');
+		}
+		await driver.pause(2_500); // validación + reveal progresivo de los demás campos
+
+		// 2) Vencimiento (cardExpirationDate, combinado MM/AA).
+		const { combined } = this.parseExpiryParts(card.expiry);
+		await this.fillWebInputField(
+			[
+				'input[formcontrolname="cardExpirationDate"]',
+				'input[data-checkout="cardExpirationDate"]',
+				'input[formcontrolname="cardExpiration"]'
+			],
+			combined,
+			scope
+		).catch(() => false);
+
+		// 3) CVV (securityCode).
+		await this.fillWebInputField(
+			[
+				'input[formcontrolname="securityCode"]',
+				'input[data-checkout="securityCode"]',
+				'input[formcontrolname="cvv"]'
+			],
+			card.cvc.replace(/\s+/g, ''),
+			scope
+		).catch(() => false);
+
+		// 4) Titular.
+		const holderName = card.holderName?.trim();
+		if (holderName) {
+			await this.fillWebInputField(
+				[
+					'input[formcontrolname="cardholderName"]',
+					'input[data-checkout="cardholderName"]',
+					'ion-input[formcontrolname="cardholderName"] input'
+				],
+				holderName,
+				scope
+			).catch(() => false);
+		}
+
+		// 5) Código postal (zipCode) — requerido por el form; default si CardInput no lo trae.
+		await this.fillWebInputField(
+			['input[formcontrolname="zipCode"]', 'input[data-checkout="zipCode"]'],
+			card.zip ?? '76000',
+			scope
+		).catch(() => false);
+
+		await driver.pause(300);
+		console.log('[PassengerWalletScreen] form NATIVO app-credit-card-payment-data completado');
 	}
 
 	/**
@@ -2233,6 +2352,11 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 	 * Removes the first visible saved card from the wallet.
 	 * Returns the visible label that was targeted, or null when the list is empty.
 	 */
+	/** Conteo público de tarjetas visibles en el wallet (para limpieza parcial pre-alta). */
+	async countCards(): Promise<number> {
+		return this.countVisibleCards();
+	}
+
 	async deleteFirstVisibleCard(): Promise<string | null> {
 		const beforeCount = await this.countVisibleCards();
 		if (beforeCount <= 0) {

@@ -16,8 +16,9 @@ import type { Page } from '@playwright/test';
 //   - test/expect vienen del fixture unificado KATA (@TestFixture) en vez de TestBase.
 //   - el modal 3DS usa el componente KATA `ThreeDsChallengePage extends UiBase` (@ui) en vez del POM ThreeDSModal.
 //   - los POMs del sustrato carrier (Dashboard/NewTravel/OperationalPreferences/TravelManagement) siguen intactos.
-// Mapeo TS-STRIPE-TC10xx → MG: no hay 1:1 en el idmap (API-level). ATCs del challenge 3DS mapeados
-// al área D (MG-152/MG-153) dentro del componente — PENDIENTE REASIGNAR cuando el ATP tenga TCs UI 3DS.
+// Mapeo TS-STRIPE-TC10xx → MG: no hay 1:1 en el idmap (API-level). Key primaria del spec = MG-158
+// (área E · hold, anotada a nivel describe); los ATC del challenge 3DS mapean al área D (MG-152/MG-153)
+// dentro del componente. Mapeo por área aceptado (idmap API-level, sin 1:1 con los TS-STRIPE-TC10xx UI).
 import { test, expect } from '@TestFixture';
 import {
 	DashboardPage,
@@ -249,95 +250,103 @@ async function runHoldOffScenario(page: Page, scenario: Hold3dsScenario): Promis
 // El fixture KATA no define la opción `role` (login explícito vía loginAsDispatcher(page)).
 test.use({ storageState: undefined });
 
-test.describe('Gateway PG · Carrier · App Pax — Hold con 3DS @gateway @stripe @hold @3ds @critical @regression', () => {
-	test.describe('Hold ON — autenticación 3DS exitosa', () => {
-		// Debería crear un viaje con hold activo, completar 3DS con éxito,
-		// y dejar el viaje en estado "Buscando conductor" visible en gestión.
-		test('[TS-STRIPE-TC1053] @smoke @critical @3ds @hold hold+cobro app pax 3DS success', async ({ page }) => {
-			await runHoldOnScenario(page, {
-				client: TEST_DATA.appPaxPassenger,
-				passenger: TEST_DATA.appPaxPassenger,
-				origin: TEST_DATA.origin,
-				destination: TEST_DATA.destination,
-				cardLast4: STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4), // 3184
-				apiSearchQuery: PASSENGERS.appPax.apiSearchQuery
+test.describe(
+	'Gateway PG · Carrier · App Pax — Hold con 3DS @gateway @stripe @hold @3ds @critical @regression',
+	{ annotation: [{ type: 'tms', description: 'MG-158' }] },
+	() => {
+		test.describe('Hold ON — autenticación 3DS exitosa', () => {
+			// Debería crear un viaje con hold activo, completar 3DS con éxito,
+			// y dejar el viaje en estado "Buscando conductor" visible en gestión.
+			test('[TS-STRIPE-TC1053] @smoke @critical @3ds @hold hold+cobro app pax 3DS success', async ({ page }) => {
+				await runHoldOnScenario(page, {
+					client: TEST_DATA.appPaxPassenger,
+					passenger: TEST_DATA.appPaxPassenger,
+					origin: TEST_DATA.origin,
+					destination: TEST_DATA.destination,
+					cardLast4: STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4), // 3184
+					apiSearchQuery: PASSENGERS.appPax.apiSearchQuery
+				});
+			});
+
+			test('[TS-STRIPE-TC1055] @regression @3ds @hold hold+cobro app pax 3DS success variante', async ({
+				page
+			}) => {
+				await runHoldOnScenario(page, {
+					client: TEST_DATA.appPaxPassenger,
+					passenger: TEST_DATA.appPaxPassenger,
+					origin: TEST_DATA.origin,
+					destination: TEST_DATA.destination,
+					cardLast4: STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4),
+					apiSearchQuery: PASSENGERS.appPax.apiSearchQuery
+				});
+			});
+
+			test('[TS-STRIPE-TC1061] @regression @3ds @hold hold+cobro app pax 3DS success (set 2)', async ({
+				page
+			}) => {
+				await runHoldOnScenario(page, {
+					client: TEST_DATA.appPaxPassenger,
+					passenger: TEST_DATA.appPaxPassenger,
+					origin: TEST_DATA.origin,
+					destination: TEST_DATA.destination,
+					apiSearchQuery: PASSENGERS.appPax.apiSearchQuery
+				});
+			});
+
+			test('[TS-STRIPE-TC1063] @regression @3ds @hold hold+cobro app pax 3DS success variante 2', async ({
+				page
+			}) => {
+				await runHoldOnScenario(page, {
+					client: TEST_DATA.appPaxPassenger,
+					passenger: TEST_DATA.appPaxPassenger,
+					origin: TEST_DATA.origin,
+					destination: TEST_DATA.destination,
+					apiSearchQuery: PASSENGERS.appPax.apiSearchQuery
+				});
 			});
 		});
 
-		test('[TS-STRIPE-TC1055] @regression @3ds @hold hold+cobro app pax 3DS success variante', async ({ page }) => {
-			await runHoldOnScenario(page, {
-				client: TEST_DATA.appPaxPassenger,
-				passenger: TEST_DATA.appPaxPassenger,
-				origin: TEST_DATA.origin,
-				destination: TEST_DATA.destination,
-				cardLast4: STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4),
-				apiSearchQuery: PASSENGERS.appPax.apiSearchQuery
+		test.describe('Hold OFF — sin cobro al finalizar', () => {
+			test('[TS-STRIPE-TC1054] @regression @3ds sin hold app pax 3DS success', async ({ page }) => {
+				await runHoldOffScenario(page, {
+					client: TEST_DATA.appPaxPassenger,
+					passenger: TEST_DATA.appPaxPassenger,
+					origin: TEST_DATA.origin,
+					destination: TEST_DATA.destination,
+					cardLast4: STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4), // 3184
+					apiSearchQuery: PASSENGERS.appPax.apiSearchQuery
+				});
 			});
-		});
 
-		test('[TS-STRIPE-TC1061] @regression @3ds @hold hold+cobro app pax 3DS success (set 2)', async ({ page }) => {
-			await runHoldOnScenario(page, {
-				client: TEST_DATA.appPaxPassenger,
-				passenger: TEST_DATA.appPaxPassenger,
-				origin: TEST_DATA.origin,
-				destination: TEST_DATA.destination,
-				apiSearchQuery: PASSENGERS.appPax.apiSearchQuery
+			test('[TS-STRIPE-TC1056] @regression @3ds sin hold app pax 3DS success variante', async ({ page }) => {
+				await runHoldOffScenario(page, {
+					client: TEST_DATA.appPaxPassenger,
+					passenger: TEST_DATA.appPaxPassenger,
+					origin: TEST_DATA.origin,
+					destination: TEST_DATA.destination,
+					apiSearchQuery: PASSENGERS.appPax.apiSearchQuery
+				});
 			});
-		});
 
-		test('[TS-STRIPE-TC1063] @regression @3ds @hold hold+cobro app pax 3DS success variante 2', async ({
-			page
-		}) => {
-			await runHoldOnScenario(page, {
-				client: TEST_DATA.appPaxPassenger,
-				passenger: TEST_DATA.appPaxPassenger,
-				origin: TEST_DATA.origin,
-				destination: TEST_DATA.destination,
-				apiSearchQuery: PASSENGERS.appPax.apiSearchQuery
+			test('[TS-STRIPE-TC1062] @regression @3ds sin hold app pax 3DS success (set 2)', async ({ page }) => {
+				await runHoldOffScenario(page, {
+					client: TEST_DATA.appPaxPassenger,
+					passenger: TEST_DATA.appPaxPassenger,
+					origin: TEST_DATA.origin,
+					destination: TEST_DATA.destination,
+					apiSearchQuery: PASSENGERS.appPax.apiSearchQuery
+				});
 			});
-		});
-	});
 
-	test.describe('Hold OFF — sin cobro al finalizar', () => {
-		test('[TS-STRIPE-TC1054] @regression @3ds sin hold app pax 3DS success', async ({ page }) => {
-			await runHoldOffScenario(page, {
-				client: TEST_DATA.appPaxPassenger,
-				passenger: TEST_DATA.appPaxPassenger,
-				origin: TEST_DATA.origin,
-				destination: TEST_DATA.destination,
-				cardLast4: STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4), // 3184
-				apiSearchQuery: PASSENGERS.appPax.apiSearchQuery
+			test('[TS-STRIPE-TC1064] @regression @3ds sin hold app pax 3DS success variante 2', async ({ page }) => {
+				await runHoldOffScenario(page, {
+					client: TEST_DATA.appPaxPassenger,
+					passenger: TEST_DATA.appPaxPassenger,
+					origin: TEST_DATA.origin,
+					destination: TEST_DATA.destination,
+					apiSearchQuery: PASSENGERS.appPax.apiSearchQuery
+				});
 			});
 		});
-
-		test('[TS-STRIPE-TC1056] @regression @3ds sin hold app pax 3DS success variante', async ({ page }) => {
-			await runHoldOffScenario(page, {
-				client: TEST_DATA.appPaxPassenger,
-				passenger: TEST_DATA.appPaxPassenger,
-				origin: TEST_DATA.origin,
-				destination: TEST_DATA.destination,
-				apiSearchQuery: PASSENGERS.appPax.apiSearchQuery
-			});
-		});
-
-		test('[TS-STRIPE-TC1062] @regression @3ds sin hold app pax 3DS success (set 2)', async ({ page }) => {
-			await runHoldOffScenario(page, {
-				client: TEST_DATA.appPaxPassenger,
-				passenger: TEST_DATA.appPaxPassenger,
-				origin: TEST_DATA.origin,
-				destination: TEST_DATA.destination,
-				apiSearchQuery: PASSENGERS.appPax.apiSearchQuery
-			});
-		});
-
-		test('[TS-STRIPE-TC1064] @regression @3ds sin hold app pax 3DS success variante 2', async ({ page }) => {
-			await runHoldOffScenario(page, {
-				client: TEST_DATA.appPaxPassenger,
-				passenger: TEST_DATA.appPaxPassenger,
-				origin: TEST_DATA.origin,
-				destination: TEST_DATA.destination,
-				apiSearchQuery: PASSENGERS.appPax.apiSearchQuery
-			});
-		});
-	});
-});
+	}
+);

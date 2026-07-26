@@ -28,7 +28,9 @@ const appPaxScenario: CargoScenario = {
 	client: TEST_DATA.appPaxPassenger,
 	origin: TEST_DATA.origin,
 	destination: TEST_DATA.destination,
-	cardPrecondition: { apiSearchQuery: PASSENGERS.appPax.apiSearchQuery!, requiredLast4: '3155', tcLabel: 'TC1092' }
+	// Card 3DS DETERMINÍSTICA always_authenticate (••••3184). Migrado desde la deprecada 3155
+	// (flaky por risk-score variable + ESLint anti-card-3155). apppax-hold-3ds ya usa esta card.
+	cardPrecondition: { apiSearchQuery: PASSENGERS.appPax.apiSearchQuery!, requiredLast4: '3184', tcLabel: 'TC1092' }
 };
 
 const APPIUM_NOTE = 'PENDIENTE: fase Driver App — requiere Appium.';

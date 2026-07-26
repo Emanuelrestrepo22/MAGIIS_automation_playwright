@@ -147,31 +147,77 @@ export class PassengerNewTripScreen extends AppiumSessionBase {
 		).filter(Boolean);
 	}
 
-	private async extractTripCode(): Promise<string | undefined> {
+	// El código de viaje del pax usa letra MINÚSCULA (p.ej. "4885-a", "8973-e").
+	private static readonly TRIP_CODE_RE = /\b(\d{3,}-[A-Za-z])\b/g;
+	private static readonly TRAVEL_ID_RE = /travelId["'=:\s]+(\d+)/i;
+
+	/**
+	 * Lee un "haystack" del WEBVIEW (URL + texto visible + HTML acotado). Tras crear el viaje el pax
+	 * navega a la pantalla de seguimiento/home donde aparece el código del viaje; capturarlo requiere
+	 * estar en el contexto WEBVIEW (getPageSource devuelve el árbol NATIVO si el contexto quedó nativo).
+	 */
+	private async readWebHaystack(): Promise<string> {
+		// href + texto visible + HTML acotado. El código del viaje aparece en el HTML de las cards
+		// (atributos/nodos), no siempre en innerText → incluir outerHTML es lo que realmente matchea.
+		return this.executeInWebView(() => {
+			const href = window.location?.href ?? '';
+			const text = document.body ? (document.body as HTMLElement).innerText : '';
+			const html = document.documentElement ? document.documentElement.outerHTML : '';
+			return `${href}\n${text}\n${html}`.slice(0, 200_000);
+		}).catch(() => '');
+	}
+
+	private collectTripCodes(haystack: string): Set<string> {
+		const codes = new Set<string>();
+		for (const match of haystack.matchAll(PassengerNewTripScreen.TRIP_CODE_RE)) {
+			codes.add(match[1]);
+		}
+		return codes;
+	}
+
+	/**
+	 * Extrae el código del viaje recién creado. Hace POLLING en el WEBVIEW porque la creación +
+	 * navegación tardan más que el one-shot previo (esa era la causa raíz del `undefined`).
+	 * `excludeCodes` = códigos ya presentes ANTES de confirmar (historial) → se ignoran para no
+	 * devolver un viaje viejo como falso positivo.
+	 */
+	private async extractTripCode(
+		excludeCodes: Set<string> = new Set(),
+		timeoutMs = 25_000
+	): Promise<string | undefined> {
 		const driver = this.getDriver();
-		const pageSource = await driver.getPageSource().catch(() => '');
-		const tripCodeMatch = pageSource.match(/(\d{3,}-[A-Z])/);
-		if (tripCodeMatch?.[1]) {
-			return tripCodeMatch[1];
+		const deadline = Date.now() + timeoutMs;
+
+		let lastFallback: string | undefined;
+		while (Date.now() < deadline) {
+			const haystack = await this.readWebHaystack();
+			const codes = this.collectTripCodes(haystack);
+
+			// Preferir un código NUEVO (no visto antes de confirmar).
+			for (const code of codes) {
+				if (!excludeCodes.has(code)) {
+					console.warn(
+						`[PassengerNewTripScreen] trip code NUEVO detectado: ${code} (excluidos=${[...excludeCodes].join(',') || '∅'})`
+					);
+					return code;
+				}
+				lastFallback = lastFallback ?? code;
+			}
+
+			const idMatch = haystack.match(PassengerNewTripScreen.TRAVEL_ID_RE);
+			if (idMatch?.[1]) {
+				console.warn(`[PassengerNewTripScreen] travelId detectado: ${idMatch[1]}`);
+				return idMatch[1];
+			}
+
+			await driver.pause(750);
 		}
 
-		const travelIdMatch = pageSource.match(/"travelId":(\d+)/) ?? pageSource.match(/travelId=(\d+)/i);
-		if (travelIdMatch?.[1]) {
-			return travelIdMatch[1];
-		}
-
-		const url = await driver.execute<string, []>(() => window.location.href).catch(() => '');
-		const urlTripCodeMatch = url.match(/(\d{3,}-[A-Z])/);
-		if (urlTripCodeMatch?.[1]) {
-			return urlTripCodeMatch[1];
-		}
-
-		const urlTravelIdMatch = url.match(/"travelId":(\d+)/) ?? url.match(/travelId=(\d+)/i);
-		if (urlTravelIdMatch?.[1]) {
-			return urlTravelIdMatch[1];
-		}
-
-		return undefined;
+		// Sin código nuevo tras el timeout: devolver uno visto (mejor que undefined si el viaje existe).
+		console.warn(
+			`[PassengerNewTripScreen] NO se detectó código NUEVO tras ${timeoutMs}ms. fallback=${lastFallback ?? 'undefined'}. Códigos vistos y excluidos como historial.`
+		);
+		return lastFallback;
 	}
 
 	/**
@@ -354,6 +400,9 @@ export class PassengerNewTripScreen extends AppiumSessionBase {
 	 * Confirms the trip request.
 	 */
 	async confirmTrip(): Promise<string | undefined> {
+		// Snapshot de códigos ya visibles ANTES de confirmar (historial) → excluirlos al extraer.
+		const codesBefore = this.collectTripCodes(await this.readWebHaystack());
+
 		const vehicleSelected = await this.tapWebText('Seleccionar Vehiculo', 10_000, true);
 		if (!vehicleSelected) {
 			throw new Error('PassengerNewTripScreen.confirmTrip() - "Seleccionar Vehiculo" not found');
@@ -370,7 +419,7 @@ export class PassengerNewTripScreen extends AppiumSessionBase {
 
 		await this.throwIfCreditLimitExceeded(4_000);
 
-		return this.extractTripCode();
+		return this.extractTripCode(codesBefore);
 	}
 
 	/**

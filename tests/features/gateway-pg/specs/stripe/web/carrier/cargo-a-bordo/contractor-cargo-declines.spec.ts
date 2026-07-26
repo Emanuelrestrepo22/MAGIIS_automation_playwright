@@ -29,49 +29,57 @@ const contractorScenario: CargoScenario = {
 
 const APPIUM_NOTE = 'PENDIENTE: fase Driver App — requiere Appium.';
 
-test.describe('Gateway PG · Carrier · Colaborador/Contractor — Cargo a Bordo · Declines @gateway @stripe @cargo-a-bordo @hold @decline @regression', () => {
-	test('[TS-STRIPE-TC1097] @regression @cargo-a-bordo pago rechazado genérico desde Driver App', async ({ page }) => {
-		await new CargoABordoSteps({ page }).runCargoScenario(contractorScenario, {
-			driverAppStep: {
-				title: '[DRIVER APP] Conductor cobra → tarjeta declinada genéricamente → rechazo',
-				note: 'PENDIENTE: fase Driver App — requiere Appium + DriverTripPaymentScreen.'
-			}
+test.describe(
+	'Gateway PG · Carrier · Colaborador/Contractor — Cargo a Bordo · Declines @gateway @stripe @cargo-a-bordo @hold @decline @regression',
+	{ annotation: [{ type: 'tms', description: 'MG-161' }] },
+	() => {
+		test('[TS-STRIPE-TC1097] @regression @cargo-a-bordo pago rechazado genérico desde Driver App', async ({
+			page
+		}) => {
+			await new CargoABordoSteps({ page }).runCargoScenario(contractorScenario, {
+				driverAppStep: {
+					title: '[DRIVER APP] Conductor cobra → tarjeta declinada genéricamente → rechazo',
+					note: 'PENDIENTE: fase Driver App — requiere Appium + DriverTripPaymentScreen.'
+				}
+			});
 		});
-	});
 
-	test('[TS-STRIPE-TC1098] @regression @cargo-a-bordo fondos insuficientes desde Driver App', async ({ page }) => {
-		await new CargoABordoSteps({ page }).runCargoScenario(contractorScenario, {
-			driverAppStep: {
-				title: '[DRIVER APP] Conductor cobra → fondos insuficientes → rechazo',
-				note: APPIUM_NOTE
-			}
+		test('[TS-STRIPE-TC1098] @regression @cargo-a-bordo fondos insuficientes desde Driver App', async ({
+			page
+		}) => {
+			await new CargoABordoSteps({ page }).runCargoScenario(contractorScenario, {
+				driverAppStep: {
+					title: '[DRIVER APP] Conductor cobra → fondos insuficientes → rechazo',
+					note: APPIUM_NOTE
+				}
+			});
 		});
-	});
 
-	test('[TS-STRIPE-TC1099] @regression @cargo-a-bordo tarjeta perdida desde Driver App', async ({ page }) => {
-		await new CargoABordoSteps({ page }).runCargoScenario(contractorScenario, {
-			driverAppStep: {
-				title: '[DRIVER APP] Conductor cobra → tarjeta reportada como perdida → rechazo',
-				note: APPIUM_NOTE
-			}
+		test('[TS-STRIPE-TC1099] @regression @cargo-a-bordo tarjeta perdida desde Driver App', async ({ page }) => {
+			await new CargoABordoSteps({ page }).runCargoScenario(contractorScenario, {
+				driverAppStep: {
+					title: '[DRIVER APP] Conductor cobra → tarjeta reportada como perdida → rechazo',
+					note: APPIUM_NOTE
+				}
+			});
 		});
-	});
 
-	test('[TS-STRIPE-TC1100] @regression @cargo-a-bordo CVC incorrecto desde Driver App', async ({ page }) => {
-		await new CargoABordoSteps({ page }).runCargoScenario(contractorScenario, {
-			driverAppStep: {
-				title: '[DRIVER APP] Conductor cobra → CVC incorrecto → rechazo',
-				note: APPIUM_NOTE
-			}
+		test('[TS-STRIPE-TC1100] @regression @cargo-a-bordo CVC incorrecto desde Driver App', async ({ page }) => {
+			await new CargoABordoSteps({ page }).runCargoScenario(contractorScenario, {
+				driverAppStep: {
+					title: '[DRIVER APP] Conductor cobra → CVC incorrecto → rechazo',
+					note: APPIUM_NOTE
+				}
+			});
 		});
-	});
 
-	test('[TS-STRIPE-TC1101] @regression @cargo-a-bordo tarjeta robada desde Driver App', async ({ page }) => {
-		await new CargoABordoSteps({ page }).runCargoScenario(contractorScenario, {
-			driverAppStep: {
-				title: '[DRIVER APP] Conductor cobra → tarjeta robada → rechazo',
-				note: APPIUM_NOTE
-			}
+		test('[TS-STRIPE-TC1101] @regression @cargo-a-bordo tarjeta robada desde Driver App', async ({ page }) => {
+			await new CargoABordoSteps({ page }).runCargoScenario(contractorScenario, {
+				driverAppStep: {
+					title: '[DRIVER APP] Conductor cobra → tarjeta robada → rechazo',
+					note: APPIUM_NOTE
+				}
+			});
 		});
-	});
-});
+	}
+);
