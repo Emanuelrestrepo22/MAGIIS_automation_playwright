@@ -315,8 +315,12 @@ export function defineGatewayConfigSuite(gateway: GatewayName, options: GatewayC
 						await test.step('Then: la pasarela queda vinculada (persistencia del efecto del link)', async () => {
 							// Endurecimiento de oráculo (auditoría R2): el status "de éxito" solo (500|409, quirk
 							// HANDOFF §2) NO prueba que el link surtió efecto — assert de persistencia del estado
-							// vinculado, mismo patrón que el caso linkValid.
-							expect(await appStore.readState(gateway), `${gateway} debe quedar vinculada tras el link (status OK sin efecto persistido = fallo)`).toBe('linked');
+							// vinculado. El FE tarda en reflejar el link (el POM `linkGateway` espera el link
+							// "Desvincular" visible hasta 20s antes de su readState) → readState con retry
+							// acotado, no one-shot (race-prone).
+							await expect(async () => {
+								expect(await appStore.readState(gateway), `${gateway} debe quedar vinculada tras el link (status OK sin efecto persistido = fallo)`).toBe('linked');
+							}).toPass({ timeout: 20_000 });
 						});
 						break;
 					}
