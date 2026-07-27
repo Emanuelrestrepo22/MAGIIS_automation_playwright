@@ -35,7 +35,7 @@ import { resolveCard } from '@fixtures/gateways/_shared';
 import { getGatewayPgAdapter } from '@features/gateway-pg/helpers/adapters';
 import { expectNoThreeDSModal, loginAsDispatcher } from '@features/gateway-pg/fixtures/gateway.fixtures';
 import { validateAndSelectMercadoPagoCard } from '@features/gateway-pg/helpers/mercadoPago.helpers';
-import { setHoldViaApi } from '@features/gateway-pg/helpers/parameters-api';
+import { readHoldEnabled, setHoldViaApi } from '@features/gateway-pg/helpers/parameters-api';
 import { validateCardPrecondition, type CardPreconditionResult } from '@features/gateway-pg/helpers/card-precondition';
 import {
 	captureCreatedTravelId,
@@ -138,10 +138,20 @@ export class CarrierHoldSteps extends UiBase {
 		expect(params.ccHoldCoverage).toBe(10);
 	}
 
-	/** Deshabilita el hold vía API y valida el parámetro posteado. */
+	/**
+	 * Deshabilita el hold vía API y verifica el efecto con READ-BACK real (GET posterior).
+	 *
+	 * Endurecimiento de oráculo (auditoría R2): el assert anterior sobre el payload
+	 * retornado por `setHoldViaApi` era tautológico — validaba el objeto que la propia
+	 * función acababa de mutar, no el estado persistido en el backend.
+	 *
+	 * El oráculo UI del toggle "Aplicar Pre-Autorización" es NO-automatizable: la pantalla
+	 * Configuración Parámetros está rota (BL-i18n/v1.72.8 — el toggle no habilita Guardar
+	 * ni persiste, ver header de `parameters-api.ts`) → el read-back es vía API.
+	 */
 	async disableHoldViaApi(): Promise<void> {
-		const params = await setHoldViaApi(this.page, false);
-		expect(params.enableCreditCardHold).toBe(false);
+		await setHoldViaApi(this.page, false);
+		expect(await readHoldEnabled(this.page), 'read-back API: enableCreditCardHold debe quedar false tras el POST').toBe(false);
 	}
 
 	/**
