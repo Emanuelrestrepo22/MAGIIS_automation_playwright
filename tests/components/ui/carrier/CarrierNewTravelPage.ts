@@ -20,7 +20,7 @@
  */
 
 import type { TestContextOptions } from '@TestContext';
-import type { NewTravelFormInput, ValidateCardResult } from '@pages/carrier';
+import type { NewTravelFormInput, PaymentMethod, ValidateCardResult } from '@pages/carrier';
 
 import { expect } from '@playwright/test';
 import { NewTravelPage as LegacyNewTravelPage } from '@pages/carrier';
@@ -103,9 +103,13 @@ export class CarrierNewTravelPage extends UiBase {
 	 * seleccionar método de pago. Requerido por el flujo Send Manual → Assign (ref: test-5);
 	 * seleccionar "Cargo a Bordo" oculta el botón "Send Manual". El conductor elige tarjeta
 	 * (CREDIT_CARD) recién en el Resumen de la Driver App.
+	 *
+	 * `origin` opcional (S7): el cliente individuo MP auto-asigna el origen (recording
+	 * test-14 solo cargó destino) — omitirlo salta `setOrigin`. Los consumidores existentes
+	 * (cargo-a-bordo / asignación manual) siguen pasándolo siempre.
 	 */
 	@step
-	async fillPlain(opts: CargoTravelInput): Promise<void> {
+	async fillPlain(opts: Omit<CargoTravelInput, 'origin'> & { origin?: string }): Promise<void> {
 		await this.legacy.selectClient(opts.client);
 		if (opts.passenger) {
 			const passengerField = this.page.locator('#passenger');
@@ -116,7 +120,9 @@ export class CarrierNewTravelPage extends UiBase {
 				await this.legacy.selectPassenger(opts.passenger);
 			}
 		}
-		await this.legacy.setOrigin(opts.origin);
+		if (opts.origin) {
+			await this.legacy.setOrigin(opts.origin);
+		}
 		await this.legacy.setDestination(opts.destination);
 	}
 
@@ -193,5 +199,49 @@ export class CarrierNewTravelPage extends UiBase {
 	@step
 	async selectCardByLast4(last4: string, skipValidate = false, allowDecline = false): Promise<void> {
 		await this.legacy.selectCardByLast4(last4, skipValidate, allowDecline);
+	}
+
+	// ── Soporte multi-gateway (S7) — form nativo Angular (MP / Authorize / eBiz) ─────
+
+	/** Selecciona el método de pago del alta (ej. 'Preautorizada' antes del card form). */
+	@step
+	async selectPaymentMethod(method: PaymentMethod): Promise<void> {
+		await this.legacy.selectPaymentMethod(method);
+	}
+
+	/**
+	 * Click en "Validar" del form NATIVO Angular y espera el oráculo de tarjeta válida
+	 * ("Tarjeta válida" / "Valid card") — VERIFICADO en vivo para Authorize (4111/900/10001);
+	 * eBiz comparte el form (oráculo asumido, TODO live). Para Stripe Elements usar el flujo
+	 * `fillMinimum`/`selectCardByLast4` (valida vía `clickValidateCard` del POM legacy).
+	 */
+	@step
+	async validateNativeCard(): Promise<void> {
+		await this.page.getByRole('button', { name: /^(Valid|Validar)$/i }).click();
+		await expect(this.page.getByText(/Tarjeta v[áa]lida|Valid card|Card valid/i).first()).toBeVisible({ timeout: 20_000 });
+	}
+
+	/**
+	 * Elimina la tarjeta RESALTADA del dropdown de métodos de pago (trash + confirmación
+	 * "Eliminar") y verifica que ya no quede vinculada. Extraído del recording MP wallet
+	 * (test-14/15 — FRAGILE: clases Angular dinámicas, confirmar en corrida viva).
+	 */
+	@step
+	async deleteHighlightedSavedCard(): Promise<void> {
+		const paymentMethods = this.page.locator('#add_travel_payment_methods');
+		await paymentMethods.locator('.below .single .value').first().click();
+		await paymentMethods.locator('.highlighted .deselect-payment-method .fa').first().click();
+		// Diálogo de confirmación "¿Quieres eliminar la tarjeta?".
+		await this.page.getByRole('button', { name: /^Eliminar$/i }).click();
+		// Tras eliminar, el trash de una tarjeta resaltada no debe seguir visible.
+		await expect(paymentMethods.locator('.highlighted .deselect-payment-method')).toHaveCount(0, { timeout: 10_000 });
+	}
+
+	/** Verifica que haya una tarjeta vinculada RESALTADA en el dropdown de métodos de pago. */
+	@step
+	async expectHighlightedSavedCard(): Promise<void> {
+		await expect(this.page.locator('#add_travel_payment_methods').locator('.highlighted .data-with-icon-col').first()).toBeVisible({
+			timeout: 10_000
+		});
 	}
 }

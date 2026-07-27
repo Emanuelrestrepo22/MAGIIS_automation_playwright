@@ -23,6 +23,37 @@ export function listGatewayPgAdapters(): GatewayPgAdapter[] {
 	return Object.values(gatewayAdapterMap);
 }
 
+/**
+ * Pasarelas ACTIVAS para los specs parametrizados (S7):
+ *   1. Pin explícito por env `GATEWAYS` (CSV, ej. `GATEWAYS=stripe,authorize`) — gana
+ *      siempre; un nombre inválido LANZA en tiempo de colección (error de invocación,
+ *      no un skip silencioso).
+ *   2. Default: las pasarelas cuyo adapter está configurado (`isConfigured()` — creds
+ *      presentes en env; stripe no exige creds propias → siempre activa).
+ *
+ * Se evalúa en tiempo de COLECCIÓN (module load de los specs parametrizados): el set de
+ * tests generados depende del env — pinnear `GATEWAYS` en CI para runs deterministas.
+ */
+export function resolveActiveGateways(): PaymentGateway[] {
+	const validNames = Object.keys(gatewayAdapterMap) as PaymentGateway[];
+	const pinned = (process.env.GATEWAYS ?? '')
+		.split(',')
+		.map(name => name.trim().toLowerCase())
+		.filter(Boolean);
+
+	if (pinned.length > 0) {
+		const invalid = pinned.filter(name => !validNames.includes(name as PaymentGateway));
+		if (invalid.length > 0) {
+			throw new Error(`GATEWAYS contiene pasarelas desconocidas: [${invalid.join(', ')}] — válidas: ${validNames.join(', ')}.`);
+		}
+		return pinned as PaymentGateway[];
+	}
+
+	return listGatewayPgAdapters()
+		.filter(adapter => adapter.isConfigured())
+		.map(adapter => adapter.gateway);
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 // BL-024 Fase 4 — Bridge declarativo ↔ fixtures
 // ═══════════════════════════════════════════════════════════════════════

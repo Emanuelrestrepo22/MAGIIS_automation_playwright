@@ -26,8 +26,9 @@
  */
 
 import type { TestContextOptions } from '@TestContext';
-import type { NewTravelFormInput } from '@pages/carrier';
+import type { NewTravelFormInput, PaymentMethod } from '@pages/carrier';
 
+import { expect } from '@playwright/test';
 import { ContractorNewTravelPage as LegacyContractorNewTravelPage } from '@pages/contractor';
 import { atc, step } from '@utils/decorators';
 import { UiBase } from '@ui/UiBase';
@@ -92,6 +93,34 @@ export class ContractorNewTravelPage extends UiBase {
 	@atc('MG-482', { severity: 'critical', description: 'Alta de viaje contractor: seleccionar tarjeta guardada del colaborador' })
 	async selectSavedCard(): Promise<void> {
 		await this.legacy.selectSavedCard();
+	}
+
+	/**
+	 * Journey contractor hasta el método de pago, SIN llenar la tarjeta (S7): usuario +
+	 * direcciones con los campos ESPECÍFICOS de contractor (clear-if-filled del origen
+	 * auto-cargado). Para gateways de form nativo (MP/Authorize/eBiz): el caller sigue con
+	 * `selectPaymentMethod('Preautorizada')` + la CardFormStrategy de la pasarela.
+	 */
+	@step
+	async fillJourneyUntilPayment(opts: { client: string; origin: string; destination: string }): Promise<void> {
+		await this.legacy.fillJourneyUntilPayment(opts);
+	}
+
+	/** Selecciona el método de pago del alta (ej. 'Preautorizada' antes del card form). */
+	@step
+	async selectPaymentMethod(method: PaymentMethod): Promise<void> {
+		await this.legacy.selectPaymentMethod(method);
+	}
+
+	/**
+	 * Click en "Validar" del form NATIVO Angular y espera el oráculo de tarjeta válida
+	 * ("Tarjeta válida" / "Valid card") — mismo contrato que el delegate carrier
+	 * (`CarrierNewTravelPage.validateNativeCard`; verificado live en Authorize, eBiz asumido).
+	 */
+	@step
+	async validateNativeCard(): Promise<void> {
+		await this.page.getByRole('button', { name: /^(Valid|Validar)$/i }).click();
+		await expect(this.page.getByText(/Tarjeta v[áa]lida|Valid card|Card valid/i).first()).toBeVisible({ timeout: 20_000 });
 	}
 
 	/** Espera a que el botón "Seleccionar Vehículo" esté habilitado. */

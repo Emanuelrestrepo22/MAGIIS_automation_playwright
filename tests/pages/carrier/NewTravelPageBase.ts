@@ -45,7 +45,8 @@ export type ValidateCardResult = {
 };
 
 type TariffType = 'Distancia' | 'ADisposicion';
-type PaymentMethod = 'Preautorizada' | 'CuentaCorriente' | 'Efectivo' | 'CargoABordo';
+// Exportado (S7): lo referencian los delegates KATA (`CarrierNewTravelPage.selectPaymentMethod`).
+export type PaymentMethod = 'Preautorizada' | 'CuentaCorriente' | 'Efectivo' | 'CargoABordo';
 type TipType = 'SIN_PROPINA' | 'PCT_10' | 'PCT_15' | 'PCT_20' | 'CUSTOM';
 
 // BL-024 mejora continua (2026-05-13): el mapping `last4 → cardNumber` fue

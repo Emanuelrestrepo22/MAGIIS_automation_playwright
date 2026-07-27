@@ -70,12 +70,20 @@ export type JourneyDefaults = { readonly [K in keyof typeof JOURNEY_DEFAULTS]: s
 export type GatewayJourneyDefaults = JourneyDefaults & {
 	/** Queries de búsqueda del pax (API getPassengerId) para cleanup de tarjeta — orden de intento. */
 	readonly paxSearchQueries: readonly string[];
+	/** Cliente canónico del alta de tarjeta (área WAL — factory wallet-add-card, S7). */
+	readonly walletClient: string;
+	/** Destino canónico del alta de tarjeta (área WAL). */
+	readonly walletDestination: string;
 };
 
-/** Entrada base: los defaults neutros + las queries del carrier 1521 (suite gateway US). */
+/** Entrada base: los defaults neutros + los datos WAL del carrier 1521 (suite gateway US). */
 const BASE_GATEWAY_JOURNEY_DEFAULTS: GatewayJourneyDefaults = {
 	...JOURNEY_DEFAULTS,
-	paxSearchQueries: ['smith', 'fast', 'Emanuel']
+	paxSearchQueries: ['smith', 'fast', 'Emanuel'],
+	// Datos del add-card Authorize (verificados en vivo): cliente contractor 'fast car',
+	// destino canónico del happy path.
+	walletClient: JOURNEY_DEFAULTS.contractorClient,
+	walletDestination: JOURNEY_DEFAULTS.destination
 };
 
 /**
@@ -100,7 +108,10 @@ export const JOURNEY_DEFAULTS_BY_GATEWAY: Record<'default' | GatewayName, Gatewa
 		// de gestión muestra el nombre del cliente.
 		passenger: 'Emanuel mercadopago',
 		appPaxPassenger: 'Emanuel mercadopago',
-		destination: 'Reconquista 661, Ciudad Autónoma de Buenos Aires'
+		destination: 'Reconquista 661, Ciudad Autónoma de Buenos Aires',
+		// WAL MP (recording test-14/15): mismo cliente individuo + destino Reconquista.
+		walletClient: 'Emanuel mercadopago',
+		walletDestination: 'Reconquista 661, Ciudad Autónoma de Buenos Aires'
 	}
 };
 

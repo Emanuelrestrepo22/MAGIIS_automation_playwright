@@ -18,6 +18,7 @@
  */
 
 import type { TestContextOptions } from '@TestContext';
+import type { GatewayName, GenericTestCard } from '@fixtures/gateways/_shared';
 
 import { test, expect } from '@TestFixture';
 import { UiBase } from '@ui/UiBase';
@@ -28,8 +29,12 @@ import {
 	CarrierOperationalPreferencesPage,
 	CarrierTravelManagementPage,
 } from '@ui/carrier';
+import { cardFormFor } from '@ui/carrier/card-forms';
 import { debugLog } from '@helpers/index';
-import { expectNoThreeDSModal, loginAsDispatcher, STRIPE_TEST_CARDS } from '@features/gateway-pg/fixtures/gateway.fixtures';
+import { resolveCard } from '@fixtures/gateways/_shared';
+import { getGatewayPgAdapter } from '@features/gateway-pg/helpers/adapters';
+import { expectNoThreeDSModal, loginAsDispatcher } from '@features/gateway-pg/fixtures/gateway.fixtures';
+import { validateAndSelectMercadoPagoCard } from '@features/gateway-pg/helpers/mercadoPago.helpers';
 import { setHoldViaApi } from '@features/gateway-pg/helpers/parameters-api';
 import { validateCardPrecondition, type CardPreconditionResult } from '@features/gateway-pg/helpers/card-precondition';
 import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '@features/gateway-pg/helpers/travel-cleanup';
@@ -38,11 +43,23 @@ import { waitForTravelCreation } from '@features/gateway-pg/helpers/stripe.helpe
 export type CardFlow = 'new' | 'existing';
 
 export type HoldScenario = {
+	/**
+	 * Pasarela del journey (S7). Default 'stripe' (comportamiento histórico intacto).
+	 * No-stripe: login con creds por pasarela, tarjeta vía `resolveCard({gateway,intent})`
+	 * + `cardFormFor(gateway)` (form nativo Angular), y branch 3DS solo si
+	 * `adapter.requires3ds` (3DS es EXCLUSIVO Stripe).
+	 */
+	gateway?: GatewayName;
 	client: string;
 	passenger: string;
-	origin: string;
+	/**
+	 * Origen del viaje. Opcional (S7) SOLO para journeys no-stripe donde el cliente
+	 * auto-asigna el origen (ej. cliente individuo MP); el flujo stripe (`fillMinimum`)
+	 * lo sigue exigiendo.
+	 */
+	origin?: string;
 	destination: string;
-	/** Override del last4 de la tarjeta; si se omite se deriva de `options.threeDs`. */
+	/** Override del last4 de la tarjeta (SOLO stripe); si se omite se deriva del intent. */
 	cardLast4?: string;
 	/** Query API para resolver la precondición de tarjeta del pasajero. */
 	apiSearchQuery?: string;
@@ -53,7 +70,11 @@ export type HoldScenario = {
 export type HoldRunOptions = {
 	/** 'on' = hold habilitado; 'off' = hold deshabilitado y restaurado al final. */
 	hold: 'on' | 'off';
-	/** true = aprueba el modal 3DS; false = verifica que NO aparezca. */
+	/**
+	 * true = aprueba el modal 3DS; false = verifica que NO aparezca.
+	 * S7: el branch 3DS solo aplica si además `adapter.requires3ds` (solo Stripe) —
+	 * para las demás pasarelas el flujo asevera la AUSENCIA del modal.
+	 */
 	threeDs: boolean;
 	/** Resolver `cardFlow` vía API (default true). false = preferSavedCard=false directo. */
 	useCardFlow?: boolean;
@@ -67,6 +88,12 @@ export type HoldRunOptions = {
 	matchDestination?: boolean;
 	/** Estado esperado en la fila de gestión (ej. 'Buscando chofer'). Opcional. */
 	expectStatus?: string;
+	/**
+	 * Con hold 'off': restaurar hold=ON al final (default true — comportamiento histórico
+	 * de la suite Stripe). false = dejar el hold OFF (specs MP no-hold, que nunca lo
+	 * restauraban — el estado del carrier ARG queda como el spec original lo dejaba).
+	 */
+	restoreHold?: boolean;
 };
 
 function shortDestination(destination: string): string {
@@ -90,9 +117,12 @@ export class CarrierHoldSteps extends UiBase {
 		this.threeDs = new ThreeDsChallengePage(opts);
 	}
 
-	/** Login como dispatcher carrier. */
-	async login(): Promise<void> {
-		await loginAsDispatcher(this.page);
+	/**
+	 * Login como dispatcher carrier. `gateway` selecciona la cadena de credenciales por
+	 * pasarela (`USER_CARRIER_<GW>_<ENV> → … → USER_CARRIER`); omitido = default histórico.
+	 */
+	async login(gateway?: GatewayName): Promise<void> {
+		await loginAsDispatcher(this.page, gateway ? { gateway } : undefined);
 	}
 
 	/** Habilita el hold vía API (BL-i18n/v1.72.8) y valida los parámetros posteados. */
@@ -151,20 +181,48 @@ export class CarrierHoldSteps extends UiBase {
 	}
 
 	/**
-	 * Orquestador reusable de alta de viaje con hold. Cubre hold ON/OFF × 3DS/no-3DS y
-	 * ambos card-flows. Los pasos concretos se decoran vía las Page components (@atc/@step).
+	 * Valida la tarjeta del form NATIVO según la pasarela (S7, privado — no es ATC):
+	 *   - mercado-pago: `validateAndSelectMercadoPagoCard` (oráculo tarjeta resaltada) +
+	 *     test.skip si la validación no completa en TEST (limitación sandbox MP — UAT-only).
+	 *   - authorize/ebizcharge: "Validar" + oráculo "Tarjeta válida" (verificado live Authorize).
+	 */
+	private async validateNativeGatewayCard(gateway: GatewayName): Promise<void> {
+		if (gateway === 'mercado-pago') {
+			const mpLink = await validateAndSelectMercadoPagoCard(this.page);
+			test.skip(
+				mpLink !== 'linked',
+				'MP: validación de tarjeta no completa en TEST (sandbox MP no transacciona) — UAT-only. Form-fill + habilitación de "Validar" verificados.',
+			);
+			return;
+		}
+		await this.travel.validateNativeCard();
+	}
+
+	/**
+	 * Orquestador reusable de alta de viaje con hold. Cubre hold ON/OFF × 3DS/no-3DS,
+	 * ambos card-flows y (S7) las 4 pasarelas: la tarjeta se resuelve cross-gateway
+	 * (`resolveCard`) y se llena con la estrategia del adapter (`cardFormFor`); el branch
+	 * 3DS solo corre si `adapter.requires3ds && options.threeDs` (3DS EXCLUSIVO Stripe).
+	 * Los pasos concretos se decoran vía las Page components (@atc/@step).
 	 */
 	async runHoldScenario(scenario: HoldScenario, options: HoldRunOptions): Promise<void> {
+		const gateway: GatewayName = scenario.gateway ?? 'stripe';
+		const adapter = getGatewayPgAdapter(gateway);
+		// 3DS: exclusivo de las pasarelas que lo soportan (hoy solo Stripe).
+		const wants3ds = options.threeDs && adapter.requires3ds;
 		const useCardFlow = options.useCardFlow ?? true;
 		const trackTravelId = options.trackTravelId ?? true;
 		const waitForCreation = options.waitForCreation ?? true;
 		const matchDestination = options.matchDestination ?? true;
-		const cardLast4 = scenario.cardLast4
-			?? (options.threeDs ? STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4) : STRIPE_TEST_CARDS.successDirect.slice(-4));
+		const restoreHold = options.restoreHold ?? true;
+		// Tarjeta cross-gateway por intent (reemplaza el fallback STRIPE_TEST_CARDS):
+		// HAPPY_AUTH (3DS, solo Stripe) o HAPPY_NO_AUTH — mismos datos que el fallback histórico.
+		const card: GenericTestCard = resolveCard({ gateway, intent: wants3ds ? 'HAPPY_AUTH' : 'HAPPY_NO_AUTH' });
+		const cardLast4 = scenario.cardLast4 ?? card.last4;
 		let travelIdRef: TravelIdRef | null = null;
 
 		await test.step('Login carrier', async () => {
-			await this.login();
+			await this.login(scenario.gateway);
 		});
 
 		let preferSavedCard = false;
@@ -197,18 +255,35 @@ export class CarrierHoldSteps extends UiBase {
 				await this.travel.ensureLoaded();
 			});
 
-			await test.step(`Completar formulario con tarjeta ${options.threeDs ? '3DS' : 'sin 3DS'}`, async () => {
-				await this.travel.fillMinimum({
-					client: scenario.client,
-					passenger: scenario.passenger,
-					origin: scenario.origin,
-					destination: scenario.destination,
-					cardLast4,
-					preferSavedCard,
-				});
+			await test.step(`Completar formulario con tarjeta ${gateway} ${wants3ds ? '3DS' : 'sin 3DS'}`, async () => {
+				if (gateway === 'stripe') {
+					if (!scenario.origin) {
+						throw new Error('runHoldScenario: `origin` es requerido en el flujo stripe (fillMinimum).');
+					}
+					await this.travel.fillMinimum({
+						client: scenario.client,
+						passenger: scenario.passenger,
+						origin: scenario.origin,
+						destination: scenario.destination,
+						cardLast4,
+						preferSavedCard,
+					});
+				} else {
+					// No-stripe (S7): formulario plano + método Preautorizada + estrategia de
+					// card form del adapter (form nativo Angular) + validación por pasarela.
+					await this.travel.fillPlain({
+						client: scenario.client,
+						passenger: scenario.passenger,
+						origin: scenario.origin,
+						destination: scenario.destination,
+					});
+					await this.travel.selectPaymentMethod('Preautorizada');
+					await cardFormFor(gateway).fill(this.page, card);
+					await this.validateNativeGatewayCard(gateway);
+				}
 			});
 
-			if (options.threeDs) {
+			if (wants3ds) {
 				await test.step('Aprobar modal 3DS de Stripe (validación inicial)', async () => {
 					await this.approve3dsIfPresent();
 				});
@@ -222,7 +297,7 @@ export class CarrierHoldSteps extends UiBase {
 				await this.travel.clickSendService();
 			});
 
-			if (options.threeDs) {
+			if (wants3ds) {
 				await test.step('Aprobar 3DS adicional si aparece post-envío', async () => {
 					await this.approve3dsIfPresent();
 				});
@@ -256,7 +331,7 @@ export class CarrierHoldSteps extends UiBase {
 					await cancelTravelIfCreated(this.page, travelIdRef!);
 				});
 			}
-			if (options.hold === 'off') {
+			if (options.hold === 'off' && restoreHold) {
 				await test.step('Restaurar hold al final del test', async () => {
 					await this.enableHoldViaApi();
 				});

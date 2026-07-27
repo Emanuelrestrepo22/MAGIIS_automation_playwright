@@ -9,16 +9,19 @@
  * grilla "Por asignar") es agnóstico del gateway porque se delega al Step
  * KATA `CarrierHoldSteps.runHoldScenario` (dominio MAGIIS, no del SDK de pago).
  *
- * `ACTIVE_GATEWAYS` queda preparado para sumar `'authorize'` cuando BL-025
- * implemente el runtime (POMs y login del portal Authorize). Hoy sólo
- * compila/ejecuta `'stripe'` porque es el único gateway con runtime web
- * disponible.
+ * S7 (carrier/gateway-standardization) — `ACTIVE_GATEWAYS` ya NO está hardcodeado:
+ * `resolveActiveGateways()` (helpers/adapters) resuelve el set en tiempo de colección:
+ *   1. Pin explícito por env `GATEWAYS` (CSV, ej. `GATEWAYS=stripe,mercado-pago`) — gana.
+ *   2. Default: adapters con `isConfigured()` true (stripe sin creds propias = siempre).
+ * El Step resuelve la tarjeta y el card form POR PASARELA (`gateway` en el scenario);
+ * los datos de journey salen de `journeyDefaultsFor(gateway)` (S8).
  *
  * KATA conformance (feature/kata-conformance): amoldado al patrón cross-gateway
  * sobre el Step KATA.
  *   - test/expect vienen del fixture unificado KATA (@TestFixture) en vez de TestBase.
- *   - El journey se delega a `CarrierHoldSteps.runHoldScenario` (@steps); sólo el dato
- *     de tarjeta lo aporta `resolveCard`, preservando la naturaleza cross-gateway del piloto.
+ *   - El journey se delega a `CarrierHoldSteps.runHoldScenario` (@steps); el dato de
+ *     tarjeta lo resuelve el Step vía `resolveCard`, preservando la naturaleza
+ *     cross-gateway del piloto (el `resolveCard` local es sanity del contrato).
  *   - Los ATC viven en las Page components que orquesta el Step (fillMinimum → MG-148,
  *     expectPassengerInPorAsignar → MG-158). mapeo por área aceptado (idmap API-level, sin 1:1
  *     con TS-STRIPE-TC10xx).
@@ -26,27 +29,27 @@
  * Trazabilidad:
  *   - Mismo dato lógico que TS-STRIPE-TC1049 (hold ON + tarjeta 4242, sin 3DS),
  *     pero estructurado para demostrar el patrón cross-gateway.
- *   - Cuando se extienda a `'authorize'`, este spec ejercitará la card
- *     `4111 1111 1111 1111` con CVV `900` (SUCCESS sandbox).
+ *   - authorize ejercita la card `4111 1111 1111 1111` con CVV `900` (SUCCESS sandbox);
+ *     mercado-pago la Visa 3704 con holder APRO (trigger del outcome).
  *
  * Cómo extender:
- *   1. Agregar el gateway a `ACTIVE_GATEWAYS` cuando su runtime esté listo.
- *   2. Si el flujo de UI difiere (ej. Authorize sin Elements iframe),
- *      condicionar los `test.step` con `if (gateway === 'authorize')` o
- *      delegar a un adapter en `helpers/adapters/`.
- *   3. Crear nuevos specs piloto en este directorio para otros intents
- *      (`HAPPY_AUTH`, `FAIL_AUTH`, `DECLINE_AUTHORIZE`, etc.) siguiendo el
- *      mismo esqueleto.
+ *   1. Configurar las creds del adapter en .env.test (o pinnear `GATEWAYS`) — el gateway
+ *      entra solo al set activo.
+ *   2. Crear nuevos specs piloto en este directorio para otros intents
+ *      (`DECLINE_AUTHORIZE`, `DECLINE_INVALID_CVC`, etc.) siguiendo el mismo esqueleto
+ *      (3DS es EXCLUSIVO Stripe — no generar casos 3DS para las demás pasarelas).
  */
 import { test, expect } from '@TestFixture';
 import { resolveCard, type GatewayName } from '@fixtures/gateways/_shared';
-import { JOURNEY_DEFAULTS } from '@features/gateway-pg/data/journey-defaults';
+import { journeyDefaultsFor } from '@features/gateway-pg/data/journey-defaults';
+import { resolveActiveGateways } from '@features/gateway-pg/helpers/adapters';
 import { CarrierHoldSteps, type HoldScenario, type HoldRunOptions } from '@steps/index';
 
 /**
- * Gateways activos en el piloto. Sumar 'authorize' cuando BL-025 termine.
+ * Gateways activos del piloto (S7): pin `GATEWAYS` (CSV) > adapters configurados.
+ * Resuelto en tiempo de colección — pinnear en CI para runs deterministas.
  */
-const ACTIVE_GATEWAYS: GatewayName[] = ['stripe'];
+const ACTIVE_GATEWAYS: GatewayName[] = resolveActiveGateways();
 
 // App pax sin 3DS: sin cardFlow ni cleanup de travelId; valida por estado 'Buscando chofer'
 // (sin filtrar por destino) y espera la habilitación del botón de vehículo. Mismo perfil que
@@ -71,17 +74,19 @@ test.describe('[BL-028][parametrized] Hold happy path sin 3DS @gateway @hold @re
 			test('crea viaje con HAPPY_NO_AUTH y queda visible en grilla "Por asignar"', async ({ page }) => {
 				const card = resolveCard({ gateway, intent: 'HAPPY_NO_AUTH' });
 
-				// Sanity: el resolver devolvió una tarjeta del gateway esperado y sin 3DS.
+				// Sanity: el resolver devolvió una tarjeta del gateway esperado y sin 3DS
+				// (el Step resuelve la MISMA tarjeta internamente — intent HAPPY_NO_AUTH).
 				expect(card.gateway).toBe(gateway);
 				expect(card.requires3ds).toBe(false);
 				expect(card.last4).toHaveLength(4);
 
+				const defaults = journeyDefaultsFor(gateway);
 				const scenario: HoldScenario = {
-					client: JOURNEY_DEFAULTS.appPaxPassenger,
-					passenger: JOURNEY_DEFAULTS.appPaxPassenger,
-					origin: JOURNEY_DEFAULTS.origin,
-					destination: JOURNEY_DEFAULTS.destination,
-					cardLast4: card.last4,
+					gateway,
+					client: defaults.appPaxPassenger,
+					passenger: defaults.appPaxPassenger,
+					origin: defaults.origin,
+					destination: defaults.destination,
 				};
 
 				await new CarrierHoldSteps({ page }).runHoldScenario(scenario, { hold: 'on', ...HAPPY_NO_AUTH_OPTIONS });
