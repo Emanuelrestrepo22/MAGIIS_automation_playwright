@@ -14,9 +14,9 @@ import { loginAsDispatcher } from '@features/auth/helpers/login.helpers';
 // El fixture KATA no define la opción `role` (login explícito vía loginAsDispatcher).
 test.use({ storageState: undefined });
 
+// SIN key Xray (unmapped visible, post-review F4): el smoke solo verifica el estado YA-vinculado — acreditar MG-220 (link con creds válidas) sin ejecutar el flujo de link inflaría evidencia.
 test.describe(
 	'Gateway PG · Carrier · Smoke Authorize vinculada @gateway @authorize @smoke @regression',
-	{ annotation: [{ type: 'tms', description: 'MG-220' }] },
 	() => {
 		test.describe.configure({ timeout: 120_000 });
 

@@ -73,6 +73,9 @@ export class GatewaySwitchSteps extends UiBase {
 	async currentActiveGateway(): Promise<SwitchableGateway | null> {
 		await this.appStore.goto();
 		for (const gateway of ALL_GATEWAYS) {
+			// Card ausente en el carrier → saltar (mismo patrón que expectExclusivity):
+			// readState espera la card visible 20s y reventaría por una pasarela no ofrecida.
+			if ((await this.appStore.cardFor(gateway).count()) === 0) continue;
 			if ((await this.appStore.readState(gateway)) === 'linked') return gateway;
 		}
 		return null;

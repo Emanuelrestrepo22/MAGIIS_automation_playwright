@@ -7,6 +7,7 @@ import { ebizchargeGatewayAdapter } from './ebizchargeGatewayAdapter';
 import { mercadoPagoGatewayAdapter } from './mercadoPagoGatewayAdapter';
 import { stripeGatewayAdapter } from './stripeGatewayAdapter';
 import type { GatewayPgAdapter } from './types';
+import { missingEnvKeys } from './types';
 
 const gatewayAdapterMap: Record<PaymentGateway, GatewayPgAdapter> = {
 	'mercado-pago': mercadoPagoGatewayAdapter,
@@ -47,6 +48,21 @@ export function resolveActiveGateways(): PaymentGateway[] {
 			throw new Error(
 				`GATEWAYS contiene pasarelas desconocidas: [${invalid.join(', ')}] — válidas: ${validNames.join(', ')}.`
 			);
+		}
+		// Post-review A4: pin explícito de una pasarela con creds propias NO configuradas →
+		// aviso accionable (el pin manda, NO throw). Riesgo cross-tenant: sin sus creds la
+		// cadena de login (USER_CARRIER_<GW>_<ENV> → … → USER_CARRIER) cae al carrier
+		// DEFAULT equivocado y el run "de esa pasarela" opera sobre otro tenant.
+		for (const name of pinned as PaymentGateway[]) {
+			const adapter = gatewayAdapterMap[name];
+			if (adapter.credsEnvKeys.length > 0 && !adapter.isConfigured()) {
+				const missing = missingEnvKeys(adapter.credsEnvKeys);
+				console.warn(
+					`⚠️  GATEWAYS pinnea '${name}' pero faltan sus creds propias: [${missing.join(', ')}] ` +
+						`(o su variante _<ENV>). Riesgo: el login caerá al carrier DEFAULT equivocado ` +
+						`(cross-tenant). Configurarlas en el .env del ambiente activo antes de correr.`
+				);
+			}
 		}
 		return pinned as PaymentGateway[];
 	}

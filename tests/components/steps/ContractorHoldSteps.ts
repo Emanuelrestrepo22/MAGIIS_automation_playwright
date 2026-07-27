@@ -27,6 +27,7 @@ import { cardFormFor } from '@ui/carrier/card-forms';
 import { ContractorNewTravelPage } from '@ui/contractor';
 import { resolveCard } from '@fixtures/gateways/_shared';
 import { expectNoThreeDSModal, loginAsContractor } from '@features/gateway-pg/fixtures/gateway.fixtures';
+import { getGatewayPgAdapter } from '@features/gateway-pg/helpers/adapters';
 import { validateAndSelectMercadoPagoCard } from '@features/gateway-pg/helpers/mercadoPago.helpers';
 import {
 	captureCreatedTravelId,
@@ -106,6 +107,15 @@ export class ContractorHoldSteps extends UiBase {
 	 */
 	async runColaboradorScenario(scenario: ContractorHoldScenario): Promise<void> {
 		const gateway: GatewayName = scenario.gateway ?? 'stripe';
+		// Fail-fast doctrina 3DS (post-review A5): 3DS es EXCLUSIVO de Stripe. Un
+		// threeDs-mode con un adapter sin 3DS colgaba el flujo esperando un modal que
+		// nunca aparece (waitForVisible) — error de invocación, lanzar claro y temprano.
+		if (scenario.threeDs !== 'none' && !getGatewayPgAdapter(gateway).requires3ds) {
+			throw new Error(
+				`runColaboradorScenario: threeDs='${scenario.threeDs}' con gateway '${gateway}' (requires3ds=false) — ` +
+					`3DS es EXCLUSIVO de Stripe; usar threeDs: 'none' para ${gateway} (doctrina: caso excluido, no convertido).`
+			);
+		}
 		let travelIdRef: TravelIdRef | null = null;
 
 		await test.step('Login contractor', async () => {

@@ -76,8 +76,9 @@ export type HoldRunOptions = {
 	hold: 'on' | 'off';
 	/**
 	 * true = aprueba el modal 3DS; false = verifica que NO aparezca.
-	 * S7: el branch 3DS solo aplica si además `adapter.requires3ds` (solo Stripe) —
-	 * para las demás pasarelas el flujo asevera la AUSENCIA del modal.
+	 * S7 + post-review A5: 3DS es EXCLUSIVO de Stripe — `threeDs: true` con un adapter
+	 * sin 3DS LANZA (fail-fast; el caso está excluido de la matriz de esa pasarela,
+	 * no se degrada silenciosamente a no-3DS).
 	 */
 	threeDs: boolean;
 	/** Resolver `cardFlow` vía API (default true). false = preferSavedCard=false directo. */
@@ -218,6 +219,15 @@ export class CarrierHoldSteps extends UiBase {
 	async runHoldScenario(scenario: HoldScenario, options: HoldRunOptions): Promise<void> {
 		const gateway: GatewayName = scenario.gateway ?? 'stripe';
 		const adapter = getGatewayPgAdapter(gateway);
+		// Fail-fast doctrina 3DS (post-review A5): 3DS es EXCLUSIVO de Stripe. Pedir
+		// threeDs=true para un adapter sin 3DS es un error de invocación — el caso está
+		// EXCLUIDO de la matriz de la pasarela, no se convierte silenciosamente en no-3DS.
+		if (options.threeDs && !adapter.requires3ds) {
+			throw new Error(
+				`runHoldScenario: threeDs=true con gateway '${gateway}' (requires3ds=false) — 3DS es EXCLUSIVO de Stripe; ` +
+					`no parametrizar threeDs para ${gateway} (doctrina: caso excluido, no convertido).`
+			);
+		}
 		// 3DS: exclusivo de las pasarelas que lo soportan (hoy solo Stripe).
 		const wants3ds = options.threeDs && adapter.requires3ds;
 		const useCardFlow = options.useCardFlow ?? true;

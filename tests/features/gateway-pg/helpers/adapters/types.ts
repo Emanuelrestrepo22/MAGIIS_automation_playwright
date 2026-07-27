@@ -1,6 +1,7 @@
 import type { JourneyPortal, PaymentGateway, PaymentValidationSource } from '../../contracts/gateway-pg.types';
 import type { GatewayJourneyDefaults } from '../../data/journey-defaults';
 import type { GatewayXrayRegistry } from '../../data/xray-keys';
+import { getCurrentUserEnvironment } from '@fixtures/users';
 
 /**
  * Tipo de formulario de tarjeta que renderiza el portal para la pasarela.
@@ -79,9 +80,21 @@ export type GatewayPgAdapter = {
 };
 
 /**
+ * Keys de `keys` que NO están presentes en el env — considera presente tanto la key
+ * directa `K` como su variante por ambiente `K_<ENV>` (post-review A4: mismo sufijo
+ * TEST/UAT/PROD que la cadena de login `USER_CARRIER_<GW>_<ENV> → …`, resuelto con
+ * `getCurrentUserEnvironment()` de `@fixtures/users`).
+ */
+export function missingEnvKeys(keys: readonly string[]): string[] {
+	const envSuffix = getCurrentUserEnvironment().toUpperCase();
+	return keys.filter(key => !process.env[key]?.trim() && !process.env[`${key}_${envSuffix}`]?.trim());
+}
+
+/**
  * Helper compartido de `isConfigured()`: toda key listada debe existir y no estar
- * vacía en `process.env`. Lista vacía = configurado (usa creds default del carrier).
+ * vacía en `process.env` — como `K` directa o como variante `K_<ENV>` (ver
+ * `missingEnvKeys`). Lista vacía = configurado (usa creds default del carrier).
  */
 export function areEnvKeysConfigured(keys: readonly string[]): boolean {
-	return keys.every(key => Boolean(process.env[key]?.trim()));
+	return missingEnvKeys(keys).length === 0;
 }
