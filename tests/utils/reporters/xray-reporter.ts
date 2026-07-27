@@ -27,6 +27,8 @@
  *   XRAY_TEST_PLAN_KEY  → info.testPlanKey (crea/asocia la ejecución al ATP)
  *   XRAY_SUMMARY        → info.summary (si se crea una ejecución nueva)
  *   XRAY_VERSION        → info.version = fixVersion (si se crea una ejecución nueva)
+ *   XRAY_OUTPUT_FILE    → override del path de salida (gana sobre el outputFile de la
+ *                         config — habilita un JSON por pasarela: xray-results.<gw>.json)
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
@@ -116,7 +118,11 @@ class XrayReporter implements Reporter {
 	private unmapped = 0;
 
 	constructor(options: ReporterOptions = {}) {
-		this.outputFile = options.outputFile
+		// XRAY_OUTPUT_FILE gana sobre el outputFile fijado en playwright.config.ts:
+		// los scripts :xray por pasarela lo usan para emitir un JSON aislado por run
+		// (evidence/test/xray-results.<gw>.json) sin pisar el output default del env.
+		this.outputFile = process.env.XRAY_OUTPUT_FILE
+			?? options.outputFile
 			?? process.env.XRAY_RESULTS_FILE
 			?? 'evidence/xray-results.json';
 	}
