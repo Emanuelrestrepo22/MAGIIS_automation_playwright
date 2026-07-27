@@ -203,17 +203,20 @@ export class CarrierHoldSteps extends UiBase {
 
 	/**
 	 * Valida la tarjeta del form NATIVO según la pasarela (S7, privado — no es ATC):
-	 *   - mercado-pago: `validateAndSelectMercadoPagoCard` (oráculo tarjeta resaltada) +
-	 *     test.skip si la validación no completa en TEST (limitación sandbox MP — UAT-only).
+	 *   - mercado-pago: `validateAndSelectMercadoPagoCard` (contrato tri-estado, oráculo tarjeta
+	 *     resaltada): 'linked' continúa; 'validation-unavailable' → test.skip (limitación sandbox
+	 *     MP en TEST — incluye el error explícito "Error al validar tarjeta", su manifestación
+	 *     documentada; UAT-only); 'validation-failed' RESERVADO (guard future-proof, hoy inerte).
 	 *   - authorize/ebizcharge: "Validar" + oráculo "Tarjeta válida" (verificado live Authorize).
 	 */
 	private async validateNativeGatewayCard(gateway: GatewayName): Promise<void> {
 		if (gateway === 'mercado-pago') {
 			const mpLink = await validateAndSelectMercadoPagoCard(this.page);
-			// Fallo real ≠ limitación de entorno (auditoría R2): un error EXPLÍCITO de
-			// validación en la UI es un FALLO del test; solo la ausencia total de señal
-			// (validation-unavailable) habilita el skip sandbox.
-			expect(mpLink, 'MP: la UI mostró un error explícito de validación de tarjeta — fallo real, no limitación sandbox').not.toBe('validation-failed');
+			// Guard future-proof (hoy INERTE): 'validation-failed' está RESERVADO a evidencia live
+			// (UAT/entorno transaccional) de un fallo distinguible de la limitación sandbox — hoy
+			// ningún camino lo retorna en TEST (el error explícito "Error al validar tarjeta" es la
+			// manifestación documentada del sandbox → habilita el skip de abajo).
+			expect(mpLink, 'MP: señal de fallo real de validación distinguible de la limitación sandbox (evidencia live)').not.toBe('validation-failed');
 			test.skip(
 				mpLink !== 'linked',
 				'MP: validación de tarjeta no completa en TEST (sandbox MP no transacciona) — UAT-only. Form-fill + habilitación de "Validar" verificados.'

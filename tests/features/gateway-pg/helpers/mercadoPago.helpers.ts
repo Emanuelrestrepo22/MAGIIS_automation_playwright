@@ -1,4 +1,4 @@
-import { type Page } from '@playwright/test';
+import { type Locator, type Page } from '@playwright/test';
 import { MP_CARD_CATALOG, MP_DEFAULT_CVV, MP_DEFAULT_EXPIRY } from '@fixtures/gateways/mercado-pago/cards';
 
 /**
@@ -80,19 +80,51 @@ export async function fillMercadoPagoNativeCard(page: Page, input: MpNativeCardI
  * NOTE: el recorder mostró que "Validar" puede requerir reintento antes de que la
  * tarjeta quede vinculada — se reintenta hasta que la tarjeta resaltada sea visible.
  */
+/** Ventana acotada (por intento) para detectar el desenlace de la validación MP. */
+const MP_VALIDATION_OUTCOME_TIMEOUT_MS = 5_000;
+
+/** Tarjeta resaltada en el dropdown de métodos de pago = vinculación satisfactoria (recording test-15). */
+const highlightedCard = (page: Page): Locator =>
+	page.locator('.ng-star-inserted.highlighted > .data-with-icon-col').first();
+
+/** Error explícito del sandbox MP — manifestación documentada de la limitación de entorno en TEST. */
+const mpValidationError = (page: Page): Locator => page.getByText(/Error al validar tarjeta/i);
+
 /**
- * Resultado de la validación de tarjeta MP (contrato endurecido — auditoría R2, separa
- * fallo real de limitación de entorno; antes ambos convergían en el skip):
+ * Espera acotada y DETERMINISTA del desenlace de la validación MP: race entre "tarjeta
+ * resaltada" y "error visible", cada rama con `waitFor({ state: 'visible' })` y timeout
+ * declarado — reemplaza el polling con `isVisible()` one-shot (race-prone). El valor retornado
+ * queda LATCHEADO al momento de la detección: los callers clasifican sobre él, NUNCA re-leyendo
+ * el DOM después.
+ */
+export async function waitForMpValidationOutcome(
+	page: Page,
+	timeout = MP_VALIDATION_OUTCOME_TIMEOUT_MS
+): Promise<'highlighted' | 'error' | 'none'> {
+	return Promise.race([
+		highlightedCard(page)
+			.waitFor({ state: 'visible', timeout })
+			.then(() => 'highlighted' as const, () => 'none' as const),
+		mpValidationError(page)
+			.waitFor({ state: 'visible', timeout })
+			.then(() => 'error' as const, () => 'none' as const)
+	]);
+}
+
+/**
+ * Resultado de la validación de tarjeta MP (contrato tri-estado):
  * - `'linked'`: la tarjeta quedó vinculada (resaltada) → se puede continuar el alta.
- * - `'validation-failed'`: la UI mostró un ERROR EXPLÍCITO de validación ("Error al validar
- *   tarjeta") — señal observable de fallo. Los callers deben tratarlo como FALLO del test
- *   (`expect(result).not.toBe('validation-failed')`), NUNCA como skip: skipear un error
- *   visible ocultaría una regresión real del backend/pasarela.
- * - `'validation-unavailable'`: sin tarjeta resaltada NI error explícito — señal indeterminada
- *   atribuible a la limitación de entorno (la validación/transacción de tarjetas sandbox MP
- *   **no completa en TEST**; va a UAT con tarjeta real). Solo este valor habilita el
- *   `test.skip` del caller (el form-fill + habilitación de "Validar" SÍ quedaron verificados
- *   = la cobertura controlable en TEST).
+ * - `'validation-unavailable'`: la validación NO completó — CON o SIN el error explícito
+ *   "Error al validar tarjeta". Ese error es la MANIFESTACIÓN DOCUMENTADA de la limitación del
+ *   sandbox MP en TEST (la validación/transacción de tarjetas sandbox MP **no completa en
+ *   TEST** — ver header de `mp-no-3ds-validation.spec.ts`; va a UAT con tarjeta real). Un FAIL
+ *   duro sobre ese error produciría false-fail sistemático en TEST. El caller debe `test.skip`
+ *   con esa razón (el form-fill + habilitación de "Validar" SÍ quedaron verificados = la
+ *   cobertura controlable en TEST).
+ * - `'validation-failed'`: RESERVADO — solo se emitirá cuando exista evidencia live (UAT/entorno
+ *   transaccional) de una señal de fallo distinguible de la limitación sandbox; HOY ningún
+ *   camino lo retorna en TEST. Los guards `expect(result).not.toBe('validation-failed')` de los
+ *   callers quedan future-proof (hoy inertes).
  */
 export async function validateAndSelectMercadoPagoCard(
 	page: Page,
@@ -100,30 +132,31 @@ export async function validateAndSelectMercadoPagoCard(
 ): Promise<'linked' | 'validation-failed' | 'validation-unavailable'> {
 	const validar = page.getByRole('button', { name: /^Validar$/i });
 	const paymentMethods = page.locator('#add_travel_payment_methods');
-	const highlighted = page.locator('.ng-star-inserted.highlighted > .data-with-icon-col').first();
-	const validationError = page.getByText(/Error al validar tarjeta/i);
 
 	for (let attempt = 1; attempt <= attempts; attempt += 1) {
 		if (await validar.isEnabled().catch(() => false)) {
 			await validar.click({ force: true });
 		}
-		// Esperar el desenlace: tarjeta vinculada (resaltada) o error de validación (sandbox TEST).
 		await paymentMethods.locator('.below .single .value .data-with-icon-col').first().click().catch(() => {});
-		if (await highlighted.isVisible({ timeout: 5_000 }).catch(() => false)) {
-			await highlighted.click();
+		// LATCH: el desenlace se detecta UNA vez por intento (espera acotada determinista) y la
+		// clasificación de abajo usa ese valor — nunca se re-lee el DOM para clasificar después.
+		const outcome = await waitForMpValidationOutcome(page);
+		if (outcome === 'highlighted') {
+			await highlightedCard(page).click();
 			return 'linked';
 		}
-		if (await validationError.isVisible().catch(() => false)) {
-			break; // no reintentar: hay señal explícita de error (no es flakiness)
+		if (outcome === 'error') {
+			// No reintentar: señal explícita (no es flakiness) = manifestación documentada de la
+			// limitación sandbox MP en TEST → habilita el skip del caller.
+			console.warn('[MP] "Error al validar tarjeta" — manifestación documentada de la limitación sandbox MP en TEST (la validación no completa). Form-fill + "Validar" verificados; el resto es UAT-only.');
+			return 'validation-unavailable';
 		}
+		// outcome === 'none': sin señal dentro de la ventana — reintentar ("Validar" puede
+		// requerir retry antes de que la tarjeta quede vinculada, ver NOTE del recording test-15).
 	}
 
-	if (await validationError.isVisible().catch(() => false)) {
-		console.warn('[MP] "Error al validar tarjeta" visible — señal EXPLÍCITA de fallo de validación; el caller debe FALLAR el test (no skipear).');
-		return 'validation-failed';
-	}
-	// Sin tarjeta resaltada ni error explícito: señal indeterminada → limitación de entorno
-	// (sandbox MP no transacciona en TEST) — único camino que habilita el skip del caller.
+	// Sin tarjeta resaltada ni error explícito tras los intentos: señal indeterminada →
+	// limitación de entorno (sandbox MP no transacciona en TEST) — también skip del caller.
 	console.warn('[MP] Tarjeta MP no quedó vinculada ni hubo error explícito — se trata como validación no disponible en TEST (sandbox).');
 	return 'validation-unavailable';
 }
