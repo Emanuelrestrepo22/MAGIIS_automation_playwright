@@ -85,8 +85,10 @@ const INTEGRATIONS_PATH = '/#/home/carrier/integrations/list';
  * Guard de operaciones DESTRUCTIVAS de pasarela (S5): renombrado cross-gateway a
  * `GATEWAY_ALLOW_DESTRUCTIVE_SWITCH` (el switch ya no es Authorize-only). El nombre viejo
  * `AUTHORIZE_ALLOW_DESTRUCTIVE_SWITCH` se mantiene como ALIAS retrocompatible.
+ * Exportado (S6) para que la factory CFG (`gateway-config.factory.ts`) skipee limpio
+ * la suite destructiva en vez de reventar dentro de `unlinkGateway()`.
  */
-function isDestructiveSwitchAllowed(): boolean {
+export function isGatewayDestructiveSwitchAllowed(): boolean {
 	return process.env.GATEWAY_ALLOW_DESTRUCTIVE_SWITCH === 'true' || process.env.AUTHORIZE_ALLOW_DESTRUCTIVE_SWITCH === 'true';
 }
 
@@ -327,6 +329,21 @@ export class AppStoreGatewaysPage extends UiBase {
 	}
 
 	/**
+	 * Recarga el App Store y espera la MISMA estabilización que `goto()` (cards visibles +
+	 * networkidle) antes de devolver el control — leer el estado inmediatamente tras un
+	 * reload opera sobre el estado INICIAL/optimista (ver root cause en `goto()`).
+	 * Lo consume el caso `reloadPersistence` de la factory CFG (S6).
+	 */
+	@step
+	async reload(): Promise<void> {
+		await this.page.reload();
+		await this.page.locator('.card').first().waitFor({ state: 'visible', timeout: 30_000 });
+		await this.page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {
+			/* si networkidle no se alcanza (polling en background), el timeout ya dio margen suficiente */
+		});
+	}
+
+	/**
 	 * Clasifica el estado de la card de `company`. Query read-only (`unknown` es un resultado
 	 * válido de la clasificación, NO un error tragado). i18n-proof: prioriza la clase de color
 	 * del link de acción; cae al texto del footer para "No Disponible".
@@ -402,7 +419,7 @@ export class AppStoreGatewaysPage extends UiBase {
 	 */
 	@atc('MG-223', { severity: 'critical', description: 'Desvincular pasarela (dispara cleaningWallets)' })
 	async unlinkGateway(company: GatewayCompany): Promise<void> {
-		if (!isDestructiveSwitchAllowed()) {
+		if (!isGatewayDestructiveSwitchAllowed()) {
 			throw new Error(
 				'unlinkGateway() es DESTRUCTIVO: dispara cleaningWallets en cascada sobre el carrier 1521 (compartido por toda la suite gateway), borrando la tarjeta real del pasajero. ' +
 					'Requiere GATEWAY_ALLOW_DESTRUCTIVE_SWITCH=true puesto explícitamente para correr (alias legacy AUTHORIZE_ALLOW_DESTRUCTIVE_SWITCH también aceptado) — no está habilitado por defecto.',
