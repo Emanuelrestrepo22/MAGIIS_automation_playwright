@@ -141,6 +141,9 @@ function caseTitle(cfgCase: GatewayCfgCase, adapter: GatewayPgAdapter): string {
 		case 'cancelUnlink':
 			return `cancelar el popup de desvinculación sin desvincular ${name}`;
 		case 'unlink':
+			// Matriz TC1005 dice "desvincular <GW> y ocultar método preautorizada" — la parte
+			// "ocultar" NO tiene oráculo automatizado aún (TODO F4+, ver caso unlink abajo);
+			// el título solo promete lo que el test asserta (gap anotado en matriz_cases.md).
 			return `desvincular ${name}`;
 		case 'exclusivity':
 			return `exclusividad: con ${name} activa no se puede vincular otra pasarela`;
@@ -264,7 +267,13 @@ export function defineGatewayConfigSuite(gateway: GatewayName, options: GatewayC
 					case 'unlink': {
 						await test.step(`Given: ${gateway} vinculada`, async () => {
 							await ensureActiveGatewayOrSkip(switcher, gateway, Boolean(driver));
+							// Pre-assert de precondición (restaurado del spec original 640eadf, perdido
+							// en la parametrización S6): el unlink solo prueba algo si la pasarela
+							// estaba REALMENTE vinculada antes de desvincular.
+							expect(await appStore.readState(gateway), `${gateway} debe estar vinculada antes del unlink (precondición explícita)`).toBe('linked');
 						});
+						// TODO(F4+/Fase 6): verificar en Alta de Viaje que "Tarjeta Preautorizada" ya NO
+						// se ofrece tras el unlink — mitad del AC de matriz TC1005 sin oráculo aún.
 						await test.step('When: desvinculo la pasarela', async () => {
 							await appStore.unlinkGateway(gateway);
 						});
