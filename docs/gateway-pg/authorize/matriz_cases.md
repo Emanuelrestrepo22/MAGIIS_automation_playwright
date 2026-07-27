@@ -27,6 +27,8 @@ Espeja `TS-STRIPE-TC1001..TC1008` pero adaptado a la UI Authorize.
 
 > **Precondición común sección 1:** acceso al Magiis App Store con rol de admin; credenciales Authorize.net sandbox cargadas en `.env.test`. Variables: `AUTHORIZE_API_LOGIN_ID`, `AUTHORIZE_TRANSACTION_KEY`.
 
+> **⚠ TS-AUTHORIZE-TC1008 — comportamiento real verificado (quirk backend):** el request de link **NO retorna 200** — quirk verificado (HANDOFF §2, addendum 2026-07-25): el link retorna **500** (conexión desde estado limpio) o **409** (ya vinculada); **400** = no conectada. El oráculo automatizado asserta `500|409` + persistencia del estado vinculado. El AC original de 2xx queda como **TODO revert** cuando DEV corrija el endpoint (`odnService`, ver `ARCHITECTURE.md` §5 + `DRAFT-improvement-backend-link-500.md`). La parte "unlink status" y "logs/auditoría" del AC **NO está automatizada** (gap documentado).
+
 ---
 
 ## 2. Alta de Viaje desde Carrier – Usuario Personal

@@ -218,6 +218,22 @@ Equivalente JSON:
 | **Fraud Management** | `getUnsettledTransactionListRequest` (filter `Pending Approval`), `updateHeldTransactionRequest` (approve/decline) |
 | **Accept Suite** | Accept.js (form embedded), Accept Hosted (redirect), Accept Customer (hosted profile mgmt) |
 
+### Endpoint de link/unlink del backend MAGIIS (odnService)
+
+> Verificado en vivo — cierra la contradicción doc-vs-código: el POM (`AppStoreGatewaysPage.expectLinkStatusOk`, MG-226) ya asserta este comportamiento pero este documento no lo mencionaba.
+
+La vinculación/desvinculación de la pasarela desde el Magiis App Store **no** va contra la API de Authorize.net de esta sección ni contra `/vendor/`: la mutación real del link la sirve el **backend MAGIIS vía `odnService`** (verificado live, MG-476).
+
+Semántica de status **verificada** ([`HANDOFF-live-reconciliation-2026-07-24.md`](./HANDOFF-live-reconciliation-2026-07-24.md) §2 + addendum 2026-07-25):
+
+| Status | Significado real |
+| --- | --- |
+| `500` | Pasarela **CONECTADA** (link desde estado limpio) — éxito funcional |
+| `409` | Pasarela **CONECTADA** (el carrier ya estaba vinculado por otra sesión — conflicto de idempotencia) — éxito funcional |
+| `400` | Pasarela **NO conectada** |
+
+El `500/409-en-éxito` es un *smell* de API (debería ser 2xx) → **candidato a Improvement al backend** (destino DEV/MX — ver borrador [`DRAFT-improvement-backend-link-500.md`](./DRAFT-improvement-backend-link-500.md)). Los oráculos de QA toleran `[500, 409]` (nunca 400) + assert de persistencia del estado vinculado, con **TODO revert a 2xx** cuando DEV corrija el endpoint.
+
 ---
 
 ## 6. Triggers consolidados (sandbox)
