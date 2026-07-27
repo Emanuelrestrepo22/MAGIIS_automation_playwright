@@ -53,6 +53,24 @@ export interface AuthorizeCreds {
 	gatewayId?: string;
 }
 
+/** Credenciales merchant eBizCharge leídas de env (EBIZ_MERCHANT_USER / _PASSWORD / EBIZ_SECURITY_KEY). */
+export interface EbizchargeCreds {
+	merchantUser: string;
+	merchantPassword: string;
+	securityKey: string;
+}
+
+/** Campo del modal de credenciales de link: locator (INLINE en este POM) + valor a llenar. */
+type LinkFieldEntry = { input: Locator; value: string };
+
+/** Opciones de los ATC de status del link — parametrizados por `adapter.linkSuccessStatuses` (S4). */
+export interface LinkStatusOptions {
+	/** Statuses HTTP de éxito conocidos (default: los del wrapper de la pasarela). */
+	successStatuses?: number[];
+	/** Matcher de URL de la mutación de link (default: el del wrapper de la pasarela). */
+	urlPattern?: RegExp;
+}
+
 /** Aguja de texto (case-insensitive) para localizar la card de cada empresa. Del probe F3. */
 const COMPANY_NEEDLE: Record<GatewayCompany, RegExp> = {
 	stripe: /stripe/i,
@@ -102,54 +120,163 @@ export class AppStoreGatewaysPage extends UiBase {
 	private readonly transactionKeyInput = (): Locator => this.page.locator('input[formcontrolname="transactionKey"]');
 
 	/**
-	 * Botón submit del modal Authorize = "Continuar" (ESPAÑOL — el modal mezcla idiomas: título/campos
-	 * en inglés "Link your account"/"API Login ID:", botones en español "Cancelar"/"Continuar";
-	 * corrige HANDOFF que asumía "Continue" en inglés). Empieza DISABLED hasta que el form sea válido
-	 * (Angular reactive form) — Playwright espera el estado enabled automáticamente antes del click.
-	 * Scopeado al modal (hay ~6 modales ocultos, 1 por PSP, cada uno con su propio submit).
+	 * FRAGILE/TODO(live): modal de credenciales eBizCharge — NO verificado en vivo (S4). Sin un
+	 * campo distintivo confirmado (como `apiLoginKey` en Authorize), se scopea por el TEXTO de la
+	 * pasarela dentro del dialog (hay ~6 modales ocultos, 1 por PSP). Confirmar en corrida viva.
 	 */
-	private readonly authSubmit = (): Locator =>
-		this.authModal().getByRole('button', { name: /^(Continuar|Continue)$/i }).first();
+	private readonly ebizModal = (): Locator =>
+		this.page.locator('.modal, [role="dialog"]').filter({ hasText: /ebiz/i }).first();
+
+	/**
+	 * FRAGILE/TODO(live): campos del modal eBizCharge por `formcontrolname` CANDIDATOS (no
+	 * confirmados — espejo del patrón Angular Reactive Forms del modal Authorize). Scopeados al
+	 * modal eBiz para no matchear inputs de otros modales PSP ocultos. Fijar selectores reales
+	 * en la primera corrida viva con EBIZ_* configuradas.
+	 */
+	private readonly ebizMerchantUserInput = (): Locator =>
+		this.ebizModal()
+			.locator('input[formcontrolname="merchantUser"], input[formcontrolname="username"], input[formcontrolname="userName"], input[formcontrolname="user"]')
+			.first();
+	private readonly ebizMerchantPasswordInput = (): Locator =>
+		this.ebizModal().locator('input[formcontrolname="merchantPassword"], input[formcontrolname="password"], input[type="password"]').first();
+	private readonly ebizSecurityKeyInput = (): Locator =>
+		this.ebizModal()
+			.locator('input[formcontrolname="securityKey"], input[formcontrolname="securityId"], input[formcontrolname="apiKey"], input[formcontrolname="token"]')
+			.first();
+
+	/**
+	 * Botón submit de un modal de credenciales = "Continuar" (ESPAÑOL — el modal Authorize mezcla
+	 * idiomas: título/campos en inglés "Link your account"/"API Login ID:", botones en español
+	 * "Cancelar"/"Continuar"; corrige HANDOFF que asumía "Continue" en inglés). Empieza DISABLED
+	 * hasta que el form sea válido (Angular reactive form) — Playwright espera el estado enabled
+	 * automáticamente antes del click. Scopeado al modal recibido (hay ~6 modales ocultos, 1 por
+	 * PSP, cada uno con su propio submit).
+	 */
+	private readonly linkSubmitIn = (modal: Locator): Locator =>
+		modal.getByRole('button', { name: /^(Continuar|Continue)$/i }).first();
+
+	/** Modal de credenciales de link por pasarela (solo Authorize verificado live). */
+	private linkModalFor(company: GatewayCompany): Locator {
+		switch (company) {
+			case 'authorize':
+				return this.authModal();
+			case 'ebizcharge':
+				return this.ebizModal();
+			default:
+				// stripe = OAuth Connect (sin modal de creds); mercado-pago sin modal modelado.
+				throw new Error(`Modal de credenciales de '${company}' no modelado — solo authorize/ebizcharge tienen modal de link en este POM.`);
+		}
+	}
 
 	/** FRAGILE: popup de confirmación de desvinculación (SweetAlert / modal). */
 	private readonly confirmPopup = (): Locator => this.page.locator('.swal2-popup, [role="dialog"], .modal').first();
 
 	// ── Helpers privados de interacción (usados por varios ATC; NO son ATC) ──────────
 
-	/** Rellena el modal de credenciales Authorize (campos por name, verificados en vivo). */
-	private async fillAuthorizeCredentials(creds: AuthorizeCreds): Promise<void> {
-		await this.apiLoginInput().fill(creds.apiLoginId);
-		await this.transactionKeyInput().fill(creds.transactionKey);
+	/** Campos del modal de link Authorize (locators verificados en vivo). `gatewayId` no se usa hoy. */
+	private authorizeLinkFields(creds: AuthorizeCreds): LinkFieldEntry[] {
+		return [
+			{ input: this.apiLoginInput(), value: creds.apiLoginId },
+			{ input: this.transactionKeyInput(), value: creds.transactionKey }
+		];
+	}
+
+	/** Campos del modal de link eBizCharge — FRAGILE/TODO(live): locators candidatos sin confirmar. */
+	private ebizchargeLinkFields(creds: EbizchargeCreds): LinkFieldEntry[] {
+		return [
+			{ input: this.ebizMerchantUserInput(), value: creds.merchantUser },
+			{ input: this.ebizMerchantPasswordInput(), value: creds.merchantPassword },
+			{ input: this.ebizSecurityKeyInput(), value: creds.securityKey }
+		];
 	}
 
 	/**
-	 * Abre el modal de link Authorize con retry: el handler (click) del <a>Link</a> puede no estar
-	 * bindeado al primer intento (Angular legacy) → `toPass` reintenta el click + espera el campo del modal.
+	 * Abre el modal de link de `company` con retry: el handler (click) del <a>Link</a> puede no
+	 * estar bindeado al primer intento (Angular legacy) → `toPass` reintenta el click + espera
+	 * `readyField` (primer campo del modal) visible.
+	 *
+	 * La sección "Interfaces de pago" de este dashboard sufre un REFRESH PERIÓDICO (probable
+	 * polling de estado del gateway contra backend): el link puede existir en el DOM en el
+	 * instante T y desaparecer/recrearse en T+1 (confirmado en vivo: `readState()` encuentra el
+	 * link, pero el intento inmediatamente posterior de `scrollIntoViewIfNeeded`/`click` timeoutea
+	 * porque el locator ya no resuelve a ningún elemento — no es un problema de scroll ni de
+	 * actionability, es que el elemento literalmente no está durante esa ventana). Por eso el retry
+	 * usa timeouts CORTOS por intento (para no quemar el presupuesto esperando en una ventana
+	 * muerta) y MUCHOS intentos dentro de una ventana total generosa, en vez de pocos intentos con
+	 * timeout largo.
+	 *
+	 * Además, el estado de la card puede seguir actualizándose tras `networkidle` (probable
+	 * socket/polling en tiempo real ajeno a requests HTTP normales — confirmado que `readState()`
+	 * ve 'linkable' pero el click inmediatamente posterior ya no encuentra el link, incluso con
+	 * waitFor(attached)). Mitigación: minimizar la ventana lectura→acción a una única operación —
+	 * click DIRECTO con timeout corto (si el link no está EN ESE INSTANTE, falla rápido y el
+	 * toPass reintenta el ciclo completo desde cero) en vez de encadenar waitFor+evaluate+click
+	 * (cada paso extra es una oportunidad más para que el estado cambie por debajo).
 	 */
-	/**
-	 * Abre el modal de link Authorize. La sección "Interfaces de pago" de este dashboard sufre un
-	 * REFRESH PERIÓDICO (probable polling de estado del gateway contra backend): el link puede existir
-	 * en el DOM en el instante T y desaparecer/recrearse en T+1 (confirmado en vivo: `readState()`
-	 * encuentra el link, pero el intento inmediatamente posterior de `scrollIntoViewIfNeeded`/`click`
-	 * timeoutea porque el locator ya no resuelve a ningún elemento — no es un problema de scroll ni de
-	 * actionability, es que el elemento literalmente no está durante esa ventana). Por eso el retry usa
-	 * timeouts CORTOS por intento (para no quemar el presupuesto esperando en una ventana muerta) y
-	 * MUCHOS intentos dentro de una ventana total generosa, en vez de pocos intentos con timeout largo.
-	 */
-	/**
-	 * El estado de la card puede seguir actualizándose tras `networkidle` (probable socket/polling
-	 * en tiempo real ajeno a requests HTTP normales — confirmado que `readState()` ve 'linkable' pero
-	 * el click inmediatamente posterior ya no encuentra el link, incluso con waitFor(attached)).
-	 * Mitigación: minimizar la ventana lectura→acción a una única operación — click DIRECTO con
-	 * timeout corto (si el link no está EN ESE INSTANTE, falla rápido y el toPass reintenta el ciclo
-	 * completo desde cero) en vez de encadenar waitFor+evaluate+click (cada paso extra es una
-	 * oportunidad más para que el estado cambie por debajo).
-	 */
-	private async openAuthorizeLinkModal(): Promise<void> {
+	private async openLinkModalFor(company: GatewayCompany, readyField: Locator): Promise<void> {
 		await expect(async () => {
-			await this.vincularLink('authorize').click({ timeout: 4_000 });
-			await expect(this.apiLoginInput()).toBeVisible({ timeout: 8_000 });
+			await this.vincularLink(company).click({ timeout: 4_000 });
+			await expect(readyField).toBeVisible({ timeout: 8_000 });
 		}).toPass({ timeout: 120_000, intervals: [300, 600, 1_000] });
+	}
+
+	/**
+	 * Impl privada COMPARTIDA del link por modal de credenciales (S4). SIN decorar — las keys de
+	 * ATC son estructurales y viven en los wrappers por pasarela (`linkAuthorize` @atc MG-220;
+	 * `linkEbizcharge` sin key aún). Abre el modal, llena `fields`, submitea y verifica el estado
+	 * vinculado resultante.
+	 */
+	private async linkGateway(company: GatewayCompany, fields: LinkFieldEntry[]): Promise<void> {
+		await this.openLinkModalFor(company, fields[0].input);
+		for (const field of fields) {
+			await field.input.fill(field.value);
+		}
+		await this.linkSubmitIn(this.linkModalFor(company)).click();
+		await expect(this.desvincularLink(company), `la card ${company} debe quedar vinculada ("Unlink"/"Desvincular")`).toBeVisible({ timeout: 20_000 });
+		expect(await this.readState(company), 'estado esperado tras vincular = linked').toBe('linked');
+	}
+
+	/**
+	 * Impl privada COMPARTIDA del rechazo de link (S4). SIN decorar (keys en los wrappers).
+	 * `errorPattern` es el matcher de error POR PASARELA (E00008 es Authorize-only).
+	 * FRAGILE: el mensaje de error puede venir inline en el modal o como toast/swal.
+	 */
+	private async expectLinkRejectedImpl(company: GatewayCompany, args: { fields: LinkFieldEntry[]; errorPattern: RegExp }): Promise<void> {
+		await this.openLinkModalFor(company, args.fields[0].input);
+		for (const field of args.fields) {
+			await field.input.fill(field.value);
+		}
+		await this.linkSubmitIn(this.linkModalFor(company)).click();
+		await expect(this.page.getByText(args.errorPattern).first(), `debe mostrar el error de autenticación de ${company} sin vincular`).toBeVisible({
+			timeout: 20_000
+		});
+		expect(await this.readState(company), `${company} NO debe quedar vinculada tras credenciales inválidas`).not.toBe('linked');
+	}
+
+	/**
+	 * Impl privada COMPARTIDA del status de la request de link (S4). SIN decorar (keys en los
+	 * wrappers). `successStatuses`/`urlPattern` vienen del wrapper por pasarela (defaults espejo
+	 * de `adapter.linkSuccessStatuses` / `adapter.linkMutationUrlPattern`) o del caller vía
+	 * `LinkStatusOptions` (factories S6 pasan los del adapter).
+	 */
+	private async expectLinkStatusOkImpl(
+		company: GatewayCompany,
+		args: { fields: LinkFieldEntry[]; successStatuses: number[]; urlPattern: RegExp }
+	): Promise<void> {
+		const isGatewayMutation = (url: string): boolean => args.urlPattern.test(url);
+		await this.openLinkModalFor(company, args.fields[0].input);
+		for (const field of args.fields) {
+			await field.input.fill(field.value);
+		}
+		const [response] = await Promise.all([
+			this.page.waitForResponse(r => isGatewayMutation(r.url()) && r.request().method() !== 'GET', { timeout: 20_000 }),
+			this.linkSubmitIn(this.linkModalFor(company)).click()
+		]);
+		expect(response.status(), `link ${company}: 400 = NO conectada`).not.toBe(400);
+		expect(
+			args.successStatuses,
+			`status observado (${response.status()}) fuera de los códigos de éxito conocidos (${args.successStatuses.join('|')}) — posible comportamiento nuevo, revisar`
+		).toContain(response.status());
 	}
 
 	/** Abre el popup de desvinculación — mismo patrón (ver openAuthorizeLinkModal). */
@@ -214,28 +341,49 @@ export class AppStoreGatewaysPage extends UiBase {
 	 * ATC — vincula Authorize con credenciales VÁLIDAS y verifica el estado vinculado.
 	 * Precondición: la card Authorize debe estar "Vincular" (green-text) — liberar el slot de
 	 * exclusividad antes (GatewaySwitchSteps.unlinkActiveGateway).
+	 * Wrapper por pasarela (S4): la key de ATC es ESTRUCTURAL acá; la lógica vive en `linkGateway`.
 	 */
 	@atc('MG-220', { severity: 'critical', description: 'Vincular Authorize con credenciales válidas' })
 	async linkAuthorize(creds: AuthorizeCreds): Promise<void> {
-		await this.openAuthorizeLinkModal();
-		await this.fillAuthorizeCredentials(creds);
-		await this.authSubmit().click();
-		await expect(this.desvincularLink('authorize'), 'la card Authorize debe quedar vinculada ("Unlink"/"Desvincular")').toBeVisible({ timeout: 20_000 });
-		expect(await this.readState('authorize'), 'estado esperado tras vincular = linked').toBe('linked');
+		await this.linkGateway('authorize', this.authorizeLinkFields(creds));
+	}
+
+	/**
+	 * Vincula eBizCharge con credenciales merchant VÁLIDAS y verifica el estado vinculado.
+	 * Wrapper por pasarela (S4) — SIN `@atc`: eBizCharge aún no tiene key CFG en Jira
+	 * (`XRAY_KEYS_BY_GATEWAY.ebizcharge.cfg.linkValid = null`); decorar cuando exista.
+	 * FRAGILE/TODO(live): modal y campos eBiz NO confirmados en vivo (ver locators candidatos).
+	 */
+	@step
+	async linkEbizcharge(creds: EbizchargeCreds): Promise<void> {
+		await this.linkGateway('ebizcharge', this.ebizchargeLinkFields(creds));
 	}
 
 	/**
 	 * ATC — intenta vincular Authorize con credenciales INVÁLIDAS y verifica el rechazo
-	 * controlado (response code E00008) sin activar el gateway.
-	 * FRAGILE: el mensaje de error puede venir inline en el modal o como toast/swal.
+	 * controlado (response code E00008 — matcher Authorize-only) sin activar el gateway.
+	 * Wrapper por pasarela (S4); lógica compartida en `expectLinkRejectedImpl`.
 	 */
 	@atc('MG-221', { severity: 'critical', description: 'Impedir vincular Authorize con credenciales inválidas (E00008)' })
 	async expectLinkRejected(creds: AuthorizeCreds): Promise<void> {
-		await this.openAuthorizeLinkModal();
-		await this.fillAuthorizeCredentials(creds);
-		await this.authSubmit().click();
-		await expect(this.page.getByText(/E00008|invalid authentication|autenticaci[oó]n|credenciales inv[aá]lidas/i).first(), 'debe mostrar el error de autenticación (E00008) sin vincular').toBeVisible({ timeout: 20_000 });
-		expect(await this.readState('authorize'), 'Authorize NO debe quedar vinculada tras credenciales inválidas').not.toBe('linked');
+		await this.expectLinkRejectedImpl('authorize', {
+			fields: this.authorizeLinkFields(creds),
+			errorPattern: /E00008|invalid authentication|autenticaci[oó]n|credenciales inv[aá]lidas/i
+		});
+	}
+
+	/**
+	 * Intenta vincular eBizCharge con credenciales INVÁLIDAS y verifica el rechazo sin activar
+	 * el gateway. Wrapper por pasarela (S4) — SIN `@atc` (sin key CFG eBiz aún).
+	 * FRAGILE/TODO(live): matcher de error genérico — el copy real del rechazo eBiz NO está
+	 * confirmado (E00008 es Authorize-only); fijar el matcher en la primera corrida viva.
+	 */
+	@step
+	async expectEbizchargeLinkRejected(creds: EbizchargeCreds): Promise<void> {
+		await this.expectLinkRejectedImpl('ebizcharge', {
+			fields: this.ebizchargeLinkFields(creds),
+			errorPattern: /error|inv[aá]lid|incorrect|credencial|autenticaci[oó]n|denied|failed/i
+		});
 	}
 
 	/**
@@ -351,22 +499,37 @@ export class AppStoreGatewaysPage extends UiBase {
 	/**
 	 * ATC — observa la request de vinculación de Authorize y verifica un status de éxito conocido (500|409).
 	 * Precondición: Authorize "Vincular" (liberar slot antes). Deja Authorize vinculada.
-	 * FRAGILE: el endpoint real del link NO está verificado — ajustar el matcher de URL en vivo
-	 * (candidatos: /payment-gateway, /paymentGateway, /vendor, /integration).
+	 * Wrapper por pasarela (S4); lógica compartida en `expectLinkStatusOkImpl`. Defaults espejo del
+	 * adapter authorize (`linkSuccessStatuses: [500, 409]`); `options` permite pasar los del adapter.
+	 *
+	 * Quirk backend VERIFICADO (HANDOFF §2, actualizado 2026-07-25): 500 = pasarela CONECTADA desde
+	 * estado limpio; 409 = CONECTADA cuando el carrier 1521 (compartido por la suite gateway) ya
+	 * estaba vinculado por otra sesión — ambos son éxito funcional, ninguno es bug de test.
+	 * 400 = NO conectada. El 500/409-en-éxito es smell de API (debería ser 2xx) → Improvement/Defect a DEV/MX (no MG).
+	 * FRAGILE: el endpoint real del link NO está verificado — ajustar el matcher de URL en vivo.
+	 * Endpoint del link Authorize = odnService (MG-476), NO /vendor/. El matcher incluye odnService.
 	 */
 	@atc('MG-226', { severity: 'normal', description: 'La request de link de Authorize retorna un status de éxito conocido (500|409)' })
-	async expectLinkStatusOk(creds: AuthorizeCreds): Promise<void> {
-		// Endpoint del link Authorize = odnService (MG-476), NO /vendor/. El matcher incluye odnService.
-		const isGatewayMutation = (url: string): boolean => /odnservice|payment.?gateway|paymentgateway|vendor|integration|authorize/i.test(url);
-		await this.openAuthorizeLinkModal();
-		await this.fillAuthorizeCredentials(creds);
-		const [response] = await Promise.all([this.page.waitForResponse(r => isGatewayMutation(r.url()) && r.request().method() !== 'GET', { timeout: 20_000 }), this.authSubmit().click()]);
-		// Quirk backend VERIFICADO (HANDOFF §2, actualizado 2026-07-25): 500 = pasarela CONECTADA desde
-		// estado limpio; 409 = CONECTADA cuando el carrier 1521 (compartido por la suite gateway) ya
-		// estaba vinculado por otra sesión — ambos son éxito funcional, ninguno es bug de test.
-		// 400 = NO conectada. El 500/409-en-éxito es smell de API (debería ser 2xx) → Improvement/Defect a DEV/MX (no MG).
-		const successStatuses = [500, 409];
-		expect(response.status(), 'link Authorize: 400 = NO conectada').not.toBe(400);
-		expect(successStatuses, `status observado (${response.status()}) fuera de los códigos de éxito conocidos (500|409) — posible comportamiento nuevo, revisar`).toContain(response.status());
+	async expectLinkStatusOk(creds: AuthorizeCreds, options: LinkStatusOptions = {}): Promise<void> {
+		await this.expectLinkStatusOkImpl('authorize', {
+			fields: this.authorizeLinkFields(creds),
+			successStatuses: options.successStatuses ?? [500, 409],
+			urlPattern: options.urlPattern ?? /odnservice|payment.?gateway|paymentgateway|vendor|integration|authorize/i
+		});
+	}
+
+	/**
+	 * Observa la request de vinculación de eBizCharge y verifica un status de éxito conocido.
+	 * Wrapper por pasarela (S4) — SIN `@atc` (sin key CFG eBiz aún). Deja eBiz vinculada.
+	 * TODO(live): default `[200]` ASUMIDO (espejo del adapter ebizcharge) — status real de la
+	 * request de link eBiz NO verificado; matcher de URL candidato sin confirmar.
+	 */
+	@step
+	async expectEbizchargeLinkStatusOk(creds: EbizchargeCreds, options: LinkStatusOptions = {}): Promise<void> {
+		await this.expectLinkStatusOkImpl('ebizcharge', {
+			fields: this.ebizchargeLinkFields(creds),
+			successStatuses: options.successStatuses ?? [200],
+			urlPattern: options.urlPattern ?? /odnservice|payment.?gateway|paymentgateway|vendor|integration|ebiz/i
+		});
 	}
 }
