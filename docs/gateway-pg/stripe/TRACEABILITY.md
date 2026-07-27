@@ -35,6 +35,8 @@
 
 ## 3. Orden canónico de sincronización (CRÍTICO)
 
+> **ID-MAP central:** [`ID-MAP.md`](./ID-MAP.md) (generado desde [`../id-map.json`](../id-map.json) por `scripts/ai/build-id-map.mjs`) — trazabilidad TS-ID ↔ MG-key ↔ spec.
+
 Siempre propagar en este orden. Saltar una capa genera drift silencioso.
 
 ```text

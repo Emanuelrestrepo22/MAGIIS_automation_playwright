@@ -64,6 +64,8 @@ for (const gateway of ACTIVE_GATEWAYS) {
 
 ## 3. Mapping bidireccional TC Stripe ↔ TC Authorize
 
+> **ID-MAP central:** [`ID-MAP.md`](./ID-MAP.md) (generado desde [`../id-map.json`](../id-map.json) por `scripts/ai/build-id-map.mjs`) — trazabilidad TS-ID ↔ MG-key ↔ spec, incluye los derivados Fase 4.
+
 ### 3.1 TCs Stripe con equivalente directo Authorize
 
 > "Equivalente directo" = mismo flujo funcional, mismo portal, mismo tipo de usuario, mismo Hold ON/OFF. Sólo difiere la card fixture y el modelo de validación (response code en vez de status string).
