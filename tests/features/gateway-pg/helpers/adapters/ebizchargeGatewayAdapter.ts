@@ -1,4 +1,5 @@
 import { JOURNEY_DEFAULTS_BY_GATEWAY } from '../../data/journey-defaults';
+import { EBIZCHARGE_LINK_MUTATION_URL_PATTERN, EBIZCHARGE_LINK_SUCCESS_STATUSES } from '../../data/link-status-defaults';
 import { XRAY_KEYS_BY_GATEWAY } from '../../data/xray-keys';
 import type { GatewayPgAdapter } from './types';
 import { areEnvKeysConfigured } from './types';
@@ -33,9 +34,10 @@ export const ebizchargeGatewayAdapter: GatewayPgAdapter = {
 	outcomeTrigger: 'number',
 	// Sin 5° campo confirmado para eBiz (los campos del modal NO están verificados live — S4).
 	// TODO(live): [200] asumido — status real de la request de link eBiz NO verificado.
-	linkSuccessStatuses: [200],
+	// FUENTE ÚNICA compartida con el POM (data/link-status-defaults.ts — anti-drift T11).
+	linkSuccessStatuses: [...EBIZCHARGE_LINK_SUCCESS_STATUSES],
 	// TODO(live): matcher NO verificado — base del matcher Authorize + needle propio.
-	linkMutationUrlPattern: /odnservice|payment.?gateway|paymentgateway|vendor|integration|ebiz/i,
+	linkMutationUrlPattern: EBIZCHARGE_LINK_MUTATION_URL_PATTERN,
 	credsEnvKeys: EBIZCHARGE_CREDS_ENV_KEYS,
 	isConfigured: () => areEnvKeysConfigured(EBIZCHARGE_CREDS_ENV_KEYS),
 	xrayKeys: XRAY_KEYS_BY_GATEWAY.ebizcharge,
