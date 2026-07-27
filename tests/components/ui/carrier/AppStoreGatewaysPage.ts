@@ -32,7 +32,7 @@
  *     Fixture → Page → Fixture (mismo patrón que CarrierNewTravelPage).
  */
 
-import type { Locator, Route } from '@playwright/test';
+import type { Locator, Request, Route } from '@playwright/test';
 import type { TestContextOptions } from '@TestContext';
 
 import { expect } from '@playwright/test';
@@ -522,33 +522,54 @@ export class AppStoreGatewaysPage extends UiBase {
 			})
 		);
 
-		await this.desvincularLink(company).click();
+		// Guard anti-mutación (post-review A2): el supuesto "unlink = SOLO cleaningWallets" NO
+		// está verificado live — el mock intercepta ese patrón, pero cualquier OTRA mutación
+		// disparada por el flujo llegaría REAL al backend. Registrar toda request no-GET fuera
+		// del patrón mockeado y fallar al final del ATC si hubo alguna.
+		const unexpectedMutations: string[] = [];
+		const onRequest = (request: Request): void => {
+			if (request.method() !== 'GET' && !/\/vendor\/cleaningWallets\//i.test(request.url())) {
+				unexpectedMutations.push(`${request.method()} ${request.url()}`);
+			}
+		};
+		this.page.on('request', onRequest);
 
-		// Popup scopeado por el texto real ("Desvincular <PSP>") — más preciso que el selector
-		// genérico `confirmPopup()`, que puede matchear un modal oculto de otra pasarela.
-		const popup = this.page
-			.locator('ngb-modal-window[role="dialog"], .modal, [role="dialog"], .swal2-popup')
-			.filter({ hasText: /desvincular/i })
-			.first();
-		await expect(popup, 'debe abrirse el popup de confirmación de desvinculación').toBeVisible({ timeout: 15_000 });
-		await popup
-			.getByRole('button', { name: /^confirmar$/i })
-			.first()
-			.click();
+		try {
+			await this.desvincularLink(company).click();
 
-		// El bug documentado (TC-PAY-G-05) es un toast/ícono de ÉXITO INCONDICIONAL — NO debe
-		// aparecer cuando el backend respondió 500 a la desvinculación.
-		const successIcon = this.page.locator('.swal2-icon.swal2-success, .swal2-success');
-		await expect(successIcon, 'BUG MG-169: el FE mostró un ícono/toast de ÉXITO pese al 500 mockeado de cleaningWallets').toBeHidden({
-			timeout: 8_000
-		});
+			// Popup scopeado por el texto real ("Desvincular <PSP>") — más preciso que el selector
+			// genérico `confirmPopup()`, que puede matchear un modal oculto de otra pasarela.
+			const popup = this.page
+				.locator('ngb-modal-window[role="dialog"], .modal, [role="dialog"], .swal2-popup')
+				.filter({ hasText: /desvincular/i })
+				.first();
+			await expect(popup, 'debe abrirse el popup de confirmación de desvinculación').toBeVisible({ timeout: 15_000 });
+			await popup
+				.getByRole('button', { name: /^confirmar$/i })
+				.first()
+				.click();
 
-		// Prueba funcional robusta (no depende del copy del toast): un fallo de backend NO puede
-		// dejar el FE "creyendo" que se desvinculó — la card debe seguir "linked" (y por lo tanto
-		// reintentable: el link "Desvincular" sigue visible).
-		expect(await this.readState(company), 'BUG MG-169: la pasarela quedó "no vinculada" en el FE pese al 500 mockeado — éxito falso').toBe(
-			'linked'
-		);
+			// El bug documentado (TC-PAY-G-05) es un toast/ícono de ÉXITO INCONDICIONAL — NO debe
+			// aparecer cuando el backend respondió 500 a la desvinculación.
+			const successIcon = this.page.locator('.swal2-icon.swal2-success, .swal2-success');
+			await expect(successIcon, 'BUG MG-169: el FE mostró un ícono/toast de ÉXITO pese al 500 mockeado de cleaningWallets').toBeHidden({
+				timeout: 8_000
+			});
+
+			// Prueba funcional robusta (no depende del copy del toast): un fallo de backend NO puede
+			// dejar el FE "creyendo" que se desvinculó — la card debe seguir "linked" (y por lo tanto
+			// reintentable: el link "Desvincular" sigue visible).
+			expect(await this.readState(company), 'BUG MG-169: la pasarela quedó "no vinculada" en el FE pese al 500 mockeado — éxito falso').toBe(
+				'linked'
+			);
+		} finally {
+			this.page.off('request', onRequest);
+		}
+
+		expect(
+			unexpectedMutations,
+			'GUARD MG-169: el flujo de unlink disparó mutaciones NO mockeadas (fuera de **/vendor/cleaningWallets/**) que llegaron REALES al backend — el supuesto "unlink = solo cleaningWallets" no se sostiene; verificar en vivo antes de confiar en este mock.'
+		).toEqual([]);
 	}
 
 	/**

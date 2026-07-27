@@ -50,6 +50,7 @@ Todas las keys de §1 están en la denylist recomendada (§2.3) — jamás deben
 - Los casos CFG (link/unlink) son **DESTRUCTIVOS** sobre la pasarela activa del **carrier 1521 (compartido por toda la suite)** — disparan `cleaningWallets` en cascada.
 - Requieren `GATEWAY_ALLOW_DESTRUCTIVE_SWITCH=true` explícito (alias legacy: `AUTHORIZE_ALLOW_DESTRUCTIVE_SWITCH`). Sin el flag, la suite CFG skipea limpio.
 - Correr SOLO en **ventana exclusiva** del carrier 1521 (nadie más ejecutando contra apps-test con ese carrier). Al terminar, dejar la pasarela default (Stripe) re-vinculada — `GatewaySwitchSteps.restoreStripe()` requiere OAuth manual si el unlink la dejó desvinculada.
+- **Capturar network trace de un unlink REAL antes de correr MG-169 sobre el carrier ARG** — verificar que la ÚNICA mutación del unlink es `vendor/cleaningWallets` (supuesto del mock de `expectUnlinkFailureShowsRealError`; el guard anti-mutación del ATC falla si aparece otra, pero la verificación live va primero).
 
 ### 2.3 Denylist de keys (emit-all)
 

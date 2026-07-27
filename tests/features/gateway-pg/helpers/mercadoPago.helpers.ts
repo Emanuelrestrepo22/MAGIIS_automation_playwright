@@ -10,9 +10,11 @@ import { MP_CARD_CATALOG, MP_DEFAULT_CVV, MP_DEFAULT_EXPIRY } from '@fixtures/ga
  * son fijos; el resultado no depende de ellos.
  *
  * Fuente de locators: recording `test-14.spec.ts` (carrier ARG, TEST, 2026-07-22).
- * TODO(variante-MP-POM · BL-038): extraer a `NewTravelPageBase` como estrategia de
- * gateway (hoy `fillPreauthorizedCard` está atado a Stripe). Confirmar en corrida
- * viva los locators marcados FRAGILE (CVV y número de documento).
+ * SUPERSEDED (post-review A7): la estrategia de card form por gateway YA existe en
+ * `@ui/carrier/card-forms` (`NativeAngularCardForm`) — el TODO(variante-MP-POM · BL-038)
+ * quedó cumplido por esa vía. `fillMercadoPagoNativeCard` queda SOLO para su único
+ * consumidor (`specs/mercado-pago/web/carrier/mp-no-3ds-validation.spec.ts`) — migrar
+ * ese spec a la estrategia y retirar este fill en la próxima limpieza.
  */
 
 export type MpNativeCardInput = {

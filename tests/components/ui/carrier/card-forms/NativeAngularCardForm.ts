@@ -55,6 +55,8 @@ export class NativeAngularCardForm implements CardFormStrategy {
 
 	/** 5° campo Mercado Pago: tipo de documento (custom select) + número. */
 	private async fillDocumentField(page: Page, card: CardFormFillInput): Promise<void> {
+		// Documento del fixture MP (identificationType/Number propagados por el resolver
+		// como docType/docNumber — post-review A11); literales SOLO como fallback.
 		const docType = card.docType ?? 'DNI';
 		const docNumber = card.docNumber ?? '12345678';
 

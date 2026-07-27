@@ -65,7 +65,7 @@ const HAPPY_NO_AUTH_OPTIONS: Omit<HoldRunOptions, 'hold'> = {
 };
 
 // El fixture KATA no define la opción `role` (login explícito vía CarrierHoldSteps.login()).
-test.use({ storageState: undefined });
+test.use({ storageState: { cookies: [], origins: [] } });
 test.describe.configure({ timeout: 180_000 });
 
 test.describe(

@@ -63,7 +63,7 @@ async function cleanupGatewayCard(page: Page, queries: readonly string[], last4:
 		try {
 			const paxId = await getPassengerId(page, query);
 			const resp = await getPassengerCards(page, paxId);
-			const cards = (resp.cards ?? []) as Array<{ id: number; lastFourDigits: string }>;
+			const cards = resp.cards ?? [];
 			const toDelete = cards.filter(card => card.lastFourDigits === last4);
 			for (const card of toDelete) await deletePassengerCard(page, paxId, card.id);
 			debugLog('gateway-pg:wallet', `[precond] query="${query}" pax=${paxId}: ${cards.length} tarjetas, borradas ${toDelete.length} con last4=${last4}`);

@@ -18,12 +18,12 @@ import {
 	getDispatcher
 } from '../../../fixtures/users';
 import type { GatewayName } from '../../../fixtures/gateways/_shared';
-
-/** Opciones de login por portal. `gateway` selecciona credenciales por pasarela. */
-type LoginOptions = { gateway?: GatewayName };
 import { DashboardPage } from '../../../pages/carrier';
 import { LoginPage } from '../../../pages/shared';
 import { ensureSpanishLanguage } from '../../../pages/shared/i18n';
+
+/** Opciones de login por portal. `gateway` selecciona credenciales por pasarela. */
+type LoginOptions = { gateway?: GatewayName };
 
 type LoginPhase = 'goto' | 'submit' | 'dashboard';
 
