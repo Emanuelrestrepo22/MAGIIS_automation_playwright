@@ -42,9 +42,9 @@ Espeja `TS-STRIPE-TC1001..TC1008` pero adaptado a la UI Authorize.
 | TS-AUTHORIZE-TC1013 | Validar Alta de Viaje desde carrier para usuario personal con Mastercard exitosa (5424…0015 + CVV 900) Hold ON                                                       | `AUTHORIZE_CARDS.SUCCESS_MASTERCARD` | ON | Response Code 1 |
 | TS-AUTHORIZE-TC1014 | Validar Alta de Viaje desde carrier para usuario personal con Amex exitosa (370…002 + CVV 9000 — 4 dígitos) Hold ON                                                  | `AUTHORIZE_CARDS.SUCCESS_AMEX` | ON | Response Code 1 — validar que el form UI acepte 4 dígitos en CVV |
 | TS-AUTHORIZE-TC1015 | Validar Alta de Viaje desde carrier para usuario personal con Discover exitosa (6011…0012 + CVV 900) Hold ON                                                         | `AUTHORIZE_CARDS.SUCCESS_DISCOVER` | ON | Response Code 1 |
-| TS-AUTHORIZE-TC1009 | Validar alta de viaje desde carrier para usuario personal con tarjeta preautorizada exitosa (Visa 4111…1111 + CVV 900) con Hold OFF — variante origen/destino alternativo | `AUTHORIZE_CARDS.SUCCESS` | ON | Response Code 1 |
-| TS-AUTHORIZE-TC1010 | Validar alta de viaje desde carrier para usuario personal con tarjeta preautorizada exitosa (Visa 4111…1111 + CVV 900) con Hold OFF — variante set 2 | `AUTHORIZE_CARDS.SUCCESS` | ON | Response Code 1 |
-| TS-AUTHORIZE-TC1018 | Validar alta de viaje desde carrier para usuario personal con tarjeta preautorizada exitosa (Visa 4111…1111 + CVV 900) con Hold OFF — variante set 2 alternativo | `AUTHORIZE_CARDS.SUCCESS` | ON | Response Code 1 |
+| TS-AUTHORIZE-TC1009 | Validar alta de viaje desde carrier para usuario personal con tarjeta preautorizada exitosa (Visa 4111…1111 + CVV 900) con Hold OFF — variante origen/destino alternativo | `AUTHORIZE_CARDS.SUCCESS` | OFF | Response Code 1 |
+| TS-AUTHORIZE-TC1010 | Validar alta de viaje desde carrier para usuario personal con tarjeta preautorizada exitosa (Visa 4111…1111 + CVV 900) con Hold OFF — variante set 2 | `AUTHORIZE_CARDS.SUCCESS` | OFF | Response Code 1 |
+| TS-AUTHORIZE-TC1018 | Validar alta de viaje desde carrier para usuario personal con tarjeta preautorizada exitosa (Visa 4111…1111 + CVV 900) con Hold OFF — variante set 2 alternativo | `AUTHORIZE_CARDS.SUCCESS` | OFF | Response Code 1 |
 
 **Precondiciones comunes sección 2.1:**
 - Pasarela Authorize vinculada (TC1002 pasado).
