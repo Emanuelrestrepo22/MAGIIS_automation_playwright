@@ -32,7 +32,7 @@ const CREDS_READY = Boolean(process.env.USER_CARRIER && process.env.PASS_CARRIER
 // Default OFF: MercadoPago NO transacciona en el entorno TEST → ejecución real diferida a UAT.
 const MP_UAT_EXEC = process.env.MP_SANDBOX_TRANSACTS === '1';
 
-test.describe(`[MG · A][API] vendor/mercadopago — vinculación ${mercadoPagoGatewayAdapter.displayName} @regression @gateway-pg @mercado-pago`, {
+test.describe(`[MG · A][API] vendor/mercadopago — vinculación ${mercadoPagoGatewayAdapter.displayName} @regression @gateway @gateway-pg @mercadopago`, {
 	annotation: [
 		{ type: 'tms', description: 'MG-141' },
 		{ type: 'tms', description: 'MG-144' }

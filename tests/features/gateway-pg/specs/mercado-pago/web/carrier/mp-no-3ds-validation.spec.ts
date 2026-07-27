@@ -23,7 +23,7 @@ test.describe(`[MP][${env.toUpperCase()}] Validación de tarjeta MP sin challeng
 	test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
 
 	test(
-		'@smoke @gateway-pg @mercado-pago @carrier [MP-3DS] MercadoPago no dispara challenge 3DS al validar tarjeta',
+		'@smoke @gateway @gateway-pg @mercadopago @carrier [MP-3DS] MercadoPago no dispara challenge 3DS al validar tarjeta',
 		{ annotation: [{ type: 'tms', description: 'MG-194' }] },
 		async ({ page }) => {
 			const dashboard = new DashboardPage(page);

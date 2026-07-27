@@ -98,7 +98,11 @@ export function defineWalletAddCardSuite(gateway: GatewayName, options: WalletAd
 	// Key null (eBiz/MP sin issue WAL aún) → SIN annotation (no inventar keys).
 	const describeDetails = addCardKey ? { annotation: [{ type: 'tms', description: addCardKey }] } : {};
 
-	test.describe(`Gateway PG · Carrier · ${adapter.displayName} — alta de tarjeta pre-autorizada @gateway @${gateway} @wallet @regression`, describeDetails, () => {
+	// Tag de pasarela SIN guiones (S9): 'mercado-pago' → '@mercadopago' — los scripts npm
+	// por pasarela grepean el tag normalizado; el identifier de código NO cambia.
+	const gatewayTag = gateway.replace(/-/g, '');
+
+	test.describe(`Gateway PG · Carrier · ${adapter.displayName} — alta de tarjeta pre-autorizada @gateway @${gatewayTag} @wallet @regression`, describeDetails, () => {
 		test.describe.configure({ mode: 'serial', timeout: 180_000 });
 		// El fixture KATA no define la opción `role` — login explícito vía loginAsDispatcher.
 		test.use({ storageState: { cookies: [], origins: [] } });

@@ -27,7 +27,7 @@ test.describe(`[SMOKE][MP][${env.toUpperCase()}] Alta sin hold · cliente indivi
 	// El fixture KATA (@TestFixture) no define la opción `role` — login explícito en el Step.
 	test.use({ storageState: { cookies: [], origins: [] } });
 
-	test('@smoke @gateway-pg @mercado-pago @carrier @no-hold @happy [MP-NOHOLD-CLIENTE-INDIVIDUO] Alta sin hold con tarjeta APRO → "Buscando chofer"', async ({ page }) => {
+	test('@smoke @gateway @gateway-pg @mercadopago @carrier @no-hold @happy [MP-NOHOLD-CLIENTE-INDIVIDUO] Alta sin hold con tarjeta APRO → "Buscando chofer"', async ({ page }) => {
 		await new CarrierHoldSteps({ page }).runHoldScenario(
 			{
 				gateway: 'mercado-pago',

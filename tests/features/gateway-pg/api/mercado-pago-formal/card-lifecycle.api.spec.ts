@@ -57,7 +57,7 @@ function toCardDetail(card: MercadoPagoTestCard): MercadopagoCardDetail {
 	};
 }
 
-test.describe(`[MG · C/H/MPX][API] ${mercadoPagoGatewayAdapter.displayName} — ciclo de tarjeta @regression @gateway-pg @mercado-pago`, {
+test.describe(`[MG · C/H/MPX][API] ${mercadoPagoGatewayAdapter.displayName} — ciclo de tarjeta @regression @gateway @gateway-pg @mercadopago`, {
 	annotation: [
 		{ type: 'tms', description: 'MG-148' },
 		{ type: 'tms', description: 'MG-149' },

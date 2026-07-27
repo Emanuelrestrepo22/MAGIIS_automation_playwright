@@ -187,7 +187,11 @@ export function defineGatewayConfigSuite(gateway: GatewayName, options: GatewayC
 		);
 	}
 
-	test.describe(`Gateway PG · Carrier · Configuración Pasarela ${adapter.displayName} @gateway @${gateway} @cfg @regression`, () => {
+	// Tag de pasarela SIN guiones (S9): 'mercado-pago' → '@mercadopago' — los scripts npm
+	// por pasarela grepean el tag normalizado; el identifier de código NO cambia.
+	const gatewayTag = gateway.replace(/-/g, '');
+
+	test.describe(`Gateway PG · Carrier · Configuración Pasarela ${adapter.displayName} @gateway @${gatewayTag} @cfg @regression`, () => {
 		test.describe.configure({ mode: 'serial', timeout: 180_000 });
 		// El fixture KATA no define la opción `role` — login explícito vía loginAsDispatcher.
 		test.use({ storageState: { cookies: [], origins: [] } });

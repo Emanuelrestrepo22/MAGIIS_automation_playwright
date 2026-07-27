@@ -35,7 +35,7 @@ test.describe(`[MG · G][UI][${env.toUpperCase()}] MercadoPago — cleaningWalle
 	test.skip(!CREDS_READY, 'Faltan USER_CARRIER_MP / PASS_CARRIER_MP / BASE_URL (carrier ARG) — configurar .env.test');
 
 	test(
-		'[G-05] fallo mockeado (500) de cleaningWallets no debe reportar éxito falso ni desvincular en el FE',
+		'@gateway @gateway-pg @mercadopago @carrier [G-05] fallo mockeado (500) de cleaningWallets no debe reportar éxito falso ni desvincular en el FE',
 		{ annotation: [{ type: 'tms', description: 'MG-169' }] },
 		async ({ page }) => {
 			const appStore = new AppStoreGatewaysPage({ page });

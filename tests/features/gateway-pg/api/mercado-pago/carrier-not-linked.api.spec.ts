@@ -36,7 +36,7 @@ const AMOUNT = process.env.MP_AMOUNT ?? '10.00';
 const CREDS_READY = Boolean(process.env.USER_CARRIER_MP && process.env.PASS_CARRIER_MP && process.env.BASE_URL);
 const DATA_READY = Boolean(UNLINKED_CARRIER_ID && PASSENGER_ID);
 
-test.describe('[MG · B][API] MercadoPago — ePayment sobre carrier sin pasarela vinculada @regression @gateway-pg @mercado-pago', () => {
+test.describe('[MG · B][API] MercadoPago — ePayment sobre carrier sin pasarela vinculada @regression @gateway @gateway-pg @mercadopago', () => {
 	test.use({ role: 'carrier' });
 	test.skip(!CREDS_READY, 'Faltan USER_CARRIER_MP / PASS_CARRIER_MP / BASE_URL (carrier ARG) — configurar .env.test');
 
