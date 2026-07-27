@@ -7,7 +7,7 @@
 // challenge 3DS — independientemente de si la validación de la tarjeta completa. Fuente de flujo:
 // recordings test-14/15/16 (carrier ARG, TEST). Los ACs que dependen de que la validación COMPLETE
 // (MG-482/483/195/160) quedan UAT-only.
-import { test } from '@TestBase';
+import { test, expect } from '@TestBase';
 import { DashboardPage, NewTravelPage } from '@pages/carrier';
 import { loginAsDispatcher, expectNoThreeDSModal } from '@features/gateway-pg/fixtures/gateway.fixtures';
 import { MP_TEST_CARDS } from '@fixtures/gateways/mercado-pago/cards';
@@ -43,6 +43,15 @@ test.describe(`[MP][${env.toUpperCase()}] Validación de tarjeta MP sin challeng
 					holderName: APRO.holderName,
 					docNumber: APRO.identificationNumber,
 				});
+			});
+
+			await test.step('And: control positivo — el form MP quedó completo y "Validar" habilitado', async () => {
+				// Endurecimiento de oráculo (auditoría R2): el único oráculo era el negativo
+				// (expectNoThreeDSModal via toBeHidden — pasa aunque el selector jamás exista).
+				// Control positivo previo: el botón "Validar" solo se habilita cuando el form
+				// reactivo Angular es válido — señal real de que el flujo PROGRESÓ hasta el punto
+				// donde un 3DS podría dispararse (la validación completa es UAT-only, ver header).
+				await expect(page.getByRole('button', { name: /^Validar$/i }), 'el form MP debe quedar válido y "Validar" habilitado antes del oráculo negativo de 3DS').toBeEnabled({ timeout: 15_000 });
 			});
 
 			await test.step('And: se dispara la validación de la tarjeta ("Validar")', async () => {
