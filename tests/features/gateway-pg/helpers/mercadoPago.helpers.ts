@@ -1,4 +1,4 @@
-import { type Locator, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 import { MP_CARD_CATALOG, MP_DEFAULT_CVV, MP_DEFAULT_EXPIRY } from '@fixtures/gateways/mercado-pago/cards';
 
 /**
@@ -83,6 +83,24 @@ export async function fillMercadoPagoNativeCard(page: Page, input: MpNativeCardI
 /** Ventana acotada (por intento) para detectar el desenlace de la validación MP. */
 const MP_VALIDATION_OUTCOME_TIMEOUT_MS = 5_000;
 
+/** Botón "Validar" del form nativo MP — locator ÚNICO (consumido acá y por `expectValidateCardEnabled`). */
+const validarButton = (page: Page): Locator => page.getByRole('button', { name: /^Validar$/i });
+
+/**
+ * Control positivo del form MP: "Validar" habilitado = form reactivo Angular válido = el flujo
+ * PROGRESÓ hasta el punto donde la validación puede dispararse. Encapsula locator + assert
+ * (antes duplicado inline en `mp-no-3ds-validation.spec.ts`).
+ *
+ * TODO(live): la premisa disabled-until-valid del botón "Validar" NO tiene captura live para MP
+ * (verificada para el modal Authorize, no para este form) — confirmar en una corrida viva.
+ */
+export async function expectValidateCardEnabled(page: Page, timeout = 15_000): Promise<void> {
+	await expect(
+		validarButton(page),
+		'el form MP debe quedar válido y "Validar" habilitado'
+	).toBeEnabled({ timeout });
+}
+
 /** Tarjeta resaltada en el dropdown de métodos de pago = vinculación satisfactoria (recording test-15). */
 const highlightedCard = (page: Page): Locator =>
 	page.locator('.ng-star-inserted.highlighted > .data-with-icon-col').first();
@@ -130,7 +148,7 @@ export async function validateAndSelectMercadoPagoCard(
 	page: Page,
 	attempts = 3
 ): Promise<'linked' | 'validation-failed' | 'validation-unavailable'> {
-	const validar = page.getByRole('button', { name: /^Validar$/i });
+	const validar = validarButton(page);
 	const paymentMethods = page.locator('#add_travel_payment_methods');
 
 	for (let attempt = 1; attempt <= attempts; attempt += 1) {

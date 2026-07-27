@@ -9,8 +9,11 @@
  * Mismo patrón de fuente única que `data/xray-keys.ts`.
  *
  * Consumidores: `authorizeGatewayAdapter` / `ebizchargeGatewayAdapter` (campos S2) y el POM
- * `AppStoreGatewaysPage` (defaults de los wrappers de status del link). El import
- * components→features tiene precedente (`card-forms` → `@features/.../adapters`).
+ * `AppStoreGatewaysPage` (defaults de los wrappers de status del link).
+ *
+ * Decisión de capas: vive en `features/data` como fuente única consumida por `components` —
+ * excepción de capas ACEPTADA (precedente: `card-forms` → `@features/.../adapters`),
+ * registrada en judgment-day 2026-07-27.
  *
  * Semántica Authorize (quirk backend VERIFICADO — HANDOFF §2 + addendum 2026-07-25):
  * 500 = conectada desde estado limpio; 409 = ya vinculada por otra sesión; 400 = NO
@@ -19,13 +22,13 @@
  */
 
 /** Statuses de éxito del link Authorize (quirk 500|409 verificado — nunca 400). */
-export const AUTHORIZE_LINK_SUCCESS_STATUSES: readonly number[] = [500, 409] as const;
+export const AUTHORIZE_LINK_SUCCESS_STATUSES = [500, 409] as const;
 
 /** Matcher VERIFICADO live de la mutación de link Authorize (endpoint = odnService, MG-476). */
 export const AUTHORIZE_LINK_MUTATION_URL_PATTERN = /odnservice|payment.?gateway|paymentgateway|vendor|integration|authorize/i;
 
 /** TODO(live): [200] ASUMIDO — status real de la request de link eBizCharge NO verificado. */
-export const EBIZCHARGE_LINK_SUCCESS_STATUSES: readonly number[] = [200] as const;
+export const EBIZCHARGE_LINK_SUCCESS_STATUSES = [200] as const;
 
 /** TODO(live): matcher NO verificado — base del matcher Authorize + needle propio eBiz. */
 export const EBIZCHARGE_LINK_MUTATION_URL_PATTERN = /odnservice|payment.?gateway|paymentgateway|vendor|integration|ebiz/i;

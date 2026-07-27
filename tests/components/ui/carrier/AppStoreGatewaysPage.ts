@@ -649,7 +649,6 @@ export class AppStoreGatewaysPage extends UiBase {
 	 * estado limpio; 409 = CONECTADA cuando el carrier 1521 (compartido por la suite gateway) ya
 	 * estaba vinculado por otra sesión — ambos son éxito funcional, ninguno es bug de test.
 	 * 400 = NO conectada. El 500/409-en-éxito es smell de API (debería ser 2xx) → Improvement/Defect a DEV/MX (no MG).
-	 * FRAGILE: el endpoint real del link NO está verificado — ajustar el matcher de URL en vivo.
 	 * Endpoint del link Authorize = odnService (MG-476), NO /vendor/. El matcher incluye odnService.
 	 */
 	@atc('MG-226', { severity: 'normal', description: 'La request de link de Authorize retorna un status de éxito conocido (500|409)' })

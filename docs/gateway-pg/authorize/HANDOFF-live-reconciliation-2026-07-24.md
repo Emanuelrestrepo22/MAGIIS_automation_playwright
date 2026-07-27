@@ -108,6 +108,10 @@ exclusiva + teardown manual — `GatewaySwitchSteps.restoreStripe()` está **INC
    mezcla idiomas (título/campos en inglés "Link your account"/"API Login ID:", botones en español
    "Cancelar"/"Continuar"); el matcher del POM acepta ambos (`/^(Continuar|Continue)$/i`) y el botón
    empieza DISABLED hasta que el form reactivo sea válido. Ver `linkSubmitIn()` (~L166-175).
-3. **Copy del botón afirmativo del popup de unlink NO documentado** — nunca se capturó el texto
-   real; el POM usa un matcher tolerante (`/s[ií]|confirmar|aceptar|desvincular|yes|ok/i`) marcado
-   **FRAGILE**. Capturar el copy real en la próxima corrida viva. Ver `confirmUnlink()` (~L309).
+3. **Copy del botón afirmativo del popup de unlink — PARCIALMENTE capturado** — para el popup de
+   **MP** el copy real es **"Confirmar"**, observado live vía MG-169 (POM
+   `expectUnlinkFailureShowsRealError`, `getByRole('button', { name: /^confirmar$/i })` —
+   verificación 2026-07-25). El matcher GENÉRICO multi-pasarela de `confirmUnlink()`
+   (`/s[ií]|confirmar|aceptar|desvincular|yes|ok/i`) sigue **FRAGILE / sin capturar** para el
+   resto de las pasarelas — capturar el copy por PSP en la próxima corrida viva. Ver
+   `confirmUnlink()` (~L309).

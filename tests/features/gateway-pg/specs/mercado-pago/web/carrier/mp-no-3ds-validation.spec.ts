@@ -7,11 +7,15 @@
 // challenge 3DS — independientemente de si la validación de la tarjeta completa. Fuente de flujo:
 // recordings test-14/15/16 (carrier ARG, TEST). Los ACs que dependen de que la validación COMPLETE
 // (MG-482/483/195/160) quedan UAT-only.
-import { test, expect } from '@TestBase';
+import { test } from '@TestBase';
 import { DashboardPage, NewTravelPage } from '@pages/carrier';
 import { loginAsDispatcher, expectNoThreeDSModal } from '@features/gateway-pg/fixtures/gateway.fixtures';
 import { MP_TEST_CARDS } from '@fixtures/gateways/mercado-pago/cards';
-import { fillMercadoPagoNativeCard } from '@features/gateway-pg/helpers/mercadoPago.helpers';
+import {
+	expectValidateCardEnabled,
+	fillMercadoPagoNativeCard,
+	waitForMpValidationOutcome
+} from '@features/gateway-pg/helpers/mercadoPago.helpers';
 
 const env = process.env.ENV ?? 'test';
 const MP_CLIENT = 'Emanuel mercadopago'; // id=10785 (cliente individuo ARG)
@@ -48,10 +52,10 @@ test.describe(`[MP][${env.toUpperCase()}] Validación de tarjeta MP sin challeng
 			await test.step('And: control positivo — el form MP quedó completo y "Validar" habilitado', async () => {
 				// Endurecimiento de oráculo (auditoría R2): el único oráculo era el negativo
 				// (expectNoThreeDSModal via toBeHidden — pasa aunque el selector jamás exista).
-				// Control positivo previo: el botón "Validar" solo se habilita cuando el form
-				// reactivo Angular es válido — señal real de que el flujo PROGRESÓ hasta el punto
-				// donde un 3DS podría dispararse (la validación completa es UAT-only, ver header).
-				await expect(page.getByRole('button', { name: /^Validar$/i }), 'el form MP debe quedar válido y "Validar" habilitado antes del oráculo negativo de 3DS').toBeEnabled({ timeout: 15_000 });
+				// Control positivo previo encapsulado en el helper (locator "Validar" único; la
+				// premisa disabled-until-valid lleva TODO(live) ahí). La validación completa es
+				// UAT-only, ver header.
+				await expectValidateCardEnabled(page);
 			});
 
 			await test.step('And: se dispara la validación de la tarjeta ("Validar")', async () => {
@@ -59,6 +63,13 @@ test.describe(`[MP][${env.toUpperCase()}] Validación de tarjeta MP sin challeng
 			});
 
 			await test.step('Then: MercadoPago NO dispara challenge 3DS (form nativo, sin iframe three-ds)', async () => {
+				// Primer assert: ausencia de 3DS inmediatamente post-click (ventana toBeHidden 5s).
+				await expectNoThreeDSModal(page);
+				// Re-assert post-desenlace: esperar el desenlace de la validación (tarjeta resaltada
+				// o error sandbox — el valor NO se asserta: la validación completa es UAT-only, ver
+				// header) y sostener la ausencia de 3DS también DESPUÉS de ese punto — el assert
+				// anterior corre post-click pero el desenlace puede tardar unos segundos más.
+				await waitForMpValidationOutcome(page);
 				await expectNoThreeDSModal(page);
 				await page.screenshot({ path: `evidence/${env}/mp-194-no-3ds.png`, fullPage: true });
 			});
