@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-27T12:44:46.022Z",
+  "generated_at": "2026-07-27T12:54:19.435Z",
   "generator": "scripts/ai/derive-gateway-matrix.mjs",
   "gateway": "authorize",
   "source_l1": "docs/gateway-pg/stripe/normalized-test-cases.json",
@@ -31,7 +31,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "1. Configuración de Pasarela Authorize.net (Magiis App Store)",
+      "section": "Configuración de Pasarela Authorize.net (Magiis App Store)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -53,7 +53,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "1. Configuración de Pasarela Authorize.net (Magiis App Store)",
+      "section": "Configuración de Pasarela Authorize.net (Magiis App Store)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -75,7 +75,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "1. Configuración de Pasarela Authorize.net (Magiis App Store)",
+      "section": "Configuración de Pasarela Authorize.net (Magiis App Store)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -97,7 +97,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "1. Configuración de Pasarela Authorize.net (Magiis App Store)",
+      "section": "Configuración de Pasarela Authorize.net (Magiis App Store)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -119,7 +119,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "1. Configuración de Pasarela Authorize.net (Magiis App Store)",
+      "section": "Configuración de Pasarela Authorize.net (Magiis App Store)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -141,7 +141,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "1. Configuración de Pasarela Authorize.net (Magiis App Store)",
+      "section": "Configuración de Pasarela Authorize.net (Magiis App Store)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -163,7 +163,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "1. Configuración de Pasarela Authorize.net (Magiis App Store)",
+      "section": "Configuración de Pasarela Authorize.net (Magiis App Store)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -185,7 +185,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "1. Configuración de Pasarela Authorize.net (Magiis App Store)",
+      "section": "Configuración de Pasarela Authorize.net (Magiis App Store)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -207,7 +207,7 @@
         "@gateway-pg"
       ],
       "critical_flow": true,
-      "section": "Alta de Viaje desde Carrier – Usuario Personal",
+      "section": "Happy paths — sin antifraude (CVV match)",
       "subsection": "Tarjeta Preautorizada – sin validación 3DS",
       "card_flow": "n/a",
       "origin": "derived",
@@ -231,7 +231,7 @@
         "@gateway-pg"
       ],
       "critical_flow": true,
-      "section": "Alta de Viaje desde Carrier – Usuario Personal",
+      "section": "Happy paths — sin antifraude (CVV match)",
       "subsection": "Tarjeta Preautorizada – sin validación 3DS",
       "card_flow": "n/a",
       "origin": "derived",
@@ -255,7 +255,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "2.1 Happy paths — sin antifraude (CVV match)",
+      "section": "Happy paths — sin antifraude (CVV match)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -277,7 +277,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "2.1 Happy paths — sin antifraude (CVV match)",
+      "section": "Happy paths — sin antifraude (CVV match)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -299,7 +299,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "2.1 Happy paths — sin antifraude (CVV match)",
+      "section": "Happy paths — sin antifraude (CVV match)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -321,7 +321,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "2.1 Happy paths — sin antifraude (CVV match)",
+      "section": "Happy paths — sin antifraude (CVV match)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -343,7 +343,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "2.1 Happy paths — sin antifraude (CVV match)",
+      "section": "Happy paths — sin antifraude (CVV match)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -365,7 +365,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "2.2 Decline genérico (ZIP trigger 46282)",
+      "section": "Decline genérico (ZIP trigger 46282)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -387,7 +387,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "2.2 Decline genérico (ZIP trigger 46282)",
+      "section": "Decline genérico (ZIP trigger 46282)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -409,7 +409,7 @@
         "@gateway-pg"
       ],
       "critical_flow": true,
-      "section": "Alta de Viaje desde Carrier – Usuario Personal",
+      "section": "Happy paths — sin antifraude (CVV match)",
       "subsection": "Tarjeta Preautorizada – sin validación 3DS",
       "card_flow": "n/a",
       "origin": "derived",
@@ -433,7 +433,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "2.3 CVV triggers (901 mismatch, 902 should-be, 903 issuer, 904 not-processed)",
+      "section": "CVV triggers (901 mismatch, 902 should-be, 903 issuer, 904 not-processed)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -455,7 +455,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "2.3 CVV triggers (901 mismatch, 902 should-be, 903 issuer, 904 not-processed)",
+      "section": "CVV triggers (901 mismatch, 902 should-be, 903 issuer, 904 not-processed)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -477,7 +477,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "2.3 CVV triggers (901 mismatch, 902 should-be, 903 issuer, 904 not-processed)",
+      "section": "CVV triggers (901 mismatch, 902 should-be, 903 issuer, 904 not-processed)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -499,7 +499,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "2.3 CVV triggers (901 mismatch, 902 should-be, 903 issuer, 904 not-processed)",
+      "section": "CVV triggers (901 mismatch, 902 should-be, 903 issuer, 904 not-processed)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -521,7 +521,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "2.3 CVV triggers (901 mismatch, 902 should-be, 903 issuer, 904 not-processed)",
+      "section": "CVV triggers (901 mismatch, 902 should-be, 903 issuer, 904 not-processed)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -543,7 +543,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "2.3 CVV triggers (901 mismatch, 902 should-be, 903 issuer, 904 not-processed)",
+      "section": "CVV triggers (901 mismatch, 902 should-be, 903 issuer, 904 not-processed)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -565,7 +565,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "2.4 AVS triggers (no match, non-US, otros)",
+      "section": "AVS triggers (no match, non-US, otros)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -587,7 +587,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "2.4 AVS triggers (no match, non-US, otros)",
+      "section": "AVS triggers (no match, non-US, otros)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -609,7 +609,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "2.4 AVS triggers (no match, non-US, otros)",
+      "section": "AVS triggers (no match, non-US, otros)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -631,7 +631,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "2.4 AVS triggers (no match, non-US, otros)",
+      "section": "AVS triggers (no match, non-US, otros)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -653,7 +653,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "2.4 AVS triggers (no match, non-US, otros)",
+      "section": "AVS triggers (no match, non-US, otros)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -675,7 +675,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "2.4 AVS triggers (no match, non-US, otros)",
+      "section": "AVS triggers (no match, non-US, otros)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -697,7 +697,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "2.4 AVS triggers (no match, non-US, otros)",
+      "section": "AVS triggers (no match, non-US, otros)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -719,7 +719,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "2.5 Partial / Prepaid authorizations (edge cases)",
+      "section": "Partial / Prepaid authorizations (edge cases)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -741,7 +741,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "2.5 Partial / Prepaid authorizations (edge cases)",
+      "section": "Partial / Prepaid authorizations (edge cases)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -763,7 +763,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "2.5 Partial / Prepaid authorizations (edge cases)",
+      "section": "Partial / Prepaid authorizations (edge cases)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -785,7 +785,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "3.1 Happy paths sin antifraude",
+      "section": "Happy paths sin antifraude",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -807,7 +807,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "3.1 Happy paths sin antifraude",
+      "section": "Happy paths sin antifraude",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -829,7 +829,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "3.1 Happy paths sin antifraude",
+      "section": "Happy paths sin antifraude",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -851,7 +851,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "3.1 Happy paths sin antifraude",
+      "section": "Happy paths sin antifraude",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -873,7 +873,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "3.1 Happy paths sin antifraude",
+      "section": "Happy paths sin antifraude",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -895,7 +895,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "3.2 Declines y CVV",
+      "section": "Declines y CVV",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -917,7 +917,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "3.2 Declines y CVV",
+      "section": "Declines y CVV",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -939,7 +939,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "4.1 Happy paths",
+      "section": "Happy paths",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -961,7 +961,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "4.1 Happy paths",
+      "section": "Happy paths",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -983,7 +983,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "4.1 Happy paths",
+      "section": "Happy paths",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -1005,7 +1005,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "4.1 Happy paths",
+      "section": "Happy paths",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -1027,7 +1027,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "4.2 Declines",
+      "section": "Declines",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -1049,7 +1049,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "5. Alta de Viaje desde App Pax – Usuario Personal (Android)",
+      "section": "Alta de Viaje desde App Pax – Usuario Personal (Android)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -1071,7 +1071,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "5. Alta de Viaje desde App Pax – Usuario Personal (Android)",
+      "section": "Alta de Viaje desde App Pax – Usuario Personal (Android)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -1093,7 +1093,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "5. Alta de Viaje desde App Pax – Usuario Personal (Android)",
+      "section": "Alta de Viaje desde App Pax – Usuario Personal (Android)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -1115,7 +1115,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "6. Alta de Viaje desde App Pax – Usuario Business / Colaborador",
+      "section": "Alta de Viaje desde App Pax – Usuario Business / Colaborador",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -1137,7 +1137,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "6. Alta de Viaje desde App Pax – Usuario Business / Colaborador",
+      "section": "Alta de Viaje desde App Pax – Usuario Business / Colaborador",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -1159,7 +1159,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "7.1 Escenarios de pago exitoso y rechazo",
+      "section": "Escenarios de pago exitoso y rechazo",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -1181,7 +1181,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "7.1 Escenarios de pago exitoso y rechazo",
+      "section": "Escenarios de pago exitoso y rechazo",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -1203,7 +1203,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "7.1 Escenarios de pago exitoso y rechazo",
+      "section": "Escenarios de pago exitoso y rechazo",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -1225,7 +1225,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "7.2 Antifraude (AVS)",
+      "section": "Antifraude (AVS)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -1247,7 +1247,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "7.2 Antifraude (AVS)",
+      "section": "Antifraude (AVS)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -1269,7 +1269,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "8. Cargo a Bordo – Tarjeta de Crédito – Usuario Colaborador o Asociado de Contractor (desde Carrier)",
+      "section": "Cargo a Bordo – Tarjeta de Crédito – Usuario Colaborador o Asociado de Contractor (desde Carrier)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -1291,7 +1291,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "8. Cargo a Bordo – Tarjeta de Crédito – Usuario Colaborador o Asociado de Contractor (desde Carrier)",
+      "section": "Cargo a Bordo – Tarjeta de Crédito – Usuario Colaborador o Asociado de Contractor (desde Carrier)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -1313,7 +1313,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "8. Cargo a Bordo – Tarjeta de Crédito – Usuario Colaborador o Asociado de Contractor (desde Carrier)",
+      "section": "Cargo a Bordo – Tarjeta de Crédito – Usuario Colaborador o Asociado de Contractor (desde Carrier)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -1335,7 +1335,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "8. Cargo a Bordo – Tarjeta de Crédito – Usuario Colaborador o Asociado de Contractor (desde Carrier)",
+      "section": "Cargo a Bordo – Tarjeta de Crédito – Usuario Colaborador o Asociado de Contractor (desde Carrier)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -1357,7 +1357,7 @@
         "@gateway-pg"
       ],
       "critical_flow": true,
-      "section": "Alta de Viaje desde App Pax – Usuario Personal",
+      "section": "Alta de Viaje desde App Pax – Usuario Personal (Android)",
       "subsection": "Tarjeta Preautorizada – sin validación 3DS",
       "card_flow": "n/a",
       "origin": "derived",
@@ -1381,7 +1381,7 @@
         "@gateway-pg"
       ],
       "critical_flow": true,
-      "section": "Alta de Viaje desde App Pax – Usuario Personal",
+      "section": "Alta de Viaje desde App Pax – Usuario Personal (Android)",
       "subsection": "Tarjeta Preautorizada – sin validación 3DS",
       "card_flow": "n/a",
       "origin": "derived",
@@ -1405,7 +1405,7 @@
         "@gateway-pg"
       ],
       "critical_flow": true,
-      "section": "Alta de Viaje desde App Pax – Usuario Personal",
+      "section": "Alta de Viaje desde App Pax – Usuario Personal (Android)",
       "subsection": "Tarjeta Preautorizada – sin validación 3DS",
       "card_flow": "n/a",
       "origin": "derived",
@@ -1501,7 +1501,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "9. Cargo a Bordo – Tarjeta de Crédito – Usuario Empresa Individuo (desde Carrier)",
+      "section": "Cargo a Bordo – Tarjeta de Crédito – Usuario Empresa Individuo (desde Carrier)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -1523,7 +1523,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "9. Cargo a Bordo – Tarjeta de Crédito – Usuario Empresa Individuo (desde Carrier)",
+      "section": "Cargo a Bordo – Tarjeta de Crédito – Usuario Empresa Individuo (desde Carrier)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -1569,7 +1569,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "1.1 Colaborador de Contractor – Tarjeta Preautorizada sin antifraude",
+      "section": "Colaborador de Contractor – Tarjeta Preautorizada sin antifraude",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -1591,7 +1591,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "1.1 Colaborador de Contractor – Tarjeta Preautorizada sin antifraude",
+      "section": "Colaborador de Contractor – Tarjeta Preautorizada sin antifraude",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -1613,7 +1613,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "1.1 Colaborador de Contractor – Tarjeta Preautorizada sin antifraude",
+      "section": "Colaborador de Contractor – Tarjeta Preautorizada sin antifraude",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -1635,7 +1635,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "1.1 Colaborador de Contractor – Tarjeta Preautorizada sin antifraude",
+      "section": "Colaborador de Contractor – Tarjeta Preautorizada sin antifraude",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -1657,7 +1657,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "1.2 Colaborador de Contractor – Tarjetas con fallo de pago",
+      "section": "Colaborador de Contractor – Tarjetas con fallo de pago",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -1679,7 +1679,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "1.2 Colaborador de Contractor – Tarjetas con fallo de pago",
+      "section": "Colaborador de Contractor – Tarjetas con fallo de pago",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -2037,7 +2037,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "2.1 Eliminación desde App Pax (Personal)",
+      "section": "Eliminación desde App Pax (Personal)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -2059,7 +2059,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "2.1 Eliminación desde App Pax (Personal)",
+      "section": "Eliminación desde App Pax (Personal)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -2081,7 +2081,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "2.2 Validación de tarjeta nueva (Accept.js iframe / shared form)",
+      "section": "Validación de tarjeta nueva (Accept.js iframe / shared form)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -2103,7 +2103,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "2.2 Validación de tarjeta nueva (Accept.js iframe / shared form)",
+      "section": "Validación de tarjeta nueva (Accept.js iframe / shared form)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -2125,7 +2125,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "2.2 Validación de tarjeta nueva (Accept.js iframe / shared form)",
+      "section": "Validación de tarjeta nueva (Accept.js iframe / shared form)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -2147,7 +2147,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "2.2 Validación de tarjeta nueva (Accept.js iframe / shared form)",
+      "section": "Validación de tarjeta nueva (Accept.js iframe / shared form)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -2169,7 +2169,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "2.2 Validación de tarjeta nueva (Accept.js iframe / shared form)",
+      "section": "Validación de tarjeta nueva (Accept.js iframe / shared form)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -2503,7 +2503,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "3.1 Primer cobro + persistencia de `networkTransId`",
+      "section": "Primer cobro + persistencia de `networkTransId`",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -2525,7 +2525,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "3.1 Primer cobro + persistencia de `networkTransId`",
+      "section": "Primer cobro + persistencia de `networkTransId`",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -2547,7 +2547,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "3.2 Segundo cobro reusando stored credentials",
+      "section": "Segundo cobro reusando stored credentials",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -2569,7 +2569,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "3.2 Segundo cobro reusando stored credentials",
+      "section": "Segundo cobro reusando stored credentials",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -2591,7 +2591,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "3.2 Segundo cobro reusando stored credentials",
+      "section": "Segundo cobro reusando stored credentials",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -2613,7 +2613,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "3.3 Edge cases stored credentials",
+      "section": "Edge cases stored credentials",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -2635,7 +2635,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "3.3 Edge cases stored credentials",
+      "section": "Edge cases stored credentials",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -2969,7 +2969,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "4. Refunds (post-settlement)",
+      "section": "Refunds (post-settlement)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -2991,7 +2991,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "4. Refunds (post-settlement)",
+      "section": "Refunds (post-settlement)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -3013,7 +3013,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "4. Refunds (post-settlement)",
+      "section": "Refunds (post-settlement)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -3035,7 +3035,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "4. Refunds (post-settlement)",
+      "section": "Refunds (post-settlement)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -3057,7 +3057,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "4. Refunds (post-settlement)",
+      "section": "Refunds (post-settlement)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -3199,7 +3199,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "5. Voids (pre-settlement)",
+      "section": "Voids (pre-settlement)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -3221,7 +3221,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "5. Voids (pre-settlement)",
+      "section": "Voids (pre-settlement)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -3243,7 +3243,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "5. Voids (pre-settlement)",
+      "section": "Voids (pre-settlement)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -3265,7 +3265,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "5. Voids (pre-settlement)",
+      "section": "Voids (pre-settlement)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -3407,7 +3407,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "6. Recurring Billing (subscriptions) — Scope opcional",
+      "section": "Recurring Billing (subscriptions) — Scope opcional",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -3429,7 +3429,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "6. Recurring Billing (subscriptions) — Scope opcional",
+      "section": "Recurring Billing (subscriptions) — Scope opcional",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -3451,7 +3451,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "6. Recurring Billing (subscriptions) — Scope opcional",
+      "section": "Recurring Billing (subscriptions) — Scope opcional",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -3473,7 +3473,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "6. Recurring Billing (subscriptions) — Scope opcional",
+      "section": "Recurring Billing (subscriptions) — Scope opcional",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -3495,7 +3495,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "7. Accept.js iframe — Edge cases de UI",
+      "section": "Accept.js iframe — Edge cases de UI",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -3517,7 +3517,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "7. Accept.js iframe — Edge cases de UI",
+      "section": "Accept.js iframe — Edge cases de UI",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -3539,7 +3539,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "7. Accept.js iframe — Edge cases de UI",
+      "section": "Accept.js iframe — Edge cases de UI",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -3561,7 +3561,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "7. Accept.js iframe — Edge cases de UI",
+      "section": "Accept.js iframe — Edge cases de UI",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -3583,7 +3583,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "8. E2E híbridos Authorize – Carrier Web + Driver App (Flow 1 equivalente)",
+      "section": "E2E híbridos Authorize – Carrier Web + Driver App (Flow 1 equivalente)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -3605,7 +3605,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "8. E2E híbridos Authorize – Carrier Web + Driver App (Flow 1 equivalente)",
+      "section": "E2E híbridos Authorize – Carrier Web + Driver App (Flow 1 equivalente)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -3627,7 +3627,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "8. E2E híbridos Authorize – Carrier Web + Driver App (Flow 1 equivalente)",
+      "section": "E2E híbridos Authorize – Carrier Web + Driver App (Flow 1 equivalente)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -3649,7 +3649,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "9. E2E híbridos Authorize – Passenger App + Driver App (Flow 2 equivalente)",
+      "section": "E2E híbridos Authorize – Passenger App + Driver App (Flow 2 equivalente)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -3671,7 +3671,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "9. E2E híbridos Authorize – Passenger App + Driver App (Flow 2 equivalente)",
+      "section": "E2E híbridos Authorize – Passenger App + Driver App (Flow 2 equivalente)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -3693,7 +3693,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "10. Fraud Management — Held for Review (Response Code 4)",
+      "section": "Fraud Management — Held for Review (Response Code 4)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -3715,7 +3715,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "10. Fraud Management — Held for Review (Response Code 4)",
+      "section": "Fraud Management — Held for Review (Response Code 4)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",
@@ -3737,7 +3737,7 @@
         "@gateway-pg"
       ],
       "critical_flow": false,
-      "section": "10. Fraud Management — Held for Review (Response Code 4)",
+      "section": "Fraud Management — Held for Review (Response Code 4)",
       "subsection": "",
       "card_flow": null,
       "origin": "existing",

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-27T12:46:25.599Z",
+  "generated_at": "2026-07-27T12:53:47.809Z",
   "generator": "scripts/ai/derive-gateway-matrix.mjs",
   "gateway": "ebizcharge",
   "source_l1": "docs/gateway-pg/stripe/normalized-test-cases.json",

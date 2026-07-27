@@ -105,7 +105,7 @@ for (const file of delta.matrix_files) {
 	let section = '';
 	for (const line of text.split(/\r?\n/)) {
 		const h = line.match(/^#{2,3}\s+(.*)$/);
-		if (h) section = h[1].trim();
+		if (h) section = h[1].trim().replace(/^\d+(\.\d+)*\.?\s+/, '');
 		const m = line.match(ID_ROW);
 		if (m) {
 			existingRows.push({
@@ -119,6 +119,16 @@ for (const file of delta.matrix_files) {
 	}
 }
 const existingById = new Map(existingRows.map((r) => [r.id, r]));
+
+// L1 previo de la pasarela (si existe): stripe_ref ya derivado = cubierto.
+// Garantiza idempotencia de re-runs (--apply repetido no duplica filas).
+let prevRefs = new Map();
+let prevById = new Map();
+try {
+	const prev = readJson(delta.l1_output);
+	prevRefs = new Map(prev.cases.filter((c) => c.stripe_ref).map((c) => [c.stripe_ref, c.test_case_id]));
+	prevById = new Map(prev.cases.map((c) => [c.test_case_id, c]));
+} catch { /* primera corrida: sin L1 previo */ }
 const existingByNormTitle = new Map();
 for (const r of existingRows) {
 	const k = normalizeTitle(r.title);
@@ -152,6 +162,12 @@ for (const c of actives) {
 		}
 		cls.covered.push(c);
 		coveredDetail.push({ stripeId: c.test_case_id, targetId: pin, via: 'pin' });
+		continue;
+	}
+	const prevId = prevRefs.get(c.test_case_id);
+	if (prevId && existingById.has(prevId)) {
+		cls.covered.push(c);
+		coveredDetail.push({ stripeId: c.test_case_id, targetId: prevId, via: 'l1-ref' });
 		continue;
 	}
 	const tm = existingByNormTitle.get(normalizeTitle(c.title));
@@ -200,6 +216,7 @@ if (cls.conflicts.length) {
 // ---------- reporte ----------
 const viaPin = coveredDetail.filter((d) => d.via === 'pin').length;
 const viaTitle = coveredDetail.filter((d) => d.via === 'title-match').length;
+const viaL1 = coveredDetail.filter((d) => d.via === 'l1-ref').length;
 console.log(`== derive-gateway-matrix — gateway=${GATEWAY} (${APPLY ? 'APPLY' : 'DRY-RUN'}) ==`);
 console.log(`L1 Stripe total:                 ${stripeL1.cases.length}`);
 console.log(`excluidos @3ds:                  ${cls.threeds.length}`);
@@ -208,7 +225,7 @@ console.log(`activos:                         ${actives.length}`);
 console.log(`excluidos §3.2 (explícitos):     ${cls.sec32.length}`);
 console.log(`excluidos delta-config:          ${cls.deltaExcl.length}`);
 console.log(`candidatos derivables:           ${actives.length - cls.sec32.length - cls.deltaExcl.length}`);
-console.log(`ya cubiertos:                    ${cls.covered.length} (pins: ${viaPin}, title-match: ${viaTitle})`);
+console.log(`ya cubiertos:                    ${cls.covered.length} (pins: ${viaPin}, l1-ref: ${viaL1}, title-match: ${viaTitle})`);
 console.log(`nuevos derivados:                ${derived.length}`);
 console.log(`pins huérfanos (stripe inactivo/excluido — documentados, sin acción): ${orphanPins.length}`);
 for (const o of orphanPins) console.log(`    · ${o}`);
@@ -327,23 +344,28 @@ const derivedCases = derived.map((d) => ({
 	card: cardCell(d.intent, d.stripe.card_flow, d.stripe).replace(/`/g, '')
 }));
 
-const existingCases = existingRows.map((r) => ({
-	test_case_id: r.id,
-	title: r.title.replace(/\*\*/g, ''),
-	module: delta.module_slug,
-	portal: null,
-	environment: ['TEST'],
-	priority: null,
-	source_type: 'md',
-	source_file: basename(r.file),
-	tags: [delta.tag, '@gateway-pg'],
-	critical_flow: false,
-	section: r.section,
-	subsection: '',
-	card_flow: null,
-	origin: 'existing',
-	stripe_ref: reversePins[r.id] ?? null
-}));
+const existingCases = existingRows.map((r) => {
+	const prev = prevById.get(r.id);
+	// Fila ya presente en un L1 previo → preservar campos derivados (idempotencia).
+	if (prev) return { ...prev, title: r.title.replace(/\*\*/g, ''), section: r.section, source_file: basename(r.file) };
+	return {
+		test_case_id: r.id,
+		title: r.title.replace(/\*\*/g, ''),
+		module: delta.module_slug,
+		portal: null,
+		environment: ['TEST'],
+		priority: null,
+		source_type: 'md',
+		source_file: basename(r.file),
+		tags: [delta.tag, '@gateway-pg'],
+		critical_flow: false,
+		section: r.section,
+		subsection: '',
+		card_flow: null,
+		origin: 'existing',
+		stripe_ref: reversePins[r.id] ?? null
+	};
+});
 
 const allCases = [...existingCases, ...derivedCases].sort((a, b) =>
 	a.test_case_id.localeCompare(b.test_case_id, 'en', { numeric: true })
