@@ -81,6 +81,15 @@ const COMPANY_NEEDLE: Record<GatewayCompany, RegExp> = {
 
 const INTEGRATIONS_PATH = '/#/home/carrier/integrations/list';
 
+/**
+ * Guard de operaciones DESTRUCTIVAS de pasarela (S5): renombrado cross-gateway a
+ * `GATEWAY_ALLOW_DESTRUCTIVE_SWITCH` (el switch ya no es Authorize-only). El nombre viejo
+ * `AUTHORIZE_ALLOW_DESTRUCTIVE_SWITCH` se mantiene como ALIAS retrocompatible.
+ */
+function isDestructiveSwitchAllowed(): boolean {
+	return process.env.GATEWAY_ALLOW_DESTRUCTIVE_SWITCH === 'true' || process.env.AUTHORIZE_ALLOW_DESTRUCTIVE_SWITCH === 'true';
+}
+
 export class AppStoreGatewaysPage extends UiBase {
 	constructor(options: TestContextOptions) {
 		super(options);
@@ -393,10 +402,10 @@ export class AppStoreGatewaysPage extends UiBase {
 	 */
 	@atc('MG-223', { severity: 'critical', description: 'Desvincular pasarela (dispara cleaningWallets)' })
 	async unlinkGateway(company: GatewayCompany): Promise<void> {
-		if (process.env.AUTHORIZE_ALLOW_DESTRUCTIVE_SWITCH !== 'true') {
+		if (!isDestructiveSwitchAllowed()) {
 			throw new Error(
 				'unlinkGateway() es DESTRUCTIVO: dispara cleaningWallets en cascada sobre el carrier 1521 (compartido por toda la suite gateway), borrando la tarjeta real del pasajero. ' +
-					'Requiere AUTHORIZE_ALLOW_DESTRUCTIVE_SWITCH=true puesto explícitamente para correr — no está habilitado por defecto.',
+					'Requiere GATEWAY_ALLOW_DESTRUCTIVE_SWITCH=true puesto explícitamente para correr (alias legacy AUTHORIZE_ALLOW_DESTRUCTIVE_SWITCH también aceptado) — no está habilitado por defecto.',
 			);
 		}
 		await this.openUnlinkPopup(company);
@@ -429,7 +438,7 @@ export class AppStoreGatewaysPage extends UiBase {
 	 * ⚠️ NO destructivo por construcción: `page.route()` intercepta la request ANTES de que
 	 * salga del browser — el backend real de `cleaningWallets` NUNCA se contacta, a diferencia
 	 * de `unlinkGateway()` (que sí ejecuta el unlink real y por eso exige el guard
-	 * `AUTHORIZE_ALLOW_DESTRUCTIVE_SWITCH`). Esta ATC deliberadamente NO reutiliza `unlinkGateway()`
+	 * `GATEWAY_ALLOW_DESTRUCTIVE_SWITCH`, ex `AUTHORIZE_ALLOW_DESTRUCTIVE_SWITCH`). Esta ATC deliberadamente NO reutiliza `unlinkGateway()`
 	 * (sus aserciones esperan el ÉXITO de la desvinculación, el escenario opuesto al de este TC).
 	 *
 	 * Tampoco reutiliza los helpers privados `openUnlinkPopup`/`confirmPopup` (FRAGILE, confirmado

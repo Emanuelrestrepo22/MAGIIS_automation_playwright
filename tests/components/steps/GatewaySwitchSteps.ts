@@ -29,7 +29,7 @@ import type { TestContextOptions } from '@TestContext';
 
 import { test } from '@TestFixture';
 import { UiBase } from '@ui/UiBase';
-import { AppStoreGatewaysPage, type AuthorizeCreds, type GatewayCompany } from '@ui/carrier';
+import { AppStoreGatewaysPage, type AuthorizeCreds, type EbizchargeCreds, type GatewayCompany } from '@ui/carrier';
 
 /** Pasarelas que el switcher sabe manejar (alias de GatewayCompany). */
 export type SwitchableGateway = GatewayCompany;
@@ -52,6 +52,21 @@ export class GatewaySwitchSteps extends UiBase {
 			throw new Error('Faltan AUTHORIZE_API_LOGIN_ID / AUTHORIZE_TRANSACTION_KEY en .env.test ' + '(ver docs/gateway-pg/authorize/EXTERNAL-BLOCKERS.md §1).');
 		}
 		return { apiLoginId, transactionKey, gatewayId: process.env.AUTHORIZE_GATEWAY_ID || undefined };
+	}
+
+	/**
+	 * Lee las credenciales merchant eBizCharge de env (mismas keys que declara el adapter
+	 * `ebizcharge.credsEnvKeys` — helpers/adapters). Lanza si faltan (el spec gatea con
+	 * `test.skip(!adapter.isConfigured(), ...)` antes de llegar acá).
+	 */
+	private ebizchargeCredsFromEnv(): EbizchargeCreds {
+		const merchantUser = process.env.EBIZ_MERCHANT_USER ?? '';
+		const merchantPassword = process.env.EBIZ_MERCHANT_PASSWORD ?? '';
+		const securityKey = process.env.EBIZ_SECURITY_KEY ?? '';
+		if (!merchantUser || !merchantPassword || !securityKey) {
+			throw new Error('Faltan EBIZ_MERCHANT_USER / EBIZ_MERCHANT_PASSWORD / EBIZ_SECURITY_KEY en .env.test (ver .env.example y el adapter ebizcharge.credsEnvKeys).');
+		}
+		return { merchantUser, merchantPassword, securityKey };
 	}
 
 	/** Navega al App Store y devuelve la pasarela actualmente vinculada (o null). */
@@ -83,7 +98,8 @@ export class GatewaySwitchSteps extends UiBase {
 	 * Idempotente: garantiza que `gateway` sea la pasarela activa del carrier.
 	 *   - Ya activa → no-op.
 	 *   - Otra activa → la desvincula (DESTRUCTIVO) y vincula la target (creds de env).
-	 * Sólo `authorize` está implementada en F4; stripe/ebizcharge/mercado-pago lanzan (TODO).
+	 * Implementadas: `authorize` (F4) y `ebizcharge` (S5 — FRAGILE: modal eBiz sin verificar live).
+	 * stripe (OAuth Connect = live F5) y mercado-pago lanzan (TODO).
 	 */
 	async ensureActiveGateway(gateway: SwitchableGateway): Promise<void> {
 		const active = await this.currentActiveGateway();
@@ -95,14 +111,15 @@ export class GatewaySwitchSteps extends UiBase {
 				case 'authorize':
 					await this.appStore.linkAuthorize(this.authorizeCredsFromEnv());
 					break;
+				case 'ebizcharge':
+					// S5 — mismo patrón que linkAuthorize (modal de creds); creds del adapter
+					// ebizcharge (EBIZ_*). FRAGILE/TODO(live): selectores del modal sin confirmar.
+					await this.appStore.linkEbizcharge(this.ebizchargeCredsFromEnv());
+					break;
 				case 'stripe':
 					// TODO F5: restaurar Stripe vía Connect test-mode (portar el OAuth loop de
 					// agentic-qa-boilerplate/tests/gateway-legacy/link-stripe-gateway.test.ts).
 					throw new Error('ensureActiveGateway(stripe) no implementado — requiere OAuth Connect test-mode (TODO F5).');
-				case 'ebizcharge':
-					// TODO: vincular eBizCharge con EBIZ_MERCHANT_USER / EBIZ_MERCHANT_PASSWORD /
-					// EBIZ_SECURITY_KEY (mismo patrón que linkAuthorize, fuera de alcance F4).
-					throw new Error('ensureActiveGateway(ebizcharge) no implementado — fuera de alcance F4.');
 				case 'mercado-pago':
 					throw new Error('ensureActiveGateway(mercado-pago) no implementado — fuera de alcance F4.');
 			}
