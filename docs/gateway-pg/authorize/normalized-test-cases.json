@@ -1,0 +1,3747 @@
+{
+  "generated_at": "2026-07-27T12:44:46.022Z",
+  "generator": "scripts/ai/derive-gateway-matrix.mjs",
+  "gateway": "authorize",
+  "source_l1": "docs/gateway-pg/stripe/normalized-test-cases.json",
+  "source_matrices": [
+    "docs/gateway-pg/authorize/matriz_cases.md",
+    "docs/gateway-pg/authorize/matriz_cases2.md"
+  ],
+  "total": 164,
+  "notes": [
+    "Derivación determinista Fase 4 (2026-07-26): activos Stripe sin @3ds, sin phase2 deprecated/collapsed, sin no-migrables §3.2 ni exclusiones delta.",
+    "origin=existing: fila preexistente de la matriz (title desde L0; campos no inferibles en null).",
+    "origin=derived: espejo del caso Stripe referenciado en stripe_ref.",
+    "total verificado programáticamente = cases.length. Cero casos @3ds (assert)."
+  ],
+  "cases": [
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1001",
+      "title": "Validar visualizar pasarela Authorize.net en Magiis App Store y mostrar estado no vinculado antes de configurar credenciales",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "1. Configuración de Pasarela Authorize.net (Magiis App Store)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": "TS-STRIPE-TC1001"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1002",
+      "title": "Validar vincular pasarela Authorize.net desde Magiis App Store con `API_LOGIN_ID` + `API_TRANSACTION_KEY` válidas y reflejar estado vinculado en UI y DB",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "1. Configuración de Pasarela Authorize.net (Magiis App Store)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": "TS-STRIPE-TC1002"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1003",
+      "title": "Validar impedir vincular pasarela Authorize.net con credenciales inválidas (response code `E00008`) y mostrar error controlado sin activar el gateway",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "1. Configuración de Pasarela Authorize.net (Magiis App Store)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": "TS-STRIPE-TC1003"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1004",
+      "title": "Validar solicitar confirmación al desvincular pasarela Authorize.net y no ejecutar acción al cancelar el popup",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "1. Configuración de Pasarela Authorize.net (Magiis App Store)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": "TS-STRIPE-TC1004"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1005",
+      "title": "Validar desvincular pasarela Authorize.net y ocultar método tarjeta preautorizada en alta de viaje desde Carrier",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "1. Configuración de Pasarela Authorize.net (Magiis App Store)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": "TS-STRIPE-TC1005"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1006",
+      "title": "Validar exclusividad de pasarela activa e impedir vincular otro gateway (Stripe / MercadoPago / eBizCharge) mientras Authorize esté activo",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "1. Configuración de Pasarela Authorize.net (Magiis App Store)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": "TS-STRIPE-TC1006"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1007",
+      "title": "Validar persistencia de estado vinculado de Authorize.net tras recargar página y navegar entre secciones de Carrier",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "1. Configuración de Pasarela Authorize.net (Magiis App Store)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": "TS-STRIPE-TC1007"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1008",
+      "title": "Validar que el request link/unlink de Authorize.net retorne status 200 y registre evento en logs o auditoría si aplica",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "1. Configuración de Pasarela Authorize.net (Magiis App Store)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": "TS-STRIPE-TC1008"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1009",
+      "title": "Validar alta de viaje desde carrier para usuario personal con tarjeta preautorizada exitosa (Visa 4111…1111 + CVV 900) con Hold OFF — variante origen/destino alternativo",
+      "module": "gateway-pg-authorize/trip-create",
+      "portal": "carrier",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P1",
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": true,
+      "section": "Alta de Viaje desde Carrier – Usuario Personal",
+      "subsection": "Tarjeta Preautorizada – sin validación 3DS",
+      "card_flow": "n/a",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-TC1052",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1010",
+      "title": "Validar alta de viaje desde carrier para usuario personal con tarjeta preautorizada exitosa (Visa 4111…1111 + CVV 900) con Hold OFF — variante set 2",
+      "module": "gateway-pg-authorize/trip-create",
+      "portal": "carrier",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P1",
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": true,
+      "section": "Alta de Viaje desde Carrier – Usuario Personal",
+      "subsection": "Tarjeta Preautorizada – sin validación 3DS",
+      "card_flow": "n/a",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-TC1058",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1011",
+      "title": "Validar Alta de Viaje desde carrier para usuario personal con tarjeta preautorizada exitosa (Visa 4111…1111 + CVV 900) Hold desde Alta de Viaje y Cobro desde App Driver",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "2.1 Happy paths — sin antifraude (CVV match)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": "TS-STRIPE-TC1049"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1012",
+      "title": "Validar Alta de Viaje desde carrier para usuario personal con tarjeta preautorizada exitosa (Visa 4111…1111 + CVV 900) sin Hold desde Alta de Viaje, Cobro desde App Driver",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "2.1 Happy paths — sin antifraude (CVV match)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": "TS-STRIPE-TC1050"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1013",
+      "title": "Validar Alta de Viaje desde carrier para usuario personal con Mastercard exitosa (5424…0015 + CVV 900) Hold ON",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "2.1 Happy paths — sin antifraude (CVV match)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1014",
+      "title": "Validar Alta de Viaje desde carrier para usuario personal con Amex exitosa (370…002 + CVV 9000 — 4 dígitos) Hold ON",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "2.1 Happy paths — sin antifraude (CVV match)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1015",
+      "title": "Validar Alta de Viaje desde carrier para usuario personal con Discover exitosa (6011…0012 + CVV 900) Hold ON",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "2.1 Happy paths — sin antifraude (CVV match)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1016",
+      "title": "Validar Alta de Viaje desde carrier para usuario personal con tarjeta declinada (ZIP 46282) Hold ON — sistema muestra error de declinación y el viaje no se crea",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "2.2 Decline genérico (ZIP trigger 46282)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": "TS-STRIPE-TC1059"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1017",
+      "title": "Validar Alta de Viaje desde carrier para usuario personal con tarjeta declinada (ZIP 46282) Hold OFF — auth+capture falla, error visible, viaje no creado",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "2.2 Decline genérico (ZIP trigger 46282)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1018",
+      "title": "Validar alta de viaje desde carrier para usuario personal con tarjeta preautorizada exitosa (Visa 4111…1111 + CVV 900) con Hold OFF — variante set 2 alternativo",
+      "module": "gateway-pg-authorize/trip-create",
+      "portal": "carrier",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P1",
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": true,
+      "section": "Alta de Viaje desde Carrier – Usuario Personal",
+      "subsection": "Tarjeta Preautorizada – sin validación 3DS",
+      "card_flow": "n/a",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-TC1060",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1021",
+      "title": "Validar Alta de Viaje desde carrier para usuario personal con tarjeta CVV mismatch (CVV 901) Hold ON — sistema rechaza el alta por validación CVV \"N: Does NOT match\"",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "2.3 CVV triggers (901 mismatch, 902 should-be, 903 issuer, 904 not-processed)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1022",
+      "title": "Validar Alta de Viaje desde carrier para usuario personal con tarjeta CVV mismatch (CVV 901) Hold OFF — comportamiento equivalente al TC1021 sin retención previa",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "2.3 CVV triggers (901 mismatch, 902 should-be, 903 issuer, 904 not-processed)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1023",
+      "title": "Validar Alta de Viaje desde carrier para usuario personal con CVV `902` (should be on card but not indicated) Hold ON",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "2.3 CVV triggers (901 mismatch, 902 should-be, 903 issuer, 904 not-processed)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1024",
+      "title": "Validar Alta de Viaje desde carrier para usuario personal con CVV `903` (issuer not certified) Hold ON",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "2.3 CVV triggers (901 mismatch, 902 should-be, 903 issuer, 904 not-processed)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1025",
+      "title": "Validar Alta de Viaje desde carrier para usuario personal con CVV `904` (CVV not processed) Hold ON — viaje crea exitosamente con flag `cvvResultCode=P`",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "2.3 CVV triggers (901 mismatch, 902 should-be, 903 issuer, 904 not-processed)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1026",
+      "title": "Validar reintento exitoso desde detalle del viaje tras fallo CVV 901 — usuario reintenta con CVV 900 desde tarjeta nueva → viaje pasa a \"Buscando conductor\"",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "2.3 CVV triggers (901 mismatch, 902 should-be, 903 issuer, 904 not-processed)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1031",
+      "title": "Validar Alta de Viaje desde carrier para usuario personal con AVS no match (ZIP 46205) Hold ON",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "2.4 AVS triggers (no match, non-US, otros)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1032",
+      "title": "Validar Alta de Viaje desde carrier para usuario personal con AVS ZIP 9-digit match (ZIP 46211)",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "2.4 AVS triggers (no match, non-US, otros)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1033",
+      "title": "Validar Alta de Viaje desde carrier para usuario personal con AVS address+ZIP 9-digit match (ZIP 46214)",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "2.4 AVS triggers (no match, non-US, otros)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1034",
+      "title": "Validar Alta de Viaje desde carrier para usuario personal con AVS ZIP match address no match (ZIP 46217)",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "2.4 AVS triggers (no match, non-US, otros)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1035",
+      "title": "Validar Alta de Viaje desde carrier para usuario personal con AVS issuer no-USA (ZIP 46204) Hold ON",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "2.4 AVS triggers (no match, non-US, otros)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1036",
+      "title": "Validar Alta de Viaje desde carrier para usuario personal con AVS system unavailable (ZIP 46207)",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "2.4 AVS triggers (no match, non-US, otros)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1037",
+      "title": "Validar Alta de Viaje desde carrier para usuario personal con AVS invalid data (ZIP 46203)",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "2.4 AVS triggers (no match, non-US, otros)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1041",
+      "title": "Validar Alta de Viaje desde carrier para usuario personal con Partial Authorization (ZIP 46225) Hold ON — solo $1.23 autorizado del total",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "2.5 Partial / Prepaid authorizations (edge cases)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1042",
+      "title": "Validar Alta de Viaje desde carrier para usuario personal con Prepaid Auth ($1.23 balance restante, ZIP 46226) Hold ON",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "2.5 Partial / Prepaid authorizations (edge cases)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1043",
+      "title": "Validar Alta de Viaje desde carrier para usuario personal con Prepaid Auth ($0 balance, ZIP 46228) Hold ON",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "2.5 Partial / Prepaid authorizations (edge cases)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1051",
+      "title": "Validar vincular tarjeta y Alta de Viaje desde carrier para usuario colaborador con tarjeta preautorizada exitosa Vincular tarjeta nueva (seed) Hold ON",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "3.1 Happy paths sin antifraude",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": "TS-STRIPE-TC1033"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1052",
+      "title": "Validar Alta de Viaje desde carrier para usuario colaborador con tarjeta preautorizada exitosa Vincular tarjeta nueva Hold ON",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "3.1 Happy paths sin antifraude",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": "TS-STRIPE-TC1035"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1053",
+      "title": "Validar Alta de Viaje desde carrier para usuario colaborador con tarjeta preautorizada exitosa Usar tarjeta vinculada existente Hold ON",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "3.1 Happy paths sin antifraude",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": "TS-STRIPE-TC1041"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1054",
+      "title": "Validar Alta de Viaje desde carrier para usuario colaborador con tarjeta preautorizada exitosa Vincular tarjeta nueva Hold OFF",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "3.1 Happy paths sin antifraude",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": "TS-STRIPE-TC1034"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1055",
+      "title": "Validar Alta de Viaje desde carrier para usuario colaborador con tarjeta preautorizada exitosa Usar tarjeta vinculada existente Hold OFF",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "3.1 Happy paths sin antifraude",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": "TS-STRIPE-TC1036"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1056",
+      "title": "Validar Alta de Viaje desde carrier para usuario colaborador con tarjeta declinada (ZIP 46282) — error visible, viaje no creado",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "3.2 Declines y CVV",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1057",
+      "title": "Validar Alta de Viaje desde carrier para usuario colaborador con CVV mismatch (CVV 901) — rechazo según política",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "3.2 Declines y CVV",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1061",
+      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con tarjeta preautorizada exitosa Vincular tarjeta nueva Hold ON",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "4.1 Happy paths",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": "TS-STRIPE-TC1065"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1062",
+      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con tarjeta preautorizada exitosa Usar tarjeta vinculada existente Hold ON",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "4.1 Happy paths",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": "TS-STRIPE-TC1067"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1063",
+      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con tarjeta preautorizada exitosa Vincular tarjeta nueva Hold OFF",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "4.1 Happy paths",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": "TS-STRIPE-TC1066"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1064",
+      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con tarjeta preautorizada exitosa Usar tarjeta vinculada existente Hold OFF",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "4.1 Happy paths",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": "TS-STRIPE-TC1068"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1065",
+      "title": "Validar Alta de Viaje desde carrier para usuario empresa individuo con tarjeta declinada (ZIP 46282) — error visible, viaje no creado",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "4.2 Declines",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1071",
+      "title": "Validar Alta de Viaje desde app pax para usuario personal con tarjeta preautorizada exitosa Vincular tarjeta nueva Hold ON (cobro desde App Driver al finalizar)",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "5. Alta de Viaje desde App Pax – Usuario Personal (Android)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": "TS-STRIPE-TC1009"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1072",
+      "title": "Validar Alta de Viaje desde app pax para usuario personal con tarjeta preautorizada exitosa Usar tarjeta vinculada existente Hold ON",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "5. Alta de Viaje desde App Pax – Usuario Personal (Android)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1073",
+      "title": "Validar Alta de Viaje desde app pax para usuario personal con tarjeta declinada (ZIP 46282) — error visible en app, viaje no creado",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "5. Alta de Viaje desde App Pax – Usuario Personal (Android)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1075",
+      "title": "Validar Alta de Viaje desde app pax para usuario business con tarjeta preautorizada exitosa Vincular tarjeta nueva Hold ON",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "6. Alta de Viaje desde App Pax – Usuario Business / Colaborador",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": "TS-STRIPE-TC1017"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1076",
+      "title": "Validar Alta de Viaje desde app pax para usuario business con tarjeta preautorizada exitosa Usar tarjeta vinculada existente Hold ON",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "6. Alta de Viaje desde App Pax – Usuario Business / Colaborador",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": "TS-STRIPE-TC1019"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1081",
+      "title": "Validar Alta de viaje desde carrier para usuario personal – cargo a bordo – pago exitoso (Visa 4111…1111 + CVV 900)",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "7.1 Escenarios de pago exitoso y rechazo",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": "TS-STRIPE-TC1081"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1082",
+      "title": "Validar Alta de viaje desde carrier para usuario personal – cargo a bordo – pago rechazado genérico (ZIP 46282)",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "7.1 Escenarios de pago exitoso y rechazo",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": "TS-STRIPE-TC1082"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1083",
+      "title": "Validar Alta de viaje desde carrier para usuario personal – cargo a bordo – CVV mismatch (CVV 901)",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "7.1 Escenarios de pago exitoso y rechazo",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": "TS-STRIPE-TC1085"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1087",
+      "title": "Validar Alta de viaje desde carrier para usuario personal – cargo a bordo – AVS no match (ZIP 46205) → política antifraude MAGIIS",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "7.2 Antifraude (AVS)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1088",
+      "title": "Validar Alta de viaje desde carrier para usuario personal – cargo a bordo – AVS issuer no-USA (ZIP 46204)",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "7.2 Antifraude (AVS)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1096",
+      "title": "Validar Alta de viaje desde carrier para usuario colaborador – cargo a bordo – pago exitoso",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "8. Cargo a Bordo – Tarjeta de Crédito – Usuario Colaborador o Asociado de Contractor (desde Carrier)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": "TS-STRIPE-TC1096"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1097",
+      "title": "Validar Alta de viaje desde carrier para usuario colaborador – cargo a bordo – pago rechazado genérico (ZIP 46282)",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "8. Cargo a Bordo – Tarjeta de Crédito – Usuario Colaborador o Asociado de Contractor (desde Carrier)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": "TS-STRIPE-TC1097"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1098",
+      "title": "Validar Alta de viaje desde carrier para usuario colaborador – cargo a bordo – CVV mismatch (CVV 901)",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "8. Cargo a Bordo – Tarjeta de Crédito – Usuario Colaborador o Asociado de Contractor (desde Carrier)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": "TS-STRIPE-TC1100"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1099",
+      "title": "Validar Alta de viaje desde carrier para usuario colaborador – cargo a bordo – AVS no match (ZIP 46205)",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "8. Cargo a Bordo – Tarjeta de Crédito – Usuario Colaborador o Asociado de Contractor (desde Carrier)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1100",
+      "title": "Validar Alta de Viaje desde app pax para usuario personal con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
+      "module": "gateway-pg-authorize/trip-create",
+      "portal": "app-pax",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P1",
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": true,
+      "section": "Alta de Viaje desde App Pax – Usuario Personal",
+      "subsection": "Tarjeta Preautorizada – sin validación 3DS",
+      "card_flow": "n/a",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-TC1010",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1101",
+      "title": "Validar Alta de Viaje desde app pax para usuario personal con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
+      "module": "gateway-pg-authorize/trip-create",
+      "portal": "app-pax",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P1",
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": true,
+      "section": "Alta de Viaje desde App Pax – Usuario Personal",
+      "subsection": "Tarjeta Preautorizada – sin validación 3DS",
+      "card_flow": "n/a",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-TC1011",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1102",
+      "title": "Validar Alta de Viaje desde app pax para usuario personal con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
+      "module": "gateway-pg-authorize/trip-create",
+      "portal": "app-pax",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P1",
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": true,
+      "section": "Alta de Viaje desde App Pax – Usuario Personal",
+      "subsection": "Tarjeta Preautorizada – sin validación 3DS",
+      "card_flow": "n/a",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-TC1012",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1103",
+      "title": "Validar Alta de Viaje desde app pax para usuario business con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Vincular tarjeta nueva",
+      "module": "gateway-pg-authorize/trip-create",
+      "portal": "app-pax",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P2",
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "Alta de Viaje desde App Pax – Usuario Business / Colaborador",
+      "subsection": "Tarjeta Preautorizada – sin validación 3DS",
+      "card_flow": "new",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-TC1018",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1104",
+      "title": "Validar Alta de Viaje desde app pax para usuario business con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Usar tarjeta vinculada existente",
+      "module": "gateway-pg-authorize/trip-create",
+      "portal": "app-pax",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P2",
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "Alta de Viaje desde App Pax – Usuario Business / Colaborador",
+      "subsection": "Tarjeta Preautorizada – sin validación 3DS",
+      "card_flow": "existing",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-TC1020",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS (stored)"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1105",
+      "title": "Validar Alta de viaje desde carrier para usuario empresa individuo – cargo a bordo – CVC incorrecto",
+      "module": "gateway-pg-authorize/charge-onboard",
+      "portal": "carrier",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P1",
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": true,
+      "section": "Cargo a Bordo – Tarjeta de Crédito – Usuario Empresa Individuo (desde Carrier)",
+      "subsection": "Escenarios de pago exitoso y rechazo genérico",
+      "card_flow": "n/a",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-TC1115",
+      "intent": "DECLINE_INVALID_CVC",
+      "card": "AUTHORIZE_CARDS.DECLINE_CVV"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1111",
+      "title": "Validar Alta de viaje desde carrier para usuario empresa individuo – cargo a bordo – pago exitoso",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "9. Cargo a Bordo – Tarjeta de Crédito – Usuario Empresa Individuo (desde Carrier)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": "TS-STRIPE-TC1111"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1112",
+      "title": "Validar Alta de viaje desde carrier para usuario empresa individuo – cargo a bordo – pago rechazado genérico (ZIP 46282)",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "9. Cargo a Bordo – Tarjeta de Crédito – Usuario Empresa Individuo (desde Carrier)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": "TS-STRIPE-TC1112"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1200",
+      "title": "Validar Alta de Viaje desde Quote para usuario sin datos filiatorios vinculado a pasajero existente con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
+      "module": "gateway-pg-authorize/quote",
+      "portal": "contractor",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P1",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": true,
+      "section": "Flujo Quote – Alta de Viaje",
+      "subsection": "Usuario sin datos filiatorios (vinculado a pasajero existente)",
+      "card_flow": "n/a",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC009",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1201",
+      "title": "Validar vinculación de tarjeta y Alta de Viaje desde portal contractor para usuario colaborador con tarjeta preautorizada exitosa Hold ON",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "1.1 Colaborador de Contractor – Tarjeta Preautorizada sin antifraude",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": "TS-STRIPE-P2-TC001"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1202",
+      "title": "Validar vinculación de tarjeta y Alta de Viaje desde portal contractor para usuario colaborador con tarjeta preautorizada exitosa Hold OFF",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "1.1 Colaborador de Contractor – Tarjeta Preautorizada sin antifraude",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": "TS-STRIPE-P2-TC002"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1203",
+      "title": "Validar selección de tarjeta vinculada y Alta de Viaje desde portal contractor para colaborador Hold ON",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "1.1 Colaborador de Contractor – Tarjeta Preautorizada sin antifraude",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": "TS-STRIPE-P2-TC003"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1204",
+      "title": "Validar selección de tarjeta vinculada y Alta de Viaje desde portal contractor para colaborador Hold OFF",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "1.1 Colaborador de Contractor – Tarjeta Preautorizada sin antifraude",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": "TS-STRIPE-P2-TC004"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1205",
+      "title": "Validar Alta de Viaje desde portal contractor para usuario colaborador con tarjeta declinada genérica (ZIP 46282) Hold ON — hold authorize rechaza, error visible, viaje no creado",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "1.2 Colaborador de Contractor – Tarjetas con fallo de pago",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": "TS-STRIPE-P2-TC090"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1206",
+      "title": "Validar Alta de Viaje desde portal contractor para usuario colaborador con CVV mismatch (CVV 901) Hold ON — política MAGIIS define si rechaza o solo flaggea",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "1.2 Colaborador de Contractor – Tarjetas con fallo de pago",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1207",
+      "title": "Validar Alta de Viaje desde Quote para usuario sin datos filiatorios vinculado a pasajero existente con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
+      "module": "gateway-pg-authorize/quote",
+      "portal": "contractor",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P1",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": true,
+      "section": "Flujo Quote – Alta de Viaje",
+      "subsection": "Usuario sin datos filiatorios (vinculado a pasajero existente)",
+      "card_flow": "n/a",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC010",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1208",
+      "title": "Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario colaborador existente con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
+      "module": "gateway-pg-authorize/quote",
+      "portal": "contractor",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P1",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": true,
+      "section": "Flujo Quote – Alta de Viaje",
+      "subsection": "Colaborador – sin 3DS",
+      "card_flow": "n/a",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC011",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1209",
+      "title": "Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario colaborador existente con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
+      "module": "gateway-pg-authorize/quote",
+      "portal": "contractor",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P1",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": true,
+      "section": "Flujo Quote – Alta de Viaje",
+      "subsection": "Colaborador – sin 3DS",
+      "card_flow": "n/a",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC012",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1210",
+      "title": "Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario colaborador existente con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
+      "module": "gateway-pg-authorize/quote",
+      "portal": "contractor",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P1",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": true,
+      "section": "Flujo Quote – Alta de Viaje",
+      "subsection": "Colaborador – sin 3DS",
+      "card_flow": "n/a",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC013",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1211",
+      "title": "Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario colaborador existente con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
+      "module": "gateway-pg-authorize/quote",
+      "portal": "contractor",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P1",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": true,
+      "section": "Flujo Quote – Alta de Viaje",
+      "subsection": "Colaborador – sin 3DS",
+      "card_flow": "n/a",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC014",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1212",
+      "title": "Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario personal existente con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
+      "module": "gateway-pg-authorize/quote",
+      "portal": "contractor",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P1",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": true,
+      "section": "Flujo Quote – Alta de Viaje",
+      "subsection": "Personal – sin 3DS",
+      "card_flow": "n/a",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC019",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1213",
+      "title": "Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario personal existente con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
+      "module": "gateway-pg-authorize/quote",
+      "portal": "contractor",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P1",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": true,
+      "section": "Flujo Quote – Alta de Viaje",
+      "subsection": "Personal – sin 3DS",
+      "card_flow": "n/a",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC020",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1214",
+      "title": "Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario personal existente con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
+      "module": "gateway-pg-authorize/quote",
+      "portal": "contractor",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P1",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": true,
+      "section": "Flujo Quote – Alta de Viaje",
+      "subsection": "Personal – sin 3DS",
+      "card_flow": "n/a",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC021",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1215",
+      "title": "Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario personal existente con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
+      "module": "gateway-pg-authorize/quote",
+      "portal": "contractor",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P1",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": true,
+      "section": "Flujo Quote – Alta de Viaje",
+      "subsection": "Personal – sin 3DS",
+      "card_flow": "n/a",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC022",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1216",
+      "title": "Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario empresa individuo existente con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
+      "module": "gateway-pg-authorize/quote",
+      "portal": "contractor",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P1",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": true,
+      "section": "Flujo Quote – Alta de Viaje",
+      "subsection": "Empresa Individuo – sin 3DS",
+      "card_flow": "n/a",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC027",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1217",
+      "title": "Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario empresa individuo existente con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
+      "module": "gateway-pg-authorize/quote",
+      "portal": "contractor",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P1",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": true,
+      "section": "Flujo Quote – Alta de Viaje",
+      "subsection": "Empresa Individuo – sin 3DS",
+      "card_flow": "n/a",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC028",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1218",
+      "title": "Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario empresa individuo existente con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
+      "module": "gateway-pg-authorize/quote",
+      "portal": "contractor",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P1",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": true,
+      "section": "Flujo Quote – Alta de Viaje",
+      "subsection": "Empresa Individuo – sin 3DS",
+      "card_flow": "n/a",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC029",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1219",
+      "title": "Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario empresa individuo existente con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
+      "module": "gateway-pg-authorize/quote",
+      "portal": "contractor",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P1",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": true,
+      "section": "Flujo Quote – Alta de Viaje",
+      "subsection": "Empresa Individuo – sin 3DS",
+      "card_flow": "n/a",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC030",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1220",
+      "title": "Validar vinculación de tarjeta y Alta de Viaje Recurrente desde portal contractor para usuario colaborador con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
+      "module": "gateway-pg-authorize/recurring",
+      "portal": "contractor",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P1",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": true,
+      "section": "Viajes Recurrentes – Portal Contractor (Usuario Colaboradores)",
+      "subsection": "",
+      "card_flow": "n/a",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC035",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1221",
+      "title": "Validar eliminar satisfactoriamente desde wallet tarjeta previamente vinculada desde app pax para usuario personal — `deleteCustomerPaymentProfile` retorna OK; UI ya no muestra la tarjeta",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "2.1 Eliminación desde App Pax (Personal)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": "TS-STRIPE-TC1122"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1222",
+      "title": "Validar eliminar tarjeta desde wallet con cancelación en pop-up de confirmación — la tarjeta permanece vinculada",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "2.1 Eliminación desde App Pax (Personal)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1223",
+      "title": "Validar vinculación de tarjeta nueva desde wallet con datos válidos (Visa 4111…1111 + CVV 900 + ZIP 90210) — Authorize devuelve `customerProfileId` + `paymentProfileId`; tarjeta aparece en wallet",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "2.2 Validación de tarjeta nueva (Accept.js iframe / shared form)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1224",
+      "title": "Validar vinculación de tarjeta nueva desde wallet con CVV mismatch (CVV 901) — error visible, tarjeta NO se agrega al wallet",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "2.2 Validación de tarjeta nueva (Accept.js iframe / shared form)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1225",
+      "title": "Validar vinculación de tarjeta nueva desde wallet con AVS no match (ZIP 46205) — política antifraude MAGIIS define si acepta o rechaza",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "2.2 Validación de tarjeta nueva (Accept.js iframe / shared form)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1226",
+      "title": "Validar vinculación de tarjeta nueva desde wallet con expiry pasado — error de validación cliente (front-end) antes de llamar a Authorize",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "2.2 Validación de tarjeta nueva (Accept.js iframe / shared form)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1227",
+      "title": "Validar vinculación de tarjeta nueva desde wallet con número inválido (Luhn check fail) — error de validación cliente",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "2.2 Validación de tarjeta nueva (Accept.js iframe / shared form)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1228",
+      "title": "Validar vinculación de tarjeta y Alta de Viaje Recurrente desde portal contractor para usuario colaborador con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
+      "module": "gateway-pg-authorize/recurring",
+      "portal": "contractor",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P1",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": true,
+      "section": "Viajes Recurrentes – Portal Contractor (Usuario Colaboradores)",
+      "subsection": "",
+      "card_flow": "n/a",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC036",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1229",
+      "title": "Validar selección de tarjeta y Alta de Viaje Recurrente desde portal contractor para usuario colaborador con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
+      "module": "gateway-pg-authorize/recurring",
+      "portal": "contractor",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P1",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": true,
+      "section": "Viajes Recurrentes – Portal Contractor (Usuario Colaboradores)",
+      "subsection": "",
+      "card_flow": "n/a",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC037",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1230",
+      "title": "Validar selección de tarjeta y Alta de Viaje Recurrente desde portal contractor para usuario colaborador con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
+      "module": "gateway-pg-authorize/recurring",
+      "portal": "contractor",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P1",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": true,
+      "section": "Viajes Recurrentes – Portal Contractor (Usuario Colaboradores)",
+      "subsection": "",
+      "card_flow": "n/a",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC038",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1231",
+      "title": "Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario colaborador con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
+      "module": "gateway-pg-authorize/recurring",
+      "portal": "carrier",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P1",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": true,
+      "section": "Viajes Recurrentes – Portal Carrier (Usuario Colaboradores)",
+      "subsection": "",
+      "card_flow": "n/a",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC041",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1232",
+      "title": "Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario colaborador con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
+      "module": "gateway-pg-authorize/recurring",
+      "portal": "carrier",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P1",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": true,
+      "section": "Viajes Recurrentes – Portal Carrier (Usuario Colaboradores)",
+      "subsection": "",
+      "card_flow": "n/a",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC042",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1233",
+      "title": "Validar selección de tarjeta y Alta de Viaje Recurrente desde carrier para usuario colaborador con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
+      "module": "gateway-pg-authorize/recurring",
+      "portal": "carrier",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P1",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": true,
+      "section": "Viajes Recurrentes – Portal Carrier (Usuario Colaboradores)",
+      "subsection": "",
+      "card_flow": "n/a",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC043",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1234",
+      "title": "Validar selección de tarjeta y Alta de Viaje Recurrente desde carrier para usuario colaborador con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
+      "module": "gateway-pg-authorize/recurring",
+      "portal": "carrier",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P1",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": true,
+      "section": "Viajes Recurrentes – Portal Carrier (Usuario Colaboradores)",
+      "subsection": "",
+      "card_flow": "n/a",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC044",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1235",
+      "title": "Validar vinculación y alta de viaje Recurrente desde carrier para usuario colaborador con tarjeta preautorizada y edición de fechas – validar consistencia de datos y finalización desde App Driver (CASO CRÍTICO)",
+      "module": "gateway-pg-authorize/recurring",
+      "portal": "carrier",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P1",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": true,
+      "section": "Viajes Recurrentes – Portal Carrier (Usuario Colaboradores)",
+      "subsection": "",
+      "card_flow": "n/a",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC047",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1236",
+      "title": "Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario personal con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
+      "module": "gateway-pg-authorize/recurring",
+      "portal": "carrier",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P1",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": true,
+      "section": "Viajes Recurrentes – Portal Carrier (Usuario Personal)",
+      "subsection": "",
+      "card_flow": "n/a",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC048",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1237",
+      "title": "Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario personal con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
+      "module": "gateway-pg-authorize/recurring",
+      "portal": "carrier",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P1",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": true,
+      "section": "Viajes Recurrentes – Portal Carrier (Usuario Personal)",
+      "subsection": "",
+      "card_flow": "n/a",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC049",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1238",
+      "title": "Validar selección de tarjeta y Alta de Viaje Recurrente desde carrier para usuario personal con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
+      "module": "gateway-pg-authorize/recurring",
+      "portal": "carrier",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P1",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": true,
+      "section": "Viajes Recurrentes – Portal Carrier (Usuario Personal)",
+      "subsection": "",
+      "card_flow": "n/a",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC050",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1239",
+      "title": "Validar selección de tarjeta y Alta de Viaje Recurrente desde carrier para usuario personal con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
+      "module": "gateway-pg-authorize/recurring",
+      "portal": "carrier",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P1",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": true,
+      "section": "Viajes Recurrentes – Portal Carrier (Usuario Personal)",
+      "subsection": "",
+      "card_flow": "n/a",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC051",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1240",
+      "title": "Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
+      "module": "gateway-pg-authorize/recurring",
+      "portal": "carrier",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P1",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": true,
+      "section": "Viajes Recurrentes – Portal Carrier (Usuario Empresa Individuo)",
+      "subsection": "",
+      "card_flow": "n/a",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC054",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1241",
+      "title": "Validar que el primer cobro exitoso con tarjeta nueva devuelve `networkTransId` en la respuesta y MAGIIS backend lo persiste en DB asociado al `paymentProfileId`",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "3.1 Primer cobro + persistencia de `networkTransId`",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1242",
+      "title": "Validar que MAGIIS backend almacena: `customerProfileId`, `paymentProfileId`, `networkTransId`, `last4`, `expiry`, `brand` en DB",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "3.1 Primer cobro + persistencia de `networkTransId`",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1243",
+      "title": "Validar Alta de Viaje desde carrier reutilizando tarjeta vinculada (stored) — request a Authorize incluye `processingOptions.isSubsequentAuth=true` + `subsequentAuthInformation.originalNetworkTransId`",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "3.2 Segundo cobro reusando stored credentials",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1244",
+      "title": "Validar Alta de Viaje desde carrier con stored credentials Hold ON — `authOnlyTransaction` con `customerProfileId`/`paymentProfileId`; aprobado",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "3.2 Segundo cobro reusando stored credentials",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1245",
+      "title": "Validar Alta de Viaje desde carrier con stored credentials Hold OFF — `authCaptureTransaction` con stored creds; aprobado",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "3.2 Segundo cobro reusando stored credentials",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1246",
+      "title": "Validar comportamiento al intentar reusar `networkTransId` de una tarjeta eliminada del wallet — Authorize debería rechazar; backend MAGIIS debería detectar y fallar antes de enviar",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "3.3 Edge cases stored credentials",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1247",
+      "title": "Validar comportamiento al usar `customerProfileId` huérfano (sin `paymentProfileId` asociado válido) — error de validación pre-request",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "3.3 Edge cases stored credentials",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1248",
+      "title": "Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
+      "module": "gateway-pg-authorize/recurring",
+      "portal": "carrier",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P1",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": true,
+      "section": "Viajes Recurrentes – Portal Carrier (Usuario Empresa Individuo)",
+      "subsection": "",
+      "card_flow": "n/a",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC055",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1249",
+      "title": "Validar selección de tarjeta y Alta de Viaje Recurrente desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver",
+      "module": "gateway-pg-authorize/recurring",
+      "portal": "carrier",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P1",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": true,
+      "section": "Viajes Recurrentes – Portal Carrier (Usuario Empresa Individuo)",
+      "subsection": "",
+      "card_flow": "n/a",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC056",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1250",
+      "title": "Validar selección de tarjeta y Alta de Viaje Recurrente desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver",
+      "module": "gateway-pg-authorize/recurring",
+      "portal": "carrier",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P1",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": true,
+      "section": "Viajes Recurrentes – Portal Carrier (Usuario Empresa Individuo)",
+      "subsection": "",
+      "card_flow": "n/a",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC057",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1251",
+      "title": "Validar Reactivación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver — Vincular tarjeta nueva",
+      "module": "gateway-pg-authorize/reactivation",
+      "portal": "carrier",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P3",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "Reactivación de Viajes Cancelados (desde Carrier – Usuario Empresa Individuo)",
+      "subsection": "",
+      "card_flow": "new",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC060",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1252",
+      "title": "Validar Reactivación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Vincular tarjeta nueva",
+      "module": "gateway-pg-authorize/reactivation",
+      "portal": "carrier",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P3",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "Reactivación de Viajes Cancelados (desde Carrier – Usuario Empresa Individuo)",
+      "subsection": "",
+      "card_flow": "new",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC061",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1253",
+      "title": "Validar Reactivación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver — Usar tarjeta vinculada existente",
+      "module": "gateway-pg-authorize/reactivation",
+      "portal": "carrier",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P3",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "Reactivación de Viajes Cancelados (desde Carrier – Usuario Empresa Individuo)",
+      "subsection": "",
+      "card_flow": "existing",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC062",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS (stored)"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1254",
+      "title": "Validar Reactivación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Usar tarjeta vinculada existente",
+      "module": "gateway-pg-authorize/reactivation",
+      "portal": "carrier",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P3",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "Reactivación de Viajes Cancelados (desde Carrier – Usuario Empresa Individuo)",
+      "subsection": "",
+      "card_flow": "existing",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC063",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS (stored)"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1255",
+      "title": "Validar Clonación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver — Vincular tarjeta nueva",
+      "module": "gateway-pg-authorize/clone",
+      "portal": "carrier",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P3",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "Clonación de Viajes Cancelados (desde Carrier – Usuario Empresa Individuo)",
+      "subsection": "",
+      "card_flow": "new",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC066",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1256",
+      "title": "Validar Clonación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Vincular tarjeta nueva",
+      "module": "gateway-pg-authorize/clone",
+      "portal": "carrier",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P3",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "Clonación de Viajes Cancelados (desde Carrier – Usuario Empresa Individuo)",
+      "subsection": "",
+      "card_flow": "new",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC067",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1257",
+      "title": "Validar Clonación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver — Usar tarjeta vinculada existente",
+      "module": "gateway-pg-authorize/clone",
+      "portal": "carrier",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P3",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "Clonación de Viajes Cancelados (desde Carrier – Usuario Empresa Individuo)",
+      "subsection": "",
+      "card_flow": "existing",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC068",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS (stored)"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1258",
+      "title": "Validar Clonación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Usar tarjeta vinculada existente",
+      "module": "gateway-pg-authorize/clone",
+      "portal": "carrier",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P3",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "Clonación de Viajes Cancelados (desde Carrier – Usuario Empresa Individuo)",
+      "subsection": "",
+      "card_flow": "existing",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC069",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS (stored)"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1259",
+      "title": "Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver — Vincular tarjeta nueva",
+      "module": "gateway-pg-authorize/clone",
+      "portal": "carrier",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P3",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "Clonación de Viajes Finalizados (desde Carrier – Usuario Empresa Individuo)",
+      "subsection": "",
+      "card_flow": "new",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC072",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1260",
+      "title": "Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Vincular tarjeta nueva",
+      "module": "gateway-pg-authorize/clone",
+      "portal": "carrier",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P3",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "Clonación de Viajes Finalizados (desde Carrier – Usuario Empresa Individuo)",
+      "subsection": "",
+      "card_flow": "new",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC073",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1261",
+      "title": "Validar reembolso completo desde portal carrier de viaje finalizado y settled — `refundTransaction` con `refTransId` + tarjeta truncada + amount completo; Response Code 1",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "4. Refunds (post-settlement)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1262",
+      "title": "Validar reembolso parcial desde portal carrier de viaje finalizado — `refundTransaction` con `amount` parcial; saldo restante en customer profile",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "4. Refunds (post-settlement)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1263",
+      "title": "Validar reembolso de transacción NO settled (en estado authorized o captured pero sin settle) — Authorize rechaza con error `E00027` o similar; UI debe mostrar mensaje claro",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "4. Refunds (post-settlement)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1264",
+      "title": "Validar reembolso con `refTransId` inválido o de otra cuenta — Authorize rechaza; UI muestra error",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "4. Refunds (post-settlement)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1265",
+      "title": "Validar multiple refunds parciales sobre la misma transacción hasta agotar el monto autorizado — el último debe success, el siguiente fallar",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "4. Refunds (post-settlement)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1266",
+      "title": "Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver — Usar tarjeta vinculada existente",
+      "module": "gateway-pg-authorize/clone",
+      "portal": "carrier",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P3",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "Clonación de Viajes Finalizados (desde Carrier – Usuario Empresa Individuo)",
+      "subsection": "",
+      "card_flow": "existing",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC074",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS (stored)"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1267",
+      "title": "Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Usar tarjeta vinculada existente",
+      "module": "gateway-pg-authorize/clone",
+      "portal": "carrier",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P3",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "Clonación de Viajes Finalizados (desde Carrier – Usuario Empresa Individuo)",
+      "subsection": "",
+      "card_flow": "existing",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC075",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS (stored)"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1268",
+      "title": "Validar Alta de viaje y edición desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver — Vincular tarjeta nueva",
+      "module": "gateway-pg-authorize/edit",
+      "portal": "carrier",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P3",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "Edición de Viajes Programados (desde Carrier – Usuario Empresa Individuo)",
+      "subsection": "",
+      "card_flow": "new",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC078",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1269",
+      "title": "Validar Alta de viaje y edición desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Vincular tarjeta nueva",
+      "module": "gateway-pg-authorize/edit",
+      "portal": "carrier",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P3",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "Edición de Viajes Programados (desde Carrier – Usuario Empresa Individuo)",
+      "subsection": "",
+      "card_flow": "new",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC079",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1270",
+      "title": "Validar Alta de viaje y edición desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver — Usar tarjeta vinculada existente",
+      "module": "gateway-pg-authorize/edit",
+      "portal": "carrier",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P3",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "Edición de Viajes Programados (desde Carrier – Usuario Empresa Individuo)",
+      "subsection": "",
+      "card_flow": "existing",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC080",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS (stored)"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1271",
+      "title": "Validar void de transacción authorized (hold) desde portal carrier — `voidTransaction` con `refTransId`; viaje pasa a `CANCELLED`, fondos liberados",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "5. Voids (pre-settlement)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1272",
+      "title": "Validar void de transacción captured pero no settled desde portal carrier — `voidTransaction` exitoso (Authorize permite voidear pre-settle)",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "5. Voids (pre-settlement)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1273",
+      "title": "Validar void de transacción ya settled — Authorize rechaza con `E00027` (debe usarse refund); UI debe enrutar a flujo refund automáticamente",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "5. Voids (pre-settlement)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1274",
+      "title": "Validar void con `refTransId` inválido — Authorize rechaza; UI muestra error",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "5. Voids (pre-settlement)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1275",
+      "title": "Validar Alta de viaje y edición desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Usar tarjeta vinculada existente",
+      "module": "gateway-pg-authorize/edit",
+      "portal": "carrier",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P3",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "Edición de Viajes Programados (desde Carrier – Usuario Empresa Individuo)",
+      "subsection": "",
+      "card_flow": "existing",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC081",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS (stored)"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1276",
+      "title": "Validar Alta de viaje y edición en conflicto desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver — Vincular tarjeta nueva",
+      "module": "gateway-pg-authorize/edit",
+      "portal": "carrier",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P3",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "Edición en Conflicto (desde Carrier – Usuario Empresa Individuo)",
+      "subsection": "",
+      "card_flow": "new",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC084",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1277",
+      "title": "Validar Alta de viaje y edición en conflicto desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Vincular tarjeta nueva",
+      "module": "gateway-pg-authorize/edit",
+      "portal": "carrier",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P3",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "Edición en Conflicto (desde Carrier – Usuario Empresa Individuo)",
+      "subsection": "",
+      "card_flow": "new",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC085",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1278",
+      "title": "Validar Alta de viaje y edición en conflicto desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver — Usar tarjeta vinculada existente",
+      "module": "gateway-pg-authorize/edit",
+      "portal": "carrier",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P3",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "Edición en Conflicto (desde Carrier – Usuario Empresa Individuo)",
+      "subsection": "",
+      "card_flow": "existing",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC086",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS (stored)"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1279",
+      "title": "Validar Alta de viaje y edición en conflicto desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Usar tarjeta vinculada existente",
+      "module": "gateway-pg-authorize/edit",
+      "portal": "carrier",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P3",
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "Edición en Conflicto (desde Carrier – Usuario Empresa Individuo)",
+      "subsection": "",
+      "card_flow": "existing",
+      "origin": "derived",
+      "stripe_ref": "TS-STRIPE-P2-TC087",
+      "intent": "HAPPY_NO_AUTH",
+      "card": "AUTHORIZE_CARDS.SUCCESS (stored)"
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1281",
+      "title": "Validar creación de viaje recurrente desde portal carrier — `ARBCreateSubscription` con `paymentSchedule.interval` (monthly/weekly); aprobado",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "6. Recurring Billing (subscriptions) — Scope opcional",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1282",
+      "title": "Validar consulta de subscription activa — `ARBGetSubscription` retorna estado `active` + próximo cobro",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "6. Recurring Billing (subscriptions) — Scope opcional",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1283",
+      "title": "Validar cancelación de viaje recurrente — `ARBCancelSubscription`; UI marca como `terminated`",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "6. Recurring Billing (subscriptions) — Scope opcional",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1284",
+      "title": "Validar fallo en cobro recurrente (CVV mismatch en pago renovación) — subscription queda en estado `suspended`; usuario debe actualizar tarjeta",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "6. Recurring Billing (subscriptions) — Scope opcional",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1291",
+      "title": "Validar carga del iframe Accept.js desde `https://jstest.authorize.net/v1/Accept.js` — `window.Accept` queda disponible en el contexto del iframe; selector del iframe debe ser estable",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "7. Accept.js iframe — Edge cases de UI",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1292",
+      "title": "Validar fallo de carga del iframe Accept.js (network offline o bloqueo CSP) — UI muestra fallback de error claro",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "7. Accept.js iframe — Edge cases de UI",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1293",
+      "title": "Validar respuesta `Accept.dispatchData` con `opaqueData.dataValue` (nonce) — backend MAGIIS lo recibe y procesa la transacción",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "7. Accept.js iframe — Edge cases de UI",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1294",
+      "title": "Validar respuesta de `Accept.dispatchData` con error de validación cliente (E_WC_05 invalid CC number) — UI muestra error inline en el form",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "7. Accept.js iframe — Edge cases de UI",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1301",
+      "title": "Flow 1 Authorize: Carrier crea viaje con Hold ON tarjeta Authorize exitosa → Driver acepta viaje → Driver simula ruta → Driver finaliza viaje → backend dispara `priorAuthCaptureTransaction` → `payment-validated`",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "8. E2E híbridos Authorize – Carrier Web + Driver App (Flow 1 equivalente)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1302",
+      "title": "Flow 1 Authorize: Carrier crea viaje con Hold ON tarjeta declinada (ZIP 46282) → viaje queda en `NO_AUTORIZADO`, Driver App NO recibe solicitud",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "8. E2E híbridos Authorize – Carrier Web + Driver App (Flow 1 equivalente)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1303",
+      "title": "Flow 1 Authorize: Carrier crea viaje con Hold OFF (cargo a bordo) → Driver acepta + finaliza → `authCaptureTransaction` directo al cierre",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "8. E2E híbridos Authorize – Carrier Web + Driver App (Flow 1 equivalente)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1311",
+      "title": "Flow 2 Authorize: Passenger vincula tarjeta Authorize desde wallet mobile → crea viaje desde Passenger App → Driver acepta + finaliza → `priorAuthCaptureTransaction` exitoso",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "9. E2E híbridos Authorize – Passenger App + Driver App (Flow 2 equivalente)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1312",
+      "title": "Flow 2 Authorize: Passenger intenta crear viaje con tarjeta declinada (ZIP 46282) — error visible en app, viaje no se crea",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "9. E2E híbridos Authorize – Passenger App + Driver App (Flow 2 equivalente)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1321",
+      "title": "Validar Alta de Viaje desde carrier que dispara fraud rule (configurada en Merchant Interface sandbox) → Response Code 4 → viaje queda en estado pendiente review en MAGIIS",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "10. Fraud Management — Held for Review (Response Code 4)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1322",
+      "title": "Validar approve manual desde admin MAGIIS de transacción Held — `updateHeldTransactionRequest` con `action=approve`; viaje pasa a `SEARCHING_DRIVER`",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "10. Fraud Management — Held for Review (Response Code 4)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    },
+    {
+      "test_case_id": "TS-AUTHORIZE-TC1323",
+      "title": "Validar decline manual desde admin MAGIIS de transacción Held — `updateHeldTransactionRequest` con `action=decline`; viaje pasa a `NO_AUTORIZADO`",
+      "module": "gateway-pg-authorize",
+      "portal": null,
+      "environment": [
+        "TEST"
+      ],
+      "priority": null,
+      "source_type": "md",
+      "source_file": "matriz_cases2.md",
+      "tags": [
+        "@authorize",
+        "@gateway-pg"
+      ],
+      "critical_flow": false,
+      "section": "10. Fraud Management — Held for Review (Response Code 4)",
+      "subsection": "",
+      "card_flow": null,
+      "origin": "existing",
+      "stripe_ref": null
+    }
+  ]
+}
