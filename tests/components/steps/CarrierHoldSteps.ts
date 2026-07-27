@@ -35,7 +35,7 @@ import { resolveCard } from '@fixtures/gateways/_shared';
 import { getGatewayPgAdapter } from '@features/gateway-pg/helpers/adapters';
 import { expectNoThreeDSModal, loginAsDispatcher } from '@features/gateway-pg/fixtures/gateway.fixtures';
 import { validateAndSelectMercadoPagoCard } from '@features/gateway-pg/helpers/mercadoPago.helpers';
-import { readHoldRaw, setHoldViaApi } from '@features/gateway-pg/helpers/parameters-api';
+import { getCarrierParameters, readHoldRaw, setHoldViaApi } from '@features/gateway-pg/helpers/parameters-api';
 import { validateCardPrecondition, type CardPreconditionResult } from '@features/gateway-pg/helpers/card-precondition';
 import {
 	captureCreatedTravelId,
@@ -132,13 +132,14 @@ export class CarrierHoldSteps extends UiBase {
 
 	/** Habilita el hold vía API (BL-i18n/v1.72.8) y verifica el efecto con read-back CRUDO (GET posterior). */
 	async enableHoldViaApi(): Promise<void> {
-		const params = await setHoldViaApi(this.page, true);
-		// Asserts del PAYLOAD posteado (defaults de hold) — el efecto persistido se verifica abajo.
-		expect(params.ccHoldPreviousHs).toBe(2);
-		expect(params.ccHoldCoverage).toBe(10);
-		// Read-back CRUDO como oráculo: assertar el payload mutado era tautológico. `toBe(true)`
-		// sobre el valor sin coerción — campo ausente (undefined) = fallo, no un false silencioso.
-		expect(await readHoldRaw(this.page), 'read-back API: enableCreditCardHold debe quedar true tras el POST (campo ausente = fallo)').toBe(true);
+		await setHoldViaApi(this.page, true);
+		// Read-back CRUDO como oráculo (auditoría R2): assertar el payload que `setHoldViaApi`
+		// acababa de mutar era tautológico. UN solo GET posterior y los 3 campos de hold se
+		// assertan desde ESE objeto leído del backend — campo ausente (undefined) = fallo.
+		const persisted = await getCarrierParameters(this.page);
+		expect(persisted.enableCreditCardHold, 'read-back API: enableCreditCardHold debe quedar true tras el POST (campo ausente = fallo)').toBe(true);
+		expect(persisted.ccHoldPreviousHs, 'read-back API: ccHoldPreviousHs debe persistir en 2 (campo ausente = fallo)').toBe(2);
+		expect(persisted.ccHoldCoverage, 'read-back API: ccHoldCoverage debe persistir en 10 (campo ausente = fallo)').toBe(10);
 	}
 
 	/**

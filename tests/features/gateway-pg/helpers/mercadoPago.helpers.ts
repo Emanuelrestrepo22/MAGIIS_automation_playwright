@@ -70,16 +70,6 @@ export async function fillMercadoPagoNativeCard(page: Page, input: MpNativeCardI
 	}
 }
 
-/**
- * Valida la tarjeta MP y confirma la **vinculación satisfactoria**.
- *
- * Oráculo de éxito (recording test-15, líneas 44-49): tras "Validar" la tarjeta
- * aparece **resaltada** (`.ng-star-inserted.highlighted`) en el dropdown de métodos de
- * pago; abrir el dropdown y seleccionarla deja la tarjeta activa para el viaje.
- *
- * NOTE: el recorder mostró que "Validar" puede requerir reintento antes de que la
- * tarjeta quede vinculada — se reintenta hasta que la tarjeta resaltada sea visible.
- */
 /** Ventana acotada (por intento) para detectar el desenlace de la validación MP. */
 const MP_VALIDATION_OUTCOME_TIMEOUT_MS = 5_000;
 
@@ -105,8 +95,12 @@ export async function expectValidateCardEnabled(page: Page, timeout = 15_000): P
 const highlightedCard = (page: Page): Locator =>
 	page.locator('.ng-star-inserted.highlighted > .data-with-icon-col').first();
 
-/** Error explícito del sandbox MP — manifestación documentada de la limitación de entorno en TEST. */
-const mpValidationError = (page: Page): Locator => page.getByText(/Error al validar tarjeta/i);
+/**
+ * Error explícito del sandbox MP — manifestación documentada de la limitación de entorno en TEST.
+ * `.first()` (igual que `highlightedCard`): el error puede renderizarse a la vez como toast +
+ * inline → sin `.first()`, el strict-mode violation resolvería la race a 'none' en t≈0.
+ */
+const mpValidationError = (page: Page): Locator => page.getByText(/Error al validar tarjeta/i).first();
 
 /**
  * Espera acotada y DETERMINISTA del desenlace de la validación MP: race entre "tarjeta
@@ -119,13 +113,20 @@ export async function waitForMpValidationOutcome(
 	page: Page,
 	timeout = MP_VALIDATION_OUTCOME_TIMEOUT_MS
 ): Promise<'highlighted' | 'error' | 'none'> {
+	// Solo el agotamiento de la ventana (TimeoutError) se traduce a 'none'; cualquier otra
+	// rejection (frame detached, page closed, strict-mode) se RE-LANZA — un fallo de
+	// infraestructura no debe disfrazarse de "sin señal" y habilitar un skip indebido.
+	const noneOnTimeout = (error: Error): 'none' => {
+		if (error.name !== 'TimeoutError') throw error;
+		return 'none' as const;
+	};
 	return Promise.race([
 		highlightedCard(page)
 			.waitFor({ state: 'visible', timeout })
-			.then(() => 'highlighted' as const, () => 'none' as const),
+			.then(() => 'highlighted' as const, noneOnTimeout),
 		mpValidationError(page)
 			.waitFor({ state: 'visible', timeout })
-			.then(() => 'error' as const, () => 'none' as const)
+			.then(() => 'error' as const, noneOnTimeout)
 	]);
 }
 
@@ -143,6 +144,11 @@ export async function waitForMpValidationOutcome(
  *   transaccional) de una señal de fallo distinguible de la limitación sandbox; HOY ningún
  *   camino lo retorna en TEST. Los guards `expect(result).not.toBe('validation-failed')` de los
  *   callers quedan future-proof (hoy inertes).
+ *
+ * Oráculo de éxito (recording test-15, líneas 44-49): tras "Validar" la tarjeta aparece
+ * **resaltada** en el dropdown de métodos de pago; seleccionarla la deja activa para el viaje.
+ * NOTE (recording test-15): "Validar" puede requerir reintento antes de que la tarjeta quede
+ * vinculada — se reintenta (hasta `attempts`) mientras el desenlace sea 'none'.
  */
 export async function validateAndSelectMercadoPagoCard(
 	page: Page,

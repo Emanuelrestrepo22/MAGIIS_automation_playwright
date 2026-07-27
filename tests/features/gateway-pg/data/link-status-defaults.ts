@@ -24,7 +24,13 @@
 /** Statuses de éxito del link Authorize (quirk 500|409 verificado — nunca 400). */
 export const AUTHORIZE_LINK_SUCCESS_STATUSES = [500, 409] as const;
 
-/** Matcher VERIFICADO live de la mutación de link Authorize (endpoint = odnService, MG-476). */
+/**
+ * Matcher VERIFICADO live de la mutación de link Authorize (endpoint = odnService, MG-476).
+ * Caveat de amplitud (juicio R2): el endpoint verificado es odnService; los needles adicionales
+ * (vendor|integration|authorize|payment.?gateway) se conservan como red de seguridad pre-campaña —
+ * estrechar a /odnservice/i tras confirmar en la primera corrida viva que ninguna otra mutación
+ * no-GET se dispara durante el submit.
+ */
 export const AUTHORIZE_LINK_MUTATION_URL_PATTERN = /odnservice|payment.?gateway|paymentgateway|vendor|integration|authorize/i;
 
 /** TODO(live): [200] ASUMIDO — status real de la request de link eBizCharge NO verificado. */

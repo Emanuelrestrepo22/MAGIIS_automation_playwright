@@ -30,7 +30,7 @@ import { ThreeDsChallengePage } from '@ui/ThreeDsChallengePage';
 import { loginAsDispatcher, STRIPE_TEST_CARDS, TEST_DATA } from '../../../../../fixtures/gateway.fixtures';
 import { waitForTravelCreation } from '../../../../../helpers/stripe.helpers';
 import { validateCardPrecondition, type CardPreconditionResult } from '../../../../../helpers/card-precondition';
-import { readHoldRaw, setHoldViaApi } from '../../../../../helpers/parameters-api';
+import { getCarrierParameters, readHoldRaw, setHoldViaApi } from '../../../../../helpers/parameters-api';
 import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../../../../helpers/travel-cleanup';
 import { PASSENGERS } from '../../../../../data/passengers';
 import { debugLog } from '../../../../../../../helpers';
@@ -50,11 +50,14 @@ async function disableHoldAndSave(preferences: OperationalPreferencesPage): Prom
 }
 
 async function restoreHoldAndSave(page: Page, _preferences: OperationalPreferencesPage): Promise<void> {
-	const params = await setHoldViaApi(page, true);
-	// Asserts del PAYLOAD posteado (defaults de hold) — el efecto persistido se verifica abajo.
-	expect(params.ccHoldPreviousHs).toBe(2);
-	expect(params.ccHoldCoverage).toBe(10);
-	expect(await readHoldRaw(page), 'read-back API: enableCreditCardHold debe quedar true tras el POST (campo ausente = fallo)').toBe(true);
+	await setHoldViaApi(page, true);
+	// Read-back CRUDO como oráculo (auditoría R2): assertar el payload que `setHoldViaApi`
+	// acababa de mutar era tautológico. UN solo GET posterior y los 3 campos de hold se
+	// assertan desde ESE objeto leído del backend — campo ausente (undefined) = fallo.
+	const persisted = await getCarrierParameters(page);
+	expect(persisted.enableCreditCardHold, 'read-back API: enableCreditCardHold debe quedar true tras el POST (campo ausente = fallo)').toBe(true);
+	expect(persisted.ccHoldPreviousHs, 'read-back API: ccHoldPreviousHs debe persistir en 2 (campo ausente = fallo)').toBe(2);
+	expect(persisted.ccHoldCoverage, 'read-back API: ccHoldCoverage debe persistir en 10 (campo ausente = fallo)').toBe(10);
 }
 
 type Hold3dsScenario = {

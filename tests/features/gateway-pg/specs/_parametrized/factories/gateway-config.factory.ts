@@ -318,6 +318,9 @@ export function defineGatewayConfigSuite(gateway: GatewayName, options: GatewayC
 							// vinculado. El FE tarda en reflejar el link (el POM `linkGateway` espera el link
 							// "Desvincular" visible hasta 20s antes de su readState) → readState con retry
 							// acotado, no one-shot (race-prone).
+							// NOTA (juicio R2): este `toPass` puede latchear un frame OPTIMISTA del FE (pintado antes
+							// de confirmar backend); la persistencia DURABLE la cubre el caso `reloadPersistence`
+							// (readState pre y post reload) — decisión registrada, sin código extra acá.
 							await expect(async () => {
 								expect(await appStore.readState(gateway), `${gateway} debe quedar vinculada tras el link (status OK sin efecto persistido = fallo)`).toBe('linked');
 							}).toPass({ timeout: 20_000 });
