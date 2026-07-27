@@ -140,6 +140,8 @@ Espeja `TS-STRIPE-TC1001..TC1008` pero adaptado a la UI Authorize.
 | TS-AUTHORIZE-TC1054 | Validar Alta de Viaje desde carrier para usuario colaborador con tarjeta preautorizada exitosa **Vincular tarjeta nueva** Hold OFF                                     | `AUTHORIZE_CARDS.SUCCESS` | new | OFF |
 | TS-AUTHORIZE-TC1055 | Validar Alta de Viaje desde carrier para usuario colaborador con tarjeta preautorizada exitosa **Usar tarjeta vinculada existente** Hold OFF                          | `AUTHORIZE_CARDS.SUCCESS` (stored) | existing | OFF |
 
+> **Oráculo automatizado del alta de tarjeta (flujos "Vincular tarjeta nueva" — TC1051/TC1052 y spec WAL `TS-AUTHORIZE-WAL-01`/MG-285):** la vinculación exitosa se asserta por el texto **"Tarjeta válida" / "Valid card"** visible tras "Validar" — **verificado en vivo** (commit `aa780b3`, 3x verde en TEST con Visa 4111 + CVV 900 + ZIP 10001; `CarrierNewTravelPage.validateNativeCard`). Nota: el spec de alta de tarjeta usa el ID `TS-AUTHORIZE-WAL-01`, que no existe como fila TC1xxx en esta matriz (numeración WAL propia del spec).
+
 ### 3.2 Declines y CVV
 
 | ID               | Descripción                                                                                                                                                              | Card |
