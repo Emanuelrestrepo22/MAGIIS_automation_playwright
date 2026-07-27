@@ -413,12 +413,13 @@ export class AppStoreGatewaysPage extends UiBase {
 	}
 
 	/**
-	 * ATC — desvincula una pasarela (click "Desvincular" → confirmar popup) y verifica el
-	 * estado vinculable resultante.
+	 * Impl privada COMPARTIDA del unlink (post-review F1). SIN decorar — las keys de ATC son
+	 * ESTRUCTURALES y viven en los wrappers por pasarela (`unlinkAuthorize` @atc MG-223;
+	 * `unlinkStripe` @atc MG-215; eBiz/MP sin key aún). Desvincula (click "Desvincular" →
+	 * confirmar popup) y verifica el estado vinculable resultante.
 	 * ⚠️ DESTRUCTIVO en runtime: desvincular dispara cleaningWallets en cascada sobre el carrier.
 	 */
-	@atc('MG-223', { severity: 'critical', description: 'Desvincular pasarela (dispara cleaningWallets)' })
-	async unlinkGateway(company: GatewayCompany): Promise<void> {
+	private async unlinkGatewayImpl(company: GatewayCompany): Promise<void> {
 		if (!isGatewayDestructiveSwitchAllowed()) {
 			throw new Error(
 				'unlinkGateway() es DESTRUCTIVO: dispara cleaningWallets en cascada sobre el carrier 1521 (compartido por toda la suite gateway), borrando la tarjeta real del pasajero. ' +
@@ -429,6 +430,49 @@ export class AppStoreGatewaysPage extends UiBase {
 		await this.confirmUnlink();
 		await expect(this.vincularLink(company), `la card ${company} debe quedar desvinculada (green-text / "Vincular")`).toBeVisible({ timeout: 20_000 });
 		expect(await this.readState(company), 'estado esperado tras desvincular = linkable').toBe('linkable');
+	}
+
+	/** ATC — desvincula Authorize. Wrapper por pasarela (key ESTRUCTURAL — TS-AUTHORIZE-TC1005). */
+	@atc('MG-223', { severity: 'critical', description: 'Desvincular pasarela (dispara cleaningWallets)' })
+	async unlinkAuthorize(): Promise<void> {
+		await this.unlinkGatewayImpl('authorize');
+	}
+
+	/** ATC — desvincula Stripe. Wrapper por pasarela (key ESTRUCTURAL — TS-STRIPE-TC1005). */
+	@atc('MG-215', { severity: 'critical', description: 'Desvincular pasarela Stripe (dispara cleaningWallets)' })
+	async unlinkStripe(): Promise<void> {
+		await this.unlinkGatewayImpl('stripe');
+	}
+
+	/** Desvincula eBizCharge. Wrapper por pasarela — SIN `@atc`: eBiz aún sin key CFG de unlink (nunca inventar). */
+	@step
+	async unlinkEbizcharge(): Promise<void> {
+		await this.unlinkGatewayImpl('ebizcharge');
+	}
+
+	/** Desvincula Mercado Pago. Wrapper por pasarela — SIN `@atc`: MP aún sin key CFG de unlink (nunca inventar). */
+	@step
+	async unlinkMercadoPago(): Promise<void> {
+		await this.unlinkGatewayImpl('mercado-pago');
+	}
+
+	/**
+	 * Desvincula la pasarela `company` despachando al wrapper por pasarela (SIN decorator acá:
+	 * cada invocación acredita la key @atc del gateway CORRECTO — fix post-review F1: la key
+	 * fija MG-223 acreditaba unlinks de Stripe/eBiz/MP a Authorize).
+	 * ⚠️ DESTRUCTIVO en runtime (ver `unlinkGatewayImpl`).
+	 */
+	async unlinkGateway(company: GatewayCompany): Promise<void> {
+		switch (company) {
+			case 'authorize':
+				return this.unlinkAuthorize();
+			case 'stripe':
+				return this.unlinkStripe();
+			case 'ebizcharge':
+				return this.unlinkEbizcharge();
+			case 'mercado-pago':
+				return this.unlinkMercadoPago();
+		}
 	}
 
 	/**
@@ -508,17 +552,61 @@ export class AppStoreGatewaysPage extends UiBase {
 	}
 
 	/**
-	 * ATC — verifica la exclusividad de pasarela: con `activeCompany` vinculada, ninguna otra
-	 * pasarela de pago debe ser vinculable ("No Disponible"). Salta cards ausentes en el carrier.
+	 * Impl privada COMPARTIDA de la exclusividad (post-review F1). SIN decorar — las keys de ATC
+	 * son ESTRUCTURALES y viven en los wrappers por pasarela (`expectExclusivityAuthorize` @atc
+	 * MG-224; `expectExclusivityStripe` @atc MG-216; eBiz/MP sin key aún). Con `activeCompany`
+	 * vinculada, ninguna otra pasarela de pago debe ser vinculable ("No Disponible"). Salta
+	 * cards ausentes en el carrier.
 	 */
-	@atc('MG-224', { severity: 'critical', description: 'Exclusividad: una sola pasarela activa por carrier' })
-	async expectExclusivity(activeCompany: GatewayCompany): Promise<void> {
+	private async expectExclusivityImpl(activeCompany: GatewayCompany): Promise<void> {
 		expect(await this.readState(activeCompany), `${activeCompany} debe estar vinculada`).toBe('linked');
 		const others = (Object.keys(COMPANY_NEEDLE) as GatewayCompany[]).filter(c => c !== activeCompany);
 		for (const other of others) {
 			if ((await this.cardFor(other).count()) === 0) continue;
 			const state = await this.readState(other);
 			expect(state, `con ${activeCompany} activa, ${other} NO debe ser vinculable`).not.toBe('linkable');
+		}
+	}
+
+	/** ATC — exclusividad con Authorize activa. Wrapper por pasarela (key ESTRUCTURAL — TS-AUTHORIZE-TC1006). */
+	@atc('MG-224', { severity: 'critical', description: 'Exclusividad: una sola pasarela activa por carrier' })
+	async expectExclusivityAuthorize(): Promise<void> {
+		await this.expectExclusivityImpl('authorize');
+	}
+
+	/** ATC — exclusividad con Stripe activa. Wrapper por pasarela (key ESTRUCTURAL — TS-STRIPE-TC1006). */
+	@atc('MG-216', { severity: 'critical', description: 'Exclusividad: con Stripe activa no se puede vincular otra pasarela' })
+	async expectExclusivityStripe(): Promise<void> {
+		await this.expectExclusivityImpl('stripe');
+	}
+
+	/** Exclusividad con eBizCharge activa. Wrapper — SIN `@atc`: eBiz aún sin key CFG de exclusividad (nunca inventar). */
+	@step
+	async expectExclusivityEbizcharge(): Promise<void> {
+		await this.expectExclusivityImpl('ebizcharge');
+	}
+
+	/** Exclusividad con Mercado Pago activa. Wrapper — SIN `@atc`: MP aún sin key CFG de exclusividad (nunca inventar). */
+	@step
+	async expectExclusivityMercadoPago(): Promise<void> {
+		await this.expectExclusivityImpl('mercado-pago');
+	}
+
+	/**
+	 * Verifica la exclusividad despachando al wrapper por pasarela (SIN decorator acá: cada
+	 * invocación acredita la key @atc del gateway CORRECTO — fix post-review F1: la key fija
+	 * MG-224 acreditaba la exclusividad de Stripe/eBiz/MP a Authorize).
+	 */
+	async expectExclusivity(activeCompany: GatewayCompany): Promise<void> {
+		switch (activeCompany) {
+			case 'authorize':
+				return this.expectExclusivityAuthorize();
+			case 'stripe':
+				return this.expectExclusivityStripe();
+			case 'ebizcharge':
+				return this.expectExclusivityEbizcharge();
+			case 'mercado-pago':
+				return this.expectExclusivityMercadoPago();
 		}
 	}
 
