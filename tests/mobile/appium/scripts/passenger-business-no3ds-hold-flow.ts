@@ -31,7 +31,7 @@ const log = (message: string): void => {
 
 async function run(): Promise<void> {
 	const harness = new PassengerTripHappyPathHarness(getPassengerAppConfig(), undefined, {
-		profileMode: 'business',
+		profileMode: 'business'
 	});
 
 	const card = STRIPE_TEST_CARDS.visa_success;
@@ -39,7 +39,7 @@ async function run(): Promise<void> {
 		number: card.number,
 		expiry: card.exp,
 		cvc: card.cvc,
-		holderName: card.holderName,
+		holderName: card.holderName
 	};
 	const origin = TEST_DATA.origin;
 	const destination = TEST_DATA.destination;

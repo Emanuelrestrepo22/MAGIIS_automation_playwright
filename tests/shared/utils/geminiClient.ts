@@ -83,7 +83,9 @@ export class GeminiClient {
 	private readonly fetchImpl: FetchLike;
 
 	constructor(options?: { apiKey?: string; baseUrl?: string; fetchImpl?: FetchLike }) {
-		const resolved = options?.apiKey ? { apiKey: options.apiKey, apiKeySource: 'GEMINI_API_KEY' as const } : mirrorGeminiApiKeyToStandardEnv();
+		const resolved = options?.apiKey
+			? { apiKey: options.apiKey, apiKeySource: 'GEMINI_API_KEY' as const }
+			: mirrorGeminiApiKeyToStandardEnv();
 
 		this.apiKey = resolved.apiKey;
 		this.apiKeySource = resolved.apiKeySource;
@@ -157,7 +159,9 @@ export class GeminiClient {
 		}
 
 		if (!response.ok) {
-			throw new Error(`Gemini request failed (${response.status} ${response.statusText}) from ${this.apiKeySource}: ${rawText || '<empty body>'}`);
+			throw new Error(
+				`Gemini request failed (${response.status} ${response.statusText}) from ${this.apiKeySource}: ${rawText || '<empty body>'}`
+			);
 		}
 
 		return {

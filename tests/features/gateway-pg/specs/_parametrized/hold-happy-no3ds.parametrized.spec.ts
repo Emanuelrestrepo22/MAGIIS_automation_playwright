@@ -61,36 +61,43 @@ const HAPPY_NO_AUTH_OPTIONS: Omit<HoldRunOptions, 'hold'> = {
 	waitForCreation: false,
 	waitForVehicleReady: true,
 	matchDestination: false,
-	expectStatus: 'Buscando chofer',
+	expectStatus: 'Buscando chofer'
 };
 
 // El fixture KATA no define la opción `role` (login explícito vía CarrierHoldSteps.login()).
 test.use({ storageState: undefined });
 test.describe.configure({ timeout: 180_000 });
 
-test.describe('[BL-028][parametrized] Hold happy path sin 3DS @gateway @hold @regression', { annotation: [{ type: 'tms', description: 'MG-158' }] }, () => {
-	for (const gateway of ACTIVE_GATEWAYS) {
-		test.describe(`gateway=${gateway}`, () => {
-			test('crea viaje con HAPPY_NO_AUTH y queda visible en grilla "Por asignar"', async ({ page }) => {
-				const card = resolveCard({ gateway, intent: 'HAPPY_NO_AUTH' });
+test.describe(
+	'[BL-028][parametrized] Hold happy path sin 3DS @gateway @hold @regression',
+	{ annotation: [{ type: 'tms', description: 'MG-158' }] },
+	() => {
+		for (const gateway of ACTIVE_GATEWAYS) {
+			test.describe(`gateway=${gateway}`, () => {
+				test('crea viaje con HAPPY_NO_AUTH y queda visible en grilla "Por asignar"', async ({ page }) => {
+					const card = resolveCard({ gateway, intent: 'HAPPY_NO_AUTH' });
 
-				// Sanity: el resolver devolvió una tarjeta del gateway esperado y sin 3DS
-				// (el Step resuelve la MISMA tarjeta internamente — intent HAPPY_NO_AUTH).
-				expect(card.gateway).toBe(gateway);
-				expect(card.requires3ds).toBe(false);
-				expect(card.last4).toHaveLength(4);
+					// Sanity: el resolver devolvió una tarjeta del gateway esperado y sin 3DS
+					// (el Step resuelve la MISMA tarjeta internamente — intent HAPPY_NO_AUTH).
+					expect(card.gateway).toBe(gateway);
+					expect(card.requires3ds).toBe(false);
+					expect(card.last4).toHaveLength(4);
 
-				const defaults = journeyDefaultsFor(gateway);
-				const scenario: HoldScenario = {
-					gateway,
-					client: defaults.appPaxPassenger,
-					passenger: defaults.appPaxPassenger,
-					origin: defaults.origin,
-					destination: defaults.destination,
-				};
+					const defaults = journeyDefaultsFor(gateway);
+					const scenario: HoldScenario = {
+						gateway,
+						client: defaults.appPaxPassenger,
+						passenger: defaults.appPaxPassenger,
+						origin: defaults.origin,
+						destination: defaults.destination
+					};
 
-				await new CarrierHoldSteps({ page }).runHoldScenario(scenario, { hold: 'on', ...HAPPY_NO_AUTH_OPTIONS });
+					await new CarrierHoldSteps({ page }).runHoldScenario(scenario, {
+						hold: 'on',
+						...HAPPY_NO_AUTH_OPTIONS
+					});
+				});
 			});
-		});
+		}
 	}
-});
+);

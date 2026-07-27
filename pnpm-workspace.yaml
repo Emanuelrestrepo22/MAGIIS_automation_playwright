@@ -1,3 +1,5 @@
 # oracledb se usa en Thin mode (JS puro) → NO se ejecuta su build script nativo (Thick mode).
 allowBuilds:
+  edgedriver: set this to true or false
+  geckodriver: set this to true or false
   oracledb: false

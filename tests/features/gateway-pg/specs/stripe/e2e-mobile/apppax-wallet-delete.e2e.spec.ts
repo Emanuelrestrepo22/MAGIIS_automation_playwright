@@ -38,23 +38,29 @@ import { PassengerTripHappyPathHarness } from '../../../../../mobile/appium/harn
 // HAPPY_3DS: 3DS determinístico (always_authenticate — 4000 0027 6000 3184).
 const HAPPY_3DS = STRIPE_TEST_CARD_FIXTURES.always_authenticate;
 
-test.describe.serial('Gateway PG · E2E Mobile · App Pax Wallet Delete (3DS) @gateway @stripe @e2e-hybrid @3ds @wallet @regression', () => {
+test.describe
+	.serial('Gateway PG · E2E Mobile · App Pax Wallet Delete (3DS) @gateway @stripe @e2e-hybrid @3ds @wallet @regression', () => {
 	// Sin servidor Appium no se puede construir el harness (getPassengerAppConfig lanza) —
 	// gate a nivel describe para que el grupo SKIPee (no ERRORE) cuando no hay device.
 	test.skip(() => !process.env.APPIUM_SERVER_URL, 'Requiere servidor Appium Android activo (APPIUM_SERVER_URL).');
 
 	test(
 		'[wallet-delete-3ds] Vincular y desvincular tarjeta 3DS del wallet del pax',
-		{ annotation: [{ type: 'tms', description: 'MG-174' }, { type: 'tms', description: 'MG-495' }] },
+		{
+			annotation: [
+				{ type: 'tms', description: 'MG-174' },
+				{ type: 'tms', description: 'MG-495' }
+			]
+		},
 		async () => {
 			const harness = new PassengerTripHappyPathHarness(getPassengerAppConfig(), undefined, {
-				profileMode: 'personal',
+				profileMode: 'personal'
 			});
 			const card = {
 				number: HAPPY_3DS.number,
 				expiry: HAPPY_3DS.exp,
 				cvc: HAPPY_3DS.cvc,
-				holderName: HAPPY_3DS.holderName,
+				holderName: HAPPY_3DS.holderName
 			};
 			const last4 = HAPPY_3DS.last4;
 
@@ -92,14 +98,19 @@ test.describe.serial('Gateway PG · E2E Mobile · App Pax Wallet Delete (3DS) @g
 				if (dbEnabled && cardsBefore !== null) {
 					const before = cardsBefore;
 					await test.step('[wallet-delete-3ds] DB count AFTER delete (trifuerza)', async () => {
-						const cardsAfter = await countCardsByPassenger(oracleCfg!, { passengerUserId: paxUserId!, last4 });
+						const cardsAfter = await countCardsByPassenger(oracleCfg!, {
+							passengerUserId: paxUserId!,
+							last4
+						});
 						// El borrado físico debe reflejarse: el count baja respecto al estado previo.
-						expect(cardsAfter, 'el borrado físico debe reducir el count de cards del pax').toBeLessThan(before);
+						expect(cardsAfter, 'el borrado físico debe reducir el count de cards del pax').toBeLessThan(
+							before
+						);
 					});
 				}
 			} finally {
 				await harness.endSession();
 			}
-		},
+		}
 	);
 });

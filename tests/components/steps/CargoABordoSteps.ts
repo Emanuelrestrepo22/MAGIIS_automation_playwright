@@ -28,7 +28,11 @@ import { CarrierDashboardPage, CarrierNewTravelPage, CarrierTravelManagementPage
 import { debugLog } from '@helpers/index';
 import { expectNoThreeDSModal, loginAsDispatcher } from '@features/gateway-pg/fixtures/gateway.fixtures';
 import { validateCardPrecondition } from '@features/gateway-pg/helpers/card-precondition';
-import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '@features/gateway-pg/helpers/travel-cleanup';
+import {
+	captureCreatedTravelId,
+	cancelTravelIfCreated,
+	type TravelIdRef
+} from '@features/gateway-pg/helpers/travel-cleanup';
 // Type-only (se borra en runtime; el módulo real se carga por import() dinámico solo con Appium).
 import type { DriverCargoDeclineHarness } from '../../mobile/appium/harness/DriverCargoDeclineHarness';
 
@@ -118,12 +122,15 @@ export class CargoABordoSteps extends UiBase {
 			await test.step(`Precondición: validar tarjeta ${pre.requiredLast4} vinculada al pasajero`, async () => {
 				const check = await validateCardPrecondition(this.page, {
 					passengerName: pre.apiSearchQuery,
-					requiredLast4: pre.requiredLast4,
+					requiredLast4: pre.requiredLast4
 				});
-				debugLog('gateway-pg:carrier', `[card-precondition] ${scenario.passenger ?? scenario.client}: ${check.activeCards} tarjetas, tiene ${pre.requiredLast4}: ${check.hasRequiredCard}, limpiadas: ${check.cardsDeleted}`);
+				debugLog(
+					'gateway-pg:carrier',
+					`[card-precondition] ${scenario.passenger ?? scenario.client}: ${check.activeCards} tarjetas, tiene ${pre.requiredLast4}: ${check.hasRequiredCard}, limpiadas: ${check.cardsDeleted}`
+				);
 				if (!check.hasRequiredCard) {
 					throw new Error(
-						`[${pre.tcLabel}] PRECONDICIÓN NO CUMPLIDA: pasajero sin tarjeta ${pre.requiredLast4} activa (tarjetas activas: ${check.activeCards}). Vincular manualmente en TEST antes de ejecutar.`,
+						`[${pre.tcLabel}] PRECONDICIÓN NO CUMPLIDA: pasajero sin tarjeta ${pre.requiredLast4} activa (tarjetas activas: ${check.activeCards}). Vincular manualmente en TEST antes de ejecutar.`
 					);
 				}
 			});
@@ -138,7 +145,9 @@ export class CargoABordoSteps extends UiBase {
 				await test.step('[PRE-WARM] Sesión driver Appium + Disponible', async () => {
 					test.setTimeout(420_000);
 					const { getDriverAppConfig } = await import('../../mobile/appium/config/appiumRuntime');
-					const { DriverCargoDeclineHarness } = await import('../../mobile/appium/harness/DriverCargoDeclineHarness');
+					const { DriverCargoDeclineHarness } = await import(
+						'../../mobile/appium/harness/DriverCargoDeclineHarness'
+					);
 					driverHarness = new DriverCargoDeclineHarness(getDriverAppConfig());
 					await driverHarness.prewarm();
 				});
@@ -151,30 +160,40 @@ export class CargoABordoSteps extends UiBase {
 				await this.travel.ensureLoaded();
 			});
 
-			await test.step(options.manualAssign ? 'Completar formulario — VIAJE PLANO (sin método; para Send Manual)' : 'Completar formulario — método Cargo a Bordo', async () => {
-				const formInput = {
-					client: scenario.client,
-					passenger: scenario.passenger,
-					origin: scenario.origin,
-					destination: scenario.destination,
-				};
-				// Asignación manual (Send Manual → Assign) REQUIERE viaje plano: seleccionar "Cargo a
-				// Bordo" oculta "Send Manual". El conductor elige tarjeta (CREDIT_CARD) en el Resumen.
-				if (options.manualAssign) {
-					await this.travel.fillPlain(formInput);
-				} else {
-					await this.travel.fillCargoABordo(formInput);
+			await test.step(
+				options.manualAssign
+					? 'Completar formulario — VIAJE PLANO (sin método; para Send Manual)'
+					: 'Completar formulario — método Cargo a Bordo',
+				async () => {
+					const formInput = {
+						client: scenario.client,
+						passenger: scenario.passenger,
+						origin: scenario.origin,
+						destination: scenario.destination
+					};
+					// Asignación manual (Send Manual → Assign) REQUIERE viaje plano: seleccionar "Cargo a
+					// Bordo" oculta "Send Manual". El conductor elige tarjeta (CREDIT_CARD) en el Resumen.
+					if (options.manualAssign) {
+						await this.travel.fillPlain(formInput);
+					} else {
+						await this.travel.fillCargoABordo(formInput);
+					}
 				}
-			});
+			);
 
-			await test.step(options.manualAssign ? 'Seleccionar vehículo y ASIGNAR (Send Manual → Assign)' : 'Seleccionar vehículo y enviar el viaje', async () => {
-				await this.travel.clickSelectVehicle();
-				if (options.manualAssign) {
-					await this.travel.clickSendManualAndAssign();
-				} else {
-					await this.travel.clickSendService();
+			await test.step(
+				options.manualAssign
+					? 'Seleccionar vehículo y ASIGNAR (Send Manual → Assign)'
+					: 'Seleccionar vehículo y enviar el viaje',
+				async () => {
+					await this.travel.clickSelectVehicle();
+					if (options.manualAssign) {
+						await this.travel.clickSendManualAndAssign();
+					} else {
+						await this.travel.clickSendService();
+					}
 				}
-			});
+			);
 
 			await test.step('Verificar que no aparece modal 3DS', async () => {
 				await this.expectNoThreeDs();
@@ -186,7 +205,7 @@ export class CargoABordoSteps extends UiBase {
 				await expect
 					.poll(() => travelIdRef?.travelId, {
 						timeout: createTimeout,
-						message: '[Cargo a Bordo] POST /travels no capturó travelId tras el submit',
+						message: '[Cargo a Bordo] POST /travels no capturó travelId tras el submit'
 					})
 					.not.toBeNull();
 			});
@@ -199,12 +218,16 @@ export class CargoABordoSteps extends UiBase {
 				if (driverPhaseActive) {
 					debugLog(
 						'gateway-pg:carrier',
-						'[cargo] fase driver activa: se omite la aserción estricta "Buscando chofer" (un conductor online consume el despacho; alta ya confirmada por POST /travels).',
+						'[cargo] fase driver activa: se omite la aserción estricta "Buscando chofer" (un conductor online consume el despacho; alta ya confirmada por POST /travels).'
 					);
 					return;
 				}
 				await this.management.goto();
-				await this.management.expectPassengerInPorAsignar(scenario.passenger ?? scenario.client, undefined, 'Buscando chofer');
+				await this.management.expectPassengerInPorAsignar(
+					scenario.passenger ?? scenario.client,
+					undefined,
+					'Buscando chofer'
+				);
 			});
 
 			if (options.driverAppStep) {
@@ -212,19 +235,29 @@ export class CargoABordoSteps extends UiBase {
 				await test.step(step.title, async () => {
 					// Fallback histórico: sin fase driver activa (sin Appium o sin card) → fixme (web ya validado).
 					if (!driverPhaseActive || !driverHarness || !step.charge) {
-						test.fixme(true, step.note ?? 'PENDIENTE: fase Driver App — requiere Appium (APPIUM=1) + charge card.');
+						test.fixme(
+							true,
+							step.note ?? 'PENDIENTE: fase Driver App — requiere Appium (APPIUM=1) + charge card.'
+						);
 						return;
 					}
 
 					// Sesión driver YA pre-warm: reaccionar al request entrante y cobrar INMEDIATO.
-					const result = await driverHarness.reactAndCharge(step.charge.card, { expect3ds: step.charge.is3ds });
+					const result = await driverHarness.reactAndCharge(step.charge.card, {
+						expect3ds: step.charge.is3ds
+					});
 					const reason = 'reason' in result.outcome ? result.outcome.reason : '';
-					debugLog('gateway-pg:driver', `[driver-app] outcome=${result.outcome.status} reason="${reason}" reachedModal=${result.reachedPaymentModal}`);
+					debugLog(
+						'gateway-pg:driver',
+						`[driver-app] outcome=${result.outcome.status} reason="${reason}" reachedModal=${result.reachedPaymentModal}`
+					);
 
 					// Debería alcanzar el modal de cobro Cargo a Bordo (Stripe Elements) en la Driver App.
 					expect(result.reachedPaymentModal, 'Debería abrir el modal de cobro en la Driver App').toBe(true);
 					// Debería rechazar el cobro con la tarjeta declinada (outcome esperado).
-					expect(result.outcome.status, 'Debería rechazar el cobro con la tarjeta declinada').toBe(step.charge.expectedOutcome);
+					expect(result.outcome.status, 'Debería rechazar el cobro con la tarjeta declinada').toBe(
+						step.charge.expectedOutcome
+					);
 				});
 			}
 		} finally {

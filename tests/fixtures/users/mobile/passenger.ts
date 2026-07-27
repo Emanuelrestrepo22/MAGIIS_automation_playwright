@@ -33,29 +33,26 @@ import type { EnvironmentMap, MobileUser } from '../types';
 const LABEL = 'passenger (Android app)';
 
 function buildPassenger(envSuffix: 'TEST' | 'UAT' | 'PROD', environment: MobileUser['environment']): MobileUser {
-  const emailEnv = lazyEnv(
-    [`PASSENGER_EMAIL_${envSuffix}`, 'PASSENGER_EMAIL'],
-    `${LABEL} [${environment}] email`,
-  );
-  const passEnv = lazyEnv(
-    [`PASSENGER_PASSWORD_${envSuffix}`, 'PASSENGER_PASSWORD'],
-    `${LABEL} [${environment}] password`,
-  );
+	const emailEnv = lazyEnv([`PASSENGER_EMAIL_${envSuffix}`, 'PASSENGER_EMAIL'], `${LABEL} [${environment}] email`);
+	const passEnv = lazyEnv(
+		[`PASSENGER_PASSWORD_${envSuffix}`, 'PASSENGER_PASSWORD'],
+		`${LABEL} [${environment}] password`
+	);
 
-  return {
-    role: 'passenger',
-    environment,
-    get email() {
-      return emailEnv.value;
-    },
-    get password() {
-      return passEnv.value;
-    },
-    notes:
-      `Passenger app Android en ${environment}. ` +
-      `No confundir con TestPassenger (dominio) de fixtures/users/passengers.ts. ` +
-      `User histórico en TEST: emanuel.restrepo@yopmail.com (wallet con tarjetas paralelas — ver memoria).`,
-  };
+	return {
+		role: 'passenger',
+		environment,
+		get email() {
+			return emailEnv.value;
+		},
+		get password() {
+			return passEnv.value;
+		},
+		notes:
+			`Passenger app Android en ${environment}. ` +
+			`No confundir con TestPassenger (dominio) de fixtures/users/passengers.ts. ` +
+			`User histórico en TEST: emanuel.restrepo@yopmail.com (wallet con tarjetas paralelas — ver memoria).`
+	};
 }
 
 /**
@@ -69,7 +66,7 @@ function buildPassenger(envSuffix: 'TEST' | 'UAT' | 'PROD', environment: MobileU
  *   const { email, password } = PASSENGER_APP_USER.test;
  */
 export const PASSENGER_APP_USER = {
-  test: buildPassenger('TEST', 'test'),
-  uat: buildPassenger('UAT', 'uat'),
-  prod: buildPassenger('PROD', 'prod'),
+	test: buildPassenger('TEST', 'test'),
+	uat: buildPassenger('UAT', 'uat'),
+	prod: buildPassenger('PROD', 'prod')
 } as const satisfies EnvironmentMap<MobileUser>;

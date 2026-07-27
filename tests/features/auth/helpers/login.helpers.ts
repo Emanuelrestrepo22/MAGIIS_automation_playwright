@@ -15,7 +15,7 @@ import {
 	PAX_WEB,
 	getContractorCollaborator,
 	getCurrentUserEnvironment,
-	getDispatcher,
+	getDispatcher
 } from '../../../fixtures/users';
 import type { GatewayName } from '../../../fixtures/gateways/_shared';
 
@@ -56,9 +56,7 @@ async function runLoginPhase<T>(role: string, phase: LoginPhase, fn: () => Promi
  * omitido = comportamiento default idéntico (carrier base vía `DISPATCHER[env]`).
  */
 export async function loginAsDispatcher(page: Page, opts?: LoginOptions): Promise<void> {
-	const dispatcher = opts?.gateway
-		? getDispatcher(opts.gateway)
-		: DISPATCHER[getCurrentUserEnvironment()];
+	const dispatcher = opts?.gateway ? getDispatcher(opts.gateway) : DISPATCHER[getCurrentUserEnvironment()];
 	const loginPage = new LoginPage(page, 'carrier', getPortalUrl('carrier'));
 	const dashboardPage = new DashboardPage(page);
 	await runLoginPhase('carrier', 'goto', () => loginPage.goto());

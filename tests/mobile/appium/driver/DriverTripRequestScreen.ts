@@ -5,10 +5,7 @@
 
 import type { MobileActorConfig } from '../config/appiumRuntime';
 import { AppiumSessionBase, type AppiumDriver } from '../base/AppiumSessionBase';
-import {
-	DRIVER_ACTION_SELECTORS,
-	DRIVER_CHECKPOINT_SELECTORS,
-} from './DriverFlowSelectors';
+import { DRIVER_ACTION_SELECTORS, DRIVER_CHECKPOINT_SELECTORS } from './DriverFlowSelectors';
 
 type TripRequestSnapshot = {
 	url: string;
@@ -32,12 +29,17 @@ export class DriverTripRequestScreen extends AppiumSessionBase {
 		while (Date.now() < deadline) {
 			await this.switchToWebView(3_000);
 			const url = await driver.execute<string, []>(() => window.location.href).catch(() => '');
-			if (checkpoint.urlTokens.some((token) => url.includes(token))) {
+			if (checkpoint.urlTokens.some(token => url.includes(token))) {
 				return true;
 			}
 
 			for (const selector of checkpoint.webSelectors) {
-				if (await driver.$(selector).isDisplayed().catch(() => false)) {
+				if (
+					await driver
+						.$(selector)
+						.isDisplayed()
+						.catch(() => false)
+				) {
 					return true;
 				}
 			}
@@ -57,14 +59,20 @@ export class DriverTripRequestScreen extends AppiumSessionBase {
 			}
 
 			return await driver.execute(() => {
-				const normalize = (value: unknown): string => String(value ?? '').replace(/\s+/g, ' ').trim();
+				const normalize = (value: unknown): string =>
+					String(value ?? '')
+						.replace(/\s+/g, ' ')
+						.trim();
 				const isVisible = (element: Element): boolean => {
 					const html = element as HTMLElement;
 					const rect = html.getBoundingClientRect();
 					const style = window.getComputedStyle(html);
-					return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+					return (
+						style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0
+					);
 				};
-				const textOf = (element: Element): string => normalize((element as HTMLElement).innerText || element.textContent);
+				const textOf = (element: Element): string =>
+					normalize((element as HTMLElement).innerText || element.textContent);
 				const attrOf = (element: Element, name: string): string => normalize(element.getAttribute(name));
 
 				const visibleElements = Array.from(document.querySelectorAll('*'))
@@ -74,18 +82,22 @@ export class DriverTripRequestScreen extends AppiumSessionBase {
 						return {
 							tag: html.tagName.toLowerCase(),
 							id: normalize(html.id),
-							accessibilityId: attrOf(html, 'aria-label') || attrOf(html, 'content-desc') || attrOf(html, 'data-testid'),
+							accessibilityId:
+								attrOf(html, 'aria-label') ||
+								attrOf(html, 'content-desc') ||
+								attrOf(html, 'data-testid'),
 							text: textOf(html),
 							className: normalize(typeof html.className === 'string' ? html.className : ''),
-							role: attrOf(html, 'role'),
+							role: attrOf(html, 'role')
 						};
 					})
 					.filter(item => item.id || item.accessibilityId || item.text || item.className || item.role);
 
 				const tripKeywords = ['trip', 'viaje', 'request', 'solicitud', 'driver'];
 				const matches = visibleElements.filter(item => {
-					const haystacks = [item.id, item.accessibilityId, item.text, item.className, item.role]
-						.map(value => value.toLowerCase());
+					const haystacks = [item.id, item.accessibilityId, item.text, item.className, item.role].map(value =>
+						value.toLowerCase()
+					);
 					return haystacks.some(value => tripKeywords.some(keyword => value.includes(keyword)));
 				});
 
@@ -98,13 +110,17 @@ export class DriverTripRequestScreen extends AppiumSessionBase {
 					texts: Array.from(new Set(visibleElements.map(item => item.text).filter(Boolean))).slice(0, 100),
 					ids: Array.from(new Set(visibleElements.map(item => item.id).filter(Boolean))).slice(0, 100),
 					buttons,
-					matches: matches.map(item =>
-						`${item.tag} | id=${item.id} | aria=${item.accessibilityId} | text=${item.text} | class=${item.className} | role=${item.role}`
-					),
+					matches: matches.map(
+						item =>
+							`${item.tag} | id=${item.id} | aria=${item.accessibilityId} | text=${item.text} | class=${item.className} | role=${item.role}`
+					)
 				};
 			});
 		} catch (error) {
-			console.warn('[DriverTripRequestScreen] WebView snapshot failed:', error instanceof Error ? error.message : error);
+			console.warn(
+				'[DriverTripRequestScreen] WebView snapshot failed:',
+				error instanceof Error ? error.message : error
+			);
 			return null;
 		}
 	}
@@ -176,8 +192,8 @@ export class DriverTripRequestScreen extends AppiumSessionBase {
 				const driver = this.getDriver();
 				const allBtns = await driver.$$(DRIVER_ACTION_SELECTORS.acceptTripPrimaryButton);
 				for (const btn of allBtns) {
-					const text     = (await btn.getText().catch(() => '')).trim();
-					const visible  = await btn.isDisplayed().catch(() => false);
+					const text = (await btn.getText().catch(() => '')).trim();
+					const visible = await btn.isDisplayed().catch(() => false);
 					if (text === 'Aceptar' && visible) {
 						await btn.click();
 						clicked = true;
@@ -186,16 +202,22 @@ export class DriverTripRequestScreen extends AppiumSessionBase {
 				}
 			}
 		} catch (error) {
-			console.warn('[DriverTripRequestScreen] acceptTrip web fallback:', error instanceof Error ? error.message : error);
+			console.warn(
+				'[DriverTripRequestScreen] acceptTrip web fallback:',
+				error instanceof Error ? error.message : error
+			);
 		}
 
 		if (!clicked) {
-			clicked = await this.clickFirstNative([
-				'//*[@text="Aceptar"]',
-				'//*[@text="Tomar viaje"]',
-				'//*[contains(@text, "Aceptar")]',
-				'//*[contains(@text, "Tomar viaje")]',
-			], 5_000);
+			clicked = await this.clickFirstNative(
+				[
+					'//*[@text="Aceptar"]',
+					'//*[@text="Tomar viaje"]',
+					'//*[contains(@text, "Aceptar")]',
+					'//*[contains(@text, "Tomar viaje")]'
+				],
+				5_000
+			);
 		}
 
 		if (!clicked) {
@@ -221,12 +243,15 @@ export class DriverTripRequestScreen extends AppiumSessionBase {
 			if (textCandidate) return textCandidate;
 		}
 
-		return this.extractTextFromNative([
-			'//*[contains(@text, "Trip")]',
-			'//*[contains(@text, "Viaje")]',
-			'//*[contains(@text, "ID")]',
-			'//*[contains(@text, "travel")]',
-		], timeout);
+		return this.extractTextFromNative(
+			[
+				'//*[contains(@text, "Trip")]',
+				'//*[contains(@text, "Viaje")]',
+				'//*[contains(@text, "ID")]',
+				'//*[contains(@text, "travel")]'
+			],
+			timeout
+		);
 	}
 
 	async getTripOrigin(timeout = 10_000): Promise<string> {
@@ -238,11 +263,10 @@ export class DriverTripRequestScreen extends AppiumSessionBase {
 			}
 		}
 
-		return this.extractTextFromNative([
-			'//*[contains(@text, "Origen")]',
-			'//*[contains(@text, "Origin")]',
-			'//*[contains(@text, "From")]',
-		], timeout);
+		return this.extractTextFromNative(
+			['//*[contains(@text, "Origen")]', '//*[contains(@text, "Origin")]', '//*[contains(@text, "From")]'],
+			timeout
+		);
 	}
 
 	async getTripDestination(timeout = 10_000): Promise<string> {
@@ -254,11 +278,10 @@ export class DriverTripRequestScreen extends AppiumSessionBase {
 			}
 		}
 
-		return this.extractTextFromNative([
-			'//*[contains(@text, "Destino")]',
-			'//*[contains(@text, "Destination")]',
-			'//*[contains(@text, "To")]',
-		], timeout);
+		return this.extractTextFromNative(
+			['//*[contains(@text, "Destino")]', '//*[contains(@text, "Destination")]', '//*[contains(@text, "To")]'],
+			timeout
+		);
 	}
 
 	async verifyTripDetails(expected: { origin: string; destination: string }): Promise<void> {

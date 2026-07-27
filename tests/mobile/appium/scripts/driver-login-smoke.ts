@@ -22,11 +22,11 @@
 
 import { remote } from 'webdriverio';
 
-const APPIUM_URL  = process.env.APPIUM_SERVER_URL          ?? 'http://localhost:4723';
-const UDID        = process.env.ANDROID_UDID               ?? 'R92XB0B8F3J';
+const APPIUM_URL = process.env.APPIUM_SERVER_URL ?? 'http://localhost:4723';
+const UDID = process.env.ANDROID_UDID ?? 'R92XB0B8F3J';
 const APP_PACKAGE = process.env.ANDROID_DRIVER_APP_PACKAGE ?? 'com.magiis.app.test.driver';
-const EMAIL       = process.env.DRIVER_EMAIL               ?? '';
-const PASSWORD    = process.env.DRIVER_PASSWORD            ?? '';
+const EMAIL = process.env.DRIVER_EMAIL ?? '';
+const PASSWORD = process.env.DRIVER_PASSWORD ?? '';
 
 if (!EMAIL || !PASSWORD) {
 	console.error('❌  Definir DRIVER_EMAIL y DRIVER_PASSWORD como variables de entorno.');
@@ -38,10 +38,13 @@ const log = (msg: string): void => console.log(`[smoke] ${msg}`);
 // ─── Helpers de contexto ──────────────────────────────────────────────────────
 
 async function switchToWebView(driver: WebdriverIO.Browser): Promise<boolean> {
-	const contexts = await driver.getContexts() as string[];
+	const contexts = (await driver.getContexts()) as string[];
 	log(`Contextos: ${contexts.join(', ')}`);
 	const webview = contexts.find((c: string) => c.startsWith('WEBVIEW'));
-	if (!webview) { log('⚠  Sin contexto WebView'); return false; }
+	if (!webview) {
+		log('⚠  Sin contexto WebView');
+		return false;
+	}
 	await driver.switchContext(webview);
 	log(`✓ Contexto → ${webview}`);
 	return true;
@@ -55,19 +58,21 @@ async function switchToNative(driver: WebdriverIO.Browser): Promise<void> {
 // ─── Handler: sesión expirada ─────────────────────────────────────────────────
 
 async function handleSessionExpiredIfPresent(driver: WebdriverIO.Browser): Promise<boolean> {
-	const result = await driver.execute<string, []>(() => {
-		const modal = document.querySelector('ion-modal.alert-modal-atention.show-modal');
-		if (!modal) return 'no-modal';
-		// Recorrer shadow roots para encontrar el botón Aceptar
-		const allEls = Array.from(document.querySelectorAll('*'));
-		for (const el of allEls) {
-			if (el.textContent?.trim() === 'Aceptar' && (el as HTMLElement).click) {
-				(el as HTMLElement).click();
-				return 'clicked-aceptar';
+	const result = await driver
+		.execute<string, []>(() => {
+			const modal = document.querySelector('ion-modal.alert-modal-atention.show-modal');
+			if (!modal) return 'no-modal';
+			// Recorrer shadow roots para encontrar el botón Aceptar
+			const allEls = Array.from(document.querySelectorAll('*'));
+			for (const el of allEls) {
+				if (el.textContent?.trim() === 'Aceptar' && (el as HTMLElement).click) {
+					(el as HTMLElement).click();
+					return 'clicked-aceptar';
+				}
 			}
-		}
-		return 'modal-found-but-no-aceptar';
-	}).catch(() => 'error');
+			return 'modal-found-but-no-aceptar';
+		})
+		.catch(() => 'error');
 
 	log(`Session expired check: ${result}`);
 	if (result === 'clicked-aceptar') {
@@ -85,18 +90,24 @@ async function reEnterPasswordAndLogin(driver: WebdriverIO.Browser): Promise<voi
 	await driver.pause(2500);
 
 	// Llenar contraseña via JS síncrono (execute no soporta Promises)
-	const loginResult = await driver.execute<string, [string]>((pwd: string): string => {
-		const passInput = document.querySelector('input[type="password"]') as HTMLInputElement | null;
-		if (!passInput) return 'no-password-field';
-		const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
-		setter?.call(passInput, pwd);
-		passInput.dispatchEvent(new Event('input', { bubbles: true }));
-		passInput.dispatchEvent(new Event('change', { bubbles: true }));
-		const btn = Array.from(document.querySelectorAll('button, [role="button"]'))
-			.find(el => el.textContent?.trim() === 'Entrar') as HTMLElement | undefined;
-		if (btn) { btn.click(); return 'login-submitted'; }
-		return 'password-filled-no-button';
-	}, PASSWORD).catch((e: Error) => `error: ${e.message}`);
+	const loginResult = await driver
+		.execute<string, [string]>((pwd: string): string => {
+			const passInput = document.querySelector('input[type="password"]') as HTMLInputElement | null;
+			if (!passInput) return 'no-password-field';
+			const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+			setter?.call(passInput, pwd);
+			passInput.dispatchEvent(new Event('input', { bubbles: true }));
+			passInput.dispatchEvent(new Event('change', { bubbles: true }));
+			const btn = Array.from(document.querySelectorAll('button, [role="button"]')).find(
+				el => el.textContent?.trim() === 'Entrar'
+			) as HTMLElement | undefined;
+			if (btn) {
+				btn.click();
+				return 'login-submitted';
+			}
+			return 'password-filled-no-button';
+		}, PASSWORD)
+		.catch((e: Error) => `error: ${e.message}`);
 
 	log(`Re-login result: ${loginResult}`);
 
@@ -126,24 +137,23 @@ async function reEnterPasswordAndLogin(driver: WebdriverIO.Browser): Promise<voi
 // ─── Polling en Node para encontrar #availability ─────────────────────────────
 // (execute() de WebdriverIO no acepta callbacks async/Promise)
 
-async function pollForAvailability(
-	driver: WebdriverIO.Browser,
-	timeoutMs = 15_000,
-): Promise<string> {
+async function pollForAvailability(driver: WebdriverIO.Browser, timeoutMs = 15_000): Promise<string> {
 	const deadline = Date.now() + timeoutMs;
 	while (Date.now() < deadline) {
-		const result = await driver.execute<string, []>(() => {
-			const btn  = document.querySelector('#availability');
-			const span = btn?.querySelector('.available-label') ?? btn?.querySelector('span');
-			if (btn && span) return 'found:' + (span.textContent?.trim() ?? '');
-			// Diagnóstico: qué IDs hay en el DOM
-			const ids = Array.from(document.querySelectorAll('[id]'))
-				.map(e => (e as HTMLElement).id)
-				.filter((id: string) => id.length > 0)
-				.slice(0, 10)
-				.join(', ');
-			return 'waiting. IDs: ' + (ids || 'ninguno');
-		}).catch(() => 'error');
+		const result = await driver
+			.execute<string, []>(() => {
+				const btn = document.querySelector('#availability');
+				const span = btn?.querySelector('.available-label') ?? btn?.querySelector('span');
+				if (btn && span) return 'found:' + (span.textContent?.trim() ?? '');
+				// Diagnóstico: qué IDs hay en el DOM
+				const ids = Array.from(document.querySelectorAll('[id]'))
+					.map(e => (e as HTMLElement).id)
+					.filter((id: string) => id.length > 0)
+					.slice(0, 10)
+					.join(', ');
+				return 'waiting. IDs: ' + (ids || 'ninguno');
+			})
+			.catch(() => 'error');
 
 		if (result.startsWith('found:')) return result;
 		log(`  polling: ${result}`);
@@ -156,7 +166,10 @@ async function pollForAvailability(
 
 async function checkAndSetAvailable(driver: WebdriverIO.Browser): Promise<void> {
 	const switched = await switchToWebView(driver);
-	if (!switched) { log('⚠  No se pudo cambiar a WebView'); return; }
+	if (!switched) {
+		log('⚠  No se pudo cambiar a WebView');
+		return;
+	}
 	await driver.pause(2000);
 
 	// Manejar sesión expirada si aparece
@@ -164,7 +177,10 @@ async function checkAndSetAvailable(driver: WebdriverIO.Browser): Promise<void> 
 	if (sessionExpired) {
 		await reEnterPasswordAndLogin(driver);
 		const ok = await switchToWebView(driver);
-		if (!ok) { log('⚠  No se pudo volver al WebView'); return; }
+		if (!ok) {
+			log('⚠  No se pudo volver al WebView');
+			return;
+		}
 		await driver.pause(2000);
 	}
 
@@ -192,11 +208,14 @@ async function checkAndSetAvailable(driver: WebdriverIO.Browser): Promise<void> 
 		});
 		await driver.pause(2500);
 
-		const newStatus = await driver.execute<string, []>(() => {
-			const span = document.querySelector('#availability .available-label')
-				?? document.querySelector('#availability span');
-			return span?.textContent?.trim() ?? '';
-		}).catch(() => '');
+		const newStatus = await driver
+			.execute<string, []>(() => {
+				const span =
+					document.querySelector('#availability .available-label') ??
+					document.querySelector('#availability span');
+				return span?.textContent?.trim() ?? '';
+			})
+			.catch(() => '');
 
 		if (newStatus && !newStatus.toLowerCase().includes('no disponible')) {
 			log(`✅  Driver disponible: "${newStatus}"`);
@@ -214,7 +233,7 @@ const LOGIN_BUTTON_SELECTORS = [
 	'//*[@text="Entrar"]',
 	'//*[contains(@text,"ntrar")]',
 	'//*[@text="Iniciar sesión"]',
-	'//*[@text="Login"]',
+	'//*[@text="Login"]'
 ];
 
 async function doLogin(driver: WebdriverIO.Browser): Promise<boolean> {
@@ -232,7 +251,7 @@ async function doLogin(driver: WebdriverIO.Browser): Promise<boolean> {
 	const passSelectors = [
 		'(//*[@password="true"])[1]',
 		'//android.widget.EditText[2]',
-		'//*[contains(@hint,"ontraseña")]',
+		'//*[contains(@hint,"ontraseña")]'
 	];
 
 	let passField: ReturnType<typeof driver.$> | null = null;
@@ -244,7 +263,10 @@ async function doLogin(driver: WebdriverIO.Browser): Promise<boolean> {
 			break;
 		}
 	}
-	if (!passField) { log('⚠  Campo contraseña no encontrado'); return false; }
+	if (!passField) {
+		log('⚠  Campo contraseña no encontrado');
+		return false;
+	}
 
 	await passField.clearValue();
 	await passField.setValue(PASSWORD);
@@ -259,8 +281,10 @@ async function doLogin(driver: WebdriverIO.Browser): Promise<boolean> {
 			await el.click();
 			log(`✓ Botón login presionado: ${sel}`);
 			await driver.pause(6000);
-			const stillOnLogin = await driver.$('//android.widget.EditText[1]')
-				.isDisplayed().catch(() => false);
+			const stillOnLogin = await driver
+				.$('//android.widget.EditText[1]')
+				.isDisplayed()
+				.catch(() => false);
 			if (!stillOnLogin) {
 				log('✅  Login exitoso');
 				return true;
@@ -282,25 +306,25 @@ async function run(): Promise<void> {
 	const driver = await remote({
 		protocol: appiumUrl.protocol.replace(':', '') as 'http' | 'https',
 		hostname: appiumUrl.hostname,
-		port:     Number(appiumUrl.port) || 4723,
-		path:     '/',
+		port: Number(appiumUrl.port) || 4723,
+		path: '/',
 		logLevel: 'warn',
 		connectionRetryTimeout: 60_000,
-		connectionRetryCount:   2,
+		connectionRetryCount: 2,
 		capabilities: {
-			platformName:                  'Android',
-			'appium:automationName':       'UiAutomator2',
-			'appium:deviceName':           'SM-A055M',
-			'appium:platformVersion':      '15.0',
-			'appium:udid':                 UDID,
-			'appium:appPackage':           APP_PACKAGE,
-			'appium:appActivity':          '.MainActivity',
-			'appium:noReset':              true,
-			'appium:forceAppLaunch':       true,
-			'appium:newCommandTimeout':    120,
+			platformName: 'Android',
+			'appium:automationName': 'UiAutomator2',
+			'appium:deviceName': 'SM-A055M',
+			'appium:platformVersion': '15.0',
+			'appium:udid': UDID,
+			'appium:appPackage': APP_PACKAGE,
+			'appium:appActivity': '.MainActivity',
+			'appium:noReset': true,
+			'appium:forceAppLaunch': true,
+			'appium:newCommandTimeout': 120,
 			'appium:autoGrantPermissions': true,
-			'appium:chromedriverAutodownload': true,
-		} as Record<string, unknown>,
+			'appium:chromedriverAutodownload': true
+		} as Record<string, unknown>
 	});
 
 	log('✓ Sesión Appium iniciada');
@@ -309,13 +333,18 @@ async function run(): Promise<void> {
 		log('Esperando que la app cargue...');
 		await driver.pause(4000);
 
-		const onLoginScreen = await driver.$('//android.widget.EditText[1]')
-			.isDisplayed().catch(() => false);
+		const onLoginScreen = await driver
+			.$('//android.widget.EditText[1]')
+			.isDisplayed()
+			.catch(() => false);
 
 		if (onLoginScreen) {
 			log('Pantalla de login detectada');
 			const ok = await doLogin(driver);
-			if (!ok) { log('⚠  Login falló'); return; }
+			if (!ok) {
+				log('⚠  Login falló');
+				return;
+			}
 			log('Esperando que Angular home cargue...');
 			await driver.pause(5000);
 		} else {
@@ -324,7 +353,6 @@ async function run(): Promise<void> {
 		}
 
 		await checkAndSetAvailable(driver);
-
 	} finally {
 		await driver.deleteSession();
 		log('Sesión cerrada');

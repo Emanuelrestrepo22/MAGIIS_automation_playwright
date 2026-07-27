@@ -24,7 +24,7 @@ function colaboradorScenario(cardFlow: CardFlow, overrides: Partial<HoldScenario
 		destination: TEST_DATA.destination,
 		apiSearchQuery: PASSENGERS.colaborador.apiSearchQuery,
 		cardFlow,
-		...overrides,
+		...overrides
 	};
 }
 
@@ -32,43 +32,79 @@ function colaboradorScenario(cardFlow: CardFlow, overrides: Partial<HoldScenario
 test.use({ storageState: undefined });
 test.describe.configure({ timeout: 180_000 });
 
-test.describe('Gateway PG · Carrier · Colaborador — Hold con 3DS @gateway @stripe @hold @3ds @critical @regression', { annotation: [{ type: 'tms', description: 'MG-158' }] }, () => {
+test.describe(
+	'Gateway PG · Carrier · Colaborador — Hold con 3DS @gateway @stripe @hold @3ds @critical @regression',
+	{ annotation: [{ type: 'tms', description: 'MG-158' }] },
+	() => {
+		test.describe('Hold ON', () => {
+			test('[TS-STRIPE-TC1037] @critical @3ds @hold @card-new hold+cobro colaborador 3DS — Vincular tarjeta nueva', async ({
+				page
+			}) => {
+				await new CarrierHoldSteps({ page }).runHoldScenario(colaboradorScenario('new'), {
+					hold: 'on',
+					threeDs: true
+				});
+			});
+			// TC1039 en el JSON es un escenario negativo (fallo 3DS); acá se mantiene la cobertura
+			// histórica con alwaysAuthenticate (default del flujo 3DS). No tiene par -CARD-EXISTING.
+			test('[TS-STRIPE-TC1039] @regression @3ds @hold hold+cobro colaborador 3DS variante', async ({ page }) => {
+				await new CarrierHoldSteps({ page }).runHoldScenario(colaboradorScenario('new'), {
+					hold: 'on',
+					threeDs: true
+				});
+			});
+			// Par card-existing de TC1037 — canonical_ref TS-STRIPE-TC1037 en normalized-test-cases.json
+			test('[TS-STRIPE-TC1045] @regression @3ds @hold @card-existing hold+cobro colaborador 3DS — Usar tarjeta vinculada existente', async ({
+				page
+			}) => {
+				await new CarrierHoldSteps({ page }).runHoldScenario(colaboradorScenario('existing'), {
+					hold: 'on',
+					threeDs: true
+				});
+			});
+			// DEPRECATED: ver TC canónico TS-STRIPE-TC1037 (fase 2 — duplicado sin card-flow diferenciado)
+			test('[TS-STRIPE-TC1047] @regression @3ds @hold hold+cobro colaborador 3DS variante 2', async ({
+				page
+			}) => {
+				await new CarrierHoldSteps({ page }).runHoldScenario(colaboradorScenario('new'), {
+					hold: 'on',
+					threeDs: true
+				});
+			});
+		});
 
-	test.describe('Hold ON', () => {
-		test('[TS-STRIPE-TC1037] @critical @3ds @hold @card-new hold+cobro colaborador 3DS — Vincular tarjeta nueva', async ({ page }) => {
-			await new CarrierHoldSteps({ page }).runHoldScenario(colaboradorScenario('new'), { hold: 'on', threeDs: true });
+		test.describe('Hold OFF', () => {
+			test('[TS-STRIPE-TC1038] @regression @3ds @card-new sin hold colaborador 3DS — Vincular tarjeta nueva', async ({
+				page
+			}) => {
+				await new CarrierHoldSteps({ page }).runHoldScenario(colaboradorScenario('new'), {
+					hold: 'off',
+					threeDs: true
+				});
+			});
+			// Par card-existing de TC1038 — canonical_ref TS-STRIPE-TC1038 en normalized-test-cases.json
+			test('[TS-STRIPE-TC1040] @regression @3ds @card-existing sin hold colaborador 3DS — Usar tarjeta vinculada existente', async ({
+				page
+			}) => {
+				await new CarrierHoldSteps({ page }).runHoldScenario(colaboradorScenario('existing'), {
+					hold: 'off',
+					threeDs: true
+				});
+			});
+			// DEPRECATED: ver TC canónico TS-STRIPE-TC1038 (fase 2 — duplicado sin card-flow diferenciado)
+			test('[TS-STRIPE-TC1046] @regression @3ds sin hold colaborador 3DS (set 2)', async ({ page }) => {
+				await new CarrierHoldSteps({ page }).runHoldScenario(colaboradorScenario('new'), {
+					hold: 'off',
+					threeDs: true
+				});
+			});
+			// DEPRECATED: ver TC canónico TS-STRIPE-TC1038 (fase 2 — duplicado sin card-flow diferenciado)
+			test('[TS-STRIPE-TC1048] @regression @3ds sin hold colaborador 3DS variante 2', async ({ page }) => {
+				await new CarrierHoldSteps({ page }).runHoldScenario(colaboradorScenario('new'), {
+					hold: 'off',
+					threeDs: true
+				});
+			});
 		});
-		// TC1039 en el JSON es un escenario negativo (fallo 3DS); acá se mantiene la cobertura
-		// histórica con alwaysAuthenticate (default del flujo 3DS). No tiene par -CARD-EXISTING.
-		test('[TS-STRIPE-TC1039] @regression @3ds @hold hold+cobro colaborador 3DS variante', async ({ page }) => {
-			await new CarrierHoldSteps({ page }).runHoldScenario(colaboradorScenario('new'), { hold: 'on', threeDs: true });
-		});
-		// Par card-existing de TC1037 — canonical_ref TS-STRIPE-TC1037 en normalized-test-cases.json
-		test('[TS-STRIPE-TC1045] @regression @3ds @hold @card-existing hold+cobro colaborador 3DS — Usar tarjeta vinculada existente', async ({ page }) => {
-			await new CarrierHoldSteps({ page }).runHoldScenario(colaboradorScenario('existing'), { hold: 'on', threeDs: true });
-		});
-		// DEPRECATED: ver TC canónico TS-STRIPE-TC1037 (fase 2 — duplicado sin card-flow diferenciado)
-		test('[TS-STRIPE-TC1047] @regression @3ds @hold hold+cobro colaborador 3DS variante 2', async ({ page }) => {
-			await new CarrierHoldSteps({ page }).runHoldScenario(colaboradorScenario('new'), { hold: 'on', threeDs: true });
-		});
-	});
-
-	test.describe('Hold OFF', () => {
-		test('[TS-STRIPE-TC1038] @regression @3ds @card-new sin hold colaborador 3DS — Vincular tarjeta nueva', async ({ page }) => {
-			await new CarrierHoldSteps({ page }).runHoldScenario(colaboradorScenario('new'), { hold: 'off', threeDs: true });
-		});
-		// Par card-existing de TC1038 — canonical_ref TS-STRIPE-TC1038 en normalized-test-cases.json
-		test('[TS-STRIPE-TC1040] @regression @3ds @card-existing sin hold colaborador 3DS — Usar tarjeta vinculada existente', async ({ page }) => {
-			await new CarrierHoldSteps({ page }).runHoldScenario(colaboradorScenario('existing'), { hold: 'off', threeDs: true });
-		});
-		// DEPRECATED: ver TC canónico TS-STRIPE-TC1038 (fase 2 — duplicado sin card-flow diferenciado)
-		test('[TS-STRIPE-TC1046] @regression @3ds sin hold colaborador 3DS (set 2)', async ({ page }) => {
-			await new CarrierHoldSteps({ page }).runHoldScenario(colaboradorScenario('new'), { hold: 'off', threeDs: true });
-		});
-		// DEPRECATED: ver TC canónico TS-STRIPE-TC1038 (fase 2 — duplicado sin card-flow diferenciado)
-		test('[TS-STRIPE-TC1048] @regression @3ds sin hold colaborador 3DS variante 2', async ({ page }) => {
-			await new CarrierHoldSteps({ page }).runHoldScenario(colaboradorScenario('new'), { hold: 'off', threeDs: true });
-		});
-	});
-
-});
+	}
+);

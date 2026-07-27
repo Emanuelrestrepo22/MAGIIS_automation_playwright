@@ -46,7 +46,10 @@ export interface CountsResetResponse {
 	body: string;
 }
 
-export async function resetCarrierServiceTypeCounts(request: APIRequestContext, opts: CarrierServiceTypeCountsResetOptions): Promise<CountsResetResponse> {
+export async function resetCarrierServiceTypeCounts(
+	request: APIRequestContext,
+	opts: CarrierServiceTypeCountsResetOptions
+): Promise<CountsResetResponse> {
 	const baseUrl = opts.baseUrl ?? process.env.BASE_URL ?? 'https://apps-test.magiis.com';
 	const url = `${baseUrl}/magiis-v0.2/carriers/${opts.carrierId}/serviceTypes/countsReset`;
 	const data = {

@@ -31,10 +31,7 @@ export const mercadoPagoGatewayAdapter: GatewayPgAdapter = {
 		'Confirm driver trip completion flow in Android app',
 		'Validate mobile payment status after trip finalization'
 	],
-	validationTodos: [
-		'Confirm backend payment event',
-		'Confirm Mercado Pago charge reference or callback outcome'
-	],
+	validationTodos: ['Confirm backend payment event', 'Confirm Mercado Pago charge reference or callback outcome'],
 
 	// ── Config operacional (S2) ──────────────────────────────────────────────
 	cardForm: 'native-angular',

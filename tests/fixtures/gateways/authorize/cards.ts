@@ -37,7 +37,20 @@ export type AuthorizeCardBrand = 'visa' | 'mastercard' | 'amex' | 'discover' | '
  * Outcomes esperados del sandbox Authorize.net.
  * Cada uno está disparado por una combinación específica de CVV y/o ZIP.
  */
-export type AuthorizeOutcome = 'approved' | 'declined-generic' | 'cvv-mismatch' | 'cvv-not-processed' | 'cvv-should-be-present' | 'cvv-issuer-not-certified' | 'avs-no-match' | 'avs-non-us-issuer' | 'avs-unavailable' | 'avs-not-supported' | 'avs-address-unavailable' | 'partial-authorization' | 'prepaid-zero-balance';
+export type AuthorizeOutcome =
+	| 'approved'
+	| 'declined-generic'
+	| 'cvv-mismatch'
+	| 'cvv-not-processed'
+	| 'cvv-should-be-present'
+	| 'cvv-issuer-not-certified'
+	| 'avs-no-match'
+	| 'avs-non-us-issuer'
+	| 'avs-unavailable'
+	| 'avs-not-supported'
+	| 'avs-address-unavailable'
+	| 'partial-authorization'
+	| 'prepaid-zero-balance';
 
 export type AuthorizeTestCard = {
 	number: string;

@@ -6,7 +6,12 @@ import { getPortalUrl } from '../../config/gatewayPortalRuntime';
 // BL-024 mejora continua: data Stripe viene del fixture canónico, no del legacy.
 // El POM sigue acoplado a Stripe Elements (deuda TIER A — BL-038 Strategy Pattern),
 // pero al menos las constantes y mappings centralizados en el fixture.
-import { STRIPE_BILLING_ZIP, STRIPE_CARD_HOLDER_NAME, STRIPE_CVC, STRIPE_EXPIRY } from '../../fixtures/gateways/stripe/cards';
+import {
+	STRIPE_BILLING_ZIP,
+	STRIPE_CARD_HOLDER_NAME,
+	STRIPE_CVC,
+	STRIPE_EXPIRY
+} from '../../fixtures/gateways/stripe/cards';
 import { resolveStripeCardByLast4 } from '../../fixtures/gateways/stripe/card-by-last4';
 import { BasePage } from '../shared/BasePage';
 
@@ -125,7 +130,9 @@ export abstract class NewTravelPageBase extends BasePage {
 		this.guestPassengerRadio = page.getByRole('radio', { name: 'PAX invitado' });
 		this.guestPassengerNameInput = page.getByRole('textbox', { name: 'Nombre*' });
 		this.originSelect = page.locator('app-input-search-place[formcontrolname="origin"]');
-		this.destinationSelect = page.locator('div.form-group-address[formarrayname="destination"] app-input-search-place');
+		this.destinationSelect = page.locator(
+			'div.form-group-address[formarrayname="destination"] app-input-search-place'
+		);
 		this.serviceTypeRow = page.locator('#id_tab_add_travel .row').filter({ hasText: 'Tipo de Servicio' }).first();
 		this.serviceTypeValue = this.serviceTypeRow.locator('.value').first();
 		this.tariffTypeButtons = page.locator('.btn-tariff');
@@ -154,7 +161,7 @@ export abstract class NewTravelPageBase extends BasePage {
 		// Selector confirmado en validación manual:
 		//   #id_tab_add_travel > app-credit-card-payment-data-validate > div > div > div.w-100.text-right.error-text.ng-star-inserted
 		this.cardValidationErrorText = page.locator(
-			'app-credit-card-payment-data-validate .error-text.ng-star-inserted',
+			'app-credit-card-payment-data-validate .error-text.ng-star-inserted'
 		);
 	}
 
@@ -167,10 +174,19 @@ export abstract class NewTravelPageBase extends BasePage {
 		await this.clientSelect.waitFor({ state: 'visible', timeout });
 	}
 
-	private async selectAutocompleteOption(select: Locator, searchInput: Locator, name: string, roleLabel: string): Promise<void> {
+	private async selectAutocompleteOption(
+		select: Locator,
+		searchInput: Locator,
+		name: string,
+		roleLabel: string
+	): Promise<void> {
 		const searchValue = name.replace(/[,()]/g, ' ').replace(/\s+/g, ' ').trim();
 		const firstToken = searchValue.split(' ').find(token => token.trim().length > 0) ?? searchValue;
-		const fallbackQueries = Array.from(new Set([searchValue, firstToken, firstToken.slice(0, 4), firstToken.slice(0, 3), name.trim()].filter(Boolean)));
+		const fallbackQueries = Array.from(
+			new Set(
+				[searchValue, firstToken, firstToken.slice(0, 4), firstToken.slice(0, 3), name.trim()].filter(Boolean)
+			)
+		);
 		const dropdown = select.locator('select-dropdown').first();
 		const options = select.locator('select-dropdown .options li');
 
@@ -237,7 +253,12 @@ export abstract class NewTravelPageBase extends BasePage {
 
 	private async openPlaceDropdown(place: Locator): Promise<Locator> {
 		const searchInput = place.getByRole('textbox', { name: 'Ingrese una dirección' }).first();
-		const clickTargets = [place.locator('.search-container-input > .bootstrap > .below > .single > .placeholder').first(), place.locator('.search-container-input').first(), place.locator('.placeholder').first(), place.locator('.toggle').first()];
+		const clickTargets = [
+			place.locator('.search-container-input > .bootstrap > .below > .single > .placeholder').first(),
+			place.locator('.search-container-input').first(),
+			place.locator('.placeholder').first(),
+			place.locator('.toggle').first()
+		];
 
 		for (const target of clickTargets) {
 			if (!(await target.isVisible().catch(() => false))) {
@@ -302,7 +323,11 @@ export abstract class NewTravelPageBase extends BasePage {
 		return false;
 	}
 
-	private async searchPlace(place: Locator, address: string, options: { keepExistingOnNoResults: boolean; avoidText?: string } = { keepExistingOnNoResults: false }): Promise<void> {
+	private async searchPlace(
+		place: Locator,
+		address: string,
+		options: { keepExistingOnNoResults: boolean; avoidText?: string } = { keepExistingOnNoResults: false }
+	): Promise<void> {
 		const currentText = normalizeText(await place.textContent());
 		const desiredText = normalizeText(address);
 		const queryText = address.split(',')[0].trim() || address;
@@ -318,7 +343,10 @@ export abstract class NewTravelPageBase extends BasePage {
 		await this.waitForAutocompleteOptionsReady(place, { timeoutMs: 4_000 });
 
 		const suggestionText = address.split(',').slice(0, -1).join(',').trim() || address;
-		const suggestion = place.getByRole('listitem').filter({ hasText: new RegExp(escapeRegExp(suggestionText), 'i') }).first();
+		const suggestion = place
+			.getByRole('listitem')
+			.filter({ hasText: new RegExp(escapeRegExp(suggestionText), 'i') })
+			.first();
 		const fallbackOption = place.getByRole('listitem').filter({ hasText: /\S/ }).first();
 
 		if (await this.commitPlaceOption(place, suggestion)) {
@@ -391,7 +419,14 @@ export abstract class NewTravelPageBase extends BasePage {
 
 	/** Selecciona Preautorizada, Cuenta Corriente, Efectivo o CargoABordo. */
 	async selectPaymentMethod(method: PaymentMethod): Promise<void> {
-		const optionText = method === 'Preautorizada' ? 'Preautorizada' : method === 'CuentaCorriente' ? 'Cuenta Corriente' : method === 'CargoABordo' ? 'Tarjeta de Crédito - Cargo' : 'Efectivo';
+		const optionText =
+			method === 'Preautorizada'
+				? 'Preautorizada'
+				: method === 'CuentaCorriente'
+					? 'Cuenta Corriente'
+					: method === 'CargoABordo'
+						? 'Tarjeta de Crédito - Cargo'
+						: 'Efectivo';
 
 		await this.chooseDropdownOption(this.paymentMethodSelector, optionText);
 
@@ -640,7 +675,9 @@ export abstract class NewTravelPageBase extends BasePage {
 	 * debe validar selección de tarjeta existente (TC003, TC004 contractor).
 	 */
 	async selectSavedCard(): Promise<void> {
-		const dropdownTrigger = this.paymentMethodSelector.locator('.below > .single > .value > .data-with-icon-col').first();
+		const dropdownTrigger = this.paymentMethodSelector
+			.locator('.below > .single > .value > .data-with-icon-col')
+			.first();
 		await expect(dropdownTrigger).toBeVisible({ timeout: 10_000 });
 		await dropdownTrigger.click();
 
@@ -671,12 +708,10 @@ export abstract class NewTravelPageBase extends BasePage {
 	async selectSavedCardByLast4(last4: string): Promise<boolean> {
 		// Abrir el dropdown de métodos de pago.
 		// Intentar el trigger del recording primero, luego fallback.
-		const valueTrigger = this.paymentMethodSelector.locator(
-			'div > div > div.value.ng-star-inserted > div',
-		).first();
-		const iconTrigger = this.paymentMethodSelector.locator(
-			'.below > .single > .value > .data-with-icon-col',
-		).first();
+		const valueTrigger = this.paymentMethodSelector.locator('div > div > div.value.ng-star-inserted > div').first();
+		const iconTrigger = this.paymentMethodSelector
+			.locator('.below > .single > .value > .data-with-icon-col')
+			.first();
 
 		if (await valueTrigger.isVisible().catch(() => false)) {
 			await valueTrigger.click();
@@ -690,9 +725,7 @@ export abstract class NewTravelPageBase extends BasePage {
 		// Migrado tier3: waitForTimeout(500) eliminado — optionsList.first().waitFor es el criterio determinista
 
 		// Buscar la opción con los últimos 4 dígitos dentro del dropdown de opciones
-		const optionsList = this.paymentMethodSelector.locator(
-			'select-dropdown div.options ul li',
-		);
+		const optionsList = this.paymentMethodSelector.locator('select-dropdown div.options ul li');
 		await optionsList.first().waitFor({ state: 'visible', timeout: 10_000 });
 
 		const count = await optionsList.count();
@@ -743,7 +776,11 @@ export abstract class NewTravelPageBase extends BasePage {
 				return;
 			}
 
-			if (!vehicleSelectionOpened && (await this.vehicleButton.isVisible().catch(() => false)) && (await this.vehicleButton.isEnabled().catch(() => false))) {
+			if (
+				!vehicleSelectionOpened &&
+				(await this.vehicleButton.isVisible().catch(() => false)) &&
+				(await this.vehicleButton.isEnabled().catch(() => false))
+			) {
 				await this.vehicleButton.click();
 				vehicleSelectionOpened = true;
 				// NOTE(tier3-kept): dentro de loop submit — espera que submitButton aparezca tras abrir selector vehículo; reemplazar rompería la lógica del loop
@@ -751,7 +788,10 @@ export abstract class NewTravelPageBase extends BasePage {
 				continue;
 			}
 
-			if ((await this.submitButton.isVisible().catch(() => false)) && (await this.submitButton.isEnabled().catch(() => false))) {
+			if (
+				(await this.submitButton.isVisible().catch(() => false)) &&
+				(await this.submitButton.isEnabled().catch(() => false))
+			) {
 				await this.submitButton.click();
 				return;
 			}
@@ -838,7 +878,10 @@ export abstract class NewTravelPageBase extends BasePage {
 			.textContent()
 			.then(text => /preautorizad/i.test(text ?? ''))
 			.catch(() => false);
-		return { success: preauthOk, errorMessage: preauthOk ? null : 'Preautorizada no confirmada tras click Validar' };
+		return {
+			success: preauthOk,
+			errorMessage: preauthOk ? null : 'Preautorizada no confirmada tras click Validar'
+		};
 	}
 
 	async waitForVehicleSelectionReady(timeout = 45_000): Promise<void> {
@@ -893,7 +936,13 @@ export abstract class NewTravelPageBase extends BasePage {
 		if (!passengerIsDisabled && normalizeText(opts.passenger) !== normalizeText(clientName)) {
 			await this.selectPassenger(opts.passenger);
 		} else {
-			await expect.poll(async () => matchesSearchText((await this.passengerSelect.textContent().catch(() => '')) ?? '', clientName), { timeout: 10_000 }).toBe(true);
+			await expect
+				.poll(
+					async () =>
+						matchesSearchText((await this.passengerSelect.textContent().catch(() => '')) ?? '', clientName),
+					{ timeout: 10_000 }
+				)
+				.toBe(true);
 		}
 
 		await this.assertDefaultServiceTypeRegular();

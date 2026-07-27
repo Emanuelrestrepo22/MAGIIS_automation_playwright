@@ -62,15 +62,12 @@ export interface TravelIdRef {
  *
  * Llamar `ref.dispose()` cuando ya no se necesite (típicamente afterEach).
  */
-export async function captureCreatedTravelId(
-	page: Page,
-	carrierId = DEFAULT_CARRIER_ID,
-): Promise<TravelIdRef> {
+export async function captureCreatedTravelId(page: Page, carrierId = DEFAULT_CARRIER_ID): Promise<TravelIdRef> {
 	const ref: TravelIdRef = {
 		travelId: null,
 		dispose: async () => {
 			page.off('response', handler);
-		},
+		}
 	};
 
 	// Acepta /carriers/{id}/travels y /contractors/{id}/travels con CUALQUIER id.
@@ -120,7 +117,7 @@ export async function cancelTravel(
 		carrierUserId?: string;
 		carrierName?: string;
 		reason?: string;
-	} = {},
+	} = {}
 ): Promise<boolean> {
 	const carrierId = opts.carrierId ?? DEFAULT_CARRIER_ID;
 	const carrierUserId = opts.carrierUserId ?? DEFAULT_CARRIER_USER_ID;
@@ -139,15 +136,13 @@ export async function cancelTravel(
 			canceledBy: 'CARRIER',
 			name: carrierName,
 			userId: carrierUserId,
-			checkPassengerCancelation: false,
+			checkPassengerCancelation: false
 		},
-		headers,
+		headers
 	});
 
 	if (!response.ok()) {
-		console.warn(
-			`[travel-cleanup] cancelTravel ${travelId} failed: ${response.status()} ${response.statusText()}`,
-		);
+		console.warn(`[travel-cleanup] cancelTravel ${travelId} failed: ${response.status()} ${response.statusText()}`);
 		return false;
 	}
 	console.log(`[travel-cleanup] ✓ Viaje ${travelId} cancelado`);
@@ -161,7 +156,7 @@ export async function cancelTravel(
 export async function cancelTravelIfCreated(
 	page: Page,
 	ref: TravelIdRef,
-	opts: Parameters<typeof cancelTravel>[2] = {},
+	opts: Parameters<typeof cancelTravel>[2] = {}
 ): Promise<boolean> {
 	await ref.dispose();
 	if (ref.travelId == null) return false;
@@ -172,4 +167,3 @@ export async function cancelTravelIfCreated(
 		return false;
 	}
 }
-

@@ -30,28 +30,22 @@ import type { EnvironmentMap, WebUser } from '../types';
 const LABEL = 'pax web portal user';
 
 function buildPaxWeb(envSuffix: 'TEST' | 'UAT' | 'PROD', environment: WebUser['environment']): WebUser {
-  const emailEnv = lazyEnv(
-    [`USER_PAX_${envSuffix}`, 'USER_PAX', 'PAX_USER'],
-    `${LABEL} [${environment}] email`,
-  );
-  const passEnv = lazyEnv(
-    [`PASS_PAX_${envSuffix}`, 'PASS_PAX', 'PAX_PASS'],
-    `${LABEL} [${environment}] password`,
-  );
+	const emailEnv = lazyEnv([`USER_PAX_${envSuffix}`, 'USER_PAX', 'PAX_USER'], `${LABEL} [${environment}] email`);
+	const passEnv = lazyEnv([`PASS_PAX_${envSuffix}`, 'PASS_PAX', 'PAX_PASS'], `${LABEL} [${environment}] password`);
 
-  return {
-    role: 'pax-web',
-    environment,
-    get email() {
-      return emailEnv.value;
-    },
-    get password() {
-      return passEnv.value;
-    },
-    notes:
-      `Pax user del portal web (wallet, alta viaje desde pax web) en ${environment}. ` +
-      `Equivale a getPortalCredentials('pax') del gatewayPortalRuntime legacy.`,
-  };
+	return {
+		role: 'pax-web',
+		environment,
+		get email() {
+			return emailEnv.value;
+		},
+		get password() {
+			return passEnv.value;
+		},
+		notes:
+			`Pax user del portal web (wallet, alta viaje desde pax web) en ${environment}. ` +
+			`Equivale a getPortalCredentials('pax') del gatewayPortalRuntime legacy.`
+	};
 }
 
 /**
@@ -62,7 +56,7 @@ function buildPaxWeb(envSuffix: 'TEST' | 'UAT' | 'PROD', environment: WebUser['e
  *   const { email, password } = PAX_WEB.test;
  */
 export const PAX_WEB = {
-  test: buildPaxWeb('TEST', 'test'),
-  uat: buildPaxWeb('UAT', 'uat'),
-  prod: buildPaxWeb('PROD', 'prod'),
+	test: buildPaxWeb('TEST', 'test'),
+	uat: buildPaxWeb('UAT', 'uat'),
+	prod: buildPaxWeb('PROD', 'prod')
 } as const satisfies EnvironmentMap<WebUser>;

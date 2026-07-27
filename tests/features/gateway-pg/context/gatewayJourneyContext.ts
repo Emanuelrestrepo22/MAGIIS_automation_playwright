@@ -49,7 +49,7 @@ export async function findLatestJourneyContextId(): Promise<string | null> {
 			const info = await stat(filePath);
 			return {
 				journeyId: entry.name.replace(/\.json$/, ''),
-				mtimeMs: info.mtimeMs,
+				mtimeMs: info.mtimeMs
 			};
 		})
 	);

@@ -27,7 +27,7 @@ import {
 	CarrierDashboardPage,
 	CarrierNewTravelPage,
 	CarrierOperationalPreferencesPage,
-	CarrierTravelManagementPage,
+	CarrierTravelManagementPage
 } from '@ui/carrier';
 import { cardFormFor } from '@ui/carrier/card-forms';
 import { debugLog } from '@helpers/index';
@@ -37,7 +37,11 @@ import { expectNoThreeDSModal, loginAsDispatcher } from '@features/gateway-pg/fi
 import { validateAndSelectMercadoPagoCard } from '@features/gateway-pg/helpers/mercadoPago.helpers';
 import { setHoldViaApi } from '@features/gateway-pg/helpers/parameters-api';
 import { validateCardPrecondition, type CardPreconditionResult } from '@features/gateway-pg/helpers/card-precondition';
-import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '@features/gateway-pg/helpers/travel-cleanup';
+import {
+	captureCreatedTravelId,
+	cancelTravelIfCreated,
+	type TravelIdRef
+} from '@features/gateway-pg/helpers/travel-cleanup';
 import { waitForTravelCreation } from '@features/gateway-pg/helpers/stripe.helpers';
 
 export type CardFlow = 'new' | 'existing';
@@ -144,22 +148,28 @@ export class CarrierHoldSteps extends UiBase {
 	 *  - 'new': valida (para cleanup) y fuerza preferSavedCard=false.
 	 *  - 'existing': exige hasRequiredCard=true, sino test.skip() con motivo.
 	 */
-	async resolveCardFlow(scenario: HoldScenario, cardLast4: string): Promise<{ cardCheck: CardPreconditionResult | null; preferSavedCard: boolean }> {
+	async resolveCardFlow(
+		scenario: HoldScenario,
+		cardLast4: string
+	): Promise<{ cardCheck: CardPreconditionResult | null; preferSavedCard: boolean }> {
 		const cardFlow: CardFlow = scenario.cardFlow ?? 'new';
 		let cardCheck: CardPreconditionResult | null = null;
 
 		if (scenario.apiSearchQuery) {
 			cardCheck = await validateCardPrecondition(this.page, {
 				passengerName: scenario.apiSearchQuery,
-				requiredLast4: cardLast4,
+				requiredLast4: cardLast4
 			});
-			debugLog('gateway-pg:carrier', `[card-precondition] ${scenario.passenger} (cardFlow=${cardFlow}): ${cardCheck.activeCards} tarjetas, tiene ${cardLast4}: ${cardCheck.hasRequiredCard}`);
+			debugLog(
+				'gateway-pg:carrier',
+				`[card-precondition] ${scenario.passenger} (cardFlow=${cardFlow}): ${cardCheck.activeCards} tarjetas, tiene ${cardLast4}: ${cardCheck.hasRequiredCard}`
+			);
 		}
 
 		if (cardFlow === 'existing') {
 			test.skip(
 				!cardCheck?.hasRequiredCard,
-				`[card-existing] Precondición: pasajero ${scenario.passenger} debe tener tarjeta ${cardLast4} vinculada.`,
+				`[card-existing] Precondición: pasajero ${scenario.passenger} debe tener tarjeta ${cardLast4} vinculada.`
 			);
 			return { cardCheck, preferSavedCard: true };
 		}
@@ -191,7 +201,7 @@ export class CarrierHoldSteps extends UiBase {
 			const mpLink = await validateAndSelectMercadoPagoCard(this.page);
 			test.skip(
 				mpLink !== 'linked',
-				'MP: validación de tarjeta no completa en TEST (sandbox MP no transacciona) — UAT-only. Form-fill + habilitación de "Validar" verificados.',
+				'MP: validación de tarjeta no completa en TEST (sandbox MP no transacciona) — UAT-only. Form-fill + habilitación de "Validar" verificados.'
 			);
 			return;
 		}
@@ -266,7 +276,7 @@ export class CarrierHoldSteps extends UiBase {
 						origin: scenario.origin,
 						destination: scenario.destination,
 						cardLast4,
-						preferSavedCard,
+						preferSavedCard
 					});
 				} else {
 					// No-stripe (S7): formulario plano + método Preautorizada + estrategia de
@@ -275,7 +285,7 @@ export class CarrierHoldSteps extends UiBase {
 						client: scenario.client,
 						passenger: scenario.passenger,
 						origin: scenario.origin,
-						destination: scenario.destination,
+						destination: scenario.destination
 					});
 					await this.travel.selectPaymentMethod('Preautorizada');
 					await cardFormFor(gateway).fill(this.page, card);
@@ -322,7 +332,7 @@ export class CarrierHoldSteps extends UiBase {
 				await this.management.expectPassengerInPorAsignar(
 					scenario.passenger,
 					matchDestination ? shortDestination(scenario.destination) : undefined,
-					options.expectStatus,
+					options.expectStatus
 				);
 			});
 		} finally {

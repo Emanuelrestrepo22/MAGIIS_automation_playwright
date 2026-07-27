@@ -2,11 +2,7 @@ import { PASSENGERS } from './passengers';
 import { TEST_DATA } from './stripeTestData';
 import type { CardId } from '../../../fixtures/stripe/card-resolver';
 
-export type PassengerBusinessStep =
-	| 'wallet-add-card'
-	| 'wallet-select-card'
-	| 'trip-create'
-	| 'trip-assigned';
+export type PassengerBusinessStep = 'wallet-add-card' | 'wallet-select-card' | 'trip-create' | 'trip-assigned';
 
 export type PassengerBusinessScenario = {
 	testCaseId: string;
@@ -49,12 +45,12 @@ export const PASSENGER_BUSINESS_NO3DS_SCENARIOS: PassengerBusinessScenario[] = [
 			'Billetera',
 			'AGREGAR',
 			'GUARDAR',
-			'Stripe iframe cardnumber / cc-exp-month / cc-exp-year / cc-csc',
+			'Stripe iframe cardnumber / cc-exp-month / cc-exp-year / cc-csc'
 		],
 		technicalRisks: [
 			'Business profile toggle can be disabled if the collaborator profile is not provisioned.',
-			'Wallet state can persist across runs when APPIUM_NO_RESET=true.',
-		],
+			'Wallet state can persist across runs when APPIUM_NO_RESET=true.'
+		]
 	},
 	{
 		testCaseId: 'TC-PAX-BIZ-02',
@@ -69,16 +65,11 @@ export const PASSENGER_BUSINESS_NO3DS_SCENARIOS: PassengerBusinessScenario[] = [
 		destination: TEST_DATA.destination,
 		requiresDriverPhase: false,
 		targetSpecPath: NO3DS_TARGET_SPEC_PATH,
-		requiredScreenObjects: [
-			'Compañía',
-			'Mi cuenta',
-			'Billetera',
-			'Saved card label ending in the last 4 digits',
-		],
+		requiredScreenObjects: ['Compañía', 'Mi cuenta', 'Billetera', 'Saved card label ending in the last 4 digits'],
 		technicalRisks: [
 			'The card may already be selected as default, so the action can become a no-op.',
-			'Card label formatting can vary slightly across app versions.',
-		],
+			'Card label formatting can vary slightly across app versions.'
+		]
 	},
 	{
 		testCaseId: 'TC-PAX-BIZ-03',
@@ -100,12 +91,12 @@ export const PASSENGER_BUSINESS_NO3DS_SCENARIOS: PassengerBusinessScenario[] = [
 			'Seleccionar Vehiculo',
 			'Ahora',
 			'Cuenta corriente',
-			'Tarjeta de crédito',
+			'Tarjeta de crédito'
 		],
 		technicalRisks: [
 			'Trip confirmation can return without a stable trip id on some builds.',
-			'Business payment defaults can vary if the profile exposes checking account first.',
-		],
+			'Business payment defaults can vary if the profile exposes checking account first.'
+		]
 	},
 	{
 		testCaseId: 'TC-PAX-BIZ-04',
@@ -120,18 +111,12 @@ export const PASSENGER_BUSINESS_NO3DS_SCENARIOS: PassengerBusinessScenario[] = [
 		destination: TEST_DATA.destination,
 		requiresDriverPhase: true,
 		targetSpecPath: NO3DS_TARGET_SPEC_PATH,
-		requiredScreenObjects: [
-			'Compañía',
-			'assigned driver keywords',
-			'conductor',
-			'driver',
-			'en camino',
-		],
+		requiredScreenObjects: ['Compañía', 'assigned driver keywords', 'conductor', 'driver', 'en camino'],
 		technicalRisks: [
 			'Driver handoff is not wired in this lane yet.',
-			'The current status screen uses keyword heuristics until a dedicated dump is captured.',
-		],
-	},
+			'The current status screen uses keyword heuristics until a dedicated dump is captured.'
+		]
+	}
 ];
 
 export const PASSENGER_BUSINESS_3DS_SCENARIOS: PassengerBusinessScenario[] = [
@@ -154,12 +139,12 @@ export const PASSENGER_BUSINESS_3DS_SCENARIOS: PassengerBusinessScenario[] = [
 			'Billetera',
 			'AGREGAR',
 			'GUARDAR',
-			'Stripe iframe cardnumber / cc-exp-month / cc-exp-year / cc-csc',
+			'Stripe iframe cardnumber / cc-exp-month / cc-exp-year / cc-csc'
 		],
 		technicalRisks: [
 			'3DS-capable cards may still branch into platform-specific validation flows.',
-			'Business profile toggle can be disabled if the collaborator profile is not provisioned.',
-		],
+			'Business profile toggle can be disabled if the collaborator profile is not provisioned.'
+		]
 	},
 	{
 		testCaseId: 'TC-PAX-BIZ-06',
@@ -174,16 +159,11 @@ export const PASSENGER_BUSINESS_3DS_SCENARIOS: PassengerBusinessScenario[] = [
 		destination: TEST_DATA.destination,
 		requiresDriverPhase: false,
 		targetSpecPath: THREE_DS_TARGET_SPEC_PATH,
-		requiredScreenObjects: [
-			'Compañía',
-			'Mi cuenta',
-			'Billetera',
-			'Saved card label ending in the last 4 digits',
-		],
+		requiredScreenObjects: ['Compañía', 'Mi cuenta', 'Billetera', 'Saved card label ending in the last 4 digits'],
 		technicalRisks: [
 			'The card may already be selected as default, so the action can become a no-op.',
-			'3DS-capable cards can display different labels after wallet save.',
-		],
+			'3DS-capable cards can display different labels after wallet save.'
+		]
 	},
 	{
 		testCaseId: 'TC-PAX-BIZ-07',
@@ -205,12 +185,12 @@ export const PASSENGER_BUSINESS_3DS_SCENARIOS: PassengerBusinessScenario[] = [
 			'Seleccionar Vehiculo',
 			'Ahora',
 			'Cuenta corriente',
-			'Tarjeta de crédito',
+			'Tarjeta de crédito'
 		],
 		technicalRisks: [
 			'Trip confirmation can return without a stable trip id on some builds.',
-			'Business payment defaults can vary if the profile exposes checking account first.',
-		],
+			'Business payment defaults can vary if the profile exposes checking account first.'
+		]
 	},
 	{
 		testCaseId: 'TC-PAX-BIZ-08',
@@ -225,16 +205,10 @@ export const PASSENGER_BUSINESS_3DS_SCENARIOS: PassengerBusinessScenario[] = [
 		destination: TEST_DATA.destination,
 		requiresDriverPhase: true,
 		targetSpecPath: THREE_DS_TARGET_SPEC_PATH,
-		requiredScreenObjects: [
-			'Compañía',
-			'assigned driver keywords',
-			'conductor',
-			'driver',
-			'en camino',
-		],
+		requiredScreenObjects: ['Compañía', 'assigned driver keywords', 'conductor', 'driver', 'en camino'],
 		technicalRisks: [
 			'Driver handoff is not wired in this lane yet.',
-			'The current status screen uses keyword heuristics until a dedicated dump is captured.',
-		],
-	},
+			'The current status screen uses keyword heuristics until a dedicated dump is captured.'
+		]
+	}
 ];

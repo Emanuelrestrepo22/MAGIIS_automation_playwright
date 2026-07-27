@@ -10,10 +10,10 @@ function matchesSearchText(candidate: string, searchText: string): boolean {
 	const candidateText = normalizeText(candidate);
 	const searchTokens = normalizeText(searchText)
 		.split(' ')
-		.map((token) => token.trim())
+		.map(token => token.trim())
 		.filter(Boolean);
 
-	return searchTokens.every((token) => candidateText.includes(token));
+	return searchTokens.every(token => candidateText.includes(token));
 }
 
 export class TravelManagementPage {
@@ -85,7 +85,9 @@ export class TravelManagementPage {
 			await this.page.waitForTimeout(500);
 		}
 
-		throw new Error(`No travel row found for passenger "${passenger}"${destination ? ` and destination "${destination}"` : ''}`);
+		throw new Error(
+			`No travel row found for passenger "${passenger}"${destination ? ` and destination "${destination}"` : ''}`
+		);
 	}
 
 	porAsignarColumn() {
@@ -95,13 +97,15 @@ export class TravelManagementPage {
 	async expectPassengerInPorAsignar(passenger: string, destination?: string, status?: string): Promise<void> {
 		const row = await this.tripRow(passenger, destination);
 		await expect(row).toBeVisible({ timeout: 10_000 });
-		await expect.poll(
-			async () => {
-				const text = normalizeText(await row.textContent().catch(() => ''));
-				return matchesSearchText(text, passenger) && (!destination || matchesSearchText(text, destination));
-			},
-			{ timeout: 10_000 }
-		).toBe(true);
+		await expect
+			.poll(
+				async () => {
+					const text = normalizeText(await row.textContent().catch(() => ''));
+					return matchesSearchText(text, passenger) && (!destination || matchesSearchText(text, destination));
+				},
+				{ timeout: 10_000 }
+			)
+			.toBe(true);
 
 		if (status) {
 			await expect(row).toContainText(status, { timeout: 10_000 });
@@ -109,7 +113,10 @@ export class TravelManagementPage {
 	}
 
 	async expectPassengerInEnConflicto(passenger: string, destination?: string): Promise<void> {
-		const enConflictoTab = this.page.locator('tabset ul li a').filter({ hasText: /en conflicto/i }).first();
+		const enConflictoTab = this.page
+			.locator('tabset ul li a')
+			.filter({ hasText: /en conflicto/i })
+			.first();
 		await expect(enConflictoTab).toBeVisible({ timeout: 10_000 });
 		await enConflictoTab.click();
 		await this.page.waitForSelector('table tbody', { state: 'visible', timeout: 15_000 }).catch(() => {});

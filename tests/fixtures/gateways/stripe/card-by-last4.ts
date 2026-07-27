@@ -34,9 +34,7 @@ import { STRIPE_TEST_CARDS } from './cards';
  *     validar antes de fillear el form (lanzar error claro).
  */
 export const STRIPE_CARD_BY_LAST4: Readonly<Record<string, string>> = Object.freeze(
-	Object.fromEntries(
-		Object.values(STRIPE_TEST_CARDS).map((cardNumber: string) => [cardNumber.slice(-4), cardNumber]),
-	),
+	Object.fromEntries(Object.values(STRIPE_TEST_CARDS).map((cardNumber: string) => [cardNumber.slice(-4), cardNumber]))
 );
 
 /**
@@ -52,7 +50,7 @@ export function resolveStripeCardByLast4(last4: string): string {
 	if (!cardNumber) {
 		throw new Error(
 			`[stripe/card-by-last4] No existe card Stripe con last4='${last4}'. ` +
-				`Cards disponibles: ${Object.keys(STRIPE_CARD_BY_LAST4).join(', ')}.`,
+				`Cards disponibles: ${Object.keys(STRIPE_CARD_BY_LAST4).join(', ')}.`
 		);
 	}
 	return cardNumber;

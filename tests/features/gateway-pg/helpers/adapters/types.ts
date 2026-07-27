@@ -1,8 +1,4 @@
-import type {
-	JourneyPortal,
-	PaymentGateway,
-	PaymentValidationSource
-} from '../../contracts/gateway-pg.types';
+import type { JourneyPortal, PaymentGateway, PaymentValidationSource } from '../../contracts/gateway-pg.types';
 import type { GatewayJourneyDefaults } from '../../data/journey-defaults';
 import type { GatewayXrayRegistry } from '../../data/xray-keys';
 
@@ -87,5 +83,5 @@ export type GatewayPgAdapter = {
  * vacía en `process.env`. Lista vacía = configurado (usa creds default del carrier).
  */
 export function areEnvKeysConfigured(keys: readonly string[]): boolean {
-	return keys.every((key) => Boolean(process.env[key]?.trim()));
+	return keys.every(key => Boolean(process.env[key]?.trim()));
 }
