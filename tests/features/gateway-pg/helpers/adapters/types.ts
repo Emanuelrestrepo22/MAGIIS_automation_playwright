@@ -3,7 +3,7 @@ import type {
 	PaymentGateway,
 	PaymentValidationSource
 } from '../../contracts/gateway-pg.types';
-import type { JourneyDefaults } from '../../data/journey-defaults';
+import type { GatewayJourneyDefaults } from '../../data/journey-defaults';
 import type { GatewayXrayRegistry } from '../../data/xray-keys';
 
 /**
@@ -74,8 +74,12 @@ export type GatewayPgAdapter = {
 	isConfigured(): boolean;
 	/** Registry Xray/matriz de la pasarela (referencia a `data/xray-keys.ts`). */
 	xrayKeys: GatewayXrayRegistry;
-	/** Defaults de journey MAGIIS (seam S8 — hoy las 4 comparten `JOURNEY_DEFAULTS`). */
-	journeyDefaults: JourneyDefaults;
+	/**
+	 * Defaults de journey MAGIIS de la pasarela (S8): referencia a la entrada del gateway
+	 * en `JOURNEY_DEFAULTS_BY_GATEWAY` (`data/journey-defaults.ts` — única fuente; la
+	 * identidad referencial se valida en `assertAdapterFixtureConsistency`).
+	 */
+	journeyDefaults: GatewayJourneyDefaults;
 };
 
 /**

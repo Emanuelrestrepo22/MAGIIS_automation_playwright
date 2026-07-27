@@ -28,6 +28,8 @@
  *     desde este archivo (alias legacy mientras los specs migran).
  */
 
+import type { GatewayName } from '@fixtures/gateways/_shared';
+
 import { PASSENGERS } from './passengers';
 
 /**
@@ -53,10 +55,59 @@ export const JOURNEY_DEFAULTS = {
 
 /**
  * Shape de los journey defaults — lo referencian los adapters (`journeyDefaults`).
- * Seam S8 (carrier/gateway-standardization): cuando exista `JOURNEY_DEFAULTS_BY_GATEWAY`
- * cada adapter apuntará a su entrada por pasarela; hoy las 4 comparten este set.
+ * Seam S8 (carrier/gateway-standardization): ENSANCHADO a `string` (antes
+ * `typeof JOURNEY_DEFAULTS`, cuyos literales `as const` impedían que una entrada
+ * por pasarela sobreescribiera valores — ver `JOURNEY_DEFAULTS_BY_GATEWAY`).
  */
-export type JourneyDefaults = typeof JOURNEY_DEFAULTS;
+export type JourneyDefaults = { readonly [K in keyof typeof JOURNEY_DEFAULTS]: string };
+
+/**
+ * Defaults de journey POR PASARELA (S8) — mismos campos que `JourneyDefaults` más los
+ * datos de dominio que hasta ahora vivían duplicados en specs:
+ *   - `paxSearchQueries`: queries de búsqueda del pax para la precondición/cleanup de
+ *     tarjeta vía API (venían hardcodeadas en el add-card Authorize: 'smith'/'fast'/'Emanuel').
+ */
+export type GatewayJourneyDefaults = JourneyDefaults & {
+	/** Queries de búsqueda del pax (API getPassengerId) para cleanup de tarjeta — orden de intento. */
+	readonly paxSearchQueries: readonly string[];
+};
+
+/** Entrada base: los defaults neutros + las queries del carrier 1521 (suite gateway US). */
+const BASE_GATEWAY_JOURNEY_DEFAULTS: GatewayJourneyDefaults = {
+	...JOURNEY_DEFAULTS,
+	paxSearchQueries: ['smith', 'fast', 'Emanuel']
+};
+
+/**
+ * Defaults por pasarela con fallback `default` (S8). Los adapters (`adapter.journeyDefaults`)
+ * apuntan cada uno a SU entrada; los specs/factories cross-gateway resuelven vía
+ * `journeyDefaultsFor(gateway)`.
+ *
+ * Mercado Pago corre contra el carrier ARG (no el 1521 US): cliente individuo canónico
+ * 'Emanuel mercadopago' (id=10785) + destino 'Reconquista 661' — datos que estaban
+ * duplicados como `MP_CLIENT` / `MP_DESTINATION` en los specs MP (no-hold + wallet).
+ */
+export const JOURNEY_DEFAULTS_BY_GATEWAY: Record<'default' | GatewayName, GatewayJourneyDefaults> = {
+	default: BASE_GATEWAY_JOURNEY_DEFAULTS,
+	stripe: BASE_GATEWAY_JOURNEY_DEFAULTS,
+	authorize: BASE_GATEWAY_JOURNEY_DEFAULTS,
+	ebizcharge: BASE_GATEWAY_JOURNEY_DEFAULTS,
+	'mercado-pago': {
+		...BASE_GATEWAY_JOURNEY_DEFAULTS,
+		// Cliente individuo TEST del carrier ARG: Emanuel mercadopago, id=10785 (recording test-14).
+		client: 'Emanuel mercadopago',
+		// El cliente individuo auto-asigna el pasajero (campo #passenger deshabilitado) — la grilla
+		// de gestión muestra el nombre del cliente.
+		passenger: 'Emanuel mercadopago',
+		appPaxPassenger: 'Emanuel mercadopago',
+		destination: 'Reconquista 661, Ciudad Autónoma de Buenos Aires'
+	}
+};
+
+/** Resuelve los journey defaults de `gateway` (con fallback a la entrada `default`). */
+export function journeyDefaultsFor(gateway: GatewayName): GatewayJourneyDefaults {
+	return JOURNEY_DEFAULTS_BY_GATEWAY[gateway] ?? JOURNEY_DEFAULTS_BY_GATEWAY.default;
+}
 
 /**
  * Alias legacy. Los nuevos archivos deben importar `JOURNEY_DEFAULTS` directamente.

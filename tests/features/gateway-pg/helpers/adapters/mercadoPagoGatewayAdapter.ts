@@ -1,4 +1,4 @@
-import { JOURNEY_DEFAULTS } from '../../data/journey-defaults';
+import { JOURNEY_DEFAULTS_BY_GATEWAY } from '../../data/journey-defaults';
 import { XRAY_KEYS_BY_GATEWAY } from '../../data/xray-keys';
 import type { GatewayPgAdapter } from './types';
 import { areEnvKeysConfigured } from './types';
@@ -49,5 +49,5 @@ export const mercadoPagoGatewayAdapter: GatewayPgAdapter = {
 	credsEnvKeys: MERCADO_PAGO_CREDS_ENV_KEYS,
 	isConfigured: () => areEnvKeysConfigured(MERCADO_PAGO_CREDS_ENV_KEYS),
 	xrayKeys: XRAY_KEYS_BY_GATEWAY['mercado-pago'],
-	journeyDefaults: JOURNEY_DEFAULTS
+	journeyDefaults: JOURNEY_DEFAULTS_BY_GATEWAY['mercado-pago']
 };

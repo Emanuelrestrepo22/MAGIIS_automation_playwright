@@ -1,5 +1,6 @@
 import type { PaymentGateway } from '../../contracts/gateway-pg.types';
 import { SUPPORTED_INTENTS_BY_GATEWAY } from '../../../../fixtures/gateways/_shared';
+import { journeyDefaultsFor } from '../../data/journey-defaults';
 import { XRAY_KEYS_BY_GATEWAY } from '../../data/xray-keys';
 import { authorizeGatewayAdapter } from './authorizeGatewayAdapter';
 import { ebizchargeGatewayAdapter } from './ebizchargeGatewayAdapter';
@@ -114,6 +115,13 @@ export function assertAdapterFixtureConsistency(): true {
 		if (adapter.xrayKeys !== XRAY_KEYS_BY_GATEWAY[gateway]) {
 			throw new Error(
 				`[adapter-fixture-drift] ${gateway}.xrayKeys NO referencia XRAY_KEYS_BY_GATEWAY['${gateway}'] (data/xray-keys.ts es la única fuente).`,
+			);
+		}
+
+		// 7. Journey defaults por identidad referencial (S8 — sin copias divergentes).
+		if (adapter.journeyDefaults !== journeyDefaultsFor(gateway)) {
+			throw new Error(
+				`[adapter-fixture-drift] ${gateway}.journeyDefaults NO referencia JOURNEY_DEFAULTS_BY_GATEWAY['${gateway}'] (data/journey-defaults.ts es la única fuente).`,
 			);
 		}
 	}

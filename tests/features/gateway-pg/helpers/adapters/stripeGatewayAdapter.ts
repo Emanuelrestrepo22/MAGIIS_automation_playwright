@@ -1,4 +1,4 @@
-import { JOURNEY_DEFAULTS } from '../../data/journey-defaults';
+import { JOURNEY_DEFAULTS_BY_GATEWAY } from '../../data/journey-defaults';
 import { XRAY_KEYS_BY_GATEWAY } from '../../data/xray-keys';
 import type { GatewayPgAdapter } from './types';
 import { areEnvKeysConfigured } from './types';
@@ -56,5 +56,5 @@ export const stripeGatewayAdapter: GatewayPgAdapter = {
 	credsEnvKeys: STRIPE_CREDS_ENV_KEYS,
 	isConfigured: () => areEnvKeysConfigured(STRIPE_CREDS_ENV_KEYS),
 	xrayKeys: XRAY_KEYS_BY_GATEWAY.stripe,
-	journeyDefaults: JOURNEY_DEFAULTS
+	journeyDefaults: JOURNEY_DEFAULTS_BY_GATEWAY.stripe
 };
