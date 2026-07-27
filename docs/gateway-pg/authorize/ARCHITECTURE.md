@@ -167,7 +167,7 @@ Esta tabla es la traducción semántica entre el dominio MAGIIS (Hold, Capture, 
 
 > Nota arquitectónica: MAGIIS expone el concepto "Hold ON / Hold OFF" desde el portal. En Authorize.net esa decisión se traduce en elegir `authOnlyTransaction` (Hold ON) vs `authCaptureTransaction` (Hold OFF + cargo directo). El backend MAGIIS resuelve el routing.
 
-> **Hold por API en tests (BL-i18n/v1.72.8):** el toggle "Aplicar Pre-Autorización" de la pantalla Configuración Parámetros **no persiste desde la UI** (no habilita el botón Guardar — verificado por exploratory 2026-07-20). Los tests automatizados fijan el estado de hold **vía la parameters API** (`GET/POST /carriers/{id}/parameters` → `enableCreditCardHold`) con **read-back** posterior (`readHoldEnabled`) como oráculo; el oráculo UI del toggle queda **fuera de alcance hasta el fix del FE**. Detalle operativo: header de `tests/features/gateway-pg/helpers/parameters-api.ts` (antes esto vivía SOLO ahí).
+> **Hold por API en tests (BL-i18n/v1.72.8):** el toggle "Aplicar Pre-Autorización" de la pantalla Configuración Parámetros **no persiste desde la UI** (no habilita el botón Guardar — verificado por exploratory 2026-07-20). Los tests automatizados fijan el estado de hold **vía la parameters API** (`GET/POST /carriers/{id}/parameters` → `enableCreditCardHold`) y verifican el efecto — **en ON y en OFF** — con **read-back crudo** posterior (`readHoldRaw`: GET del campo sin coerción; campo ausente = fallo, no `false`) como oráculo; el oráculo UI del toggle queda **fuera de alcance hasta el fix del FE**. Detalle operativo: header de `tests/features/gateway-pg/helpers/parameters-api.ts` (antes esto vivía SOLO ahí).
 
 ---
 

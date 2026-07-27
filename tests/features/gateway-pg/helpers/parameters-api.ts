@@ -62,7 +62,20 @@ export async function setHoldViaApi(
 	return params;
 }
 
-/** Lee `enableCreditCardHold` vía API (para asserts de setup). */
+/**
+ * Lee `enableCreditCardHold` vía API con coerción (`=== true`): campo ausente → `false`.
+ * ⚠️ Para READ-BACK como oráculo usar `readHoldRaw` — la coerción convierte campo-ausente en
+ * `false` (false-pass ante drift del contrato cuando se asserta el estado OFF).
+ */
 export async function readHoldEnabled(page: Page, carrierId = DEFAULT_CARRIER_ID): Promise<boolean> {
 	return (await getCarrierParameters(page, carrierId)).enableCreditCardHold === true;
+}
+
+/**
+ * Lee `enableCreditCardHold` CRUDO (sin coerción): `boolean` si el backend devuelve el campo,
+ * `undefined` si está AUSENTE del contrato. Los read-backs de hold deben assertar sobre este
+ * valor (`toBe(true)` / `toBe(false)`) — así un campo ausente FALLA en vez de pasar como `false`.
+ */
+export async function readHoldRaw(page: Page, carrierId = DEFAULT_CARRIER_ID): Promise<boolean | undefined> {
+	return (await getCarrierParameters(page, carrierId)).enableCreditCardHold;
 }

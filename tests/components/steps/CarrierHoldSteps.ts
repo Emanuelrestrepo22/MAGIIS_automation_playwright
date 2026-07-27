@@ -35,7 +35,7 @@ import { resolveCard } from '@fixtures/gateways/_shared';
 import { getGatewayPgAdapter } from '@features/gateway-pg/helpers/adapters';
 import { expectNoThreeDSModal, loginAsDispatcher } from '@features/gateway-pg/fixtures/gateway.fixtures';
 import { validateAndSelectMercadoPagoCard } from '@features/gateway-pg/helpers/mercadoPago.helpers';
-import { readHoldEnabled, setHoldViaApi } from '@features/gateway-pg/helpers/parameters-api';
+import { readHoldRaw, setHoldViaApi } from '@features/gateway-pg/helpers/parameters-api';
 import { validateCardPrecondition, type CardPreconditionResult } from '@features/gateway-pg/helpers/card-precondition';
 import {
 	captureCreatedTravelId,
@@ -130,20 +130,24 @@ export class CarrierHoldSteps extends UiBase {
 		await loginAsDispatcher(this.page, gateway ? { gateway } : undefined);
 	}
 
-	/** Habilita el hold vía API (BL-i18n/v1.72.8) y valida los parámetros posteados. */
+	/** Habilita el hold vía API (BL-i18n/v1.72.8) y verifica el efecto con read-back CRUDO (GET posterior). */
 	async enableHoldViaApi(): Promise<void> {
 		const params = await setHoldViaApi(this.page, true);
-		expect(params.enableCreditCardHold).toBe(true);
+		// Asserts del PAYLOAD posteado (defaults de hold) — el efecto persistido se verifica abajo.
 		expect(params.ccHoldPreviousHs).toBe(2);
 		expect(params.ccHoldCoverage).toBe(10);
+		// Read-back CRUDO como oráculo: assertar el payload mutado era tautológico. `toBe(true)`
+		// sobre el valor sin coerción — campo ausente (undefined) = fallo, no un false silencioso.
+		expect(await readHoldRaw(this.page), 'read-back API: enableCreditCardHold debe quedar true tras el POST (campo ausente = fallo)').toBe(true);
 	}
 
 	/**
-	 * Deshabilita el hold vía API y verifica el efecto con READ-BACK real (GET posterior).
+	 * Deshabilita el hold vía API y verifica el efecto con READ-BACK CRUDO (GET posterior).
 	 *
 	 * Endurecimiento de oráculo (auditoría R2): el assert anterior sobre el payload
 	 * retornado por `setHoldViaApi` era tautológico — validaba el objeto que la propia
-	 * función acababa de mutar, no el estado persistido en el backend.
+	 * función acababa de mutar, no el estado persistido en el backend. El read-back usa
+	 * `readHoldRaw` (sin coerción): un campo ausente FALLA en vez de pasar como `false`.
 	 *
 	 * El oráculo UI del toggle "Aplicar Pre-Autorización" es NO-automatizable: la pantalla
 	 * Configuración Parámetros está rota (BL-i18n/v1.72.8 — el toggle no habilita Guardar
@@ -151,7 +155,7 @@ export class CarrierHoldSteps extends UiBase {
 	 */
 	async disableHoldViaApi(): Promise<void> {
 		await setHoldViaApi(this.page, false);
-		expect(await readHoldEnabled(this.page), 'read-back API: enableCreditCardHold debe quedar false tras el POST').toBe(false);
+		expect(await readHoldRaw(this.page), 'read-back API: enableCreditCardHold debe quedar false tras el POST (campo ausente = fallo)').toBe(false);
 	}
 
 	/**
