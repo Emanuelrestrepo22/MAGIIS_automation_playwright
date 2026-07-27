@@ -19,7 +19,6 @@
  */
 
 import { faker } from '@faker-js/faker';
-import { getCurrentEnv } from '../../../config/runtime';
 
 // ═══════════════════════════════════════════════════════════════════════
 // TYPES
@@ -143,23 +142,13 @@ export function getStripeCardLast4(cardNumber: string): string {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// ENV RESOLUTION — TEST usa los valores RAW; UAT/PROD requiere env vars.
+// ENV RESOLUTION — el valor canónico del .ts es la fuente de verdad en TODOS
+// los entornos. Una env var STRIPE_CARD_* solo actúa como override opcional
+// si está presente (ya no es obligatoria en uat/prod).
 // ═══════════════════════════════════════════════════════════════════════
 
-const currentEnv = getCurrentEnv();
-const isTestEnv = currentEnv === 'test';
-
-function requireEnv(name: string): string {
-	const value = process.env[name];
-	if (!value) {
-		throw new Error(`Missing ${name} for ${currentEnv} environment`);
-	}
-
-	return value;
-}
-
-function resolveCardNumber(envName: string, testValue: string): string {
-	return isTestEnv ? testValue : requireEnv(envName);
+function resolveCardNumber(envName: string, canonical: string): string {
+	return process.env[envName] ?? canonical;
 }
 
 /**
@@ -209,10 +198,10 @@ export const STRIPE_TEST_CARDS = {
 	)
 } as const;
 
-export const STRIPE_EXPIRY = isTestEnv ? TEST_STRIPE_CARD_EXPIRY : requireEnv('STRIPE_CARD_EXPIRY');
-export const STRIPE_CVC = isTestEnv ? TEST_STRIPE_CARD_CVC : requireEnv('STRIPE_CARD_CVC');
-export const STRIPE_BILLING_ZIP = isTestEnv ? TEST_STRIPE_CARD_ZIP_CODE : requireEnv('STRIPE_CARD_ZIP_CODE');
-export const STRIPE_CARD_HOLDER_NAME = isTestEnv ? TEST_STRIPE_CARD_HOLDER_NAME : requireEnv('STRIPE_CARD_HOLDER_NAME');
+export const STRIPE_EXPIRY = process.env.STRIPE_CARD_EXPIRY ?? TEST_STRIPE_CARD_EXPIRY;
+export const STRIPE_CVC = process.env.STRIPE_CARD_CVC ?? TEST_STRIPE_CARD_CVC;
+export const STRIPE_BILLING_ZIP = process.env.STRIPE_CARD_ZIP_CODE ?? TEST_STRIPE_CARD_ZIP_CODE;
+export const STRIPE_CARD_HOLDER_NAME = process.env.STRIPE_CARD_HOLDER_NAME ?? TEST_STRIPE_CARD_HOLDER_NAME;
 
 /**
  * Alias del registry RAW para código legacy que usa el nombre `STRIPE_TEST_CARD_FIXTURES`.

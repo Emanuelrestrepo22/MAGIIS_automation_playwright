@@ -32,7 +32,7 @@ const CREDS_READY = Boolean(process.env.USER_CARRIER && process.env.PASS_CARRIER
 const DESTRUCTIVE_OK = process.env.MP_RUN_DESTRUCTIVE === '1';
 const ORACLE = oracleConfigFromEnv();
 
-test.describe('[MG · MPX][API] Mercado Pago — deltas de integración @regression @gateway-pg @mercado-pago', () => {
+test.describe('[MG · MPX][API] Mercado Pago — deltas de integración @regression @gateway @gateway-pg @mercadopago', () => {
 	test.use({ role: 'carrier' });
 	test.skip(!CREDS_READY, 'Faltan USER_CARRIER / PASS_CARRIER / BASE_URL (carrier ARG) — configurar .env.test');
 

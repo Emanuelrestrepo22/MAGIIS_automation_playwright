@@ -2,6 +2,8 @@
 
 > Los **datos + docs** están listos (BL-027). Estos bloqueantes aplican al **runtime** (POM + specs), no a los datos.
 
+> **✅ Resultado del probe F3 (2026-07-23) — "No Disponible" = regla de exclusividad, NO bloqueo de backend.** Probe read-only contra apps-test, carrier **1521 (Remises EEUU, US)**, v1.72.8. La card **EBizCharge existe** y muestra **"No Disponible"** porque **Stripe está vinculado** y solo una pasarela puede estar activa por carrier (exclusividad, ATP MG-224 / BL-037). **Al desvincular Stripe, eBiz pasa a "Vincular".** Evidencia: `evidence/test/probe/{appstore-all,ebizcharge-card}.png`. **Consecuencia:** el runtime UI de eBiz es viable vía switching (igual que Authorize). **Prerrequisitos reales (no backend):** (1) credenciales sandbox eBiz `EBIZ_*` para el modal (§3); (2) ventana exclusiva para el switching destructivo sobre 1521 (cleaningWallets al desvincular). Nota: eBiz aún **no tiene specs API contract** (a diferencia de Authorize) → su cobertura ejecutable depende 100% del runtime UI.
+
 ## §1 — Confirmar uso de eBizCharge en PROD (USA)
 
 - **Acción:** confirmar con el líder / backend que MAGIIS integra eBizCharge en algún portal/PROD (USA).

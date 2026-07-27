@@ -18,9 +18,9 @@ Sirve como referencia para:
 | Gateway | Estado | SoT datos | Runtime | Docs | Specs |
 | --- | --- | --- | --- | --- | --- |
 | **Stripe** | 🟢 Producción | `tests/fixtures/gateways/stripe/` | Completo | [`docs/gateway-pg/stripe/`](./stripe/) | `tests/features/gateway-pg/specs/stripe/**` |
-| **Authorize.net** | 🟡 Docs + datos listos | `tests/fixtures/gateways/authorize/` | Pendiente BL-025 | [`docs/gateway-pg/authorize/`](./authorize/) | Slot reservado en `specs/authorize/` |
+| **Authorize.net** | 🟡 Docs + datos listos · matriz derivada Fase 4 (L1 = 164 TCs sin 3DS) | `tests/fixtures/gateways/authorize/` | Pendiente BL-025 | [`docs/gateway-pg/authorize/`](./authorize/) | `specs/authorize/` (CFG/WAL/smoke) |
 | **MercadoPago** | 🟡 Docs + datos listos | `tests/fixtures/gateways/mercado-pago/` | Pendiente BL-026 | [`docs/gateway-pg/mercado-pago/`](./mercado-pago/) | Slot reservado en `specs/mercado-pago/` |
-| **eBizCharge** | 🟡 Docs + datos listos | `tests/fixtures/gateways/ebizcharge/` | Pendiente BL-027 | [`docs/gateway-pg/ebizcharge/`](./ebizcharge/) | Slot reservado en `specs/ebizcharge/` |
+| **eBizCharge** | 🟡 Docs + datos listos · matriz derivada Fase 4 (L1 = 111 TCs sin 3DS) | `tests/fixtures/gateways/ebizcharge/` | Pendiente BL-027 | [`docs/gateway-pg/ebizcharge/`](./ebizcharge/) | `specs/ebizcharge/` (CFG) |
 
 ## Modelo arquitectónico (umbrella multi-gateway)
 

@@ -49,7 +49,9 @@ export class LoginPage {
 		const targetUrl = this.baseURL ? new URL(loginPath, this.baseURL).toString() : loginPath;
 		// `load` puede quedarse colgado por recursos del portal; con `domcontentloaded`
 		// alcanzamos la UI del formulario sin depender de assets lentos o conexiones largas.
-		await this.page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 20_000 });
+		// Timeout de navegación configurable vía LOGIN_GOTO_TIMEOUT (default 20s) para entornos lentos.
+		const gotoTimeout = Number(process.env.LOGIN_GOTO_TIMEOUT) || 20_000;
+		await this.page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: gotoTimeout });
 
 		await this.page.context().clearCookies();
 		await this.page.evaluate(() => {
@@ -58,10 +60,10 @@ export class LoginPage {
 		});
 
 		// Volvemos a navegar explicitamente porque reload() puede dejarnos varados en un redirect si la sesion expira sorpresivamente
-		await this.page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 20_000 });
+		await this.page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: gotoTimeout });
 
 		// Esperamos el campo email como señal de que el formulario quedó listo para interactuar.
-		await this.emailInput.waitFor({ state: 'visible', timeout: 15_000 });
+		await this.emailInput.waitFor({ state: 'visible', timeout: Math.max(15_000, gotoTimeout) });
 		console.log(`[LoginPage][${this.role}] Pantalla de login cargada`);
 	}
 

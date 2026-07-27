@@ -199,7 +199,148 @@ Authorize.net puede marcar transacciones como `Held for Review` cuando dispara r
 
 ---
 
-## 11. Trazabilidad cruzada
+## 11. Flujo Quote – Alta de Viaje
+
+> Derivado determinísticamente del L1 Stripe (`docs/gateway-pg/stripe/normalized-test-cases.json`) — Fase 4 (2026-07-26), sin casos 3DS. Script: `scripts/ai/derive-gateway-matrix.mjs`.
+
+| ID | Descripción | Card | Ref Stripe |
+| --- | --- | --- | --- |
+| TS-AUTHORIZE-TC1200 | Validar Alta de Viaje desde Quote para usuario sin datos filiatorios vinculado a pasajero existente con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver | `AUTHORIZE_CARDS.SUCCESS` | `TS-STRIPE-P2-TC009` |
+| TS-AUTHORIZE-TC1207 | Validar Alta de Viaje desde Quote para usuario sin datos filiatorios vinculado a pasajero existente con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver | `AUTHORIZE_CARDS.SUCCESS` | `TS-STRIPE-P2-TC010` |
+| TS-AUTHORIZE-TC1208 | Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario colaborador existente con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver | `AUTHORIZE_CARDS.SUCCESS` | `TS-STRIPE-P2-TC011` |
+| TS-AUTHORIZE-TC1209 | Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario colaborador existente con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver | `AUTHORIZE_CARDS.SUCCESS` | `TS-STRIPE-P2-TC012` |
+| TS-AUTHORIZE-TC1210 | Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario colaborador existente con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver | `AUTHORIZE_CARDS.SUCCESS` | `TS-STRIPE-P2-TC013` |
+| TS-AUTHORIZE-TC1211 | Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario colaborador existente con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver | `AUTHORIZE_CARDS.SUCCESS` | `TS-STRIPE-P2-TC014` |
+| TS-AUTHORIZE-TC1212 | Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario personal existente con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver | `AUTHORIZE_CARDS.SUCCESS` | `TS-STRIPE-P2-TC019` |
+| TS-AUTHORIZE-TC1213 | Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario personal existente con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver | `AUTHORIZE_CARDS.SUCCESS` | `TS-STRIPE-P2-TC020` |
+| TS-AUTHORIZE-TC1214 | Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario personal existente con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver | `AUTHORIZE_CARDS.SUCCESS` | `TS-STRIPE-P2-TC021` |
+| TS-AUTHORIZE-TC1215 | Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario personal existente con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver | `AUTHORIZE_CARDS.SUCCESS` | `TS-STRIPE-P2-TC022` |
+| TS-AUTHORIZE-TC1216 | Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario empresa individuo existente con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver | `AUTHORIZE_CARDS.SUCCESS` | `TS-STRIPE-P2-TC027` |
+| TS-AUTHORIZE-TC1217 | Validar Alta de Viaje desde Quote para usuario con número de teléfono vinculado a usuario empresa individuo existente con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver | `AUTHORIZE_CARDS.SUCCESS` | `TS-STRIPE-P2-TC028` |
+| TS-AUTHORIZE-TC1218 | Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario empresa individuo existente con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver | `AUTHORIZE_CARDS.SUCCESS` | `TS-STRIPE-P2-TC029` |
+| TS-AUTHORIZE-TC1219 | Validar Alta de Viaje desde Quote para usuario con mail vinculado a usuario empresa individuo existente con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver | `AUTHORIZE_CARDS.SUCCESS` | `TS-STRIPE-P2-TC030` |
+
+---
+
+## 12. Viajes Recurrentes – Portal Contractor (Usuario Colaboradores)
+
+> Derivado determinísticamente del L1 Stripe (`docs/gateway-pg/stripe/normalized-test-cases.json`) — Fase 4 (2026-07-26), sin casos 3DS. Script: `scripts/ai/derive-gateway-matrix.mjs`.
+
+| ID | Descripción | Card | Ref Stripe |
+| --- | --- | --- | --- |
+| TS-AUTHORIZE-TC1220 | Validar vinculación de tarjeta y Alta de Viaje Recurrente desde portal contractor para usuario colaborador con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver | `AUTHORIZE_CARDS.SUCCESS` | `TS-STRIPE-P2-TC035` |
+| TS-AUTHORIZE-TC1228 | Validar vinculación de tarjeta y Alta de Viaje Recurrente desde portal contractor para usuario colaborador con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver | `AUTHORIZE_CARDS.SUCCESS` | `TS-STRIPE-P2-TC036` |
+| TS-AUTHORIZE-TC1229 | Validar selección de tarjeta y Alta de Viaje Recurrente desde portal contractor para usuario colaborador con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver | `AUTHORIZE_CARDS.SUCCESS` | `TS-STRIPE-P2-TC037` |
+| TS-AUTHORIZE-TC1230 | Validar selección de tarjeta y Alta de Viaje Recurrente desde portal contractor para usuario colaborador con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver | `AUTHORIZE_CARDS.SUCCESS` | `TS-STRIPE-P2-TC038` |
+
+---
+
+## 13. Viajes Recurrentes – Portal Carrier (Usuario Colaboradores)
+
+> Derivado determinísticamente del L1 Stripe (`docs/gateway-pg/stripe/normalized-test-cases.json`) — Fase 4 (2026-07-26), sin casos 3DS. Script: `scripts/ai/derive-gateway-matrix.mjs`.
+
+| ID | Descripción | Card | Ref Stripe |
+| --- | --- | --- | --- |
+| TS-AUTHORIZE-TC1231 | Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario colaborador con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver | `AUTHORIZE_CARDS.SUCCESS` | `TS-STRIPE-P2-TC041` |
+| TS-AUTHORIZE-TC1232 | Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario colaborador con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver | `AUTHORIZE_CARDS.SUCCESS` | `TS-STRIPE-P2-TC042` |
+| TS-AUTHORIZE-TC1233 | Validar selección de tarjeta y Alta de Viaje Recurrente desde carrier para usuario colaborador con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver | `AUTHORIZE_CARDS.SUCCESS` | `TS-STRIPE-P2-TC043` |
+| TS-AUTHORIZE-TC1234 | Validar selección de tarjeta y Alta de Viaje Recurrente desde carrier para usuario colaborador con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver | `AUTHORIZE_CARDS.SUCCESS` | `TS-STRIPE-P2-TC044` |
+| TS-AUTHORIZE-TC1235 | Validar vinculación y alta de viaje Recurrente desde carrier para usuario colaborador con tarjeta preautorizada y edición de fechas – validar consistencia de datos y finalización desde App Driver (CASO CRÍTICO) | `AUTHORIZE_CARDS.SUCCESS` | `TS-STRIPE-P2-TC047` |
+
+---
+
+## 14. Viajes Recurrentes – Portal Carrier (Usuario Personal)
+
+> Derivado determinísticamente del L1 Stripe (`docs/gateway-pg/stripe/normalized-test-cases.json`) — Fase 4 (2026-07-26), sin casos 3DS. Script: `scripts/ai/derive-gateway-matrix.mjs`.
+
+| ID | Descripción | Card | Ref Stripe |
+| --- | --- | --- | --- |
+| TS-AUTHORIZE-TC1236 | Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario personal con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver | `AUTHORIZE_CARDS.SUCCESS` | `TS-STRIPE-P2-TC048` |
+| TS-AUTHORIZE-TC1237 | Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario personal con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver | `AUTHORIZE_CARDS.SUCCESS` | `TS-STRIPE-P2-TC049` |
+| TS-AUTHORIZE-TC1238 | Validar selección de tarjeta y Alta de Viaje Recurrente desde carrier para usuario personal con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver | `AUTHORIZE_CARDS.SUCCESS` | `TS-STRIPE-P2-TC050` |
+| TS-AUTHORIZE-TC1239 | Validar selección de tarjeta y Alta de Viaje Recurrente desde carrier para usuario personal con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver | `AUTHORIZE_CARDS.SUCCESS` | `TS-STRIPE-P2-TC051` |
+
+---
+
+## 15. Viajes Recurrentes – Portal Carrier (Usuario Empresa Individuo)
+
+> Derivado determinísticamente del L1 Stripe (`docs/gateway-pg/stripe/normalized-test-cases.json`) — Fase 4 (2026-07-26), sin casos 3DS. Script: `scripts/ai/derive-gateway-matrix.mjs`.
+
+| ID | Descripción | Card | Ref Stripe |
+| --- | --- | --- | --- |
+| TS-AUTHORIZE-TC1240 | Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver | `AUTHORIZE_CARDS.SUCCESS` | `TS-STRIPE-P2-TC054` |
+| TS-AUTHORIZE-TC1248 | Validar vinculación de tarjeta y Alta de Viaje Recurrente desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver | `AUTHORIZE_CARDS.SUCCESS` | `TS-STRIPE-P2-TC055` |
+| TS-AUTHORIZE-TC1249 | Validar selección de tarjeta y Alta de Viaje Recurrente desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver | `AUTHORIZE_CARDS.SUCCESS` | `TS-STRIPE-P2-TC056` |
+| TS-AUTHORIZE-TC1250 | Validar selección de tarjeta y Alta de Viaje Recurrente desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver | `AUTHORIZE_CARDS.SUCCESS` | `TS-STRIPE-P2-TC057` |
+
+---
+
+## 16. Reactivación de Viajes Cancelados (desde Carrier – Usuario Empresa Individuo)
+
+> Derivado determinísticamente del L1 Stripe (`docs/gateway-pg/stripe/normalized-test-cases.json`) — Fase 4 (2026-07-26), sin casos 3DS. Script: `scripts/ai/derive-gateway-matrix.mjs`.
+
+| ID | Descripción | Card | Ref Stripe |
+| --- | --- | --- | --- |
+| TS-AUTHORIZE-TC1251 | Validar Reactivación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver — Vincular tarjeta nueva | `AUTHORIZE_CARDS.SUCCESS` | `TS-STRIPE-P2-TC060` |
+| TS-AUTHORIZE-TC1252 | Validar Reactivación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Vincular tarjeta nueva | `AUTHORIZE_CARDS.SUCCESS` | `TS-STRIPE-P2-TC061` |
+| TS-AUTHORIZE-TC1253 | Validar Reactivación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver — Usar tarjeta vinculada existente | `AUTHORIZE_CARDS.SUCCESS` (stored) | `TS-STRIPE-P2-TC062` |
+| TS-AUTHORIZE-TC1254 | Validar Reactivación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Usar tarjeta vinculada existente | `AUTHORIZE_CARDS.SUCCESS` (stored) | `TS-STRIPE-P2-TC063` |
+
+---
+
+## 17. Clonación de Viajes Cancelados (desde Carrier – Usuario Empresa Individuo)
+
+> Derivado determinísticamente del L1 Stripe (`docs/gateway-pg/stripe/normalized-test-cases.json`) — Fase 4 (2026-07-26), sin casos 3DS. Script: `scripts/ai/derive-gateway-matrix.mjs`.
+
+| ID | Descripción | Card | Ref Stripe |
+| --- | --- | --- | --- |
+| TS-AUTHORIZE-TC1255 | Validar Clonación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver — Vincular tarjeta nueva | `AUTHORIZE_CARDS.SUCCESS` | `TS-STRIPE-P2-TC066` |
+| TS-AUTHORIZE-TC1256 | Validar Clonación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Vincular tarjeta nueva | `AUTHORIZE_CARDS.SUCCESS` | `TS-STRIPE-P2-TC067` |
+| TS-AUTHORIZE-TC1257 | Validar Clonación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver — Usar tarjeta vinculada existente | `AUTHORIZE_CARDS.SUCCESS` (stored) | `TS-STRIPE-P2-TC068` |
+| TS-AUTHORIZE-TC1258 | Validar Clonación de viaje cancelado desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Usar tarjeta vinculada existente | `AUTHORIZE_CARDS.SUCCESS` (stored) | `TS-STRIPE-P2-TC069` |
+
+---
+
+## 18. Clonación de Viajes Finalizados (desde Carrier – Usuario Empresa Individuo)
+
+> Derivado determinísticamente del L1 Stripe (`docs/gateway-pg/stripe/normalized-test-cases.json`) — Fase 4 (2026-07-26), sin casos 3DS. Script: `scripts/ai/derive-gateway-matrix.mjs`.
+
+| ID | Descripción | Card | Ref Stripe |
+| --- | --- | --- | --- |
+| TS-AUTHORIZE-TC1259 | Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver — Vincular tarjeta nueva | `AUTHORIZE_CARDS.SUCCESS` | `TS-STRIPE-P2-TC072` |
+| TS-AUTHORIZE-TC1260 | Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Vincular tarjeta nueva | `AUTHORIZE_CARDS.SUCCESS` | `TS-STRIPE-P2-TC073` |
+| TS-AUTHORIZE-TC1266 | Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver — Usar tarjeta vinculada existente | `AUTHORIZE_CARDS.SUCCESS` (stored) | `TS-STRIPE-P2-TC074` |
+| TS-AUTHORIZE-TC1267 | Validar Clonación de viaje finalizado desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Usar tarjeta vinculada existente | `AUTHORIZE_CARDS.SUCCESS` (stored) | `TS-STRIPE-P2-TC075` |
+
+---
+
+## 19. Edición de Viajes Programados (desde Carrier – Usuario Empresa Individuo)
+
+> Derivado determinísticamente del L1 Stripe (`docs/gateway-pg/stripe/normalized-test-cases.json`) — Fase 4 (2026-07-26), sin casos 3DS. Script: `scripts/ai/derive-gateway-matrix.mjs`.
+
+| ID | Descripción | Card | Ref Stripe |
+| --- | --- | --- | --- |
+| TS-AUTHORIZE-TC1268 | Validar Alta de viaje y edición desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver — Vincular tarjeta nueva | `AUTHORIZE_CARDS.SUCCESS` | `TS-STRIPE-P2-TC078` |
+| TS-AUTHORIZE-TC1269 | Validar Alta de viaje y edición desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Vincular tarjeta nueva | `AUTHORIZE_CARDS.SUCCESS` | `TS-STRIPE-P2-TC079` |
+| TS-AUTHORIZE-TC1270 | Validar Alta de viaje y edición desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver — Usar tarjeta vinculada existente | `AUTHORIZE_CARDS.SUCCESS` (stored) | `TS-STRIPE-P2-TC080` |
+| TS-AUTHORIZE-TC1275 | Validar Alta de viaje y edición desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Usar tarjeta vinculada existente | `AUTHORIZE_CARDS.SUCCESS` (stored) | `TS-STRIPE-P2-TC081` |
+
+---
+
+## 20. Edición en Conflicto (desde Carrier – Usuario Empresa Individuo)
+
+> Derivado determinísticamente del L1 Stripe (`docs/gateway-pg/stripe/normalized-test-cases.json`) — Fase 4 (2026-07-26), sin casos 3DS. Script: `scripts/ai/derive-gateway-matrix.mjs`.
+
+| ID | Descripción | Card | Ref Stripe |
+| --- | --- | --- | --- |
+| TS-AUTHORIZE-TC1276 | Validar Alta de viaje y edición en conflicto desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver — Vincular tarjeta nueva | `AUTHORIZE_CARDS.SUCCESS` | `TS-STRIPE-P2-TC084` |
+| TS-AUTHORIZE-TC1277 | Validar Alta de viaje y edición en conflicto desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Vincular tarjeta nueva | `AUTHORIZE_CARDS.SUCCESS` | `TS-STRIPE-P2-TC085` |
+| TS-AUTHORIZE-TC1278 | Validar Alta de viaje y edición en conflicto desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver — Usar tarjeta vinculada existente | `AUTHORIZE_CARDS.SUCCESS` (stored) | `TS-STRIPE-P2-TC086` |
+| TS-AUTHORIZE-TC1279 | Validar Alta de viaje y edición en conflicto desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Usar tarjeta vinculada existente | `AUTHORIZE_CARDS.SUCCESS` (stored) | `TS-STRIPE-P2-TC087` |
+
+---
+
+## 21. Trazabilidad cruzada
 
 Ver [`TRACEABILITY.md`](./TRACEABILITY.md) para:
 - Mapping bidireccional TC Stripe ↔ TC Authorize.

@@ -1,5 +1,14 @@
 # eBizCharge — Changelog
 
+## 2026-07-26 — Fase 4: derivación determinista desde el L1 Stripe (sin 3DS) + ID-MAP
+
+- Derivación con `scripts/ai/derive-gateway-matrix.mjs` + delta `scripts/ai/gateway-deltas/ebizcharge.json` (dry-run verificado antes de aplicar).
+- **94 TCs nuevos** desde `TC1050+` (rangos espejo de authorize §6 — ver sección nueva en `TRACEABILITY.md`): `TC1050..TC1070` CFG + alta carrier, `TC1100..TC1116` App Pax + cargo a bordo, `TC1200..TC1255` contractor / Quote / recurrentes / operaciones. 20 secciones de flujo nuevas en `matriz_cases.md`; los 17 TCs outcome-level (`TC1001..TC1041`) quedan intactos.
+- Precondiciones extra documentadas por sección: alta de tarjeta requiere `placeId` del pax; vinculación de pasarela requiere `zipCode` del carrier.
+- Exclusiones (mismas clases que Authorize, por decisión del briefing Fase 4): 89 `@3ds` + 15 `phase2` + 9 §3.2 + 17 delta-config (always_authenticate 3184, lost/stolen/insufficient/Radar análogos). Nota: eBiz sí expone code 51 / Fraud Profiler — ya cubiertos como exclusivos `TC1012` / `TC1030/1031`.
+- **`normalized-test-cases.json` (L1 eBizCharge)** — 111 casos (17 existentes + 94 derivados), `total = cases.length` verificado, **cero `@3ds`** (assert del script).
+- **`ID-MAP.md`** (GENERATED) + puntero en `TRACEABILITY.md` — trazabilidad TS-ID ↔ MG-key ↔ spec desde `docs/gateway-pg/id-map.json` (keys MG CFG eBiz aún `null` en `xray-keys.ts`: no se fabrican).
+
 ## 2026-07-20 — BL-027: SoT de datos + documentación (sin runtime)
 
 - Análisis de la doc oficial <https://developer.ebizcharge.net/connect/docs/test-credit-card-numbers>.

@@ -24,14 +24,37 @@
  *   - .env.test / .env.uat / .env.prod declaran USER_CARRIER + PASS_CARRIER
  */
 
-import { lazyEnv } from '../internal/env-resolver';
-import type { EnvironmentMap, WebUser } from '../types';
+import { ENV_SUFFIX_BY_ENVIRONMENT, lazyEnv, resolveActiveEnvironment, type EnvSuffix } from '../internal/env-resolver';
+import type { EnvironmentMap, UserEnvironment, WebUser } from '../types';
+import type { GatewayName } from '../../gateways/_shared';
+import { GATEWAY_ENV_SUFFIX } from './gateway-suffix';
 
 const LABEL = 'dispatcher (carrier portal)';
 
-function buildDispatcher(envSuffix: 'TEST' | 'UAT' | 'PROD', environment: WebUser['environment']): WebUser {
-	const emailEnv = lazyEnv([`USER_CARRIER_${envSuffix}`, 'USER_CARRIER'], `${LABEL} [${environment}] email`);
-	const passEnv = lazyEnv([`PASS_CARRIER_${envSuffix}`, 'PASS_CARRIER'], `${LABEL} [${environment}] password`);
+/**
+ * Cadena de candidatos de credencial para el rol carrier, en orden de preferencia.
+ *
+ * Sin gateway (default, backward-compat): `[<PREFIX>_<ENV>, <PREFIX>]`
+ * Con gateway:                            `[<PREFIX>_<GW>_<ENV>, <PREFIX>_<GW>, <PREFIX>_<ENV>, <PREFIX>]`
+ */
+function carrierCandidates(
+	prefix: 'USER_CARRIER' | 'PASS_CARRIER',
+	envSuffix: EnvSuffix,
+	gateway?: GatewayName
+): string[] {
+	if (!gateway) {
+		return [`${prefix}_${envSuffix}`, prefix];
+	}
+	const gw = GATEWAY_ENV_SUFFIX[gateway];
+	return [`${prefix}_${gw}_${envSuffix}`, `${prefix}_${gw}`, `${prefix}_${envSuffix}`, prefix];
+}
+
+function buildDispatcher(envSuffix: EnvSuffix, environment: WebUser['environment'], gateway?: GatewayName): WebUser {
+	const emailEnv = lazyEnv(carrierCandidates('USER_CARRIER', envSuffix, gateway), `${LABEL} [${environment}] email`);
+	const passEnv = lazyEnv(
+		carrierCandidates('PASS_CARRIER', envSuffix, gateway),
+		`${LABEL} [${environment}] password`
+	);
 
 	return {
 		role: 'dispatcher',
@@ -64,3 +87,20 @@ export const DISPATCHER = {
 	uat: buildDispatcher('UAT', 'uat'),
 	prod: buildDispatcher('PROD', 'prod')
 } as const satisfies EnvironmentMap<WebUser>;
+
+/**
+ * getDispatcher — resuelve el WebUser dispatcher para un gateway y ambiente dados.
+ *
+ * - SIN `gateway`: cadena de candidatos idéntica al fixture `DISPATCHER`
+ *   (`[USER_CARRIER_<ENV>, USER_CARRIER]`) → comportamiento default sin cambios.
+ * - CON `gateway`: antepone `USER_CARRIER_<GW>_<ENV>` y `USER_CARRIER_<GW>`.
+ *
+ * @param gateway - pasarela objetivo (opcional). Omitido = comportamiento default.
+ * @param environment - ambiente (opcional). Default = ambiente activo (`process.env.ENV`).
+ */
+export function getDispatcher(
+	gateway?: GatewayName,
+	environment: UserEnvironment = resolveActiveEnvironment()
+): WebUser {
+	return buildDispatcher(ENV_SUFFIX_BY_ENVIRONMENT[environment], environment, gateway);
+}

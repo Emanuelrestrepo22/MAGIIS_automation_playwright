@@ -7,6 +7,33 @@ IDs canónicos: ver [`matriz_cases.md`](./matriz_cases.md) y [`matriz_cases2.md`
 
 ---
 
+## [2026-07-26] Fase 4 — Derivación determinista desde el L1 Stripe (sin 3DS) + ID-MAP
+
+Derivación con `scripts/ai/derive-gateway-matrix.mjs` + delta declarativo `scripts/ai/gateway-deltas/authorize.json` (dry-run verificado antes de aplicar).
+
+### Added
+
+- **60 TCs nuevos** derivados de los 120 activos Stripe sin 3DS (94 candidatos tras exclusiones; 34 ya cubiertos por pins §3.1 / espejo CFG):
+  - `TC1009/TC1010/TC1018` — carrier personal Hold OFF (variantes) en `matriz_cases.md` §2.1.
+  - `TC1100..TC1102` — App Pax personal (Hold ON/OFF variantes) §5; `TC1103/TC1104` — App Pax business sin Hold §6; `TC1105` — cargo a bordo empresa individuo CVV mismatch §9.
+  - `TC1200/TC1207..TC1219` — Flujo Quote (sección nueva §11 de `matriz_cases2.md`).
+  - `TC1220/TC1228..TC1240/TC1248..TC1250` — Viajes Recurrentes (contractor / carrier colaborador / personal / empresa, §12-§15).
+  - `TC1251..TC1260/TC1266..TC1279` — Reactivación, Clonación (cancelados/finalizados) y Edición (programados/conflicto), §16-§20.
+- **`normalized-test-cases.json` (L1 Authorize)** — 164 casos (104 existentes + 60 derivados), `total = cases.length` verificado, **cero `@3ds`** (assert del script).
+- **`ID-MAP.md`** (GENERATED) + puntero en `TRACEABILITY.md` §3 — trazabilidad TS-ID ↔ MG-key ↔ spec desde `docs/gateway-pg/id-map.json`.
+
+### Excluded (no derivados — racional)
+
+- Clases 1-2: 89 casos `@3ds` + 15 `phase2` deprecated/collapsed.
+- Clase 3 (§3.2 explícitos, 9): `TC1059` (decline-en-capture/9995), `TC1083/1084/1086` (insufficient/lost/stolen), `TC1087..TC1091` (Radar).
+- Delta-config (17): `TC1062` (always_authenticate 3184 = 3DS sin tag) + análogos lost/stolen/insufficient/Radar de cargo a bordo colaborador (`TC1098..TC1106`) y empresa (`TC1113..TC1121` salvo `TC1115`).
+
+### Note
+
+- IDs existentes intactos (regla dura: nunca renumerar). "## 11. Trazabilidad cruzada" pasó a §21 por inserción de las secciones §11-§20.
+
+---
+
 ## [2026-07-20] Reconciliación fixtures ↔ guía oficial
 
 Verificación de `tests/fixtures/gateways/authorize/` contra <https://developer.authorize.net/hello_world/testing_guide.html>.

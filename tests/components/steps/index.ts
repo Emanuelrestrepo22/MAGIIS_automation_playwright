@@ -11,3 +11,4 @@ export {
 	type ContractorHoldScenario
 } from './ContractorHoldSteps';
 export { RecoverySteps, type RecoveryScenario } from './RecoverySteps';
+export { GatewaySwitchSteps, type SwitchableGateway } from './GatewaySwitchSteps';

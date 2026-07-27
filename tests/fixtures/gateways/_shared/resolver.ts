@@ -139,6 +139,10 @@ function normalizeMercadoPagoCard(card: MercadoPagoTestCard): GenericTestCard {
 		expiry: card.exp,
 		cvc: card.cvc,
 		holderName: card.holderName,
+		// Documento del fixture MP (post-review A11): el form nativo lo consume vía
+		// NativeAngularCardForm.fillDocumentField (sus literales quedan como fallback).
+		docType: card.identificationType,
+		docNumber: card.identificationNumber,
 		expectedOutcome: card.expectedOutcome,
 		requires3ds: false
 	};

@@ -42,7 +42,7 @@ const AMOUNT = process.env.MP_AMOUNT ?? '10.00';
 const CREDS_READY = Boolean(process.env.USER_CARRIER && process.env.PASS_CARRIER && process.env.BASE_URL);
 const MP_UAT_EXEC = process.env.MP_SANDBOX_TRANSACTS === '1';
 
-test.describe(`[MG · E/F/COB][API] ${mercadoPagoGatewayAdapter.displayName} — ePayment → finalize @regression @gateway-pg @mercado-pago`, {
+test.describe(`[MG · E/F/COB][API] ${mercadoPagoGatewayAdapter.displayName} — ePayment → finalize @regression @gateway @gateway-pg @mercadopago`, {
 	annotation: [
 		{ type: 'tms', description: 'MG-160' },
 		{ type: 'tms', description: 'MG-161' },

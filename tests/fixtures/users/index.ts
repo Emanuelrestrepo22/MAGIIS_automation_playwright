@@ -12,13 +12,14 @@
 
 import type { AppRole } from '../../config/runtime';
 import { CONTRACTOR_COLLABORATOR, DISPATCHER } from './web-portals';
+import { resolveActiveEnvironment } from './internal/env-resolver';
 import type { UserEnvironment } from './types';
 
 // ─── Tipos públicos ───────────────────────────────────────────────────────────
 export type { UserEnvironment, PortalRole, MobileRole, WebUser, MobileUser, EnvironmentMap } from './types';
 
 // ─── Fixtures con credenciales ────────────────────────────────────────────────
-export { DISPATCHER, CONTRACTOR_COLLABORATOR, PAX_WEB } from './web-portals';
+export { DISPATCHER, CONTRACTOR_COLLABORATOR, PAX_WEB, getDispatcher, getContractorCollaborator } from './web-portals';
 export { DRIVER, PASSENGER_APP_USER } from './mobile';
 
 // ─── Pasajeros de dominio (sin credenciales) ──────────────────────────────────
@@ -44,13 +45,10 @@ export { PASSENGERS, type TestPassenger } from './passengers';
  *   const { email, password } = DISPATCHER[env];
  */
 export function getCurrentUserEnvironment(): UserEnvironment {
-	const env = process.env.ENV ?? 'test';
-	if (env === 'test' || env === 'uat' || env === 'prod') {
-		return env;
-	}
-	// No usamos console.warn para evitar romper el check 6 del pre-push (sin console.log nuevos).
-	// El default a 'test' es seguro porque las creds TEST son las únicas que están en .env por defecto.
-	return 'test';
+	// Delega en el SoT único de resolución de ambiente (internal/env-resolver).
+	// El default a 'test' es seguro porque las creds TEST son las únicas que
+	// están en .env por defecto. Sin console.warn para no romper el check 6 del pre-push.
+	return resolveActiveEnvironment();
 }
 
 /**

@@ -1,4 +1,7 @@
-import { expect, type Frame, type Locator, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
+// Import directo del módulo concreto (no del barrel card-forms) para no arrastrar la
+// factory `cardFormFor` (y su dependencia runtime en los adapters de gateway-pg) al POM legacy.
+import { StripeElementsCardForm } from '@ui/carrier/card-forms/StripeElementsCardForm';
 import { getPortalUrl } from '../../config/gatewayPortalRuntime';
 // BL-024 mejora continua: data Stripe viene del fixture canónico, no del legacy.
 // El POM sigue acoplado a Stripe Elements (deuda TIER A — BL-038 Strategy Pattern),
@@ -46,9 +49,9 @@ export type ValidateCardResult = {
 	errorMessage: string | null;
 };
 
-type StripeComponentName = 'cardNumber' | 'cardExpiry' | 'cardCvc';
 type TariffType = 'Distancia' | 'ADisposicion';
-type PaymentMethod = 'Preautorizada' | 'CuentaCorriente' | 'Efectivo' | 'CargoABordo';
+// Exportado (S7): lo referencian los delegates KATA (`CarrierNewTravelPage.selectPaymentMethod`).
+export type PaymentMethod = 'Preautorizada' | 'CuentaCorriente' | 'Efectivo' | 'CargoABordo';
 type TipType = 'SIN_PROPINA' | 'PCT_10' | 'PCT_15' | 'PCT_20' | 'CUSTOM';
 
 // BL-024 mejora continua (2026-05-13): el mapping `last4 → cardNumber` fue
@@ -613,30 +616,13 @@ export abstract class NewTravelPageBase extends BasePage {
 		await card.click();
 	}
 
-	private async waitForStripeFrame(component: StripeComponentName, timeoutMs = 15_000): Promise<Frame> {
-		const deadline = Date.now() + timeoutMs;
-
-		while (Date.now() < deadline) {
-			const frame = this.page.frames().find(candidate => candidate.url().includes(`componentName=${component}`));
-			if (frame) {
-				return frame;
-			}
-
-			// NOTE(tier3-kept): polling loop propio — Stripe iframe no emite evento DOM de aparición
-			await this.page.waitForTimeout(250);
-		}
-
-		throw new Error(`Stripe frame not found: ${component}`);
-	}
-
 	/**
 	 * Completa los datos de la tarjeta preautorizada sin disparar validación.
 	 *
-	 * NOTA deuda TIER A (BL-038): este método está atado a Stripe Elements
-	 * (3 iframes + constantes STRIPE_*). Cuando entre Authorize (que usa
-	 * Accept.js o form propio), hace falta Strategy Pattern para que
-	 * `fillPreauthorizedCard` delegue a una `CardFormStrategy` específica
-	 * del gateway activo.
+	 * Seam S3 (BL-038 saldada): la lógica de iframes de Stripe Elements vive en
+	 * `StripeElementsCardForm` (@ui/carrier/card-forms). Este método legacy queda
+	 * como WRAPPER delegando — misma firma, misma secuencia (dropdown "Preautorizada"
+	 * → llenado del form → aserción), CERO cambios para sus consumidores.
 	 */
 	async fillPreauthorizedCard(last4: string): Promise<void> {
 		// Resolución del cardNumber centralizada en el fixture Stripe canónico.
@@ -651,18 +637,14 @@ export abstract class NewTravelPageBase extends BasePage {
 			.first();
 		await preauthOption.waitFor({ state: 'visible', timeout: 10_000 });
 		await preauthOption.click();
-		// NOTE(tier3-kept): Stripe monta 3 iframes (cardNumber/cardExpiry/cardCvc) sin evento DOM de "ready"; reducir causa waitForStripeFrame timeout
-		await this.page.waitForTimeout(2_500);
 
-		const numberFrame = await this.waitForStripeFrame('cardNumber');
-		const expiryFrame = await this.waitForStripeFrame('cardExpiry');
-		const cvcFrame = await this.waitForStripeFrame('cardCvc');
-
-		await numberFrame.locator('input[name="cardnumber"]').fill(cardNumber);
-		await expiryFrame.locator('input[name="exp-date"]').fill(STRIPE_EXPIRY);
-		await cvcFrame.locator('input[name="cvc"]').fill(STRIPE_CVC);
-		await this.cardOwnerNameInput.fill(STRIPE_CARD_HOLDER_NAME);
-		await this.billingZipInput.fill(STRIPE_BILLING_ZIP);
+		await new StripeElementsCardForm().fill(this.page, {
+			number: cardNumber,
+			expiry: STRIPE_EXPIRY,
+			cvc: STRIPE_CVC,
+			holderName: STRIPE_CARD_HOLDER_NAME,
+			zip: STRIPE_BILLING_ZIP
+		});
 		await this.assertPaymentMethodPreauthorizedSelected();
 	}
 

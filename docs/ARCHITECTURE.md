@@ -178,7 +178,7 @@ Anti-patterns prohibidos:
 
 ### TODO — Consolidación pendiente (TIER 1.5)
 
-`tests/specs/gateway-pg/stripe/` (32 archivos wrapper) queda pendiente de eliminación. Razón: `package.json` tiene 4 scripts (`test:test:gateway-pg:stripe`, `test:test:gateway-pg:3ds`, `test:test:e2e:flow2`, `test:test:e2e:passenger`) que referencian directamente esa ruta, y `docs/gateway-pg/` la usan como entrypoint oficial.
+`tests/specs/gateway-pg/stripe/` (32 archivos wrapper) queda pendiente de eliminación. Razón: `package.json` tiene 4 scripts (`test:test:gateway:stripe`, `test:test:gateway:3ds`, `test:test:e2e:flow2`, `test:test:e2e:passenger`) que referencian directamente esa ruta, y `docs/gateway-pg/` la usan como entrypoint oficial.
 
 **Antes de eliminar, auditar wrapper-por-wrapper** para confirmar que solo re-exportan (sin fixtures locales, sin `beforeAll` custom, sin orquestación). Luego:
 

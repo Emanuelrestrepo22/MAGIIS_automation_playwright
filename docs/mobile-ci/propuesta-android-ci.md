@@ -112,7 +112,7 @@ web-carrier-tests:
   image: mcr.microsoft.com/playwright:v1.x-focal
   script:
     - pnpm install
-    - pnpm test:test:gateway-pg:hold --workers=1
+    - pnpm test:test:gateway --grep @hold --workers=1
   artifacts:
     paths:
       - evidence/journey-context/

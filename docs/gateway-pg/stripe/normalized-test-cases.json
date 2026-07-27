@@ -5,7 +5,7 @@
     "docs/gateway-pg/stripe/matriz_cases.md",
     "docs/gateway-pg/stripe/matriz_cases2.md"
   ],
-  "total": 219,
+  "total": 224,
   "notes": [
     "Generado tras normalización E2E→Validar en las matrices canónicas.",
     "Steps / preconditions / expected_results quedan vacíos: se poblarán en Fase 2 con critical-flow-prioritizer.",
@@ -4692,6 +4692,146 @@
       "critical_flow": false,
       "section": "Cargo a Bordo – Tarjeta de Crédito – Usuario Empresa Individuo (desde Carrier)",
       "subsection": "Antifraude",
+      "playwright_assets": {
+        "spec_file": null,
+        "page_objects": [],
+        "fixtures": [],
+        "data_files": [
+          "tests/features/gateway-pg/data/stripeTestData.ts"
+        ]
+      },
+      "card_flow": "n/a"
+    },
+    {
+      "test_case_id": "TS-STRIPE-TC1123",
+      "title": "Validar Alta de viaje desde carrier para usuario empresa individuo – cargo a bordo – pago exitoso con 3D Secure obligatorio",
+      "module": "gateway-pg-stripe/charge-onboard",
+      "portal": "carrier",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P1",
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "preconditions": [],
+      "steps": [],
+      "expected_results": [],
+      "tags": [
+        "@stripe",
+        "@gateway-pg",
+        "@3ds",
+        "@carrier",
+        "@business",
+        "@charge-onboard"
+      ],
+      "critical_flow": true,
+      "section": "Cargo a Bordo – Tarjeta de Crédito – Usuario Empresa Individuo (desde Carrier)",
+      "subsection": "Con validación 3D Secure",
+      "playwright_assets": {
+        "spec_file": null,
+        "page_objects": [],
+        "fixtures": [],
+        "data_files": [
+          "tests/features/gateway-pg/data/stripeTestData.ts"
+        ]
+      },
+      "card_flow": "n/a"
+    },
+    {
+      "test_case_id": "TS-STRIPE-TC1124",
+      "title": "Validar Alta de viaje desde carrier para usuario empresa individuo – cargo a bordo – pago rechazado con 3D Secure obligatorio",
+      "module": "gateway-pg-stripe/charge-onboard",
+      "portal": "carrier",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P1",
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "preconditions": [],
+      "steps": [],
+      "expected_results": [],
+      "tags": [
+        "@stripe",
+        "@gateway-pg",
+        "@3ds",
+        "@carrier",
+        "@business",
+        "@charge-onboard"
+      ],
+      "critical_flow": true,
+      "section": "Cargo a Bordo – Tarjeta de Crédito – Usuario Empresa Individuo (desde Carrier)",
+      "subsection": "Con validación 3D Secure",
+      "playwright_assets": {
+        "spec_file": null,
+        "page_objects": [],
+        "fixtures": [],
+        "data_files": [
+          "tests/features/gateway-pg/data/stripeTestData.ts"
+        ]
+      },
+      "card_flow": "n/a"
+    },
+    {
+      "test_case_id": "TS-STRIPE-TC1125",
+      "title": "Validar Alta de viaje desde carrier para usuario empresa individuo – cargo a bordo – error con 3D Secure obligatorio",
+      "module": "gateway-pg-stripe/charge-onboard",
+      "portal": "carrier",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P1",
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "preconditions": [],
+      "steps": [],
+      "expected_results": [],
+      "tags": [
+        "@stripe",
+        "@gateway-pg",
+        "@3ds",
+        "@carrier",
+        "@business",
+        "@charge-onboard"
+      ],
+      "critical_flow": true,
+      "section": "Cargo a Bordo – Tarjeta de Crédito – Usuario Empresa Individuo (desde Carrier)",
+      "subsection": "Con validación 3D Secure",
+      "playwright_assets": {
+        "spec_file": null,
+        "page_objects": [],
+        "fixtures": [],
+        "data_files": [
+          "tests/features/gateway-pg/data/stripeTestData.ts"
+        ]
+      },
+      "card_flow": "n/a"
+    },
+    {
+      "test_case_id": "TS-STRIPE-TC1126",
+      "title": "Validar Alta de viaje desde carrier para usuario empresa individuo – cargo a bordo – falla 3D Secure",
+      "module": "gateway-pg-stripe/charge-onboard",
+      "portal": "carrier",
+      "environment": [
+        "TEST"
+      ],
+      "priority": "P1",
+      "source_type": "md",
+      "source_file": "matriz_cases.md",
+      "preconditions": [],
+      "steps": [],
+      "expected_results": [],
+      "tags": [
+        "@stripe",
+        "@gateway-pg",
+        "@3ds",
+        "@carrier",
+        "@business",
+        "@charge-onboard"
+      ],
+      "critical_flow": true,
+      "section": "Cargo a Bordo – Tarjeta de Crédito – Usuario Empresa Individuo (desde Carrier)",
+      "subsection": "Con validación 3D Secure",
       "playwright_assets": {
         "spec_file": null,
         "page_objects": [],

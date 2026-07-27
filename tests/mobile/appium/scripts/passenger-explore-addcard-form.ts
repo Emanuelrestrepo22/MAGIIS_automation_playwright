@@ -10,8 +10,9 @@
 
 import { getPassengerAppConfig } from '../config/appiumRuntime';
 import { PassengerTripHappyPathHarness } from '../harness/PassengerTripHappyPathHarness';
+import { CARDS } from '../../../fixtures/gateways/stripe/card-policy';
 
-const CARD = process.env.EXPLORE_CARD ?? '4000002500003155';
+const CARD = process.env.EXPLORE_CARD ?? CARDS.HAPPY_3DS;
 const log = (m: string): void => console.log(`[explore-addcard] ${m}`);
 
 async function run(): Promise<void> {
