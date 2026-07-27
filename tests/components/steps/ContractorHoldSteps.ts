@@ -220,6 +220,10 @@ export class ContractorHoldSteps extends UiBase {
 					timeout: 30_000,
 					waitUntil: 'commit'
 				});
+				// Oráculo explícito de destino (restaurado del original c3c99e8 — auditoría R2):
+				// "salió de /travel/create" NO asserta que llegó al dashboard; el redirect de
+				// éxito del contractor es /contractor/dashboard (MP-NOHOLD-04, smoke-cases-no3ds).
+				await expect(this.page).toHaveURL(/contractor\/dashboard/, { timeout: 10_000 });
 			});
 
 			// Validación API: el POST /travels devolvió un travelId — viaje creado en backend.
