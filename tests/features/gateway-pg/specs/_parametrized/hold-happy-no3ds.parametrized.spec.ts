@@ -73,7 +73,9 @@ test.describe(
 	{ annotation: [{ type: 'tms', description: 'MG-158' }] },
 	() => {
 		for (const gateway of ACTIVE_GATEWAYS) {
-			test.describe(`gateway=${gateway}`, () => {
+			// Tag normalizado por pasarela (mismo patrón gatewayTag de las factories): permite que
+			// los runs :xray por gateway (--grep "@authorize" etc.) incluyan al piloto.
+			test.describe(`gateway=${gateway} @${gateway.replace(/-/g, '')}`, () => {
 				test('crea viaje con HAPPY_NO_AUTH y queda visible en grilla "Por asignar"', async ({ page }) => {
 					const card = resolveCard({ gateway, intent: 'HAPPY_NO_AUTH' });
 

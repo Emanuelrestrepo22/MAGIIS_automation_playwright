@@ -186,6 +186,22 @@ class XrayReporter implements Reporter {
 				`⚠️  Xray: ${this.unmapped} spec(s) sin key → NO exportados. Añade annotation type:'tms' (o [KEY] en el título).`
 			);
 		}
+
+		// Guarda F5 (post-review): un run POR PASARELA (GATEWAYS con UNA sola) sin
+		// XRAY_EXECUTION_KEY emite un JSON sin testExecutionKey — el import posterior con
+		// `--file` y sin `--execution` crearía una ejecución NUEVA en vez de alimentar el
+		// ATR por pasarela (MG-558..561). Aviso, NO fail: crear ejecuciones nuevas es un
+		// uso legítimo en otros contextos.
+		const pinnedGateways = (process.env.GATEWAYS ?? '')
+			.split(',')
+			.map(s => s.trim())
+			.filter(Boolean);
+		if (process.env.XRAY && pinnedGateways.length === 1 && !process.env.XRAY_EXECUTION_KEY) {
+			console.warn(
+				'\x1b[33m\x1b[1m%s\x1b[0m',
+				`⚠️⚠️  Xray: run por pasarela (GATEWAYS=${pinnedGateways[0]}) SIN XRAY_EXECUTION_KEY — importar ${this.outputFile} con --file y sin --execution creará una ejecución NUEVA en vez de alimentar el ATR de la pasarela. Exportá la key de su execution (env XRAY_EXECUTION_<GW> del RUNBOOK-executions-por-gateway.md §1.1, p. ej. XRAY_EXECUTION_KEY=$XRAY_EXECUTION_AUTHORIZE) o pasá --execution en el import.`
+			);
+		}
 	}
 }
 

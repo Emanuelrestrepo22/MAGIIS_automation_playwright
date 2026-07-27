@@ -53,13 +53,13 @@ Todas las keys de §1 están en la denylist recomendada (§2.3) — jamás deben
 
 ### 2.3 Denylist de keys (emit-all)
 
-El reporter emite TODAS las keys `tms` (estáticas + runtime `@atc`). Para que ninguna key estructural no-Test reciba resultado, exportar la denylist recomendada antes del run:
+El reporter emite TODAS las keys `tms` (estáticas + runtime `@atc`). Para que ninguna key estructural no-Test reciba resultado, los scripts `:xray` por pasarela **ya llevan la denylist recomendada EMBEBIDA** (`XRAY_KEY_DENYLIST=...` en `package.json`) — no hay que exportar nada para el flujo estándar. El export manual queda como **override** (p. ej. para ampliar o recortar la lista en un run puntual):
 
 ```bash
 export XRAY_KEY_DENYLIST="MG-3,MG-178,MG-509,MG-510,MG-511,MG-512,MG-513,MG-514,MG-515,MG-516,MG-553,MG-557,MG-558,MG-559,MG-560,MG-561"
 ```
 
-(Misma cadena exportada como `XRAY_KEY_DENYLIST_RECOMMENDED` en `xray-keys.ts`.)
+(Misma cadena exportada como `XRAY_KEY_DENYLIST_RECOMMENDED` en `xray-keys.ts`. Nota: en los scripts npm el env embebido lo fija `cross-env`, así que un `export` de shell NO lo pisa — para override, editar el script o correr `npx playwright test` a mano con el env deseado.)
 
 ### 2.4 Orden de ejecución recomendado
 
@@ -75,7 +75,11 @@ Ejemplo con **Authorize** (sustituir sufijo/keys para las demás según la tabla
 
 ```bash
 # 1. Run con trazabilidad Xray → JSON aislado por pasarela
-#    (GATEWAYS pinnea el set del piloto parametrizado; --grep filtra los specs por tag)
+#    (GATEWAYS pinnea el set del piloto parametrizado; --grep filtra los specs por tag.
+#     El piloto hold-happy-no3ds SÍ entra al run de su pasarela: su describe interno lleva
+#     el tag normalizado `@<gateway>` — mismo patrón gatewayTag de las factories. Los
+#     scripts :xray además fijan --project=gateway-pg-chromium para evitar la doble
+#     ejecución por projects solapados regression-web + gateway-pg-chromium.)
 XRAY_EXECUTION_KEY=MG-558 npm run test:test:gateway:authorize:xray
 # → escribe evidence/test/xray-results.authorize.json (XRAY_OUTPUT_FILE del script)
 #   con testExecutionKey=MG-558 embebido por el reporter.
