@@ -82,7 +82,9 @@ function detectIntent(title) {
 	return 'HAPPY_NO_AUTH';
 }
 
-function cardCell(intent, cardFlow) {
+function cardCell(intent, cardFlow, stripeCase) {
+	// Casos de configuración de pasarela (App Store) no ejercitan tarjeta.
+	if ((stripeCase?.module || '').endsWith('/config')) return '—';
 	const base = delta.intent_cards[intent];
 	return cardFlow === 'existing' ? `${base} (stored)` : base;
 }
@@ -240,7 +242,7 @@ for (const d of derived) {
 function appendRowCells(d) {
 	const cells = [d.id, d.title];
 	for (const col of d.map.columns || []) {
-		if (col === 'card') cells.push(cardCell(d.intent, d.stripe.card_flow));
+		if (col === 'card') cells.push(cardCell(d.intent, d.stripe.card_flow, d.stripe));
 		else if (col === 'hold') cells.push(d.title.toLowerCase().includes('sin hold') ? 'OFF' : 'ON');
 		else if (col === 'outcome') cells.push(outcomeCell(d.intent));
 		else if (col === 'stripe_ref') cells.push(`\`${d.stripe.test_case_id}\``);
@@ -285,7 +287,7 @@ for (const [file, bucket] of byFile) {
 				'',
 				'| ID | Descripción | Card | Ref Stripe |',
 				'| --- | --- | --- | --- |',
-				...rows.map((d) => `| ${d.id} | ${d.title} | ${cardCell(d.intent, d.stripe.card_flow)} | \`${d.stripe.test_case_id}\` |`),
+				...rows.map((d) => `| ${d.id} | ${d.title} | ${cardCell(d.intent, d.stripe.card_flow, d.stripe)} | \`${d.stripe.test_case_id}\` |`),
 				'',
 				'---',
 				''
@@ -322,7 +324,7 @@ const derivedCases = derived.map((d) => ({
 	origin: 'derived',
 	stripe_ref: d.stripe.test_case_id,
 	intent: d.intent,
-	card: cardCell(d.intent, d.stripe.card_flow).replace(/`/g, '')
+	card: cardCell(d.intent, d.stripe.card_flow, d.stripe).replace(/`/g, '')
 }));
 
 const existingCases = existingRows.map((r) => ({
