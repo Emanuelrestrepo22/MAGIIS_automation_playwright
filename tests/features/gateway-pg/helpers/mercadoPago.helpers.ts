@@ -81,14 +81,23 @@ export async function fillMercadoPagoNativeCard(page: Page, input: MpNativeCardI
  * tarjeta quede vinculada — se reintenta hasta que la tarjeta resaltada sea visible.
  */
 /**
- * Resultado de la validación de tarjeta MP:
+ * Resultado de la validación de tarjeta MP (contrato endurecido — auditoría R2, separa
+ * fallo real de limitación de entorno; antes ambos convergían en el skip):
  * - `'linked'`: la tarjeta quedó vinculada (resaltada) → se puede continuar el alta.
- * - `'validation-unavailable'`: MP respondió "Error al validar tarjeta" — la validación/transacción
- *   de tarjetas sandbox MP **no completa en TEST** (limitación de entorno documentada; va a UAT con
- *   tarjeta real). El caller debe `test.skip` con esa razón (el form-fill + habilitación de "Validar"
- *   SÍ quedaron verificados = la cobertura controlable en TEST).
+ * - `'validation-failed'`: la UI mostró un ERROR EXPLÍCITO de validación ("Error al validar
+ *   tarjeta") — señal observable de fallo. Los callers deben tratarlo como FALLO del test
+ *   (`expect(result).not.toBe('validation-failed')`), NUNCA como skip: skipear un error
+ *   visible ocultaría una regresión real del backend/pasarela.
+ * - `'validation-unavailable'`: sin tarjeta resaltada NI error explícito — señal indeterminada
+ *   atribuible a la limitación de entorno (la validación/transacción de tarjetas sandbox MP
+ *   **no completa en TEST**; va a UAT con tarjeta real). Solo este valor habilita el
+ *   `test.skip` del caller (el form-fill + habilitación de "Validar" SÍ quedaron verificados
+ *   = la cobertura controlable en TEST).
  */
-export async function validateAndSelectMercadoPagoCard(page: Page, attempts = 3): Promise<'linked' | 'validation-unavailable'> {
+export async function validateAndSelectMercadoPagoCard(
+	page: Page,
+	attempts = 3
+): Promise<'linked' | 'validation-failed' | 'validation-unavailable'> {
 	const validar = page.getByRole('button', { name: /^Validar$/i });
 	const paymentMethods = page.locator('#add_travel_payment_methods');
 	const highlighted = page.locator('.ng-star-inserted.highlighted > .data-with-icon-col').first();
@@ -105,15 +114,16 @@ export async function validateAndSelectMercadoPagoCard(page: Page, attempts = 3)
 			return 'linked';
 		}
 		if (await validationError.isVisible().catch(() => false)) {
-			break; // no reintentar: es limitación de entorno, no flakiness
+			break; // no reintentar: hay señal explícita de error (no es flakiness)
 		}
 	}
 
 	if (await validationError.isVisible().catch(() => false)) {
-		console.warn('[MP] "Error al validar tarjeta" — la validación de tarjeta MP no completa en TEST (sandbox). Form-fill + "Validar" verificados; el resto es UAT-only.');
-		return 'validation-unavailable';
+		console.warn('[MP] "Error al validar tarjeta" visible — señal EXPLÍCITA de fallo de validación; el caller debe FALLAR el test (no skipear).');
+		return 'validation-failed';
 	}
-	// Sin tarjeta resaltada ni error explícito: tratar como no-disponible (no romper el TC).
-	console.warn('[MP] Tarjeta MP no quedó vinculada ni hubo error explícito — se trata como validación no disponible en TEST.');
+	// Sin tarjeta resaltada ni error explícito: señal indeterminada → limitación de entorno
+	// (sandbox MP no transacciona en TEST) — único camino que habilita el skip del caller.
+	console.warn('[MP] Tarjeta MP no quedó vinculada ni hubo error explícito — se trata como validación no disponible en TEST (sandbox).');
 	return 'validation-unavailable';
 }

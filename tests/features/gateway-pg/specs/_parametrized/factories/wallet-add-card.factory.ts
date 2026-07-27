@@ -140,6 +140,9 @@ export function defineWalletAddCardSuite(gateway: GatewayName, options: WalletAd
 				if (gateway === 'mercado-pago') {
 					// Vinculación satisfactoria = tarjeta resaltada en el dropdown (recording test-15).
 					const mpLink = await validateAndSelectMercadoPagoCard(page);
+					// Fallo real ≠ limitación de entorno (auditoría R2): error EXPLÍCITO visible
+					// = FALLO del test; solo la ausencia de señal habilita el skip sandbox.
+					expect(mpLink, 'MP: la UI mostró un error explícito de validación de tarjeta — fallo real, no limitación sandbox').not.toBe('validation-failed');
 					test.skip(
 						mpLink !== 'linked',
 						'MP: validación de tarjeta no completa en TEST (sandbox MP no transacciona) — UAT-only. Form-fill + habilitación de "Validar" verificados.'

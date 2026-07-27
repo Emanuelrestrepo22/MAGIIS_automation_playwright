@@ -210,6 +210,10 @@ export class CarrierHoldSteps extends UiBase {
 	private async validateNativeGatewayCard(gateway: GatewayName): Promise<void> {
 		if (gateway === 'mercado-pago') {
 			const mpLink = await validateAndSelectMercadoPagoCard(this.page);
+			// Fallo real ≠ limitación de entorno (auditoría R2): un error EXPLÍCITO de
+			// validación en la UI es un FALLO del test; solo la ausencia total de señal
+			// (validation-unavailable) habilita el skip sandbox.
+			expect(mpLink, 'MP: la UI mostró un error explícito de validación de tarjeta — fallo real, no limitación sandbox').not.toBe('validation-failed');
 			test.skip(
 				mpLink !== 'linked',
 				'MP: validación de tarjeta no completa en TEST (sandbox MP no transacciona) — UAT-only. Form-fill + habilitación de "Validar" verificados.'
