@@ -1,0 +1,181 @@
+{
+  "_comment": "Delta declarativo para derivar la matriz Authorize.net desde el L1 Stripe (docs/gateway-pg/stripe/normalized-test-cases.json). Consumido por scripts/ai/derive-gateway-matrix.mjs. Fuentes: docs/gateway-pg/authorize/TRACEABILITY.md (§3.1 pins, §3.2 no-migrables, §6 rangos).",
+  "gateway": "authorize",
+  "gateway_label": "Authorize.net",
+  "id_prefix": "TS-AUTHORIZE-TC",
+  "tag": "@authorize",
+  "module_slug": "gateway-pg-authorize",
+  "docs_dir": "docs/gateway-pg/authorize",
+  "matrix_files": [
+    "docs/gateway-pg/authorize/matriz_cases.md",
+    "docs/gateway-pg/authorize/matriz_cases2.md"
+  ],
+  "l1_output": "docs/gateway-pg/authorize/normalized-test-cases.json",
+  "title_substitutions": [
+    ["Stripe", "Authorize.net"],
+    ["(4242 4242 4242 4242)", "(Visa 4111…1111 + CVV 900)"],
+    ["4242 4242 4242 4242", "Visa 4111…1111 + CVV 900"],
+    ["(4000 0000 0000 0002)", "(ZIP 46282)"],
+    ["4000 0000 0000 0002", "ZIP 46282"]
+  ],
+  "intent_cards": {
+    "HAPPY_NO_AUTH": "`AUTHORIZE_CARDS.SUCCESS`",
+    "DECLINE_AUTHORIZE": "`AUTHORIZE_CARDS.DECLINE_GENERIC`",
+    "DECLINE_INVALID_CVC": "`AUTHORIZE_CARDS.DECLINE_CVV`"
+  },
+  "excluded_source_ids": {
+    "TS-STRIPE-TC1059": "§3.2 — insufficient funds 9995 / decline-en-capture: Authorize sandbox no expone decline diferenciado ni decline-en-capture",
+    "TS-STRIPE-TC1083": "§3.2 — fondos insuficientes: 46282 es el único decline genérico en Authorize",
+    "TS-STRIPE-TC1084": "§3.2 — lost_card no expuesto por Authorize sandbox",
+    "TS-STRIPE-TC1086": "§3.2 — stolen_card no expuesto por Authorize sandbox",
+    "TS-STRIPE-TC1087": "§3.2 — Radar cvcFail: parcialmente cubierto por TS-AUTHORIZE-TC1083 (CVV mismatch), sin distinción antifraude",
+    "TS-STRIPE-TC1088": "§3.2 — Radar riesgo máximo: Authorize sin Radar",
+    "TS-STRIPE-TC1089": "§3.2 — Radar tarjeta siempre bloqueada: Authorize sin Radar",
+    "TS-STRIPE-TC1090": "§3.2 — Radar postal fail: cubierto parcialmente por AVS TS-AUTHORIZE-TC1099 (NO derivar — TC propio ya existe)",
+    "TS-STRIPE-TC1091": "§3.2 — Radar dirección no disponible: cubierto parcialmente por AVS U (NO derivar — TC propio ya existe)"
+  },
+  "excluded_title_patterns": [
+    { "pattern": "always_authenticate", "reason": "tarjeta 3184 fuerza challenge 3DS (caso 3DS sin tag @3ds) — Authorize no expone 3DS" },
+    { "pattern": "cargo a bordo – fondos insuficientes", "reason": "análogo §3.2 TC1083 para colaborador/empresa — sin decline diferenciado en Authorize" },
+    { "pattern": "tarjeta reportada como perdida", "reason": "análogo §3.2 TC1084 — lost_card no expuesto" },
+    { "pattern": "tarjeta robada", "reason": "análogo §3.2 TC1086 — stolen_card no expuesto" },
+    { "pattern": "(antifraude)", "reason": "análogo §3.2 TC1087..TC1091 — Authorize sin Radar; antifraude propio ya cubierto por TCs AVS exclusivos (§3.3)" }
+  ],
+  "pinned_pairs": {
+    "_comment": "§3.1 TRACEABILITY.md authorize — equivalencias directas Stripe↔Authorize. NUNCA renumerar.",
+    "TS-STRIPE-TC1049": "TS-AUTHORIZE-TC1011",
+    "TS-STRIPE-TC1050": "TS-AUTHORIZE-TC1012",
+    "TS-STRIPE-TC1059": "TS-AUTHORIZE-TC1016",
+    "TS-STRIPE-TC1033": "TS-AUTHORIZE-TC1051",
+    "TS-STRIPE-TC1035": "TS-AUTHORIZE-TC1052",
+    "TS-STRIPE-TC1041": "TS-AUTHORIZE-TC1053",
+    "TS-STRIPE-TC1034": "TS-AUTHORIZE-TC1054",
+    "TS-STRIPE-TC1036": "TS-AUTHORIZE-TC1055",
+    "TS-STRIPE-TC1065": "TS-AUTHORIZE-TC1061",
+    "TS-STRIPE-TC1067": "TS-AUTHORIZE-TC1062",
+    "TS-STRIPE-TC1066": "TS-AUTHORIZE-TC1063",
+    "TS-STRIPE-TC1068": "TS-AUTHORIZE-TC1064",
+    "TS-STRIPE-TC1009": "TS-AUTHORIZE-TC1071",
+    "TS-STRIPE-TC1017": "TS-AUTHORIZE-TC1075",
+    "TS-STRIPE-TC1019": "TS-AUTHORIZE-TC1076",
+    "TS-STRIPE-TC1081": "TS-AUTHORIZE-TC1081",
+    "TS-STRIPE-TC1082": "TS-AUTHORIZE-TC1082",
+    "TS-STRIPE-TC1085": "TS-AUTHORIZE-TC1083",
+    "TS-STRIPE-TC1096": "TS-AUTHORIZE-TC1096",
+    "TS-STRIPE-TC1111": "TS-AUTHORIZE-TC1111",
+    "TS-STRIPE-TC1122": "TS-AUTHORIZE-TC1221",
+    "TS-STRIPE-P2-TC001": "TS-AUTHORIZE-TC1201",
+    "TS-STRIPE-P2-TC002": "TS-AUTHORIZE-TC1202",
+    "TS-STRIPE-P2-TC003": "TS-AUTHORIZE-TC1203",
+    "TS-STRIPE-P2-TC004": "TS-AUTHORIZE-TC1204",
+    "TS-STRIPE-P2-TC090": "TS-AUTHORIZE-TC1205"
+  },
+  "extra_pins": {
+    "_comment": "Equivalencias directas NO listadas en §3.1 pero ya existentes en las matrices Authorize (config espejo TC1001..1008 confirmado por xray-keys.ts; declines cargo a bordo).",
+    "TS-STRIPE-TC1001": "TS-AUTHORIZE-TC1001",
+    "TS-STRIPE-TC1002": "TS-AUTHORIZE-TC1002",
+    "TS-STRIPE-TC1003": "TS-AUTHORIZE-TC1003",
+    "TS-STRIPE-TC1004": "TS-AUTHORIZE-TC1004",
+    "TS-STRIPE-TC1005": "TS-AUTHORIZE-TC1005",
+    "TS-STRIPE-TC1006": "TS-AUTHORIZE-TC1006",
+    "TS-STRIPE-TC1007": "TS-AUTHORIZE-TC1007",
+    "TS-STRIPE-TC1008": "TS-AUTHORIZE-TC1008",
+    "TS-STRIPE-TC1097": "TS-AUTHORIZE-TC1097",
+    "TS-STRIPE-TC1100": "TS-AUTHORIZE-TC1098",
+    "TS-STRIPE-TC1112": "TS-AUTHORIZE-TC1112"
+  },
+  "id_groups": {
+    "G1": { "range": [1001, 1099], "semantics": "configuración + alta carrier (§6 TRACEABILITY)" },
+    "G2": { "range": [1100, 1130], "semantics": "alta App Pax + cargo a bordo" },
+    "G3": { "range": [1200, 1299], "semantics": "Parte 2 (wallet, stored creds, refund, void, recurring, flujos portal)" },
+    "G4": { "range": [1300, 1399], "semantics": "E2E híbridos" }
+  },
+  "section_map": {
+    "Alta de Viaje desde App Pax – Usuario Personal": {
+      "group": "G2",
+      "mode": "append",
+      "file": "docs/gateway-pg/authorize/matriz_cases.md",
+      "heading": "## 5. Alta de Viaje desde App Pax – Usuario Personal (Android)",
+      "columns": ["card"]
+    },
+    "Alta de Viaje desde App Pax – Usuario Business / Colaborador": {
+      "group": "G2",
+      "mode": "append",
+      "file": "docs/gateway-pg/authorize/matriz_cases.md",
+      "heading": "## 6. Alta de Viaje desde App Pax – Usuario Business / Colaborador",
+      "columns": ["card"]
+    },
+    "Alta de Viaje desde Carrier – Usuario Personal": {
+      "group": "G1",
+      "mode": "append",
+      "file": "docs/gateway-pg/authorize/matriz_cases.md",
+      "heading": "### 2.1 Happy paths — sin antifraude (CVV match)",
+      "columns": ["card", "hold", "outcome"]
+    },
+    "Cargo a Bordo – Tarjeta de Crédito – Usuario Empresa Individuo (desde Carrier)": {
+      "group": "G2",
+      "mode": "append",
+      "file": "docs/gateway-pg/authorize/matriz_cases.md",
+      "heading": "## 9. Cargo a Bordo – Tarjeta de Crédito – Usuario Empresa Individuo (desde Carrier)",
+      "columns": []
+    },
+    "Flujo Quote – Alta de Viaje": {
+      "group": "G3",
+      "mode": "create",
+      "file": "docs/gateway-pg/authorize/matriz_cases2.md"
+    },
+    "Viajes Recurrentes – Portal Contractor (Usuario Colaboradores)": {
+      "group": "G3",
+      "mode": "create",
+      "file": "docs/gateway-pg/authorize/matriz_cases2.md"
+    },
+    "Viajes Recurrentes – Portal Carrier (Usuario Colaboradores)": {
+      "group": "G3",
+      "mode": "create",
+      "file": "docs/gateway-pg/authorize/matriz_cases2.md"
+    },
+    "Viajes Recurrentes – Portal Carrier (Usuario Personal)": {
+      "group": "G3",
+      "mode": "create",
+      "file": "docs/gateway-pg/authorize/matriz_cases2.md"
+    },
+    "Viajes Recurrentes – Portal Carrier (Usuario Empresa Individuo)": {
+      "group": "G3",
+      "mode": "create",
+      "file": "docs/gateway-pg/authorize/matriz_cases2.md"
+    },
+    "Reactivación de Viajes Cancelados (desde Carrier – Usuario Empresa Individuo)": {
+      "group": "G3",
+      "mode": "create",
+      "file": "docs/gateway-pg/authorize/matriz_cases2.md"
+    },
+    "Clonación de Viajes Cancelados (desde Carrier – Usuario Empresa Individuo)": {
+      "group": "G3",
+      "mode": "create",
+      "file": "docs/gateway-pg/authorize/matriz_cases2.md"
+    },
+    "Clonación de Viajes Finalizados (desde Carrier – Usuario Empresa Individuo)": {
+      "group": "G3",
+      "mode": "create",
+      "file": "docs/gateway-pg/authorize/matriz_cases2.md"
+    },
+    "Edición de Viajes Programados (desde Carrier – Usuario Empresa Individuo)": {
+      "group": "G3",
+      "mode": "create",
+      "file": "docs/gateway-pg/authorize/matriz_cases2.md"
+    },
+    "Edición en Conflicto (desde Carrier – Usuario Empresa Individuo)": {
+      "group": "G3",
+      "mode": "create",
+      "file": "docs/gateway-pg/authorize/matriz_cases2.md"
+    }
+  },
+  "create_anchor": {
+    "docs/gateway-pg/authorize/matriz_cases2.md": {
+      "before_heading": "## 11. Trazabilidad cruzada",
+      "numbering_start": 11,
+      "renumber_anchor_to": 21
+    }
+  },
+  "preconditions_extra": []
+}

@@ -1,0 +1,172 @@
+{
+  "_comment": "Delta declarativo para derivar la matriz eBizCharge desde el L1 Stripe. Consumido por scripts/ai/derive-gateway-matrix.mjs. Exclusiones clase 3 (§3.2 authorize/TRACEABILITY.md) aplican a AMBAS pasarelas por decisión del briefing Fase 4. IDs nuevos desde TC1050+ (rangos espejo de authorize §6 — ver sección nueva en docs/gateway-pg/ebizcharge/TRACEABILITY.md).",
+  "gateway": "ebizcharge",
+  "gateway_label": "eBizCharge",
+  "id_prefix": "TS-EBIZ-TC",
+  "tag": "@ebizcharge",
+  "module_slug": "gateway-pg-ebizcharge",
+  "docs_dir": "docs/gateway-pg/ebizcharge",
+  "matrix_files": ["docs/gateway-pg/ebizcharge/matriz_cases.md"],
+  "l1_output": "docs/gateway-pg/ebizcharge/normalized-test-cases.json",
+  "title_substitutions": [
+    ["Stripe", "eBizCharge"],
+    ["(4242 4242 4242 4242)", "(Visa 4000100011112224)"],
+    ["4242 4242 4242 4242", "Visa 4000100011112224"],
+    ["(4000 0000 0000 0002)", "(Do Not Honor 4000300211112228)"],
+    ["4000 0000 0000 0002", "Do Not Honor 4000300211112228"]
+  ],
+  "intent_cards": {
+    "HAPPY_NO_AUTH": "`EBIZ_CARDS.SUCCESS`",
+    "DECLINE_AUTHORIZE": "`EBIZ_CARDS.DECLINE_DO_NOT_HONOR`",
+    "DECLINE_INVALID_CVC": "`EBIZ_CARDS.DECLINE_CVV`"
+  },
+  "excluded_source_ids": {
+    "TS-STRIPE-TC1059": "§3.2 — decline-en-capture no distinguible en eBiz sandbox (regla briefing: clase 3 aplica a ambas pasarelas)",
+    "TS-STRIPE-TC1083": "§3.2 — clase 3 ambas pasarelas (nota: eBiz sí expone code 51 — ya cubierto como caso exclusivo TS-EBIZ-TC1012)",
+    "TS-STRIPE-TC1084": "§3.2 — lost card sin trigger sandbox eBiz documentado",
+    "TS-STRIPE-TC1086": "§3.2 — stolen card sin trigger sandbox eBiz documentado",
+    "TS-STRIPE-TC1087": "§3.2 — Radar cvcFail: eBiz Fraud Profiler es modelo distinto (cubierto como exclusivo TS-EBIZ-TC1030/1031)",
+    "TS-STRIPE-TC1088": "§3.2 — Radar riesgo máximo: sin equivalente 1:1 (Fraud Profiler exclusivo TS-EBIZ-TC1030/1031)",
+    "TS-STRIPE-TC1089": "§3.2 — Radar tarjeta siempre bloqueada: sin equivalente 1:1",
+    "TS-STRIPE-TC1090": "§3.2 — Radar postal fail: cubierto por serie AVS eBiz (referencia, sin derivar)",
+    "TS-STRIPE-TC1091": "§3.2 — Radar dirección no disponible: cubierto por serie AVS eBiz (referencia, sin derivar)"
+  },
+  "excluded_title_patterns": [
+    { "pattern": "always_authenticate", "reason": "tarjeta 3184 fuerza challenge 3DS (caso 3DS sin tag @3ds) — eBiz no expone 3DS" },
+    { "pattern": "cargo a bordo – fondos insuficientes", "reason": "análogo §3.2 TC1083 para colaborador/empresa (clase 3 ambas pasarelas)" },
+    { "pattern": "tarjeta reportada como perdida", "reason": "análogo §3.2 TC1084" },
+    { "pattern": "tarjeta robada", "reason": "análogo §3.2 TC1086" },
+    { "pattern": "(antifraude)", "reason": "análogo §3.2 TC1087..TC1091 — Fraud Profiler eBiz documentado como exclusivo (TS-EBIZ-TC1030/1031)" }
+  ],
+  "pinned_pairs": {
+    "_comment": "Sin equivalencias directas activas: TS-EBIZ-TC1040 espeja TS-STRIPE-TC1049 (inactivo phase2) y TS-EBIZ-TC1041 espeja TS-STRIPE-TC1059 (excluido §3.2). Los 17 TCs existentes TS-EBIZ-TC1001..1041 son outcome-level / exclusivos y NO se tocan."
+  },
+  "extra_pins": {},
+  "id_groups": {
+    "G1": { "range": [1050, 1099], "semantics": "configuración + alta carrier (espejo authorize §6; 1001..1049 reservado outcome-level preexistente)" },
+    "G2": { "range": [1100, 1130], "semantics": "alta App Pax + cargo a bordo (espejo)" },
+    "G3": { "range": [1200, 1299], "semantics": "Parte 2 — contractor, quote, recurrentes, operaciones (espejo)" },
+    "G4": { "range": [1300, 1399], "semantics": "E2E híbridos (reservado)" }
+  },
+  "section_map": {
+    "Configuración de Pasarela Stripe (Magiis App Store)": {
+      "group": "G1",
+      "mode": "create",
+      "file": "docs/gateway-pg/ebizcharge/matriz_cases.md",
+      "note": "Precondición extra eBiz: vincular la pasarela requiere `zipCode` del carrier (además de las credenciales sandbox)."
+    },
+    "Alta de Viaje desde App Pax – Usuario Personal": {
+      "group": "G2",
+      "mode": "create",
+      "file": "docs/gateway-pg/ebizcharge/matriz_cases.md",
+      "note": "Precondición extra eBiz: el alta de tarjeta requiere `placeId` del pax."
+    },
+    "Alta de Viaje desde App Pax – Usuario Business / Colaborador": {
+      "group": "G2",
+      "mode": "create",
+      "file": "docs/gateway-pg/ebizcharge/matriz_cases.md",
+      "note": "Precondición extra eBiz: el alta de tarjeta requiere `placeId` del pax."
+    },
+    "Alta de Viaje desde Carrier – Usuario Colaborador o Asociado de Contractor": {
+      "group": "G1",
+      "mode": "create",
+      "file": "docs/gateway-pg/ebizcharge/matriz_cases.md",
+      "note": "Precondición extra eBiz: el alta de tarjeta requiere `placeId` del pax."
+    },
+    "Alta de Viaje desde Carrier – Usuario Personal": {
+      "group": "G1",
+      "mode": "create",
+      "file": "docs/gateway-pg/ebizcharge/matriz_cases.md",
+      "note": "Precondición extra eBiz: el alta de tarjeta requiere `placeId` del pax."
+    },
+    "Alta de Viaje desde Carrier – Usuario Empresa Individuo": {
+      "group": "G1",
+      "mode": "create",
+      "file": "docs/gateway-pg/ebizcharge/matriz_cases.md",
+      "note": "Precondición extra eBiz: el alta de tarjeta requiere `placeId` del pax."
+    },
+    "Cargo a Bordo – Tarjeta de Crédito – Usuario Personal (desde Carrier)": {
+      "group": "G2",
+      "mode": "create",
+      "file": "docs/gateway-pg/ebizcharge/matriz_cases.md"
+    },
+    "Cargo a Bordo – Tarjeta de Crédito – Usuario Colaborador o Asociado de Contractor (desde Carrier)": {
+      "group": "G2",
+      "mode": "create",
+      "file": "docs/gateway-pg/ebizcharge/matriz_cases.md"
+    },
+    "Cargo a Bordo – Tarjeta de Crédito – Usuario Empresa Individuo (desde Carrier)": {
+      "group": "G2",
+      "mode": "create",
+      "file": "docs/gateway-pg/ebizcharge/matriz_cases.md"
+    },
+    "Portal Contractor – Alta de Tarjetas y Vinculación": {
+      "group": "G3",
+      "mode": "create",
+      "file": "docs/gateway-pg/ebizcharge/matriz_cases.md",
+      "note": "Precondición extra eBiz: el alta de tarjeta requiere `placeId` del pax."
+    },
+    "Flujo Quote – Alta de Viaje": {
+      "group": "G3",
+      "mode": "create",
+      "file": "docs/gateway-pg/ebizcharge/matriz_cases.md"
+    },
+    "Viajes Recurrentes – Portal Contractor (Usuario Colaboradores)": {
+      "group": "G3",
+      "mode": "create",
+      "file": "docs/gateway-pg/ebizcharge/matriz_cases.md"
+    },
+    "Viajes Recurrentes – Portal Carrier (Usuario Colaboradores)": {
+      "group": "G3",
+      "mode": "create",
+      "file": "docs/gateway-pg/ebizcharge/matriz_cases.md"
+    },
+    "Viajes Recurrentes – Portal Carrier (Usuario Personal)": {
+      "group": "G3",
+      "mode": "create",
+      "file": "docs/gateway-pg/ebizcharge/matriz_cases.md"
+    },
+    "Viajes Recurrentes – Portal Carrier (Usuario Empresa Individuo)": {
+      "group": "G3",
+      "mode": "create",
+      "file": "docs/gateway-pg/ebizcharge/matriz_cases.md"
+    },
+    "Reactivación de Viajes Cancelados (desde Carrier – Usuario Empresa Individuo)": {
+      "group": "G3",
+      "mode": "create",
+      "file": "docs/gateway-pg/ebizcharge/matriz_cases.md"
+    },
+    "Clonación de Viajes Cancelados (desde Carrier – Usuario Empresa Individuo)": {
+      "group": "G3",
+      "mode": "create",
+      "file": "docs/gateway-pg/ebizcharge/matriz_cases.md"
+    },
+    "Clonación de Viajes Finalizados (desde Carrier – Usuario Empresa Individuo)": {
+      "group": "G3",
+      "mode": "create",
+      "file": "docs/gateway-pg/ebizcharge/matriz_cases.md"
+    },
+    "Edición de Viajes Programados (desde Carrier – Usuario Empresa Individuo)": {
+      "group": "G3",
+      "mode": "create",
+      "file": "docs/gateway-pg/ebizcharge/matriz_cases.md"
+    },
+    "Edición en Conflicto (desde Carrier – Usuario Empresa Individuo)": {
+      "group": "G3",
+      "mode": "create",
+      "file": "docs/gateway-pg/ebizcharge/matriz_cases.md"
+    }
+  },
+  "create_anchor": {
+    "docs/gateway-pg/ebizcharge/matriz_cases.md": {
+      "before_heading": "## Fuera de alcance (N/A en eBizCharge)",
+      "numbering_start": null,
+      "renumber_anchor_to": null
+    }
+  },
+  "preconditions_extra": [
+    "Alta de tarjeta (wallet / alta de viaje con tarjeta nueva): requiere `placeId` del pax.",
+    "Vinculación de pasarela desde Magiis App Store: requiere `zipCode` del carrier.",
+    "Trigger de outcome = número de tarjeta (exp fija 0930); categorías sandbox: approved / declines / CVV2 / fraud."
+  ]
+}
