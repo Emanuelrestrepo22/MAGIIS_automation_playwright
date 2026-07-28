@@ -27,6 +27,9 @@
  *     con TS-STRIPE-TC10xx).
  *
  * Trazabilidad:
+ *   - TC ID de matriz POR PASARELA desde `XRAY_KEYS_BY_GATEWAY[gateway].holdTcIds
+ *     .personalHappyHoldOn` → va en el TÍTULO del test (stripe: TS-STRIPE-TC1049,
+ *     authorize: TS-AUTHORIZE-TC1011; eBiz/MP sin TC 1:1 en matriz → sin prefijo).
  *   - Mismo dato lógico que TS-STRIPE-TC1049 (hold ON + tarjeta 4242, sin 3DS),
  *     pero estructurado para demostrar el patrón cross-gateway.
  *   - authorize ejercita la card `4111 1111 1111 1111` con CVV `900` (SUCCESS sandbox);
@@ -42,6 +45,7 @@
 import { test, expect } from '@TestFixture';
 import { resolveCard, type GatewayName } from '@fixtures/gateways/_shared';
 import { journeyDefaultsFor } from '@features/gateway-pg/data/journey-defaults';
+import { XRAY_KEYS_BY_GATEWAY, type XrayIssueKey } from '@features/gateway-pg/data/xray-keys';
 import { resolveActiveGateways } from '@features/gateway-pg/helpers/adapters';
 import { CarrierHoldSteps, type HoldScenario, type HoldRunOptions } from '@steps/index';
 
@@ -68,10 +72,25 @@ const HAPPY_NO_AUTH_OPTIONS: Omit<HoldRunOptions, 'hold'> = {
 test.use({ storageState: undefined });
 test.describe.configure({ timeout: 180_000 });
 
-test.describe('[BL-028][parametrized] Hold happy path sin 3DS @gateway @hold @regression', { annotation: [{ type: 'tms', description: 'MG-158' }] }, () => {
+// FIX trazabilidad: el describe RAÍZ tenía `annotation: [{ type: 'tms', description: 'MG-158' }]`,
+// pero MG-158 es la key del área E (Hold) de STRIPE y este describe envuelve el loop sobre
+// N pasarelas → los resultados de authorize/eBiz/MP se reportaban al reporter Xray contra un
+// Test de Stripe (resultados pisados/contaminados; misma clase de colisión ya corregida en MG-220).
+// Ahora la key se resuelve POR PASARELA dentro del loop desde el registry. Como todas las keys
+// `hold` son `null` (no existen Tests Xray espejo), ninguna pasarela emite annotation y el gap
+// queda unmapped VISIBLE en vez de mal atribuido. El área sigue cubierta estructuralmente por
+// el `@atc('MG-158')` de `CarrierTravelManagementPage`, que es mapeo por área y no por caso.
+test.describe('[BL-028][parametrized] Hold happy path sin 3DS @gateway @hold @regression', () => {
 	for (const gateway of ACTIVE_GATEWAYS) {
+		const registry = XRAY_KEYS_BY_GATEWAY[gateway];
+		const tcId = registry.holdTcIds.personalHappyHoldOn;
+		const key: XrayIssueKey | null = registry.hold.personalHappyHoldOn;
+		// Key null = sin issue Xray aún → SIN annotation (unmapped visible; no inventar keys).
+		const details = key ? { annotation: [{ type: 'tms', description: key }] } : {};
+		const title = `${tcId ? `[${tcId}] ` : ''}crea viaje con HAPPY_NO_AUTH y queda visible en grilla "Por asignar"`;
+
 		test.describe(`gateway=${gateway}`, () => {
-			test('crea viaje con HAPPY_NO_AUTH y queda visible en grilla "Por asignar"', async ({ page }) => {
+			test(title, details, async ({ page }) => {
 				const card = resolveCard({ gateway, intent: 'HAPPY_NO_AUTH' });
 
 				// Sanity: el resolver devolvió una tarjeta del gateway esperado y sin 3DS
