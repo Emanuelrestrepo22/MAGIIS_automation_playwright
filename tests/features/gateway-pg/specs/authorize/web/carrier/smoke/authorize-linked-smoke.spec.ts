@@ -33,7 +33,14 @@ test.describe(
 
 			await test.step('Then: la card Authorize.Net muestra estado vinculado (Unlink/Desvincular)', async () => {
 				await expect(appStore.cardFor('authorize'), 'la card Authorize.Net debe estar visible').toBeVisible({ timeout: 20_000 });
-				expect(await appStore.readState('authorize'), 'Authorize debe figurar vinculada (Unlink/Desvincular)').toBe('linked');
+				// Retry-window sobre readState: el App Store renderiza un estado OPTIMISTA que el
+				// fetch real corrige (~750ms; más bajo carga — ver root-cause en el POM goto()).
+				// Confirmado en vivo 2026-07-27: one-shot leía 'linkable' con la pasarela vinculada
+				// (el probe simultáneo veía "Desvincular"). Oráculo MÁS fuerte: exige 'linked'
+				// sostenido dentro de la ventana, nunca acepta el frame optimista como veredicto.
+				await expect(async () => {
+					expect(await appStore.readState('authorize'), 'Authorize debe figurar vinculada (Unlink/Desvincular)').toBe('linked');
+				}).toPass({ timeout: 20_000 });
 			});
 		});
 	},
