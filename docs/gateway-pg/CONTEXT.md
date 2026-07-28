@@ -22,6 +22,42 @@ Sirve como referencia para:
 | **MercadoPago** | 🟡 Docs + datos listos | `tests/fixtures/gateways/mercado-pago/` | Pendiente BL-026 | [`docs/gateway-pg/mercado-pago/`](./mercado-pago/) | Slot reservado en `specs/mercado-pago/` |
 | **eBizCharge** | 🟡 Docs + datos listos · matriz derivada Fase 4 (L1 = 111 TCs sin 3DS) | `tests/fixtures/gateways/ebizcharge/` | Pendiente BL-027 | [`docs/gateway-pg/ebizcharge/`](./ebizcharge/) | `specs/ebizcharge/` (CFG) |
 
+## Cómo leer la cobertura del ID-MAP (y qué NO mide)
+
+> ⚠️ **`with_specs` NO es cobertura automatizada.** Cuenta TCs de la matriz que tienen *algún* spec asociado — sin distinguir un test que ejecuta aserciones de un `test.fixme` que sólo declara el caso. Leerlo como "% automatizado" infla el número.
+
+`docs/gateway-pg/id-map.json` → `summary.<gateway>` (renders por pasarela en `docs/gateway-pg/<gateway>/ID-MAP.md`):
+
+| Campo | Qué mide | Qué NO mide |
+| --- | --- | --- |
+| `total` | TCs enumerados en el L1 de la pasarela | nada sobre ejecución |
+| `with_mg_key` | TCs con Test Xray espejo (key MG) | si ese Test tiene corridas |
+| `with_specs` | TCs con al menos un spec asociado | **si el spec ejecuta o es placeholder** |
+| `status` (`confirmed` / `needs-review` / `unmapped`) | confianza del *join* TS-ID ↔ key ↔ spec | ejecutabilidad |
+
+**Para leer cobertura automatizada real hay que descontar los `test.fixme`.** Dos formas de placeholder coexisten y se miden distinto:
+
+1. **`test.fixme(title, …)` declarado** (factories `hold` / `cargo`) — el título lleva el marcador `[FIXME: <motivo>]`, así que `npx playwright test --list` lo delata. Trazable por TC ID sin acreditar un PASS.
+2. **`test.fixme(true, …)` en el cuerpo** (specs Stripe de `operaciones`, `recurrentes`, `quote`, y los 3 casos OAuth de `config`) — el test se colecciona con título normal y **`--list` NO lo distingue**; sólo se ve leyendo el archivo.
+
+Medición 2026-07-28 (HEAD `22ce03c`, ambiente `apps-test` caído — verificación 100% estática):
+
+| Pasarela | TCs L1 | `with_specs` (crudo) | Placeholders `fixme` | Ejecutable neto |
+| --- | --- | --- | --- | --- |
+| Stripe | 224 | 169 (75,4 %) | 59 | **112 (50,0 %)** |
+| Authorize.net | 164 | 25 (15,2 %) | 8 | **22 (13,4 %)** |
+| eBizCharge | 111 | 18 (16,2 %) | 7 | **16 (14,4 %)** — 0 corribles hoy: `EBIZ_MERCHANT_USER` / `EBIZ_MERCHANT_PASSWORD` / `EBIZ_SECURITY_KEY` vacías en `.env` y ausentes de `.env.test`, así que `adapter.isConfigured()` saltea la suite completa |
+
+Además el join tiene sesgo en ambas direcciones, medido contra `--list`:
+
+- **Sub-acredita** las factories *thin*: los 9 TCs de cargo por pasarela se generan desde `cargoTcIds`, pero el docblock del consumer sólo escribe el primer TS-ID completo (el resto abreviado `TC1082`), así que el scan por texto acredita 1 de 9 (Authorize `TC1082/1083/1096/1097/1098/1105/1111/1112` y eBiz `TC1109`-`TC1116` quedan fuera).
+- **Sobre-acredita** cuando el docblock menciona TCs que la llamada a la factory no genera: Authorize `TC1001/1004/1007` y eBiz `TC1050/1053/1056` figuran con spec pero la factory CFG no los emite para esas pasarelas.
+- Los 8 TCs Stripe `TC1017`-`TC1024` sí tienen test real (`e2e-mobile/apppax-business-hold-*`) pero su título no lleva el TS-ID: son cobertura real invisible a un chequeo por título.
+
+**Regla al reportar**: nunca citar `with_specs` como "% automatizado" ni "% de ACs verificados" como completitud. Un `fixme` es cobertura *declarada y trazable*, no ejecutada.
+
+*Follow-up*: el generador `scripts/ai/build-id-map.mjs` puede emitir la distinción como dos columnas (`with_executable_specs` / `with_fixme_only_specs` + `spec_coverage` por fila). Incluso con eso, el join por texto seguirá sin ver un `test.fixme` interno — los placeholders de la clase 2 (Stripe `operaciones`/`recurrentes`/`quote`) hay que descontarlos a mano.
+
 ## Modelo arquitectónico (umbrella multi-gateway)
 
 > **Principio rector** (afirmado por el líder, sesión 2026-05-13):
