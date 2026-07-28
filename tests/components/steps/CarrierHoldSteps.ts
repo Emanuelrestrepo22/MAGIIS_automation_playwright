@@ -217,9 +217,10 @@ export class CarrierHoldSteps extends UiBase {
 	 *     resaltada): 'linked' continúa; 'validation-unavailable' → test.skip (limitación sandbox
 	 *     MP en TEST — incluye el error explícito "Error al validar tarjeta", su manifestación
 	 *     documentada; UAT-only); 'validation-failed' RESERVADO (guard future-proof, hoy inerte).
-	 *   - authorize/ebizcharge: "Validar" + oráculo "Tarjeta válida" (verificado live Authorize).
+	 *   - authorize/ebizcharge: "Validar" + oráculo de ESTADO (Forma de Pago resuelta a
+	 *     "*** <last4>" — live 2026-07-28, ver CarrierNewTravelPage.validateNativeCard).
 	 */
-	private async validateNativeGatewayCard(gateway: GatewayName): Promise<void> {
+	private async validateNativeGatewayCard(gateway: GatewayName, cardLast4: string): Promise<void> {
 		if (gateway === 'mercado-pago') {
 			const mpLink = await validateAndSelectMercadoPagoCard(this.page);
 			// Guard future-proof (hoy INERTE): 'validation-failed' está RESERVADO a evidencia live
@@ -233,7 +234,7 @@ export class CarrierHoldSteps extends UiBase {
 			);
 			return;
 		}
-		await this.travel.validateNativeCard();
+		await this.travel.validateNativeCard(cardLast4);
 	}
 
 	/**
@@ -355,7 +356,7 @@ export class CarrierHoldSteps extends UiBase {
 					} else {
 						await this.travel.selectPaymentMethod('Preautorizada');
 						await cardFormFor(gateway).fill(this.page, card);
-						await this.validateNativeGatewayCard(gateway);
+						await this.validateNativeGatewayCard(gateway, cardLast4);
 					}
 				}
 			});

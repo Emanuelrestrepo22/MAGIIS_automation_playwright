@@ -235,19 +235,26 @@ export class CarrierNewTravelPage extends UiBase {
 	}
 
 	/**
-	 * Click en "Validar" del form NATIVO Angular y espera el oráculo de tarjeta válida
-	 * ("Tarjeta válida" / "Valid card") — VERIFICADO en vivo para Authorize (4111/900/10001);
-	 * eBiz comparte el form (oráculo asumido, TODO live). Para Stripe Elements usar el flujo
-	 * `fillMinimum`/`selectCardByLast4` (valida vía `clickValidateCard` del POM legacy).
+	 * Click en "Validar" del form NATIVO Angular y espera el oráculo de tarjeta validada.
+	 *
+	 * ORÁCULO PRIMARIO = ESTADO (live 2026-07-28): al validar OK, el form nativo se colapsa
+	 * y la Forma de Pago queda RESUELTA a "Tarjeta de crédito ... *** <last4>" — señal
+	 * persistente. Verificado por API (card id nueva creada en paymentMethodsByPax) bajo
+	 * Live Mode + política AVS estricta de la cuenta sandbox Authorize, donde el toast
+	 * "Tarjeta válida" (oráculo anterior, verificado 2026-07-27 con la cuenta en Test Mode)
+	 * dejó de observarse: la validación GUARDABA y seleccionaba la tarjeta pero el assert
+	 * de texto fallaba — falso negativo por oráculo efímero. Estado > toast.
+	 * Para Stripe Elements usar `fillMinimum`/`selectCardByLast4` (POM legacy).
 	 */
 	@step
-	async validateNativeCard(): Promise<void> {
+	async validateNativeCard(last4: string): Promise<void> {
 		await this.page.getByRole('button', { name: /^(Valid|Validar)$/i }).click();
 		// 45s: la validación viaja al sandbox del PSP (Authorize.Net) y el RTT excede 20s
-		// de forma intermitente bajo carga — observado en vivo 2026-07-27 (2 flakes en runs
-		// back-to-back con el MISMO oráculo; verde en ventana tranquila). Espera por estado
-		// observable, oráculo intacto.
-		await expect(this.page.getByText(/Tarjeta v[áa]lida|Valid card|Card valid/i).first()).toBeVisible({ timeout: 45_000 });
+		// de forma intermitente bajo carga (observado 2026-07-27).
+		await expect(
+			this.page.getByText(new RegExp(`\\*+\\s*${last4}`)).first(),
+			`Forma de Pago resuelta a la tarjeta *** ${last4} tras Validar (estado post-validación)`
+		).toBeVisible({ timeout: 45_000 });
 	}
 
 	/**
