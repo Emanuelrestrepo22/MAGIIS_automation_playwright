@@ -35,6 +35,7 @@ import { cardFormFor } from '@ui/carrier/card-forms';
 import { resolveCard } from '@fixtures/gateways/_shared';
 import { debugLog } from '@helpers/index';
 import { getGatewayPgAdapter } from '@features/gateway-pg/helpers/adapters';
+import { gatewayTag } from '@features/gateway-pg/helpers/adapters/gateway-tag';
 import { loginAsDispatcher } from '@features/gateway-pg/fixtures/gateway.fixtures';
 import { validateAndSelectMercadoPagoCard } from '@features/gateway-pg/helpers/mercadoPago.helpers';
 import { getPassengerId, getPassengerCards, deletePassengerCard } from '@features/gateway-pg/helpers/card-precondition';
@@ -98,11 +99,9 @@ export function defineWalletAddCardSuite(gateway: GatewayName, options: WalletAd
 	// Key null (eBiz/MP sin issue WAL aún) → SIN annotation (no inventar keys).
 	const describeDetails = addCardKey ? { annotation: [{ type: 'tms', description: addCardKey }] } : {};
 
-	// Tag de pasarela SIN guiones (S9): 'mercado-pago' → '@mercadopago' — los scripts npm
-	// por pasarela grepean el tag normalizado; el identifier de código NO cambia.
-	const gatewayTag = gateway.replace(/-/g, '');
-
-	test.describe(`Gateway PG · Carrier · ${adapter.displayName} — alta de tarjeta pre-autorizada @gateway @${gatewayTag} @wallet @regression`, describeDetails, () => {
+	// Tag de pasarela SIN guiones (S9) — derivado por `gatewayTag()` (SoT única en
+	// helpers/adapters/gateway-tag.ts, verificada por assertGatewayTagContract).
+	test.describe(`Gateway PG · Carrier · ${adapter.displayName} — alta de tarjeta pre-autorizada @gateway ${gatewayTag(gateway)} @wallet @regression`, describeDetails, () => {
 		test.describe.configure({ mode: 'serial', timeout: 180_000 });
 		// El fixture KATA no define la opción `role` — login explícito vía loginAsDispatcher.
 		test.use({ storageState: { cookies: [], origins: [] } });

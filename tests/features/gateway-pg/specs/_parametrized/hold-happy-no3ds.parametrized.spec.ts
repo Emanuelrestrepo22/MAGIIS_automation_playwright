@@ -43,6 +43,7 @@ import { test, expect } from '@TestFixture';
 import { resolveCard, type GatewayName } from '@fixtures/gateways/_shared';
 import { journeyDefaultsFor } from '@features/gateway-pg/data/journey-defaults';
 import { resolveActiveGateways } from '@features/gateway-pg/helpers/adapters';
+import { gatewayTag } from '@features/gateway-pg/helpers/adapters/gateway-tag';
 import { CarrierHoldSteps, type HoldScenario, type HoldRunOptions } from '@steps/index';
 
 /**
@@ -73,9 +74,9 @@ test.describe(
 	{ annotation: [{ type: 'tms', description: 'MG-158' }] },
 	() => {
 		for (const gateway of ACTIVE_GATEWAYS) {
-			// Tag normalizado por pasarela (mismo patrón gatewayTag de las factories): permite que
+			// Tag normalizado por pasarela vía `gatewayTag()` (SoT única): permite que
 			// los runs :xray por gateway (--grep "@authorize" etc.) incluyan al piloto.
-			test.describe(`gateway=${gateway} @${gateway.replace(/-/g, '')}`, () => {
+			test.describe(`gateway=${gateway} ${gatewayTag(gateway)}`, () => {
 				test('crea viaje con HAPPY_NO_AUTH y queda visible en grilla "Por asignar"', async ({ page }) => {
 					const card = resolveCard({ gateway, intent: 'HAPPY_NO_AUTH' });
 
