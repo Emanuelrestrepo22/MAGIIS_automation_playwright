@@ -89,19 +89,25 @@ Racional: Authorize y eBiz necesitan link programático (modal de credenciales) 
 
 Ejemplo con **Authorize** (sustituir sufijo/keys para las demás según la tabla §1.1):
 
+Cada pasarela corre **DOS legs** contra el MISMO execution: `:xray:ui` (project `gateway-pg-chromium`, specs de `specs/`) y `:xray:api` (project `api`, contract tests de `api/`). El script agregado `:xray` encadena los dos. Son dos JSON separados y **dos imports al mismo `--execution`** — un import por archivo es válido y acumulativo en Xray.
+
+> **Por qué el leg api existe** (auditoría 2026-07-28): los scripts `:xray` fijaban solo `--project=gateway-pg-chromium`, que hereda `testDir: specs/`. Los contract tests viven en `api/` y solo los colecta el project `api` → sus keys (p. ej. **MG-551** de `allcards-regression`, **MG-172**) NO entraban a NINGÚN ATR. El leg api cierra ese agujero.
+
 ```bash
-# 1. Run con trazabilidad Xray → JSON aislado por pasarela
+# 1. Run con trazabilidad Xray → un JSON por leg, ambos con el mismo execution
 #    (GATEWAYS pinnea el set del piloto parametrizado; --grep filtra los specs por tag.
 #     El piloto hold-happy-no3ds SÍ entra al run de su pasarela: su describe interno lleva
-#     el tag normalizado `@<gateway>` — mismo patrón gatewayTag de las factories. Los
-#     scripts :xray además fijan --project=gateway-pg-chromium para evitar la doble
-#     ejecución por projects solapados regression-web + gateway-pg-chromium.)
+#     el tag normalizado `@<gateway>` — mismo patrón gatewayTag de las factories. El leg ui
+#     fija --project=gateway-pg-chromium para evitar la doble ejecución por projects
+#     solapados regression-web + gateway-pg-chromium; el leg api fija --project=api.)
 XRAY_EXECUTION_KEY=MG-558 npm run test:test:gateway:authorize:xray
-# → escribe evidence/test/xray-results.authorize.json (XRAY_OUTPUT_FILE del script)
-#   con testExecutionKey=MG-558 embebido por el reporter.
+# → escribe evidence/test/xray-results.authorize-ui.json  (leg ui)
+#         + evidence/test/xray-results.authorize-api.json (leg api)
+#   ambos con testExecutionKey=MG-558 embebido por el reporter.
 
-# 2. Import de resultados contra la execution de la pasarela
-bun xray import xray --file evidence/test/xray-results.authorize.json --execution $XRAY_EXECUTION_AUTHORIZE
+# 2. Import de resultados contra la execution de la pasarela — LOS DOS archivos
+bun xray import xray --file evidence/test/xray-results.authorize-ui.json  --execution $XRAY_EXECUTION_AUTHORIZE
+bun xray import xray --file evidence/test/xray-results.authorize-api.json --execution $XRAY_EXECUTION_AUTHORIZE
 
 # 3. Listar los runs de la execution (obtener runId por Test)
 bun xray run list --execution MG-558
@@ -115,18 +121,22 @@ bun xray run evidence-list --id <runId>
 
 Comandos equivalentes por pasarela:
 
-| Pasarela | Paso 1 (run) | Paso 2 (import) |
+| Pasarela | Paso 1 (run: ui + api) | Paso 2 (import de los DOS JSON) |
 |---|---|---|
-| Authorize | `XRAY_EXECUTION_KEY=MG-558 npm run test:test:gateway:authorize:xray` | `bun xray import xray --file evidence/test/xray-results.authorize.json --execution MG-558` |
-| eBizCharge | `XRAY_EXECUTION_KEY=MG-559 npm run test:test:gateway:ebizcharge:xray` | `bun xray import xray --file evidence/test/xray-results.ebizcharge.json --execution MG-559` |
-| Stripe | `XRAY_EXECUTION_KEY=MG-560 npm run test:test:gateway:stripe:xray` | `bun xray import xray --file evidence/test/xray-results.stripe.json --execution MG-560` |
-| Mercado Pago | `XRAY_EXECUTION_KEY=MG-561 npm run test:test:gateway:mercadopago:xray` | `bun xray import xray --file evidence/test/xray-results.mercadopago.json --execution MG-561` |
+| Authorize | `XRAY_EXECUTION_KEY=MG-558 npm run test:test:gateway:authorize:xray` | `bun xray import xray --file evidence/test/xray-results.authorize-ui.json --execution MG-558` · idem con `...authorize-api.json` |
+| eBizCharge | `XRAY_EXECUTION_KEY=MG-559 npm run test:test:gateway:ebizcharge:xray` | `bun xray import xray --file evidence/test/xray-results.ebizcharge-ui.json --execution MG-559` · idem con `...ebizcharge-api.json` |
+| Stripe | `XRAY_EXECUTION_KEY=MG-560 npm run test:test:gateway:stripe:xray` | `bun xray import xray --file evidence/test/xray-results.stripe-ui.json --execution MG-560` · idem con `...stripe-api.json` |
+| Mercado Pago | `XRAY_EXECUTION_KEY=MG-561 npm run test:test:gateway:mercadopago:xray` | `bun xray import xray --file evidence/test/xray-results.mercadopago-ui.json --execution MG-561` · idem con `...mercadopago-api.json` |
+
+Cobertura del leg api hoy (`--project=api --grep "@<gw>" --list`, 2026-07-28): **authorize = 13**, **mercadopago = 17**, **stripe = 0**, **ebizcharge = 0**.
 
 Notas:
 
-- `XRAY_EXECUTION_KEY` en el paso 1 hace que el JSON ya lleve `testExecutionKey` — el `--execution` del paso 2 es redundante-defensivo (mismo valor; si difieren, gana el flag del import).
+- `XRAY_EXECUTION_KEY` en el paso 1 hace que ambos JSON ya lleven `testExecutionKey` — el `--execution` del paso 2 es redundante-defensivo (mismo valor; si difieren, gana el flag del import).
 - El paso 1 en PowerShell: `$env:XRAY_EXECUTION_KEY='MG-558'; npm run test:test:gateway:authorize:xray`.
-- Los specs sin key mapeada aparecen en el summary del reporter como `spec(s) sin key → NO exportados` — es el gap visible esperado para eBiz/MP (registry CFG/WAL `null`, no inventar keys).
+- **El encadenado es `&&`** (único operador portable entre `sh` y `cmd.exe`): si el leg ui termina con fallos, el leg api **NO corre**. En ese caso — el escenario normal cuando hay bugs que triar — correr el leg api explícitamente: `XRAY_EXECUTION_KEY=MG-558 npm run test:test:gateway:authorize:xray:api`.
+- El leg api lleva `--pass-with-no-tests` para que Stripe/eBizCharge (0 contract tests hoy) no rompan el encadenado. Su JSON sale con `tests: []` → **NO importarlo**; cuando esas pasarelas ganen specs `api/*.api.spec.ts` con tag, el leg los recoge sin tocar el script.
+- Los specs sin key mapeada aparecen en el summary del reporter como `spec(s) sin key → NO exportados` — es el gap visible esperado para eBiz/MP (registry CFG/WAL `null`, no inventar keys) y para el smoke Authorize (`[TS-AUTHORIZE-SMOKE-01]`, sin key por diseño).
 - Evidencia local: los specs escriben screenshots bajo `evidence/test/...`; organizar por pasarela/key antes del paso 4 (`evidence/test/<gw>/<MG-key>/`).
 
 ---
