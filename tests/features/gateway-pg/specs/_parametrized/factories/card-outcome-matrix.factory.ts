@@ -22,7 +22,9 @@
  *   1. `N/A` — la pasarela no expone ese outcome (razón literal de la celda `{ na }`).
  *   2. `sin oráculo` — la pasarela lo expone pero nadie definió qué debe hacer MAGIIS
  *      (ver `helpers/journey-outcome.ts`: FRAUD_REVIEW, HAPPY_PARTIAL_AUTH, DECLINE_CAPTURE).
- *   3. gate de credenciales / guard destructivo, a nivel describe.
+ *   3. gate de credenciales del adapter, a nivel describe.
+ *
+ * NO lleva gate destructivo: ver la nota de ALCANCE DE ESCRITURA en el cuerpo del describe.
  *
  * EXCEPCIÓN: `HAPPY_AUTH`/`FAIL_AUTH` con `adapter.requires3ds === false` NO se generan ni
  * como skip. 3DS es exclusivo de Stripe y la invariante 1 de
@@ -47,7 +49,6 @@ import { cardFormFor } from '@ui/carrier/card-forms';
 import { ALL_CARD_INTENTS, intentSupport } from '@fixtures/gateways/_shared';
 import { getGatewayPgAdapter } from '@features/gateway-pg/helpers/adapters';
 import { gatewayTag } from '@features/gateway-pg/helpers/adapters/gateway-tag';
-import { isGatewayDestructiveSwitchAllowed } from '@ui/carrier';
 import { loginAsDispatcher } from '@features/gateway-pg/fixtures/gateway.fixtures';
 import { hasObservedOutcome, outcomeFor } from '@features/gateway-pg/helpers/journey-outcome';
 import { cleanupGatewayCardByLast4 } from '@features/gateway-pg/helpers/card-precondition';
@@ -98,11 +99,14 @@ export function defineCardOutcomeMatrixSuite(gateway: GatewayName, options: Card
 			test.use({ storageState: { cookies: [], origins: [] } });
 
 			test.skip(!adapter.isConfigured(), `Requiere ${adapter.credsEnvKeys.join(' + ')} en .env.test (gate del adapter ${gateway}).`);
-			test.skip(
-				!isGatewayDestructiveSwitchAllowed(),
-				'La suite opera sobre el carrier compartido y da de alta tarjetas reales en su wallet: ' +
-					'requiere GATEWAY_ALLOW_DESTRUCTIVE_SWITCH=true explícito. Correr SOLO en ventana exclusiva.'
-			);
+
+			// ALCANCE DE ESCRITURA de esta suite: da de alta tarjetas en la wallet del pax, con
+			// cleanup idempotente previo por API. Es EXACTAMENTE el alcance de
+			// `defineWalletAddCardSuite`, que no lleva gate destructivo y corre en la suite
+			// Authorize (MG-285). NUNCA vincula ni desvincula una pasarela, así que no dispara la
+			// cascada de `cleaningWallets` — que es la razón por la que existe
+			// GATEWAY_ALLOW_DESTRUCTIVE_SWITCH y por la que la suite CFG sí lo exige.
+			// Gatear esta suite con ese flag describía mal lo que hace y la dejaba inejecutable.
 
 			for (const intent of intents) {
 				const support = intentSupport(gateway, intent);

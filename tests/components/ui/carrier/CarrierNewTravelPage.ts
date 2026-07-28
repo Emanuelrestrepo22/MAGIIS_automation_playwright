@@ -231,24 +231,41 @@ export class CarrierNewTravelPage extends UiBase {
 	 * Contraparte NEGATIVA de `validateNativeCard()`: click en "Validar" con una tarjeta que
 	 * la pasarela debe rechazar, y verifica que el sistema NO la dé por válida.
 	 *
-	 * ⚠️ ALCANCE DEL ORÁCULO — leer antes de confiar en este método.
-	 * Asserta **ausencia de éxito**, no presencia de un error concreto: un front que
-	 * fallara EN SILENCIO (sin cartel de válida y sin mensaje de error) pasaría este check.
-	 * Es un piso deliberado, no un descuido: el copy real del rechazo no está verificado en
-	 * vivo para ninguna de las pasarelas de form nativo, y assertar un texto inventado daría
-	 * un test que valida nuestra suposición.
+	 * ⚠️ HISTORIA DE ESTE MÉTODO — leer antes de tocarlo.
 	 *
-	 * TODO(live): en la primera ventana con credenciales, capturar el mensaje real de
-	 * rechazo y endurecer esto a `expect(getByText(<copy real>)).toBeVisible()`.
+	 * La primera versión hacía `expect(cartelDeExito).not.toBeVisible({ timeout })` como
+	 * única aserción, y era **vacua**: `not.toBeVisible` se satisface con el PRIMER chequeo,
+	 * y en t=0 el cartel todavía no llegó porque la respuesta de la pasarela está en vuelo.
+	 * Pasaba siempre, incluso cuando el cartel aparecía dos segundos después. Verificado en
+	 * vivo con Authorize el 2026-07-28: el probe de decline mostró el cartel "Tarjeta válida"
+	 * presente al final del flujo mientras el test daba verde.
 	 *
-	 * @param graceMs Ventana durante la que el cartel de éxito NO debe aparecer.
+	 * Una aserción de ausencia solo dice algo si se evalúa DESPUÉS de que el flujo terminó.
+	 * Por eso ahora primero se espera un asentamiento observable — el botón "Validar" queda
+	 * deshabilitado mientras el front procesa la respuesta — y recién entonces se pregunta
+	 * por el cartel de éxito.
+	 *
+	 * Sigue siendo ausencia-de-éxito y no presencia-de-error, porque el copy del rechazo aún
+	 * no se observó (con la tarjeta de decline de Authorize el front muestra ÉXITO — ver
+	 * `docs/gateway-pg/authorize/RUN-LOG.md`). Pero ya no puede pasar de forma vacua.
+	 *
+	 * @param settleMs Ventana para que el front procese la respuesta de la pasarela.
 	 */
 	@step
-	async expectNativeCardRejected(graceMs = 15_000): Promise<void> {
-		await this.page.getByRole('button', { name: /^(Valid|Validar)$/i }).click();
-		await expect(this.page.getByText(/Tarjeta v[áa]lida|Valid card|Card valid/i).first()).not.toBeVisible({
-			timeout: graceMs
+	async expectNativeCardRejected(settleMs = 20_000): Promise<void> {
+		const validar = this.page.getByRole('button', { name: /^(Valid|Validar)$/i });
+		await validar.click();
+
+		// Asentamiento: el front deshabilita "Validar" mientras procesa. Sin esta espera, la
+		// aserción de abajo se evalúa antes de que la pasarela conteste y pasa vacuamente.
+		await expect(validar, 'el front debería deshabilitar "Validar" mientras procesa la respuesta de la pasarela').toBeDisabled({
+			timeout: settleMs
 		});
+
+		await expect(
+			this.page.getByText(/Tarjeta v[áa]lida|Valid card|Card valid/i).first(),
+			'la pasarela rechazó la tarjeta: el sistema NO debe declararla válida'
+		).toBeHidden();
 	}
 
 	/**
