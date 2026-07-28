@@ -140,7 +140,20 @@ Espeja `TS-STRIPE-TC1001..TC1008` pero adaptado a la UI Authorize.
 | TS-AUTHORIZE-TC1054 | Validar Alta de Viaje desde carrier para usuario colaborador con tarjeta preautorizada exitosa **Vincular tarjeta nueva** Hold OFF                                     | `AUTHORIZE_CARDS.SUCCESS` | new | OFF |
 | TS-AUTHORIZE-TC1055 | Validar Alta de Viaje desde carrier para usuario colaborador con tarjeta preautorizada exitosa **Usar tarjeta vinculada existente** Hold OFF                          | `AUTHORIZE_CARDS.SUCCESS` (stored) | existing | OFF |
 
-> **Oráculo automatizado del alta de tarjeta (flujos "Vincular tarjeta nueva" — TC1051/TC1052 y spec WAL `TS-AUTHORIZE-WAL-01`/MG-285):** la vinculación exitosa se asserta por el texto **"Tarjeta válida" / "Valid card"** visible tras "Validar" (`CarrierNewTravelPage.validateNativeCard`). **Alcance de la evidencia live** (commit `aa780b3`, 3x verde en TEST): aplica SOLO al spec WAL (Visa 4111 + CVV 900 + **ZIP 10001**) — TC1051/TC1052 usan `AUTHORIZE_CARDS.SUCCESS` (**ZIP 90210**), combinación AÚN sin captura live del oráculo. Nota: el spec de alta de tarjeta usa el ID `TS-AUTHORIZE-WAL-01`, que no existe como fila TC1xxx en esta matriz (numeración WAL propia del spec).
+> **Oráculo automatizado del alta de tarjeta (flujos "Vincular tarjeta nueva" — TC1051/TC1052 y spec WAL `TS-AUTHORIZE-WAL-01`/MG-285):** la vinculación exitosa se asserta por **ESTADO**, no por toast: tras "Validar", el form nativo se colapsa y la **Forma de Pago queda RESUELTA a `Tarjeta de crédito … *** <last4>`** (`CarrierNewTravelPage.validateNativeCard`, timeout 45s por el RTT al sandbox del PSP).
+>
+> **Por qué cambió** (live 2026-07-28): el oráculo anterior era el texto **"Tarjeta válida" / "Valid card"** (verificado 2026-07-27 con la cuenta sandbox en **Test Mode**, commit `aa780b3`, 3x verde en TEST). Bajo **Live Mode + política AVS estricta** de la cuenta sandbox Authorize ese toast dejó de emitirse: la validación **SÍ guardaba y preseleccionaba** la tarjeta (confirmado por API — card id nueva en `paymentMethodsByPax`) pero el assert de texto fallaba → **falso negativo por oráculo efímero**. Regla derivada: **estado persistente > toast**.
+>
+> **Alcance de la evidencia live:** el estado post-validación está verificado para el spec WAL (Visa 4111 + CVV 900 + **ZIP 10001**). TC1051/TC1052 usan `AUTHORIZE_CARDS.SUCCESS` (**ZIP 90210**), combinación AÚN sin captura live del oráculo.
+
+> **Nota de numeración — IDs de spec que NO son filas TC1xxx de esta matriz.** Dos specs de Authorize usan numeración propia y por diseño no tienen fila en las tablas de arriba:
+>
+> | ID de spec | Spec | Key Xray | Estado |
+> |---|---|---|---|
+> | `TS-AUTHORIZE-WAL-01` | `specs/_parametrized/factories/wallet-add-card.factory.ts` (alta de tarjeta pre-autorizada) | MG-285 | anomalía ya reconocida — numeración WAL propia del spec |
+> | `TS-AUTHORIZE-SMOKE-01` | `specs/authorize/web/carrier/smoke/authorize-linked-smoke.spec.ts` (Authorize figura vinculada en el App Store) | **ninguna (por diseño)** | numeración SMOKE propia del spec |
+>
+> El smoke **no lleva key Xray a propósito**: solo verifica el estado YA-vinculado, así que acreditar MG-220 (TC1002 · link con credenciales válidas) sin ejecutar el flujo de link inflaría evidencia. Queda como `unmapped` en el summary del reporter — comportamiento **real** desde 2026-07-28: antes el fallback por título del `xray-reporter` extraía del corchete la key basura `SMOKE-01` y la emitía al execution MG-558; hoy el fallback solo acepta keys del prefijo del proyecto (`MG-\d+`). Ninguno de estos dos IDs debe buscarse como TC1xxx en esta matriz.
 
 ### 3.2 Declines y CVV
 
