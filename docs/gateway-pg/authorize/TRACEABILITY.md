@@ -18,9 +18,26 @@
 | **L1 — Fuente estructurada** | `normalized-test-cases.json` (pendiente — se generará con BL-025 runtime) | Contrato canónico consumible por scripts | Generado desde L0 |
 | **L2 — Fuente binaria** | `.xlsx` Authorize (pendiente — se generará con BL-025 runtime) | Matriz operativa QA manual | Sincronizado desde L1 |
 | **L3 — Documentos derivados** | [`ARCHITECTURE.md`](./ARCHITECTURE.md), [`EXTERNAL-BLOCKERS.md`](./EXTERNAL-BLOCKERS.md), [`CHANGELOG.md`](./CHANGELOG.md) | Reportes / racionales de decisiones | Generado desde L0 / contexto |
-| **L4 — Código Playwright** | `tests/features/gateway-pg/specs/authorize/**/*.spec.ts` (vacío hasta BL-025) | Implementación de los TCs | Referencia L0 vía IDs |
+| **L4 — Código Playwright** | `tests/features/gateway-pg/specs/authorize/**/*.spec.ts` (11 specs UI/E2E) + `tests/features/gateway-pg/api/{authorize-formal,authorize-sandbox}/**` (5 specs API) — **ya implementado, ver §L4 abajo** | Implementación de los TCs | Referencia L0 vía IDs |
 | **L5 — Cobertura** | `tests/coverage/authorize-*.md` (futuro) | Mapa TC ↔ spec, estado de cobertura | Generado desde L0 + L4 (gitignored) |
 | **L6 — Resolver shared** | [`tests/fixtures/gateways/_shared/resolver.ts`](../../../tests/fixtures/gateways/_shared/resolver.ts) | Mapeo intents canónicos → fixtures concretos | Código TypeScript |
+
+### L4 — Estado real de la implementación (actualizado 2026-07-28)
+
+> ⚠️ **Corrección de doc-drift.** Este documento afirmaba que la carpeta de specs de Authorize estaba
+> "vacía hasta BL-025". Eso quedó desactualizado: hoy existen **16 specs reales**. Auditoría de
+> respaldo: `agentic-qa-boilerplate/.context/reports/automation-inventory-baseline-2026-07-25.md`.
+
+| Área | Specs | Trazabilidad Xray |
+| --- | --- | --- |
+| **CFG** (link / unlink / exclusividad / status) | `specs/authorize/web/carrier/config/authorize-link-unlink.spec.ts` (consumidor thin de `gateway-config.factory.ts`) | MG-220 / MG-221 / MG-223 / MG-224 / MG-226 (vía `data/xray-keys.ts`) |
+| **Smoke** | `specs/authorize/web/carrier/smoke/authorize-linked-smoke.spec.ts` | MG-225 (TC15 · persistencia de estado vinculado) |
+| **Wallet** | `specs/authorize/web/carrier/wallet/authorize-add-card.spec.ts` | MG-285 |
+| **Hold — "Ola A"** | `specs/authorize/web/carrier/hold/{personal-hold-on-happy,personal-hold-decline-generic,personal-hold-zip-mismatch,colaborador-hold-on-happy,empresa-hold-on-happy}.spec.ts` | ⚠️ sin Test Xray creado aún (gap conocido, ver `authorize-coverage-gap-2026-07-23.md`) |
+| **Quote** | `specs/authorize/web/quote/personal-quote-no-hold-happy.spec.ts` | ⚠️ sin Test Xray creado aún |
+| **Probe** (descubrimiento, no regresión) | `specs/authorize/probe/appstore-gateways-probe.spec.ts` | n/a por diseño |
+| **API — formal** | `api/authorize-formal/allcards-regression.api.spec.ts` | MG-551 |
+| **API — sandbox contract** | `api/authorize-sandbox/contract-{happy,decline,edge,cvv-avs}.api.spec.ts` | BL-036 (work item propio, fuera del idmap MG) |
 
 ---
 

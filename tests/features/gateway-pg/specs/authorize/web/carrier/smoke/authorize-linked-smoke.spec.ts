@@ -14,13 +14,20 @@ import { loginAsDispatcher } from '@features/auth/helpers/login.helpers';
 // El fixture KATA no define la opción `role` (login explícito vía loginAsDispatcher).
 test.use({ storageState: undefined });
 
+// TRAZABILIDAD (corregido 2026-07-28): este smoke apuntaba a MG-220 (TC10 · "vincular Authorize
+// con credenciales válidas"), pero NO ejecuta el link — solo LEE el estado ya vinculado. Dos tests
+// distintos reportando a la misma key pisan resultados en el mismo Test Execution. El dueño único de
+// MG-220 es `authorize-link-unlink.spec.ts` (que sí ejecuta el link real).
+// Key correcta = MG-225 (TC15 · "persistencia de estado Vinculado tras recargar página y navegar
+// entre secciones de Carrier"): es exactamente lo que este smoke verifica — sesión nueva → navegar
+// al App Store → el estado vinculado persiste.
 test.describe(
 	'Gateway PG · Carrier · Smoke Authorize vinculada @gateway @authorize @smoke @regression',
-	{ annotation: [{ type: 'tms', description: 'MG-220' }] },
+	{ annotation: [{ type: 'tms', description: 'MG-225' }] },
 	() => {
 		test.describe.configure({ timeout: 120_000 });
 
-		test('[TS-AUTHORIZE-SMOKE-01] Authorize.Net figura vinculada (Unlink) en el App Store', async ({ page }) => {
+		test('[TS-AUTHORIZE-SMOKE-01] Authorize.Net figura vinculada (Unlink) en el App Store — estado persiste en sesión nueva', async ({ page }) => {
 			const appStore = new AppStoreGatewaysPage({ page });
 
 			await test.step('Given: dispatcher logueado en carrier 1521 (creds chain Authorize)', async () => {
