@@ -1,3 +1,8 @@
 # oracledb se usa en Thin mode (JS puro) → NO se ejecuta su build script nativo (Thick mode).
+# edgedriver / geckodriver: transitive deps of webdriverio. This repo drives browsers
+# with Playwright, so their native build scripts are denied. Leaving them unresolved
+# makes pnpm 11 abort with ERR_PNPM_IGNORED_BUILDS on every `pnpm run <script>`.
 allowBuilds:
+  edgedriver: false
+  geckodriver: false
   oracledb: false

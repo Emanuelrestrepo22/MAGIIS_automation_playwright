@@ -1034,6 +1034,19 @@ Checklist (en orden):
 
 ---
 
+### BL-052 — Config de pnpm 11: `.npmrc` muerto + placeholders de `allowBuilds` rompen `pnpm run`
+
+- **Estado:** 🟢 Resuelto (2026-07-28)
+- **Prioridad:** P1
+- **Tipo:** Configuración
+- **Reportado:** 2026-07-28
+- **Contexto:** Dos defectos independientes en la config de pnpm, ambos detectados al verificar un install limpio en un worktree nuevo (pnpm 11.4.0). **(a)** `.npmrc` declaraba `node-linker=hoisted`, pero desde pnpm 11 ese archivo solo se lee para auth y registry: la clave se mudó a `pnpm-workspace.yaml` como `nodeLinker` (camelCase). Confirmado en vivo: `pnpm config get node-linker` → `undefined` con la línea en `.npmrc`, → `hoisted` con la clave en el YAML. npm además avisa `Unknown project config "node-linker"`. Efecto: todos los worktrees corrían con el linker `isolated` mientras el repo creía estar en `hoisted`. **(b)** `pnpm-workspace.yaml` tenía dos placeholders del codemod v10→v11 sin resolver (`edgedriver: set this to true or false`, `geckodriver: ...`). pnpm 11 corre un deps-status check antes de cualquier script, así que en un install limpio **cualquier** `pnpm run <script>` abortaba con `ERR_PNPM_IGNORED_BUILDS` y exit 1.
+- **Decisión tomada:** NO restaurar `hoisted`. El linker `isolated` es justo lo que destapó la dependencia fantasma `allure-js-commons` (importada por `tests/utils/decorators.ts` sin estar declarada en `package.json`); volver a plano vuelve a enmascarar esa clase de bug. El motivo original del `hoisted` — symlinks colgados por OneDrive — sigue vigente solo para el clone bajo OneDrive, no para los worktrees de `C:\worktrees\*`. Si ese clone lo necesita, se configura local con `pnpm config set nodeLinker hoisted --location project`.
+- **Próxima acción:** Ninguna. Verificado en worktree limpio: `pnpm install` sin `ERR_PNPM_IGNORED_BUILDS`, `pnpm run test:test:gateway:unit` arranca, `npx tsc --noEmit` exit 0.
+- **Referencias:** `.npmrc`, `pnpm-workspace.yaml`, rama `scripts/allure-js-commons-dep`, commit `6e53441` (declaración de `allure-js-commons`), BL-023 (política de hotspot files)
+
+---
+
 ## Resuelto recientemente (últimos 30 días)
 
 ### BL-RES-001 — Consolidación TIER 1-5 (14 MRs + 1 revert)
