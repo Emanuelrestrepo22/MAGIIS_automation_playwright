@@ -10,16 +10,29 @@
  *   - **El NÚMERO de tarjeta determina el outcome** (determinístico), igual que Stripe
  *     y a diferencia de Authorize.net (que usa CVV/ZIP). NO depende de monto, CVV ni ZIP.
  *   - Expiración fija `0930` (MMYY = 09/30) en casi todas; excepción documentada abajo.
- *   - CVV: los declines usan `999`; el resto acepta cualquier CVV ("any").
+ *   - **CVV: la doc lo declara POR TABLA, no por categoría.** No generalizar:
+ *       · tabla Decline Responses → `999` en las 14 filas.
+ *       · tabla AVS Responses → `123` en la primera fila, `321` en la segunda y `999` en
+ *         las 15 restantes. NO es "cualquier CVV" — el valor está fijado por fila.
+ *       · tabla CVV2 Responses → literal `any` en las 21 filas (ahí sí vale cualquiera).
+ *       · Fraud Profiler / Slow Processing → la doc no fija CVV.
+ *       · tabla Referral Response → `999`.
+ *     Por eso `EBIZ_AVS_REFERENCE` lleva su `cvc` explícito por fila.
  *   - **No requiere 3DS** en el flujo MAGIIS (`ebizchargeGatewayAdapter.requires3ds = false`).
  *     La categoría CAVV es un *indicador de respuesta*, no un challenge.
  *
  * Estructura de referencia completa:
  *   - `EBIZ_TEST_CARDS`  — objetos completos para las tarjetas con outcome de negocio
- *     (approved default, las 14 declines, CVV2 clave, fraud profiler, processing delay).
+ *     (approved default, las 14 declines, el decline de CVV2 de Amex, referral,
+ *     CVV2 clave, fraud profiler, processing delay).
  *   - Arrays `EBIZ_*_REFERENCE` — capturan TODOS los números/códigos documentados de las
  *     categorías puramente de anotación (AVS, CVV2 completo, CAVV, Card Level), sin
  *     promoverlos a objetos de card (no son outcomes de negocio distintos para MAGIIS).
+ *
+ * Cobertura de la doc: **92 números en 8 tablas** (17 AVS + 21 CVV2 + 14 declines +
+ * 2 fraud profiler + 1 referral + 5 slow processing + 12 CAVV + 20 card level, sin
+ * solapes). `ebiz-cards-fidelity.unit.spec.ts` transcribe las 8 tablas y falla si este
+ * archivo divierge de ellas.
  *
  * Regla arquitectónica (igual que Stripe/Authorize):
  *   - Importar tarjetas desde `tests/fixtures/gateways/ebizcharge/cards` — no duplicar inline.
@@ -28,7 +41,7 @@
 
 export type EbizCardBrand = 'visa' | 'mastercard' | 'amex' | 'discover';
 
-export type EbizOutcomeCategory = 'approved' | 'declined' | 'cvv2' | 'fraud-profiler' | 'processing-delay';
+export type EbizOutcomeCategory = 'approved' | 'declined' | 'cvv2' | 'fraud-profiler' | 'processing-delay' | 'referral';
 
 export type EbizTestCard = {
 	number: string;
@@ -284,16 +297,23 @@ export const EBIZ_TEST_CARDS = {
 		cvv2Result: 'P',
 		description: 'CVV2 P (Not Processed). AVS YYY.'
 	},
+	/**
+	 * La doc la lista en la tabla CVV2 Responses, pero su CVV2 Response es
+	 * `CVV2 No Match (Decline)` y su AVS Response viene VACÍO: el outcome de negocio es
+	 * un RECHAZO, no una aprobación con anotación. Por eso `category: 'declined'` — el
+	 * front debe mostrar tarjeta rechazada. Clasificarla como `'cvv2'` hacía que se
+	 * pudiera tomar por happy path.
+	 */
 	amexCvv2Decline: {
 		number: '371122223332241',
 		brand: 'amex',
 		exp: EBIZ_DEFAULT_EXPIRY,
 		cvc: EBIZ_ANY_CVV_AMEX,
 		holderName: EBIZ_DEFAULT_HOLDER,
-		category: 'cvv2',
-		expectedOutcome: 'cvv2-no-match-decline',
+		category: 'declined',
+		expectedOutcome: 'declined',
 		cvv2Result: 'no-match-decline',
-		description: 'Amex → CVV2 No Match que resulta en Decline.'
+		description: 'Amex → CVV2 No Match que resulta en Decline (tabla CVV2 de la doc, outcome = decline).'
 	},
 
 	// ═══════════════════════════════════════════════════════════════════
@@ -321,6 +341,27 @@ export const EBIZ_TEST_CARDS = {
 		expectedOutcome: 'fraud-reject',
 		profilerResponse: 'reject',
 		description: 'Fraud Profiler → reject.'
+	},
+
+	// ═══════════════════════════════════════════════════════════════════
+	// REFERRAL (tabla propia en la doc — 1 sola tarjeta)
+	// ═══════════════════════════════════════════════════════════════════
+
+	/**
+	 * Tabla `Referral Response` de la doc. Es una CUARTA clase de outcome, distinta de
+	 * approved / declined / fraud: el emisor no aprueba ni rechaza, deriva la operación a
+	 * autorización por voz. Para MAGIIS el viaje NO puede quedar autorizado.
+	 * La doc no publica AVS/CVV2/CAVV/Card Level para esta fila.
+	 */
+	referral: {
+		number: '4000300111112229',
+		brand: 'visa',
+		exp: EBIZ_DEFAULT_EXPIRY,
+		cvc: EBIZ_DECLINE_CVV,
+		holderName: EBIZ_DEFAULT_HOLDER,
+		category: 'referral',
+		expectedOutcome: 'referral',
+		description: 'Referral — el emisor deriva a autorización por voz (no aprueba ni rechaza).'
 	},
 
 	// ═══════════════════════════════════════════════════════════════════
@@ -391,25 +432,32 @@ export type EbizTestCardKey = keyof typeof EBIZ_TEST_CARDS;
 // Capturan todos los números/códigos documentados sin inflar el registry.
 // ═══════════════════════════════════════════════════════════════════════
 
-/** AVS — serie approved `4000100…`. Todas devuelven approved con CVV2 M / CAVV A. */
-export const EBIZ_AVS_REFERENCE: ReadonlyArray<{ number: string; avs: string }> = [
-	{ number: '4000100011112224', avs: 'YYY' },
-	{ number: '4000100111112223', avs: 'YYX' },
-	{ number: '4000100211112222', avs: 'NYZ' },
-	{ number: '4000100311112221', avs: 'NYW' },
-	{ number: '4000100411112220', avs: 'YNA' },
-	{ number: '4000100511112229', avs: 'NNN' },
-	{ number: '4000100611112228', avs: 'XXW' },
-	{ number: '4000100711112227', avs: 'XXU' },
-	{ number: '4000100811112226', avs: 'XXR' },
-	{ number: '4000100911112225', avs: 'XXS' },
-	{ number: '4000101011112222', avs: 'XXE' },
-	{ number: '4000101111112221', avs: 'XXG' },
-	{ number: '4000101211112220', avs: 'YYG' },
-	{ number: '4000101311112229', avs: 'GGG' },
-	{ number: '4000101411112228', avs: 'YGG' },
-	{ number: '4000101511112227', avs: 'NN' },
-	{ number: '4000101611112226', avs: 'N/A' }
+/**
+ * AVS — serie approved `4000100…`. Las 17 devuelven approved con CVV2 `M` y CAVV `A`
+ * (y Card Level `A`), o sea el AVS es la ÚNICA variable de la tabla.
+ *
+ * `cvc` va explícito POR FILA porque la doc lo fija: `123` en la primera, `321` en la
+ * segunda y `999` en las 15 restantes. Consumir estas filas con `EBIZ_ANY_CVV` metería
+ * un dato que la doc no respalda (ver la regla de CVV por tabla en el header).
+ */
+export const EBIZ_AVS_REFERENCE: ReadonlyArray<{ number: string; avs: string; cvc: string }> = [
+	{ number: '4000100011112224', avs: 'YYY', cvc: '123' },
+	{ number: '4000100111112223', avs: 'YYX', cvc: '321' },
+	{ number: '4000100211112222', avs: 'NYZ', cvc: '999' },
+	{ number: '4000100311112221', avs: 'NYW', cvc: '999' },
+	{ number: '4000100411112220', avs: 'YNA', cvc: '999' },
+	{ number: '4000100511112229', avs: 'NNN', cvc: '999' },
+	{ number: '4000100611112228', avs: 'XXW', cvc: '999' },
+	{ number: '4000100711112227', avs: 'XXU', cvc: '999' },
+	{ number: '4000100811112226', avs: 'XXR', cvc: '999' },
+	{ number: '4000100911112225', avs: 'XXS', cvc: '999' },
+	{ number: '4000101011112222', avs: 'XXE', cvc: '999' },
+	{ number: '4000101111112221', avs: 'XXG', cvc: '999' },
+	{ number: '4000101211112220', avs: 'YYG', cvc: '999' },
+	{ number: '4000101311112229', avs: 'GGG', cvc: '999' },
+	{ number: '4000101411112228', avs: 'YGG', cvc: '999' },
+	{ number: '4000101511112227', avs: 'NN', cvc: '999' },
+	{ number: '4000101611112226', avs: 'N/A', cvc: '999' }
 ] as const;
 
 /** CVV2 completo — por marca. `cvv2` = resultado esperado. */
