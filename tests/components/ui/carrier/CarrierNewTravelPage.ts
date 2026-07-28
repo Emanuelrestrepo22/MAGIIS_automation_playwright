@@ -237,13 +237,21 @@ export class CarrierNewTravelPage extends UiBase {
 	/**
 	 * Click en "Validar" del form NATIVO Angular y espera el oráculo de tarjeta validada.
 	 *
-	 * ORÁCULO PRIMARIO = ESTADO (live 2026-07-28): al validar OK, el form nativo se colapsa
-	 * y la Forma de Pago queda RESUELTA a "Tarjeta de crédito ... *** <last4>" — señal
-	 * persistente. Verificado por API (card id nueva creada en paymentMethodsByPax) bajo
-	 * Live Mode + política AVS estricta de la cuenta sandbox Authorize, donde el toast
-	 * "Tarjeta válida" (oráculo anterior, verificado 2026-07-27 con la cuenta en Test Mode)
-	 * dejó de observarse: la validación GUARDABA y seleccionaba la tarjeta pero el assert
-	 * de texto fallaba — falso negativo por oráculo efímero. Estado > toast.
+	 * ORÁCULO = CUALQUIERA de las dos manifestaciones observables del éxito (`.or()`), porque
+	 * el flujo tiene DOS presentaciones verificadas live y ambas prueban lo mismo:
+	 *   (a) TOAST "Tarjeta válida"/"Valid card" — señal inmediata del alta de tarjeta nueva
+	 *       (flujo WAL: verificado live 2026-07-28 junto a `POST passengers/{id}/cards → 200`
+	 *       y la tarjeta presente en `paymentMethodsByPax`).
+	 *   (b) ESTADO "… *** <last4>" — la Forma de Pago queda RESUELTA a la tarjeta (flujo de
+	 *       alta de viaje con tarjeta ya vinculada: verificado live 2026-07-27/28 por screenshot).
+	 *
+	 * HISTORIA DEL ORÁCULO (para no repetir el error): el 2026-07-28 el toast dejó de
+	 * observarse y se reemplazó por (b) creyendo que era un cambio de comportamiento del FE.
+	 * El log de red probó la causa real: la política AVS estricta de la cuenta sandbox
+	 * (A/Z/Y → "authorize and hold for review", luego Z → Decline) RETENÍA la transacción de
+	 * validación → sin aprobación no hay toast. Corregida la política (Z/W/Y → Allow), el toast
+	 * volvió. Aceptar ambas señales es MÁS fuerte que cualquiera sola: cubre las dos
+	 * presentaciones sin depender de la config de la cuenta.
 	 * Para Stripe Elements usar `fillMinimum`/`selectCardByLast4` (POM legacy).
 	 */
 	@step
@@ -251,9 +259,12 @@ export class CarrierNewTravelPage extends UiBase {
 		await this.page.getByRole('button', { name: /^(Valid|Validar)$/i }).click();
 		// 45s: la validación viaja al sandbox del PSP (Authorize.Net) y el RTT excede 20s
 		// de forma intermitente bajo carga (observado 2026-07-27).
+		const validated = this.page
+			.getByText(/Tarjeta v[áa]lida|Valid card|Card valid/i)
+			.or(this.page.getByText(new RegExp(`\\*+\\s*${last4}`)));
 		await expect(
-			this.page.getByText(new RegExp(`\\*+\\s*${last4}`)).first(),
-			`Forma de Pago resuelta a la tarjeta *** ${last4} tras Validar (estado post-validación)`
+			validated.first(),
+			`validación OK: toast "Tarjeta válida" o Forma de Pago resuelta a *** ${last4}`
 		).toBeVisible({ timeout: 45_000 });
 	}
 

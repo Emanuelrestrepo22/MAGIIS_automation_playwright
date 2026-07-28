@@ -119,16 +119,20 @@ export class ContractorNewTravelPage extends UiBase {
 	/**
 	 * Click en "Validar" del form NATIVO Angular y espera el oráculo de tarjeta validada.
 	 * Mismo contrato que el delegate carrier (`CarrierNewTravelPage.validateNativeCard`):
-	 * ORÁCULO PRIMARIO = ESTADO — la Forma de Pago queda resuelta a "*** <last4>" (live
-	 * 2026-07-28: bajo Live Mode + AVS estricta el toast "Tarjeta válida" dejó de emitirse
-	 * aunque la validación guarda/selecciona la tarjeta; estado > toast efímero).
+	 * acepta CUALQUIERA de las dos manifestaciones verificadas live del éxito — toast
+	 * "Tarjeta válida" (alta de tarjeta nueva) o Forma de Pago resuelta a "*** <last4>"
+	 * (tarjeta ya vinculada). Ver la historia del oráculo en el docblock del carrier: el
+	 * toast desaparecía por la política AVS de la cuenta sandbox, no por cambio del FE.
 	 */
 	@step
 	async validateNativeCard(last4: string): Promise<void> {
 		await this.page.getByRole('button', { name: /^(Valid|Validar)$/i }).click();
+		const validated = this.page
+			.getByText(/Tarjeta v[áa]lida|Valid card|Card valid/i)
+			.or(this.page.getByText(new RegExp(`\\*+\\s*${last4}`)));
 		await expect(
-			this.page.getByText(new RegExp(`\\*+\\s*${last4}`)).first(),
-			`Forma de Pago resuelta a la tarjeta *** ${last4} tras Validar (estado post-validación)`
+			validated.first(),
+			`validación OK: toast "Tarjeta válida" o Forma de Pago resuelta a *** ${last4}`
 		).toBeVisible({ timeout: 45_000 });
 	}
 
