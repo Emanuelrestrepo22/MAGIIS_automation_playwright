@@ -11,9 +11,20 @@
  *   1. annotation `tms`:       test.info().annotations.push({ type: 'tms', description: 'MG-158' })
  *      (convención del org — misma que usan Allure links y carrier-v2; la empuja @atc)
  *   2. annotation `test_key`:  alias aceptado
- *   3. título:                 test('[MG-158] ...', ...)   → fallback, primera key AAA-123
+ *   3. título:                 test('[MG-158] ...', ...)   → fallback, primera key del
+ *      PREFIJO del proyecto Jira (`XRAY_PROJECT_PREFIX`, default 'MG').
  *   Se recogen TODAS las keys tms/test_key distinctas (estáticas del TestCase +
  *   runtime del TestResult) → una fila de resultado por cada Test cubierto.
+ *
+ * POR QUÉ el fallback por título está restringido al prefijo del proyecto (evidencia
+ * live 2026-07-28): el regex genérico anterior (`\b([A-Z][A-Z0-9]+-\d+)\b`) matcheaba
+ * CUALQUIER identificador con forma de key. Del título del smoke Authorize
+ * `[TS-AUTHORIZE-SMOKE-01] ...` extraía la key BASURA `SMOKE-01` y la emitía como
+ * testKey al execution MG-558 — pese a que el spec declara explícitamente NO tener key
+ * Xray ("unmapped visible"). Lo mismo haría cualquier `[BL-0xx]`, `[TS-<GW>-TCxxxx]` o
+ * `[COB-48]` presente en el título de un `test()`. Con el prefijo del proyecto, un
+ * título sin key `MG-\d+` cae a `unmapped` (el gap queda visible en el summary) en vez
+ * de contaminar el ATR con un run contra un issue inexistente.
  *
  * Specs SIN key NO se exportan (no están mapeados a un Test de Xray); se reporta
  * el conteo al final para que el gap sea visible y no un drop silencioso.
@@ -29,6 +40,8 @@
  *   XRAY_VERSION        → info.version = fixVersion (si se crea una ejecución nueva)
  *   XRAY_OUTPUT_FILE    → override del path de salida (gana sobre el outputFile de la
  *                         config — habilita un JSON por pasarela: xray-results.<gw>.json)
+ *   XRAY_PROJECT_PREFIX → prefijo del proyecto Jira aceptado por el fallback de título
+ *                         (default 'MG'); cambiarlo al onboardear otro proyecto.
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
@@ -52,7 +65,12 @@ interface ReporterOptions {
 // Tipos de annotation que portan la key del Test de Xray (orden = prioridad).
 // 'tms' es la convención existente del org (Allure links + carrier-v2).
 const KEY_ANNOTATION_TYPES = ['tms', 'test_key'];
-const KEY_IN_TITLE = /\b([A-Z][A-Z0-9]+-\d+)\b/;
+// Prefijo del proyecto Jira aceptado por el fallback de título. Configurable para
+// reusar el reporter en otro proyecto (XRAY_PROJECT_PREFIX); default 'MG'.
+const KEY_PREFIX = process.env.XRAY_PROJECT_PREFIX ?? 'MG';
+// SOLO keys del proyecto: un título sin `<PREFIX>-\d+` queda unmapped en vez de emitir
+// una key basura (ver "POR QUÉ" en el docblock del módulo — caso live `SMOKE-01`).
+const KEY_IN_TITLE = new RegExp('\\b(' + KEY_PREFIX + '-\\d+)\\b');
 // Secuencias ANSI de color (ESC[..m). ESC via fromCharCode para evitar escapes de control.
 const ANSI = new RegExp(String.fromCharCode(27) + '\\[[0-9;]*m', 'g');
 
@@ -95,7 +113,8 @@ const KEY_DENYLIST = new Set(
 // TODAS las keys tms/test_key distinctas, uniendo las annotations ESTÁTICAS del
 // TestCase (declaradas en describe/test) con las de RUNTIME del TestResult (donde el
 // decorador @atc las agrega). Así la corrida acredita evidencia a cada Test cubierto.
-// Fallback al título solo si no hay ninguna annotation. Denylist filtra no-Tests.
+// Fallback al título solo si no hay ninguna annotation, y SOLO para keys del prefijo del
+// proyecto (KEY_PREFIX) — nunca para IDs de matriz/spec (TS-*, BL-*, COB-*). Denylist filtra no-Tests.
 function extractTestKeys(test: TestCase, result: TestResult): string[] {
 	const keys = new Set<string>();
 	const all = [...test.annotations, ...(result.annotations ?? [])];
@@ -183,7 +202,7 @@ class XrayReporter implements Reporter {
 		if (this.unmapped > 0) {
 			console.log(
 				'\x1b[33m%s\x1b[0m',
-				`⚠️  Xray: ${this.unmapped} spec(s) sin key → NO exportados. Añade annotation type:'tms' (o [KEY] en el título).`
+				`⚠️  Xray: ${this.unmapped} spec(s) sin key → NO exportados. Añade annotation type:'tms' (o [${KEY_PREFIX}-NNN] en el título).`
 			);
 		}
 
