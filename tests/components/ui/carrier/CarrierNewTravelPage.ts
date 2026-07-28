@@ -216,6 +216,25 @@ export class CarrierNewTravelPage extends UiBase {
 	}
 
 	/**
+	 * Detecta si la Forma de Pago ya quedó RESUELTA a la tarjeta guardada del pax
+	 * ("Tarjeta de crédito VISA *** <last4>") — con tarjeta vigente el form nativo NO se
+	 * renderiza y el dropdown la preselecciona (confirmado por screenshot live 2026-07-27,
+	 * carrier 1521 / Authorize). Utility read-only: silent-fail → false.
+	 */
+	@step
+	async isSavedCardPreselected(last4: string): Promise<boolean> {
+		try {
+			await this.page
+				.getByText(new RegExp(`\\*+\\s*${last4}`))
+				.first()
+				.waitFor({ state: 'visible', timeout: 3_000 });
+			return true;
+		} catch {
+			return false;
+		}
+	}
+
+	/**
 	 * Click en "Validar" del form NATIVO Angular y espera el oráculo de tarjeta válida
 	 * ("Tarjeta válida" / "Valid card") — VERIFICADO en vivo para Authorize (4111/900/10001);
 	 * eBiz comparte el form (oráculo asumido, TODO live). Para Stripe Elements usar el flujo
