@@ -110,7 +110,10 @@ export const XRAY_KEYS_BY_GATEWAY: Record<GatewayCompany, GatewayXrayRegistry> =
 		wallet: { addCard: 'MG-285' }
 	},
 	ebizcharge: {
-		// TODO: eBizCharge aún sin issues CFG en Jira ni TC IDs en matriz (TS-EBIZ-*).
+		// Las issues CFG de eBizCharge NO existen en Jira todavía → keys en null, sin
+		// annotation, `unmapped` visible en el reporter. Las keys las crea QA; el código
+		// jamás las fabrica. Lista de las que hay que crear:
+		// docs/gateway-pg/ebizcharge/MG-KEYS-REQUEST.md
 		cfg: {
 			viewUnlinked: null,
 			linkValid: null,
@@ -121,15 +124,19 @@ export const XRAY_KEYS_BY_GATEWAY: Record<GatewayCompany, GatewayXrayRegistry> =
 			reloadPersistence: null,
 			linkStatus: null
 		},
+		// Los TC IDs de matriz SÍ existen desde la Fase 4 (derivación del L1 Stripe):
+		// docs/gateway-pg/ebizcharge/matriz_cases.md:55-62 + normalized-test-cases.json.
+		// Son IDs LOCALES de la matriz, no keys de Jira: poblarlos no inventa nada, y
+		// recupera el `[TS-EBIZ-TCxxxx]` en el título de cada caso.
 		cfgTcIds: {
-			viewUnlinked: null,
-			linkValid: null,
-			linkInvalid: null,
-			cancelUnlink: null,
-			unlink: null,
-			exclusivity: null,
-			reloadPersistence: null,
-			linkStatus: null
+			viewUnlinked: 'TS-EBIZ-TC1050',
+			linkValid: 'TS-EBIZ-TC1051',
+			linkInvalid: 'TS-EBIZ-TC1052',
+			cancelUnlink: 'TS-EBIZ-TC1053',
+			unlink: 'TS-EBIZ-TC1054',
+			exclusivity: 'TS-EBIZ-TC1055',
+			reloadPersistence: 'TS-EBIZ-TC1056',
+			linkStatus: 'TS-EBIZ-TC1057'
 		},
 		wallet: { addCard: null }
 	},
