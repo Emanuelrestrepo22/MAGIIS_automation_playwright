@@ -11,6 +11,7 @@
  *   - POST /magiis-v0.2/carriers/{carrierId}/paymentMethodsByPax → cards[]
  */
 import type { Page } from '@playwright/test';
+import { debugLog } from '@helpers/index';
 
 /** Carrier ID del ambiente TEST (confirmado en .env.test y specs) */
 const DEFAULT_CARRIER_ID = process.env.CARRIER_ID ?? '1521';
@@ -470,8 +471,11 @@ export async function cleanupGatewayCardByLast4(page: Page, queries: readonly st
 			const toDelete = cards.filter(card => card.lastFourDigits === last4);
 			for (const card of toDelete) await deletePassengerCard(page, paxId, card.id);
 			if (toDelete.length > 0) return;
-		} catch {
-			// utility silent-fail: query sin match no es error de la precondición
+		} catch (error) {
+			// utility silent-fail: query sin match no es error de la precondición.
+			// debugLog (no console): observabilidad del E13 — un 401 por token frío o un DELETE
+			// rechazado se veían como "sin match" (root-cause del falso negativo del piloto 2026-07-28).
+			debugLog('card-precondition', `[card-cleanup] query "${query}" fallo: ${String(error).slice(0, 200)}`);
 		}
 	}
 }
