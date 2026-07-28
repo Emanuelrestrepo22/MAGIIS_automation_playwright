@@ -224,7 +224,11 @@ export class CarrierNewTravelPage extends UiBase {
 	@step
 	async validateNativeCard(): Promise<void> {
 		await this.page.getByRole('button', { name: /^(Valid|Validar)$/i }).click();
-		await expect(this.page.getByText(/Tarjeta v[áa]lida|Valid card|Card valid/i).first()).toBeVisible({ timeout: 20_000 });
+		// 45s: la validación viaja al sandbox del PSP (Authorize.Net) y el RTT excede 20s
+		// de forma intermitente bajo carga — observado en vivo 2026-07-27 (2 flakes en runs
+		// back-to-back con el MISMO oráculo; verde en ventana tranquila). Espera por estado
+		// observable, oráculo intacto.
+		await expect(this.page.getByText(/Tarjeta v[áa]lida|Valid card|Card valid/i).first()).toBeVisible({ timeout: 45_000 });
 	}
 
 	/**
