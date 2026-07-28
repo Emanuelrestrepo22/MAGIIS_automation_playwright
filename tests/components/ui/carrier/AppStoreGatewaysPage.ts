@@ -353,20 +353,35 @@ export class AppStoreGatewaysPage extends UiBase {
 
 	/**
 	 * Clasifica el estado de la card de `company`. Query read-only (`unknown` es un resultado
-	 * válido de la clasificación, NO un error tragado). i18n-proof: prioriza la clase de color
-	 * del link de acción; cae al texto del footer para "No Disponible".
+	 * válido de la clasificación, NO un error tragado).
+	 *
+	 * CLASIFICA POR EL **TEXTO** DEL LINK DE ACCIÓN, no por su clase de color (fix live
+	 * 2026-07-28): la clase es AMBIGUA — "No Disponible" (pasarela bloqueada por la regla de
+	 * exclusividad) también se renderiza como `a.red-text`, igual que "Desvincular". El check
+	 * por clase devolvía `linked` para una pasarela NO vinculada → `currentActiveGateway()`
+	 * elegía la pasarela equivocada y la suite CFG intentaba desvincular una card cuyo link no
+	 * abre popup (click al vacío → timeout del toPass). Evidencia: dump del DOM con
+	 * `a.red-text` presente y visible en una card cuya acción era "No Disponible".
+	 * El locator SIGUE siendo por clase (discriminador estable, ver `vincularLink`); lo que
+	 * cambia es que se decide por el texto DE ESE elemento — mismo criterio que el probe
+	 * read-only del App Store, cuya clasificación coincidió con la realidad en todos los dumps.
 	 */
 	@step
 	async readState(company: GatewayCompany): Promise<GatewayCardState> {
 		const card = this.cardFor(company);
 		await card.waitFor({ state: 'visible', timeout: 20_000 });
-		const redText = card.locator('a.red-text').first();
-		if (await redText.isVisible().catch(() => false)) return 'linked';
-		const greenText = card.locator('a.green-text').first();
-		if (await greenText.isVisible().catch(() => false)) return 'linkable';
+		// Texto del link de acción (cualquiera de los dos colores) — decide el estado.
+		const actionLink = card.locator('a.red-text, a.green-text').first();
+		if (await actionLink.isVisible().catch(() => false)) {
+			const action = ((await actionLink.textContent().catch(() => '')) ?? '').trim().toLowerCase();
+			if (action.includes('no disponible') || action.includes('not available')) return 'unavailable';
+			if (action.includes('desvincular') || action.includes('unlink')) return 'linked';
+			if (action.includes('vincular') || action.includes('link') || action.includes('habilitar')) return 'linkable';
+		}
+		// Fallback al texto completo de la card (sin link de acción visible, p.ej. MP fuera de región).
 		const raw = ((await card.textContent().catch(() => '')) ?? '').trim().toLowerCase();
-		if (raw.includes('desvincular') || raw.includes('unlink')) return 'linked';
 		if (raw.includes('no disponible') || raw.includes('not available')) return 'unavailable';
+		if (raw.includes('desvincular') || raw.includes('unlink')) return 'linked';
 		if (raw.includes('vincular') || raw.includes('link') || raw.includes('habilitar')) return 'linkable';
 		return 'unknown';
 	}
