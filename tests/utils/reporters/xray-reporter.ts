@@ -65,12 +65,24 @@ interface ReporterOptions {
 // Tipos de annotation que portan la key del Test de Xray (orden = prioridad).
 // 'tms' es la convención existente del org (Allure links + carrier-v2).
 const KEY_ANNOTATION_TYPES = ['tms', 'test_key'];
-// Prefijo del proyecto Jira aceptado por el fallback de título. Configurable para
-// reusar el reporter en otro proyecto (XRAY_PROJECT_PREFIX); default 'MG'.
-const KEY_PREFIX = process.env.XRAY_PROJECT_PREFIX ?? 'MG';
-// SOLO keys del proyecto: un título sin `<PREFIX>-\d+` queda unmapped en vez de emitir
+// Prefijos de PROYECTO Jira cuyas keys son Tests de Xray importables (CSV, allowlist).
+// Default `MG,MX`: los dos proyectos reales que este repo acredita. Todo lo demás es un
+// identificador que NO existe en Jira (backlog interno `BL-*`, IDs de matriz `TS-*`,
+// numeraciones de área `COB-*`) y NO debe salir al import.
+// `XRAY_PROJECT_PREFIX` (singular) se acepta por compatibilidad.
+const KEY_PREFIXES = (process.env.XRAY_PROJECT_PREFIXES ?? process.env.XRAY_PROJECT_PREFIX ?? 'MG,MX')
+	.split(',')
+	.map(s => s.trim())
+	.filter(Boolean);
+const PREFIX_ALTERNATION = KEY_PREFIXES.join('|');
+// SOLO keys de proyecto: un título sin `<PREFIX>-\d+` queda unmapped en vez de emitir
 // una key basura (ver "POR QUÉ" en el docblock del módulo — caso live `SMOKE-01`).
-const KEY_IN_TITLE = new RegExp('\\b(' + KEY_PREFIX + '-\\d+)\\b');
+const KEY_IN_TITLE = new RegExp('\\b((?:' + PREFIX_ALTERNATION + ')-\\d+)\\b');
+// Misma allowlist para las keys de ANNOTATION (estáticas y runtime del decorador @atc):
+// el `@atc('BL-036')` de AuthorizeSandboxApi es trazabilidad de backlog interno, NO un Test
+// de Xray — sin este filtro el import metía `BL-036` como testKey en el ATR (caso live
+// 2026-07-28, misma clase de bug que `SMOKE-01` pero por la vía del decorador).
+const IS_PROJECT_KEY = new RegExp('^(?:' + PREFIX_ALTERNATION + ')-\\d+$');
 // Secuencias ANSI de color (ESC[..m). ESC via fromCharCode para evitar escapes de control.
 const ANSI = new RegExp(String.fromCharCode(27) + '\\[[0-9;]*m', 'g');
 
@@ -113,9 +125,12 @@ const KEY_DENYLIST = new Set(
 // TODAS las keys tms/test_key distinctas, uniendo las annotations ESTÁTICAS del
 // TestCase (declaradas en describe/test) con las de RUNTIME del TestResult (donde el
 // decorador @atc las agrega). Así la corrida acredita evidencia a cada Test cubierto.
-// Fallback al título solo si no hay ninguna annotation, y SOLO para keys del prefijo del
-// proyecto (KEY_PREFIX) — nunca para IDs de matriz/spec (TS-*, BL-*, COB-*). Denylist filtra no-Tests.
-function extractTestKeys(test: TestCase, result: TestResult): string[] {
+// Fallback al título solo si no hay ninguna annotation. TODA key (annotation o título) pasa
+// por la allowlist de prefijos de proyecto (IS_PROJECT_KEY) — nunca se exportan IDs que no
+// existen en Jira (TS-*, BL-*, COB-*). Denylist filtra además keys de proyecto que no son Test
+// (Executions/Plans/Stories) o que pertenecen al ATR de otra pasarela.
+// Devuelve también las descartadas por no ser de proyecto, para reportar el drop (nunca silencioso).
+function extractTestKeys(test: TestCase, result: TestResult): { keys: string[]; nonProject: string[] } {
 	const keys = new Set<string>();
 	const all = [...test.annotations, ...(result.annotations ?? [])];
 	for (const type of KEY_ANNOTATION_TYPES) {
@@ -127,14 +142,24 @@ function extractTestKeys(test: TestCase, result: TestResult): string[] {
 		const m = KEY_IN_TITLE.exec(test.title);
 		if (m) keys.add(m[1]);
 	}
-	for (const k of [...keys]) if (KEY_DENYLIST.has(k)) keys.delete(k);
-	return [...keys];
+	const nonProject: string[] = [];
+	for (const k of [...keys]) {
+		if (!IS_PROJECT_KEY.test(k)) {
+			nonProject.push(k);
+			keys.delete(k);
+			continue;
+		}
+		if (KEY_DENYLIST.has(k)) keys.delete(k);
+	}
+	return { keys: [...keys], nonProject };
 }
 
 class XrayReporter implements Reporter {
 	private readonly outputFile: string;
 	private readonly results = new Map<string, XrayTestResult>();
 	private unmapped = 0;
+	/** Keys descartadas por no pertenecer a un proyecto Jira de la allowlist (p.ej. `BL-036`). */
+	private readonly nonProjectKeys = new Set<string>();
 
 	constructor(options: ReporterOptions = {}) {
 		// XRAY_OUTPUT_FILE gana sobre el outputFile fijado en playwright.config.ts:
@@ -151,7 +176,8 @@ class XrayReporter implements Reporter {
 		// Ignorar corridas intermedias de retry: solo el resultado final cuenta.
 		if (result.status !== 'passed' && result.retry < test.retries) return;
 
-		const testKeys = extractTestKeys(test, result);
+		const { keys: testKeys, nonProject } = extractTestKeys(test, result);
+		for (const k of nonProject) this.nonProjectKeys.add(k);
 		if (testKeys.length === 0) {
 			this.unmapped++;
 			return;
@@ -202,7 +228,15 @@ class XrayReporter implements Reporter {
 		if (this.unmapped > 0) {
 			console.log(
 				'\x1b[33m%s\x1b[0m',
-				`⚠️  Xray: ${this.unmapped} spec(s) sin key → NO exportados. Añade annotation type:'tms' (o [${KEY_PREFIX}-NNN] en el título).`
+				`⚠️  Xray: ${this.unmapped} spec(s) sin key → NO exportados. Añade annotation type:'tms' (o [${KEY_PREFIXES[0]}-NNN] en el título).`
+			);
+		}
+		// El drop de keys que no son de proyecto NUNCA es silencioso: son ids de trazabilidad
+		// interna (backlog `BL-*`, matriz `TS-*`) que no existen como issue en Jira.
+		if (this.nonProjectKeys.size > 0) {
+			console.log(
+				'\x1b[33m%s\x1b[0m',
+				`ℹ️  Xray: key(s) fuera de los proyectos [${KEY_PREFIXES.join(',')}] descartadas del import: ${[...this.nonProjectKeys].join(', ')} (trazabilidad interna, no son Test de Xray).`
 			);
 		}
 
