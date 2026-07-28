@@ -62,6 +62,21 @@ export XRAY_KEY_DENYLIST="MG-3,MG-178,MG-509,MG-510,MG-511,MG-512,MG-513,MG-514,
 
 (Misma cadena exportada como `XRAY_KEY_DENYLIST_RECOMMENDED` en `xray-keys.ts`. Nota: en los scripts npm el env embebido lo fija `cross-env`, así que un `export` de shell NO lo pisa — para override, editar el script o correr `npx playwright test` a mano con el env deseado.)
 
+#### Denylist POR RUN — keys ajenas al ATR de la pasarela
+
+La lista de arriba es la parte **estructural** (issues que no son Test: épica, ATP, executions) y es **común** a las 4 pasarelas. Encima de ella, cada script `:xray` añade un tramo **específico de su run**:
+
+> **Criterio:** keys legítimas de ATC que pertenecen al ATR de OTRA pasarela. El ATC las emite por efecto colateral del flujo (p. ej. `unlinkActiveGateway` / `ensureActiveGateway` desvinculan la pasarela ACTIVA — que puede ser Stripe — al preparar el slot para Authorize), así que la corrida las ve aunque el caso probado no sea suyo. **Su run se acredita en el ATR de origen**, no en el de la pasarela que se está corriendo; en este run se denylistean para no inflar el ATR con evidencia prestada.
+
+| Run (`:xray`) | Tramo añadido | Por qué |
+|---|---|---|
+| `authorize` (MG-558) | `MG-158` + `MG-211..MG-218` | `MG-158` es el piloto hold, key del **área E de Stripe** (Authorize no tiene área E en el membership del ATP) — la emite el piloto parametrizado cuando `GATEWAYS=authorize`. `MG-211..218` = CFG **Stripe**, emitidas por los ATC de switch de la suite CFG Authorize. |
+| `stripe` (MG-560) | `MG-219..MG-226` | Simétrico: CFG **Authorize**, alcanzable desde los ATC de switch del run Stripe. `MG-158` **NO** se denylistea acá — es key propia del ATR Stripe. |
+| `ebizcharge` (MG-559) | `MG-158` + `MG-211..MG-226` | eBiz no tiene keys CFG propias (registry `null`); todo `MG-211..226` que aparezca es de Stripe o Authorize. `MG-158` es de Stripe. |
+| `mercadopago` (MG-561) | `MG-158` + `MG-211..MG-226` | Idem eBizCharge. |
+
+Regla de mantenimiento: al dar de alta keys CFG/WAL de una pasarela nueva, agregarlas al tramo por-run de las OTRAS tres — no a `XRAY_KEY_DENYLIST_RECOMMENDED` (esa lista es solo estructural y compartida).
+
 ### 2.4 Orden de ejecución recomendado
 
 **Authorize → eBizCharge → Stripe → Mercado Pago.**
