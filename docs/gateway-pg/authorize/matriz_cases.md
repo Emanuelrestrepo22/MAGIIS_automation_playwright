@@ -89,6 +89,8 @@ Espeja `TS-STRIPE-TC1001..TC1008` pero adaptado a la UI Authorize.
 - Network: `transactionResponse.responseCode = "2"`, `responseReasonCode` típicamente `2` (referral/decline).
 - Equivalente Stripe: `TS-STRIPE-TC1059` (insufficient funds Hold ON) y `TS-STRIPE-P2-TC090` (generic decline contractor).
 
+> **Estado de automatización (2026-07-28) — nivel CONTRATO ≠ nivel UI.** El CONTRATO del sandbox para el trigger ZIP `46282` está automatizado a nivel API en `tests/features/gateway-pg/api/authorize-sandbox/contract-decline.api.spec.ts`, con su propio Test Xray de nivel contrato: **MG-594** (rango del pack: MG-590..MG-601, creados 2026-07-28, miembros del Test Execution MG-558). Ese test solo verifica la RESPUESTA del PSP (`responseCode = "2"`). El flujo UI de Alta de Viaje que describen TC1016 / TC1017 (pop-up de error + viaje NO creado) sigue **SIN automatizar** — gap declarado; los TC de esta sección NO se acreditan con los contract tests API.
+
 ### 2.3 CVV triggers (901 mismatch, 902 should-be, 903 issuer, 904 not-processed)
 
 | ID               | Descripción                                                                                                                                                          | CVV | Card | Hold | Outcome |
@@ -101,6 +103,8 @@ Espeja `TS-STRIPE-TC1001..TC1008` pero adaptado a la UI Authorize.
 | TS-AUTHORIZE-TC1026 | Validar reintento exitoso desde detalle del viaje tras fallo CVV 901 — usuario reintenta con CVV 900 desde tarjeta nueva → viaje pasa a "Buscando conductor"          | `900` (reintento) | `AUTHORIZE_CARDS.SUCCESS` | ON | Reintento OK, viaje activo |
 
 > **TODO BL-025 runtime:** validar con backend MAGIIS si CVV mismatch (`901`) genera rechazo duro o solo flag. La doc Authorize indica que el CVV check no aborta la transacción por sí mismo — el merchant decide.
+
+> **Estado de automatización (2026-07-28) — nivel CONTRATO ≠ nivel UI.** El CONTRATO del sandbox para los triggers CVV `901` y `904` está automatizado a nivel API en `tests/features/gateway-pg/api/authorize-sandbox/contract-cvv-avs.api.spec.ts`, con Tests Xray propios de nivel contrato: **MG-595** (CVV 901 → `cvvResultCode = "N"`) y **MG-596** (CVV 904 → `cvvResultCode = "P"`) (rango del pack: MG-590..MG-601, creados 2026-07-28, miembros del Test Execution MG-558). Esos tests solo verifican la RESPUESTA del PSP. El flujo UI de Alta de Viaje que describen TC1021 / TC1022 / TC1025 (política MAGIIS de aceptar o rechazar el flag) sigue **SIN automatizar** — gap declarado; los TC de esta sección NO se acreditan con los contract tests API.
 
 ### 2.4 AVS triggers (no match, non-US, otros)
 
@@ -116,6 +120,8 @@ Espeja `TS-STRIPE-TC1001..TC1008` pero adaptado a la UI Authorize.
 
 > **TODO matriz:** documentar el comportamiento MAGIIS esperado para cada AVS code. La política puede ser: aceptar `Y/X/W`, rechazar `N`, warning para `G/R/S/U`. Pendiente confirmación con líder.
 
+> **Estado de automatización (2026-07-28) — nivel CONTRATO ≠ nivel UI.** El CONTRATO del sandbox para los triggers AVS `46205` y `46204` está automatizado a nivel API, con Tests Xray propios de nivel contrato: **MG-597** (ZIP 46205 → `avsResultCode = "N"`, en `contract-cvv-avs.api.spec.ts`) y **MG-599** (ZIP 46204 → `avsResultCode = "G"`, en `contract-edge.api.spec.ts`) (rango del pack: MG-590..MG-601, creados 2026-07-28, miembros del Test Execution MG-558). Esos tests solo verifican la RESPUESTA del PSP. El flujo UI de Alta de Viaje que describen TC1031 / TC1035 sigue **SIN automatizar** — gap declarado; los TC de esta sección NO se acreditan con los contract tests API.
+
 ### 2.5 Partial / Prepaid authorizations (edge cases)
 
 | ID               | Descripción                                                                                                                            | ZIP | Card | Hold | Outcome |
@@ -125,6 +131,8 @@ Espeja `TS-STRIPE-TC1001..TC1008` pero adaptado a la UI Authorize.
 | TS-AUTHORIZE-TC1043 | Validar Alta de Viaje desde carrier para usuario personal con Prepaid Auth ($0 balance, ZIP 46228) Hold ON                            | `46228` | `AUTHORIZE_CARDS.PREPAID_ZERO` | ON | Approved con balance cero — flag explícito |
 
 > **Decisión de negocio pendiente:** ¿MAGIIS acepta Partial Authorization? Stripe no expone este caso de forma directa; es una capacidad exclusiva Authorize. Si MAGIIS lo rechaza por política, el TC se mueve a "expected decline".
+
+> **Estado de automatización (2026-07-28) — nivel CONTRATO ≠ nivel UI.** El CONTRATO del sandbox para los triggers ZIP `46225` (partial) y `46228` (prepaid balance cero) está automatizado a nivel API en `tests/features/gateway-pg/api/authorize-sandbox/contract-edge.api.spec.ts`, con Tests Xray propios de nivel contrato: **MG-600** (ZIP 46225) y **MG-601** (ZIP 46228) (rango del pack: MG-590..MG-601, creados 2026-07-28, miembros del Test Execution MG-558). Esos tests solo verifican la RESPUESTA del PSP — y hoy el monto parcial / el bloque `prePaidCard` NO son asertables porque la cuenta sandbox está en TEST MODE (ver los `TODO(live)` del spec). El flujo UI de Alta de Viaje que describen TC1041 / TC1043 sigue **SIN automatizar** — gap declarado; los TC de esta sección NO se acreditan con los contract tests API.
 
 ---
 
