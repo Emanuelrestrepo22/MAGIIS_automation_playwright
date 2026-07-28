@@ -27,18 +27,16 @@
  */
 
 import type { GatewayName } from '@fixtures/gateways/_shared';
-import type { Page } from '@playwright/test';
 
 import { test, expect } from '@TestFixture';
 import { CarrierDashboardPage, CarrierNewTravelPage } from '@ui/carrier';
 import { cardFormFor } from '@ui/carrier/card-forms';
 import { resolveCard } from '@fixtures/gateways/_shared';
-import { debugLog } from '@helpers/index';
 import { getGatewayPgAdapter } from '@features/gateway-pg/helpers/adapters';
 import { gatewayTag } from '@features/gateway-pg/helpers/adapters/gateway-tag';
 import { loginAsDispatcher } from '@features/gateway-pg/fixtures/gateway.fixtures';
 import { validateAndSelectMercadoPagoCard } from '@features/gateway-pg/helpers/mercadoPago.helpers';
-import { getPassengerId, getPassengerCards, deletePassengerCard } from '@features/gateway-pg/helpers/card-precondition';
+import { cleanupGatewayCardByLast4 } from '@features/gateway-pg/helpers/card-precondition';
 
 export type WalletAddCardSuiteOptions = {
 	/** TC ID de matriz para el título (ej. 'TS-AUTHORIZE-WAL-01'). Omitido → sin corchete. */
@@ -53,27 +51,6 @@ export type WalletAddCardSuiteOptions = {
 	 */
 	cleanupBeforeAdd?: boolean;
 };
-
-/**
- * Idempotencia: borra por API la tarjeta (last4) del pax antes del alta. Prueba varias
- * queries de búsqueda (la tarjeta se adjunta al pasajero del alta). Extraído del spec
- * Authorize original; queries por pasarela en `journeyDefaults.paxSearchQueries` (S8).
- */
-async function cleanupGatewayCard(page: Page, queries: readonly string[], last4: string): Promise<void> {
-	for (const query of queries) {
-		try {
-			const paxId = await getPassengerId(page, query);
-			const resp = await getPassengerCards(page, paxId);
-			const cards = resp.cards ?? [];
-			const toDelete = cards.filter(card => card.lastFourDigits === last4);
-			for (const card of toDelete) await deletePassengerCard(page, paxId, card.id);
-			debugLog('gateway-pg:wallet', `[precond] query="${query}" pax=${paxId}: ${cards.length} tarjetas, borradas ${toDelete.length} con last4=${last4}`);
-			if (toDelete.length > 0) return;
-		} catch (error) {
-			debugLog('gateway-pg:wallet', `[precond] query="${query}" skip: ${(error as Error).message}`);
-		}
-	}
-}
 
 /**
  * Genera la suite WAL (alta de tarjeta) de `gateway`. Ver doc del módulo.
@@ -119,7 +96,7 @@ export function defineWalletAddCardSuite(gateway: GatewayName, options: WalletAd
 
 			if (cleanupBeforeAdd) {
 				await test.step('And: precondición — limpiar tarjeta previa del pax (idempotencia)', async () => {
-					await cleanupGatewayCard(page, defaults.paxSearchQueries, card.last4);
+					await cleanupGatewayCardByLast4(page, defaults.paxSearchQueries, card.last4);
 				});
 			}
 

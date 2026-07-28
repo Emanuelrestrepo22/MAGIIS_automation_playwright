@@ -3,30 +3,32 @@
  * =====================================================================
  *
  * La pieza que faltaba entre el dato y el test. El fixture sabe qué responde la
- * PASARELA (código 51, CVV2 `N`, AVS `NNN`), pero un test necesita saber qué debe
- * mostrar el SISTEMA: ¿el viaje queda "Buscando chofer" o "No autorizado"? ¿aparece un
- * mensaje? ¿se guarda la tarjeta? Sin esta capa, "ingresar la tarjeta 51 y verificar que
- * el sistema informe fondos insuficientes" no es expresable en código.
+ * PASARELA (código 51, CVV2 `N`, AVS `NNN`), pero un test necesita saber qué debe hacer
+ * el SISTEMA: ¿la tarjeta queda validada? ¿el viaje queda "Buscando chofer" o
+ * "No autorizado"? Sin esta capa, "ingresar la tarjeta 51 y verificar que el sistema
+ * informe fondos insuficientes" no es expresable en código.
  *
  * El comportamiento es el MISMO para las 4 pasarelas — es justamente el invariante que
  * hace posible el código estándar. Lo que cambia por pasarela es el dato de entrada
  * (`CARD_MATRIX`), no lo que el sistema tiene que hacer.
  *
- * ═══ REGLA DURA: este archivo es un registro de comportamiento OBSERVADO ═══
+ * ═══ DOS NIVELES DE CERTEZA, explícitos ═══
  *
- * Solo se declara un intent cuando su comportamiento fue verificado en vivo o está
- * documentado en el repo. Un intent sin observación **lanza** en `outcomeFor()` en vez de
- * caer en un default optimista. Un default acá sería peor que un hueco: produciría un
- * test verde que asserta el comportamiento que asumimos, no el que el sistema tiene.
+ * `basis` distingue de dónde sale cada oráculo, porque no todo está verificado igual:
  *
- * Hoy hay DOS estados observados, y están documentados:
- *   - `SEARCHING_DRIVER` ("Buscando chofer") ← transacción aprobada
- *   - `NO_AUTORIZADO` ("No autorizado")     ← transacción rechazada
- * Fuente: `docs/gateway-pg/ebizcharge/ARCHITECTURE.md` §mapping + los ~20 asserts de
- * 'Buscando chofer' que ya existen en las suites verdes de Stripe/Authorize/MP.
+ *   - `'live-verified'`   — observado corriendo el caso. El oráculo puede ser estricto.
+ *   - `'documented-class'` — el mapeo de la CLASE está documentado (aprobada →
+ *     `SEARCHING_DRIVER`, rechazada → `NO_AUTORIZADO`, según
+ *     `docs/gateway-pg/ebizcharge/ARCHITECTURE.md` §mapping y el catálogo del ATP), pero
+ *     el copy exacto del mensaje por código NO se verificó. El oráculo asserta el ESTADO,
+ *     que es la regla de negocio, y NO inventa el texto.
  *
- * Cómo se agrega un intent: correrlo en vivo UNA vez, observar el estado y el mensaje
- * reales, y recién entonces declararlo acá citando la evidencia.
+ * Un intent cuyo comportamiento no se deduce ni de la clase ni de una corrida **no se
+ * declara**, y `outcomeFor()` lanza. Eso es deliberado: un default produciría un test
+ * verde que valida lo que asumimos, no lo que el sistema hace.
+ *
+ * `messagePattern` solo se llena cuando el copy fue verificado. Nunca a partir del
+ * mensaje que devuelve la pasarela — MAGIIS no lo muestra tal cual.
  */
 
 import { ALL_CARD_INTENTS, type CardIntent } from '@fixtures/gateways/_shared';
@@ -34,52 +36,136 @@ import { ALL_CARD_INTENTS, type CardIntent } from '@fixtures/gateways/_shared';
 /** Estado del viaje tras intentar el cobro, tal como lo muestra la grilla del carrier. */
 export type ExpectedTravelStatus = 'Buscando chofer' | 'No autorizado';
 
+export type OutcomeBasis = 'live-verified' | 'documented-class';
+
 export type JourneyOutcome = {
 	/** Etiqueta corta para el título del test. */
 	readonly label: string;
-	/** Estado esperado del viaje. */
+	/** Área C — ¿la tarjeta debe quedar validada y guardada en la wallet? */
+	readonly addCardShouldSucceed: boolean;
+	/** Área F — estado esperado del viaje tras intentar el cobro. */
 	readonly expectedTravelStatus: ExpectedTravelStatus;
-	/** `true` si la tarjeta debe quedar guardada/seleccionable tras la operación. */
-	readonly cardShouldPersist: boolean;
-	/** De dónde sale la observación — obligatorio, es lo que sostiene el oráculo. */
+	/** De dónde sale el oráculo. */
+	readonly basis: OutcomeBasis;
+	/** Evidencia concreta — obligatorio, es lo que sostiene el oráculo. */
 	readonly evidence: string;
+	/** Copy verificado del mensaje al usuario. Ausente = no verificado, no assertar texto. */
+	readonly messagePattern?: RegExp;
 };
 
+const DOC_MAPPING =
+	'docs/gateway-pg/ebizcharge/ARCHITECTURE.md §mapping (approved → SEARCHING_DRIVER, decline → NO_AUTORIZADO) + catálogo del ATP MG-178.';
+
+/** Aprobada: la tarjeta se valida y el viaje sale a buscar chofer. */
+const aprobada = (label: string, evidence: string, basis: OutcomeBasis = 'documented-class'): JourneyOutcome => ({
+	label,
+	addCardShouldSucceed: true,
+	expectedTravelStatus: 'Buscando chofer',
+	basis,
+	evidence
+});
+
+/** Rechazada: la tarjeta NO se valida y el viaje queda no autorizado. */
+const rechazada = (label: string, evidence: string, basis: OutcomeBasis = 'documented-class'): JourneyOutcome => ({
+	label,
+	addCardShouldSucceed: false,
+	expectedTravelStatus: 'No autorizado',
+	basis,
+	evidence
+});
+
 /**
- * Comportamiento observado por intent. Deliberadamente PARCIAL: solo lo verificado.
- * Los intents ausentes hacen lanzar a `outcomeFor()`.
+ * Comportamiento esperado por intent.
+ *
+ * Deliberadamente PARCIAL: los intents ausentes hacen lanzar a `outcomeFor()` porque su
+ * comportamiento no se deduce de la clase (ver el bloque de exclusiones al final).
  */
 export const OUTCOME_BY_INTENT: Partial<Record<CardIntent, JourneyOutcome>> = {
-	HAPPY_NO_AUTH: {
-		label: 'aprobada',
-		expectedTravelStatus: 'Buscando chofer',
-		cardShouldPersist: true,
-		evidence:
-			'Verificado en vivo en Stripe, Authorize (MG-285, 2026-07-24) y MercadoPago; es el oráculo del piloto hold-happy-no3ds.'
-	},
-	DECLINE_AUTHORIZE: {
-		label: 'rechazada (decline genérico)',
-		expectedTravelStatus: 'No autorizado',
-		cardShouldPersist: false,
-		evidence: 'docs/gateway-pg/ebizcharge/ARCHITECTURE.md §mapping: decline → NO_AUTORIZADO. Observado en Stripe y MP.'
-	}
+	// ── Aprobaciones ────────────────────────────────────────────────────
+	HAPPY_NO_AUTH: aprobada(
+		'aprobada',
+		'Verificado en vivo en Stripe, Authorize (MG-285, 2026-07-24) y MercadoPago; es el oráculo del piloto hold-happy-no3ds.',
+		'live-verified'
+	),
+	HAPPY_MASTERCARD: aprobada('aprobada (Mastercard)', `Variante de marca del happy path — mismo comportamiento. ${DOC_MAPPING}`),
+	HAPPY_AMEX: aprobada('aprobada (Amex, CVV 4 dígitos)', `Variante de marca del happy path. ${DOC_MAPPING}`),
+	HAPPY_DISCOVER: aprobada('aprobada (Discover)', `Variante de marca del happy path. ${DOC_MAPPING}`),
+	HAPPY_SLOW_PROCESSING: aprobada(
+		'aprobada con demora del procesador',
+		`El outcome de la pasarela es approved; lo único distinto es la latencia, que se absorbe con el timeout del caso. ${DOC_MAPPING}`
+	),
+	HAPPY_AUTH: aprobada(
+		'aprobada tras challenge 3DS',
+		'Verificado en vivo en Stripe (suites de hold con 3DS: el challenge se completa y el viaje queda Buscando chofer).',
+		'live-verified'
+	),
+
+	// ── Verificación blanda: APRUEBA con la verificación fallida ─────────
+	// El riesgo acá es el opuesto al de un decline: que el sistema la deje pasar como si
+	// nada hubiera fallado. El estado esperado es el del happy path a propósito.
+	APPROVED_CVV_MISMATCH: aprobada(
+		'aprobada con CVV2 sin coincidir',
+		`La transacción se aprueba (la verificación del código falla pero no rechaza). ${DOC_MAPPING}`
+	),
+	APPROVED_AVS_MISMATCH: aprobada(
+		'aprobada con AVS sin coincidir',
+		`La transacción se aprueba (la verificación de dirección falla pero no rechaza). ${DOC_MAPPING}`
+	),
+
+	// ── Rechazos ────────────────────────────────────────────────────────
+	DECLINE_AUTHORIZE: rechazada(
+		'rechazada (decline genérico)',
+		'Verificado en vivo en Stripe y MercadoPago; mapeo documentado decline → NO_AUTORIZADO.',
+		'live-verified'
+	),
+	FAIL_AUTH: rechazada(
+		'rechazada tras completar el challenge 3DS',
+		'Verificado en vivo en Stripe (card 1629: el challenge pasa y el cobro se declina igual).',
+		'live-verified'
+	),
+	DECLINE_INVALID_CVC: rechazada('rechazada por CVV inválido', DOC_MAPPING),
+	DECLINE_INSUFFICIENT_FUNDS: rechazada('rechazada por fondos insuficientes', DOC_MAPPING),
+	DECLINE_DO_NOT_HONOR: rechazada('rechazada (do not honor)', DOC_MAPPING),
+	DECLINE_INVALID_TRANSACTION: rechazada('rechazada (transacción inválida)', DOC_MAPPING),
+	DECLINE_INVALID_ISSUER: rechazada('rechazada (emisor inválido)', DOC_MAPPING),
+	DECLINE_RESTRICTED_CARD: rechazada('rechazada (tarjeta restringida)', DOC_MAPPING),
+	DECLINE_EXPIRED_CARD: rechazada('rechazada por expiración', DOC_MAPPING),
+	DECLINE_PREPAID_ZERO_BALANCE: rechazada('rechazada (prepaga sin saldo)', DOC_MAPPING),
+	DECLINE_CARD_FLAGGED: rechazada('rechazada (tarjeta marcada por el emisor)', DOC_MAPPING),
+
+	// ── Antifraude y referral: no autorizan la operación ─────────────────
+	FRAUD_REJECT: rechazada('rechazada por antifraude', `El antifraude rechaza: la operación no queda autorizada. ${DOC_MAPPING}`),
+	REFERRAL: rechazada(
+		'derivada a autorización por voz',
+		'El emisor no aprueba: deriva a autorización telefónica, así que el viaje NO puede quedar autorizado. Tabla Referral Response de la doc eBizCharge.'
+	)
+
+	// ── SIN declarar a propósito ─────────────────────────────────────────
+	// FRAUD_REVIEW        — "marcada para revisión" no es aprobar ni rechazar. Nadie
+	//                       observó si MAGIIS expone un tercer estado, y elegir uno de los
+	//                       dos existentes sería inventar la regla de negocio.
+	// HAPPY_PARTIAL_AUTH  — se autoriza un monto MENOR al pedido. Qué hace MAGIIS con el
+	//                       faltante (¿cobra el parcial? ¿rechaza? ¿pide otra tarjeta?) es
+	//                       precisamente lo que habría que decidir con producto.
+	// DECLINE_CAPTURE     — autoriza y falla al capturar: el viaje SÍ se crea y falla más
+	//                       tarde, así que no encaja en un oráculo de estado inicial. Es el
+	//                       escenario del TC F-04, con su propio flujo.
 };
 
 /**
  * Devuelve el comportamiento esperado del sistema para un intent.
  *
- * @throws Si el intent no tiene comportamiento OBSERVADO. Es intencional: preferimos un
- *   test que no corre a un test que asserta una suposición. El mensaje dice exactamente
- *   qué hay que hacer para desbloquearlo.
+ * @throws Si el intent no tiene oráculo. Es intencional: preferimos un caso que no corre a
+ *   un caso que asserta una suposición. El mensaje dice qué hace falta para desbloquearlo.
  */
 export function outcomeFor(intent: CardIntent): JourneyOutcome {
 	const outcome = OUTCOME_BY_INTENT[intent];
 	if (!outcome) {
 		throw new Error(
-			`[journey-outcome] El intent '${intent}' no tiene comportamiento OBSERVADO declarado en OUTCOME_BY_INTENT. ` +
+			`[journey-outcome] El intent '${intent}' no tiene comportamiento esperado declarado. ` +
 				'No hay default a propósito: un default produciría un test que valida lo que asumimos, no lo que el sistema hace. ' +
-				`Para habilitarlo: correr el caso una vez en vivo, observar el estado del viaje y el mensaje reales, ` +
-				`y declarar la entrada en tests/features/gateway-pg/helpers/journey-outcome.ts citando la evidencia.`
+				'Para habilitarlo hay que definir con producto/QA qué debe mostrar MAGIIS en ese caso, o correrlo una vez en vivo, ' +
+				'y declararlo en tests/features/gateway-pg/helpers/journey-outcome.ts citando la evidencia.'
 		);
 	}
 	return outcome;
@@ -90,7 +176,12 @@ export function hasObservedOutcome(intent: CardIntent): boolean {
 	return OUTCOME_BY_INTENT[intent] !== undefined;
 }
 
-/** Los intents que hoy tienen oráculo, en el orden canónico de la matriz. */
+/** Los intents con oráculo, en el orden canónico de la matriz. */
 export function observedIntents(): CardIntent[] {
 	return ALL_CARD_INTENTS.filter(hasObservedOutcome);
+}
+
+/** Los intents verificados en vivo (oráculo estricto disponible). */
+export function liveVerifiedIntents(): CardIntent[] {
+	return observedIntents().filter(intent => OUTCOME_BY_INTENT[intent]?.basis === 'live-verified');
 }

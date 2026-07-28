@@ -11,6 +11,7 @@
  *   - POST /magiis-v0.2/carriers/{carrierId}/paymentMethodsByPax → cards[]
  */
 import type { Page } from '@playwright/test';
+import { debugLog } from '@helpers/index';
 
 /** Carrier ID del ambiente TEST (confirmado en .env.test y specs) */
 const DEFAULT_CARRIER_ID = process.env.CARRIER_ID ?? '1521';
@@ -217,6 +218,40 @@ export async function deletePassengerCard(page: Page, passengerId: number, cardI
 		return false;
 	}
 	return true;
+}
+
+/**
+ * Idempotencia de re-runs: borra por API la tarjeta con ese `last4` del pax, probando
+ * varias queries de búsqueda (la tarjeta se adjunta al pasajero del alta de viaje, y qué
+ * pasajero es depende de la pasarela → `journeyDefaults.paxSearchQueries`).
+ *
+ * Por qué hace falta: re-validar una tarjeta YA vinculada devuelve "Error al validar"
+ * (verificado en vivo en Authorize), así que sin este cleanup el segundo run de una suite
+ * de alta de tarjeta falla por un motivo que no es el que el test quiere medir.
+ *
+ * Silencia los errores por query a propósito: que un pasajero no aparezca con una de las
+ * queries es normal, no un fallo de la precondición. Corta en la primera query que
+ * efectivamente borró algo.
+ *
+ * Extraído de `wallet-add-card.factory.ts` para compartirlo con la matriz de outcomes.
+ */
+export async function cleanupGatewayCardByLast4(page: Page, queries: readonly string[], last4: string): Promise<void> {
+	for (const query of queries) {
+		try {
+			const paxId = await getPassengerId(page, query);
+			const resp = await getPassengerCards(page, paxId);
+			const cards = resp.cards ?? [];
+			const toDelete = cards.filter(card => card.lastFourDigits === last4);
+			for (const card of toDelete) await deletePassengerCard(page, paxId, card.id);
+			debugLog(
+				'gateway-pg:wallet',
+				`[precond] query="${query}" pax=${paxId}: ${cards.length} tarjetas, borradas ${toDelete.length} con last4=${last4}`
+			);
+			if (toDelete.length > 0) return;
+		} catch (error) {
+			debugLog('gateway-pg:wallet', `[precond] query="${query}" skip: ${(error as Error).message}`);
+		}
+	}
 }
 
 /**

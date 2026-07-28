@@ -33,7 +33,7 @@ import {
 	SUPPORTED_INTENTS_BY_GATEWAY,
 	type GatewayName
 } from '@fixtures/gateways/_shared';
-import { outcomeFor, hasObservedOutcome, observedIntents } from '@features/gateway-pg/helpers/journey-outcome';
+import { outcomeFor, hasObservedOutcome, observedIntents, liveVerifiedIntents } from '@features/gateway-pg/helpers/journey-outcome';
 
 test.describe('[unit] Adapters — consistencia declarativa cross-gateway @gateway @unit @regression', () => {
 	test('@unit assertAdapterFixtureConsistency: adapters ↔ resolver ↔ xray-keys ↔ journey-defaults sin drift', () => {
@@ -107,17 +107,41 @@ test.describe('[unit] Adapters — consistencia declarativa cross-gateway @gatew
 		expect(SUPPORTED_INTENTS_BY_GATEWAY.ebizcharge.length).toBeGreaterThan(SUPPORTED_INTENTS_BY_GATEWAY.stripe.length);
 	});
 
-	test('@unit outcomeFor lanza para un intent sin comportamiento observado', () => {
-		// Los dos observados y documentados.
+	test('@unit el oráculo de sistema distingue lo verificado en vivo de lo documentado', () => {
+		// Aprobada → sale a buscar chofer y la tarjeta queda validada.
 		expect(outcomeFor('HAPPY_NO_AUTH').expectedTravelStatus).toBe('Buscando chofer');
-		expect(outcomeFor('DECLINE_AUTHORIZE').expectedTravelStatus).toBe('No autorizado');
-		expect(outcomeFor('HAPPY_NO_AUTH').evidence.length).toBeGreaterThan(20);
+		expect(outcomeFor('HAPPY_NO_AUTH').addCardShouldSucceed).toBe(true);
+		expect(outcomeFor('HAPPY_NO_AUTH').basis).toBe('live-verified');
 
-		// El resto NO tiene oráculo todavía, y eso tiene que doler explícitamente en vez de
+		// Rechazada → no autorizado y la tarjeta NO se valida.
+		expect(outcomeFor('DECLINE_INSUFFICIENT_FUNDS').expectedTravelStatus).toBe('No autorizado');
+		expect(outcomeFor('DECLINE_INSUFFICIENT_FUNDS').addCardShouldSucceed).toBe(false);
+		expect(outcomeFor('DECLINE_INSUFFICIENT_FUNDS').basis).toBe('documented-class');
+
+		// Verificación blanda: APRUEBA aunque la verificación falle — el riesgo es el
+		// opuesto al de un decline, así que su estado esperado es el del happy path.
+		expect(outcomeFor('APPROVED_AVS_MISMATCH').expectedTravelStatus).toBe('Buscando chofer');
+		expect(outcomeFor('APPROVED_CVV_MISMATCH').addCardShouldSucceed).toBe(true);
+
+		// Todo oráculo declara evidencia, y ninguno inventa el copy del mensaje.
+		for (const intent of observedIntents()) {
+			const outcome = outcomeFor(intent);
+			expect(outcome.evidence.length, `${intent} sin evidencia`).toBeGreaterThan(20);
+			if (outcome.basis === 'documented-class') {
+				expect(outcome.messagePattern, `${intent}: el copy no está verificado, no se puede assertar texto`).toBeUndefined();
+			}
+		}
+
+		// Los 3 intents cuyo comportamiento NO se deduce siguen lanzando en vez de
 		// resolverse con un default optimista.
-		expect(() => outcomeFor('FRAUD_REVIEW')).toThrow(/no tiene comportamiento OBSERVADO/);
-		expect(hasObservedOutcome('FRAUD_REVIEW')).toBe(false);
-		expect(observedIntents()).toEqual(['HAPPY_NO_AUTH', 'DECLINE_AUTHORIZE']);
+		for (const intent of ['FRAUD_REVIEW', 'HAPPY_PARTIAL_AUTH', 'DECLINE_CAPTURE'] as const) {
+			expect(hasObservedOutcome(intent), `${intent} no debería tener oráculo todavía`).toBe(false);
+			expect(() => outcomeFor(intent)).toThrow(/no tiene comportamiento esperado declarado/);
+		}
+
+		// 24 intents - 3 sin definir = 21 con oráculo.
+		expect(observedIntents()).toHaveLength(21);
+		expect(liveVerifiedIntents().length).toBeGreaterThanOrEqual(4);
 	});
 
 	test('@unit requires3ds sale de la celda, no del nombre del intent', () => {

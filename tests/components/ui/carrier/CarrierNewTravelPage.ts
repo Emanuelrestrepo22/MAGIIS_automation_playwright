@@ -228,6 +228,30 @@ export class CarrierNewTravelPage extends UiBase {
 	}
 
 	/**
+	 * Contraparte NEGATIVA de `validateNativeCard()`: click en "Validar" con una tarjeta que
+	 * la pasarela debe rechazar, y verifica que el sistema NO la dé por válida.
+	 *
+	 * ⚠️ ALCANCE DEL ORÁCULO — leer antes de confiar en este método.
+	 * Asserta **ausencia de éxito**, no presencia de un error concreto: un front que
+	 * fallara EN SILENCIO (sin cartel de válida y sin mensaje de error) pasaría este check.
+	 * Es un piso deliberado, no un descuido: el copy real del rechazo no está verificado en
+	 * vivo para ninguna de las pasarelas de form nativo, y assertar un texto inventado daría
+	 * un test que valida nuestra suposición.
+	 *
+	 * TODO(live): en la primera ventana con credenciales, capturar el mensaje real de
+	 * rechazo y endurecer esto a `expect(getByText(<copy real>)).toBeVisible()`.
+	 *
+	 * @param graceMs Ventana durante la que el cartel de éxito NO debe aparecer.
+	 */
+	@step
+	async expectNativeCardRejected(graceMs = 15_000): Promise<void> {
+		await this.page.getByRole('button', { name: /^(Valid|Validar)$/i }).click();
+		await expect(this.page.getByText(/Tarjeta v[áa]lida|Valid card|Card valid/i).first()).not.toBeVisible({
+			timeout: graceMs
+		});
+	}
+
+	/**
 	 * Elimina la tarjeta RESALTADA del dropdown de métodos de pago (trash + confirmación
 	 * "Eliminar") y verifica que ya no quede vinculada. Extraído del recording MP wallet
 	 * (test-14/15 — FRAGILE: clases Angular dinámicas, confirmar en corrida viva).
