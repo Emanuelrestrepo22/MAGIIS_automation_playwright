@@ -173,6 +173,50 @@ type _AnnotationLeak = Extract<CardIntent, `AVS_${string}` | `CVV2_${string}` | 
 const _axesAreSeparate: _AnnotationLeak extends never ? true : never = true;
 void _axesAreSeparate;
 
+// ═══════════════════════════════════════════════════════════════════════
+// EJE DE ANOTACIÓN — códigos de respuesta, NO casos de prueba
+// ═══════════════════════════════════════════════════════════════════════
+
+/**
+ * Familias de código de verificación que las pasarelas devuelven junto con el outcome.
+ *
+ *   - `avs`        — Address Verification System (coincidencia de dirección y ZIP).
+ *   - `cvv2`       — resultado de la verificación del código de seguridad.
+ *   - `cavv`       — indicador de autenticación del titular (3DS). En eBizCharge es solo
+ *                    un indicador de respuesta, NO un challenge.
+ *   - `card-level` — clasificación del producto de tarjeta (corporativa, prepaga, …).
+ */
+export type CardAnnotationKind = 'avs' | 'cvv2' | 'cavv' | 'card-level';
+
+/**
+ * Una fila de tabla de anotación.
+ *
+ * **CONTRATO ARQUITECTÓNICO:** un `CardAnnotationEntry` NUNCA se promueve a caso de
+ * prueba. Estos códigos no cambian lo que ve el usuario, así que un test por código
+ * multiplicaría la suite sin agregar cobertura de negocio. Solo los consumen (a) la doc y
+ * la paridad de datos contra la doc del PSP y (b) `assertAnnotationReferenceIntegrity()`.
+ *
+ * La excepción son las PROMOCIONES: una fila cuyo outcome de negocio sí importa (aprobar
+ * con el AVS fallido, por ejemplo) se agrega ADEMÁS como card en el eje de negocio, y esa
+ * promoción queda pinneada en el guard de fidelidad.
+ */
+export type CardAnnotationEntry = {
+	readonly gateway: GatewayName;
+	readonly kind: CardAnnotationKind;
+	/** Código documentado por la pasarela: 'YYY', 'N', 'A', 'G1', … */
+	readonly code: string;
+	readonly number: string;
+	/** Marca, cuando el código depende de ella (las tablas CVV2 de eBizCharge). */
+	readonly brand?: string;
+	/**
+	 * Trigger alternativo cuando el outcome NO lo dispara el número.
+	 * Authorize decide por (cvc, zip); eBizCharge y Stripe, por el número.
+	 */
+	readonly trigger?: { readonly cvc?: string; readonly zip?: string };
+};
+
+export type CardAnnotationRegistry = Readonly<Partial<Record<CardAnnotationKind, readonly CardAnnotationEntry[]>>>;
+
 /**
  * Forma genérica de tarjeta para código de orquestación cross-gateway.
  *

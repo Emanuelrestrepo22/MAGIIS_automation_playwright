@@ -35,6 +35,7 @@ import {
 	type EbizTestCard
 } from '@fixtures/gateways/ebizcharge/cards';
 import { EBIZ_CARDS } from '@fixtures/gateways/ebizcharge/card-policy';
+import { assertAnnotationReferenceIntegrity, countAnnotations, listAnnotations } from '@fixtures/gateways/_shared';
 
 // ═══════════════════════════════════════════════════════════════════════
 // LA DOC — transcripción literal, tabla por tabla. NO editar sin abrir la doc.
@@ -369,6 +370,31 @@ test.describe('[unit] eBizCharge — fidelidad del fixture contra la doc oficial
 			const esperado = card.brand === 'amex' ? 4 : 3;
 			expect(card.cvc.length, `${card.number} (${card.brand}) debe llevar CVV de ${esperado} dígitos`).toBe(esperado);
 		}
+	});
+
+	test('@unit el eje de anotación es íntegro y su conteo coincide con las tablas de la doc', () => {
+		expect(assertAnnotationReferenceIntegrity()).toBe(true);
+
+		// eBizCharge: las 4 tablas de anotación, con el conteo exacto de la doc.
+		expect(countAnnotations('ebizcharge')).toEqual({
+			avs: DOC_AVS.length,
+			cvv2: DOC_CVV2.length,
+			cavv: DOC_CAVV.length,
+			'card-level': DOC_CARD_LEVEL.length
+		});
+
+		// Authorize registra sus códigos AVS/CVV extra con `trigger`, porque todas sus filas
+		// comparten el mismo número y el outcome lo decide (cvc, zip).
+		const authorize = listAnnotations('authorize');
+		expect(authorize.length).toBeGreaterThan(0);
+		for (const entry of authorize) {
+			expect(entry.trigger, `${entry.kind}/${entry.code} de Authorize sin trigger`).toBeDefined();
+			expect(entry.trigger?.zip ?? entry.trigger?.cvc).toBeTruthy();
+		}
+
+		// Ningún código de anotación puede haberse convertido en intent de negocio: el
+		// tamaño del eje de anotación de eBiz supera por mucho a su fila en la matriz.
+		expect(listAnnotations('ebizcharge').length).toBe(DOC_AVS.length + DOC_CVV2.length + DOC_CAVV.length + DOC_CARD_LEVEL.length);
 	});
 
 	test('@unit el namespace EBIZ_CARDS solo expone tarjetas que existen en el registry', () => {

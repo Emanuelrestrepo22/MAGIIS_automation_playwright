@@ -17,8 +17,18 @@ export type {
 	ReferralIntent,
 	GatewayName,
 	GenericTestCard,
-	ResolveCardArgs
+	ResolveCardArgs,
+	CardAnnotationKind,
+	CardAnnotationEntry,
+	CardAnnotationRegistry
 } from './types';
+
+export {
+	CARD_ANNOTATIONS,
+	listAnnotations,
+	countAnnotations,
+	assertAnnotationReferenceIntegrity
+} from './annotations';
 
 export { ALL_CARD_INTENTS } from './types';
 
