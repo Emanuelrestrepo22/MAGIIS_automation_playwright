@@ -35,7 +35,7 @@ import { resolveCard } from '@fixtures/gateways/_shared';
 import { getGatewayPgAdapter } from '@features/gateway-pg/helpers/adapters';
 import { expectNoThreeDSModal, loginAsDispatcher } from '@features/gateway-pg/fixtures/gateway.fixtures';
 import { validateAndSelectMercadoPagoCard } from '@features/gateway-pg/helpers/mercadoPago.helpers';
-import { setHoldViaApi } from '@features/gateway-pg/helpers/parameters-api';
+import { getCarrierParameters, readHoldRaw, setHoldViaApi } from '@features/gateway-pg/helpers/parameters-api';
 import { validateCardPrecondition, type CardPreconditionResult } from '@features/gateway-pg/helpers/card-precondition';
 import {
 	captureCreatedTravelId,
@@ -130,18 +130,33 @@ export class CarrierHoldSteps extends UiBase {
 		await loginAsDispatcher(this.page, gateway ? { gateway } : undefined);
 	}
 
-	/** Habilita el hold vía API (BL-i18n/v1.72.8) y valida los parámetros posteados. */
+	/** Habilita el hold vía API (BL-i18n/v1.72.8) y verifica el efecto con read-back CRUDO (GET posterior). */
 	async enableHoldViaApi(): Promise<void> {
-		const params = await setHoldViaApi(this.page, true);
-		expect(params.enableCreditCardHold).toBe(true);
-		expect(params.ccHoldPreviousHs).toBe(2);
-		expect(params.ccHoldCoverage).toBe(10);
+		await setHoldViaApi(this.page, true);
+		// Read-back CRUDO como oráculo (auditoría R2): assertar el payload que `setHoldViaApi`
+		// acababa de mutar era tautológico. UN solo GET posterior y los 3 campos de hold se
+		// assertan desde ESE objeto leído del backend — campo ausente (undefined) = fallo.
+		const persisted = await getCarrierParameters(this.page);
+		expect(persisted.enableCreditCardHold, 'read-back API: enableCreditCardHold debe quedar true tras el POST (campo ausente = fallo)').toBe(true);
+		expect(persisted.ccHoldPreviousHs, 'read-back API: ccHoldPreviousHs debe persistir en 2 (campo ausente = fallo)').toBe(2);
+		expect(persisted.ccHoldCoverage, 'read-back API: ccHoldCoverage debe persistir en 10 (campo ausente = fallo)').toBe(10);
 	}
 
-	/** Deshabilita el hold vía API y valida el parámetro posteado. */
+	/**
+	 * Deshabilita el hold vía API y verifica el efecto con READ-BACK CRUDO (GET posterior).
+	 *
+	 * Endurecimiento de oráculo (auditoría R2): el assert anterior sobre el payload
+	 * retornado por `setHoldViaApi` era tautológico — validaba el objeto que la propia
+	 * función acababa de mutar, no el estado persistido en el backend. El read-back usa
+	 * `readHoldRaw` (sin coerción): un campo ausente FALLA en vez de pasar como `false`.
+	 *
+	 * El oráculo UI del toggle "Aplicar Pre-Autorización" es NO-automatizable: la pantalla
+	 * Configuración Parámetros está rota (BL-i18n/v1.72.8 — el toggle no habilita Guardar
+	 * ni persiste, ver header de `parameters-api.ts`) → el read-back es vía API.
+	 */
 	async disableHoldViaApi(): Promise<void> {
-		const params = await setHoldViaApi(this.page, false);
-		expect(params.enableCreditCardHold).toBe(false);
+		await setHoldViaApi(this.page, false);
+		expect(await readHoldRaw(this.page), 'read-back API: enableCreditCardHold debe quedar false tras el POST (campo ausente = fallo)').toBe(false);
 	}
 
 	/**
@@ -193,13 +208,20 @@ export class CarrierHoldSteps extends UiBase {
 
 	/**
 	 * Valida la tarjeta del form NATIVO según la pasarela (S7, privado — no es ATC):
-	 *   - mercado-pago: `validateAndSelectMercadoPagoCard` (oráculo tarjeta resaltada) +
-	 *     test.skip si la validación no completa en TEST (limitación sandbox MP — UAT-only).
+	 *   - mercado-pago: `validateAndSelectMercadoPagoCard` (contrato tri-estado, oráculo tarjeta
+	 *     resaltada): 'linked' continúa; 'validation-unavailable' → test.skip (limitación sandbox
+	 *     MP en TEST — incluye el error explícito "Error al validar tarjeta", su manifestación
+	 *     documentada; UAT-only); 'validation-failed' RESERVADO (guard future-proof, hoy inerte).
 	 *   - authorize/ebizcharge: "Validar" + oráculo "Tarjeta válida" (verificado live Authorize).
 	 */
 	private async validateNativeGatewayCard(gateway: GatewayName): Promise<void> {
 		if (gateway === 'mercado-pago') {
 			const mpLink = await validateAndSelectMercadoPagoCard(this.page);
+			// Guard future-proof (hoy INERTE): 'validation-failed' está RESERVADO a evidencia live
+			// (UAT/entorno transaccional) de un fallo distinguible de la limitación sandbox — hoy
+			// ningún camino lo retorna en TEST (el error explícito "Error al validar tarjeta" es la
+			// manifestación documentada del sandbox → habilita el skip de abajo).
+			expect(mpLink, 'MP: señal de fallo real de validación distinguible de la limitación sandbox (evidencia live)').not.toBe('validation-failed');
 			test.skip(
 				mpLink !== 'linked',
 				'MP: validación de tarjeta no completa en TEST (sandbox MP no transacciona) — UAT-only. Form-fill + habilitación de "Validar" verificados.'

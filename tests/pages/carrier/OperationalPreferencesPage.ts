@@ -4,7 +4,7 @@ import { getPortalUrl } from '../../config/gatewayPortalRuntime';
 import { CARRIER_L } from '../shared/i18n';
 // BL-i18n/v1.72.8: el guardado de preferencias por UI (toggle pre-autorización) no
 // habilita "Guardar" ni persiste; el estado de hold se fija por API. Ver parameters-api.ts.
-import { setHoldViaApi, readHoldEnabled } from '../../features/gateway-pg/helpers/parameters-api';
+import { setHoldViaApi, readHoldRaw } from '../../features/gateway-pg/helpers/parameters-api';
 
 type ParametersSavePayload = {
 	enableCreditCardHold?: boolean;
@@ -91,12 +91,21 @@ export class OperationalPreferencesPage {
 		await expect(this.holdToggle).toBeVisible({ timeout: 10_000 });
 	}
 
+	// Asserts CRUDOS (auditoría R2): `readHoldEnabled` coercionaba campo-ausente a `false`
+	// (false-pass en el assert OFF). `readHoldRaw` retorna el campo sin coerción — ausente
+	// (undefined) FALLA el assert en vez de pasar como `false`.
 	async assertHoldEnabled(): Promise<void> {
-		expect(await readHoldEnabled(this.page)).toBe(true);
+		expect(
+			await readHoldRaw(this.page),
+			'read-back API: enableCreditCardHold debe ser true (campo ausente = fallo, no false silencioso)'
+		).toBe(true);
 	}
 
 	async assertHoldDisabled(): Promise<void> {
-		expect(await readHoldEnabled(this.page)).toBe(false);
+		expect(
+			await readHoldRaw(this.page),
+			'read-back API: enableCreditCardHold debe ser false (campo ausente = fallo, no false silencioso)'
+		).toBe(false);
 	}
 
 	async setHoldEnabled(enabled: boolean): Promise<boolean> {

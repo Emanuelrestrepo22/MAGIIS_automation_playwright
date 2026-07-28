@@ -144,6 +144,10 @@ export class ContractorHoldSteps extends UiBase {
 					await cardFormFor(gateway).fill(this.page, card);
 					if (gateway === 'mercado-pago') {
 						const mpLink = await validateAndSelectMercadoPagoCard(this.page);
+						// Guard future-proof (hoy INERTE): 'validation-failed' está RESERVADO a evidencia
+						// live (UAT) de un fallo distinguible de la limitación sandbox — hoy ningún camino
+						// lo retorna en TEST (el error explícito es la manifestación documentada → skip).
+						expect(mpLink, 'MP: señal de fallo real de validación distinguible de la limitación sandbox (evidencia live)').not.toBe('validation-failed');
 						test.skip(
 							mpLink !== 'linked',
 							'MP: validación de tarjeta no completa en TEST (sandbox MP no transacciona) — UAT-only. Form-fill + habilitación de "Validar" verificados.'
@@ -220,6 +224,10 @@ export class ContractorHoldSteps extends UiBase {
 					timeout: 30_000,
 					waitUntil: 'commit'
 				});
+				// Oráculo explícito de destino (restaurado del original c3c99e8 — auditoría R2):
+				// "salió de /travel/create" NO asserta que llegó al dashboard; el redirect de
+				// éxito del contractor es /contractor/dashboard (MP-NOHOLD-04, smoke-cases-no3ds).
+				await expect(this.page).toHaveURL(/contractor\/dashboard/, { timeout: 10_000 });
 			});
 
 			// Validación API: el POST /travels devolvió un travelId — viaje creado en backend.

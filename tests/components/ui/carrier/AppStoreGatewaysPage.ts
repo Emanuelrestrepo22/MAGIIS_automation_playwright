@@ -38,6 +38,14 @@ import type { TestContextOptions } from '@TestContext';
 import { expect } from '@playwright/test';
 import { atc, step } from '@utils/decorators';
 import { UiBase } from '@ui/UiBase';
+// Fuente única de statuses/urlPattern del link (anti-drift POM↔adapter — auditoría R2 T11).
+// Import components→features con precedente (card-forms → @features/.../adapters).
+import {
+	AUTHORIZE_LINK_MUTATION_URL_PATTERN,
+	AUTHORIZE_LINK_SUCCESS_STATUSES,
+	EBIZCHARGE_LINK_MUTATION_URL_PATTERN,
+	EBIZCHARGE_LINK_SUCCESS_STATUSES
+} from '@features/gateway-pg/data/link-status-defaults';
 
 /** Pasarelas de pago censables en el App Store (match case-insensitive por texto de card). */
 export type GatewayCompany = 'stripe' | 'authorize' | 'ebizcharge' | 'mercado-pago';
@@ -641,15 +649,15 @@ export class AppStoreGatewaysPage extends UiBase {
 	 * estado limpio; 409 = CONECTADA cuando el carrier 1521 (compartido por la suite gateway) ya
 	 * estaba vinculado por otra sesión — ambos son éxito funcional, ninguno es bug de test.
 	 * 400 = NO conectada. El 500/409-en-éxito es smell de API (debería ser 2xx) → Improvement/Defect a DEV/MX (no MG).
-	 * FRAGILE: el endpoint real del link NO está verificado — ajustar el matcher de URL en vivo.
 	 * Endpoint del link Authorize = odnService (MG-476), NO /vendor/. El matcher incluye odnService.
 	 */
 	@atc('MG-226', { severity: 'normal', description: 'La request de link de Authorize retorna un status de éxito conocido (500|409)' })
 	async expectLinkStatusOk(creds: AuthorizeCreds, options: LinkStatusOptions = {}): Promise<void> {
 		await this.expectLinkStatusOkImpl('authorize', {
 			fields: this.authorizeLinkFields(creds),
-			successStatuses: options.successStatuses ?? [500, 409],
-			urlPattern: options.urlPattern ?? /odnservice|payment.?gateway|paymentgateway|vendor|integration|authorize/i
+			// Defaults desde la FUENTE ÚNICA compartida con el adapter (link-status-defaults.ts).
+			successStatuses: options.successStatuses ?? [...AUTHORIZE_LINK_SUCCESS_STATUSES],
+			urlPattern: options.urlPattern ?? AUTHORIZE_LINK_MUTATION_URL_PATTERN
 		});
 	}
 
@@ -663,8 +671,9 @@ export class AppStoreGatewaysPage extends UiBase {
 	async expectEbizchargeLinkStatusOk(creds: EbizchargeCreds, options: LinkStatusOptions = {}): Promise<void> {
 		await this.expectLinkStatusOkImpl('ebizcharge', {
 			fields: this.ebizchargeLinkFields(creds),
-			successStatuses: options.successStatuses ?? [200],
-			urlPattern: options.urlPattern ?? /odnservice|payment.?gateway|paymentgateway|vendor|integration|ebiz/i
+			// Defaults desde la FUENTE ÚNICA compartida con el adapter (link-status-defaults.ts).
+			successStatuses: options.successStatuses ?? [...EBIZCHARGE_LINK_SUCCESS_STATUSES],
+			urlPattern: options.urlPattern ?? EBIZCHARGE_LINK_MUTATION_URL_PATTERN
 		});
 	}
 }

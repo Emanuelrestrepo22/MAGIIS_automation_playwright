@@ -93,3 +93,25 @@ exclusiva + teardown manual — `GatewaySwitchSteps.restoreStripe()` está **INC
 - [ ] Confirmar/limpiar `test-11.spec.ts` (MG-211 → MG-220, o descartar).
 - [ ] Crear el ATR de UI (CFG) y agregar MG-220/221/223/224/226 (§4).
 - [ ] Correr en ventana exclusiva + teardown manual (§6).
+
+## Correcciones live 2026-07-25/27 (desde el POM)
+
+> Promoción a docs de verificaciones que vivían SOLO en los comentarios del POM
+> `tests/components/ui/carrier/AppStoreGatewaysPage.ts` — el §1 de arriba quedó parcialmente
+> desactualizado por verificaciones posteriores con el modal REAL abierto (dump de outerHTML):
+
+1. **Campo del modal ≠ `input[name="apiLoginKey"]`** — el input NO tiene atributo `name`; tiene
+   **`formcontrolname="apiLoginKey"`** (Angular Reactive Forms) + `id="apiLoginKey"`. El
+   `ng-reflect-name` (debug-only de Angular dev mode) generó la confusión del §1. Ídem
+   `formcontrolname="transactionKey"`. Ver `authModal()` / `apiLoginInput()` en el POM (~L128-139).
+2. **Botón submit = `Continuar` (ESPAÑOL)** — el §1 asumía `Continue` en inglés. El modal Authorize
+   mezcla idiomas (título/campos en inglés "Link your account"/"API Login ID:", botones en español
+   "Cancelar"/"Continuar"); el matcher del POM acepta ambos (`/^(Continuar|Continue)$/i`) y el botón
+   empieza DISABLED hasta que el form reactivo sea válido. Ver `linkSubmitIn()` (~L166-175).
+3. **Copy del botón afirmativo del popup de unlink — PARCIALMENTE capturado** — para el popup de
+   **MP** el copy real es **"Confirmar"**, observado live vía MG-169 (POM
+   `expectUnlinkFailureShowsRealError`, `getByRole('button', { name: /^confirmar$/i })` —
+   verificación 2026-07-25). El matcher GENÉRICO multi-pasarela de `confirmUnlink()`
+   (`/s[ií]|confirmar|aceptar|desvincular|yes|ok/i`) sigue **FRAGILE / sin capturar** para el
+   resto de las pasarelas — capturar el copy por PSP en la próxima corrida viva. Ver
+   `confirmUnlink()` (~L309).

@@ -30,7 +30,7 @@ import { ThreeDsChallengePage } from '@ui/ThreeDsChallengePage';
 import { loginAsDispatcher, STRIPE_TEST_CARDS, TEST_DATA } from '../../../../../fixtures/gateway.fixtures';
 import { waitForTravelCreation } from '../../../../../helpers/stripe.helpers';
 import { validateCardPrecondition, type CardPreconditionResult } from '../../../../../helpers/card-precondition';
-import { setHoldViaApi } from '../../../../../helpers/parameters-api';
+import { getCarrierParameters, readHoldRaw, setHoldViaApi } from '../../../../../helpers/parameters-api';
 import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../../../../helpers/travel-cleanup';
 import { PASSENGERS } from '../../../../../data/passengers';
 import { debugLog } from '../../../../../../../helpers';
@@ -41,16 +41,23 @@ function shortDestination(destination: string): string {
 
 // BL-i18n/v1.72.8: en v1.72.8 el toggle de pre-autorización en la UI no habilita
 // "Guardar" ni persiste (exploratory 2026-07-20). El setup fija el hold vía API.
+// Oráculo = read-back CRUDO posterior (`readHoldRaw`, GET sin coerción): assertar el payload
+// que `setHoldViaApi` acababa de mutar era tautológico, y un campo ausente debe FALLAR.
 async function disableHoldAndSave(preferences: OperationalPreferencesPage): Promise<void> {
-	const params = await setHoldViaApi(preferences.getPage(), false);
-	expect(params.enableCreditCardHold).toBe(false);
+	const page = preferences.getPage();
+	await setHoldViaApi(page, false);
+	expect(await readHoldRaw(page), 'read-back API: enableCreditCardHold debe quedar false tras el POST (campo ausente = fallo)').toBe(false);
 }
 
 async function restoreHoldAndSave(page: Page, _preferences: OperationalPreferencesPage): Promise<void> {
-	const params = await setHoldViaApi(page, true);
-	expect(params.enableCreditCardHold).toBe(true);
-	expect(params.ccHoldPreviousHs).toBe(2);
-	expect(params.ccHoldCoverage).toBe(10);
+	await setHoldViaApi(page, true);
+	// Read-back CRUDO como oráculo (auditoría R2): assertar el payload que `setHoldViaApi`
+	// acababa de mutar era tautológico. UN solo GET posterior y los 3 campos de hold se
+	// assertan desde ESE objeto leído del backend — campo ausente (undefined) = fallo.
+	const persisted = await getCarrierParameters(page);
+	expect(persisted.enableCreditCardHold, 'read-back API: enableCreditCardHold debe quedar true tras el POST (campo ausente = fallo)').toBe(true);
+	expect(persisted.ccHoldPreviousHs, 'read-back API: ccHoldPreviousHs debe persistir en 2 (campo ausente = fallo)').toBe(2);
+	expect(persisted.ccHoldCoverage, 'read-back API: ccHoldCoverage debe persistir en 10 (campo ausente = fallo)').toBe(10);
 }
 
 type Hold3dsScenario = {

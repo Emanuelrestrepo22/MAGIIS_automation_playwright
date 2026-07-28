@@ -27,6 +27,10 @@ Espeja `TS-STRIPE-TC1001..TC1008` pero adaptado a la UI Authorize.
 
 > **Precondición común sección 1:** acceso al Magiis App Store con rol de admin; credenciales Authorize.net sandbox cargadas en `.env.test`. Variables: `AUTHORIZE_API_LOGIN_ID`, `AUTHORIZE_TRANSACTION_KEY`.
 
+> **TS-AUTHORIZE-TC1005 — cobertura parcial del AC:** el caso automatizado cubre "desvincular" (con pre-assert de estado vinculado); la parte **"ocultar método tarjeta preautorizada en alta de viaje"** está **pendiente de automatizar — TODO F4+** (el título del test generado solo promete lo que asserta: `desvincular <GW>`).
+
+> **⚠ TS-AUTHORIZE-TC1008 — comportamiento real verificado (quirk backend):** el request de link **NO retorna 200** — quirk verificado (HANDOFF §2, addendum 2026-07-25): el link retorna **500** (conexión desde estado limpio) o **409** (ya vinculada); **400** = no conectada. El oráculo automatizado asserta `500|409` + persistencia del estado vinculado. El AC original de 2xx queda como **TODO revert** cuando DEV corrija el endpoint (`odnService`, ver `ARCHITECTURE.md` §5 + `DRAFT-improvement-backend-link-500.md`). La parte "unlink status" y "logs/auditoría" del AC **NO está automatizada** (gap documentado).
+
 ---
 
 ## 2. Alta de Viaje desde Carrier – Usuario Personal
@@ -135,6 +139,8 @@ Espeja `TS-STRIPE-TC1001..TC1008` pero adaptado a la UI Authorize.
 | TS-AUTHORIZE-TC1053 | Validar Alta de Viaje desde carrier para usuario colaborador con tarjeta preautorizada exitosa **Usar tarjeta vinculada existente** Hold ON                            | `AUTHORIZE_CARDS.SUCCESS` (stored) | existing | ON |
 | TS-AUTHORIZE-TC1054 | Validar Alta de Viaje desde carrier para usuario colaborador con tarjeta preautorizada exitosa **Vincular tarjeta nueva** Hold OFF                                     | `AUTHORIZE_CARDS.SUCCESS` | new | OFF |
 | TS-AUTHORIZE-TC1055 | Validar Alta de Viaje desde carrier para usuario colaborador con tarjeta preautorizada exitosa **Usar tarjeta vinculada existente** Hold OFF                          | `AUTHORIZE_CARDS.SUCCESS` (stored) | existing | OFF |
+
+> **Oráculo automatizado del alta de tarjeta (flujos "Vincular tarjeta nueva" — TC1051/TC1052 y spec WAL `TS-AUTHORIZE-WAL-01`/MG-285):** la vinculación exitosa se asserta por el texto **"Tarjeta válida" / "Valid card"** visible tras "Validar" (`CarrierNewTravelPage.validateNativeCard`). **Alcance de la evidencia live** (commit `aa780b3`, 3x verde en TEST): aplica SOLO al spec WAL (Visa 4111 + CVV 900 + **ZIP 10001**) — TC1051/TC1052 usan `AUTHORIZE_CARDS.SUCCESS` (**ZIP 90210**), combinación AÚN sin captura live del oráculo. Nota: el spec de alta de tarjeta usa el ID `TS-AUTHORIZE-WAL-01`, que no existe como fila TC1xxx en esta matriz (numeración WAL propia del spec).
 
 ### 3.2 Declines y CVV
 
