@@ -58,10 +58,25 @@ test.describe('[BL-036][API] Authorize.net sandbox — Edge triggers @gateway @a
 			refId: `bl-036-edge-partial-${Date.now()}`
 		});
 
-		// Conservador: el sandbox procesa la operación (Ok) y devuelve un responseCode;
-		// el monto parcial exacto ($1.23) depende de la config del sandbox.
+		// Endurecido (auditoría 2026-07-28): `responseCode` truthy pasaba también con un
+		// decline ('2') o error ('3'), lo que CONTRADICE el título. El contrato de matriz
+		// TS-AUTHORIZE-TC1041 exige aprobación → responseCode '1' + mensaje de aprobación.
 		expect(response.messages.resultCode).toBe('Ok');
-		expect(response.transactionResponse?.responseCode).toBeTruthy();
+		expect(response.transactionResponse?.responseCode, 'partial auth debe quedar APROBADA (Response Code 1)').toBe('1');
+		expect(response.transactionResponse?.messages?.[0]?.code, 'el mensaje de transacción debe ser el de aprobación (code 1)').toBe('1');
+
+		// TODO(live): el oráculo COMPLETO de TS-AUTHORIZE-TC1041 ("solo $1.23 autorizado del
+		// total") NO es asertable hoy — la respuesta del sandbox NO trae el monto parcial ni
+		// `splitTenderId` (los campos que Authorize.net emite en una partial authorization
+		// real). Evidencia del probe live 2026-07-28 con ZIP 46225: transactionResponse =
+		// { responseCode:'1', authCode:'000000', transId:'0', testRequest:'1',
+		//   avsResultCode:'P', cvvResultCode:'', accountNumber:'XXXX1111' } — IDÉNTICA a la
+		// del ZIP 46228 (prepaid). `testRequest:'1'` + `transId:'0'` + `authCode:'000000'`
+		// = la cuenta sandbox está en TEST MODE, donde Authorize.net NO evalúa los triggers
+		// por ZIP/CVV. Mismo root cause que los 5 tests de trigger que fallan hoy en este
+		// pack (CVV 901/904 → cvvResultCode '', ZIP 46205/46204 → avsResultCode 'P',
+		// ZIP 46282 → responseCode '1' en vez de '2'). Al pasar la cuenta a Live Mode:
+		// assertar el monto aprobado ($1.23) y agregar el campo al facade @schemas/authorize.types.
 	});
 
 	test('Prepaid balance cero (ZIP 46228) → procesado', async ({ request }) => {
@@ -73,7 +88,19 @@ test.describe('[BL-036][API] Authorize.net sandbox — Edge triggers @gateway @a
 			refId: `bl-036-edge-prepaid-${Date.now()}`
 		});
 
+		// Endurecido (auditoría 2026-07-28): idem partial — el contrato de matriz
+		// TS-AUTHORIZE-TC1043 es "Approved con balance cero", así que el approved es parte
+		// del oráculo, no un detalle. `toBeTruthy()` aceptaba un decline.
 		expect(response.messages.resultCode).toBe('Ok');
-		expect(response.transactionResponse?.responseCode).toBeTruthy();
+		expect(response.transactionResponse?.responseCode, 'prepaid balance cero debe quedar APROBADA (Response Code 1)').toBe('1');
+		expect(response.transactionResponse?.messages?.[0]?.code, 'el mensaje de transacción debe ser el de aprobación (code 1)').toBe('1');
+
+		// TODO(live): el "flag explícito" de balance cero que pide TS-AUTHORIZE-TC1043 NO es
+		// asertable hoy — la respuesta NO trae el bloque `prePaidCard`
+		// (requestedAmount / approvedAmount / balanceOnCard) que Authorize.net emite para
+		// tarjetas prepaid. Probe live 2026-07-28 con ZIP 46228: respuesta IDÉNTICA a la del
+		// ZIP 46225, con `testRequest:'1'` → cuenta sandbox en TEST MODE, triggers por ZIP
+		// inertes (ver detalle en el TODO del test de partial auth). Al pasar a Live Mode:
+		// assertar `prePaidCard.balanceOnCard === '0.00'` y agregar el bloque al facade.
 	});
 });
