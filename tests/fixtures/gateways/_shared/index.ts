@@ -9,4 +9,16 @@
 
 export type { CardIntent, GatewayName, GenericTestCard, ResolveCardArgs } from './types';
 
-export { resolveCard, SUPPORTED_INTENTS_BY_GATEWAY } from './resolver';
+export { resolveCard, intentSupport, SUPPORTED_INTENTS_BY_GATEWAY, type IntentSupport } from './resolver';
+
+export {
+	CARD_MATRIX,
+	isSupported,
+	assertCardMatrixIntegrity,
+	EXPECTED_SUPPORTED_COUNTS,
+	type CardMatrixCell,
+	type CardMatrixRow,
+	type CardMatrixShape,
+	type CardMatrixSupported,
+	type CardMatrixNotApplicable
+} from './card-matrix';

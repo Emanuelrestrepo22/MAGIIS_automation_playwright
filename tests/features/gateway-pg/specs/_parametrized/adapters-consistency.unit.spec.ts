@@ -23,6 +23,14 @@
 import { test, expect } from '@playwright/test';
 import { assertAdapterFixtureConsistency } from '@features/gateway-pg/helpers/adapters';
 import { assertGatewayTagContract, gatewayTag, EXPECTED_GATEWAY_TAGS } from '@features/gateway-pg/helpers/adapters/gateway-tag';
+import {
+	assertCardMatrixIntegrity,
+	intentSupport,
+	resolveCard,
+	EXPECTED_SUPPORTED_COUNTS,
+	SUPPORTED_INTENTS_BY_GATEWAY,
+	type GatewayName
+} from '@fixtures/gateways/_shared';
 
 test.describe('[unit] Adapters — consistencia declarativa cross-gateway @gateway @unit @regression', () => {
 	test('@unit assertAdapterFixtureConsistency: adapters ↔ resolver ↔ xray-keys ↔ journey-defaults sin drift', () => {
@@ -36,5 +44,53 @@ test.describe('[unit] Adapters — consistencia declarativa cross-gateway @gatew
 		// Pin explícito del caso con guion — el único donde el tag ≠ el nombre.
 		expect(gatewayTag('mercado-pago')).toBe('@mercadopago');
 		expect(Object.keys(EXPECTED_GATEWAY_TAGS)).toHaveLength(4);
+	});
+
+	test('@unit assertCardMatrixIntegrity: toda celda declarada y conteos de soporte pinneados', () => {
+		expect(assertCardMatrixIntegrity()).toBe(true);
+
+		// Los conteos derivados DEBEN coincidir con el pin. Si esto falla con "todos los
+		// intents soportados" en las 4 pasarelas, falta el .filter(isSupported) al derivar.
+		for (const [gateway, esperado] of Object.entries(EXPECTED_SUPPORTED_COUNTS)) {
+			expect(SUPPORTED_INTENTS_BY_GATEWAY[gateway as GatewayName], `intents soportados de ${gateway}`).toHaveLength(esperado);
+		}
+
+		// 3DS sigue siendo exclusivo de Stripe.
+		expect(SUPPORTED_INTENTS_BY_GATEWAY.stripe).toContain('HAPPY_AUTH');
+		for (const gateway of ['authorize', 'ebizcharge', 'mercado-pago'] as GatewayName[]) {
+			expect(SUPPORTED_INTENTS_BY_GATEWAY[gateway], `${gateway} no debe soportar 3DS`).not.toContain('HAPPY_AUTH');
+		}
+	});
+
+	test('@unit intentSupport: no lanza y devuelve la razón declarada en la celda N/A', () => {
+		const soportado = intentSupport('ebizcharge', 'HAPPY_NO_AUTH');
+		expect(soportado.supported).toBe(true);
+		if (soportado.supported) {
+			expect(soportado.card.gateway).toBe('ebizcharge');
+			expect(soportado.card.number).toBe('4000100011112224');
+			expect(soportado.card.requires3ds).toBe(false);
+			// MMYY del fixture eBiz normalizado a MM/YY del shape común.
+			expect(soportado.card.expiry).toBe('09/30');
+		}
+
+		const naCase = intentSupport('ebizcharge', 'HAPPY_AUTH');
+		expect(naCase.supported).toBe(false);
+		if (!naCase.supported) {
+			// La razón viaja literal desde la celda — es lo que verá el skip en el reporte.
+			expect(naCase.reason).toContain('3DS');
+			expect(naCase.reason.length).toBeGreaterThan(20);
+		}
+
+		// resolveCard mantiene el contrato histórico: lanza para un intent no soportado.
+		expect(() => resolveCard({ gateway: 'ebizcharge', intent: 'HAPPY_AUTH' })).toThrow(/no soportado por gateway 'ebizcharge'/);
+	});
+
+	test('@unit requires3ds sale de la celda, no del nombre del intent', () => {
+		// Las dos celdas Stripe con challenge lo declaran explícitamente.
+		expect(resolveCard({ gateway: 'stripe', intent: 'HAPPY_AUTH' }).requires3ds).toBe(true);
+		expect(resolveCard({ gateway: 'stripe', intent: 'FAIL_AUTH' }).requires3ds).toBe(true);
+		// El resto de Stripe no.
+		expect(resolveCard({ gateway: 'stripe', intent: 'HAPPY_NO_AUTH' }).requires3ds).toBe(false);
+		expect(resolveCard({ gateway: 'stripe', intent: 'DECLINE_CAPTURE' }).requires3ds).toBe(false);
 	});
 });
