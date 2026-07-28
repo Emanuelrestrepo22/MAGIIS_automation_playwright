@@ -160,6 +160,52 @@ export const XRAY_KEYS_BY_GATEWAY: Record<GatewayCompany, GatewayXrayRegistry> =
 };
 
 /**
+ * Casos del pack de CONTRATO del sandbox Authorize (`api/authorize-sandbox/*`), en el
+ * orden de los 4 spec files: happy → decline → cvv/avs → edge.
+ */
+export type AuthorizeContractCase =
+	| 'happyVisa' /*       Visa + CVV 900 + ZIP neutro → Response Code 1 */
+	| 'happyMastercard' /* Mastercard + CVV 900 + ZIP neutro → Response Code 1 */
+	| 'happyAmex' /*       Amex + CVV 4 dígitos + ZIP neutro → Response Code 1 */
+	| 'echoCvv' /*         echo cvvResultCode "M" (contrato Security Settings) */
+	| 'declineZip46282' /* ZIP 46282 → Response Code 2 (decline genérico) */
+	| 'cvv901' /*          CVV 901 → cvvResultCode "N" */
+	| 'cvv904' /*          CVV 904 → cvvResultCode "P" */
+	| 'avs46205' /*        ZIP 46205 → avsResultCode "N" */
+	| 'happyDiscover' /*   Discover + CVV 900 → Response Code 1 */
+	| 'avs46204' /*        ZIP 46204 → avsResultCode "G" (issuer no-USA) */
+	| 'partial46225' /*    ZIP 46225 → aprobación parcial */
+	| 'prepaid46228'; /*   ZIP 46228 → prepaid balance cero procesado */
+
+/**
+ * Keys Xray del pack de CONTRATO del sandbox Authorize — issues REALES creadas en MG
+ * el 2026-07-28 y verificadas en Jira; miembros del Test Execution `MG-558`.
+ *
+ * NIVEL DE ABSTRACCIÓN (load-bearing — no reutilizar estas keys para otra cosa):
+ * estos 12 Tests acreditan el CONTRATO del sandbox de Authorize.net (la respuesta del
+ * PSP: `responseCode`, `cvvResultCode`, `avsResultCode`), NO el flujo UI de Alta de
+ * Viaje que describen los TC de matriz `TS-AUTHORIZE-TC1016/1021/1031/1041` & co.
+ * Cablear estos contract tests API a esos TC de matriz sería INFLAR EVIDENCIA: el test
+ * solo verifica lo que devuelve la pasarela, no que el viaje se cree (ni el estado en
+ * DB, ni el error en UI). El flujo UI de esos TC sigue SIN automatizar — gap declarado
+ * en `docs/gateway-pg/authorize/matriz_cases.md` §§2.2-2.5.
+ */
+export const AUTHORIZE_CONTRACT_XRAY_KEYS: Record<AuthorizeContractCase, XrayIssueKey> = {
+	happyVisa: 'MG-590',
+	happyMastercard: 'MG-591',
+	happyAmex: 'MG-592',
+	echoCvv: 'MG-593',
+	declineZip46282: 'MG-594',
+	cvv901: 'MG-595',
+	cvv904: 'MG-596',
+	avs46205: 'MG-597',
+	happyDiscover: 'MG-598',
+	avs46204: 'MG-599',
+	partial46225: 'MG-600',
+	prepaid46228: 'MG-601'
+};
+
+/**
  * Test Executions por pasarela (creados 2026-07-25, env `test`).
  * La EXECUTION key se pasa por shell al importar resultados
  * (ej. `XRAY_EXECUTION_KEY=MG-558 npm run test:test:gateway:authorize:xray`).
