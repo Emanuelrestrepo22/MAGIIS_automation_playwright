@@ -7,7 +7,20 @@
  *   import { resolveCard, type CardIntent, type GatewayName } from 'tests/fixtures/gateways/_shared';
  */
 
-export type { CardIntent, GatewayName, GenericTestCard, ResolveCardArgs } from './types';
+export type {
+	CardIntent,
+	LegacyCardIntent,
+	ApprovalIntent,
+	DeclineIntent,
+	FraudIntent,
+	SoftVerificationIntent,
+	ReferralIntent,
+	GatewayName,
+	GenericTestCard,
+	ResolveCardArgs
+} from './types';
+
+export { ALL_CARD_INTENTS } from './types';
 
 export { resolveCard, intentSupport, SUPPORTED_INTENTS_BY_GATEWAY, type IntentSupport } from './resolver';
 

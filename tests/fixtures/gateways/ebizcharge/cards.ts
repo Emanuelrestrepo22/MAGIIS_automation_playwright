@@ -98,6 +98,66 @@ export const EBIZ_TEST_CARDS = {
 		description: 'Visa → approved (AVS YYY, CVV2 M). Default happy path.'
 	},
 
+	/**
+	 * Approved con AVS `NNN` (dirección Y ZIP no coinciden) — fila 6 de la tabla AVS.
+	 * Promovida a card de negocio porque el riesgo NO es un rechazo sino lo contrario:
+	 * la transacción se aprueba con la verificación de dirección fallida, y hay que
+	 * comprobar que el sistema no la trate como una verificación limpia.
+	 */
+	visaApprovedAvsMismatch: {
+		number: '4000100511112229',
+		brand: 'visa',
+		exp: EBIZ_DEFAULT_EXPIRY,
+		cvc: '999', // la doc fija 999 para esta fila de la tabla AVS
+		holderName: EBIZ_DEFAULT_HOLDER,
+		category: 'approved',
+		expectedOutcome: 'approved-avs-mismatch',
+		avsResponse: 'NNN',
+		cvv2Result: 'M',
+		description: 'Visa → approved con AVS NNN (dirección y ZIP no coinciden).'
+	},
+
+	// ═══════════════════════════════════════════════════════════════════
+	// APPROVED POR MARCA (fila `M` de la tabla CVV2 de cada marca)
+	// ═══════════════════════════════════════════════════════════════════
+
+	mastercardApproved: {
+		number: '5555444433332226',
+		brand: 'mastercard',
+		exp: EBIZ_DEFAULT_EXPIRY,
+		cvc: EBIZ_ANY_CVV,
+		holderName: EBIZ_DEFAULT_HOLDER,
+		category: 'approved',
+		expectedOutcome: 'approved',
+		avsResponse: 'YYY',
+		cvv2Result: 'M',
+		description: 'Mastercard → approved (AVS YYY, CVV2 M).'
+	},
+	amexApproved: {
+		number: '371122223332225',
+		brand: 'amex',
+		exp: EBIZ_DEFAULT_EXPIRY,
+		cvc: EBIZ_ANY_CVV_AMEX, // Amex: CVV de 4 dígitos
+		holderName: EBIZ_DEFAULT_HOLDER,
+		category: 'approved',
+		expectedOutcome: 'approved',
+		avsResponse: 'YYY',
+		cvv2Result: 'M',
+		description: 'Amex → approved (AVS YYY, CVV2 M). Único caso con CVV de 4 dígitos en el happy path.'
+	},
+	discoverApproved: {
+		number: '6011222233332224',
+		brand: 'discover',
+		exp: EBIZ_DEFAULT_EXPIRY,
+		cvc: EBIZ_ANY_CVV,
+		holderName: EBIZ_DEFAULT_HOLDER,
+		category: 'approved',
+		expectedOutcome: 'approved',
+		avsResponse: 'YYY',
+		cvv2Result: 'M',
+		description: 'Discover → approved (AVS YYY, CVV2 M).'
+	},
+
 	// ═══════════════════════════════════════════════════════════════════
 	// DECLINES (serie 4000300…, CVV 999) — code + message del sandbox
 	// ═══════════════════════════════════════════════════════════════════

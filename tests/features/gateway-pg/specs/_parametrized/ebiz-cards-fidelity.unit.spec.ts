@@ -209,14 +209,19 @@ function fixtureNumbers(): string[] {
 }
 
 /**
- * Las 4 promociones anotación → negocio, pinneadas. Si aparece una quinta, es una
+ * Las promociones anotación → negocio, pinneadas. Una promoción se justifica cuando la
+ * fila SÍ tiene un outcome de negocio propio para MAGIIS; si aparece una novena, es una
  * decisión de diseño que hay que justificar acá (no un accidente).
  */
 const PROMOCIONES_ESPERADAS: readonly string[] = [
 	'4000100011112224', // AVS YYY → la approved default del fixture
+	'4000100511112229', // AVS NNN → APPROVED_AVS_MISMATCH (aprueba con la dirección fallida)
 	'4000200111112221', // CVV2 N  → CVV2_NO_MATCH
 	'4000200211112220', // CVV2 P  → CVV2_NOT_PROCESSED
-	'371122223332241' //  CVV2 No Match (Decline) → DECLINE_AMEX_CVV2
+	'371122223332241', // CVV2 No Match (Decline) → DECLINE_AMEX_CVV2
+	'5555444433332226', // CVV2 M de Mastercard → SUCCESS_MASTERCARD
+	'371122223332225', // CVV2 M de Amex       → SUCCESS_AMEX (CVV de 4 dígitos)
+	'6011222233332224' //  CVV2 M de Discover   → SUCCESS_DISCOVER
 ];
 
 function cardByNumber(number: string): EbizTestCard | undefined {
@@ -243,7 +248,10 @@ function isLuhnValid(number: string): boolean {
 // SPECS
 // ═══════════════════════════════════════════════════════════════════════
 
-test.describe('[unit] eBizCharge — fidelidad del fixture contra la doc oficial @gateway @ebizcharge @unit @regression', () => {
+// Sin tag de pasarela a propósito: es un guard de DATOS, no un test de la pasarela. Con
+// `@ebizcharge` se colectaba en los 3 projects del run por pasarela (10 tests × 3) y
+// entraba al import Xray de MG-559 como tests unmapped. Corre en `:unit`.
+test.describe('[unit] eBizCharge — fidelidad del fixture contra la doc oficial @gateway @unit @regression', () => {
 	test('@unit cobertura: los 92 números documentados están en el fixture, sin extras', () => {
 		// Las 8 tablas no se solapan → 92 números distintos.
 		expect(new Set(DOC_ALL_NUMBERS).size).toBe(92);
@@ -270,7 +278,7 @@ test.describe('[unit] eBizCharge — fidelidad del fixture contra la doc oficial
 		expect(invalidos, `números que no pasan Luhn: ${invalidos.join(', ')}`).toEqual([]);
 	});
 
-	test('@unit las promociones anotación → negocio son exactamente las 4 esperadas', () => {
+	test('@unit las promociones anotación → negocio son exactamente las esperadas', () => {
 		const anotacion = new Set([
 			...EBIZ_AVS_REFERENCE.map(r => r.number),
 			...EBIZ_CVV2_REFERENCE.map(r => r.number),

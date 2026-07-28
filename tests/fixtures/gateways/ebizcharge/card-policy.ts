@@ -36,6 +36,17 @@ export const EBIZ_CARDS = {
 	// ── Happy path ──────────────────────────────────────────────────────
 	/** DEFAULT happy path — Visa approved (AVS YYY, CVV2 M) → Response approved. */
 	SUCCESS: EBIZ_TEST_CARDS.visaApproved,
+	/** Happy path con Mastercard. */
+	SUCCESS_MASTERCARD: EBIZ_TEST_CARDS.mastercardApproved,
+	/** Happy path con Amex — CVV de 4 dígitos (el form nativo debe aceptarlo). */
+	SUCCESS_AMEX: EBIZ_TEST_CARDS.amexApproved,
+	/** Happy path con Discover. */
+	SUCCESS_DISCOVER: EBIZ_TEST_CARDS.discoverApproved,
+	/**
+	 * Approved con AVS NNN — aprueba pese a que dirección y ZIP no coinciden.
+	 * Sirve para verificar que el sistema no reporte la verificación como limpia.
+	 */
+	APPROVED_AVS_MISMATCH: EBIZ_TEST_CARDS.visaApprovedAvsMismatch,
 
 	// ── Declines ────────────────────────────────────────────────────────
 	/** Decline genérico (sin código). */
@@ -48,6 +59,10 @@ export const EBIZ_CARDS = {
 	DECLINE_INVALID_TRANSACTION: EBIZ_TEST_CARDS.declineInvalidTransaction,
 	/** 62 Restricted Card. */
 	DECLINE_RESTRICTED: EBIZ_TEST_CARDS.declineRestrictedCard,
+	/** 15 Invalid Issuer — OJO: es la única con exp 0922, no 0930. */
+	DECLINE_INVALID_ISSUER: EBIZ_TEST_CARDS.declineInvalidIssuer,
+	/** 04 Pickup Card — el emisor pide retener la tarjeta. */
+	DECLINE_PICKUP_CARD: EBIZ_TEST_CARDS.declinePickupCard,
 	/** 97 Declined for CVV failure — usado por el intent canónico DECLINE_INVALID_CVC. */
 	DECLINE_CVV: EBIZ_TEST_CARDS.declineCvvFailure,
 	/**

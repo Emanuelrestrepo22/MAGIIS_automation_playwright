@@ -27,10 +27,13 @@ import {
 	assertCardMatrixIntegrity,
 	intentSupport,
 	resolveCard,
+	ALL_CARD_INTENTS,
+	CARD_MATRIX,
 	EXPECTED_SUPPORTED_COUNTS,
 	SUPPORTED_INTENTS_BY_GATEWAY,
 	type GatewayName
 } from '@fixtures/gateways/_shared';
+import { outcomeFor, hasObservedOutcome, observedIntents } from '@features/gateway-pg/helpers/journey-outcome';
 
 test.describe('[unit] Adapters — consistencia declarativa cross-gateway @gateway @unit @regression', () => {
 	test('@unit assertAdapterFixtureConsistency: adapters ↔ resolver ↔ xray-keys ↔ journey-defaults sin drift', () => {
@@ -83,6 +86,38 @@ test.describe('[unit] Adapters — consistencia declarativa cross-gateway @gatew
 
 		// resolveCard mantiene el contrato histórico: lanza para un intent no soportado.
 		expect(() => resolveCard({ gateway: 'ebizcharge', intent: 'HAPPY_AUTH' })).toThrow(/no soportado por gateway 'ebizcharge'/);
+	});
+
+	test('@unit el vocabulario de intents cubre los 4 gateways sin huecos declarativos', () => {
+		expect(ALL_CARD_INTENTS).toHaveLength(24);
+
+		// Cada intent tiene celda declarada en las 4 pasarelas — soportada o N/A con razón.
+		// Esto es lo que hace imposible el hueco silencioso: no hay "intent sin declarar".
+		for (const gateway of Object.keys(CARD_MATRIX) as GatewayName[]) {
+			for (const intent of ALL_CARD_INTENTS) {
+				const support = intentSupport(gateway, intent);
+				if (!support.supported) {
+					expect(support.reason, `${gateway}.${intent} sin razón de N/A`).toBeTruthy();
+				}
+			}
+		}
+
+		// eBizCharge es la pasarela con más outcomes de negocio expresables: su doc publica
+		// 14 códigos de decline + antifraude + referral + latencia.
+		expect(SUPPORTED_INTENTS_BY_GATEWAY.ebizcharge.length).toBeGreaterThan(SUPPORTED_INTENTS_BY_GATEWAY.stripe.length);
+	});
+
+	test('@unit outcomeFor lanza para un intent sin comportamiento observado', () => {
+		// Los dos observados y documentados.
+		expect(outcomeFor('HAPPY_NO_AUTH').expectedTravelStatus).toBe('Buscando chofer');
+		expect(outcomeFor('DECLINE_AUTHORIZE').expectedTravelStatus).toBe('No autorizado');
+		expect(outcomeFor('HAPPY_NO_AUTH').evidence.length).toBeGreaterThan(20);
+
+		// El resto NO tiene oráculo todavía, y eso tiene que doler explícitamente en vez de
+		// resolverse con un default optimista.
+		expect(() => outcomeFor('FRAUD_REVIEW')).toThrow(/no tiene comportamiento OBSERVADO/);
+		expect(hasObservedOutcome('FRAUD_REVIEW')).toBe(false);
+		expect(observedIntents()).toEqual(['HAPPY_NO_AUTH', 'DECLINE_AUTHORIZE']);
 	});
 
 	test('@unit requires3ds sale de la celda, no del nombre del intent', () => {
