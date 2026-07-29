@@ -2,8 +2,9 @@
 
 > **GENERATED — no editar a mano.** Regenerar con `node scripts/ai/build-id-map.mjs`.
 > Fuente de verdad: [`docs/gateway-pg/id-map.json`](../id-map.json). Keys MG desde `tests/features/gateway-pg/data/xray-keys.ts` + annotations `tms` en specs — nunca fabricadas.
+> Un spec marcado **(fixme)** DECLARA el caso pero lo emite como `test.fixme`: cobertura trazable, NO ejecutada — no cuenta como cobertura real.
 
-Total: 111 · confirmed: 8 · needs-review: 0 · unmapped: 103 · con MG-key: 0 · con spec: 8
+Total: 111 · confirmed: 17 · needs-review: 0 · unmapped: 94 · con MG-key: 0 · con spec: 17 (ejecutable: 10 · sólo fixme: 7)
 
 | TS-ID | Ref Stripe | MG key | Specs | Status |
 | --- | --- | --- | --- | --- |
@@ -32,19 +33,19 @@ Total: 111 · confirmed: 8 · needs-review: 0 · unmapped: 103 · con MG-key: 0 
 | TS-EBIZ-TC1055 | TS-STRIPE-TC1006 | — | `tests/features/gateway-pg/specs/ebizcharge/web/carrier/config/ebizcharge-link-unlink.spec.ts` | confirmed |
 | TS-EBIZ-TC1056 | TS-STRIPE-TC1007 | — | `tests/features/gateway-pg/specs/ebizcharge/web/carrier/config/ebizcharge-link-unlink.spec.ts` | confirmed |
 | TS-EBIZ-TC1057 | TS-STRIPE-TC1008 | — | `tests/features/gateway-pg/specs/ebizcharge/web/carrier/config/ebizcharge-link-unlink.spec.ts` | confirmed |
-| TS-EBIZ-TC1058 | TS-STRIPE-TC1033 | — | — | unmapped |
-| TS-EBIZ-TC1059 | TS-STRIPE-TC1034 | — | — | unmapped |
+| TS-EBIZ-TC1058 | TS-STRIPE-TC1033 | — | `tests/features/gateway-pg/specs/ebizcharge/web/carrier/hold/ebizcharge-hold.spec.ts` | confirmed |
+| TS-EBIZ-TC1059 | TS-STRIPE-TC1034 | — | `tests/features/gateway-pg/specs/ebizcharge/web/carrier/hold/ebizcharge-hold.spec.ts` **(fixme)** | confirmed |
 | TS-EBIZ-TC1060 | TS-STRIPE-TC1035 | — | — | unmapped |
-| TS-EBIZ-TC1061 | TS-STRIPE-TC1036 | — | — | unmapped |
-| TS-EBIZ-TC1062 | TS-STRIPE-TC1041 | — | — | unmapped |
-| TS-EBIZ-TC1063 | TS-STRIPE-TC1050 | — | — | unmapped |
+| TS-EBIZ-TC1061 | TS-STRIPE-TC1036 | — | `tests/features/gateway-pg/specs/ebizcharge/web/carrier/hold/ebizcharge-hold.spec.ts` **(fixme)** | confirmed |
+| TS-EBIZ-TC1062 | TS-STRIPE-TC1041 | — | `tests/features/gateway-pg/specs/ebizcharge/web/carrier/hold/ebizcharge-hold.spec.ts` **(fixme)** | confirmed |
+| TS-EBIZ-TC1063 | TS-STRIPE-TC1050 | — | `tests/features/gateway-pg/specs/ebizcharge/web/carrier/hold/ebizcharge-hold.spec.ts` **(fixme)** | confirmed |
 | TS-EBIZ-TC1064 | TS-STRIPE-TC1052 | — | — | unmapped |
 | TS-EBIZ-TC1065 | TS-STRIPE-TC1058 | — | — | unmapped |
 | TS-EBIZ-TC1066 | TS-STRIPE-TC1060 | — | — | unmapped |
-| TS-EBIZ-TC1067 | TS-STRIPE-TC1065 | — | — | unmapped |
-| TS-EBIZ-TC1068 | TS-STRIPE-TC1066 | — | — | unmapped |
-| TS-EBIZ-TC1069 | TS-STRIPE-TC1067 | — | — | unmapped |
-| TS-EBIZ-TC1070 | TS-STRIPE-TC1068 | — | — | unmapped |
+| TS-EBIZ-TC1067 | TS-STRIPE-TC1065 | — | `tests/features/gateway-pg/specs/ebizcharge/web/carrier/hold/ebizcharge-hold.spec.ts` | confirmed |
+| TS-EBIZ-TC1068 | TS-STRIPE-TC1066 | — | `tests/features/gateway-pg/specs/ebizcharge/web/carrier/hold/ebizcharge-hold.spec.ts` **(fixme)** | confirmed |
+| TS-EBIZ-TC1069 | TS-STRIPE-TC1067 | — | `tests/features/gateway-pg/specs/ebizcharge/web/carrier/hold/ebizcharge-hold.spec.ts` **(fixme)** | confirmed |
+| TS-EBIZ-TC1070 | TS-STRIPE-TC1068 | — | `tests/features/gateway-pg/specs/ebizcharge/web/carrier/hold/ebizcharge-hold.spec.ts` **(fixme)** | confirmed |
 | TS-EBIZ-TC1100 | TS-STRIPE-TC1009 | — | — | unmapped |
 | TS-EBIZ-TC1101 | TS-STRIPE-TC1010 | — | — | unmapped |
 | TS-EBIZ-TC1102 | TS-STRIPE-TC1011 | — | — | unmapped |

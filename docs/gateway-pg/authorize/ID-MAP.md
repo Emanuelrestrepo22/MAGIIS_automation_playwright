@@ -4,7 +4,7 @@
 > Fuente de verdad: [`docs/gateway-pg/id-map.json`](../id-map.json). Keys MG desde `tests/features/gateway-pg/data/xray-keys.ts` + annotations `tms` en specs — nunca fabricadas.
 > Un spec marcado **(fixme)** DECLARA el caso pero lo emite como `test.fixme`: cobertura trazable, NO ejecutada — no cuenta como cobertura real.
 
-Total: 164 · confirmed: 23 · needs-review: 2 · unmapped: 139 · con MG-key: 10 · con spec: 25 (ejecutable: 17 · sólo fixme: 8)
+Total: 164 · confirmed: 23 · needs-review: 1 · unmapped: 140 · con MG-key: 9 · con spec: 24 (ejecutable: 16 · sólo fixme: 8)
 
 | TS-ID | Ref Stripe | MG key | Specs | Status |
 | --- | --- | --- | --- | --- |
@@ -18,7 +18,7 @@ Total: 164 · confirmed: 23 · needs-review: 2 · unmapped: 139 · con MG-key: 1
 | TS-AUTHORIZE-TC1008 | TS-STRIPE-TC1008 | MG-226 | `tests/features/gateway-pg/specs/authorize/web/carrier/config/authorize-link-unlink.spec.ts` | confirmed |
 | TS-AUTHORIZE-TC1009 | TS-STRIPE-TC1052 | — | — | unmapped |
 | TS-AUTHORIZE-TC1010 | TS-STRIPE-TC1058 | — | — | unmapped |
-| TS-AUTHORIZE-TC1011 | TS-STRIPE-TC1049 | MG-158 | `tests/features/gateway-pg/specs/_parametrized/hold-happy-no3ds.parametrized.spec.ts`<br>`tests/features/gateway-pg/specs/authorize/web/carrier/hold/personal-hold-on-happy.spec.ts` | needs-review |
+| TS-AUTHORIZE-TC1011 | TS-STRIPE-TC1049 | — | `tests/features/gateway-pg/specs/authorize/web/carrier/hold/personal-hold-on-happy.spec.ts` | confirmed |
 | TS-AUTHORIZE-TC1012 | TS-STRIPE-TC1050 | — | `tests/features/gateway-pg/specs/authorize/web/carrier/hold/authorize-hold-matrix.spec.ts` **(fixme)** | confirmed |
 | TS-AUTHORIZE-TC1013 | — | — | — | unmapped |
 | TS-AUTHORIZE-TC1014 | — | — | — | unmapped |
@@ -59,7 +59,7 @@ Total: 164 · confirmed: 23 · needs-review: 2 · unmapped: 139 · con MG-key: 1
 | TS-AUTHORIZE-TC1073 | — | — | — | unmapped |
 | TS-AUTHORIZE-TC1075 | TS-STRIPE-TC1017 | — | — | unmapped |
 | TS-AUTHORIZE-TC1076 | TS-STRIPE-TC1019 | — | — | unmapped |
-| TS-AUTHORIZE-TC1081 | TS-STRIPE-TC1081 | — | `tests/features/gateway-pg/specs/authorize/web/carrier/cargo-a-bordo/authorize-cargo-a-bordo.spec.ts` | confirmed |
+| TS-AUTHORIZE-TC1081 | TS-STRIPE-TC1081 | — | — | unmapped |
 | TS-AUTHORIZE-TC1082 | TS-STRIPE-TC1082 | — | — | unmapped |
 | TS-AUTHORIZE-TC1083 | TS-STRIPE-TC1085 | — | — | unmapped |
 | TS-AUTHORIZE-TC1087 | — | — | — | unmapped |
