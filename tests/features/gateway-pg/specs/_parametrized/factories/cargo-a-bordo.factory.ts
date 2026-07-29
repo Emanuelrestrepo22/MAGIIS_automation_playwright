@@ -126,6 +126,16 @@ export type CargoABordoSuiteOptions = {
 	/**
 	 * Asignación MANUAL directa al conductor en vez de Send Service (elimina el timer de
 	 * oferta-candidato; requerido para el e2e driver estable). Default false.
+	 *
+	 * Si se omite, cae a la env var `CARGO_MANUAL_ASSIGN=1`. Existe porque los dos modos cubren
+	 * cosas DISTINTAS y la elección es del que corre, no del spec:
+	 *   - OFF (default): el carrier selecciona "Cargo a Bordo" como forma de pago → valida ESE
+	 *     flujo web. Pero el viaje queda a la espera de oferta-candidato y NUNCA se asigna al
+	 *     conductor, así que la fase driver muere esperando (`No llegó/asignó ningún viaje al
+	 *     conductor (TravelConfirmPage) en 90000ms`, observado en TC1081 el 2026-07-29).
+	 *   - ON: viaje PLANO (sin forma de pago — seleccionar "Cargo a Bordo" oculta "Send Manual")
+	 *     + Send Manual → Assign. El conductor recibe el viaje y elige la tarjeta en el Resumen,
+	 *     que es lo único que permite ACREDITAR el cobro de los TC "…desde la Driver App".
 	 */
 	manualAssign?: boolean;
 	/** Tags extra del título del test (ej. '@smoke'). */
@@ -164,6 +174,9 @@ export function defineCargoABordoSuite(gateway: GatewayName, options: CargoABord
 	const cases = options.cases ?? GATEWAY_CARGO_ALL_CASES;
 	const origin = options.origin ?? DRIVER_E2E_PICKUP;
 	const createTimeout = options.createTimeout ?? 30_000;
+	// Ver el JSDoc de `manualAssign`: opt-in por env para acreditar el cobro en la Driver App
+	// sin cambiar el default de los 9 casos web ni el de eBizCharge.
+	const manualAssign = options.manualAssign ?? process.env.CARGO_MANUAL_ASSIGN === '1';
 	const extraTags = options.extraTags ? `${options.extraTags} ` : '';
 	const supportedIntents: readonly CardIntent[] = SUPPORTED_INTENTS_BY_GATEWAY[gateway];
 
@@ -199,7 +212,7 @@ export function defineCargoABordoSuite(gateway: GatewayName, options: CargoABord
 			test(title, details, async ({ page }) => {
 				await new CargoABordoSteps({ page }).runCargoScenario(scenario, {
 					createTimeout,
-					manualAssign: options.manualAssign,
+					manualAssign,
 					driverAppStep: {
 						title: `[DRIVER APP] Conductor finaliza el viaje y cobra (•••• ${charge.card.number.slice(-4)}) → ${charge.expectedOutcome === 'success' ? 'cobro aprobado' : 'cobro rechazado'}`,
 						note: `PENDIENTE: fase Driver App — requiere Appium (APPIUM=1) sobre el teléfono físico. Cobro ${adapter.displayName} intent ${intent}.`,
