@@ -1082,6 +1082,36 @@ Checklist (en orden):
 - **Próxima acción:** Capturar por red el endpoint de lectura de uso (en Associates o al chequear cupo en alta de viaje, en un entorno estable), agregar helper de lectura API + aserción de efecto que complemente/reemplace la capa DB.
 - **Referencias:** ATR MX-6122, `oracle-service-usage.ts`, `counts-reset-db.api.spec.ts`, BL-047
 
+#### Avance 2026-07-29 — CONFIRMADO, y no es solo UAT: **TEST tampoco es alcanzable desde local**
+
+Este registro suponía que el firewall afectaba a UAT ("el Oracle de UAT **probablemente** esté firewalleado desde local"). Medido hoy al intentar cerrar el eje DB de la Ronda 1 de Authorize: **el Oracle de TEST (`magiis-test-v2`) tampoco responde desde esta máquina.** La suposición pasa a hecho, y con alcance mayor al registrado.
+
+Diagnóstico en tres niveles, para que quede descartado todo lo que no es:
+
+| Prueba | Resultado |
+| --- | --- |
+| `oracleConfigFromEnv()` con `ENV=test` | ✅ resuelve (las 5 `ORACLE_*_TEST` de `.env.test` están pobladas) |
+| DNS del host (`*.rds.amazonaws.com`) | ✅ resuelve a `52.15.107.228` |
+| Control HTTPS a `apps-test.magiis.com:443` | ✅ 185 ms — la red del equipo funciona |
+| **TCP crudo a `52.15.107.228:1521`** | ❌ **TIMEOUT** (dos intentos: 8 s y 12 s) |
+| Oracle Thin (`select 1 from dual`) | ❌ `NJS-510: connection … timed out. Request exceeded "transportConnectTimeout" of 20 seconds` |
+
+**Lo que esto descarta:** no son las credenciales (la config resuelve), no es DNS, no es Thin mode ni el verificador de contraseña (nunca se llega al handshake), no es el guard SELECT-only, no es el código. Es **acceso de red a la instancia RDS**: security group de AWS que no incluye la IP pública de esta máquina, o VPN requerida y ausente.
+
+**Dato que vuelve esto accionable:** MG-166 (cascada de `cleaningWallets`) **sí** conectó contra `magiis-test-v2` el 2026-07-24 y dejó su verificación DB en verde. O sea que entre el 24 y el 29 **cambió algo** — el security group, o la red desde la que se corre. Vale preguntar a infra si se modificó la regla del puerto 1521, y desde qué IP/VPN se corrió aquella vez.
+
+**Impacto medido en el release de pasarelas:** el eje DB de la trifuerza queda **no medible desde local**, y con él cuatro verificaciones que ya estaban diseñadas y listas:
+
+1. **La más valiosa: AC9 idempotencia.** Existía la posibilidad de buscar `transaction_ref` con más de una fila aprobada en `MGW_TRANSACTIONS` — evidencia **directa** del doble cobro, sin crear ningún cobro. El veto CRITICAL del release sigue apoyado solo en "0 hits de `Idempotency` en el código", que es evidencia de ausencia.
+2. Estado de vinculación de Authorize en `MGW_LINKED` (hoy solo hay evidencia de UI, vía probe).
+3. Sustento en DB para MG-285 / `TS-AUTHORIZE-WAL-01`, la única key verde real del release, hoy acreditada solo por UI.
+4. El contraste de tarjetas por pasajero que explicaría por qué TC1011/TC1051 pasaron y TC1061 falló con el mismo flujo (ver Avance de BL-050).
+
+**Además queda sin verificar el esquema de `MGW_TRANSACTIONS`.** `oracle-wallet.ts` documenta `transaction_ref` y `status IN ('APPROVED','CONFIRM')` como **asumidos, nunca ejecutados**; la verificación contra `USER_TAB_COLUMNS` era el primer paso y no pudo correr.
+
+- **Próxima acción ampliada:** la alternativa por API que este ticket ya propone **deja de ser opcional** para el release de pasarelas: sin acceso a Oracle es el único camino a la capa de datos. Sube de prioridad. En paralelo, confirmar con infra el acceso al 1521 desde la red de QA, porque cuatro verificaciones diseñadas dependen de eso.
+- **Evidencia:** medición del 2026-07-29 registrada en `.context/reports/gonogo-pasarelas-2026-07-29.md` (repo `agentic-qa-boilerplate`), sección del eje DB.
+
 ### BL-047 — MX-6057: discovery + validación del blueprint UI en CI estable
 
 - **Estado:** 🔴 Pendiente
