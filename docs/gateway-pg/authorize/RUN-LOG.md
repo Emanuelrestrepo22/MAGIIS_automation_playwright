@@ -819,3 +819,71 @@ Los viajes de la ronda (67550, 67553 y los de la primera tanda) los canceló el 
    declines vuelven a ser medibles.
 4. El `DELETE` en 500 merece ticket propio: es intermitente, contamina mediciones y ya obligó a
    construir un guard de atribución para trabajar alrededor.
+
+---
+
+# Ronda 6 — acreditación de la campaña MANUAL en Xray (2026-07-29)
+
+Las rondas 1-5 midieron la suite automatizada. En paralelo se ejecutó **a mano** un conjunto de
+flujos completos de Authorize que resultaron satisfactorios, y ese trabajo no estaba acreditado en
+ningún lado: **MG-558 estaba en 0/118 ejecutados**. Esta ronda lo registra.
+
+**Decisiones de registro** (del dueño de la campaña): destino **MG-558 directo** (no un ATR manual
+aparte) · evidencia = `PASSED` + comentario narrativo por run, **sin adjuntos** · alcance = **solo
+keys que ya existían** (no se crearon Tests nuevos).
+
+> ⚠️ **Estos 16 runs se van a sobreescribir** cuando entre el import de la suite automatizada sobre
+> MG-558 — por eso el registro vive acá además de en Xray. El comentario de cada run se
+> autoidentifica como ejecución manual para que no se confunda con un resultado de la suite.
+
+## Los 16 acreditados
+
+| Key | tcid | Flujo manual que lo acredita |
+|---|---|---|
+| MG-285 | WAL-02 | vincular desde Carrier a usuario **sin wallet** → wallet creada en DB + tarjetas agregadas |
+| MG-286 | WAL-03 | vincular desde App PAX **modo Personal** |
+| MG-288 | WAL-05 | vincular desde App PAX **modo Business** (colaborador) |
+| MG-289 | WAL-06 | vincular desde Carrier al **perfil Business** del colaborador |
+| MG-293 | WAL-10 | **eliminar** tarjeta desde App PAX |
+| MG-294 | WAL-11 | **eliminar** desde Carrier + reflejo en App PAX |
+| MG-346 | COB-01 | alta de viaje desde **Carrier** con validación previa de tarjeta |
+| MG-349 | COB-04 | alta desde Carrier con **Hold ON** → se genera el hold |
+| MG-353 | COB-08 | alta desde Carrier con **Hold OFF** → cobro solo al cierre desde App Driver |
+| MG-347 | COB-02 | alta desde **App PAX Personal** → finalización por App Driver |
+| MG-348 | COB-03 | alta desde **App PAX Business** → cobro a la tarjeta del perfil Business |
+| MG-524 | COB-25 | App PAX Personal Hold ON → **priorAuthCapture** desde App Driver |
+| MG-538 | COB-28 | **Portal Contractor** colaborador, tarjeta nueva, **Hold ON** + cobro App Driver |
+| MG-541 | COB-29 | **Portal Contractor** colaborador **Hold OFF** + authCapture al cierre |
+| MG-350 | COB-05 | finalizar desde App Driver con **captura del monto final** |
+| MG-540 | COB-44 | **E2E** Hold ON → priorAuthCapture → viaje `payment-validated` |
+
+Verificado live: `run list --execution MG-558` → **16 PASSED / 84 TO DO** (de las 100 visibles;
+las 18 restantes son las SBX MG-590..601, fuera de este lote), 118 miembros sin cambios.
+
+## Lo que NO se acreditó, y por qué
+
+**Pendiente de confirmación** (el título del Test agrega una condición que la ejecución manual no
+declaró): **MG-295** (eliminar *la última* tarjeta → estado vacío) · **MG-535** / **MG-543**
+(variantes con tarjeta *ya vinculada*, no nueva) · **MG-539** (cargo a bordo colaborador — el título
+no fija portal y la matriz L0 documenta cargo a bordo solo *desde Carrier*) · **MG-529** (cargo a
+bordo personal) · **MG-354** (tarjeta vinculada el día anterior + revalidación).
+
+**Sin key — gap declarado, no marcable:**
+- **Viaje calle** con vinculación de tarjeta y pago exitoso: no existe Test Xray **ni fila L0** en
+  `docs/gateway-pg/authorize/*`. Las únicas contrapartes son de otras pasarelas (`MP-CALLE-01`,
+  `[DRIVER-VIAJECALLE-3DS]`), ambas sin key.
+- **Hold ON/OFF en la *vinculación*** como caso propio, **individuo empresa** como caso propio de
+  wallet, y **eliminar desde App PAX en modo Business**: no tienen Test Xray creado.
+
+**Excluidos a propósito:** MG-525 / MG-526 / MG-527 (Mastercard / Amex / Discover Hold ON) — marcas
+que la ejecución manual no cubrió, y **MG-527 tiene defecto abierto** ("Discover bloqueada en la UI",
+comentario Jira #34511). Quedan en TO DO; MG-527 sirve de control negativo del lote.
+
+## Corrección de fuentes detectada al mapear
+
+`atp-mg-gateway-idmap.md:414-419` y `atp-gateway-membership.json` derivan el tcid del bloque
+COB-16..48 con la aritmética `MG-(503+N)`, que es **incorrecta**. Los labels `tcid:` leídos en Jira
+lo desmienten: **MG-524 = COB-25** (no COB-21), **MG-540 = COB-44** (no COB-37), **MG-542 = COB-37**,
+**MG-547 = COB-32**. Además los 33 summaries de MG-519..551 **no existen en ningún archivo local**
+(el propio idmap lo declara para no fabricarlos) — se leyeron de Jira. Corregir el idmap queda como
+tarea aparte.
