@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-27T12:54:42.003Z",
+  "generated_at": "2026-07-29T03:58:12.296Z",
   "generator": "scripts/ai/build-id-map.mjs",
   "notes": [
     "SoT central de trazabilidad TS-ID ↔ MG-key ↔ spec (Fase 4, 2026-07-26).",
@@ -26,11 +26,11 @@
     },
     "ebizcharge": {
       "total": 111,
-      "confirmed": 0,
-      "needs-review": 8,
-      "unmapped": 103,
+      "confirmed": 9,
+      "needs-review": 0,
+      "unmapped": 102,
       "with_mg_key": 0,
-      "with_specs": 8
+      "with_specs": 9
     }
   },
   "rows": [
@@ -1716,8 +1716,10 @@
       "stripe_ref": null,
       "tcid": "TC1001",
       "mg_key": null,
-      "spec_paths": [],
-      "status": "unmapped",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/ebizcharge/web/carrier/cardmatrix/ebizcharge-card-outcomes.spec.ts"
+      ],
+      "status": "confirmed",
       "sources": []
     },
     {
@@ -1889,7 +1891,7 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/ebizcharge/web/carrier/config/ebizcharge-link-unlink.spec.ts"
       ],
-      "status": "needs-review",
+      "status": "confirmed",
       "sources": []
     },
     {
@@ -1901,7 +1903,7 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/ebizcharge/web/carrier/config/ebizcharge-link-unlink.spec.ts"
       ],
-      "status": "needs-review",
+      "status": "confirmed",
       "sources": []
     },
     {
@@ -1913,7 +1915,7 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/ebizcharge/web/carrier/config/ebizcharge-link-unlink.spec.ts"
       ],
-      "status": "needs-review",
+      "status": "confirmed",
       "sources": []
     },
     {
@@ -1925,7 +1927,7 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/ebizcharge/web/carrier/config/ebizcharge-link-unlink.spec.ts"
       ],
-      "status": "needs-review",
+      "status": "confirmed",
       "sources": []
     },
     {
@@ -1937,7 +1939,7 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/ebizcharge/web/carrier/config/ebizcharge-link-unlink.spec.ts"
       ],
-      "status": "needs-review",
+      "status": "confirmed",
       "sources": []
     },
     {
@@ -1949,7 +1951,7 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/ebizcharge/web/carrier/config/ebizcharge-link-unlink.spec.ts"
       ],
-      "status": "needs-review",
+      "status": "confirmed",
       "sources": []
     },
     {
@@ -1961,7 +1963,7 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/ebizcharge/web/carrier/config/ebizcharge-link-unlink.spec.ts"
       ],
-      "status": "needs-review",
+      "status": "confirmed",
       "sources": []
     },
     {
@@ -1973,7 +1975,7 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/ebizcharge/web/carrier/config/ebizcharge-link-unlink.spec.ts"
       ],
-      "status": "needs-review",
+      "status": "confirmed",
       "sources": []
     },
     {
