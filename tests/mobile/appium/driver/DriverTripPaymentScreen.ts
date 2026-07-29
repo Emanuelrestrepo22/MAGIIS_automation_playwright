@@ -90,17 +90,29 @@ const SEL = {
 const CHARGE_MODAL_MARK = 'data-qa-charge-modal';
 const MARKED = `[${CHARGE_MODAL_MARK}="1"]`;
 
-/** Variantes de selector del HOST `ion-input` de `name`, scopeadas al overlay activo. */
-const hostVariants = (name: string): readonly string[] => [
-	`${MARKED} #${name}`,
-	`${MARKED} ion-input#${name}`,
-	`${MARKED} ion-input[formcontrolname="${name}"]`,
-	`${MARKED} ion-input[data-checkout="${name}"]`
+/**
+ * Gracia antes de aceptar un modal de cobro que NO da la señal `has-focus`. Existe para no llenar el
+ * form ANTES de que la app termine de (re)abrirlo — `closeTravel → payTravelCreditCard` tarda ~2.5s
+ * medidos, así que 6s da margen 2x. Con `has-focus` presente NO se paga nada de esto.
+ */
+const ACTIVATION_GRACE_MS = 6_000;
+
+/** Variantes de selector del HOST `ion-input` de `name`, RELATIVAS al overlay que las contiene. */
+const hostVariantsRaw = (name: string): readonly string[] => [
+	`#${name}`,
+	`ion-input#${name}`,
+	`ion-input[formcontrolname="${name}"]`,
+	`ion-input[data-checkout="${name}"]`
 ];
+
+/** Idem, scopeadas al overlay ACTIVO (marcado) — lo que consume el fill/readback. */
+const hostVariants = (name: string): readonly string[] => hostVariantsRaw(name).map(sel => `${MARKED} ${sel}`);
 
 const NATIVE = {
 	/** Marcador del overlay de cobro activo (lo setea `markActiveChargeModal`). */
 	marked: MARKED,
+	/** Host de `cardNumber` SIN scope — para buscar DENTRO de un overlay candidato. */
+	numberHostAny: hostVariantsRaw('cardNumber').join(', '),
 	number: hostVariants('cardNumber'),
 	expiry: hostVariants('cardExpirationDate'),
 	cvc: hostVariants('securityCode'),
@@ -155,89 +167,115 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 	 * "existe alguno" esta función daba `true` en 0.5s contra el modal MUERTO, cuando la app tarda
 	 * ~2.5s en abrir el nuevo (`closeTravel → payTravelCreditCard`) ⇒ el fill iba al form equivocado.
 	 *
-	 * Por eso, en la PRIMERA iteración se marcan como `stale` los overlays ya presentes y después se
-	 * espera uno NUEVO, que queda marcado como el activo para el resto del flujo. Si el timeout se
-	 * agota sin overlay nuevo, se degrada al comportamiento anterior (topmost) con un warning: es
-	 * preferible intentar el cobro que abortar un viaje real por una heurística.
+	 * ⚠️ Y la app REUSA el elemento del modal en vez de montar uno nuevo (medido en el run verde de
+	 * TC1081, viaje 67755: 3 overlays marcados stale y NUNCA apareció uno nuevo). Por eso la espera
+	 * NO puede ser "apareció un overlay NUEVO" — esa condición no se cumple nunca y se comía los 30s
+	 * completos antes del fallback, 30s que salen de la ventana CORTA del cobro del conductor.
+	 *
+	 * La condición real que importa es que el overlay topmost esté **listo para tipear**:
+	 *   - `ion-modal` contenedor con `show-modal`;
+	 *   - host `#cardNumber` presente, con `<input>` interno NO `readOnly` ni `disabled`
+	 *     (`readOnly` es justo lo que probea `scripts/driver-charge-from-resume.ts:161`);
+	 *   - y la señal de ACTIVACIÓN `has-focus` en ese host — la app enfoca el campo al abrir el modal,
+	 *     y en el dump de 2 overlays sólo el VIVO la tenía (el stale no).
+	 *
+	 * Con `has-focus` el camino feliz sale en el primer poll. Si el build no autoenfoca, después de
+	 * `ACTIVATION_GRACE_MS` se acepta el topmost listo igual (red de seguridad, logueada): esa espera
+	 * mínima existe para no llenar el form ANTES de que la app lo re-abra y lo resetee.
 	 */
 	async waitForPaymentScreen(timeout = 30_000): Promise<boolean> {
 		const driver = this.getDriver();
-		const deadline = Date.now() + timeout;
-		const staleCount = await this.snapshotStaleModals();
-		if (staleCount > 0) {
-			console.log(
-				`[DriverTripPaymentScreen] ${staleCount} modal(es) de cobro STALE en el DOM (corridas previas) — se ignoran; se espera el nuevo.`
-			);
-		}
+		const started = Date.now();
+		const deadline = started + timeout;
 
 		while (Date.now() < deadline) {
 			await this.switchToWebView(3_000);
-			if ((await this.markActiveChargeModal()) === 'fresh') return true;
+			const graced = Date.now() - started >= ACTIVATION_GRACE_MS;
+			const kind = await this.markActiveChargeModal(graced);
+			if (kind === 'focused' || kind === 'fresh') return true;
+			if (kind === 'graced') {
+				console.warn(
+					`[DriverTripPaymentScreen] Modal de cobro sin señal has-focus tras ${ACTIVATION_GRACE_MS}ms; se usa el topmost listo.`
+				);
+				return true;
+			}
 			const stripeReady = await driver
 				.execute<boolean, [string]>(iframeSel => !!document.querySelector(iframeSel), SEL.iframeNumber)
 				.catch(() => false);
 			if (stripeReady) return true;
-			await driver.pause(400);
-		}
-
-		// Degradación: ningún overlay NUEVO. Puede ser un build que reusa el modal existente.
-		if ((await this.markActiveChargeModal(true)) !== 'none') {
-			console.warn(
-				'[DriverTripPaymentScreen] No apareció un modal de cobro NUEVO; se usa el topmost existente (posible overlay stale).'
-			);
-			return true;
+			await driver.pause(300);
 		}
 		return false;
-	}
-
-	/**
-	 * Marca como `stale` todos los `credit-card-payment-data` presentes AHORA y limpia el marcador
-	 * activo. Baseline para distinguir el modal de ESTE cobro de los huérfanos. Devuelve cuántos marcó.
-	 */
-	private async snapshotStaleModals(): Promise<number> {
-		return this.executeInWebView((attr: string) => {
-			const all = Array.from(document.querySelectorAll('credit-card-payment-data')) as HTMLElement[];
-			for (const el of all) el.setAttribute(attr, 'stale');
-			return all.length;
-		}, CHARGE_MODAL_MARK).catch(() => 0);
 	}
 
 	/**
 	 * Marca el overlay de cobro ACTIVO con `data-qa-charge-modal="1"`, para que TODO lo que sigue
 	 * (guard de rama, fill, readback, COBRAR) opere sobre el mismo form y nunca sobre un stale.
 	 *
-	 * Preferencia: (1) el que ya esté marcado activo; (2) el último overlay visible SIN marcar —
-	 * o sea, aparecido después del baseline; (3) sólo con `allowStale`, el último visible aunque sea
-	 * stale. En Ionic el último overlay del DOM es el de mayor z-index (medido: 20256 > 20243).
+	 * Elegibilidad = visible (`ion-modal.show-modal`) **y listo para tipear** (host `#cardNumber` con
+	 * `<input>` interno no `readOnly`/`disabled`). Entre los elegibles gana el ÚLTIMO en orden de DOM:
+	 * en Ionic el último overlay es el de mayor z-index (medido: 20256 vivo > 20243 muerto).
+	 *
+	 * Devuelve la CALIDAD de la señal, para que el caller decida si ya puede actuar:
+	 *   - `focused`  → tiene `has-focus`: la app acaba de abrirlo. Señal fuerte, actuar ya.
+	 *   - `fresh`    → apareció después del baseline (overlay recién montado). Señal fuerte.
+	 *   - `graced`   → sólo topmost-listo, sin foco ni novedad; válido recién pasada la gracia.
+	 *   - `none`     → nada elegible (p.ej. rama Stripe: no hay `#cardNumber` nativo).
 	 *
 	 * El marcador es una anotación de TEST sobre el DOM, no un selector de la app (mismo criterio que
 	 * el `style.pointerEvents = 'none'` que ya aplica `PassengerWalletScreen`).
 	 */
-	private async markActiveChargeModal(allowStale = false): Promise<'fresh' | 'fallback' | 'none'> {
+	private async markActiveChargeModal(allowUnfocused = false): Promise<'focused' | 'fresh' | 'graced' | 'none'> {
 		return this.executeInWebView(
-			(attr: string, permitStale: boolean) => {
+			(attr: string, permitUnfocused: boolean, numberSel: string) => {
 				const all = Array.from(document.querySelectorAll('credit-card-payment-data')) as HTMLElement[];
+
 				const isVisible = (el: HTMLElement): boolean => {
 					const overlay = el.closest('ion-modal');
 					return overlay ? overlay.classList.contains('show-modal') : el.offsetParent !== null;
 				};
 
-				const already = all.find(el => el.getAttribute(attr) === '1');
-				if (already && isVisible(already)) return 'fresh';
+				const numberHost = (el: HTMLElement): HTMLElement | null =>
+					el.querySelector(numberSel) as HTMLElement | null;
 
-				const visible = all.filter(isVisible);
-				const fresh = visible.filter(el => el.getAttribute(attr) !== 'stale');
-				const target = fresh[fresh.length - 1] ?? (permitStale ? visible[visible.length - 1] : null);
+				/** Listo para tipear: hay input interno y no está bloqueado. */
+				const isReady = (el: HTMLElement): boolean => {
+					const host = numberHost(el) as (HTMLElement & { shadowRoot?: ShadowRoot | null }) | null;
+					if (!host) return false;
+					const inner = (host.matches('input, textarea')
+						? host
+						: (host.shadowRoot?.querySelector('input, textarea') ??
+							host.querySelector('input, textarea'))) as HTMLInputElement | null;
+					return !!inner && !inner.readOnly && !inner.disabled;
+				};
+
+				const hasFocus = (el: HTMLElement): boolean => {
+					const host = numberHost(el);
+					return !!host && /\bhas-focus\b/.test(host.className);
+				};
+
+				const topmost = (list: HTMLElement[]): HTMLElement | null => list[list.length - 1] ?? null;
+
+				const eligible = all.filter(el => isVisible(el) && isReady(el));
+				if (!eligible.length) return 'none';
+
+				const focused = topmost(eligible.filter(hasFocus));
+				const brandNew = topmost(eligible.filter(el => el.getAttribute(attr) === null));
+				const target = focused ?? brandNew ?? (permitUnfocused ? topmost(eligible) : null);
 				if (!target) return 'none';
 
 				for (const el of all) {
-					if (el.getAttribute(attr) === '1') el.setAttribute(attr, 'stale');
+					if (el.getAttribute(attr) === '1' && el !== target) el.setAttribute(attr, 'stale');
 				}
 				target.setAttribute(attr, '1');
-				return fresh.length > 0 ? 'fresh' : 'fallback';
+
+				if (focused === target) return 'focused';
+				if (brandNew === target) return 'fresh';
+				return 'graced';
 			},
 			CHARGE_MODAL_MARK,
-			allowStale
+			allowUnfocused,
+			NATIVE.numberHostAny
 		).catch(() => 'none' as const);
 	}
 
