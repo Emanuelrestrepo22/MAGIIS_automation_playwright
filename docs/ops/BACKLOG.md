@@ -1110,6 +1110,34 @@ Checklist (en orden):
 - **Defecto colateral detectado:** el `refId` de los specs `authorize-sandbox` excede el límite documentado. El propio código anota *"max 20 chars"* pero `bl-036-cvv-mismatch-${Date.now()}` produce ~33. No causó estos fallos (`resultCode: 'Ok'`), pero es riesgo de errores intermitentes → truncar a 20.
 - **Referencias:** BL-036 (registro previo, diagnóstico a corregir), `tests/components/api/AuthorizeSandboxApi.ts`, `tests/features/gateway-pg/api/authorize-sandbox/*.api.spec.ts`, `docs/gateway-pg/authorize/EXTERNAL-BLOCKERS.md`, plan `~/.claude/plans/quiet-marinating-reddy.md` §1.5
 
+#### Avance 2026-07-28 — el diagnóstico queda PARCIALMENTE REFUTADO por medición en vivo
+
+Corrida de la Ronda 1 de Authorize (`--project=api`, 12 tests, ambiente `test`): **7 PASSED · 4 FAILED · 1 SKIPPED**. El registro anterior predecía 8 fallos sobre 12.
+
+**Los magic triggers de CVV y AVS SÍ se evalúan ahora.** Tres casos que este ticket declara imposibles pasaron en verde:
+
+| Caso | Esperado | Resultado 2026-07-28 |
+| --- | --- | --- |
+| CVV 901 → `cvvResultCode` `N` | síntoma (a): volvía vacío | ✅ PASSED |
+| ZIP 46205 → `avsResultCode` `N` | síntoma (b): mismo valor que 46204 | ✅ PASSED |
+| ZIP 46204 → `avsResultCode` `G` | síntoma (b) | ✅ PASSED |
+| ZIP 46225 → aprobación parcial | ~19 casos no provocables | ✅ PASSED |
+| ZIP 46228 → prepaid procesado | ídem | ✅ PASSED |
+
+Lo más probable es que se hayan activado los filtros **AVS / Card Code Verification** en el Merchant Interface — exactamente la *Próxima acción* (2) de este ticket. Conviene confirmarlo con quien administre la cuenta y dejarlo asentado.
+
+**Persisten dos síntomas, con alcance mucho menor al registrado:**
+
+1. **El happy path con CVV 900 devuelve `cvvResultCode: "P"` (Is NOT Processed) donde debería dar `M`.** Reproducido en Amex (`contract-happy.api.spec.ts:73`). Es el síntoma (a), pero restringido al happy path — no a todos los casos de CVV.
+2. **El ZIP 46282 sigue aprobando en vez de declinar** (síntoma (c), sin cambios).
+
+**Tres de los cuatro fallos tienen `messages.resultCode: "Error"`**, no un código de resultado distinto del esperado: la transacción fue **rechazada por la API**, no evaluada. Afecta a `contract-cvv-avs` (CVV 904), `contract-decline` (ZIP 46282) y `contract-happy` (Visa y Amex).
+
+**El `refId` queda DESCARTADO como causa** (contra lo que sugería el *Defecto colateral detectado*). Correlacionado uno a uno: los que fallan miden 31-32 caracteres y varios de los que pasan miden 33-35 (`bl-036-edge-avs-nonus-` = 35 ✅). La longitud no explica nada.
+
+- **Próxima acción actualizada:** (1) confirmar con el administrador de la cuenta si se activaron AVS/CCV entre el 27 y el 28 de julio, y asentar la fecha; (2) **capturar `response.messages.message[0]` en los asserts de `authorize-sandbox`** — hoy los specs asertan `resultCode === 'Ok'` sin loguear el mensaje de error, así que un `Error` de la API es indiagnosticable desde el log y esa es la razón por la que la causa raíz de los 3 fallos sigue abierta; (3) recién con ese mensaje, decidir si el ticket se cierra parcialmente.
+- **Evidencia:** `evidence/test/xray-results.authorize.api.json`, log de la corrida en `%TEMP%/claude/authorize-api-run.log`, reporte `.context/reports/gonogo-pasarelas-*.md` del repo `agentic-qa-boilerplate`.
+
 ### BL-050 — Divergencia de negocio: duplicado de tarjetas en wallet (Authorize rechaza, Stripe permite)
 
 - **Estado:** 🔴 Pendiente — regla de negocio confirmada en vivo, spec por desarrollar
@@ -1128,6 +1156,23 @@ Checklist (en orden):
   3. **Spec nuevo de la divergencia** (pedido del líder de QA): cubrir que **Stripe permite N tarjetas iguales** en la wallet y que **Authorize lo bloquea**. Es cobertura que la matriz Authorize **no tiene** (§2.2 sólo cubre alta de tarjeta nueva válida/CVV/AVS/expiry/Luhn — no el duplicado). Antes de desarrollarlo hay que **crear el TC en la matriz** y asignarle ID canónico (regla de trazabilidad de CLAUDE.md: prohibido inventar IDs) — marcar como `[SIN-ID-MATRIZ]` hasta entonces.
 - **Pregunta abierta para negocio/dev:** ¿el límite de 20 tarjetas de Stripe es una regla intencional de MAGIIS o el default del proveedor? ¿Debería MAGIIS unificar el comportamiento entre pasarelas (bloquear duplicados en todas)? Si la respuesta es sí, el comportamiento de Stripe pasa a ser un **defect**, no una divergencia aceptada.
 - **Referencias:** `tests/test-3.spec.ts` (grabación del flujo, untracked), `tests/features/gateway-pg/specs/_parametrized/factories/wallet-add-card.factory.ts`, `tests/features/gateway-pg/helpers/card-precondition.ts`, `docs/gateway-pg/authorize/matriz_cases2.md` §2.2, BL-049
+
+#### Avance 2026-07-28 — NO se reprodujo en la Ronda 1
+
+Los tres casos que este ticket predecía en `timedOut` **pasaron en verde**:
+
+| Caso | Predicción del ticket | Resultado 2026-07-28 |
+| --- | --- | --- |
+| `TS-AUTHORIZE-WAL-01` | `timedOut` 240 s (el botón *Válido* nunca se habilita) | ✅ PASSED — y exporta MG-285 |
+| `TS-AUTHORIZE-TC1011` (A1, `cardFlow: new`) | afectado | ✅ PASSED |
+| `TS-AUTHORIZE-TC1051` (C2, `cardFlow: new`) | afectado | ✅ PASSED |
+
+O sea, la precondición de borrado por API (`cleanupCardsByLast4` → `deletePassengerCard`) **sí resolvió el pax y borró la tarjeta** en esta corrida, que es justamente el paso que el ticket describe como fallido. El mecanismo descrito no está refutado —la divergencia de negocio (Authorize rechaza duplicados, Stripe los permite) sigue siendo real y está confirmada en vivo— pero **su manifestación como timeout es intermitente, no determinista**.
+
+Contraste útil dentro de la misma corrida: `TS-AUTHORIZE-TC1061` (C1, también `cardFlow: new`, cliente empresa individuo) **sí falló**, con timeout de 15 s en `selectPreauthorizedCardMethod("1111")` (`CarrierNewTravelPage.ts:524`) después de que su paso 3 borrara la tarjeta con éxito. Mismo patrón de flujo, resultado distinto según el cliente → apunta a estado del wallet por pasajero, no a la regla de duplicado en sí.
+
+- **Próxima acción actualizada:** antes de invertir en el fix de la precondición, instrumentar por qué el borrado resuelve el pax para algunos clientes y no para otros (comparar TC1011/TC1051 contra TC1061 con el mismo dato). Bajar la prioridad del fix si se confirma que es intermitente y no bloqueante.
+- **Evidencia:** log de la corrida UI en `%TEMP%/claude/authorize-ui-run.log`, `evidence/test/xray-results.authorize.ui.json`.
 
 ### BL-051 — El hold se aplica DOS veces (vinculación + viaje): ¿se libera el hold de vinculación?
 
