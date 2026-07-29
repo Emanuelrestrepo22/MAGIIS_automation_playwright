@@ -739,18 +739,21 @@ export class AppStoreGatewaysPage extends UiBase {
 	}
 
 	/**
-	 * ATC — observa la request de vinculación de Authorize y verifica un status de éxito conocido (500|409).
+	 * ATC — observa la request de vinculación de Authorize y verifica el status de éxito del AC (200).
 	 * Precondición: Authorize "Vincular" (liberar slot antes). Deja Authorize vinculada.
-	 * Wrapper por pasarela (S4); lógica compartida en `expectLinkStatusOkImpl`. Defaults espejo del
-	 * adapter authorize (`linkSuccessStatuses: [500, 409]`); `options` permite pasar los del adapter.
+	 * Wrapper por pasarela (S4); lógica compartida en `expectLinkStatusOkImpl`. Defaults desde la
+	 * fuente única `data/link-status-defaults.ts`; `options` permite pasar los del adapter.
 	 *
-	 * Quirk backend VERIFICADO (HANDOFF §2, actualizado 2026-07-25): 500 = pasarela CONECTADA desde
-	 * estado limpio; 409 = CONECTADA cuando el carrier 1521 (compartido por la suite gateway) ya
-	 * estaba vinculado por otra sesión — ambos son éxito funcional, ninguno es bug de test.
-	 * 400 = NO conectada. El 500/409-en-éxito es smell de API (debería ser 2xx) → Improvement/Defect a DEV/MX (no MG).
-	 * Endpoint del link Authorize = odnService (MG-476), NO /vendor/. El matcher incluye odnService.
+	 * EVIDENCIA LIVE 2026-07-28 (campaña exploratoria, dos probes de red independientes): el submit
+	 * dispara UNA sola mutación, `POST vendor/authorize`, y responde **200** dejando la card en
+	 * `linked`. Corrige DOS afirmaciones del HANDOFF §2 que ya no reproducen: el quirk `500|409` y
+	 * el endpoint `odnService`. Se vuelve al AC original de la matriz (status 200): el assert ya NO
+	 * tolera códigos de error, así que un 500/409 futuro FALLA (era lo que el quirk tapaba).
+	 * ⚠️ 200 ≠ credenciales validadas: el endpoint responde 200 y vincula incluso con credenciales
+	 * INVÁLIDAS (defecto de backend, ver DRAFT-improvement en docs/gateway-pg/authorize/) — por eso
+	 * el caso asserta además la persistencia del estado.
 	 */
-	@atc('MG-226', { severity: 'normal', description: 'La request de link de Authorize retorna un status de éxito conocido (500|409)' })
+	@atc('MG-226', { severity: 'normal', description: 'La request de link de Authorize retorna status 200 (AC de matriz) y la pasarela queda vinculada' })
 	async expectLinkStatusOk(creds: AuthorizeCreds, options: LinkStatusOptions = {}): Promise<void> {
 		await this.expectLinkStatusOkImpl('authorize', {
 			fields: this.authorizeLinkFields(creds),
