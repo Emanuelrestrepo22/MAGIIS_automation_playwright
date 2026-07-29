@@ -1112,6 +1112,25 @@ Diagnóstico en tres niveles, para que quede descartado todo lo que no es:
 - **Próxima acción ampliada:** la alternativa por API que este ticket ya propone **deja de ser opcional** para el release de pasarelas: sin acceso a Oracle es el único camino a la capa de datos. Sube de prioridad. En paralelo, confirmar con infra el acceso al 1521 desde la red de QA, porque cuatro verificaciones diseñadas dependen de eso.
 - **Evidencia:** medición del 2026-07-29 registrada en `.context/reports/gonogo-pasarelas-2026-07-29.md` (repo `agentic-qa-boilerplate`), sección del eje DB.
 
+#### Avance 2026-07-29 (más tarde) — DESBLOQUEADO: el CTO habilitó la IP y la capa DB quedó medida
+
+Habilitada la IP `190.137.114.50/32` en el security group, **la conexión funciona: 2126 ms contra `magiis-test-v2`**. Se ejecutaron 14 queries, todas SELECT, cero escrituras, sin imprimir credenciales.
+
+**Primera verificación de esquema que existe en el repo** (contra `all_tab_columns`), y corrige un dato del propio código:
+
+| Tabla | Resultado |
+| --- | --- |
+| `MGW_TRANSACTIONS` (16 cols) | ✅ el supuesto era **correcto**: `TRANSACTION_REF` y `STATUS` existen. Bonus: `PAYMENT_PROVIDER`, `CARRIERACCOUNT_ID`, `AMOUNT`, `TRANSACTION_TYPE`, `APPROVED_DATE` |
+| `MGW_LINKED` (8 cols) | ⚠️ **el comentario de `oracle-wallet.ts:9-17` está equivocado**: afirma *"NO existe columna STATUS en el esquema observado"* y **sí existe**. Se puebla con `UNLINKED` al desvincular y es `NULL` mientras está activa — de ahí el error de quien lo escribió mirando una fila activa. **Conviene corregir ese comentario**, porque induce a inferir la desvinculación de `ACTIVE`/`DELETE_DATE` cuando hay una columna directa. |
+| `USER_WALLET` (8 cols) | ✅ `CARRIERACCOUNT_ID` (sin guion). Trae `FIRST_NAME`/`LAST_NAME`/`EMAIL` |
+| `CARD` (17 cols) | ✅ `LAST_FOUR_DIGITS`, `USER_WALLET_ID`, `PAYMENT_METHOD_ID` |
+
+Valores reales — `STATUS`: `APPROVED` 171 · `CONFIRM` 131 · `REJECTED` 86 · `REQUEST` 32 · `CANCEL` 19 · `REQUIRES_ACTION` 16 (total 455). `PAYMENT_PROVIDER`: `STRIPE` 343 · `MERCADOPAGO` 78 · `EBIZ` 27 · `AUTHORIZE` 7.
+
+**Advertencia operativa:** la IP habilitada es de un ISP residencial y muy probablemente **dinámica** — la regla `/32` se va a romper al renovar DHCP. Alternativas más estables ya propuestas: VPN a la VPC, bastion/túnel SSH, o CIDR de oficina con IP fija.
+
+- **Estado sugerido:** el bloqueo de acceso quedó resuelto; la alternativa de lectura por API que este ticket propone vuelve a ser **opcional** (deseable por robustez, no imprescindible). Queda a criterio del dueño cerrarlo o reorientarlo a la estabilidad del acceso.
+
 ### BL-047 — MX-6057: discovery + validación del blueprint UI en CI estable
 
 - **Estado:** 🔴 Pendiente
@@ -1203,6 +1222,22 @@ Contraste útil dentro de la misma corrida: `TS-AUTHORIZE-TC1061` (C1, también 
 
 - **Próxima acción actualizada:** antes de invertir en el fix de la precondición, instrumentar por qué el borrado resuelve el pax para algunos clientes y no para otros (comparar TC1011/TC1051 contra TC1061 con el mismo dato). Bajar la prioridad del fix si se confirma que es intermitente y no bloqueante.
 - **Evidencia:** log de la corrida UI en `%TEMP%/claude/authorize-ui-run.log`, `evidence/test/xray-results.authorize.ui.json`.
+
+#### Avance 2026-07-29 (DB) — el fallo de TC1061 queda EXPLICADO, y no es este ticket
+
+Con acceso a Oracle habilitado, la consulta de tarjetas por dueño en el carrier 1521 cierra la pregunta que este avance dejaba abierta:
+
+| `userId` | Nombre | Tarjetas |
+| --- | --- | --- |
+| 15156 | Emanuel smith | `0015` (master), `0002` (amex) |
+| **12055** | **Emanuel Restrepo** | **`1111` (visa)** |
+
+La tarjeta `1111` pertenece **solo** al pasajero `12055`. **TC1061 es el caso de empresa individuo, cuyo pasajero es otro y nunca tuvo esa tarjeta vinculada** → el desplegable de Forma de Pago no la ofrece → `selectPreauthorizedCardMethod('1111')` agota sus 15 s (`CarrierNewTravelPage.ts:524`). Eso explica exactamente por qué TC1011 y TC1051 pasan y TC1061 no, con el mismo `cardFlow: 'new'`.
+
+**Lo que queda descartado como causa:** la precondición de borrado por API, la regla de duplicado de Authorize, y cualquier defecto de producto. **Es un problema de DATOS DE PRUEBA**: el caso de empresa individuo apunta a una tarjeta que vive en el wallet de otro pasajero.
+
+- **Próxima acción reorientada:** el fix no va en `card-precondition.ts` sino en los **datos del caso de empresa individuo** — o vincular la `1111` al pasajero de ese cliente como precondición explícita, o apuntar el caso a una tarjeta que ese pasajero sí tenga. Revisar `journey-defaults` / los datos del cliente de empresa. La divergencia de negocio que este ticket describe (Authorize rechaza duplicados) sigue siendo real y no se ve afectada por este hallazgo.
+- **Evidencia:** 14 queries SELECT del 2026-07-29 registradas en `.context/reports/gonogo-pasarelas-2026-07-29.md` §5.bis (repo `agentic-qa-boilerplate`).
 
 ### BL-051 — El hold se aplica DOS veces (vinculación + viaje): ¿se libera el hold de vinculación?
 
