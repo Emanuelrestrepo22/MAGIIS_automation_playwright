@@ -148,3 +148,85 @@ lentitud (el `settleMs` de 20s es la ventana de la respuesta de la pasarela, no 
 3. Cablear la capa DB (`countCardsByPassenger`) para cerrar la trifuerza del área C.
 4. Reportar el defecto de Discover en Jira.
 5. Observar `HAPPY_PARTIAL_AUTH` y declarar su oráculo.
+
+---
+
+# Ronda 2 — las tarjetas por defecto de Authorize.net (2026-07-28)
+
+Motivo: verificar que el fixture use la lista oficial del sandbox, y cubrir los **largos de PAN**
+que la matriz no modela (todas sus entradas son de 16 dígitos salvo Amex, de 15).
+
+## El fixture ya usaba la lista oficial
+
+| Marca | Número oficial | En el fixture | |
+|---|---|---|---|
+| Visa | `4111111111111111` | `visaSuccess` | ✅ idéntico |
+| Mastercard | `5424000000000015` | `mastercardSuccess` | ✅ idéntico |
+| American Express | `370000000000002` | `amexSuccess` | ✅ idéntico |
+| Discover | `6011000000000012` | `discoverSuccess` | ✅ idéntico (también oficial) |
+
+**No hubo cambio de datos.** Y refuerza el hallazgo 1: la tarjeta que MAGIIS bloquea es la Discover
+publicada por Authorize.net, Luhn-válida, en la misma lista que las tres que sí funcionan.
+
+## Resultado del probe `default-cards-probe.spec.ts`
+
+| Tarjeta | Dígitos | "Validar" habilitado | Validada por la pasarela |
+|---|---|---|---|
+| Visa `4111111111111111` | 16 | ✅ | ❌ **no concluyente** — ver abajo |
+| Visa `4007000000027` | 13 | ✅ | ✅ |
+| Visa `4012888818888` | 13 | ✅ | ✅ |
+| Mastercard `5424000000000015` | 16 | ✅ | ✅ |
+| Amex `370000000000002` | 15 | ✅ | ✅ |
+| Discover `6011000000000012` | 16 | ❌ | — (el form nunca habilita el submit) |
+
+### Hallazgo 3 — el form acepta PAN de 13 dígitos (dato nuevo, sin defecto)
+
+Las dos Visa de 13 dígitos validan sin problema. La validación de MAGIIS **no es rígida con el
+largo del número**, así que no hace falta cobertura defensiva por ese lado. Es información que la
+matriz no tenía porque todas sus Visa son de 16.
+
+### Hallazgo 4 — Discover confirmado por segunda vía
+
+El botón "Validar" queda deshabilitado también en este probe, con otro flujo y otro orden de
+ejecución. Es un **estado determinístico de la UI**, independiente de tiempos de red: el form
+rechaza el número antes de cualquier llamada. Sube la confianza del hallazgo 1 de "observado una
+vez" a "reproducible".
+
+### Visa de 16 dígitos: observación NO concluyente
+
+En este probe `4111111111111111` no llegó a validar, pero una hora antes el mismo número pasó
+**3/3** en `HAPPY_NO_AUTH`. No lo cuento como defecto porque:
+
+1. **El entorno se degradó durante la ronda**: la corrida de confirmación falló ya en el global
+   setup (`[GlobalSetup][carrier] ⚠️ Login failed — skipping storage state`). Con la app rechazando
+   logins, cualquier medición es sospechosa.
+2. **Hay una causa conocida más probable que un bug**: re-validar una tarjeta YA vinculada devuelve
+   "Error al validar" (verificado en vivo en Authorize, documentado en `travel-cleanup.ts` y en la
+   factory WAL). Después de docenas de altas de la misma `1111` en las corridas previas, es
+   esperable que el pax acumule copias.
+3. **El cleanup de idempotencia tiene un límite conocido**: `cleanupGatewayCardByLast4` recorre
+   `paxSearchQueries` y **retorna en la primera query que borró algo**. Si la tarjeta quedó
+   adherida a más de un pasajero, o si quedan copias en otro, no las limpia todas.
+
+**Riesgo real que esto expone** (independiente de si hubo bug): la suite se degrada con el uso. Un
+`HAPPY_NO_AUTH` verde hoy puede ponerse rojo tras N corridas por acumulación de tarjetas, y el
+síntoma no se parece en nada a la causa.
+
+Acción propuesta, en orden:
+1. Contar por API cuántas tarjetas con `last4=1111` tiene el pax de Authorize (`paymentMethodsByPax`).
+2. Si hay más de una, endurecer `cleanupGatewayCardByLast4`: recorrer **todas** las queries y borrar
+   **todas** las coincidencias en vez de cortar en la primera productiva.
+3. Recién después volver a medir la Visa de 16 con el entorno estable.
+
+## Artefacto que queda
+
+`tests/features/gateway-pg/specs/authorize/probe/default-cards-probe.spec.ts` — tagged `@probe`,
+fuera de `@gateway`/`@authorize`, así que no entra en la regresión. No asserta nada de negocio:
+reporta habilitación del submit y validación por marca y largo de PAN. Sirve para re-medir la
+matriz marca × largo sin tocar la suite.
+
+Nota sobre su primera versión: usaba `locator.isVisible({timeout})`, que es un chequeo **inmediato**
+—el `timeout` se ignora— y medía antes de que llegara la respuesta de la pasarela. Mismo error de
+clase que el hallazgo 2. Corregido a `waitFor({ state: 'visible' })`. Vale como recordatorio de que
+`isVisible()` no espera y `not.toBeVisible()` se satisface con el primer chequeo: ninguno de los dos
+sirve para medir algo asíncrono.
