@@ -437,9 +437,31 @@ export class CarrierNewTravelPage extends UiBase {
 		const hadSavedCard = await this.hasSavedCardWithLast4(last4);
 
 		if (hadSavedCard) {
-			// Rama "pax CON tarjeta": seleccionar la guardada expone su ícono de borrado.
-			await this.openPaymentMethodsDropdown();
-			await this.highlightedOption().click();
+			// Rama "pax CON tarjeta". El click en `.highlighted` sólo corresponde cuando la opción
+			// RESALTADA **es** la tarjeta: seleccionarla es lo que expone su ícono de borrado
+			// (secuencia de la grabación validada, con el pax cuya tarjeta el sistema ya eligió sola).
+			//
+			// Si el método por defecto del pax es OTRO, ese click selecciona el método equivocado y
+			// CIERRA el desplegable, así que el trash desaparece del DOM y el borrado muere por
+			// timeout. Observado el 2026-07-29 en TS-AUTHORIZE-TC1051 (3/3) y TS-AUTHORIZE-TC1061:
+			// el snapshot del fallo muestra "Forma de Pago" en **"Cuenta Corriente"** con el
+			// desplegable ya cerrado (`▼`), y el timeout cae en el trash de fallback
+			// (`#add_travel_payment_methods .deselect-payment-method`).
+			//
+			// Cuando la tarjeta está sólo LISTADA (no seleccionada), su fila ya trae su propio trash,
+			// así que alcanza con dejar el desplegable abierto y delegar en
+			// `deleteHighlightedOrByLast4`, que prefiere el trash de la fila que matchea `last4`.
+			if (await this.legacy.hasSelectedCardWithLast4(last4)) {
+				await this.openPaymentMethodsDropdown();
+				await this.highlightedOption().click();
+			} else if (
+				!(await this.savedCardByLast4(last4)
+					.first()
+					.isVisible()
+					.catch(() => false))
+			) {
+				await this.openPaymentMethodsDropdown();
+			}
 			await this.deleteHighlightedOrByLast4(last4);
 		}
 
