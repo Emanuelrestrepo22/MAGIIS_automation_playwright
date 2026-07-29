@@ -270,7 +270,21 @@ export const XRAY_KEYS_BY_GATEWAY: Record<GatewayCompany, GatewayXrayRegistry> =
 			empresaHappyExistingHoldOff: 'TS-AUTHORIZE-TC1064',
 			empresaDecline: 'TS-AUTHORIZE-TC1065'
 		},
-		cargo: noCargoKeys(),
+		// Sólo los DOS casos happy tienen Test Xray, y las keys se leyeron EN VIVO de Jira
+		// (2026-07-29) para no cablear por inferencia:
+		//   · MG-529 = "MG-200 | TC33: Validar cargo a bordo Authorize usuario personal happy y
+		//     pago exitoso" (label `tcid:TC-PAY-COB-33`).
+		//   · MG-539 = "MG-200 | TC36: Validar cargo a bordo Authorize usuario colaborador happy y
+		//     pago exitoso" (label `tcid:TC-PAY-COB-36`).
+		// Ambos títulos describen el flujo desde Carrier con cobro exitoso, que es exactamente lo
+		// que ejecutan `personalHappy` y `colaboradorHappy` de la factory. Los 6 declines y el caso
+		// `empresaHappy` quedan `null` a propósito: NO existe Test Xray para ellos y fabricar una
+		// key inflaría evidencia. Quedan unmapped VISIBLES (el reporter los cuenta como tales).
+		cargo: {
+			...noCargoKeys(),
+			personalHappy: 'MG-529',
+			colaboradorHappy: 'MG-539'
+		},
 		// Matriz authorize/matriz_cases.md §7.1 (personal TC1081-1083), §8 (colaborador
 		// TC1096-1098) y §9 (empresa TC1111/1112 + TC1105 "CVC incorrecto").
 		cargoTcIds: {
