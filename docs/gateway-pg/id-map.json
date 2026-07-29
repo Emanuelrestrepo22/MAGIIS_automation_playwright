@@ -1,36 +1,46 @@
 {
-  "generated_at": "2026-07-27T12:54:42.003Z",
+  "generated_at": "2026-07-28T19:39:19.623Z",
   "generator": "scripts/ai/build-id-map.mjs",
   "notes": [
     "SoT central de trazabilidad TS-ID ↔ MG-key ↔ spec (Fase 4, 2026-07-26).",
     "mg_key null = sin key Xray conocida (JAMÁS fabricar; ver xray-keys.ts).",
-    "status: confirmed = fuentes explícitas · needs-review = algún join heurístico · unmapped = sin key ni spec.",
-    "stripe_ref: equivalencia §3.1 / derivación Fase 4 hacia el caso Stripe canónico."
+    "status: confirmed = fuentes explícitas · needs-review = algún join heurístico · unmapped = sin key ni spec. Mide CONFIANZA DEL JOIN, no ejecutabilidad.",
+    "stripe_ref: equivalencia §3.1 / derivación Fase 4 hacia el caso Stripe canónico.",
+    "spec_coverage: executable = al menos un spec EJECUTA el caso · fixme-only = sólo hay placeholders `test.fixme` (cobertura declarada y trazable, NO ejecutada) · none = sin spec. fixme_spec_paths lista esos placeholders.",
+    "with_specs cuenta ambos (executable + fixme-only) por compat: para cobertura REAL usar with_executable_specs.",
+    "La marca fixme sólo la produce el join estructural de factories (§4). Los specs escritos a mano se acreditan por texto (§2), que no ve un `test.fixme` interno → esas filas pueden seguir sobreestimando (ej. specs `e2e-mobile` Stripe).",
+    "hold.factory (§4b): join estructural = import + lista `cases:` de cada llamada + registry.holdTcIds, filtrado por los intents que expone la pasarela. Para esos consumers THIN el join por texto de §2 se DESCARTA: sus docblocks listan refs Stripe y TS-IDs de otros archivos que no son cobertura propia."
   ],
   "summary": {
     "stripe": {
       "total": 224,
-      "confirmed": 16,
-      "needs-review": 153,
+      "confirmed": 12,
+      "needs-review": 157,
       "unmapped": 55,
-      "with_mg_key": 165,
-      "with_specs": 169
+      "with_mg_key": 169,
+      "with_specs": 169,
+      "with_executable_specs": 169,
+      "with_fixme_only_specs": 0
     },
     "authorize": {
       "total": 164,
-      "confirmed": 8,
-      "needs-review": 1,
-      "unmapped": 155,
-      "with_mg_key": 9,
-      "with_specs": 9
+      "confirmed": 23,
+      "needs-review": 2,
+      "unmapped": 139,
+      "with_mg_key": 10,
+      "with_specs": 25,
+      "with_executable_specs": 17,
+      "with_fixme_only_specs": 8
     },
     "ebizcharge": {
       "total": 111,
-      "confirmed": 0,
-      "needs-review": 8,
-      "unmapped": 103,
+      "confirmed": 18,
+      "needs-review": 0,
+      "unmapped": 93,
       "with_mg_key": 0,
-      "with_specs": 8
+      "with_specs": 18,
+      "with_executable_specs": 11,
+      "with_fixme_only_specs": 7
     }
   },
   "rows": [
@@ -43,6 +53,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/authorize/web/carrier/config/authorize-link-unlink.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "confirmed",
       "sources": [
         "xray-keys.ts cfg.viewUnlinked"
@@ -57,6 +69,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/authorize/web/carrier/config/authorize-link-unlink.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "confirmed",
       "sources": [
         "xray-keys.ts cfg.linkValid"
@@ -71,6 +85,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/authorize/web/carrier/config/authorize-link-unlink.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "confirmed",
       "sources": [
         "xray-keys.ts cfg.linkInvalid"
@@ -85,6 +101,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/authorize/web/carrier/config/authorize-link-unlink.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "confirmed",
       "sources": [
         "xray-keys.ts cfg.cancelUnlink"
@@ -99,6 +117,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/authorize/web/carrier/config/authorize-link-unlink.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "confirmed",
       "sources": [
         "xray-keys.ts cfg.unlink"
@@ -113,6 +133,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/authorize/web/carrier/config/authorize-link-unlink.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "confirmed",
       "sources": [
         "xray-keys.ts cfg.exclusivity"
@@ -127,6 +149,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/authorize/web/carrier/config/authorize-link-unlink.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "confirmed",
       "sources": [
         "xray-keys.ts cfg.reloadPersistence"
@@ -141,6 +165,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/authorize/web/carrier/config/authorize-link-unlink.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "confirmed",
       "sources": [
         "xray-keys.ts cfg.linkStatus"
@@ -153,6 +179,8 @@
       "tcid": "TC1009",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -163,6 +191,8 @@
       "tcid": "TC1010",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -171,10 +201,17 @@
       "gateway": "authorize",
       "stripe_ref": "TS-STRIPE-TC1049",
       "tcid": "TC1011",
-      "mg_key": null,
-      "spec_paths": [],
-      "status": "unmapped",
-      "sources": []
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/_parametrized/hold-happy-no3ds.parametrized.spec.ts",
+        "tests/features/gateway-pg/specs/authorize/web/carrier/hold/personal-hold-on-happy.spec.ts"
+      ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/_parametrized/hold-happy-no3ds.parametrized.spec.ts (heurístico)"
+      ]
     },
     {
       "ts_id": "TS-AUTHORIZE-TC1012",
@@ -182,8 +219,14 @@
       "stripe_ref": "TS-STRIPE-TC1050",
       "tcid": "TC1012",
       "mg_key": null,
-      "spec_paths": [],
-      "status": "unmapped",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/authorize/web/carrier/hold/authorize-hold-matrix.spec.ts"
+      ],
+      "fixme_spec_paths": [
+        "tests/features/gateway-pg/specs/authorize/web/carrier/hold/authorize-hold-matrix.spec.ts"
+      ],
+      "spec_coverage": "fixme-only",
+      "status": "confirmed",
       "sources": []
     },
     {
@@ -193,6 +236,8 @@
       "tcid": "TC1013",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -203,6 +248,8 @@
       "tcid": "TC1014",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -213,6 +260,8 @@
       "tcid": "TC1015",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -222,8 +271,12 @@
       "stripe_ref": "TS-STRIPE-TC1059",
       "tcid": "TC1016",
       "mg_key": null,
-      "spec_paths": [],
-      "status": "unmapped",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/authorize/web/carrier/hold/personal-hold-decline-generic.spec.ts"
+      ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
+      "status": "confirmed",
       "sources": []
     },
     {
@@ -232,8 +285,14 @@
       "stripe_ref": null,
       "tcid": "TC1017",
       "mg_key": null,
-      "spec_paths": [],
-      "status": "unmapped",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/authorize/web/carrier/hold/authorize-hold-matrix.spec.ts"
+      ],
+      "fixme_spec_paths": [
+        "tests/features/gateway-pg/specs/authorize/web/carrier/hold/authorize-hold-matrix.spec.ts"
+      ],
+      "spec_coverage": "fixme-only",
+      "status": "confirmed",
       "sources": []
     },
     {
@@ -243,6 +302,8 @@
       "tcid": "TC1018",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -253,6 +314,8 @@
       "tcid": "TC1021",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -263,6 +326,8 @@
       "tcid": "TC1022",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -273,6 +338,8 @@
       "tcid": "TC1023",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -283,6 +350,8 @@
       "tcid": "TC1024",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -293,6 +362,8 @@
       "tcid": "TC1025",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -303,6 +374,8 @@
       "tcid": "TC1026",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -312,8 +385,12 @@
       "stripe_ref": null,
       "tcid": "TC1031",
       "mg_key": null,
-      "spec_paths": [],
-      "status": "unmapped",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/authorize/web/carrier/hold/personal-hold-zip-mismatch.spec.ts"
+      ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
+      "status": "confirmed",
       "sources": []
     },
     {
@@ -323,6 +400,8 @@
       "tcid": "TC1032",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -333,6 +412,8 @@
       "tcid": "TC1033",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -343,6 +424,8 @@
       "tcid": "TC1034",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -353,6 +436,8 @@
       "tcid": "TC1035",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -363,6 +448,8 @@
       "tcid": "TC1036",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -373,6 +460,8 @@
       "tcid": "TC1037",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -383,6 +472,8 @@
       "tcid": "TC1041",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -393,6 +484,8 @@
       "tcid": "TC1042",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -403,6 +496,8 @@
       "tcid": "TC1043",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -412,8 +507,12 @@
       "stripe_ref": "TS-STRIPE-TC1033",
       "tcid": "TC1051",
       "mg_key": null,
-      "spec_paths": [],
-      "status": "unmapped",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/authorize/web/carrier/hold/colaborador-hold-on-happy.spec.ts"
+      ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
+      "status": "confirmed",
       "sources": []
     },
     {
@@ -423,6 +522,8 @@
       "tcid": "TC1052",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -432,8 +533,14 @@
       "stripe_ref": "TS-STRIPE-TC1041",
       "tcid": "TC1053",
       "mg_key": null,
-      "spec_paths": [],
-      "status": "unmapped",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/authorize/web/carrier/hold/authorize-hold-matrix.spec.ts"
+      ],
+      "fixme_spec_paths": [
+        "tests/features/gateway-pg/specs/authorize/web/carrier/hold/authorize-hold-matrix.spec.ts"
+      ],
+      "spec_coverage": "fixme-only",
+      "status": "confirmed",
       "sources": []
     },
     {
@@ -442,8 +549,14 @@
       "stripe_ref": "TS-STRIPE-TC1034",
       "tcid": "TC1054",
       "mg_key": null,
-      "spec_paths": [],
-      "status": "unmapped",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/authorize/web/carrier/hold/authorize-hold-matrix.spec.ts"
+      ],
+      "fixme_spec_paths": [
+        "tests/features/gateway-pg/specs/authorize/web/carrier/hold/authorize-hold-matrix.spec.ts"
+      ],
+      "spec_coverage": "fixme-only",
+      "status": "confirmed",
       "sources": []
     },
     {
@@ -452,8 +565,14 @@
       "stripe_ref": "TS-STRIPE-TC1036",
       "tcid": "TC1055",
       "mg_key": null,
-      "spec_paths": [],
-      "status": "unmapped",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/authorize/web/carrier/hold/authorize-hold-matrix.spec.ts"
+      ],
+      "fixme_spec_paths": [
+        "tests/features/gateway-pg/specs/authorize/web/carrier/hold/authorize-hold-matrix.spec.ts"
+      ],
+      "spec_coverage": "fixme-only",
+      "status": "confirmed",
       "sources": []
     },
     {
@@ -463,6 +582,8 @@
       "tcid": "TC1056",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -473,6 +594,8 @@
       "tcid": "TC1057",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -482,8 +605,12 @@
       "stripe_ref": "TS-STRIPE-TC1065",
       "tcid": "TC1061",
       "mg_key": null,
-      "spec_paths": [],
-      "status": "unmapped",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/authorize/web/carrier/hold/empresa-hold-on-happy.spec.ts"
+      ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
+      "status": "confirmed",
       "sources": []
     },
     {
@@ -492,8 +619,14 @@
       "stripe_ref": "TS-STRIPE-TC1067",
       "tcid": "TC1062",
       "mg_key": null,
-      "spec_paths": [],
-      "status": "unmapped",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/authorize/web/carrier/hold/authorize-hold-matrix.spec.ts"
+      ],
+      "fixme_spec_paths": [
+        "tests/features/gateway-pg/specs/authorize/web/carrier/hold/authorize-hold-matrix.spec.ts"
+      ],
+      "spec_coverage": "fixme-only",
+      "status": "confirmed",
       "sources": []
     },
     {
@@ -502,8 +635,14 @@
       "stripe_ref": "TS-STRIPE-TC1066",
       "tcid": "TC1063",
       "mg_key": null,
-      "spec_paths": [],
-      "status": "unmapped",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/authorize/web/carrier/hold/authorize-hold-matrix.spec.ts"
+      ],
+      "fixme_spec_paths": [
+        "tests/features/gateway-pg/specs/authorize/web/carrier/hold/authorize-hold-matrix.spec.ts"
+      ],
+      "spec_coverage": "fixme-only",
+      "status": "confirmed",
       "sources": []
     },
     {
@@ -512,8 +651,14 @@
       "stripe_ref": "TS-STRIPE-TC1068",
       "tcid": "TC1064",
       "mg_key": null,
-      "spec_paths": [],
-      "status": "unmapped",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/authorize/web/carrier/hold/authorize-hold-matrix.spec.ts"
+      ],
+      "fixme_spec_paths": [
+        "tests/features/gateway-pg/specs/authorize/web/carrier/hold/authorize-hold-matrix.spec.ts"
+      ],
+      "spec_coverage": "fixme-only",
+      "status": "confirmed",
       "sources": []
     },
     {
@@ -522,8 +667,12 @@
       "stripe_ref": null,
       "tcid": "TC1065",
       "mg_key": null,
-      "spec_paths": [],
-      "status": "unmapped",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/authorize/web/carrier/hold/authorize-hold-matrix.spec.ts"
+      ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
+      "status": "confirmed",
       "sources": []
     },
     {
@@ -533,6 +682,8 @@
       "tcid": "TC1071",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -543,6 +694,8 @@
       "tcid": "TC1072",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -553,6 +706,8 @@
       "tcid": "TC1073",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -563,6 +718,8 @@
       "tcid": "TC1075",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -573,6 +730,8 @@
       "tcid": "TC1076",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -582,8 +741,12 @@
       "stripe_ref": "TS-STRIPE-TC1081",
       "tcid": "TC1081",
       "mg_key": null,
-      "spec_paths": [],
-      "status": "unmapped",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/authorize/web/carrier/cargo-a-bordo/authorize-cargo-a-bordo.spec.ts"
+      ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
+      "status": "confirmed",
       "sources": []
     },
     {
@@ -593,6 +756,8 @@
       "tcid": "TC1082",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -603,6 +768,8 @@
       "tcid": "TC1083",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -613,6 +780,8 @@
       "tcid": "TC1087",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -623,6 +792,8 @@
       "tcid": "TC1088",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -633,6 +804,8 @@
       "tcid": "TC1096",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -643,6 +816,8 @@
       "tcid": "TC1097",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -653,6 +828,8 @@
       "tcid": "TC1098",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -663,6 +840,8 @@
       "tcid": "TC1099",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -673,6 +852,8 @@
       "tcid": "TC1100",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -683,6 +864,8 @@
       "tcid": "TC1101",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -693,6 +876,8 @@
       "tcid": "TC1102",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -703,6 +888,8 @@
       "tcid": "TC1103",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -713,6 +900,8 @@
       "tcid": "TC1104",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -723,6 +912,8 @@
       "tcid": "TC1105",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -733,6 +924,8 @@
       "tcid": "TC1111",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -743,6 +936,8 @@
       "tcid": "TC1112",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -753,6 +948,8 @@
       "tcid": "TC1200",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -763,6 +960,8 @@
       "tcid": "TC1201",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -773,6 +972,8 @@
       "tcid": "TC1202",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -783,6 +984,8 @@
       "tcid": "TC1203",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -793,6 +996,8 @@
       "tcid": "TC1204",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -803,6 +1008,8 @@
       "tcid": "TC1205",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -813,6 +1020,8 @@
       "tcid": "TC1206",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -823,6 +1032,8 @@
       "tcid": "TC1207",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -833,6 +1044,8 @@
       "tcid": "TC1208",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -843,6 +1056,8 @@
       "tcid": "TC1209",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -853,6 +1068,8 @@
       "tcid": "TC1210",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -863,6 +1080,8 @@
       "tcid": "TC1211",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -873,6 +1092,8 @@
       "tcid": "TC1212",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -883,6 +1104,8 @@
       "tcid": "TC1213",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -893,6 +1116,8 @@
       "tcid": "TC1214",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -902,8 +1127,12 @@
       "stripe_ref": "TS-STRIPE-P2-TC022",
       "tcid": "TC1215",
       "mg_key": null,
-      "spec_paths": [],
-      "status": "unmapped",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/authorize/web/quote/personal-quote-no-hold-happy.spec.ts"
+      ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
+      "status": "confirmed",
       "sources": []
     },
     {
@@ -913,6 +1142,8 @@
       "tcid": "TC1216",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -923,6 +1154,8 @@
       "tcid": "TC1217",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -933,6 +1166,8 @@
       "tcid": "TC1218",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -943,6 +1178,8 @@
       "tcid": "TC1219",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -953,6 +1190,8 @@
       "tcid": "TC1220",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -963,6 +1202,8 @@
       "tcid": "TC1221",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -973,6 +1214,8 @@
       "tcid": "TC1222",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -985,6 +1228,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/authorize/web/carrier/wallet/authorize-add-card.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "xray-keys.ts wallet.addCard vía tests/features/gateway-pg/specs/authorize/web/carrier/wallet/authorize-add-card.spec.ts (heurístico)"
@@ -997,6 +1242,8 @@
       "tcid": "TC1224",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1007,6 +1254,8 @@
       "tcid": "TC1225",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1017,6 +1266,8 @@
       "tcid": "TC1226",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1027,6 +1278,8 @@
       "tcid": "TC1227",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1037,6 +1290,8 @@
       "tcid": "TC1228",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1047,6 +1302,8 @@
       "tcid": "TC1229",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1057,6 +1314,8 @@
       "tcid": "TC1230",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1067,6 +1326,8 @@
       "tcid": "TC1231",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1077,6 +1338,8 @@
       "tcid": "TC1232",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1087,6 +1350,8 @@
       "tcid": "TC1233",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1097,6 +1362,8 @@
       "tcid": "TC1234",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1107,6 +1374,8 @@
       "tcid": "TC1235",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1117,6 +1386,8 @@
       "tcid": "TC1236",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1127,6 +1398,8 @@
       "tcid": "TC1237",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1137,6 +1410,8 @@
       "tcid": "TC1238",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1147,6 +1422,8 @@
       "tcid": "TC1239",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1157,6 +1434,8 @@
       "tcid": "TC1240",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1167,6 +1446,8 @@
       "tcid": "TC1241",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1177,6 +1458,8 @@
       "tcid": "TC1242",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1187,6 +1470,8 @@
       "tcid": "TC1243",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1197,6 +1482,8 @@
       "tcid": "TC1244",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1207,6 +1494,8 @@
       "tcid": "TC1245",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1217,6 +1506,8 @@
       "tcid": "TC1246",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1227,6 +1518,8 @@
       "tcid": "TC1247",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1237,6 +1530,8 @@
       "tcid": "TC1248",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1247,6 +1542,8 @@
       "tcid": "TC1249",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1257,6 +1554,8 @@
       "tcid": "TC1250",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1267,6 +1566,8 @@
       "tcid": "TC1251",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1277,6 +1578,8 @@
       "tcid": "TC1252",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1287,6 +1590,8 @@
       "tcid": "TC1253",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1297,6 +1602,8 @@
       "tcid": "TC1254",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1307,6 +1614,8 @@
       "tcid": "TC1255",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1317,6 +1626,8 @@
       "tcid": "TC1256",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1327,6 +1638,8 @@
       "tcid": "TC1257",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1337,6 +1650,8 @@
       "tcid": "TC1258",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1347,6 +1662,8 @@
       "tcid": "TC1259",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1357,6 +1674,8 @@
       "tcid": "TC1260",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1367,6 +1686,8 @@
       "tcid": "TC1261",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1377,6 +1698,8 @@
       "tcid": "TC1262",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1387,6 +1710,8 @@
       "tcid": "TC1263",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1397,6 +1722,8 @@
       "tcid": "TC1264",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1407,6 +1734,8 @@
       "tcid": "TC1265",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1417,6 +1746,8 @@
       "tcid": "TC1266",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1427,6 +1758,8 @@
       "tcid": "TC1267",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1437,6 +1770,8 @@
       "tcid": "TC1268",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1447,6 +1782,8 @@
       "tcid": "TC1269",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1457,6 +1794,8 @@
       "tcid": "TC1270",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1467,6 +1806,8 @@
       "tcid": "TC1271",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1477,6 +1818,8 @@
       "tcid": "TC1272",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1487,6 +1830,8 @@
       "tcid": "TC1273",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1497,6 +1842,8 @@
       "tcid": "TC1274",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1507,6 +1854,8 @@
       "tcid": "TC1275",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1517,6 +1866,8 @@
       "tcid": "TC1276",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1527,6 +1878,8 @@
       "tcid": "TC1277",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1537,6 +1890,8 @@
       "tcid": "TC1278",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1547,6 +1902,8 @@
       "tcid": "TC1279",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1557,6 +1914,8 @@
       "tcid": "TC1281",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1567,6 +1926,8 @@
       "tcid": "TC1282",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1577,6 +1938,8 @@
       "tcid": "TC1283",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1587,6 +1950,8 @@
       "tcid": "TC1284",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1597,6 +1962,8 @@
       "tcid": "TC1291",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1607,6 +1974,8 @@
       "tcid": "TC1292",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1617,6 +1986,8 @@
       "tcid": "TC1293",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1627,6 +1998,8 @@
       "tcid": "TC1294",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1637,6 +2010,8 @@
       "tcid": "TC1301",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1647,6 +2022,8 @@
       "tcid": "TC1302",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1657,6 +2034,8 @@
       "tcid": "TC1303",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1667,6 +2046,8 @@
       "tcid": "TC1311",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1677,6 +2058,8 @@
       "tcid": "TC1312",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1687,6 +2070,8 @@
       "tcid": "TC1321",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1697,6 +2082,8 @@
       "tcid": "TC1322",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1707,6 +2094,8 @@
       "tcid": "TC1323",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1717,6 +2106,8 @@
       "tcid": "TC1001",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1727,6 +2118,8 @@
       "tcid": "TC1002",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1737,6 +2130,8 @@
       "tcid": "TC1003",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1747,6 +2142,8 @@
       "tcid": "TC1010",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1757,6 +2154,8 @@
       "tcid": "TC1011",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1767,6 +2166,8 @@
       "tcid": "TC1012",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1777,6 +2178,8 @@
       "tcid": "TC1013",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1787,6 +2190,8 @@
       "tcid": "TC1014",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1797,6 +2202,8 @@
       "tcid": "TC1015",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1807,6 +2214,8 @@
       "tcid": "TC1016",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1817,6 +2226,8 @@
       "tcid": "TC1020",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1827,6 +2238,8 @@
       "tcid": "TC1021",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1837,6 +2250,8 @@
       "tcid": "TC1022",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1847,6 +2262,8 @@
       "tcid": "TC1030",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1857,6 +2274,8 @@
       "tcid": "TC1031",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1867,6 +2286,8 @@
       "tcid": "TC1040",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1877,6 +2298,8 @@
       "tcid": "TC1041",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -1889,7 +2312,9 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/ebizcharge/web/carrier/config/ebizcharge-link-unlink.spec.ts"
       ],
-      "status": "needs-review",
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
+      "status": "confirmed",
       "sources": []
     },
     {
@@ -1901,7 +2326,9 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/ebizcharge/web/carrier/config/ebizcharge-link-unlink.spec.ts"
       ],
-      "status": "needs-review",
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
+      "status": "confirmed",
       "sources": []
     },
     {
@@ -1913,7 +2340,9 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/ebizcharge/web/carrier/config/ebizcharge-link-unlink.spec.ts"
       ],
-      "status": "needs-review",
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
+      "status": "confirmed",
       "sources": []
     },
     {
@@ -1925,7 +2354,9 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/ebizcharge/web/carrier/config/ebizcharge-link-unlink.spec.ts"
       ],
-      "status": "needs-review",
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
+      "status": "confirmed",
       "sources": []
     },
     {
@@ -1937,7 +2368,9 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/ebizcharge/web/carrier/config/ebizcharge-link-unlink.spec.ts"
       ],
-      "status": "needs-review",
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
+      "status": "confirmed",
       "sources": []
     },
     {
@@ -1949,7 +2382,9 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/ebizcharge/web/carrier/config/ebizcharge-link-unlink.spec.ts"
       ],
-      "status": "needs-review",
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
+      "status": "confirmed",
       "sources": []
     },
     {
@@ -1961,7 +2396,9 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/ebizcharge/web/carrier/config/ebizcharge-link-unlink.spec.ts"
       ],
-      "status": "needs-review",
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
+      "status": "confirmed",
       "sources": []
     },
     {
@@ -1973,7 +2410,9 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/ebizcharge/web/carrier/config/ebizcharge-link-unlink.spec.ts"
       ],
-      "status": "needs-review",
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
+      "status": "confirmed",
       "sources": []
     },
     {
@@ -1982,8 +2421,12 @@
       "stripe_ref": "TS-STRIPE-TC1033",
       "tcid": "TC1058",
       "mg_key": null,
-      "spec_paths": [],
-      "status": "unmapped",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/ebizcharge/web/carrier/hold/ebizcharge-hold.spec.ts"
+      ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
+      "status": "confirmed",
       "sources": []
     },
     {
@@ -1992,8 +2435,14 @@
       "stripe_ref": "TS-STRIPE-TC1034",
       "tcid": "TC1059",
       "mg_key": null,
-      "spec_paths": [],
-      "status": "unmapped",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/ebizcharge/web/carrier/hold/ebizcharge-hold.spec.ts"
+      ],
+      "fixme_spec_paths": [
+        "tests/features/gateway-pg/specs/ebizcharge/web/carrier/hold/ebizcharge-hold.spec.ts"
+      ],
+      "spec_coverage": "fixme-only",
+      "status": "confirmed",
       "sources": []
     },
     {
@@ -2003,6 +2452,8 @@
       "tcid": "TC1060",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2012,8 +2463,14 @@
       "stripe_ref": "TS-STRIPE-TC1036",
       "tcid": "TC1061",
       "mg_key": null,
-      "spec_paths": [],
-      "status": "unmapped",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/ebizcharge/web/carrier/hold/ebizcharge-hold.spec.ts"
+      ],
+      "fixme_spec_paths": [
+        "tests/features/gateway-pg/specs/ebizcharge/web/carrier/hold/ebizcharge-hold.spec.ts"
+      ],
+      "spec_coverage": "fixme-only",
+      "status": "confirmed",
       "sources": []
     },
     {
@@ -2022,8 +2479,14 @@
       "stripe_ref": "TS-STRIPE-TC1041",
       "tcid": "TC1062",
       "mg_key": null,
-      "spec_paths": [],
-      "status": "unmapped",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/ebizcharge/web/carrier/hold/ebizcharge-hold.spec.ts"
+      ],
+      "fixme_spec_paths": [
+        "tests/features/gateway-pg/specs/ebizcharge/web/carrier/hold/ebizcharge-hold.spec.ts"
+      ],
+      "spec_coverage": "fixme-only",
+      "status": "confirmed",
       "sources": []
     },
     {
@@ -2032,8 +2495,14 @@
       "stripe_ref": "TS-STRIPE-TC1050",
       "tcid": "TC1063",
       "mg_key": null,
-      "spec_paths": [],
-      "status": "unmapped",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/ebizcharge/web/carrier/hold/ebizcharge-hold.spec.ts"
+      ],
+      "fixme_spec_paths": [
+        "tests/features/gateway-pg/specs/ebizcharge/web/carrier/hold/ebizcharge-hold.spec.ts"
+      ],
+      "spec_coverage": "fixme-only",
+      "status": "confirmed",
       "sources": []
     },
     {
@@ -2043,6 +2512,8 @@
       "tcid": "TC1064",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2053,6 +2524,8 @@
       "tcid": "TC1065",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2063,6 +2536,8 @@
       "tcid": "TC1066",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2072,8 +2547,12 @@
       "stripe_ref": "TS-STRIPE-TC1065",
       "tcid": "TC1067",
       "mg_key": null,
-      "spec_paths": [],
-      "status": "unmapped",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/ebizcharge/web/carrier/hold/ebizcharge-hold.spec.ts"
+      ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
+      "status": "confirmed",
       "sources": []
     },
     {
@@ -2082,8 +2561,14 @@
       "stripe_ref": "TS-STRIPE-TC1066",
       "tcid": "TC1068",
       "mg_key": null,
-      "spec_paths": [],
-      "status": "unmapped",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/ebizcharge/web/carrier/hold/ebizcharge-hold.spec.ts"
+      ],
+      "fixme_spec_paths": [
+        "tests/features/gateway-pg/specs/ebizcharge/web/carrier/hold/ebizcharge-hold.spec.ts"
+      ],
+      "spec_coverage": "fixme-only",
+      "status": "confirmed",
       "sources": []
     },
     {
@@ -2092,8 +2577,14 @@
       "stripe_ref": "TS-STRIPE-TC1067",
       "tcid": "TC1069",
       "mg_key": null,
-      "spec_paths": [],
-      "status": "unmapped",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/ebizcharge/web/carrier/hold/ebizcharge-hold.spec.ts"
+      ],
+      "fixme_spec_paths": [
+        "tests/features/gateway-pg/specs/ebizcharge/web/carrier/hold/ebizcharge-hold.spec.ts"
+      ],
+      "spec_coverage": "fixme-only",
+      "status": "confirmed",
       "sources": []
     },
     {
@@ -2102,8 +2593,14 @@
       "stripe_ref": "TS-STRIPE-TC1068",
       "tcid": "TC1070",
       "mg_key": null,
-      "spec_paths": [],
-      "status": "unmapped",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/ebizcharge/web/carrier/hold/ebizcharge-hold.spec.ts"
+      ],
+      "fixme_spec_paths": [
+        "tests/features/gateway-pg/specs/ebizcharge/web/carrier/hold/ebizcharge-hold.spec.ts"
+      ],
+      "spec_coverage": "fixme-only",
+      "status": "confirmed",
       "sources": []
     },
     {
@@ -2113,6 +2610,8 @@
       "tcid": "TC1100",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2123,6 +2622,8 @@
       "tcid": "TC1101",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2133,6 +2634,8 @@
       "tcid": "TC1102",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2143,6 +2646,8 @@
       "tcid": "TC1103",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2153,6 +2658,8 @@
       "tcid": "TC1104",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2163,6 +2670,8 @@
       "tcid": "TC1105",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2173,6 +2682,8 @@
       "tcid": "TC1106",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2183,6 +2694,8 @@
       "tcid": "TC1107",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2192,8 +2705,12 @@
       "stripe_ref": "TS-STRIPE-TC1081",
       "tcid": "TC1108",
       "mg_key": null,
-      "spec_paths": [],
-      "status": "unmapped",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/ebizcharge/web/carrier/cargo-a-bordo/ebizcharge-cargo-a-bordo.spec.ts"
+      ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
+      "status": "confirmed",
       "sources": []
     },
     {
@@ -2203,6 +2720,8 @@
       "tcid": "TC1109",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2213,6 +2732,8 @@
       "tcid": "TC1110",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2223,6 +2744,8 @@
       "tcid": "TC1111",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2233,6 +2756,8 @@
       "tcid": "TC1112",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2243,6 +2768,8 @@
       "tcid": "TC1113",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2253,6 +2780,8 @@
       "tcid": "TC1114",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2263,6 +2792,8 @@
       "tcid": "TC1115",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2273,6 +2804,8 @@
       "tcid": "TC1116",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2283,6 +2816,8 @@
       "tcid": "TC1200",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2293,6 +2828,8 @@
       "tcid": "TC1201",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2303,6 +2840,8 @@
       "tcid": "TC1202",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2313,6 +2852,8 @@
       "tcid": "TC1203",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2323,6 +2864,8 @@
       "tcid": "TC1204",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2333,6 +2876,8 @@
       "tcid": "TC1205",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2343,6 +2888,8 @@
       "tcid": "TC1206",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2353,6 +2900,8 @@
       "tcid": "TC1207",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2363,6 +2912,8 @@
       "tcid": "TC1208",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2373,6 +2924,8 @@
       "tcid": "TC1209",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2383,6 +2936,8 @@
       "tcid": "TC1210",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2393,6 +2948,8 @@
       "tcid": "TC1211",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2403,6 +2960,8 @@
       "tcid": "TC1212",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2413,6 +2972,8 @@
       "tcid": "TC1213",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2423,6 +2984,8 @@
       "tcid": "TC1214",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2433,6 +2996,8 @@
       "tcid": "TC1215",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2443,6 +3008,8 @@
       "tcid": "TC1216",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2453,6 +3020,8 @@
       "tcid": "TC1217",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2463,6 +3032,8 @@
       "tcid": "TC1218",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2473,6 +3044,8 @@
       "tcid": "TC1219",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2483,6 +3056,8 @@
       "tcid": "TC1220",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2493,6 +3068,8 @@
       "tcid": "TC1221",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2503,6 +3080,8 @@
       "tcid": "TC1222",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2513,6 +3092,8 @@
       "tcid": "TC1223",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2523,6 +3104,8 @@
       "tcid": "TC1224",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2533,6 +3116,8 @@
       "tcid": "TC1225",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2543,6 +3128,8 @@
       "tcid": "TC1226",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2553,6 +3140,8 @@
       "tcid": "TC1227",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2563,6 +3152,8 @@
       "tcid": "TC1228",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2573,6 +3164,8 @@
       "tcid": "TC1229",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2583,6 +3176,8 @@
       "tcid": "TC1230",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2593,6 +3188,8 @@
       "tcid": "TC1231",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2603,6 +3200,8 @@
       "tcid": "TC1232",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2613,6 +3212,8 @@
       "tcid": "TC1233",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2623,6 +3224,8 @@
       "tcid": "TC1234",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2633,6 +3236,8 @@
       "tcid": "TC1235",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2643,6 +3248,8 @@
       "tcid": "TC1236",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2653,6 +3260,8 @@
       "tcid": "TC1237",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2663,6 +3272,8 @@
       "tcid": "TC1238",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2673,6 +3284,8 @@
       "tcid": "TC1239",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2683,6 +3296,8 @@
       "tcid": "TC1240",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2693,6 +3308,8 @@
       "tcid": "TC1241",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2703,6 +3320,8 @@
       "tcid": "TC1242",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2713,6 +3332,8 @@
       "tcid": "TC1243",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2723,6 +3344,8 @@
       "tcid": "TC1244",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2733,6 +3356,8 @@
       "tcid": "TC1245",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2743,6 +3368,8 @@
       "tcid": "TC1246",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2753,6 +3380,8 @@
       "tcid": "TC1247",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2763,6 +3392,8 @@
       "tcid": "TC1248",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2773,6 +3404,8 @@
       "tcid": "TC1249",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2783,6 +3416,8 @@
       "tcid": "TC1250",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2793,6 +3428,8 @@
       "tcid": "TC1251",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2803,6 +3440,8 @@
       "tcid": "TC1252",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2813,6 +3452,8 @@
       "tcid": "TC1253",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2823,6 +3464,8 @@
       "tcid": "TC1254",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2833,6 +3476,8 @@
       "tcid": "TC1255",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2846,6 +3491,8 @@
         "tests/features/gateway-pg/specs/stripe/web/contractor/colaborador-hold-no3ds.spec.ts",
         "tests/features/gateway-pg/specs/stripe/web/contractor/vinculacion-tarjeta.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/contractor/colaborador-hold-no3ds.spec.ts (heurístico)"
@@ -2860,6 +3507,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/contractor/colaborador-hold-no3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/contractor/colaborador-hold-no3ds.spec.ts (heurístico)"
@@ -2874,6 +3523,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/contractor/colaborador-hold-no3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/contractor/colaborador-hold-no3ds.spec.ts (heurístico)"
@@ -2888,6 +3539,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/contractor/colaborador-hold-no3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/contractor/colaborador-hold-no3ds.spec.ts (heurístico)"
@@ -2902,6 +3555,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/contractor/colaborador-hold-3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/contractor/colaborador-hold-3ds.spec.ts (heurístico)"
@@ -2916,6 +3571,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/contractor/colaborador-hold-3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/contractor/colaborador-hold-3ds.spec.ts (heurístico)"
@@ -2928,6 +3585,8 @@
       "tcid": "P2-TC007",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2938,6 +3597,8 @@
       "tcid": "P2-TC008",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2948,6 +3609,8 @@
       "tcid": "P2-TC009",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2958,6 +3621,8 @@
       "tcid": "P2-TC010",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -2970,6 +3635,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/quote/quote-colaborador.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/quote/quote-colaborador.spec.ts (heurístico)"
@@ -2984,6 +3651,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/quote/quote-colaborador.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/quote/quote-colaborador.spec.ts (heurístico)"
@@ -2998,6 +3667,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/quote/quote-colaborador.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/quote/quote-colaborador.spec.ts (heurístico)"
@@ -3012,6 +3683,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/quote/quote-colaborador.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/quote/quote-colaborador.spec.ts (heurístico)"
@@ -3026,6 +3699,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/quote/quote-colaborador.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/quote/quote-colaborador.spec.ts (heurístico)"
@@ -3040,6 +3715,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/quote/quote-colaborador.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/quote/quote-colaborador.spec.ts (heurístico)"
@@ -3054,6 +3731,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/quote/quote-colaborador.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/quote/quote-colaborador.spec.ts (heurístico)"
@@ -3068,6 +3747,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/quote/quote-colaborador.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/quote/quote-colaborador.spec.ts (heurístico)"
@@ -3080,6 +3761,8 @@
       "tcid": "P2-TC019",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -3090,6 +3773,8 @@
       "tcid": "P2-TC020",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -3100,6 +3785,8 @@
       "tcid": "P2-TC021",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -3110,6 +3797,8 @@
       "tcid": "P2-TC022",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -3120,6 +3809,8 @@
       "tcid": "P2-TC023",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -3130,6 +3821,8 @@
       "tcid": "P2-TC024",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -3140,6 +3833,8 @@
       "tcid": "P2-TC025",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -3150,6 +3845,8 @@
       "tcid": "P2-TC026",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -3160,6 +3857,8 @@
       "tcid": "P2-TC027",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -3170,6 +3869,8 @@
       "tcid": "P2-TC028",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -3180,6 +3881,8 @@
       "tcid": "P2-TC029",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -3190,6 +3893,8 @@
       "tcid": "P2-TC030",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -3200,6 +3905,8 @@
       "tcid": "P2-TC031",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -3210,6 +3917,8 @@
       "tcid": "P2-TC032",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -3220,6 +3929,8 @@
       "tcid": "P2-TC033",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -3230,6 +3941,8 @@
       "tcid": "P2-TC034",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -3240,6 +3953,8 @@
       "tcid": "P2-TC035",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -3250,6 +3965,8 @@
       "tcid": "P2-TC036",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -3260,6 +3977,8 @@
       "tcid": "P2-TC037",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -3270,6 +3989,8 @@
       "tcid": "P2-TC038",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -3280,6 +4001,8 @@
       "tcid": "P2-TC039",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -3290,6 +4013,8 @@
       "tcid": "P2-TC040",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -3302,6 +4027,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/colaborador-recurrente.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/colaborador-recurrente.spec.ts (heurístico)"
@@ -3316,6 +4043,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/colaborador-recurrente.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/colaborador-recurrente.spec.ts (heurístico)"
@@ -3330,6 +4059,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/colaborador-recurrente.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/colaborador-recurrente.spec.ts (heurístico)"
@@ -3344,6 +4075,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/colaborador-recurrente.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/colaborador-recurrente.spec.ts (heurístico)"
@@ -3358,6 +4091,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/colaborador-recurrente.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/colaborador-recurrente.spec.ts (heurístico)"
@@ -3372,6 +4107,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/colaborador-recurrente.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/colaborador-recurrente.spec.ts (heurístico)"
@@ -3386,6 +4123,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/colaborador-recurrente.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/colaborador-recurrente.spec.ts (heurístico)"
@@ -3400,6 +4139,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/apppax-recurrente.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/apppax-recurrente.spec.ts (heurístico)"
@@ -3414,6 +4155,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/apppax-recurrente.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/apppax-recurrente.spec.ts (heurístico)"
@@ -3428,6 +4171,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/apppax-recurrente.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/apppax-recurrente.spec.ts (heurístico)"
@@ -3442,6 +4187,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/apppax-recurrente.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/apppax-recurrente.spec.ts (heurístico)"
@@ -3456,6 +4203,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/apppax-recurrente.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/apppax-recurrente.spec.ts (heurístico)"
@@ -3470,6 +4219,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/apppax-recurrente.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/apppax-recurrente.spec.ts (heurístico)"
@@ -3484,6 +4235,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/empresa-recurrente.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/empresa-recurrente.spec.ts (heurístico)"
@@ -3498,6 +4251,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/empresa-recurrente.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/empresa-recurrente.spec.ts (heurístico)"
@@ -3512,6 +4267,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/empresa-recurrente.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/empresa-recurrente.spec.ts (heurístico)"
@@ -3526,6 +4283,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/empresa-recurrente.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/empresa-recurrente.spec.ts (heurístico)"
@@ -3540,6 +4299,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/empresa-recurrente.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/empresa-recurrente.spec.ts (heurístico)"
@@ -3554,6 +4315,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/empresa-recurrente.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/empresa-recurrente.spec.ts (heurístico)"
@@ -3568,6 +4331,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/reactivacion.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/reactivacion.spec.ts (heurístico)"
@@ -3582,6 +4347,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/reactivacion.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/reactivacion.spec.ts (heurístico)"
@@ -3596,6 +4363,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/reactivacion.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/reactivacion.spec.ts (heurístico)"
@@ -3610,6 +4379,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/reactivacion.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/reactivacion.spec.ts (heurístico)"
@@ -3624,6 +4395,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/reactivacion.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/reactivacion.spec.ts (heurístico)"
@@ -3638,6 +4411,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/reactivacion.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/reactivacion.spec.ts (heurístico)"
@@ -3652,6 +4427,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-cancelados.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-cancelados.spec.ts (heurístico)"
@@ -3666,6 +4443,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-cancelados.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-cancelados.spec.ts (heurístico)"
@@ -3680,6 +4459,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-cancelados.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-cancelados.spec.ts (heurístico)"
@@ -3694,6 +4475,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-cancelados.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-cancelados.spec.ts (heurístico)"
@@ -3708,6 +4491,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-cancelados.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-cancelados.spec.ts (heurístico)"
@@ -3722,6 +4507,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-cancelados.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-cancelados.spec.ts (heurístico)"
@@ -3736,6 +4523,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-finalizados.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-finalizados.spec.ts (heurístico)"
@@ -3750,6 +4539,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-finalizados.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-finalizados.spec.ts (heurístico)"
@@ -3764,6 +4555,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-finalizados.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-finalizados.spec.ts (heurístico)"
@@ -3778,6 +4571,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-finalizados.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-finalizados.spec.ts (heurístico)"
@@ -3792,6 +4587,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-finalizados.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-finalizados.spec.ts (heurístico)"
@@ -3806,6 +4603,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-finalizados.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-finalizados.spec.ts (heurístico)"
@@ -3820,6 +4619,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-programados.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-programados.spec.ts (heurístico)"
@@ -3834,6 +4635,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-programados.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-programados.spec.ts (heurístico)"
@@ -3848,6 +4651,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-programados.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-programados.spec.ts (heurístico)"
@@ -3862,6 +4667,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-programados.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-programados.spec.ts (heurístico)"
@@ -3876,6 +4683,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-programados.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-programados.spec.ts (heurístico)"
@@ -3890,6 +4699,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-programados.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-programados.spec.ts (heurístico)"
@@ -3904,6 +4715,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-conflicto.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-conflicto.spec.ts (heurístico)"
@@ -3918,6 +4731,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-conflicto.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-conflicto.spec.ts (heurístico)"
@@ -3932,6 +4747,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-conflicto.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-conflicto.spec.ts (heurístico)"
@@ -3946,6 +4763,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-conflicto.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-conflicto.spec.ts (heurístico)"
@@ -3960,6 +4779,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-conflicto.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-conflicto.spec.ts (heurístico)"
@@ -3974,6 +4795,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-conflicto.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-conflicto.spec.ts (heurístico)"
@@ -3986,6 +4809,8 @@
       "tcid": "P2-TC090",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -3996,6 +4821,8 @@
       "tcid": "TC-RV001",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -4006,6 +4833,8 @@
       "tcid": "TC-RV002",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -4016,6 +4845,8 @@
       "tcid": "TC-RV003",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -4026,6 +4857,8 @@
       "tcid": "TC-RV004",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -4036,6 +4869,8 @@
       "tcid": "TC-RV005",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -4046,6 +4881,8 @@
       "tcid": "TC-RV006",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -4056,6 +4893,8 @@
       "tcid": "TC-RV007",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -4066,6 +4905,8 @@
       "tcid": "TC-RV008",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -4078,6 +4919,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/config/gateway-config.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "confirmed",
       "sources": [
         "xray-keys.ts cfg.viewUnlinked"
@@ -4092,6 +4935,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/config/gateway-config.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "confirmed",
       "sources": [
         "xray-keys.ts cfg.linkValid"
@@ -4106,6 +4951,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/config/gateway-config.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "confirmed",
       "sources": [
         "xray-keys.ts cfg.linkInvalid"
@@ -4120,6 +4967,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/config/gateway-config.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "confirmed",
       "sources": [
         "xray-keys.ts cfg.cancelUnlink"
@@ -4134,6 +4983,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/config/gateway-config.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "confirmed",
       "sources": [
         "xray-keys.ts cfg.unlink"
@@ -4148,6 +4999,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/config/gateway-config.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "confirmed",
       "sources": [
         "xray-keys.ts cfg.exclusivity"
@@ -4162,6 +5015,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/config/gateway-config.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "confirmed",
       "sources": [
         "xray-keys.ts cfg.reloadPersistence"
@@ -4176,6 +5031,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/config/gateway-config.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "confirmed",
       "sources": [
         "xray-keys.ts cfg.linkStatus"
@@ -4188,6 +5045,8 @@
       "tcid": "TC1009",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -4198,6 +5057,8 @@
       "tcid": "TC1010",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -4208,6 +5069,8 @@
       "tcid": "TC1011",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -4218,6 +5081,8 @@
       "tcid": "TC1012",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -4228,6 +5093,8 @@
       "tcid": "TC1013",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -4238,6 +5105,8 @@
       "tcid": "TC1014",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -4248,6 +5117,8 @@
       "tcid": "TC1015",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -4258,6 +5129,8 @@
       "tcid": "TC1016",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -4270,6 +5143,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-no3ds.e2e.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-no3ds.e2e.spec.ts (heurístico)"
@@ -4284,6 +5159,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-no3ds.e2e.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-no3ds.e2e.spec.ts (heurístico)"
@@ -4298,6 +5175,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-no3ds.e2e.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-no3ds.e2e.spec.ts (heurístico)"
@@ -4312,6 +5191,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-no3ds.e2e.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-no3ds.e2e.spec.ts (heurístico)"
@@ -4326,6 +5207,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-3ds.e2e.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-3ds.e2e.spec.ts (heurístico)"
@@ -4340,6 +5223,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-3ds.e2e.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-3ds.e2e.spec.ts (heurístico)"
@@ -4354,6 +5239,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-3ds.e2e.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-3ds.e2e.spec.ts (heurístico)"
@@ -4368,6 +5255,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-3ds.e2e.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-3ds.e2e.spec.ts (heurístico)"
@@ -4380,6 +5269,8 @@
       "tcid": "TC1025",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -4390,6 +5281,8 @@
       "tcid": "TC1026",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -4400,6 +5293,8 @@
       "tcid": "TC1027",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -4410,6 +5305,8 @@
       "tcid": "TC1028",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -4420,6 +5317,8 @@
       "tcid": "TC1029",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -4430,6 +5329,8 @@
       "tcid": "TC1030",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -4440,6 +5341,8 @@
       "tcid": "TC1031",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -4450,6 +5353,8 @@
       "tcid": "TC1032",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -4462,6 +5367,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-no3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-no3ds.spec.ts (heurístico)"
@@ -4476,6 +5383,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-no3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-no3ds.spec.ts (heurístico)"
@@ -4490,6 +5399,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-no3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-no3ds.spec.ts (heurístico)"
@@ -4504,6 +5415,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-no3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-no3ds.spec.ts (heurístico)"
@@ -4518,6 +5431,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-3ds.spec.ts (heurístico)"
@@ -4532,6 +5447,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-3ds.spec.ts (heurístico)"
@@ -4547,6 +5464,8 @@
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-3ds.spec.ts",
         "tests/features/gateway-pg/specs/stripe/web/carrier/recovery/recorded-3ds-preauth-failure.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-3ds.spec.ts (heurístico)",
@@ -4562,6 +5481,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-3ds.spec.ts (heurístico)"
@@ -4576,6 +5497,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-no3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-no3ds.spec.ts (heurístico)"
@@ -4590,6 +5513,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-no3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-no3ds.spec.ts (heurístico)"
@@ -4604,6 +5529,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-no3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-no3ds.spec.ts (heurístico)"
@@ -4618,6 +5545,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-no3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-no3ds.spec.ts (heurístico)"
@@ -4632,6 +5561,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-3ds.spec.ts (heurístico)"
@@ -4646,6 +5577,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-3ds.spec.ts (heurístico)"
@@ -4660,6 +5593,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-3ds.spec.ts (heurístico)"
@@ -4674,6 +5609,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-3ds.spec.ts (heurístico)"
@@ -4690,11 +5627,13 @@
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/hold-capture.spec.ts",
         "tests/features/gateway-pg/specs/_parametrized/hold-happy-no3ds.parametrized.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-no3ds.spec.ts (heurístico)",
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/hold-capture.spec.ts (heurístico)",
-        "tms describe-level en tests/features/gateway-pg/specs/_parametrized/hold-happy-no3ds.parametrized.spec.ts"
+        "tms describe-level en tests/features/gateway-pg/specs/_parametrized/hold-happy-no3ds.parametrized.spec.ts (heurístico)"
       ]
     },
     {
@@ -4706,6 +5645,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-no3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-no3ds.spec.ts (heurístico)"
@@ -4721,6 +5662,8 @@
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-no3ds.spec.ts",
         "tests/features/gateway-pg/specs/stripe/web/carrier/recovery/3ds-failure.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-no3ds.spec.ts (heurístico)",
@@ -4736,6 +5679,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-no3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-no3ds.spec.ts (heurístico)"
@@ -4751,6 +5696,8 @@
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-3ds.spec.ts",
         "tests/features/gateway-pg/specs/stripe/web/carrier/recovery/recorded-3ds-happy-path.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-3ds.spec.ts (heurístico)",
@@ -4766,6 +5713,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-3ds.spec.ts (heurístico)"
@@ -4780,6 +5729,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-3ds.spec.ts (heurístico)"
@@ -4794,6 +5745,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-3ds.spec.ts (heurístico)"
@@ -4809,6 +5762,8 @@
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-no3ds.spec.ts",
         "tests/features/gateway-pg/specs/stripe/web/carrier/recovery/3ds-failure.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-no3ds.spec.ts (heurístico)",
@@ -4824,6 +5779,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-no3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-no3ds.spec.ts (heurístico)"
@@ -4839,6 +5796,8 @@
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-no3ds.spec.ts",
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/hold-capture.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-no3ds.spec.ts (heurístico)",
@@ -4854,6 +5813,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-no3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-no3ds.spec.ts (heurístico)"
@@ -4869,6 +5830,8 @@
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-3ds.spec.ts",
         "tests/features/gateway-pg/specs/stripe/web/carrier/recovery/3ds-failure.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-3ds.spec.ts (heurístico)",
@@ -4884,6 +5847,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-3ds.spec.ts (heurístico)"
@@ -4899,6 +5864,8 @@
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-3ds.spec.ts",
         "tests/features/gateway-pg/specs/stripe/web/carrier/recovery/3ds-retry-card-change.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-3ds.spec.ts (heurístico)",
@@ -4915,6 +5882,8 @@
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-3ds.spec.ts",
         "tests/features/gateway-pg/specs/stripe/web/carrier/recovery/3ds-retry-card-change.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-3ds.spec.ts (heurístico)",
@@ -4930,6 +5899,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-no3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-no3ds.spec.ts (heurístico)"
@@ -4944,6 +5915,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-no3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-no3ds.spec.ts (heurístico)"
@@ -4958,6 +5931,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-no3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-no3ds.spec.ts (heurístico)"
@@ -4972,6 +5947,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-no3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-no3ds.spec.ts (heurístico)"
@@ -4986,6 +5963,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-3ds.spec.ts (heurístico)"
@@ -5000,6 +5979,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-3ds.spec.ts (heurístico)"
@@ -5014,6 +5995,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-3ds.spec.ts (heurístico)"
@@ -5028,6 +6011,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-3ds.spec.ts (heurístico)"
@@ -5042,6 +6027,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-no3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-no3ds.spec.ts (heurístico)"
@@ -5056,6 +6043,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-no3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-no3ds.spec.ts (heurístico)"
@@ -5070,6 +6059,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-no3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-no3ds.spec.ts (heurístico)"
@@ -5084,6 +6075,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-no3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-no3ds.spec.ts (heurístico)"
@@ -5098,6 +6091,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-3ds.spec.ts (heurístico)"
@@ -5112,6 +6107,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-3ds.spec.ts (heurístico)"
@@ -5126,6 +6123,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-3ds.spec.ts (heurístico)"
@@ -5140,6 +6139,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-3ds.spec.ts (heurístico)"
@@ -5155,6 +6156,8 @@
         "tests/features/gateway-pg/specs/stripe/e2e-mobile/cargo-a-bordo/apppax-cargo-asignado-success.e2e.spec.ts",
         "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-happy.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "confirmed",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/e2e-mobile/cargo-a-bordo/apppax-cargo-asignado-success.e2e.spec.ts",
@@ -5170,6 +6173,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-declines.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-declines.spec.ts (heurístico)"
@@ -5184,6 +6189,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-declines.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-declines.spec.ts (heurístico)"
@@ -5198,6 +6205,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-declines.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-declines.spec.ts (heurístico)"
@@ -5212,6 +6221,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-declines.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-declines.spec.ts (heurístico)"
@@ -5226,6 +6237,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-declines.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-declines.spec.ts (heurístico)"
@@ -5240,6 +6253,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-antifraud.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-antifraud.spec.ts (heurístico)"
@@ -5254,6 +6269,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-antifraud.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-antifraud.spec.ts (heurístico)"
@@ -5268,6 +6285,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-antifraud.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-antifraud.spec.ts (heurístico)"
@@ -5282,6 +6301,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-antifraud.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-antifraud.spec.ts (heurístico)"
@@ -5296,6 +6317,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-antifraud.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-antifraud.spec.ts (heurístico)"
@@ -5306,49 +6329,65 @@
       "gateway": "stripe",
       "stripe_ref": null,
       "tcid": "TC1092",
-      "mg_key": null,
+      "mg_key": "MG-161",
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/e2e-mobile/cargo-a-bordo/apppax-cargo-asignado-3ds.e2e.spec.ts",
         "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-3ds.spec.ts"
       ],
-      "status": "confirmed",
-      "sources": []
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-3ds.spec.ts (heurístico)"
+      ]
     },
     {
       "ts_id": "TS-STRIPE-TC1093",
       "gateway": "stripe",
       "stripe_ref": null,
       "tcid": "TC1093",
-      "mg_key": null,
+      "mg_key": "MG-161",
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-3ds.spec.ts"
       ],
-      "status": "confirmed",
-      "sources": []
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-3ds.spec.ts (heurístico)"
+      ]
     },
     {
       "ts_id": "TS-STRIPE-TC1094",
       "gateway": "stripe",
       "stripe_ref": null,
       "tcid": "TC1094",
-      "mg_key": null,
+      "mg_key": "MG-161",
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-3ds.spec.ts"
       ],
-      "status": "confirmed",
-      "sources": []
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-3ds.spec.ts (heurístico)"
+      ]
     },
     {
       "ts_id": "TS-STRIPE-TC1095",
       "gateway": "stripe",
       "stripe_ref": null,
       "tcid": "TC1095",
-      "mg_key": null,
+      "mg_key": "MG-161",
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-3ds.spec.ts"
       ],
-      "status": "confirmed",
-      "sources": []
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-3ds.spec.ts (heurístico)"
+      ]
     },
     {
       "ts_id": "TS-STRIPE-TC1096",
@@ -5359,6 +6398,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-happy.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "confirmed",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-happy.spec.ts"
@@ -5373,6 +6414,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-declines.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-declines.spec.ts (heurístico)"
@@ -5387,6 +6430,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-declines.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-declines.spec.ts (heurístico)"
@@ -5401,6 +6446,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-declines.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-declines.spec.ts (heurístico)"
@@ -5415,6 +6462,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-declines.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-declines.spec.ts (heurístico)"
@@ -5429,6 +6478,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-declines.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-declines.spec.ts (heurístico)"
@@ -5443,6 +6494,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-antifraud.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-antifraud.spec.ts (heurístico)"
@@ -5457,6 +6510,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-antifraud.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-antifraud.spec.ts (heurístico)"
@@ -5471,6 +6526,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-antifraud.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-antifraud.spec.ts (heurístico)"
@@ -5485,6 +6542,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-antifraud.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-antifraud.spec.ts (heurístico)"
@@ -5499,6 +6558,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-antifraud.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-antifraud.spec.ts (heurístico)"
@@ -5513,6 +6574,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-3ds.spec.ts (heurístico)"
@@ -5527,6 +6590,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-3ds.spec.ts (heurístico)"
@@ -5541,6 +6606,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-3ds.spec.ts (heurístico)"
@@ -5555,6 +6622,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-3ds.spec.ts (heurístico)"
@@ -5569,6 +6638,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-happy.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "confirmed",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-happy.spec.ts"
@@ -5583,6 +6654,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-declines.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-declines.spec.ts (heurístico)"
@@ -5597,6 +6670,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-declines.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-declines.spec.ts (heurístico)"
@@ -5611,6 +6686,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-declines.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-declines.spec.ts (heurístico)"
@@ -5625,6 +6702,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-declines.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-declines.spec.ts (heurístico)"
@@ -5639,6 +6718,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-declines.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-declines.spec.ts (heurístico)"
@@ -5653,6 +6734,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-antifraud.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-antifraud.spec.ts (heurístico)"
@@ -5667,6 +6750,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-antifraud.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-antifraud.spec.ts (heurístico)"
@@ -5681,6 +6766,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-antifraud.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-antifraud.spec.ts (heurístico)"
@@ -5695,6 +6782,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-antifraud.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-antifraud.spec.ts (heurístico)"
@@ -5709,6 +6798,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-antifraud.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-antifraud.spec.ts (heurístico)"
@@ -5721,6 +6812,8 @@
       "tcid": "TC1122",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -5733,6 +6826,8 @@
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-3ds.spec.ts"
       ],
+      "fixme_spec_paths": [],
+      "spec_coverage": "executable",
       "status": "confirmed",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-3ds.spec.ts"
@@ -5745,6 +6840,8 @@
       "tcid": "TC1124",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -5755,6 +6852,8 @@
       "tcid": "TC1125",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     },
@@ -5765,6 +6864,8 @@
       "tcid": "TC1126",
       "mg_key": null,
       "spec_paths": [],
+      "fixme_spec_paths": [],
+      "spec_coverage": "none",
       "status": "unmapped",
       "sources": []
     }

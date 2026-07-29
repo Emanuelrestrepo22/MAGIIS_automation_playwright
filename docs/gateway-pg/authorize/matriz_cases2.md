@@ -1,4 +1,4 @@
-# Test Suite – Authorize.net · Parte 2: Wallet, Reembolsos, Voids, Stored Credentials y Recurring
+e es AVS# Test Suite – Authorize.net · Parte 2: Wallet, Reembolsos, Voids, Stored Credentials y Recurring
 
 > **Proyecto:** Automatización de pruebas – Integración Authorize.net (Playwright / Appium)
 > **Alcance:** Wallet (vinculación / eliminación) · Refund · Void · Stored credentials reuse · Recurring billing · Edge cases Accept.js iframe

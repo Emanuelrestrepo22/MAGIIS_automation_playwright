@@ -2,8 +2,9 @@
 
 > **GENERATED — no editar a mano.** Regenerar con `node scripts/ai/build-id-map.mjs`.
 > Fuente de verdad: [`docs/gateway-pg/id-map.json`](../id-map.json). Keys MG desde `tests/features/gateway-pg/data/xray-keys.ts` + annotations `tms` en specs — nunca fabricadas.
+> Un spec marcado **(fixme)** DECLARA el caso pero lo emite como `test.fixme`: cobertura trazable, NO ejecutada — no cuenta como cobertura real.
 
-Total: 224 · confirmed: 16 · needs-review: 153 · unmapped: 55 · con MG-key: 165 · con spec: 169
+Total: 224 · confirmed: 12 · needs-review: 157 · unmapped: 55 · con MG-key: 169 · con spec: 169 (ejecutable: 169 · sólo fixme: 0)
 
 | TS-ID | Ref Stripe | MG key | Specs | Status |
 | --- | --- | --- | --- | --- |
@@ -196,10 +197,10 @@ Total: 224 · confirmed: 16 · needs-review: 153 · unmapped: 55 · con MG-key: 
 | TS-STRIPE-TC1089 | — | MG-161 | `tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-antifraud.spec.ts` | needs-review |
 | TS-STRIPE-TC1090 | — | MG-161 | `tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-antifraud.spec.ts` | needs-review |
 | TS-STRIPE-TC1091 | — | MG-161 | `tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-antifraud.spec.ts` | needs-review |
-| TS-STRIPE-TC1092 | — | — | `tests/features/gateway-pg/specs/stripe/e2e-mobile/cargo-a-bordo/apppax-cargo-asignado-3ds.e2e.spec.ts`<br>`tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-3ds.spec.ts` | confirmed |
-| TS-STRIPE-TC1093 | — | — | `tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-3ds.spec.ts` | confirmed |
-| TS-STRIPE-TC1094 | — | — | `tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-3ds.spec.ts` | confirmed |
-| TS-STRIPE-TC1095 | — | — | `tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-3ds.spec.ts` | confirmed |
+| TS-STRIPE-TC1092 | — | MG-161 | `tests/features/gateway-pg/specs/stripe/e2e-mobile/cargo-a-bordo/apppax-cargo-asignado-3ds.e2e.spec.ts`<br>`tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-3ds.spec.ts` | needs-review |
+| TS-STRIPE-TC1093 | — | MG-161 | `tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-3ds.spec.ts` | needs-review |
+| TS-STRIPE-TC1094 | — | MG-161 | `tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-3ds.spec.ts` | needs-review |
+| TS-STRIPE-TC1095 | — | MG-161 | `tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-3ds.spec.ts` | needs-review |
 | TS-STRIPE-TC1096 | — | MG-161 | `tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-happy.spec.ts` | confirmed |
 | TS-STRIPE-TC1097 | — | MG-161 | `tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-declines.spec.ts` | needs-review |
 | TS-STRIPE-TC1098 | — | MG-161 | `tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-declines.spec.ts` | needs-review |

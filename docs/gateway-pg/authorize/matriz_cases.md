@@ -79,30 +79,37 @@ Espeja `TS-STRIPE-TC1001..TC1008` pero adaptado a la UI Authorize.
 | TS-AUTHORIZE-TC1016 | Validar Alta de Viaje desde carrier para usuario personal con tarjeta declinada (ZIP 46282) Hold ON — sistema muestra error de declinación y el viaje no se crea | `AUTHORIZE_CARDS.DECLINE_GENERIC` | ON | Response Code 2 → red flag "No autorizado", viaje NO aparece en "Buscando conductor" |
 | TS-AUTHORIZE-TC1017 | Validar Alta de Viaje desde carrier para usuario personal con tarjeta declinada (ZIP 46282) Hold OFF — auth+capture falla, error visible, viaje no creado          | `AUTHORIZE_CARDS.DECLINE_GENERIC` | OFF | Response Code 2 → error UI, sin viaje |
 
-**Resultado esperado (TC1016):** Debería mostrar pop-up de error "No se pudo autorizar la tarjeta" con mensaje de Authorize; el viaje permanece sin crear (la URL no cambia o muestra detalle en estado `NO_AUTORIZADO`).
+**Resultado esperado (TC1016):** Debería mostrar el error de validación de la tarjeta con el mensaje de Authorize **en el paso de vinculación**; debería dejar "Seleccionar Vehículo" deshabilitado y **no crear el viaje** (no aparece en "Por asignar" ni en "Buscando conductor"). Queda **descartado** el desenlace alternativo "detalle en estado `NO_AUTORIZADO`": con Hold ON el rechazo ocurre antes del armado del viaje — ver "Punto de rechazo canónico con Hold ON" abajo.
 
 **Observaciones:**
 - Network: `transactionResponse.responseCode = "2"`, `responseReasonCode` típicamente `2` (referral/decline).
 - Equivalente Stripe: `TS-STRIPE-TC1059` (insufficient funds Hold ON) y `TS-STRIPE-P2-TC090` (generic decline contractor).
+- **Punto de rechazo canónico con Hold ON:** el rechazo cae en la **vinculación de la tarjeta**, no en el alta del viaje. Con el hold activo el sistema dispara un hold de verificación de bajo monto para poder vincular la tarjeta; si la pasarela lo declina no queda tarjeta vinculada, "Seleccionar Vehículo" no se habilita y el flujo nunca llega al armado del viaje. Aplica a §2.2, §2.3 y §2.4. Ref: BL-051 (un alta con tarjeta nueva genera DOS transacciones: vinculación + viaje).
+  Monto del hold de vinculación: **$10.00**, observado el 2026-07-28 en transacciones retenidas en *Fraud Review*. BL-051 documentó la contraparte **anulada** (`Voided`), donde la columna de monto del dashboard aparece vacía — no es un dato contradictorio sino el mismo hold en otro estado.
+- ⚠️ **Estado verificado en vivo (2026-07-28) — trigger inerte:** el ZIP `46282` **aprobó** (la tarjeta se vinculó) en lugar de declinar. Observado de forma independiente por UI y por API. TC1016 y TC1017 quedan **BLOQUEADOS por configuración de la cuenta sandbox**, no por defecto de producto ni de la automatización: el expected de arriba es el correcto y el spec lo asevera, pero la cuenta no está evaluando el ZIP. Ref: BL-049 · ver la nota de §2.4, donde el mismo síntoma aparece con un segundo trigger.
 
 ### 2.3 CVV triggers (901 mismatch, 902 should-be, 903 issuer, 904 not-processed)
 
 | ID               | Descripción                                                                                                                                                          | CVV | Card | Hold | Outcome |
 | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- | ---- | ---- | ------- |
-| TS-AUTHORIZE-TC1021 | Validar Alta de Viaje desde carrier para usuario personal con tarjeta CVV mismatch (CVV 901) Hold ON — sistema rechaza el alta por validación CVV "N: Does NOT match" | `901` | `AUTHORIZE_CARDS.DECLINE_CVV` | ON | `cvvResultCode = "N"` → backend MAGIIS decide rechazar o aceptar según política. Validar comportamiento. |
+| TS-AUTHORIZE-TC1021 | Validar Alta de Viaje desde carrier para usuario personal con tarjeta CVV mismatch (CVV 901) Hold ON — sistema rechaza el alta por validación CVV "N: Does NOT match" | `901` | `AUTHORIZE_CARDS.DECLINE_CVV` | ON | `cvvResultCode = "N"` → **Debería** rechazar la tarjeta en la vinculación (mismo desenlace que TC1031): error visible, "Seleccionar Vehículo" no se habilita y el viaje NO se crea — política de cuenta USA 2026-07-28 |
 | TS-AUTHORIZE-TC1022 | Validar Alta de Viaje desde carrier para usuario personal con tarjeta CVV mismatch (CVV 901) Hold OFF — comportamiento equivalente al TC1021 sin retención previa     | `901` | `AUTHORIZE_CARDS.DECLINE_CVV` | OFF | `cvvResultCode = "N"` |
 | TS-AUTHORIZE-TC1023 | Validar Alta de Viaje desde carrier para usuario personal con CVV `902` (should be on card but not indicated) Hold ON                                                | `902` | `AUTHORIZE_CARDS.SUCCESS` (override CVV) | ON | `cvvResultCode = "S"` — Response Code 1 con flag CVV. Documentar si MAGIIS lo trata como warning o decline. |
 | TS-AUTHORIZE-TC1024 | Validar Alta de Viaje desde carrier para usuario personal con CVV `903` (issuer not certified) Hold ON                                                               | `903` | `AUTHORIZE_CARDS.SUCCESS` (override CVV) | ON | `cvvResultCode = "U"` |
 | TS-AUTHORIZE-TC1025 | Validar Alta de Viaje desde carrier para usuario personal con CVV `904` (CVV not processed) Hold ON — viaje crea exitosamente con flag `cvvResultCode=P`             | `904` | `AUTHORIZE_CARDS.CVV_NOT_PROCESSED` | ON | `cvvResultCode = "P"` — Response Code 1 |
 | TS-AUTHORIZE-TC1026 | Validar reintento exitoso desde detalle del viaje tras fallo CVV 901 — usuario reintenta con CVV 900 desde tarjeta nueva → viaje pasa a "Buscando conductor"          | `900` (reintento) | `AUTHORIZE_CARDS.SUCCESS` | ON | Reintento OK, viaje activo |
 
-> **TODO BL-025 runtime:** validar con backend MAGIIS si CVV mismatch (`901`) genera rechazo duro o solo flag. La doc Authorize indica que el CVV check no aborta la transacción por sí mismo — el merchant decide.
+> **Decisión de política CVV (líder de QA, 2026-07-28) — reemplaza el TODO exploratorio:** CVV mismatch (`901`, `cvvResultCode = "N"`) **rechaza**. El desenlace es idéntico al de AVS no match (TC1031): rechazo en la **vinculación de la tarjeta**, sin tarjeta vinculada y sin viaje creado (ver "Punto de rechazo canónico con Hold ON" en §2.2). Racional: se extiende al CVV la regla de negocio de USA "sin match = falla" — **política de cuenta USA 2026-07-28** — para que el comportamiento esperado sea el mismo que en Stripe, donde la tarjeta equivalente (`DECLINE_INVALID_CVC`, 4000…0127) rechaza de fábrica.
+>
+> **SUPERSEDED:** esta decisión anula la del **2026-07-27** ("CVV mismatch → aceptar con flag, el viaje se crea"). Razón: la premisa de parametrización del proyecto exige **un mismo comportamiento esperado para todas las pasarelas** — sólo cambian los datos de entrada; un expected divergente Authorize-vs-Stripe rompe los specs `_parametrized`. Alcance: TC1021, TC1022 y todo TC que herede el desenlace CVV por referencia (TC1057, TC1083, TC1098, TC1105).
+>
+> ⚠️ **Bloqueo de ejecución (2026-07-28):** el filtro **Card Code Verification** de la cuenta sandbox **sigue deshabilitado** — evidencia: un probe API con CVV válido devolvió `cvvResultCode` **vacío** (debería ser `M`). Mientras siga así, TC1021 y TC1022 **no son ejecutables**: bloqueo de configuración de cuenta, no defecto de producto ni de la automatización. Ref: BL-049.
 
 ### 2.4 AVS triggers (no match, non-US, otros)
 
 | ID               | Descripción                                                                                                                            | ZIP | Card | Hold | Outcome |
 | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ---- | ---- | ---- | ------- |
-| TS-AUTHORIZE-TC1031 | Validar Alta de Viaje desde carrier para usuario personal con AVS no match (ZIP 46205) Hold ON                                       | `46205` | `AUTHORIZE_CARDS.AVS_NO_MATCH` | ON | `avsResultCode = "N"` (Address & ZIP no match) |
+| TS-AUTHORIZE-TC1031 | Validar Alta de Viaje desde carrier para usuario personal con AVS no match (ZIP 46205) Hold ON                                       | `46205` | `AUTHORIZE_CARDS.AVS_NO_MATCH` | ON | `avsResultCode = "N"` (Address & ZIP no match) → **Debería** rechazar la tarjeta en la vinculación: error visible, "Seleccionar Vehículo" no se habilita y el viaje **NO se crea** — política de cuenta USA 2026-07-28 |
 | TS-AUTHORIZE-TC1032 | Validar Alta de Viaje desde carrier para usuario personal con AVS ZIP 9-digit match (ZIP 46211)                                       | `46211` | `AUTHORIZE_CARDS.SUCCESS` (override ZIP) | ON | `avsResultCode = "W"` |
 | TS-AUTHORIZE-TC1033 | Validar Alta de Viaje desde carrier para usuario personal con AVS address+ZIP 9-digit match (ZIP 46214)                              | `46214` | `AUTHORIZE_CARDS.SUCCESS` (override ZIP) | ON | `avsResultCode = "X"` — no aplica a Visa por nota oficial; validar con Mastercard |
 | TS-AUTHORIZE-TC1034 | Validar Alta de Viaje desde carrier para usuario personal con AVS ZIP match address no match (ZIP 46217)                            | `46217` | `AUTHORIZE_CARDS.SUCCESS` (override ZIP) | ON | `avsResultCode = "Z"` |
@@ -110,7 +117,29 @@ Espeja `TS-STRIPE-TC1001..TC1008` pero adaptado a la UI Authorize.
 | TS-AUTHORIZE-TC1036 | Validar Alta de Viaje desde carrier para usuario personal con AVS system unavailable (ZIP 46207)                                     | `46207` | `AUTHORIZE_CARDS.SUCCESS` (override ZIP) | ON | `avsResultCode = "R"` |
 | TS-AUTHORIZE-TC1037 | Validar Alta de Viaje desde carrier para usuario personal con AVS invalid data (ZIP 46203)                                           | `46203` | `AUTHORIZE_CARDS.SUCCESS` (override ZIP) | ON | `avsResultCode = "E"` |
 
-> **TODO matriz:** documentar el comportamiento MAGIIS esperado para cada AVS code. La política puede ser: aceptar `Y/X/W`, rechazar `N`, warning para `G/R/S/U`. Pendiente confirmación con líder.
+> **Política antifraude de la cuenta sandbox — Enhanced AVS (configurada por el líder de QA; política de cuenta USA 2026-07-28):** aplica la regla de negocio de USA para validación de tarjetas, *sin match de ZIP = falla*. Mapa configurado en *Fraud Filters → Enhanced AVS*:
+>
+> | AVS code | Significado | Filtro | Efecto esperado en MAGIIS |
+> | --- | --- | --- | --- |
+> | `N` | Street No Match / ZIP No Match | **Decline** | Debería rechazar la tarjeta en la vinculación; viaje NO creado |
+> | `A` | Street Matched / ZIP No Match | **Decline** | Debería rechazar la tarjeta en la vinculación; viaje NO creado |
+> | `Z` / `W` / `Y` | ZIP Matched | **Allow** | Debería vincular la tarjeta y permitir crear el viaje |
+> | `U` | Address information unavailable | **Decline** | Debería rechazar la tarjeta en la vinculación; viaje NO creado |
+> | `S` | Issuing bank does not support AVS | **Decline** | Debería rechazar la tarjeta en la vinculación; viaje NO creado |
+>
+> El expected verificable **no es el código AVS** — es artefacto del proveedor y se asserta sólo como evidencia de red — sino el efecto en MAGIIS. Punto de rechazo: la **vinculación de la tarjeta**, ver §2.2.
+>
+> ⚠️ **Estado verificado en vivo (2026-07-28) — LOS TRIGGERS DE ZIP ESTÁN INERTES.** La política de arriba es correcta pero **hoy no se alcanza a evaluar**, porque la cuenta no está resolviendo el ZIP a un código AVS discriminante:
+>
+> | ZIP | Código esperado | Observado |
+> | --- | --- | --- |
+> | `90210` (neutro, happy path) | — | `avsResultCode = "P"` (*AVS not applicable*), Response Code 1 |
+> | `46205` (TC1031) | `N` → Decline | **aprobó** — la tarjeta se vinculó (UI, 2026-07-28) |
+> | `46282` (TC1016, §2.2) | Response Code 2 | **aprobó** — la tarjeta se vinculó (UI + API) |
+>
+> Dos triggers distintos con el mismo resultado, y un tercero devolviendo `P`, apuntan a **una** causa: el ZIP no se evalúa, así que ningún código de la tabla de filtros se produce y las filas `N`/`A` nunca se alcanzan — sin importar cómo estén configuradas. Consecuencia: **TC1031 (y TC1016/TC1017 en §2.2) quedan BLOQUEADOS por configuración de la cuenta**, no rojos por código. Los specs aseveran el expected correcto y fallan con el mensaje "la pasarela ACEPTÓ la tarjeta que debía rechazar", que es la señal buscada. Ref: BL-049, BL-036.
+>
+> **Residual exploratorio:** los códigos `X`, `G`, `R` y `E` (TC1033, TC1035, TC1036, TC1037) **no están cubiertos** por el mapa de filtros; siguen sin expected verificable y no deben acreditarse como pass/fail hasta que se defina su política.
 
 ### 2.5 Partial / Prepaid authorizations (edge cases)
 
