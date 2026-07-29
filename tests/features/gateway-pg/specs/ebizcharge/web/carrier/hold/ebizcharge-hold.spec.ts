@@ -12,18 +12,22 @@
 // | --------------- | ------------------------------- | ----------------- | ------------------- |
 // | TS-EBIZ-TC1058  | colaboradorHappyNewHoldOn       | TS-STRIPE-TC1033  | EJECUTABLE          |
 // | TS-EBIZ-TC1067  | empresaHappyNewHoldOn           | TS-STRIPE-TC1065  | EJECUTABLE          |
-// | TS-EBIZ-TC1063  | personalHappyHoldOff            | TS-STRIPE-TC1050  | fixme (Hold OFF)    |
-// | TS-EBIZ-TC1059  | colaboradorHappyNewHoldOff      | TS-STRIPE-TC1034  | fixme (Hold OFF)    |
-// | TS-EBIZ-TC1068  | empresaHappyNewHoldOff          | TS-STRIPE-TC1066  | fixme (Hold OFF)    |
-// | TS-EBIZ-TC1062  | colaboradorHappyExistingHoldOn  | TS-STRIPE-TC1041  | fixme (tarjeta existente) |
-// | TS-EBIZ-TC1069  | empresaHappyExistingHoldOn      | TS-STRIPE-TC1067  | fixme (tarjeta existente) |
-// | TS-EBIZ-TC1061  | colaboradorHappyExistingHoldOff | TS-STRIPE-TC1036  | fixme (tarjeta existente + Hold OFF) |
-// | TS-EBIZ-TC1070  | empresaHappyExistingHoldOff     | TS-STRIPE-TC1068  | fixme (tarjeta existente + Hold OFF) |
+// | TS-EBIZ-TC1063  | personalHappyHoldOff            | TS-STRIPE-TC1050  | EJECUTABLE (destructivo) |
+// | TS-EBIZ-TC1059  | colaboradorHappyNewHoldOff      | TS-STRIPE-TC1034  | EJECUTABLE (destructivo) |
+// | TS-EBIZ-TC1068  | empresaHappyNewHoldOff          | TS-STRIPE-TC1066  | EJECUTABLE (destructivo) |
+// | TS-EBIZ-TC1062  | colaboradorHappyExistingHoldOn  | TS-STRIPE-TC1041  | EJECUTABLE          |
+// | TS-EBIZ-TC1069  | empresaHappyExistingHoldOn      | TS-STRIPE-TC1067  | EJECUTABLE          |
+// | TS-EBIZ-TC1061  | colaboradorHappyExistingHoldOff | TS-STRIPE-TC1036  | EJECUTABLE (destructivo) |
+// | TS-EBIZ-TC1070  | empresaHappyExistingHoldOff     | TS-STRIPE-TC1068  | EJECUTABLE (destructivo) |
 //
-// Los motivos de `fixme` son los MISMOS que en Authorize y no son propios de eBiz: el motor
-// `runStepwiseHoldJourney` no gestiona el toggle de hold y siempre ejercita el alta de tarjeta
-// NUEVA (borra la guardada en los pasos 2 y 8, precondición BL-050). Detalle completo en el
-// docblock de `hold.factory.ts`.
+// Los 9 casos de la matriz eBiz son EJECUTABLES: los dos ejes que faltaban están cableados en el
+// motor (`holdMode` / `cardFlow`) y no son propios de eBiz. Dos consecuencias operativas:
+//   · los 5 casos "destructivo" apagan la pre-autorización del carrier COMPARTIDO y la restauran
+//     en el `finally`, así que exigen `GATEWAY_ALLOW_DESTRUCTIVE_SWITCH=true` y skipean limpio
+//     sin él — correr SOLO en ventana exclusiva;
+//   · los 4 casos de tarjeta existente SKIPEAN si el pasajero no la tiene ya vinculada: la deja
+//     el caso seed TC1058 / TC1067, así que la suite corre en el orden serial de la matriz.
+// Detalle completo en el docblock de `hold.factory.ts`.
 //
 // ── GATE DE CREDENCIALES (comportamiento esperado hoy: SKIP LIMPIO) ─────────────────────────
 // La factory aplica `test.skip(!adapter.isConfigured(), …)` a nivel describe, y el adapter eBiz
@@ -52,17 +56,18 @@ import { defineHoldSuite } from '@features/gateway-pg/specs/_parametrized/factor
 defineHoldSuite('ebizcharge', {
 	suiteSuffix: 'matriz derivada Fase 4',
 	cases: [
-		// Ejecutables con el motor actual (tarjeta nueva, sin exigir el toggle en OFF).
+		// Casos seed: tarjeta NUEVA con Hold ON. Dejan la tarjeta vinculada que consumen los casos
+		// `Existing` de más abajo, así que van primero en el orden serial.
 		'colaboradorHappyNewHoldOn',
 		'empresaHappyNewHoldOn',
-		// Hold OFF — toggle no gestionado por el motor.
+		// Hold OFF — el motor apaga el toggle y lo restaura (gate GATEWAY_ALLOW_DESTRUCTIVE_SWITCH).
 		'personalHappyHoldOff',
 		'colaboradorHappyNewHoldOff',
 		'empresaHappyNewHoldOff',
-		// Tarjeta vinculada existente — el motor fuerza el alta de tarjeta nueva.
+		// Tarjeta vinculada existente — el motor la selecciona en vez de borrarla.
 		'colaboradorHappyExistingHoldOn',
 		'empresaHappyExistingHoldOn',
-		// Ambos motivos a la vez.
+		// Los dos ejes a la vez.
 		'colaboradorHappyExistingHoldOff',
 		'empresaHappyExistingHoldOff'
 	]

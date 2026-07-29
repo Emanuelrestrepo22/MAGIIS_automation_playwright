@@ -37,7 +37,7 @@ import { debugLog } from '@helpers/index';
 import { getGatewayPgAdapter } from '@features/gateway-pg/helpers/adapters';
 import { loginAsDispatcher } from '@features/gateway-pg/fixtures/gateway.fixtures';
 import { validateAndSelectMercadoPagoCard } from '@features/gateway-pg/helpers/mercadoPago.helpers';
-import { getPassengerId, getPassengerCards, deletePassengerCard } from '@features/gateway-pg/helpers/card-precondition';
+import { cleanupCardsByLast4 } from '@features/gateway-pg/helpers/card-precondition';
 
 export type WalletAddCardSuiteOptions = {
 	/** TC ID de matriz para el título (ej. 'TS-AUTHORIZE-WAL-01'). Omitido → sin corchete. */
@@ -54,25 +54,12 @@ export type WalletAddCardSuiteOptions = {
 };
 
 /**
- * Idempotencia: borra por API la tarjeta (last4) del pax antes del alta. Prueba varias
- * queries de búsqueda (la tarjeta se adjunta al pasajero del alta). Extraído del spec
- * Authorize original; queries por pasarela en `journeyDefaults.paxSearchQueries` (S8).
+ * Idempotencia: borra por API la tarjeta (last4) del pax antes del alta.
+ *
+ * La implementación vive en `card-precondition.cleanupCardsByLast4` — se extrajo de acá para que la
+ * comparta el journey stepwise de Authorize, que necesita la misma precondición (2026-07-28).
  */
-async function cleanupGatewayCard(page: Page, queries: readonly string[], last4: string): Promise<void> {
-	for (const query of queries) {
-		try {
-			const paxId = await getPassengerId(page, query);
-			const resp = await getPassengerCards(page, paxId);
-			const cards = (resp.cards ?? []) as Array<{ id: number; lastFourDigits: string }>;
-			const toDelete = cards.filter(card => card.lastFourDigits === last4);
-			for (const card of toDelete) await deletePassengerCard(page, paxId, card.id);
-			debugLog('gateway-pg:wallet', `[precond] query="${query}" pax=${paxId}: ${cards.length} tarjetas, borradas ${toDelete.length} con last4=${last4}`);
-			if (toDelete.length > 0) return;
-		} catch (error) {
-			debugLog('gateway-pg:wallet', `[precond] query="${query}" skip: ${(error as Error).message}`);
-		}
-	}
-}
+const cleanupGatewayCard = (page: Page, queries: readonly string[], last4: string): Promise<number> => cleanupCardsByLast4(page, queries, last4);
 
 /**
  * Genera la suite WAL (alta de tarjeta) de `gateway`. Ver doc del módulo.
@@ -80,10 +67,7 @@ async function cleanupGatewayCard(page: Page, queries: readonly string[], last4:
  */
 export function defineWalletAddCardSuite(gateway: GatewayName, options: WalletAddCardSuiteOptions = {}): void {
 	if (gateway === 'stripe') {
-		throw new Error(
-			"defineWalletAddCardSuite('stripe'): el alta de tarjeta Stripe Elements valida por el flujo fillMinimum/selectCardByLast4 " +
-				'(otro oráculo) — la factory WAL cubre hoy el form nativo (authorize/ebizcharge/mercado-pago).'
-		);
+		throw new Error("defineWalletAddCardSuite('stripe'): el alta de tarjeta Stripe Elements valida por el flujo fillMinimum/selectCardByLast4 " + '(otro oráculo) — la factory WAL cubre hoy el form nativo (authorize/ebizcharge/mercado-pago).');
 	}
 
 	const adapter = getGatewayPgAdapter(gateway);
@@ -140,12 +124,11 @@ export function defineWalletAddCardSuite(gateway: GatewayName, options: WalletAd
 				if (gateway === 'mercado-pago') {
 					// Vinculación satisfactoria = tarjeta resaltada en el dropdown (recording test-15).
 					const mpLink = await validateAndSelectMercadoPagoCard(page);
-					test.skip(
-						mpLink !== 'linked',
-						'MP: validación de tarjeta no completa en TEST (sandbox MP no transacciona) — UAT-only. Form-fill + habilitación de "Validar" verificados.'
-					);
+					test.skip(mpLink !== 'linked', 'MP: validación de tarjeta no completa en TEST (sandbox MP no transacciona) — UAT-only. Form-fill + habilitación de "Validar" verificados.');
 				} else {
-					await travel.validateNativeCard();
+					// `last4` habilita el oráculo persistente (tarjeta vinculada en Forma de Pago) además
+					// del toast "Tarjeta válida", que es transitorio y se pierde por carrera.
+					await travel.validateNativeCard(card.last4);
 				}
 			});
 

@@ -24,27 +24,34 @@
  *   4. SIN locators (regla KATA): toda interacción va por el motor → POM/Steps.
  *
  * ── QUÉ SE GENERA COMO EJECUTABLE Y QUÉ COMO `fixme` (decisión explícita) ────────────────
- * El motor cubre UNA combinación: **tarjeta NUEVA** con el toggle de hold **tal como esté**
- * en el carrier (precondición declarada, no gestionada). De ahí:
+ * El motor expresa los DOS ejes de la taxonomía vía opciones opt-in (`holdMode`, `cardFlow`
+ * — ver el docblock de `stepwise-hold-journey.ts`), así que 13 de los 14 casos se generan
+ * EJECUTABLES. Cada eje se cablea desde el spec declarativo, sin ramas por caso:
  *
- *   · `cardFlow: 'new'` + `hold: 'on' | null`  → test EJECUTABLE.
- *   · `hold: 'off'`     → `test.fixme`. El motor NO fija ni asevera el toggle
- *     (deuda documentada en el docblock de `stepwise-hold-journey.ts`): correrlo contra el
- *     default Hold ON del carrier 1521 acreditaría un TC "Hold OFF" ejecutando Hold ON.
- *     La capacidad EXISTE hoy sin usar — `setHoldViaApi` / `readHoldEnabled`
- *     (`helpers/parameters-api.ts`) y `CarrierOperationalPreferencesPage.ensureHoldEnabled`
- *     —, pero conectarla es un seam propio: apagar el hold MUTA el carrier 1521 COMPARTIDO
- *     (necesita guard destructivo + restore, como `GATEWAY_ALLOW_DESTRUCTIVE_SWITCH` en CFG)
- *     y para el caso decline + Hold OFF el desenlace esperado está declarado NO verificado
- *     (ver `JourneyOutcome.card-rejected`, `helpers/journey-outcome.ts`).
- *   · `cardFlow: 'existing'` → `test.fixme`. Los pasos 2 y 8 del motor BORRAN la tarjeta
- *     guardada y siempre ejercitan el alta de tarjeta nueva (precondición BL-050). Un caso
- *     "usar tarjeta vinculada existente" pasado por el motor ejercitaría el camino nuevo.
- *     El flujo de tarjeta guardada ya está modelado en `CarrierHoldSteps.runHoldScenario`
- *     (`cardFlow` / `preferSavedCard` / `resolveCardFlow`) — cablearlo es otro seam.
+ *   · `holdAxis: 'on'`  → `holdMode: 'on'`: el motor ASEVERA (sin escribir) que la
+ *     pre-autorización está activa. Cierra la deuda vieja de acreditar un TC "Hold ON"
+ *     corriendo en realidad con el toggle apagado.
+ *   · `holdAxis: null`  → sin `holdMode`: la matriz no fija el eje (Authorize §4.2 / TC1065),
+ *     así que el motor tampoco lo toca — la precondición queda declarada, no gestionada.
+ *   · `holdAxis: 'off'` → `holdMode: 'off'`: apaga el toggle vía API y lo RESTAURA en el
+ *     `finally`. Es DESTRUCTIVO sobre el carrier 1521 COMPARTIDO, así que el motor exige
+ *     `GATEWAY_ALLOW_DESTRUCTIVE_SWITCH=true` (mismo guard que la suite CFG) y skipea limpio
+ *     sin él. Correr SOLO en ventana exclusiva: con el toggle apagado, cualquier spec de hold
+ *     concurrente fallaría por este caso y no por el suyo.
+ *   · `cardFlow: 'existing'` → `cardFlow: 'existing'`: el motor SELECCIONA la tarjeta ya
+ *     vinculada en vez de borrarla, y omite el fill + "Validar" (sin tarjeta nueva no hay hold
+ *     de vinculación). Si el pasajero no la tiene, el caso SKIPEA — la vincula el caso seed de
+ *     la matriz (TS-AUTHORIZE-TC1051 / TS-EBIZ-TC1058), no éste.
  *
- * Los `fixme` NO llevan cuerpo de journey: lanzan con el motivo. Flipear `fixme` → `test`
- * sin cablear la capacidad falla en rojo en vez de reportar un PASS falso.
+ * ÚNICO `fixme` que queda (`unsupportedReason`): **decline + Hold OFF** (TS-AUTHORIZE-TC1017).
+ * No es una limitación del motor sino del ORÁCULO: `OUTCOME_BY_INTENT` mapea DECLINE_AUTHORIZE
+ * a `card-rejected`, y `helpers/journey-outcome.ts` documenta explícitamente que ese desenlace
+ * DEPENDE del hold ACTIVO (con hold apagado la vinculación podría no disparar transacción y el
+ * rechazo se movería al alta del viaje, o no ocurrir). Sin una corrida real que lo observe no
+ * hay assertion honesta que escribir — y el motor rechaza inventarla.
+ *
+ * El `fixme` NO lleva cuerpo de journey: lanza con el motivo. Flipearlo a `test` sin observar
+ * el desenlace real falla en rojo en vez de reportar un PASS falso.
  *
  * Casos cuyo INTENT no soporta la pasarela (`SUPPORTED_INTENTS_BY_GATEWAY`, el resolver
  * LANZA) NO se generan: eBizCharge no expone `DECLINE_ZIP_MISMATCH`, así que
@@ -54,6 +61,17 @@
  *   · Ningún test de esta factory se ejecutó: sólo verificación estática (tsc + eslint +
  *     `--list`). Los 5 casos Authorize migrados sí tienen historia de corridas — ver el
  *     docblock de cada consumidor.
+ *   · Los DOS ejes nuevos (`holdMode`, `cardFlow: 'existing'`) NUNCA se ejercitaron contra el
+ *     ambiente. Lo que está SIN OBSERVAR, en concreto:
+ *       - que el alta con hold APAGADO complete igual y caiga en "Por asignar" (es lo que
+ *         afirma la deuda histórica del motor, pero nadie lo corrió por este camino);
+ *       - que `POST /carriers/{id}/parameters` persista `enableCreditCardHold=false` con el
+ *         resto de los parámetros intactos (el POST re-postea el objeto entero);
+ *       - que el desplegable de Forma de Pago exponga la tarjeta guardada tal como la busca
+ *         `selectSavedPreauthorizedCard` (locators heredados de las grabaciones, no verificados
+ *         en este camino);
+ *       - que con tarjeta ya vinculada "Seleccionar Vehículo" habilite sin pasar por "Validar".
+ *     Hasta que corran en verde, estos casos son cobertura DECLARADA, no acreditada.
  *   · eBizCharge: `adapter.nativeExtraField` está SIN definir (¿el form nativo eBiz pide un
  *     5° campo?), `linkSuccessStatuses: [200]` es un SUPUESTO (el de Authorize resultó
  *     500/409) y el oráculo `validateNativeCard` / `expectNativeCardRejected` no se verificó
@@ -126,39 +144,27 @@ const HOLD_CASE_SPECS: Record<GatewayHoldCase, HoldCaseSpec> = {
 export const HOLD_ALL_CASES: GatewayHoldCase[] = Object.keys(HOLD_CASE_SPECS) as GatewayHoldCase[];
 
 /**
- * Los casos que el motor `runStepwiseHoldJourney` ejercita DE VERDAD hoy: tarjeta nueva y
- * sin exigir el toggle en OFF. El resto de `HOLD_ALL_CASES` se genera como `fixme` con
- * motivo (ver el docblock del módulo).
+ * Los casos que el motor `runStepwiseHoldJourney` ejercita DE VERDAD: hoy todos menos el que
+ * carece de oráculo verificado (decline + Hold OFF). Ver el docblock del módulo.
  */
-export const HOLD_BASE_CASES: GatewayHoldCase[] = HOLD_ALL_CASES.filter(holdCase => {
-	const spec = HOLD_CASE_SPECS[holdCase];
-	return spec.cardFlow === 'new' && spec.holdAxis !== 'off';
-});
+export const HOLD_BASE_CASES: GatewayHoldCase[] = HOLD_ALL_CASES.filter(holdCase => unsupportedReason(HOLD_CASE_SPECS[holdCase]) === null);
 
 /**
- * Motivo por el que el motor NO puede ejercitar el caso, o `null` si es ejecutable.
- * Un caso puede acumular los dos motivos (ej. `colaboradorHappyExistingHoldOff`).
+ * Motivo por el que el caso NO se puede ejercitar honestamente, o `null` si es ejecutable.
+ *
+ * Ya NO hay motivos de CAPACIDAD: los dos ejes que faltaban (toggle de hold, tarjeta
+ * existente) están cableados en el motor. El único bloqueo que queda es de ORÁCULO — un
+ * desenlace que nadie observó todavía, que ninguna cantidad de código puede suplir.
  */
 function unsupportedReason(spec: HoldCaseSpec): { tag: string; detail: string } | null {
-	const tags: string[] = [];
-	const details: string[] = [];
-
-	if (spec.cardFlow === 'existing') {
-		tags.push('tarjeta existente no soportada');
-		details.push('el motor `runStepwiseHoldJourney` BORRA la tarjeta guardada (pasos 2 y 8, precondición BL-050) ' + 'y siempre ejercita el alta de tarjeta NUEVA: correr este caso acreditaría "tarjeta existente" ' + 'ejecutando el camino nuevo. El flujo de tarjeta guardada está modelado en ' + '`CarrierHoldSteps.runHoldScenario` (cardFlow/preferSavedCard) — falta cablearlo al motor stepwise.');
-	}
-
-	if (spec.holdAxis === 'off') {
-		tags.push('toggle Hold OFF no gestionado');
-		details.push('el motor NO fija ni asevera el toggle de pre-autorización (deuda del docblock de ' + '`stepwise-hold-journey.ts`): con el default Hold ON del carrier 1521 este caso acreditaría ' + 'un TC "Hold OFF" ejecutando Hold ON. La capacidad existe (`setHoldViaApi` / `readHoldEnabled` ' + 'en `helpers/parameters-api.ts`) pero apagar el hold MUTA el carrier COMPARTIDO — requiere ' + 'guard destructivo + restore.');
-	}
-
 	if (spec.intent !== 'HAPPY_NO_AUTH' && spec.holdAxis === 'off') {
-		tags.push('oráculo decline+HoldOFF no verificado');
-		details.push('además, el desenlace esperado de un decline con Hold OFF está declarado NO VERIFICADO ' + '(ver `JourneyOutcome.card-rejected` en `helpers/journey-outcome.ts`): sin oráculo confirmado ' + 'no hay assertion honesta que escribir.');
+		return {
+			tag: 'oráculo decline+HoldOFF no verificado',
+			detail: 'el desenlace esperado de un decline con Hold OFF está declarado NO VERIFICADO ' + '(ver `JourneyOutcome.card-rejected` en `helpers/journey-outcome.ts`): `OUTCOME_BY_INTENT` mapea ' + 'DECLINE_AUTHORIZE a `card-rejected`, pero ese desenlace DEPENDE del hold ACTIVO — con el hold ' + 'apagado la vinculación podría no disparar transacción y el rechazo se movería al alta del viaje ' + '(`trip-unauthorized`) o no ocurrir. El motor SÍ sabe apagar el toggle (`holdMode: "off"`); lo que ' + 'falta es OBSERVAR una corrida real y recién ahí mapear el outcome. Sin oráculo confirmado no hay ' + 'assertion honesta que escribir.'
+		};
 	}
 
-	return tags.length > 0 ? { tag: tags.join(' + '), detail: details.join(' ') } : null;
+	return null;
 }
 
 /** Datos del alta por tipo de actor — SIEMPRE desde `journeyDefaultsFor`, nunca hardcodeados. */
@@ -243,7 +249,10 @@ export function defineHoldSuite(gateway: GatewayName, options: HoldSuiteOptions 
 			// El TC ID va SIEMPRE primero (token que consume el ID-MAP). El marcador `[FIXME: …]`
 			// va al final del título para que `--list`, Allure y el reporte HTML muestren que el
 			// caso es un PLACEHOLDER trazable y no cobertura ejecutada.
-			const title = `${tcId ? `[${tcId}] ` : ''}${outcomeTag(spec.intent)} Validar alta de viaje ${adapter.displayName} · ${spec.label} ${outcomeHint(spec.intent)}` + (blocked ? ` [FIXME: ${blocked.tag}]` : '');
+			// El marcador de gate destructivo va en el TÍTULO (no sólo en el motivo del skip) para que
+			// `--list` y el reporte muestren POR QUÉ un caso Hold OFF no corrió, sin abrir el trace.
+			const destructiveHint = !blocked && spec.holdAxis === 'off' ? ' [requiere GATEWAY_ALLOW_DESTRUCTIVE_SWITCH]' : '';
+			const title = `${tcId ? `[${tcId}] ` : ''}${outcomeTag(spec.intent)} Validar alta de viaje ${adapter.displayName} · ${spec.label} ${outcomeHint(spec.intent)}` + (blocked ? ` [FIXME: ${blocked.tag}]` : destructiveHint);
 
 			if (blocked) {
 				// `fixme` = el caso EXISTE en la matriz y queda trazable por su TC ID, pero no se
@@ -265,7 +274,11 @@ export function defineHoldSuite(gateway: GatewayName, options: HoldSuiteOptions 
 					client,
 					passenger,
 					origin: defaults.origin,
-					destination: defaults.destination
+					destination: defaults.destination,
+					// `holdAxis: null` (la matriz no fija el eje) → se omite `holdMode` y el motor no
+					// toca ni asevera el toggle, que es exactamente lo que declara la matriz.
+					...(spec.holdAxis ? { holdMode: spec.holdAxis } : {}),
+					cardFlow: spec.cardFlow
 				});
 			});
 		}
