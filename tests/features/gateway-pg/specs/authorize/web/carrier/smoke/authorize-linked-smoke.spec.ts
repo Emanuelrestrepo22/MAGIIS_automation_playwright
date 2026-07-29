@@ -12,7 +12,13 @@ import { AppStoreGatewaysPage } from '@ui/carrier';
 import { loginAsDispatcher } from '@features/auth/helpers/login.helpers';
 
 // El fixture KATA no define la opción `role` (login explícito vía loginAsDispatcher).
-test.use({ storageState: undefined });
+// `storageState: undefined` NO desactiva el del config: Playwright lo trata como "sin override"
+// y hereda `getStorageStatePath('carrier', env)` del proyecto base. El smoke arrancaba entonces
+// con una sesión pre-cargada y logueaba encima, y `readState('authorize')` devolvía `linkable`
+// con la card diciendo "Desvincular" → falso negativo determinista que contaminaba MG-225.
+// Diagnóstico en vivo (2026-07-28): con sesión limpia la card matchea única, `red=1 green=0` y
+// texto "Authorize.Net … Desvincular". Sesión vacía EXPLÍCITA, igual que `gateway-config.factory`.
+test.use({ storageState: { cookies: [], origins: [] } });
 
 // TRAZABILIDAD (corregido 2026-07-28): este smoke apuntaba a MG-220 (TC10 · "vincular Authorize
 // con credenciales válidas"), pero NO ejecuta el link — solo LEE el estado ya vinculado. Dos tests
