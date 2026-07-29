@@ -179,16 +179,31 @@ export type AuthorizeContractCase =
 
 /**
  * Keys Xray del pack de CONTRATO del sandbox Authorize — issues REALES creadas en MG
- * el 2026-07-28 y verificadas en Jira; miembros del Test Execution `MG-558` y del
- * Test Set `MG-602` ("ATP · SBX — Contrato sandbox Authorize.Net (BL-036)").
+ * el 2026-07-28 y verificadas en Jira; miembros del Test Execution `MG-558`, del
+ * Test Set `MG-602` ("ATP · SBX — Contrato sandbox Authorize.Net (BL-036)") y del
+ * Test Plan `MG-178` ("ATP · Release Pasarelas de Pago (Gateway) — 4 PSP").
  *
  * TCID LOCAL (label `tcid:` en Jira, área SBX del idmap del ATP):
  *   MG-590 = TC-PAY-SBX-01 · MG-591 = TC-PAY-SBX-02 · MG-592 = TC-PAY-SBX-03
  *   MG-593 = TC-PAY-SBX-04 · MG-594 = TC-PAY-SBX-05 · MG-595 = TC-PAY-SBX-06
  *   MG-596 = TC-PAY-SBX-07 · MG-597 = TC-PAY-SBX-08 · MG-598 = TC-PAY-SBX-09
  *   MG-599 = TC-PAY-SBX-10 · MG-600 = TC-PAY-SBX-11 · MG-601 = TC-PAY-SBX-12
- * Los summaries en Jira siguen el estándar del generador del ATP:
- * `MG-602 | TC<n>: Validar …` (n = 1..12, mismo orden que este registry).
+ *
+ * NOMENCLATURA CANÓNICA EN JIRA (normalizada 2026-07-29 al estándar del generador
+ * del ATP, `scripts/atp-bulk-create.mjs` del boilerplate):
+ *   - summary  = `MG-602 | TC<n>: Validar contrato sandbox Authorize.Net: <caso>`
+ *                (n = 1..12, mismo orden que este registry).
+ *   - labels   = `atp-mg-gateway-release` + `tcid:<TCID>` + payment · gateway ·
+ *                authorize · automatable-api · automation-candidate · regression ·
+ *                automated. (La label `api` se retiró: el vocabulario del ATP usa
+ *                `automatable-api`.)
+ *   - Test Type = `Cucumber` con Gherkin poblado (igual que el hermano API MG-551),
+ *                no `Generic`. El Gherkin va sin acentos, como el resto del ATP.
+ *   - description = ADF de 9 secciones h3 del generador (User Story · Clasificación ·
+ *                Precondiciones · Datos · Resultado esperado · Resultado obtenido ·
+ *                Endpoints / DB · Trazabilidad · Observaciones).
+ *   - parent   = `MG-135` (epic *QA Test Repository*) · issue link `tests` → `MG-3`
+ *                (ancla del release). BL-036 no es issue de MG: va en Trazabilidad.
  *
  * NIVEL DE ABSTRACCIÓN (load-bearing — no reutilizar estas keys para otra cosa):
  * estos 12 Tests acreditan el CONTRATO del sandbox de Authorize.net (la respuesta del
@@ -218,6 +233,7 @@ export const AUTHORIZE_CONTRACT_XRAY_KEYS: Record<AuthorizeContractCase, XrayIss
  * Test Set Xray que agrupa el pack de CONTRATO del sandbox Authorize (los 12 de arriba).
  * Es el prefijo de los summaries (`MG-602 | TC<n>: …`), el eje de agrupación por feature.
  * NO es un Test Execution: los resultados siguen yendo a `MG-558` (ver más abajo).
+ * NO es el Test Plan: el ATP del release es `MG-178`, del que los 12 también son miembros.
  */
 export const AUTHORIZE_CONTRACT_XRAY_TEST_SET: XrayIssueKey = 'MG-602';
 
