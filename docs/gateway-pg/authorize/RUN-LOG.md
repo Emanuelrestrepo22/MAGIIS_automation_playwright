@@ -313,6 +313,9 @@ que hoy sólo toma la del medio.
 
 ## Hallazgo 4 — tras el borrado, el desplegable no se reabre y el fallo queda silencioso
 
+> ✅ **RESUELTO en la ronda 3.** El booleano descartado era real pero NO era la causa: el POM conocía un
+> único trigger del selector. Ver "Hallazgo 4 — RESUELTO" en la ronda 3.
+
 **Defecto de nuestro código de test.** Causa la repetición 1 de los dos casos.
 
 Terminado el borrado, `chooseNewPreauthorizedCardOption()` no encuentra la opción visible y llama a
@@ -334,6 +337,9 @@ del borrado se desmonta. Mismo patrón que las trampas de vacuidad ya documentad
 devuelve `false` y a nadie le importa es un `if` que miente.
 
 ## Hallazgo 5 — borrar desde el control CERRADO confirma el diálogo pero no borra la tarjeta
+
+> ✅ **RESUELTO en la ronda 3**: el borrado reabre el desplegable y sólo clickea el trash de una FILA; el
+> locator del control cerrado ya no existe en ningún camino. Ver "Hallazgo 5 — RESUELTO" en la ronda 3.
 
 **Defecto de nuestro código de test.** Causa la repetición 3 de los dos casos.
 
@@ -373,6 +379,10 @@ actores la precondición por API **es un no-op**, y la rama de borrado por UI �
 carga con todo el peso. Sigue **sin arreglarse a propósito** (helper compartido con la factory WAL).
 
 ## Qué hace falta para acreditar (decisión pendiente, no ejecutada)
+
+> **Resuelto por la ronda 3**: se ejecutó el camino **2** (arreglar 4 y 5 en el POM), sin tocar el
+> hallazgo 3. Los dos defectos quedaron cerrados y aparecieron tres más (6, 7, 8). El 3/3 sigue abierto,
+> ahora por un **defecto del backend** (hallazgo 8), no por el POM.
 
 Dos caminos, y conviene decidir antes de tocar código:
 
@@ -420,3 +430,280 @@ viaje puntual habría cerrado viajes ajenos.
 
 Cero cambios en specs, POMs, helpers o motores. Cero `skip` / `fixme`. Cero aserciones relajadas.
 Cero timeouts inflados. `tsc --noEmit` limpio.
+
+---
+
+# Ronda 3 — arreglo de los hallazgos 4 y 5 en el POM (2026-07-29)
+
+Objetivo: dejar el camino de UI del alta de tarjeta funcionando con **cualquier** estado del wallet,
+arreglando los hallazgos **4** y **5** en `CarrierNewTravelPage`, y acreditar TS-AUTHORIZE-TC1051 y
+TS-AUTHORIZE-TC1061.
+
+**Decisión de alcance heredada y respetada:** NO se tocó `cleanupCardsByLast4` ni `paxSearchQueries`.
+El hallazgo 3 sigue abierto a propósito, así que la rama de borrado por UI se ejercitó de verdad — que
+es justamente lo que la ronda pedía endurecer. Confirmado de nuevo en vivo: la precondición por API
+borró **0** tarjetas en 7 de las 8 corridas del actor `empresa individuo` y no apuntó nunca al pasajero
+del caso.
+
+## Precondición verificada
+
+- `curl --ssl-no-revoke https://apps-test.magiis.com/magiis-v0.2/` → **403** (vivo) antes de arrancar y
+  re-verificado a mitad de la ronda (403, 0.7-4.4 s).
+- Cuenta de Authorize en **Test Mode enlatado** (aprueba todo). Para happy paths es el resultado
+  correcto; el límite de alcance de la ronda 1 sigue vigente.
+- Un **login de global-setup del carrier falló** al inicio de la primera corrida (`dashboard pattern no
+  alcanzado en 60s`) y se recuperó solo en las siguientes: transitorio, sin efecto sobre ninguna
+  medición (los specs se loguean por su cuenta con `loginAsDispatcher`).
+
+## Veredicto: los DOS defectos del encargo quedaron CERRADOS; el 3/3 **no** se cerró, y el bloqueo no es nuestro
+
+| Caso | TC | Corrida 4 (fix sin instrumentación HTTP) | Corrida 5 (código final) | Veredicto |
+|---|---|---|---|---|
+| `colaboradorHappyNewHoldOn` | TS-AUTHORIZE-TC1051 | ✅ **3/3** — 43.7s / 57.5s / 1.1m | ⚠️ 2 verdes (1.2m / 1.1m) + **1 inconclusa**: `500 DELETE users/9869/cards/4782` | **NO acreditado** sobre el código final |
+| `empresaHappyNewHoldOn` | TS-AUTHORIZE-TC1061 | ⚠️ 2 verdes (52.4s / 1.2m) + 1 roja (borrado sin efecto) | ⚠️ 2 verdes (1.1m / ~1m) + **1 inconclusa**: `500 DELETE users/4951/cards/4783` | **NO acreditado** |
+
+**Por qué no se declara acreditado, aunque TC1051 haya dado 3/3.** Ese 3/3 se midió en la corrida 4, y
+después de esa corrida el código cambió (se agregaron la iteración del borrado y la aserción HTTP del
+`DELETE`). Acreditar con una medición de una revisión anterior sería exactamente lo que la regla prohíbe,
+así que **no se hace**: sobre el código que se commitea, ninguno de los dos casos llegó a 3/3.
+
+**Y el bloqueo está identificado y no es del test.** Las 3 repeticiones que faltan cayeron todas en el
+mismo punto —la PRECONDICIÓN de borrar la tarjeta duplicada— con el backend devolviendo **500** en
+`DELETE /users/{pax}/cards/{id}` (hallazgo 8). En la corrida 4 ese mismo defecto se veía como
+"sigue SELECCIONADA" sin poder nombrarlo; ahora se nombra en 33-37 s con la URL exacta.
+
+Lo que **sí** quedó demostrado sobre el camino de UI, con el ambiente sano: **8 repeticiones verdes** entre
+las corridas 4 y 5 que atravesaron la rama de borrado por UI de punta a punta (detectar → reabrir →
+borrar por la fila → verificar que no quedó ni seleccionada ni listada → elegir tarjeta nueva → validar →
+alta → "Por asignar"), contra **0 verdes** que esa rama lograba antes de esta ronda en el estado 1.
+
+## Los 5 hallazgos de esta ronda
+
+Los dos que venían del encargo (4 y 5) resultaron **síntomas de una causa más profunda**, y arreglarlos
+destapó tres defectos más de nuestro código de test. Todos son **defectos de NUESTRO código**, menos el
+último.
+
+### Hallazgo 4 — RESUELTO. La causa raíz no era el booleano descartado: el POM conocía UN solo trigger
+
+El encargo lo describía como "`chooseNewPreauthorizedCardOption` descarta el retorno de
+`openPaymentMethodsDropdown()`". Eso era cierto y estaba mal, pero **no** era la causa: al hacer que el
+método verificara su efecto y reintentara, el desplegable **seguía sin abrir** después del borrado.
+
+Lo que faltaba es que el selector de Forma de Pago **no renderiza igual el control cerrado en todos los
+estados**, y el POM conocía un único trigger (`.below .single .value`). Medido con el diagnóstico nuevo:
+
+| Estado | Qué reportó el trigger único |
+|---|---|
+| Después del borrado | `el click en el selector no lo desplegó` |
+| Con el form de tarjeta NUEVA montado | `cerrado y sin trigger visible (Forma de Pago: "Tarjeta de Crédito - Preautorizada")` |
+
+El segundo caso es revelador: el `.value` existe (de ahí se lee el texto) pero **no** bajo
+`.below > .single`. La **grabación validada** abre este desplegable —las dos veces, incluida la
+reapertura post-borrado— con **otro** trigger: `.data-with-icon-col.option-content-container`. Eso es lo
+que el POM no replicaba.
+
+**Fix (endurecimiento):**
+1. `openPaymentMethodsDropdown()` ya no devuelve `boolean`: **verifica su efecto, reintenta de forma
+   observable y LANZA** con un diagnóstico que enumera qué triggers probó y con qué error murió cada
+   click.
+2. Cuatro triggers en orden de preferencia, **ninguno inventado**: el de la grabación validada, los dos
+   de `BasePage.openDropdown` (`.value` / `.placeholder`) y el `paymentMethodValue` del POM legacy.
+3. Es **idempotente**: si ya está abierto no clickea (un "abrir siempre" lo cerraría).
+
+Sin `{ force: true }` a propósito, aunque `BasePage.openDropdown` lo use: un click forzado atravesaría
+un overlay y taparía la clase de problema que se estaba midiendo.
+
+### Hallazgo 5 — RESUELTO. Reabrir, borrar por la FILA, y un oráculo que "deseleccionar" no puede satisfacer
+
+**Fix (endurecimiento), tres partes:**
+1. `deleteHighlightedOrByLast4()` **REABRE** el desplegable antes de borrar — lo que hacía la grabación
+   validada y el POM no replicaba. Reabrir **dentro** del método (y no en el llamador) es lo que hace el
+   borrado independiente del estado en que quedó el desplegable.
+2. El trash se busca **siempre dentro de una FILA** (`listitem`) del desplegable abierto. El respaldo
+   anterior (`#add_travel_payment_methods .deselect-payment-method` sin acotar) podía resolver al ícono
+   del **control cerrado**, cuya clase `deselect-payment-method` describe *deseleccionar*: ése era el
+   camino que confirmaba el diálogo sin borrar. **Ya no existe como camino.**
+3. Oráculo nuevo `expectSavedCardDeleted()`: la tarjeta no debe seguir **SELECCIONADA** *ni* **LISTADA**
+   como opción. La aserción vieja (`hasSelectedCardWithLast4 === false`) se satisfacía con una simple
+   deselección — pasaba con la tarjeta intacta en el wallet y el test moría dos pasos después culpando al
+   formulario.
+
+Además el borrado **itera** sobre todas las filas que matchean `last4`: BL-050 es por NÚMERO, y con la
+precondición por API en no-op el wallet puede tener más de una.
+
+### Hallazgo 6 — NUEVO, cerrado en esta ronda. Un detector que deja el desplegable abierto TAPA el form
+
+Al hacer que el detector pudiera abrir el desplegable de verdad, apareció un fallo que **no existía
+antes**: `hasSavedCardWithLast4()` lo dejaba **abierto**, y el motor lo llama DESPUÉS de elegir el método
+(paso 9), así que las `li` de la lista quedaban por encima del formulario de tarjeta nueva:
+
+```
+TimeoutError: locator.click: Timeout 15000ms exceeded — input[formcontrolname="creditCardNumber"]
+  <li class="ng-star-inserted"> … subtree intercepts pointer events
+```
+
+**Fix:** un DETECTOR no debe dejar la UI cambiada. `hasSavedCardWithLast4()` ahora **cierra** el
+desplegable (Escape, la vía que ya usa el POM legacy) y **verifica** que cerró. Efecto colateral bueno:
+ningún camino tiene que adivinar en qué estado quedó el desplegable — que era la raíz común de 4 y 5.
+
+### Hallazgo 7 — NUEVO, cerrado en esta ronda. "Sigue seleccionada" se leía en un estado indefinido
+
+TS-AUTHORIZE-TC1061 rep 3 falló 10 s con `sigue SELECCIONADA en Forma de Pago` en el **mismo camino y
+con el mismo estado inicial** que habían pasado las reps 1 y 2. `paymentMethodValue` del POM legacy es el
+**primer** `.value` del componente: con la lista desplegada ese primer `.value` puede ser el de la
+**opción** de la tarjeta en vez del control cerrado, así que el resultado dependía de si el borrado
+dejaba la lista abierta o cerrada.
+
+**Fix:** cada señal se lee en un estado **conocido** — "sigue seleccionada" con el desplegable CERRADO,
+"sigue listada" con el desplegable ABIERTO (cerrado no hay `listitem` y el 0 sería vacío, la misma trampa
+de presencia-vs-estado del hallazgo 1). Ninguna aserción se relajó: la vieja quedó igual (misma
+condición, mismos 10 s) y sólo se la movió a donde significa lo que dice.
+
+### Hallazgo 8 — NUEVO y ABIERTO. El `DELETE` de la tarjeta no siempre surte efecto
+
+Medido out-of-band, y es lo que separa este hallazgo de los anteriores: cuando TC1061 rep 3 falló con la
+tarjeta todavía presente, la corrida **siguiente** encontró esa misma tarjeta **aún en el wallet**
+(`estado inicial: tarjeta PRESENTE`). O sea: **el borrado no ocurrió**, la aserción tenía razón y no es
+un refresco tardío de la UI.
+
+Es la misma familia que el `DELETE /users/{pax}/cards/{id}` intermitente ya documentado en
+`card-precondition.ts`. Para poder **clasificarlo** en vez de discutirlo, el borrado ahora se sincroniza
+con la **respuesta HTTP** del `DELETE` (la doctrina del repo para medir algo asíncrono) y asevera dos
+cosas por separado:
+
+- que la confirmación **disparó** el `DELETE` (si no, el click cayó en un control que no borra);
+- que el backend lo **aceptó** (un no-2xx es un rechazo del BACKEND y el mensaje lo dice así, para que no
+  se lea como un fallo del test).
+
+**Evidencia capturada apenas se instrumentó** (corrida 5):
+
+```
+Error: El BACKEND rechazó el borrado de la tarjeta •••• 1111:
+  500 DELETE https://apps-test.magiis.com/magiis-v0.2/users/9869/cards/4782
+```
+
+Es **intermitente**, no una tarjeta trabada: en la MISMA corrida la repetición siguiente del mismo caso
+borró bien, y el mismo `DELETE` funcionó para el pax 4951. El root del backend respondía **403 (vivo,
+0.6-0.7 s)** durante todo el episodio, así que no es una caída del ambiente: es el endpoint de borrado de
+tarjetas fallando de a ratos.
+
+**Impacto en el caso**: el borrado es la PRECONDICIÓN del alta (BL-050 no habilita "Validar" mientras
+exista una tarjeta con el mismo número), no el criterio bajo prueba. Un 500 ahí deja la repetición
+**inconclusa**, y por la regla de la ronda 1 esas mediciones **se descartan** — no cuentan como rojo ni
+como verde. Lo que cambió es que ahora el rojo **dice** que fue el backend, en 37 s y con la URL exacta,
+en vez de morir a los 10 s en un oráculo de UI apuntando al lugar equivocado.
+
+**Queda ABIERTO** — no es nuestro para arreglar: el reporte del defecto de producto (o la limpieza
+server-side de la tarjeta afectada) es el próximo paso.
+
+## Corrección al modelo de estados de la ronda 2
+
+La ronda 2 asumió que `--repeat-each=3` recorre los tres estados del wallet, y por eso un 3/3 probaría
+cobertura de los tres. **Medido con `DEBUG=gateway-pg:wallet`, eso no se sostiene**: el estado inicial de
+cada repetición lo determina el RESIDUO de la anterior, y con el camino arreglado el residuo **converge**.
+
+| Estado | Cómo se llega | Se ejercitó en esta ronda |
+|---|---|---|
+| **1** — tarjeta PRESENTE, no seleccionada | Es el residuo de toda repetición verde: la tarjeta recién vinculada NO vuelve auto-seleccionada en un form nuevo | **Sí, dominante** — 11 de las 14 repeticiones medidas |
+| **2** — SIN tarjeta | Sólo si el borrado de la repetición anterior quedó sin re-vincular (o si la precondición por API acierta) | **Sí** — 3 repeticiones |
+| **3** — tarjeta PRESENTE y SELECCIONADA | Requiere que el pax tenga la tarjeta como método por defecto. Se observó en la ronda 2, **no** en esta | **No** |
+
+Consecuencia honesta: **el 3/3 NO es prueba de cobertura de los 3 estados**. La rama `wasSelected`
+(estado 3) no se ejecutó en esta ronda. Lo que sí se puede afirmar por construcción —y se declara como
+argumento estructural, no como medición— es que el mecanismo que hacía rojo al estado 3 (el trash del
+control CERRADO) **ya no es alcanzable**: el borrado reabre el desplegable y sólo clickea un trash que
+está dentro de una fila `listitem`; el locator del control cerrado no existe en ningún camino. Para
+acreditar el estado 3 hay que **forzarlo** (dejar la tarjeta como método por defecto del pax), y eso
+merece su propia corrida.
+
+## Cambios de código de esta ronda
+
+| Archivo | Cambio | Tipo |
+|---|---|---|
+| `components/ui/carrier/CarrierNewTravelPage.ts` | `openPaymentMethodsDropdown()` deja de devolver `boolean`: verifica, reintenta y **lanza** con diagnóstico enumerando triggers probados | **corrección de causa raíz** (hallazgo 4) |
+| ídem | 4 triggers conocidos en orden de preferencia (el de la grabación validada primero) | **corrección de causa raíz** (hallazgo 4) |
+| ídem | `deleteHighlightedOrByLast4()` **reabre** el desplegable y borra sólo por el trash de una FILA; se eliminó el respaldo que resolvía al control cerrado | **corrección de causa raíz** (hallazgo 5) |
+| ídem | `deleteHighlightedOrByLast4()` **itera** sobre todas las filas con esos last4 (BL-050 es por número) | endurecimiento |
+| ídem | borrado sincronizado con la **respuesta HTTP del `DELETE`** + aserción de 2xx | **instrumentación** (hallazgo 8) |
+| ídem | `expectSavedCardDeleted()` nuevo: ni SELECCIONADA ni LISTADA, cada señal leída en un estado conocido del desplegable | endurecimiento (hallazgos 5 y 7) |
+| ídem | `closePaymentMethodsDropdown()` nuevo; `hasSavedCardWithLast4()` deja de mutar la UI | **corrección** (hallazgo 6) |
+| ídem | `selectPreauthorizedCardMethod()`: se fue la rama `else if` que abría "por si acaso"; loguea el estado inicial del wallet (`DEBUG=gateway-pg:wallet`) | simplificación + observabilidad |
+| `docs/gateway-pg/authorize/RUN-LOG.md` | esta sección | documentación |
+
+Cero cambios en specs, factories, motores o helpers — todo el arreglo vive en el POM. Cero `skip` /
+`fixme`. Cero aserciones relajadas (la del borrado quedó **más** fuerte: antes la satisfacía una
+deselección). Cero timeouts inflados: el presupuesto del oráculo de borrado sigue en 10 s y el de la
+apertura son 10 s de reintento observable donde antes no había ninguna verificación. `cleanupCardsByLast4`
+y `paxSearchQueries` **intactos**.
+
+`npx tsc --noEmit` limpio. `eslint`: **0 errores**; 9 advertencias, de las cuales 7 preexistentes y 2
+nuevas del mismo patrón `expect.poll(...).catch(...)` que el archivo ya usaba deliberadamente en
+`readNativeCardValidationOutcome` (líneas 318/323 del baseline).
+
+### Deuda menor detectada y NO tocada
+
+`CarrierNewTravelPage.hasHighlightedSavedCard()` conserva el patrón viejo (abre el desplegable con un
+único trigger y devuelve `false` en silencio si no lo encuentra). **No tiene consumidores** —
+`ContractorHoldSteps` usa la implementación de `ContractorNewTravelPage`, y la factory WAL usa
+`expectHighlightedSavedCard` / `deleteHighlightedSavedCard`—, así que se deja como está para no ampliar el
+radio de la corrida. Es la misma familia de la trampa de vacuidad #6.
+
+## Cómo se midió: 5 corridas, 3 descartadas por cambio de código
+
+Ninguna de las tres primeras se descartó por ENVIRONMENT: se descartaron porque **el código cambió** al
+descubrir cada defecto nuevo. Se documentan porque son la evidencia de la cadena causal.
+
+| Corrida | Código | Resultado | Qué destapó |
+|---|---|---|---|
+| 1 | fix inicial de 4 y 5 | 2 rojas medidas, resto abortado a mano | El reintento de apertura NO alcanzaba: faltaban triggers (hallazgo 4 real) |
+| 2 | + 4 triggers | 1 verde, 1 roja, resto abortado a mano | El detector dejaba el desplegable abierto y TAPABA el form (hallazgo 6) |
+| 3 | + cierre del detector | **5 verdes / 1 roja** | La lectura de "sigue seleccionada" dependía del estado del desplegable (hallazgo 7) |
+| 4 | + lectura en estado conocido | **5 verdes / 1 roja** | La roja no era artefacto: la tarjeta SOBREVIVÍA (verificado en la corrida siguiente) → hallazgo 8 |
+| 5 | + iteración del borrado y aserción HTTP del `DELETE` | **4 verdes / 2 inconclusas** | `500 DELETE /users/{pax}/cards/{id}`, con la URL exacta |
+
+Las corridas 1 y 2 se cortaron a mano al identificar el defecto: seguir gastando repeticiones sobre código
+que ya se sabía roto no agrega información.
+
+## Nota de entorno
+
+El root del backend estuvo en **403 (vivo)** durante toda la ronda, pero se **degradó al final**: la
+latencia pasó de **0.65 s** (antes de la corrida 5) a **10.9 s / 3.3 s** al terminarla, en paralelo con los
+500 del borrado de tarjetas. Clasificado **ENVIRONMENT** para la corrida 5, que por eso no acredita.
+**No se tocó ningún spec por esto.**
+
+Un login del global-setup del carrier falló al inicio de la corrida 1 (`dashboard pattern no alcanzado en
+60s`) y no volvió a fallar. Sin efecto sobre las mediciones.
+
+## Riesgos conocidos: cómo se comportaron
+
+- **HTTP 500 en `POST /passengers/{id}/cards`** (re-adición tras borrado por UI): **no apareció** en
+  ninguna de las 30 repeticiones de la ronda.
+- **HTTP 500 en `DELETE /users/{id}/cards/{cardId}`**: **sí apareció** — es el hallazgo 8, ahora con
+  evidencia HTTP.
+- **Stripe en paralelo**: no se corrió nada de Stripe. El toggle `enableCreditCardHold` del carrier 1521 lo
+  asevera el motor en cada caso Hold ON y estuvo en ON en las 30 repeticiones.
+
+## Viajes creados y cerrados
+
+**16 creados, 16 cancelados, 0 abiertos.** Todos por el `finally` del motor; no hizo falta
+`cancel-travel-by-id.ts`. El id **67618** NO es de esta sesión (carrier 1521 es compartido; el hueco en la
+numeración es de otra sesión — motivo por el cual no se usó el barrido general `cleanup-travels-api.ts`).
+
+| Corrida | travelIds | Cancelados |
+|---|---|---|
+| 1 | — (las 2 rojas murieron en el paso 9, antes del submit) | n/a |
+| 2 | 67607, 67608 | sí |
+| 3 | 67609, 67610, 67611, 67612, 67613 | sí |
+| 4 | 67614, 67615, 67616, 67617, 67619 | sí |
+| 5 | 67622, 67623, 67625, 67626 | sí |
+
+## Próximos pasos
+
+1. **Reportar el hallazgo 8** (o limpiar server-side las tarjetas afectadas): `DELETE
+   /magiis-v0.2/users/{pax}/cards/{cardId}` devuelve **500** de forma intermitente y bloquea el alta de
+   tarjeta nueva por BL-050. Es el único bloqueo que queda para el 3/3.
+2. **Cerrar el 3/3 de TC1051 y TC1061** sobre el código final, con el endpoint de borrado sano.
+3. **Acreditar el estado 3** del wallet forzándolo (tarjeta como método por defecto del pax): la rama
+   `wasSelected` no se ejecutó en esta ronda.
+4. Sigue pendiente de la ronda 1: hallazgo 3 (`cleanupCardsByLast4`), regenerar `ID-MAP.md`, y los 5 casos
+   Hold OFF.
