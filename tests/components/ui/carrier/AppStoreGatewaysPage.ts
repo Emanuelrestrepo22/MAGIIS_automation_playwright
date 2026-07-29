@@ -201,6 +201,31 @@ export class AppStoreGatewaysPage extends UiBase {
 	private readonly confirmPopup = (): Locator =>
 		this.page.locator('.swal2-popup, [role="dialog"], .modal').filter({ visible: true }).first();
 
+	/**
+	 * Botones del popup de confirmación de desvinculación, anclados AL BOTÓN y no al contenedor.
+	 *
+	 * POR QUÉ (fix live 2026-07-28): el popup real de MAGIIS NO usa ninguno de los contenedores
+	 * que `confirmPopup()` busca — un probe con el popup ABIERTO mostró `.swal2-popup`,
+	 * `[role=dialog]` y `.modal` con 7 matches TODOS invisibles (son el modal oculto de login de
+	 * GNET del App Store), mientras los botones "Cancelar" y "Confirmar" del popup sí estaban
+	 * visibles. Por eso `expect(confirmPopup()).toBeVisible()` fallaba aunque el popup estuviera
+	 * en pantalla, y la suite CFG nunca podía desvincular.
+	 * El filtro `{ visible: true }` es OBLIGATORIO: el modal oculto de GNET también tiene un
+	 * botón "Cancelar" y sin filtrar `.first()` devolvía ese.
+	 */
+	private readonly unlinkConfirmButton = (): Locator =>
+		this.page
+			.getByRole('button', { name: /^\s*(confirmar|aceptar|s[ií]|yes|ok)\s*$/i })
+			.filter({ visible: true })
+			.first();
+
+	/** Botón de cancelación del mismo popup (ver `unlinkConfirmButton` para el por qué del anclaje). */
+	private readonly unlinkCancelButton = (): Locator =>
+		this.page
+			.getByRole('button', { name: /^\s*(cancelar|cancel|cerrar|close|no)\s*$/i })
+			.filter({ visible: true })
+			.first();
+
 	// ── Helpers privados de interacción (usados por varios ATC; NO son ATC) ──────────
 
 	/** Campos del modal de link Authorize (locators verificados en vivo). `gatewayId` no se usa hoy. */
@@ -328,16 +353,14 @@ export class AppStoreGatewaysPage extends UiBase {
 			const link = this.desvincularLink(company);
 			await link.scrollIntoViewIfNeeded({ timeout: 4_000 });
 			await link.click({ timeout: 4_000, force: true });
-			await expect(this.confirmPopup()).toBeVisible({ timeout: 8_000 });
+			// Oráculo del popup abierto = su botón afirmativo VISIBLE (ver `unlinkConfirmButton`).
+			await expect(this.unlinkConfirmButton()).toBeVisible({ timeout: 8_000 });
 		}).toPass({ timeout: 120_000, intervals: [300, 600, 1_000] });
 	}
 
-	/** FRAGILE: confirma el popup de desvinculación (botón afirmativo). */
+	/** Confirma el popup de desvinculación (botón afirmativo visible — ver `unlinkConfirmButton`). */
 	private async confirmUnlink(): Promise<void> {
-		await this.confirmPopup()
-			.getByRole('button', { name: /s[ií]|confirmar|aceptar|desvincular|yes|ok/i })
-			.first()
-			.click();
+		await this.unlinkConfirmButton().click();
 	}
 
 	// ── API pública KATA ─────────────────────────────────────────────────────────────
@@ -569,11 +592,9 @@ export class AppStoreGatewaysPage extends UiBase {
 	@step
 	async cancelUnlink(company: GatewayCompany): Promise<void> {
 		await this.openUnlinkPopup(company);
-		await this.confirmPopup()
-			.getByRole('button', { name: /cancelar|no|cerrar|cancel|close/i })
-			.first()
-			.click();
-		await expect(this.confirmPopup(), 'el popup debe cerrarse sin desvincular').toBeHidden({ timeout: 10_000 });
+		await this.unlinkCancelButton().click();
+		// El cierre se verifica por la desaparición del botón afirmativo (mismo anclaje que la apertura).
+		await expect(this.unlinkConfirmButton(), 'el popup debe cerrarse sin desvincular').toBeHidden({ timeout: 10_000 });
 		expect(await this.readState(company), `${company} sigue vinculada tras cancelar`).toBe('linked');
 	}
 
