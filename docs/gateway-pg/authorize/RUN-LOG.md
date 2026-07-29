@@ -417,8 +417,13 @@ Con hold ON el alta llama `POST /cards/passengers/{id}/cardValidationWithHold/{c
 |---|---|---|---|---|---|
 | `HAPPY_NO_AUTH` (control) | CVV 900 / ZIP 90210 | 1/1 | `SEARCHING_DRIVER` | Asignar | OK esperado |
 | `DECLINE_AUTHORIZE` | ZIP **46282** | **2/2** | `SEARCHING_DRIVER` | Asignar | **NO queda "No autorizado"** |
-| `DECLINE_INVALID_CVC` | CVV **901** | 1/1 | `SEARCHING_DRIVER` | Asignar | ídem |
-| `DECLINE_PREPAID_ZERO_BALANCE` | ZIP **46228** | 1/1 | `SEARCHING_DRIVER` | Asignar | ídem |
+| `DECLINE_INVALID_CVC` | CVV **901** | **4/4** | `SEARCHING_DRIVER` | Asignar | ídem |
+| `DECLINE_PREPAID_ZERO_BALANCE` | ZIP **46228** | **2/2** | `SEARCHING_DRIVER` | Asignar | ídem |
+
+Corridas con `--repeat-each=3` por intent. "Limpias" = con el guard de atribución en verde; las
+descartadas por el guard o por un `DELETE` de tarjeta fallido no se cuentan (ver el hallazgo del
+cleanup más abajo). El único resultado distinto a `SEARCHING_DRIVER` en toda la ronda fue el
+`NO_AUTH` de `HAPPY_PARTIAL_AUTH`, y no se repitió — ver F2.
 
 **El discriminador que faltaba salió negativo.** Los 3 declines de Authorize no se manifiestan ni en
 el área C ni en el área F: el viaje se crea normal y sale a buscar chofer, indistinguible del happy
@@ -563,7 +568,7 @@ aserción con hold ON. La primera versión de este probe gateaba con
 
 ## Viajes creados y cerrados
 
-**10 creados, 10 cancelados, 0 abiertos.**
+**14 creados, 14 cancelados, 0 abiertos.**
 
 | travelId | Intent | Cancelado |
 |---|---|---|
@@ -577,9 +582,18 @@ aserción con hold ON. La primera versión de este probe gateaba con
 | 67543 | `DECLINE_AUTHORIZE` | sí |
 | 67544 | `HAPPY_PARTIAL_AUTH` | sí |
 | 67545 | `HAPPY_PARTIAL_AUTH` | sí |
+| 67546 | `DECLINE_INVALID_CVC` | sí |
+| 67547 | `DECLINE_INVALID_CVC` | sí |
+| 67548 | `DECLINE_INVALID_CVC` | sí |
+| 67549 | `DECLINE_PREPAID_ZERO_BALANCE` | sí |
 
-Queda como residuo la tarjeta `•••• 1111` (id 4715) vinculada al pax 8669, porque su `DELETE` devolvió
-500. No es un viaje abierto; el `cleanupGatewayCardByLast4` del próximo caso vuelve a intentarlo.
+Queda como residuo la tarjeta `•••• 1111` (id 4723) vinculada al pax 8669, porque el `DELETE` de esa
+familia de tarjetas devuelve 500 de forma intermitente. No es un viaje abierto; el
+`cleanupGatewayCardByLast4` del próximo caso vuelve a intentarlo.
+
+El guard de atribución se validó a sí mismo en la corrida de cierre: con `DELETE card 4719` en 500 el
+pax quedó con 2 tarjetas `1111` y el probe **cortó antes del submit** en vez de crear un viaje que no
+habría medido nada.
 
 ## Nota de entorno
 
