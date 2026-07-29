@@ -230,12 +230,23 @@ export async function deletePassengerCard(page: Page, passengerId: number, cardI
  * de alta de tarjeta falla por un motivo que no es el que el test quiere medir.
  *
  * Silencia los errores por query a propósito: que un pasajero no aparezca con una de las
- * queries es normal, no un fallo de la precondición. Corta en la primera query que
- * efectivamente borró algo.
+ * queries es normal, no un fallo de la precondición.
+ *
+ * RECORRE TODAS LAS QUERIES — no corta en la primera productiva. La versión anterior hacía
+ * `if (toDelete.length > 0) return`, así que si la misma tarjeta quedaba adherida a MÁS DE UN
+ * pasajero (cada query resuelve a un pax distinto) sólo limpiaba el primero y dejaba copias
+ * atrás. Eso degrada la suite con el uso: re-validar una tarjeta ya vinculada devuelve
+ * "Error al validar" (verificado en vivo en Authorize, ver `travel-cleanup.ts`), así que un
+ * happy path verde hoy se pone rojo tras N corridas por acumulación — y el síntoma no se
+ * parece en nada a la causa. Mismo modo de fallo que ya documentó `cleanupExcessCards`
+ * (Marcelle/Stripe con 47 tarjetas, 36 del mismo last4).
  *
  * Extraído de `wallet-add-card.factory.ts` para compartirlo con la matriz de outcomes.
  */
 export async function cleanupGatewayCardByLast4(page: Page, queries: readonly string[], last4: string): Promise<void> {
+	let totalDeleted = 0;
+	let paxTouched = 0;
+
 	for (const query of queries) {
 		try {
 			const paxId = await getPassengerId(page, query);
@@ -243,15 +254,23 @@ export async function cleanupGatewayCardByLast4(page: Page, queries: readonly st
 			const cards = resp.cards ?? [];
 			const toDelete = cards.filter(card => card.lastFourDigits === last4);
 			for (const card of toDelete) await deletePassengerCard(page, paxId, card.id);
+			totalDeleted += toDelete.length;
+			if (toDelete.length > 0) paxTouched += 1;
 			debugLog(
 				'gateway-pg:wallet',
 				`[precond] query="${query}" pax=${paxId}: ${cards.length} tarjetas, borradas ${toDelete.length} con last4=${last4}`
 			);
-			if (toDelete.length > 0) return;
 		} catch (error) {
 			debugLog('gateway-pg:wallet', `[precond] query="${query}" skip: ${(error as Error).message}`);
 		}
 	}
+
+	// Diagnóstico de acumulación: >1 pax con la misma tarjeta es exactamente el caso que el
+	// early-return anterior dejaba a medias.
+	debugLog(
+		'gateway-pg:wallet',
+		`[precond][total] last4=${last4}: ${totalDeleted} tarjetas borradas across ${paxTouched} pasajero(s) de ${queries.length} queries`
+	);
 }
 
 /**
