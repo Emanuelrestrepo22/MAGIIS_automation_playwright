@@ -75,6 +75,16 @@ function matchesSearchText(candidate: string, searchText: string): boolean {
 	return searchTokens.every(token => candidateText.includes(token));
 }
 
+/**
+ * Tramo corto de una dirección (calle + número). El autocomplete de Google y la grilla devuelven
+ * un sufijo de localidad distinto del string canónico de `JOURNEY_DEFAULTS` — p. ej.
+ * "Cazadores 1987, Ciudad Autónoma…" vs "Cazadores 1987, Buenos Aires, Argentina" — así que
+ * comparar el string completo daría falsos negativos.
+ */
+function shortAddress(address: string): string {
+	return address.split(',')[0].trim();
+}
+
 function isMeaningfulOptionText(value: string): boolean {
 	return value.length > 0 && !normalizeText(value).includes('no se encontraron resultados');
 }
@@ -257,17 +267,36 @@ export abstract class NewTravelPageBase extends BasePage {
 			place.locator('.search-container-input > .bootstrap > .below > .single > .placeholder').first(),
 			place.locator('.search-container-input').first(),
 			place.locator('.placeholder').first(),
-			place.locator('.toggle').first()
+			place.locator('.toggle').first(),
+			// ADDITIVE (2026-07-28) — campo con dirección PRE-CARGADA. Los 4 targets de arriba asumen
+			// campo vacío: cuando el cliente trae dirección por defecto, `.placeholder` ya no existe
+			// (lo reemplazó el valor) y el typeahead no se abría. `setOrigin` entonces presionaba
+			// Escape y retornaba SIN error → el viaje se armaba con el origen del cliente en vez del
+			// del caso (observado en TC1061: quedó "3500 Paradise Road, Las Vegas").
+			// Las grabaciones lo resuelven clickeando EL VALOR ACTUAL, que es lo que hace este target.
+			// Va AL FINAL a propósito: los specs Stripe siguen entrando por el primer target que ya
+			// les funciona, así que no cambia su comportamiento.
+			place.locator('.below .single .value').first()
 		];
 
-		for (const target of clickTargets) {
-			if (!(await target.isVisible().catch(() => false))) {
-				continue;
-			}
+		// DOS pasadas. La primera puede DESBLOQUEAR el campo sin abrir el typeahead: cuando hay una
+		// dirección pre-cargada, clickear el valor sólo enfoca el campo y recién entonces aparece el
+		// `.placeholder`. La grabación validada lo hace en dos clicks —valor y después placeholder—
+		// así que una sola pasada terminaba el loop sin el input montado y moría en el waitFor.
+		// El caso de campo vacío resuelve en la primera pasada con el primer target, sin cambio.
+		for (let pass = 0; pass < 2; pass++) {
+			for (const target of clickTargets) {
+				if (!(await target.isVisible().catch(() => false))) {
+					continue;
+				}
 
-			await target.click({ force: true });
-			// Migrado tier3: waitForTimeout(500) → isVisible con timeout; searchInput.waitFor debajo es el criterio final
-			if (await searchInput.isVisible({ timeout: 500 }).catch(() => false)) {
+				await target.click({ force: true });
+				// Migrado tier3: waitForTimeout(500) → isVisible con timeout; searchInput.waitFor debajo es el criterio final
+				if (await searchInput.isVisible({ timeout: 500 }).catch(() => false)) {
+					break;
+				}
+			}
+			if (await searchInput.isVisible().catch(() => false)) {
 				break;
 			}
 		}
@@ -347,9 +376,25 @@ export abstract class NewTravelPageBase extends BasePage {
 			.getByRole('listitem')
 			.filter({ hasText: new RegExp(escapeRegExp(suggestionText), 'i') })
 			.first();
+		// ADDITIVE (2026-07-28) — intento por el tramo CORTO (calle + número) antes del fallback ciego.
+		// El autocomplete devuelve un sufijo de localidad DISTINTO del string canónico de
+		// JOURNEY_DEFAULTS: "Reconquista 661, C1002 Cdad." o "Cazadores 1987, Ciudad Autónoma…" vs
+		// "…, Buenos Aires, Argentina". El `suggestionText` de arriba incluye ese sufijo, así que NO
+		// matcheaba y se caía al fallback ciego (primer listitem, puede ser otra dirección) o, peor,
+		// a `keepExistingOnNoResults` que MANTIENE el valor previo y retorna sin error — el falso
+		// verde observado en TC1061, donde el origen quedó en "3500 Paradise Road, Las Vegas".
+		// Va DESPUÉS del intento exacto para no cambiar el comportamiento de los specs Stripe.
+		const shortSuggestion = place
+			.getByRole('listitem')
+			.filter({ hasText: new RegExp(escapeRegExp(queryText), 'i') })
+			.first();
 		const fallbackOption = place.getByRole('listitem').filter({ hasText: /\S/ }).first();
 
 		if (await this.commitPlaceOption(place, suggestion)) {
+			return;
+		}
+
+		if (await this.commitPlaceOption(place, shortSuggestion)) {
 			return;
 		}
 
@@ -962,5 +1007,88 @@ export abstract class NewTravelPageBase extends BasePage {
 
 	async assertPaymentMethodPreauthorizedSelected(): Promise<void> {
 		await expect(this.paymentMethodValue).toContainText('Tarjeta de Crédito - Preautorizada', { timeout: 10_000 });
+	}
+
+	/**
+	 * Verifica que el cliente quedó efectivamente seleccionado en el form.
+	 *
+	 * Match token-based (no literal): el portal muestra los nombres en formato "apellido, nombre"
+	 * y con teléfono — p. ej. buscar 'Marcelle Stripe' contra "Stripe, Marcelle (+9398989887)".
+	 */
+	async assertClientSelected(name: string): Promise<void> {
+		await expect
+			.poll(async () => matchesSearchText((await this.clientSelect.textContent().catch(() => '')) ?? '', name), {
+				message: `El cliente "${name}" no quedó seleccionado en el formulario`,
+				timeout: 10_000
+			})
+			.toBe(true);
+	}
+
+	/**
+	 * Verifica que el pasajero quedó efectivamente seleccionado — sea porque se eligió o porque el
+	 * cliente lo AUTO-ASIGNA (empresa individuo, cliente individuo MP, donde el campo queda
+	 * deshabilitado). Misma lógica que usa `fillMinimum` para la rama auto-asignada.
+	 */
+	async assertPassengerSelected(name: string): Promise<void> {
+		await expect
+			.poll(async () => matchesSearchText((await this.passengerSelect.textContent().catch(() => '')) ?? '', name), {
+				message: `El pasajero "${name}" no quedó asignado en el formulario`,
+				timeout: 10_000
+			})
+			.toBe(true);
+	}
+
+	/**
+	 * Verifica que el ORIGEN quedó commiteado en el form.
+	 *
+	 * Necesario porque `setOrigin()` tiene un camino de éxito SILENCIOSO: si el autocomplete no
+	 * devuelve opciones presiona Escape y retorna sin error. Observado en la corrida TC1061 del
+	 * 2026-07-27 — el origen quedó en el precargado del cliente ("3500 Paradise Road, Las Vegas")
+	 * en vez de "Reconquista 661" y el paso pasó en verde, armando el viaje con datos distintos
+	 * a los del caso de prueba.
+	 *
+	 * Compara por el tramo corto (calle + número): el autocomplete devuelve un sufijo de localidad
+	 * distinto del string canónico de `JOURNEY_DEFAULTS` (p. ej. "Cazadores 1987, Ciudad Autónoma…"
+	 * vs "Cazadores 1987, Buenos Aires, Argentina").
+	 */
+	async assertOriginSet(address: string): Promise<void> {
+		await expect(this.originSelect, `El origen no quedó seteado en "${address}"`).toContainText(shortAddress(address), { timeout: 10_000 });
+	}
+
+	/** Verifica que el DESTINO quedó commiteado en el form. Ver `assertOriginSet` para el porqué. */
+	async assertDestinationSet(address: string): Promise<void> {
+		await expect(this.destinationSelect, `El destino no quedó seteado en "${address}"`).toContainText(shortAddress(address), { timeout: 10_000 });
+	}
+
+	/**
+	 * Verifica que NO se puede avanzar al armado del viaje mientras la tarjeta no esté validada:
+	 * el botón "Seleccionar Vehículo" debe estar deshabilitado.
+	 *
+	 * Es una regla de negocio (no una verificación cosmética): el sistema no debe permitir enviar
+	 * un servicio con una tarjeta sin validar. Llamar ANTES de `validateNativeCard()`/`clickValidateCard()`.
+	 */
+	/**
+	 * ¿El selector de Forma de Pago ya muestra una tarjeta vinculada con esos últimos 4 dígitos?
+	 *
+	 * Señal MUCHO más robusta que inspeccionar el desplegable: cuando el pasajero tiene una tarjeta
+	 * vinculada, el sistema la selecciona sola y el campo la muestra como
+	 * "Tarjeta de crédito VISA *** 1111". No hace falta abrir el dropdown ni depender de su
+	 * estructura interna (`.ng-star-inserted` / `.deselect-payment-method`), que fue lo que falló en
+	 * la corrida del 2026-07-27: la detección por dropdown devolvía false, no se borraba nada, y el
+	 * test moría después porque el form de tarjeta nueva no existe cuando ya hay una seleccionada.
+	 */
+	async hasSelectedCardWithLast4(last4: string): Promise<boolean> {
+		const text = (await this.paymentMethodValue.textContent().catch(() => '')) ?? '';
+
+		return text.includes(last4);
+	}
+
+	/** Texto actual del selector de Forma de Pago (para diagnóstico en los mensajes de error). */
+	async getPaymentMethodText(): Promise<string> {
+		return ((await this.paymentMethodValue.textContent().catch(() => '')) ?? '').trim();
+	}
+
+	async assertVehicleSelectionBlocked(): Promise<void> {
+		await expect(this.vehicleButton, 'El botón "Seleccionar Vehículo" debería estar deshabilitado hasta validar la tarjeta').toBeDisabled({ timeout: 10_000 });
 	}
 }

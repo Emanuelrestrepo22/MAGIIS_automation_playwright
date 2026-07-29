@@ -109,6 +109,9 @@ export const CARD_MATRIX = {
 		DECLINE_EXPIRED_CARD: { card: 'DECLINE_EXPIRED_CARD', note: 'expired_card — el rechazo lo produce el PSP, no la validación del form.' },
 		DECLINE_PREPAID_ZERO_BALANCE: { na: 'Stripe no expone prepaga con saldo cero.' },
 		DECLINE_CARD_FLAGGED: { card: 'DECLINE_LOST_CARD', note: 'lost_card (la variante stolen_card está en CARDS.DECLINE_STOLEN_CARD).' },
+		DECLINE_ZIP_MISMATCH: {
+			na: 'La card que falla el `zip_check` (4000 0000 0000 0036) APRUEBA el cargo igual salvo que la cuenta tenga la Radar rule `Block if :card_address_zip_check: = \'fail\'`, hoy NO verificada en la cuenta MAGIIS. Mapearla produciría un spec que espera un rechazo que no ocurre. Al confirmar la regla: agregar la card a stripe/cards.ts + card-policy.ts y declararla acá, en un commit propio.'
+		},
 		FRAUD_REVIEW: {
 			na: 'Radar bloquea o deja pasar; no expone un estado "en revisión" que el front de MAGIIS muestre distinto de un decline.'
 		},
@@ -140,6 +143,10 @@ export const CARD_MATRIX = {
 		DECLINE_EXPIRED_CARD: { na: 'Authorize valida la expiración del lado del cliente: la request no llega a la pasarela.' },
 		DECLINE_PREPAID_ZERO_BALANCE: { card: 'PREPAID_ZERO', note: 'Trigger por ZIP 46228 → Prepaid Auth con saldo $0.' },
 		DECLINE_CARD_FLAGGED: { na: NA_COLAPSA_EN_GENERICO('Authorize') },
+		DECLINE_ZIP_MISMATCH: {
+			card: 'AVS_NO_MATCH',
+			note: 'ZIP 46205 → el banco responde "no coincide". Que eso RECHACE la operación no es propiedad del trigger sino de la política de la cuenta (Fraud Filters → Enhanced AVS `N = Decline`, aplicada por el líder de QA el 2026-07-28 con la regla de negocio USA "sin match de ZIP = falla"). MISMA card que APPROVED_AVS_MISMATCH: mismo dato, dos intents con oráculo distinto — cuál de los dos aplica lo decide la política de la cuenta, no la tarjeta.'
+		},
 		FRAUD_REVIEW: {
 			na: 'Held-for-Review (Response Code 4) exige tener los Fraud Management Filters activos en la cuenta — ver matriz_cases2.md §10.'
 		},
@@ -183,6 +190,9 @@ export const CARD_MATRIX = {
 		DECLINE_EXPIRED_CARD: { na: 'La expiración se valida del lado del cliente: la request no llega a la pasarela.' },
 		DECLINE_PREPAID_ZERO_BALANCE: { na: 'eBizCharge no expone prepaga con saldo cero.' },
 		DECLINE_CARD_FLAGGED: { card: 'DECLINE_PICKUP_CARD', note: 'Código 04 Pickup Card — el emisor pide retener la tarjeta.' },
+		DECLINE_ZIP_MISMATCH: {
+			na: 'eBizCharge no expone un rechazo por ZIP: sus números AVS son eje de ANOTACIÓN y todos devuelven approved (equivalente a investigar — BL-027).'
+		},
 		FRAUD_REVIEW: { card: 'FRAUD_REVIEW', note: 'Fraud Profiler → review (marcada para revisión manual).' },
 		FRAUD_REJECT: { card: 'FRAUD_REJECT', note: 'Fraud Profiler → reject.' },
 		APPROVED_CVV_MISMATCH: {
@@ -215,6 +225,7 @@ export const CARD_MATRIX = {
 		DECLINE_CARD_FLAGGED: {
 			na: 'MP no distingue "tarjeta marcada por el emisor" de tarjeta deshabilitada (LOCK) ni de lista negra (BLAC), ya cubiertos por otros intents.'
 		},
+		DECLINE_ZIP_MISMATCH: { na: 'MP no hace verificación de dirección en el flujo MAGIIS (no pide ZIP).' },
 		FRAUD_REVIEW: {
 			na: 'CONT deja el pago en `in_process` (pendiente), que NO es lo mismo que una revisión antifraude — mapearlo ahí sería inventar el oráculo.'
 		},
@@ -243,7 +254,10 @@ export const CARD_MATRIX = {
  */
 export const EXPECTED_SUPPORTED_COUNTS = {
 	stripe: 13,
-	authorize: 10,
+	// 11 desde el merge de la suite HOLD (2026-07-29): DECLINE_ZIP_MISMATCH entra al vocabulario
+	// como intent de DATO y Authorize es la única pasarela que hoy lo dispara (ZIP 46205 +
+	// Enhanced AVS `N = Decline`). Decisión, no efecto colateral.
+	authorize: 11,
 	ebizcharge: 18,
 	'mercado-pago': 8
 } as const satisfies Record<GatewayName, number>;

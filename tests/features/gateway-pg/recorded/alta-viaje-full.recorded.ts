@@ -15,12 +15,7 @@ test('test', async ({ page }) => {
 	await page.getByRole('button', { name: 'A Disposición' }).click();
 	await page.locator('#add_rental_hours').click();
 	await page.locator('#add_rental_hours').fill('8');
-	await page
-		.locator(
-			'.ng-tns-c27-2.ng-untouched > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder'
-		)
-		.first()
-		.click();
+	await page.locator('.ng-tns-c27-2.ng-untouched > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder').first().click();
 	await page.getByRole('textbox', { name: 'Ingrese una dirección' }).fill('cazadores 1987');
 	await page.getByText('Cazadores 1987, Buenos Aires').click();
 	await page.getByText('Cazadores 1987, Buenos Aires').nth(1).click();
@@ -30,17 +25,11 @@ test('test', async ({ page }) => {
 	await page.getByRole('listitem').filter({ hasText: 'Cuenta Corriente' }).click();
 	await page.locator('.round-inline > div > .round > label').first().click();
 	await page.locator('div:nth-child(2) > .round > label').first().click();
-	await page
-		.locator('.bootstrap.width-combo.input-search.ng-valid.ng-dirty > .below > .single > .toggle')
-		.first()
-		.click();
+	await page.locator('.bootstrap.width-combo.input-search.ng-valid.ng-dirty > .below > .single > .toggle').first().click();
 	await page.locator('#id_tab_add_travel > div:nth-child(8)').click();
 	await page.getByText('✕').nth(3).click();
 	await page.getByText('✕').nth(3).click();
-	await page
-		.locator('.bootstrap.width-combo.input-search.ng-dirty > .below > .single > .placeholder')
-		.first()
-		.click();
+	await page.locator('.bootstrap.width-combo.input-search.ng-dirty > .below > .single > .placeholder').first().click();
 	await page.getByText('Cazadores 1987, Ciudad Autó').click();
 	await page.getByText('✕').nth(4).click();
 	await page.locator('.focus > .single > .toggle').click();
@@ -51,17 +40,13 @@ test('test', async ({ page }) => {
 	await page.getByRole('textbox', { name: 'Instrucciones' }).click();
 	await page.getByRole('textbox', { name: 'Instrucciones' }).fill('test case instrucciones espera en direcci');
 	await page.getByRole('textbox', { name: 'Instrucciones' }).press('Dead');
-	await page
-		.getByRole('textbox', { name: 'Instrucciones' })
-		.fill('test case instrucciones espera en dirección origen');
+	await page.getByRole('textbox', { name: 'Instrucciones' }).fill('test case instrucciones espera en dirección origen');
 	await page.getByRole('button', { name: 'Aceptar' }).click();
 	await page.locator('.container-extra-button.adjust-margin > .btn').click();
 	await page.getByRole('textbox').nth(2).click();
 	await page.getByRole('textbox').nth(2).fill('30');
 	await page.getByRole('textbox', { name: 'Instrucciones' }).click();
-	await page
-		.getByRole('textbox', { name: 'Instrucciones' })
-		.fill('test case nota intrucciones de espera en lugar destino');
+	await page.getByRole('textbox', { name: 'Instrucciones' }).fill('test case nota intrucciones de espera en lugar destino');
 	await page.getByRole('button', { name: 'Aceptar' }).click();
 	await page.locator('.multiple-destination-container > div > div:nth-child(3)').click();
 	await page.getByRole('button', { name: 'Distancia' }).click();
@@ -74,20 +59,14 @@ test('test', async ({ page }) => {
 	await page.getByRole('textbox', { name: 'Instrucciones' }).click();
 	await page.getByRole('textbox', { name: 'Instrucciones' }).fill('test case nota intrucciones de espera en direcci');
 	await page.getByRole('textbox', { name: 'Instrucciones' }).press('Dead');
-	await page
-		.getByRole('textbox', { name: 'Instrucciones' })
-		.fill('test case nota intrucciones de espera en dirección parada');
+	await page.getByRole('textbox', { name: 'Instrucciones' }).fill('test case nota intrucciones de espera en dirección parada');
 	await page.getByRole('button', { name: 'Aceptar' }).click();
-	await page
-		.locator('.multiple-destination-container.ng-untouched.ng-valid.ng-dirty > div > div:nth-child(3) > .btn > .fa')
-		.click();
+	await page.locator('.multiple-destination-container.ng-untouched.ng-valid.ng-dirty > div > div:nth-child(3) > .btn > .fa').click();
 	await page.getByText('Parada 1', { exact: true }).click();
 	await page.getByText('Parada 1', { exact: true }).click();
 	await page.getByText('Parada 2').click();
 	await page.getByText('Destino').first().click();
-	await page
-		.locator('div:nth-child(3) > .stop > .multiple-destination-container > div > div:nth-child(3) > .btn > .fa')
-		.click();
+	await page.locator('div:nth-child(3) > .stop > .multiple-destination-container > div > div:nth-child(3) > .btn > .fa').click();
 	await page.getByText('Reconquista 661, Buenos Aires').nth(1).click();
 	await page.getByRole('textbox', { name: 'Ingrese una dirección' }).fill('san martin 536');
 	await page.getByText('San Martín 536, AAL, Buenos').click();
@@ -165,11 +144,7 @@ test('test', async ({ page }) => {
 	await page.locator('.form-group > .form-group > .switch > .switch-label').first().click();
 	await page.locator('.form-group > .form-group > .switch > .switch-label').first().click();
 	await page.getByRole('spinbutton').fill('100');
-	await page
-		.locator(
-			'div:nth-child(3) > .row-main-container > .column-container > .padding-switch > div > .form-group > .switch > .switch-label'
-		)
-		.click();
+	await page.locator('div:nth-child(3) > .row-main-container > .column-container > .padding-switch > div > .form-group > .switch > .switch-label').click();
 	await page.getByRole('spinbutton').fill('100.02');
 	await page.locator('.round-inline > div > .round > label').first().click();
 	await page.locator('div:nth-child(2) > .round > label').first().click();

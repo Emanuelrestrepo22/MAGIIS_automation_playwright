@@ -16,7 +16,7 @@
  * `expectedTravelStatus: 'No autorizado'` es hoy `documented-class`: nadie corrió el hold con estas
  * tarjetas. Escribir el assert primero y ajustarlo después es exactamente el anti-patrón que la
  * ronda 3 vino a corregir. Este archivo **MIDE**: no asserta nada de negocio, reporta lo que pasó, y
- * el oráculo se declara en `helpers/journey-outcome.ts` recién con ese dato.
+ * el oráculo se declara en `helpers/card-outcome-oracle.ts` recién con ese dato.
  *
  * ═══ SOBRE LOS PRIMITIVOS DE MEDICIÓN (leer antes de editar) ═══
  *

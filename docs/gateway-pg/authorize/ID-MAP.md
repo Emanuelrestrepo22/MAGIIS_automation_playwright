@@ -2,8 +2,9 @@
 
 > **GENERATED — no editar a mano.** Regenerar con `node scripts/ai/build-id-map.mjs`.
 > Fuente de verdad: [`docs/gateway-pg/id-map.json`](../id-map.json). Keys MG desde `tests/features/gateway-pg/data/xray-keys.ts` + annotations `tms` en specs — nunca fabricadas.
+> Un spec marcado **(fixme)** DECLARA el caso pero lo emite como `test.fixme`: cobertura trazable, NO ejecutada — no cuenta como cobertura real.
 
-Total: 164 · confirmed: 8 · needs-review: 1 · unmapped: 155 · con MG-key: 9 · con spec: 9
+Total: 164 · confirmed: 23 · needs-review: 2 · unmapped: 139 · con MG-key: 10 · con spec: 25 (ejecutable: 17 · sólo fixme: 8)
 
 | TS-ID | Ref Stripe | MG key | Specs | Status |
 | --- | --- | --- | --- | --- |
@@ -17,13 +18,13 @@ Total: 164 · confirmed: 8 · needs-review: 1 · unmapped: 155 · con MG-key: 9 
 | TS-AUTHORIZE-TC1008 | TS-STRIPE-TC1008 | MG-226 | `tests/features/gateway-pg/specs/authorize/web/carrier/config/authorize-link-unlink.spec.ts` | confirmed |
 | TS-AUTHORIZE-TC1009 | TS-STRIPE-TC1052 | — | — | unmapped |
 | TS-AUTHORIZE-TC1010 | TS-STRIPE-TC1058 | — | — | unmapped |
-| TS-AUTHORIZE-TC1011 | TS-STRIPE-TC1049 | — | — | unmapped |
-| TS-AUTHORIZE-TC1012 | TS-STRIPE-TC1050 | — | — | unmapped |
+| TS-AUTHORIZE-TC1011 | TS-STRIPE-TC1049 | MG-158 | `tests/features/gateway-pg/specs/_parametrized/hold-happy-no3ds.parametrized.spec.ts`<br>`tests/features/gateway-pg/specs/authorize/web/carrier/hold/personal-hold-on-happy.spec.ts` | needs-review |
+| TS-AUTHORIZE-TC1012 | TS-STRIPE-TC1050 | — | `tests/features/gateway-pg/specs/authorize/web/carrier/hold/authorize-hold-matrix.spec.ts` **(fixme)** | confirmed |
 | TS-AUTHORIZE-TC1013 | — | — | — | unmapped |
 | TS-AUTHORIZE-TC1014 | — | — | — | unmapped |
 | TS-AUTHORIZE-TC1015 | — | — | — | unmapped |
-| TS-AUTHORIZE-TC1016 | TS-STRIPE-TC1059 | — | — | unmapped |
-| TS-AUTHORIZE-TC1017 | — | — | — | unmapped |
+| TS-AUTHORIZE-TC1016 | TS-STRIPE-TC1059 | — | `tests/features/gateway-pg/specs/authorize/web/carrier/hold/personal-hold-decline-generic.spec.ts` | confirmed |
+| TS-AUTHORIZE-TC1017 | — | — | `tests/features/gateway-pg/specs/authorize/web/carrier/hold/authorize-hold-matrix.spec.ts` **(fixme)** | confirmed |
 | TS-AUTHORIZE-TC1018 | TS-STRIPE-TC1060 | — | — | unmapped |
 | TS-AUTHORIZE-TC1021 | — | — | — | unmapped |
 | TS-AUTHORIZE-TC1022 | — | — | — | unmapped |
@@ -31,7 +32,7 @@ Total: 164 · confirmed: 8 · needs-review: 1 · unmapped: 155 · con MG-key: 9 
 | TS-AUTHORIZE-TC1024 | — | — | — | unmapped |
 | TS-AUTHORIZE-TC1025 | — | — | — | unmapped |
 | TS-AUTHORIZE-TC1026 | — | — | — | unmapped |
-| TS-AUTHORIZE-TC1031 | — | — | — | unmapped |
+| TS-AUTHORIZE-TC1031 | — | — | `tests/features/gateway-pg/specs/authorize/web/carrier/hold/personal-hold-zip-mismatch.spec.ts` | confirmed |
 | TS-AUTHORIZE-TC1032 | — | — | — | unmapped |
 | TS-AUTHORIZE-TC1033 | — | — | — | unmapped |
 | TS-AUTHORIZE-TC1034 | — | — | — | unmapped |
@@ -41,24 +42,24 @@ Total: 164 · confirmed: 8 · needs-review: 1 · unmapped: 155 · con MG-key: 9 
 | TS-AUTHORIZE-TC1041 | — | — | — | unmapped |
 | TS-AUTHORIZE-TC1042 | — | — | — | unmapped |
 | TS-AUTHORIZE-TC1043 | — | — | — | unmapped |
-| TS-AUTHORIZE-TC1051 | TS-STRIPE-TC1033 | — | — | unmapped |
+| TS-AUTHORIZE-TC1051 | TS-STRIPE-TC1033 | — | `tests/features/gateway-pg/specs/authorize/web/carrier/hold/colaborador-hold-on-happy.spec.ts` | confirmed |
 | TS-AUTHORIZE-TC1052 | TS-STRIPE-TC1035 | — | — | unmapped |
-| TS-AUTHORIZE-TC1053 | TS-STRIPE-TC1041 | — | — | unmapped |
-| TS-AUTHORIZE-TC1054 | TS-STRIPE-TC1034 | — | — | unmapped |
-| TS-AUTHORIZE-TC1055 | TS-STRIPE-TC1036 | — | — | unmapped |
+| TS-AUTHORIZE-TC1053 | TS-STRIPE-TC1041 | — | `tests/features/gateway-pg/specs/authorize/web/carrier/hold/authorize-hold-matrix.spec.ts` **(fixme)** | confirmed |
+| TS-AUTHORIZE-TC1054 | TS-STRIPE-TC1034 | — | `tests/features/gateway-pg/specs/authorize/web/carrier/hold/authorize-hold-matrix.spec.ts` **(fixme)** | confirmed |
+| TS-AUTHORIZE-TC1055 | TS-STRIPE-TC1036 | — | `tests/features/gateway-pg/specs/authorize/web/carrier/hold/authorize-hold-matrix.spec.ts` **(fixme)** | confirmed |
 | TS-AUTHORIZE-TC1056 | — | — | — | unmapped |
 | TS-AUTHORIZE-TC1057 | — | — | — | unmapped |
-| TS-AUTHORIZE-TC1061 | TS-STRIPE-TC1065 | — | — | unmapped |
-| TS-AUTHORIZE-TC1062 | TS-STRIPE-TC1067 | — | — | unmapped |
-| TS-AUTHORIZE-TC1063 | TS-STRIPE-TC1066 | — | — | unmapped |
-| TS-AUTHORIZE-TC1064 | TS-STRIPE-TC1068 | — | — | unmapped |
-| TS-AUTHORIZE-TC1065 | — | — | — | unmapped |
+| TS-AUTHORIZE-TC1061 | TS-STRIPE-TC1065 | — | `tests/features/gateway-pg/specs/authorize/web/carrier/hold/empresa-hold-on-happy.spec.ts` | confirmed |
+| TS-AUTHORIZE-TC1062 | TS-STRIPE-TC1067 | — | `tests/features/gateway-pg/specs/authorize/web/carrier/hold/authorize-hold-matrix.spec.ts` **(fixme)** | confirmed |
+| TS-AUTHORIZE-TC1063 | TS-STRIPE-TC1066 | — | `tests/features/gateway-pg/specs/authorize/web/carrier/hold/authorize-hold-matrix.spec.ts` **(fixme)** | confirmed |
+| TS-AUTHORIZE-TC1064 | TS-STRIPE-TC1068 | — | `tests/features/gateway-pg/specs/authorize/web/carrier/hold/authorize-hold-matrix.spec.ts` **(fixme)** | confirmed |
+| TS-AUTHORIZE-TC1065 | — | — | `tests/features/gateway-pg/specs/authorize/web/carrier/hold/authorize-hold-matrix.spec.ts` | confirmed |
 | TS-AUTHORIZE-TC1071 | TS-STRIPE-TC1009 | — | — | unmapped |
 | TS-AUTHORIZE-TC1072 | — | — | — | unmapped |
 | TS-AUTHORIZE-TC1073 | — | — | — | unmapped |
 | TS-AUTHORIZE-TC1075 | TS-STRIPE-TC1017 | — | — | unmapped |
 | TS-AUTHORIZE-TC1076 | TS-STRIPE-TC1019 | — | — | unmapped |
-| TS-AUTHORIZE-TC1081 | TS-STRIPE-TC1081 | — | — | unmapped |
+| TS-AUTHORIZE-TC1081 | TS-STRIPE-TC1081 | — | `tests/features/gateway-pg/specs/authorize/web/carrier/cargo-a-bordo/authorize-cargo-a-bordo.spec.ts` | confirmed |
 | TS-AUTHORIZE-TC1082 | TS-STRIPE-TC1082 | — | — | unmapped |
 | TS-AUTHORIZE-TC1083 | TS-STRIPE-TC1085 | — | — | unmapped |
 | TS-AUTHORIZE-TC1087 | — | — | — | unmapped |
@@ -90,7 +91,7 @@ Total: 164 · confirmed: 8 · needs-review: 1 · unmapped: 155 · con MG-key: 9 
 | TS-AUTHORIZE-TC1212 | TS-STRIPE-P2-TC019 | — | — | unmapped |
 | TS-AUTHORIZE-TC1213 | TS-STRIPE-P2-TC020 | — | — | unmapped |
 | TS-AUTHORIZE-TC1214 | TS-STRIPE-P2-TC021 | — | — | unmapped |
-| TS-AUTHORIZE-TC1215 | TS-STRIPE-P2-TC022 | — | — | unmapped |
+| TS-AUTHORIZE-TC1215 | TS-STRIPE-P2-TC022 | — | `tests/features/gateway-pg/specs/authorize/web/quote/personal-quote-no-hold-happy.spec.ts` | confirmed |
 | TS-AUTHORIZE-TC1216 | TS-STRIPE-P2-TC027 | — | — | unmapped |
 | TS-AUTHORIZE-TC1217 | TS-STRIPE-P2-TC028 | — | — | unmapped |
 | TS-AUTHORIZE-TC1218 | TS-STRIPE-P2-TC029 | — | — | unmapped |

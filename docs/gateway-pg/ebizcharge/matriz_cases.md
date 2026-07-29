@@ -1,6 +1,13 @@
 # eBizCharge — Matriz de casos (`TS-EBIZ-TCxxxx`)
 
-> **Estado:** documentados, **no automatizados** (runtime pendiente — BL-027). IDs bajo la convención `TS-<GATEWAY>-TCxxxx`.
+> **Estado (actualizado 2026-07-28):** documentados. Automatización: **el bloque CFG (link/unlink,
+> 5 casos) YA está codificado** en `tests/features/gateway-pg/specs/ebizcharge/web/carrier/config/ebizcharge-link-unlink.spec.ts`
+> (consumidor thin de `gateway-config.factory.ts`, mismo patrón que Stripe/Authorize) — pero **gateado
+> y nunca ejecutado en vivo**: falta poblar `EBIZ_MERCHANT_USER` / `EBIZ_MERCHANT_PASSWORD` /
+> `EBIZ_SECURITY_KEY`, y los selectores del modal de credenciales siguen marcados `FRAGILE/TODO(live)`
+> (sin reconciliar contra el ambiente real, a diferencia del modal Authorize). El resto de las áreas
+> sigue sin código (runtime pendiente — BL-027). Precisión: **0% ejecutado en vivo**, no "0% codificado".
+> IDs bajo la convención `TS-<GATEWAY>-TCxxxx`.
 > Ambiente: **TEST**. Trigger = número de tarjeta. Datos: [`tests/fixtures/gateways/ebizcharge/`](../../../tests/fixtures/gateways/ebizcharge/).
 
 ## Happy path / approved

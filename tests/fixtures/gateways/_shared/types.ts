@@ -37,6 +37,17 @@ export type GatewayName = 'stripe' | 'authorize' | 'mercado-pago' | 'ebizcharge'
  *
  *   const card = resolveCard({ gateway, intent: 'DECLINE_INSUFFICIENT_FUNDS' });
  *
+ * Mapping conceptual:
+ *   | Intent               | Stripe                     | Authorize             |
+ *   |----------------------|----------------------------|-----------------------|
+ *   | HAPPY_NO_AUTH        | SUCCESS_NO_3DS (4242)      | SUCCESS (4111+900)    |
+ *   | HAPPY_AUTH           | HAPPY_3DS (3184)           | N/A (no 3DS)          |
+ *   | FAIL_AUTH            | FAIL_3DS (9235)            | N/A (no 3DS)          |
+ *   | DECLINE_AUTHORIZE    | DECLINE_AUTHORIZE (0002)   | DECLINE_GENERIC       |
+ *   | DECLINE_CAPTURE      | DECLINE_CAPTURE (9995)     | N/A                   |
+ *   | DECLINE_INVALID_CVC  | DECLINE_INVALID_CVC (0127) | DECLINE_CVV (901)     |
+ *   | DECLINE_ZIP_MISMATCH | N/A todavía (ver abajo)    | AVS_NO_MATCH (46205)  |
+ *
  * El criterio para que algo sea intent y no dato de referencia:
  *   **¿el front muestra algo DISTINTO?** Si dos códigos de respuesta terminan en la misma
  *   pantalla para el usuario, son UN intent con dos datos, no dos intents. Y si un código
@@ -62,7 +73,24 @@ export type LegacyCardIntent =
 	| 'FAIL_AUTH'
 	| 'DECLINE_AUTHORIZE'
 	| 'DECLINE_CAPTURE'
-	| 'DECLINE_INVALID_CVC';
+	| 'DECLINE_INVALID_CVC'
+	/**
+	 * El ZIP declarado NO coincide con el que el banco tiene registrado para la tarjeta.
+	 *
+	 * Es un intent de DATO, no un código de proveedor: acá no se nombra ningún `avsResultCode`.
+	 * Cada pasarela lo dispara a su manera (Authorize por ZIP trigger, Stripe por número de
+	 * tarjeta) y el resultado en MAGIIS lo define `OUTCOME_BY_INTENT`
+	 * (`features/gateway-pg/helpers/journey-outcome.ts`), igual para todas.
+	 *
+	 * ⚠️ El outcome sólo es igual entre pasarelas si la CUENTA de cada una tiene la regla
+	 * equivalente configurada. La regla de negocio USA es "sin match de ZIP = falla":
+	 *   · Authorize  → Fraud Filters → Enhanced AVS, `N = Decline` (aplicado 2026-07-28).
+	 *   · Stripe     → Radar rule `Block if :card_address_zip_check: = 'fail'` — SIN VERIFICAR.
+	 *                  Por eso Stripe queda deliberadamente SIN mapear en el resolver: sin la
+	 *                  regla, Stripe aprueba y mapearlo mentiría sobre el comportamiento.
+	 *   · eBizCharge → equivalente a investigar (BL-027).
+	 */
+	| 'DECLINE_ZIP_MISMATCH';
 
 /** Aprobaciones con variante de marca, de monto o de latencia. */
 export type ApprovalIntent =
@@ -145,6 +173,9 @@ export const ALL_CARD_INTENTS = [
 	'DECLINE_EXPIRED_CARD',
 	'DECLINE_PREPAID_ZERO_BALANCE',
 	'DECLINE_CARD_FLAGGED',
+	// Intent de DATO (ZIP declarado ≠ ZIP del banco) — no de código de proveedor. Ver el
+	// docblock de `LegacyCardIntent.DECLINE_ZIP_MISMATCH`.
+	'DECLINE_ZIP_MISMATCH',
 	// Antifraude
 	'FRAUD_REVIEW',
 	'FRAUD_REJECT',

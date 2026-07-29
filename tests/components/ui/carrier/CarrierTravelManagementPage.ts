@@ -55,8 +55,31 @@ export class CarrierTravelManagementPage extends UiBase {
 	 * pendiente reasignar).
 	 */
 	@atc('MG-158', { severity: 'critical', description: 'Verificar viaje en "Por Asignar" tras hold aprobado' })
-	async expectPassengerInPorAsignar(passenger: string, destination?: string, status?: string): Promise<void> {
+	async expectPassengerInPorAsignar(passenger: string, destination?: string, status?: string | RegExp): Promise<void> {
 		await this.legacy.expectPassengerInPorAsignar(passenger, destination, status);
+	}
+
+	/**
+	 * Contraparte UNHAPPY: confirma que el viaje quedó en "En conflicto" con estado "No autorizado"
+	 * — el hold del viaje falló DESPUÉS de vincular la tarjeta, así que el viaje existe y queda
+	 * marcado (desenlace `trip-unauthorized` de `journey-outcome.ts`).
+	 *
+	 * Sin decorar con @atc: no hay key del ATP para la verificación UI del hold fallido y las keys
+	 * jamás se inventan. Queda unmapped-visible hasta que el ATP tenga el TC correspondiente.
+	 */
+	@step
+	async expectPassengerInEnConflicto(passenger: string, destination?: string): Promise<void> {
+		await this.legacy.expectPassengerInEnConflicto(passenger, destination);
+	}
+
+	/**
+	 * DIAGNÓSTICO read-only: en qué pestaña de gestión está el viaje, o `null` si en ninguna.
+	 * Para usar dentro del manejo de error de una assertion que ya falló — ver el JSDoc del método
+	 * legacy, que explica las dos situaciones opuestas que distingue.
+	 */
+	@step
+	async findTripColumn(passenger: string, destination?: string): Promise<string | null> {
+		return this.legacy.findTripColumn(passenger, destination);
 	}
 
 	/** Columna "Por Asignar" del tablero de gestión (para aserciones not-contains). */

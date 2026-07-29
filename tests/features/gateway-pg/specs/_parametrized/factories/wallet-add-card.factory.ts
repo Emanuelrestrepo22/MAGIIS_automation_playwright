@@ -59,10 +59,7 @@ export type WalletAddCardSuiteOptions = {
  */
 export function defineWalletAddCardSuite(gateway: GatewayName, options: WalletAddCardSuiteOptions = {}): void {
 	if (gateway === 'stripe') {
-		throw new Error(
-			"defineWalletAddCardSuite('stripe'): el alta de tarjeta Stripe Elements valida por el flujo fillMinimum/selectCardByLast4 " +
-				'(otro oráculo) — la factory WAL cubre hoy el form nativo (authorize/ebizcharge/mercado-pago).'
-		);
+		throw new Error("defineWalletAddCardSuite('stripe'): el alta de tarjeta Stripe Elements valida por el flujo fillMinimum/selectCardByLast4 " + '(otro oráculo) — la factory WAL cubre hoy el form nativo (authorize/ebizcharge/mercado-pago).');
 	}
 
 	const adapter = getGatewayPgAdapter(gateway);
@@ -146,6 +143,8 @@ export function defineWalletAddCardSuite(gateway: GatewayName, options: WalletAd
 						'MP: validación de tarjeta no completa en TEST (sandbox MP no transacciona) — UAT-only. Form-fill + habilitación de "Validar" verificados.'
 					);
 				} else {
+					// `last4` habilita el oráculo persistente (tarjeta vinculada en Forma de Pago) además
+					// del toast "Tarjeta válida", que es transitorio y se pierde por carrera.
 					await travel.validateNativeCard(card.last4);
 				}
 			});

@@ -21,7 +21,7 @@
  * Tres motivos de skip, distinguibles en el reporte:
  *   1. `N/A` — la pasarela no expone ese outcome (razón literal de la celda `{ na }`).
  *   2. `sin oráculo` — la pasarela lo expone pero nadie definió qué debe hacer MAGIIS
- *      (ver `helpers/journey-outcome.ts`: FRAUD_REVIEW, HAPPY_PARTIAL_AUTH, DECLINE_CAPTURE).
+ *      (ver `helpers/card-outcome-oracle.ts`: FRAUD_REVIEW, HAPPY_PARTIAL_AUTH, DECLINE_CAPTURE).
  *   3. gate de credenciales del adapter, a nivel describe.
  *
  * NO lleva gate destructivo: ver la nota de ALCANCE DE ESCRITURA en el cuerpo del describe.
@@ -50,7 +50,7 @@ import { ALL_CARD_INTENTS, intentSupport } from '@fixtures/gateways/_shared';
 import { getGatewayPgAdapter } from '@features/gateway-pg/helpers/adapters';
 import { gatewayTag } from '@features/gateway-pg/helpers/adapters/gateway-tag';
 import { loginAsDispatcher } from '@features/gateway-pg/fixtures/gateway.fixtures';
-import { addCardExpectation, areaFRelocationFor, hasObservedOutcome, outcomeFor } from '@features/gateway-pg/helpers/journey-outcome';
+import { addCardExpectation, areaFRelocationFor, hasObservedOutcome, outcomeFor } from '@features/gateway-pg/helpers/card-outcome-oracle';
 import { cleanupGatewayCardByLast4 } from '@features/gateway-pg/helpers/card-precondition';
 import { assertAuthorizeAccountMeasuresRealAuthorizations, readAuthorizeAccountMode } from '@features/gateway-pg/helpers/authorize-account-guard';
 
@@ -156,7 +156,7 @@ export function defineCardOutcomeMatrixSuite(gateway: GatewayName, options: Card
 					if (!hasObservedOutcome(intent)) {
 						const motivo =
 							`[${gateway}/${intent}] Sin oráculo de sistema: la pasarela expone el outcome pero nadie definió ` +
-							'qué debe mostrar MAGIIS. Definirlo en helpers/journey-outcome.ts (con producto o con una corrida en vivo) ' +
+							'qué debe mostrar MAGIIS. Definirlo en helpers/card-outcome-oracle.ts (con producto o con una corrida en vivo) ' +
 							'antes de habilitar el caso.';
 						test.info().annotations.push({ type: 'sin-oraculo', description: motivo });
 						test.skip(true, motivo);
@@ -221,11 +221,11 @@ export function defineCardOutcomeMatrixSuite(gateway: GatewayName, options: Card
 						await cardFormFor(gateway).fill(page, card);
 					});
 
-					// El oráculo sale de journey-outcome, idéntico para las 4 pasarelas. `addCardExpectation`
+					// El oráculo sale de card-outcome-oracle, idéntico para las 4 pasarelas. `addCardExpectation`
 					// le suma la única corrección que NO es cross-pasarela: si la pasarela evalúa este
 					// outcome en la transacción y no en el alta (Authorize con triggers de ZIP/CVV), el
 					// área C debe esperar un alta APROBADA — es lo observado en vivo — y la cobertura del
-					// rechazo vive en el área F. Ver AREA_F_SCOPED_OUTCOMES en journey-outcome.ts.
+					// rechazo vive en el área F. Ver AREA_F_SCOPED_OUTCOMES en card-outcome-oracle.ts.
 					// (`addCard` se resolvió arriba, antes del journey, para alimentar el gate per-case.)
 					if (addCard.relocation) {
 						test.info().annotations.push({

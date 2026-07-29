@@ -33,7 +33,7 @@ import {
 	SUPPORTED_INTENTS_BY_GATEWAY,
 	type GatewayName
 } from '@fixtures/gateways/_shared';
-import { outcomeFor, hasObservedOutcome, observedIntents, liveVerifiedIntents } from '@features/gateway-pg/helpers/journey-outcome';
+import { outcomeFor, hasObservedOutcome, observedIntents, liveVerifiedIntents } from '@features/gateway-pg/helpers/card-outcome-oracle';
 
 test.describe('[unit] Adapters — consistencia declarativa cross-gateway @gateway @unit @regression', () => {
 	test('@unit assertAdapterFixtureConsistency: adapters ↔ resolver ↔ xray-keys ↔ journey-defaults sin drift', () => {
@@ -89,7 +89,9 @@ test.describe('[unit] Adapters — consistencia declarativa cross-gateway @gatew
 	});
 
 	test('@unit el vocabulario de intents cubre los 4 gateways sin huecos declarativos', () => {
-		expect(ALL_CARD_INTENTS).toHaveLength(24);
+		// 25 desde el merge de la suite HOLD (2026-07-29): el vocabulario incorpora
+		// DECLINE_ZIP_MISMATCH (intent de DATO, hoy sólo disparable en Authorize).
+		expect(ALL_CARD_INTENTS).toHaveLength(25);
 
 		// Cada intent tiene celda declarada en las 4 pasarelas — soportada o N/A con razón.
 		// Esto es lo que hace imposible el hueco silencioso: no hay "intent sin declarar".
