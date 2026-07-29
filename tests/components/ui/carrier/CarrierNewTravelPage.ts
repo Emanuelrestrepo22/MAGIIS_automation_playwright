@@ -30,6 +30,22 @@ import { UiBase } from '@ui/UiBase';
 export type { NewTravelFormInput } from '@pages/carrier';
 
 /**
+ * Endpoint del alta de tarjeta a la wallet del pasajero, VERIFICADO en vivo el 2026-07-28
+ * (`POST /magiis-v0.2/passengers/5289/cards` → 200, probe de la ronda 3 del RUN-LOG de
+ * Authorize). Es el único evento observable que marca el fin del round-trip con la pasarela:
+ * lo usa `expectNativeCardRejected` como asentamiento real.
+ */
+const ADD_CARD_URL_PATTERN = /\/passengers\/\d+\/cards(\?|$)/;
+
+/**
+ * Firma de un alta EXITOSA en el cuerpo de esa respuesta (misma corrida en vivo): la tarjeta
+ * queda persistida con id propio y últimos 4 dígitos. Se usa NEGADA — un rechazo no puede
+ * haber persistido la tarjeta.
+ */
+const PERSISTED_CARD_ID_PATTERN = /"id"\s*:\s*\d+/;
+const PERSISTED_CARD_LAST4_PATTERN = /"lastFourDigits"\s*:\s*"\d{4}"/;
+
+/**
  * Entrada del alta de viaje con método "Cargo a Bordo".
  * `passenger` opcional: cuando el cliente auto-asigna el pasajero (app pax /
  * empresa individuo, `#passenger` con `ng-reflect-is-disabled="true"`) se omite.
@@ -231,37 +247,58 @@ export class CarrierNewTravelPage extends UiBase {
 	 * Contraparte NEGATIVA de `validateNativeCard()`: click en "Validar" con una tarjeta que
 	 * la pasarela debe rechazar, y verifica que el sistema NO la dé por válida.
 	 *
-	 * ⚠️ HISTORIA DE ESTE MÉTODO — leer antes de tocarlo.
+	 * ⚠️ HISTORIA DE ESTE MÉTODO — leer antes de tocarlo. Falló dos veces por lo mismo.
 	 *
-	 * La primera versión hacía `expect(cartelDeExito).not.toBeVisible({ timeout })` como
-	 * única aserción, y era **vacua**: `not.toBeVisible` se satisface con el PRIMER chequeo,
-	 * y en t=0 el cartel todavía no llegó porque la respuesta de la pasarela está en vuelo.
-	 * Pasaba siempre, incluso cuando el cartel aparecía dos segundos después. Verificado en
-	 * vivo con Authorize el 2026-07-28: el probe de decline mostró el cartel "Tarjeta válida"
-	 * presente al final del flujo mientras el test daba verde.
+	 * **v1** — única aserción `expect(cartelDeExito).not.toBeVisible({ timeout })`. Vacua:
+	 * `not.toBeVisible` se satisface con el PRIMER chequeo, y en t=0 el cartel todavía no
+	 * llegó porque la respuesta está en vuelo. Pasaba siempre.
 	 *
-	 * Una aserción de ausencia solo dice algo si se evalúa DESPUÉS de que el flujo terminó.
-	 * Por eso ahora primero se espera un asentamiento observable — el botón "Validar" queda
-	 * deshabilitado mientras el front procesa la respuesta — y recién entonces se pregunta
-	 * por el cartel de éxito.
+	 * **v2** — se agregó un "asentamiento" esperando `toBeDisabled()` en "Validar" antes de
+	 * preguntar por el cartel. **También era vacua**, y el probe de la ronda 3 explica por
+	 * qué: el front deshabilita el botón EN EL CLICK (estado de submit) y lo deja
+	 * deshabilitado incluso DESPUÉS del éxito — se muestreó `disabled` a t+2s y seguía
+	 * `disabled` a t+30s con la tarjeta ya aprobada. O sea `toBeDisabled()` resuelve en
+	 * milisegundos y no es señal de "procesando": el asentamiento aportaba ~0 de espera, y
+	 * `toBeHidden()` seguía evaluándose antes de que la pasarela contestara.
 	 *
-	 * Sigue siendo ausencia-de-éxito y no presencia-de-error, porque el copy del rechazo aún
-	 * no se observó (con la tarjeta de decline de Authorize el front muestra ÉXITO — ver
-	 * `docs/gateway-pg/authorize/RUN-LOG.md`). Pero ya no puede pasar de forma vacua.
+	 * **v3 (esta)** — el asentamiento se ancla a lo único que sí marca el fin del round-trip:
+	 * la RESPUESTA del alta de tarjeta (`POST /passengers/{id}/cards`, observada a t+1.1-1.7s).
+	 * Y se agrega una aserción de PRESENCIA del rechazo a nivel API: un alta rechazada no
+	 * puede haber PERSISTIDO la tarjeta. La firma del alta exitosa está observada en vivo
+	 * (HTTP 2xx + `id` + `cardId` de la pasarela + `lastFourDigits`), así que su negación es
+	 * un oráculo fundado y no un copy inventado — el copy del rechazo en la UI sigue sin
+	 * observarse y por eso NO se asserta texto.
 	 *
-	 * @param settleMs Ventana para que el front procese la respuesta de la pasarela.
+	 * Ver `docs/gateway-pg/authorize/RUN-LOG.md` (hallazgos 2 y 5).
+	 *
+	 * @param settleMs Ventana para la respuesta del alta de tarjeta. Si no llega ninguna, se
+	 *   espera igual la ventana completa, así el chequeo del cartel nunca es instantáneo.
 	 */
 	@step
 	async expectNativeCardRejected(settleMs = 20_000): Promise<void> {
 		const validar = this.page.getByRole('button', { name: /^(Valid|Validar)$/i });
+
+		// El listener se arma ANTES del click: la respuesta se observó a t+1.1s, esperarla
+		// después del click la perdería.
+		const addCardResponse = this.page
+			.waitForResponse(response => response.request().method() === 'POST' && ADD_CARD_URL_PATTERN.test(response.url()), {
+				timeout: settleMs
+			})
+			.catch(() => null);
+
 		await validar.click();
+		const response = await addCardResponse;
 
-		// Asentamiento: el front deshabilita "Validar" mientras procesa. Sin esta espera, la
-		// aserción de abajo se evalúa antes de que la pasarela conteste y pasa vacuamente.
-		await expect(validar, 'el front debería deshabilitar "Validar" mientras procesa la respuesta de la pasarela').toBeDisabled({
-			timeout: settleMs
-		});
+		if (response) {
+			const body = await response.text().catch(() => '');
+			const cardPersisted = response.ok() && PERSISTED_CARD_ID_PATTERN.test(body) && PERSISTED_CARD_LAST4_PATTERN.test(body);
+			expect(
+				cardPersisted,
+				`la pasarela rechazó la tarjeta: el backend NO debe persistirla. Respondió HTTP ${response.status()} con: ${body.slice(0, 400)}`
+			).toBe(false);
+		}
 
+		// Ahora sí post-asentamiento: o llegó la respuesta del alta, o se agotó `settleMs`.
 		await expect(
 			this.page.getByText(/Tarjeta v[áa]lida|Valid card|Card valid/i).first(),
 			'la pasarela rechazó la tarjeta: el sistema NO debe declararla válida'

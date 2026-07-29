@@ -31,7 +31,7 @@
  * mensaje que devuelve la pasarela — MAGIIS no lo muestra tal cual.
  */
 
-import { ALL_CARD_INTENTS, type CardIntent } from '@fixtures/gateways/_shared';
+import { ALL_CARD_INTENTS, type CardIntent, type GatewayName } from '@fixtures/gateways/_shared';
 
 /** Estado del viaje tras intentar el cobro, tal como lo muestra la grilla del carrier. */
 export type ExpectedTravelStatus = 'Buscando chofer' | 'No autorizado';
@@ -184,4 +184,90 @@ export function observedIntents(): CardIntent[] {
 /** Los intents verificados en vivo (oráculo estricto disponible). */
 export function liveVerifiedIntents(): CardIntent[] {
 	return observedIntents().filter(intent => OUTCOME_BY_INTENT[intent]?.basis === 'live-verified');
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// EN QUÉ ÁREA EVALÚA LA PASARELA EL OUTCOME (C = alta de tarjeta · F = cobro)
+// ═══════════════════════════════════════════════════════════════════════
+
+/**
+ * `OUTCOME_BY_INTENT` describe QUÉ debe hacer el sistema. Esta tabla describe DÓNDE la
+ * pasarela lo decide, que no es lo mismo y no siempre es el área C.
+ *
+ * El caso que la hizo necesaria: en Authorize.net el outcome de estos tres intents lo
+ * dispara el ZIP o el CVV, y ZIP/CVV son campos de la **respuesta de autorización** (AVS /
+ * CVV2) — la pasarela los evalúa en la TRANSACCIÓN, no al crear el perfil de pago. Por eso
+ * el alta de la tarjeta aprueba, y aprueba con razón: no hay nada que rechazar todavía.
+ *
+ * Sin esta tabla el área C exigía un rechazo que la pasarela no emite en esa área, y el
+ * único test que "pasaba" lo hacía de forma vacua. Declararlo acá reubica la cobertura del
+ * decline en el área F —donde sí se manifiesta— en vez de simular un rechazo inexistente,
+ * y deja el área C assertando el comportamiento REAL y observado (la tarjeta se acepta).
+ *
+ * NO es una excepción para tapar un rojo: `addCardShouldSucceed` pasa a `true` porque eso
+ * es lo que se observó en vivo, y el caso del área C sigue corriendo con una aserción de
+ * PRESENCIA ("Tarjeta válida" visible), que es más fuerte que la de ausencia que tenía.
+ *
+ * La celda de `CARD_MATRIX` NO se toca: la pasarela SÍ expone el outcome (`{card}` sigue
+ * siendo correcto), sólo lo expone en otra área.
+ */
+export type AreaFRelocation = {
+	/** El área donde la pasarela realmente evalúa el outcome. */
+	readonly area: 'F';
+	/** Por qué el alta aprueba: qué evalúa la pasarela y cuándo. */
+	readonly reason: string;
+	/** Observación en vivo que sostiene la reubicación. */
+	readonly evidence: string;
+};
+
+const AUTHORIZE_TRANSACTION_SCOPED = (trigger: string): AreaFRelocation => ({
+	area: 'F',
+	reason:
+		`En Authorize.net el outcome lo dispara ${trigger}, y ese dato se evalúa en la RESPUESTA DE AUTORIZACIÓN ` +
+		'(campos AVS / CVV2), no al crear el perfil de pago del alta. El alta de la tarjeta aprueba legítimamente; ' +
+		'el rechazo pertenece al área F (hold / cobro).',
+	evidence:
+		'Observado en vivo 2026-07-28 (probe `specs/authorize/probe/decline-oracle-probe.spec.ts`, ronda 3 del ' +
+		'RUN-LOG): las 3 tarjetas producen `POST /passengers/{id}/cards` → HTTP 200 con la tarjeta PERSISTIDA ' +
+		'(`id` + `cardId` de Authorize + `lastFourDigits`) y el cartel "Tarjeta válida" visible desde t+2s y estable ' +
+		'hasta t+30s — idéntico al control HAPPY_NO_AUTH de la misma corrida. Cero mensajes de rechazo en la página.'
+});
+
+/**
+ * Intents cuyo outcome la pasarela NO evalúa en el alta de tarjeta.
+ * Exhaustivo por pasarela sólo donde hay evidencia: la ausencia significa "se evalúa en el
+ * área C", que es el default y lo que vale para las otras 3 pasarelas.
+ */
+export const AREA_F_SCOPED_OUTCOMES: Partial<Record<GatewayName, Partial<Record<CardIntent, AreaFRelocation>>>> = {
+	authorize: {
+		DECLINE_AUTHORIZE: AUTHORIZE_TRANSACTION_SCOPED('el ZIP 46282'),
+		DECLINE_INVALID_CVC: AUTHORIZE_TRANSACTION_SCOPED('el CVV 901'),
+		DECLINE_PREPAID_ZERO_BALANCE: AUTHORIZE_TRANSACTION_SCOPED('el ZIP 46228')
+	}
+};
+
+/** `undefined` = la pasarela evalúa este outcome en el alta (área C), el caso normal. */
+export function areaFRelocationFor(gateway: GatewayName, intent: CardIntent): AreaFRelocation | undefined {
+	return AREA_F_SCOPED_OUTCOMES[gateway]?.[intent];
+}
+
+/** Lo que el área C debe esperar del alta de tarjeta, ya resuelta la reubicación de área. */
+export type AddCardExpectation = {
+	/** `true` → el alta debe aprobar; `false` → el alta debe rechazar. */
+	readonly shouldSucceed: boolean;
+	/** Presente sólo si el outcome del intent se decide en el área F. */
+	readonly relocation?: AreaFRelocation;
+};
+
+/**
+ * Resuelve la expectativa del área C combinando la regla de negocio (`OUTCOME_BY_INTENT`,
+ * cross-pasarela) con el área en que la pasarela evalúa el outcome.
+ *
+ * Un intent reubicado al área F espera un alta APROBADA, porque es lo observado; su
+ * cobertura de rechazo vive en la suite de hold, no acá.
+ */
+export function addCardExpectation(gateway: GatewayName, intent: CardIntent): AddCardExpectation {
+	const relocation = areaFRelocationFor(gateway, intent);
+	if (relocation) return { shouldSucceed: true, relocation };
+	return { shouldSucceed: outcomeFor(intent).addCardShouldSucceed };
 }

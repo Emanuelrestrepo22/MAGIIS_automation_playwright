@@ -50,7 +50,7 @@ import { ALL_CARD_INTENTS, intentSupport } from '@fixtures/gateways/_shared';
 import { getGatewayPgAdapter } from '@features/gateway-pg/helpers/adapters';
 import { gatewayTag } from '@features/gateway-pg/helpers/adapters/gateway-tag';
 import { loginAsDispatcher } from '@features/gateway-pg/fixtures/gateway.fixtures';
-import { hasObservedOutcome, outcomeFor } from '@features/gateway-pg/helpers/journey-outcome';
+import { addCardExpectation, areaFRelocationFor, hasObservedOutcome, outcomeFor } from '@features/gateway-pg/helpers/journey-outcome';
 import { cleanupGatewayCardByLast4 } from '@features/gateway-pg/helpers/card-precondition';
 
 export type CardOutcomeMatrixSuiteOptions = {
@@ -122,7 +122,12 @@ export function defineCardOutcomeMatrixSuite(gateway: GatewayName, options: Card
 
 				// `intentSupport` es puro/síncrono → el last4 entra al título en tiempo de definición.
 				const last4 = support.supported ? ` (•••• ${support.card.last4})` : '';
-				const etiqueta = hasObservedOutcome(intent) ? outcomeFor(intent).label : intent.toLowerCase().replace(/_/g, ' ');
+				// `areaFRelocationFor` también es puro → el título dice desde el reporte que este caso
+				// verifica el ALTA (área C) y que el rechazo se decide en el área F. Sin esto el título
+				// decía "rechazada" en un caso que asserta una aprobación, que es peor que no decir nada.
+				const areaF = hasObservedOutcome(intent) ? areaFRelocationFor(gateway, intent) : undefined;
+				const etiquetaBase = hasObservedOutcome(intent) ? outcomeFor(intent).label : intent.toLowerCase().replace(/_/g, ' ');
+				const etiqueta = areaF ? `alta APROBADA — ${etiquetaBase} se decide en el área ${areaF.area} (cobro)` : etiquetaBase;
 				const title = `${tcId ? `[${tcId}] ` : ''}${extraTags}@cardmatrix ${intentTag(intent)} ${intent} — ${etiqueta}${last4} (${env.toUpperCase()})`;
 
 				test(title, details, async ({ page }) => {
@@ -177,9 +182,27 @@ export function defineCardOutcomeMatrixSuite(gateway: GatewayName, options: Card
 						await cardFormFor(gateway).fill(page, card);
 					});
 
-					// El oráculo sale de journey-outcome, idéntico para las 4 pasarelas.
-					if (expected.addCardShouldSucceed) {
-						await test.step(`Then: el sistema da la tarjeta por válida (${expected.label}, base: ${expected.basis})`, async () => {
+					// El oráculo sale de journey-outcome, idéntico para las 4 pasarelas. `addCardExpectation`
+					// le suma la única corrección que NO es cross-pasarela: si la pasarela evalúa este
+					// outcome en la transacción y no en el alta (Authorize con triggers de ZIP/CVV), el
+					// área C debe esperar un alta APROBADA — es lo observado en vivo — y la cobertura del
+					// rechazo vive en el área F. Ver AREA_F_SCOPED_OUTCOMES en journey-outcome.ts.
+					const addCard = addCardExpectation(gateway, intent);
+					if (addCard.relocation) {
+						test.info().annotations.push({
+							type: 'area-f',
+							description:
+								`[${gateway}/${intent}] El outcome se evalúa en el área F, no en el alta. ${addCard.relocation.reason} ` +
+								`Evidencia: ${addCard.relocation.evidence} Este caso verifica el área C (el alta aprueba); ` +
+								'el rechazo se cubre en la suite de hold con el mismo intent.'
+						});
+					}
+
+					if (addCard.shouldSucceed) {
+						const etiquetaThen = addCard.relocation
+							? `${expected.label} — pero el outcome se decide en el área ${addCard.relocation.area}: acá el alta APRUEBA (live-verified)`
+							: `${expected.label}, base: ${expected.basis}`;
+						await test.step(`Then: el sistema da la tarjeta por válida (${etiquetaThen})`, async () => {
 							await travel.validateNativeCard();
 						});
 					} else {
