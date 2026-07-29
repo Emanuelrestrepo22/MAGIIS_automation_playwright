@@ -680,3 +680,142 @@ chofer" habría convertido un gap en comportamiento esperado.
 **14 viajes creados, 14 cancelados, 0 abiertos.** Ningún spec quedó con `skip` o `fixme` agregado por
 esta campaña; `CARD_MATRIX` no se tocó y los 3 casos del área C siguen corriendo con su aserción de
 presencia real.
+
+---
+
+# Ronda 5 — el back volvió; el bloqueante no era el back (2026-07-29)
+
+Disparador: el servicio de tarjetas volvió a estar arriba. La ronda pregunta qué de lo que la caída
+contaminó se puede re-medir, y la respuesta corta es: **menos de lo esperado, porque el bloqueante
+principal nunca fue el back**.
+
+## Paso 0 — el back está arriba, medido por la ruta que importa
+
+`curl` a `apps-test2.magiis.com:3000/api/card` da HTTP 000 desde la máquina de test, pero ese endpoint
+es interno: el 500 original venía del backend de MAGIIS actuando como cliente. La verificación válida
+es ejercitarlo a través de MAGIIS, y salió bien:
+
+```
+POST /magiis-v0.2/passengers/8669/cards                          → 200  (antes 500)
+POST /magiis-v0.2/cards/passengers/8669/cardValidationWithHold/…  → 200
+POST /magiis-v0.2/carriers/1521/travels                          → 200
+```
+
+**Residuo del cierre anterior eliminado**: el guard de atribución leyó `tarjetas 1111 del pax: 1`, así
+que la card `4723` que sobrevivía con `DELETE` en 500 se fue. Confirmación directa por inventario, no
+inferida.
+
+## Paso 1 — la cuenta sigue enlatada (gate cerrado)
+
+`npm run test:test:gateway:api -- --grep="@authorize"` → **los mismos 8 rojos**, sin un solo trigger
+evaluándose:
+
+| Trigger | Esperado | Sigue devolviendo |
+|---|---|---|
+| CVV 901 | `cvvResultCode "N"` | ≠ N |
+| CVV 904 | `cvvResultCode "P"` | ≠ P |
+| ZIP 46205 | `avsResultCode "N"` | ≠ N |
+| ZIP 46204 | `avsResultCode "G"` | ≠ G |
+| ZIP 46282 | `responseCode "2"` | `1` (aprueba) |
+| happy paths | `cvvResultCode "M"` | `""` |
+
+Como estaba previsto, **el Paso 4 (área F con los 3 declines) NO se corrió**: con una cuenta que
+aprueba todo, un verde ahí no probaría cobertura de decline.
+
+### La causa raíz del desalineo está en el mensaje del guard, y es autoinfligida
+
+El `[GUARD][AUTHORIZE-ACCOUNT]` lo dice explícito:
+
+> **la suite CFG vincula la pasarela con estas mismas credenciales** (`GatewaySwitchSteps.linkAuthorize`),
+> así que un run de CFG deja al carrier apuntando a esta cuenta.
+
+Eso cierra el círculo de la ronda 4 y **reencuadra sus conclusiones**: el carrier apuntaba a la cuenta
+del equipo cuando el backend produjo `NO_AUTH` (viaje 67541); un run de CFG lo repuntó a la cuenta
+enlatada de `.env.test`; desde entonces todo aprueba. Los "3 declines que no rechazan en ninguna área"
+**no son evidencia sobre MAGIIS**: son el resultado esperado de una cuenta instalada por nuestra propia
+suite.
+
+Consecuencia operativa nueva: **correr la suite CFG de Authorize tiene un efecto colateral que
+invalida las mediciones de pago posteriores** hasta re-vincular con las creds del equipo. Eso hay que
+decirlo en el runbook antes de que alguien corra CFG y mida declines después.
+
+## Paso 2 — `HAPPY_PARTIAL_AUTH` re-medido: sigue sin oráculo, ahora por una razón más filosa
+
+3 corridas con el back sano, guard de atribución OK en las tres:
+
+| Muestra | travelId | Estado | Nota |
+|---|---|---|---|
+| 1 | 67550 | `SEARCHING_DRIVER` | `simulatePrice` 163.92 |
+| 2 | 67553 | `SEARCHING_DRIVER` | ídem |
+| 3 | — | no llegó al submit | `DELETE card 4728` en **500** |
+
+Acumulado con la ronda 4: **4 `SEARCHING_DRIVER` contra 1 `NO_AUTH`** en 5 muestras.
+
+Y sin embargo **no se declara el oráculo**, por una razón que la ronda 4 no había aislado: con la
+cuenta enlatada **no se puede probar que el trigger de autorización parcial se haya ejercitado**. El
+ZIP 46225 no se evalúa, así que "el viaje se creó y salió a buscar chofer" es compatible con dos
+lecturas opuestas:
+
+1. MAGIIS crea el viaje con una pre-autorización insuficiente (riesgo de dinero), **o**
+2. nunca hubo autorización parcial y lo que se observó fue una aprobación normal — o sea la medición
+   no dice nada del caso.
+
+Declarar `basis: 'live-verified'` sobre eso sería declarar un oráculo sobre un trigger que no se
+disparó. Queda fuera de `OUTCOME_BY_INTENT`, como estaba.
+
+## Paso 3 — el área C no pudo correr, y eso es el guard funcionando
+
+```
+Error: [GUARD][AUTHORIZE-ACCOUNT] La cuenta detrás de AUTHORIZE_API_LOGIN_ID está en TEST MODE …
+1 failed · 21 did not run
+```
+
+El guard que la ronda anterior agregó al `beforeAll` de la factory **bloquea la suite entera** en vez
+de dejarla producir 8 verdes que no habrían autorizado nada. Es el resultado correcto: el área C de
+Authorize **no es medible** mientras el carrier apunte a la cuenta enlatada.
+
+### Hallazgo 6 — el guard es FAIL-OPEN, y eso hace no confiable un verde propio de esta ronda
+
+`authorize-account-guard.ts:121`:
+
+```ts
+if (!verdict || !verdict.canned) return;   // ← veredicto nulo ⇒ NO lanza
+```
+
+Si el probe del guard no logra un veredicto (timeout, error de red), **deja pasar la suite**. Eso
+explica una inconsistencia de esta misma ronda: el control `HAPPY_NO_AUTH` que corrí en el Paso 0
+**pasó en verde**, y 40 minutos después el mismo caso fue bloqueado por el guard. No cambió la cuenta:
+lo más probable es que en la primera corrida el veredicto viniera nulo y el guard abriera.
+
+Consecuencia: **un verde bajo este guard no prueba que la cuenta esté bien** — puede significar que el
+guard no pudo determinarlo. Es la quinta trampa de vacuidad de la campaña, y la primera que está en un
+guard en vez de en una aserción.
+
+Arreglo propuesto (no aplicado en esta ronda, es cambio de política): distinguir
+`canned` / `real` / `indeterminado`, y que `indeterminado` **también** bloquee, con un mensaje distinto.
+Un gate de validez de medición tiene que fallar cerrado.
+
+## Viajes creados y cerrados
+
+**Cero abiertos al cierre**, verificado con el barrido:
+`cleanup-travels-api.ts --dry-run` → `Recolectados 0 travelIds CANCELABLES`.
+
+Los viajes de la ronda (67550, 67553 y los de la primera tanda) los canceló el `finally` del probe.
+
+## Estado de los dos bloqueantes al cerrar la ronda
+
+| Bloqueante | Estado |
+|---|---|
+| Servicio de tarjetas caído | **RESUELTO** — 200 en las 3 rutas |
+| `DELETE` de tarjeta con 500 intermitente | **SOBREVIVE** — card `4728` falló con el back sano, así que no era la caída. Es defecto intermitente propio |
+| Cuenta de Authorize desalineada | **SIGUE** — y ahora se conoce la causa raíz: la suite CFG la instala |
+
+## Próximos pasos
+
+1. **Cerrar el guard**: que un veredicto indeterminado bloquee en vez de abrir (hallazgo 6).
+2. **Documentar el efecto colateral de CFG** en el runbook: correr CFG de Authorize invalida las
+   mediciones de pago posteriores hasta re-vincular con las creds del equipo.
+3. Conseguir las creds de la cuenta del equipo y re-vincular. Recién ahí el área C, el área F y los 3
+   declines vuelven a ser medibles.
+4. El `DELETE` en 500 merece ticket propio: es intermitente, contamina mediciones y ya obligó a
+   construir un guard de atribución para trabajar alrededor.
