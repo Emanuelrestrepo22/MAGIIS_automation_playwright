@@ -11,14 +11,20 @@ export class DashboardPage extends SuperPage {
 	// Validación mínima pero confiable del dashboard:
 	// 1. confirmar que salimos del login por URL
 	// 2. confirmar que el shell principal del portal ya es visible
-	async ensureDashboardLoaded(): Promise<void> {
+	//
+	// `timeout` configurable vía LOGIN_DASHBOARD_TIMEOUT (default 20s). Existe porque
+	// LOGIN_GOTO_TIMEOUT cubre SOLO la fase `goto` de LoginPage, y en `apps-test` degradado el
+	// cuello de botella real es esta espera: la campaña Authorize del 2026-07-29 falló en masa
+	// con `[login:dashboard] Timeout 20000ms exceeded` AUNQUE se corrió con
+	// LOGIN_GOTO_TIMEOUT=60000 — subir esa variable no tenía efecto acá.
+	async ensureDashboardLoaded(timeout = Number(process.env.LOGIN_DASHBOARD_TIMEOUT) || 20_000): Promise<void> {
 		const dashboardUrl = /#\/home\/(?:carrier|contractor)(?:\/dashboard)?(?:[?#].*)?$/;
 		console.log('[DashboardPage.ensureDashboardLoaded][S00] Validando shell /home/carrier o /home/contractor...');
 		// Hash-routed SPA: `expect(page).toHaveURL` a veces NO dispara aunque la URL ya matchee
 		// (el navigation event no se emite en cambios de hash). Se poll-ea `page.url()` en vivo
 		// (mismo patrón que global-setup.multi-role.ts) para no flakear en el login.
 		await expect
-			.poll(() => this.page.url(), { timeout: 20_000, message: `dashboard URL no alcanzada (patrón ${dashboardUrl})` })
+			.poll(() => this.page.url(), { timeout, message: `dashboard URL no alcanzada (patrón ${dashboardUrl})` })
 			.toMatch(dashboardUrl);
 		console.log('[DashboardPage.ensureDashboardLoaded][S01] Shell portal OK');
 
