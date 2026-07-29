@@ -380,11 +380,18 @@ export abstract class NewTravelPageBase extends BasePage {
 			return;
 		}
 
-		if (options.keepExistingOnNoResults && currentText) {
-			await this.page.keyboard.press('Escape');
-			return;
-		}
-
+		// FIX (2026-07-29) — este shortcut estaba ANTES del retry path y por eso `setOrigin`
+		// (único caller con `keepExistingOnNoResults: true`) nunca llegaba a limpiar el campo y
+		// reintentar: al fallar los 3 intentos de commit salía por acá conservando el valor previo.
+		// Con un cliente que trae origen PRE-CARGADO (empresa individuo → "3500 Paradise Road,
+		// Las Vegas") eso dejaba el viaje con la dirección equivocada. Confirmado en vivo en
+		// TS-AUTHORIZE-TC1061 el 2026-07-29: falló con `El origen no quedó seteado en
+		// "Reconquista 661…"` y el campo conservaba los 68 chars del origen precargado.
+		//
+		// Conservar el valor existente sólo es defendible cuando ES el pedido — y ese caso ya
+		// retornó en el early-return de arriba (`currentText.includes(desiredText)`). Si llegamos
+		// hasta acá, el valor actual NO es el que pidió el caller, así que primero se intenta el
+		// retry con el campo limpio y el shortcut queda como ÚLTIMO recurso.
 		await searchInput.fill('');
 		// NOTE(tier3-kept): clear field Angular — sin evento de confirmación de "campo vacío"
 		await this.page.waitForTimeout(500);
@@ -397,7 +404,21 @@ export abstract class NewTravelPageBase extends BasePage {
 			return;
 		}
 
+		// Tramo corto también en el retry (simetría con la primera pasada): el autocomplete
+		// devuelve un sufijo de localidad distinto del string canónico de JOURNEY_DEFAULTS.
+		if (await this.commitPlaceOption(place, shortSuggestion)) {
+			return;
+		}
+
 		if (await this.commitPlaceOption(place, fallbackOption)) {
+			return;
+		}
+
+		// ÚLTIMO recurso (movido desde antes del retry): si de verdad no hay opciones y el caller
+		// tolera conservar lo que había, se conserva. El caller que exige la dirección debe
+		// aseverarla después (`expectOriginSet`), que es lo que detectó TC1061.
+		if (options.keepExistingOnNoResults && currentText) {
+			await this.page.keyboard.press('Escape');
 			return;
 		}
 
