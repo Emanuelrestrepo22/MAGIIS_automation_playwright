@@ -216,6 +216,25 @@ export class CarrierNewTravelPage extends UiBase {
 	}
 
 	/**
+	 * Detecta si la Forma de Pago ya quedó RESUELTA a la tarjeta guardada del pax
+	 * ("Tarjeta de crédito VISA *** <last4>") — con tarjeta vigente el form nativo NO se
+	 * renderiza y el dropdown la preselecciona (confirmado por screenshot live 2026-07-27,
+	 * carrier 1521 / Authorize). Utility read-only: silent-fail → false.
+	 */
+	@step
+	async isSavedCardPreselected(last4: string): Promise<boolean> {
+		try {
+			await this.page
+				.getByText(new RegExp(`\\*+\\s*${last4}`))
+				.first()
+				.waitFor({ state: 'visible', timeout: 3_000 });
+			return true;
+		} catch {
+			return false;
+		}
+	}
+
+	/**
 	 * Click en "Validar" del form NATIVO Angular y espera el oráculo de tarjeta válida
 	 * ("Tarjeta válida" / "Valid card") — VERIFICADO en vivo para Authorize (4111/900/10001);
 	 * eBiz comparte el form (oráculo asumido, TODO live). Para Stripe Elements usar el flujo
@@ -224,7 +243,11 @@ export class CarrierNewTravelPage extends UiBase {
 	@step
 	async validateNativeCard(): Promise<void> {
 		await this.page.getByRole('button', { name: /^(Valid|Validar)$/i }).click();
-		await expect(this.page.getByText(/Tarjeta v[áa]lida|Valid card|Card valid/i).first()).toBeVisible({ timeout: 20_000 });
+		// 45s: la validación viaja al sandbox del PSP (Authorize.Net) y el RTT excede 20s
+		// de forma intermitente bajo carga — observado en vivo 2026-07-27 (2 flakes en runs
+		// back-to-back con el MISMO oráculo; verde en ventana tranquila). Espera por estado
+		// observable, oráculo intacto.
+		await expect(this.page.getByText(/Tarjeta v[áa]lida|Valid card|Card valid/i).first()).toBeVisible({ timeout: 45_000 });
 	}
 
 	/**

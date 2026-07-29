@@ -36,7 +36,11 @@ import { getGatewayPgAdapter } from '@features/gateway-pg/helpers/adapters';
 import { expectNoThreeDSModal, loginAsDispatcher } from '@features/gateway-pg/fixtures/gateway.fixtures';
 import { validateAndSelectMercadoPagoCard } from '@features/gateway-pg/helpers/mercadoPago.helpers';
 import { getCarrierParameters, readHoldRaw, setHoldViaApi } from '@features/gateway-pg/helpers/parameters-api';
-import { validateCardPrecondition, type CardPreconditionResult } from '@features/gateway-pg/helpers/card-precondition';
+import {
+	cleanupGatewayCardByLast4,
+	validateCardPrecondition,
+	type CardPreconditionResult
+} from '@features/gateway-pg/helpers/card-precondition';
 import {
 	captureCreatedTravelId,
 	cancelTravelIfCreated,
@@ -267,6 +271,17 @@ export class CarrierHoldSteps extends UiBase {
 			await this.login(scenario.gateway);
 		});
 
+		// Precondición de idempotencia (form nativo): si la MISMA tarjeta quedó vinculada al
+		// pax por un run previo, el alta diverge y "Tarjeta válida" nunca aparece (falso
+		// negativo confirmado live 2026-07-27 — el piloto hold reproducía el fallo que WAL
+		// evitaba con su cleanup). Mismo helper compartido; silent-fail por query.
+		if (adapter.cardForm === 'native-angular') {
+			await test.step('Precondición: limpiar tarjeta nativa previa (idempotencia)', async () => {
+				const queries = [scenario.passenger, ...(adapter.journeyDefaults.paxSearchQueries ?? [])];
+				await cleanupGatewayCardByLast4(this.page, queries, cardLast4);
+			});
+		}
+
 		let preferSavedCard = false;
 		if (useCardFlow) {
 			await test.step(`Precondición: resolver flujo de tarjeta (cardFlow=${scenario.cardFlow ?? 'new'})`, async () => {
@@ -319,9 +334,17 @@ export class CarrierHoldSteps extends UiBase {
 						origin: scenario.origin,
 						destination: scenario.destination
 					});
-					await this.travel.selectPaymentMethod('Preautorizada');
-					await cardFormFor(gateway).fill(this.page, card);
-					await this.validateNativeGatewayCard(gateway);
+					// Rama tarjeta-vigente (live 2026-07-27, screenshot): con la tarjeta del pax ya
+					// vinculada, el dropdown la PRESELECCIONA y el form nativo no se renderiza —
+					// fill+Validar divergen y "Tarjeta válida" nunca aparece (falso negativo).
+					// Oráculo funcional de esta rama: la selección visible "*** <last4>".
+					if (await this.travel.isSavedCardPreselected(cardLast4)) {
+						debugLog('gateway-pg:hold', `[card] tarjeta guardada *** ${cardLast4} preseleccionada — se omite fill/Validar (rama CARD-EXISTING nativa)`);
+					} else {
+						await this.travel.selectPaymentMethod('Preautorizada');
+						await cardFormFor(gateway).fill(this.page, card);
+						await this.validateNativeGatewayCard(gateway);
+					}
 				}
 			});
 

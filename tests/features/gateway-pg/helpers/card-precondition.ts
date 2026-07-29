@@ -452,3 +452,26 @@ export async function validateCardPrecondition(
 		apiResolved: true
 	};
 }
+
+/**
+ * Idempotencia de alta de tarjeta nativa: borra por API la tarjeta (last4) del pax
+ * antes del alta. Prueba varias queries de búsqueda (la tarjeta se adjunta al pasajero
+ * del alta). Extraído de wallet-add-card.factory (S8/campaña: el piloto hold reproducía
+ * un falso-negativo cuando la tarjeta ya estaba vinculada — confirmado live 2026-07-27:
+ * con la card guardada, el form nativo diverge y "Tarjeta válida" nunca aparece).
+ * Silent-fail por query (utility KATA): una query sin pax no aborta la precondición.
+ */
+export async function cleanupGatewayCardByLast4(page: Page, queries: readonly string[], last4: string): Promise<void> {
+	for (const query of queries) {
+		try {
+			const paxId = await getPassengerId(page, query);
+			const resp = await getPassengerCards(page, paxId);
+			const cards = resp.cards ?? [];
+			const toDelete = cards.filter(card => card.lastFourDigits === last4);
+			for (const card of toDelete) await deletePassengerCard(page, paxId, card.id);
+			if (toDelete.length > 0) return;
+		} catch {
+			// utility silent-fail: query sin match no es error de la precondición
+		}
+	}
+}
