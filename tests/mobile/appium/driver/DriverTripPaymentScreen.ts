@@ -60,38 +60,58 @@ const SEL = {
 	fHolderNameOutside:
 		'credit-card-payment-data input[formcontrolname="cardholderName"], #cardholderName, input[formcontrolname="cardholderName"]',
 	fPostalOutside: 'credit-card-payment-data input[formcontrolname="zipCode"], input[formcontrolname="zipCode"]',
-	// ── RAMA NATIVA (sin Stripe) ───────────────────────────────────────────────────────────────
-	// Guard de rama: presencia del campo de número NATIVO. Los 3 sabores del selector son los
-	// mismos que ya resuelve `PassengerWalletScreen.fillCardForm` para este componente; el
-	// atributo `id`/`formcontrolname`/`data-checkout` de `cardNumber` está medido en el dump del
-	// modal del driver (`credit-card-payment-data > form > .first-segment ion-input#cardNumber`).
-	nativeGuard:
-		'credit-card-payment-data input#cardNumber, input#cardNumber, input[formcontrolname="cardNumber"], input[data-checkout="cardNumber"]',
-	// Los 4 campos del form nativo del DRIVER, medidos por el probe
-	// `tests/mobile/appium/scripts/driver-charge-from-resume.ts` (#cardNumber #cardExpirationDate
-	// #securityCode #cardholderName). Las variantes formcontrolname/data-checkout son las que ya
-	// usa el pasajero para el MISMO componente.
-	nativeNumber: ['input#cardNumber', 'input[formcontrolname="cardNumber"]', 'input[data-checkout="cardNumber"]'],
-	nativeExpiry: [
-		'input#cardExpirationDate',
-		'input[formcontrolname="cardExpirationDate"]',
-		'input[data-checkout="cardExpirationDate"]'
-	],
-	nativeCvc: ['input#securityCode', 'input[formcontrolname="securityCode"]', 'input[data-checkout="securityCode"]'],
-	nativeHolder: [
-		'input#cardholderName',
-		'input[formcontrolname="cardholderName"]',
-		'input[data-checkout="cardholderName"]',
-		'ion-input[formcontrolname="cardholderName"] input'
-	],
-	// El probe del driver NO vio `zipCode` en su modal (sí existe en el form del pasajero) ⇒ se
-	// llena SOLO si el campo aparece en vivo. Selectores medidos, sin inventar un `#zipCode`.
-	nativeZip: ['input[formcontrolname="zipCode"]', 'input[data-checkout="zipCode"]'],
 	// Botón COBRAR (WebView MAGIIS, fuera del iframe) — selector real del build.
 	cobrar: 'credit-card-payment-data ion-content form button, credit-card-payment-data button.btn.primary',
 	// Resultado / alerts.
 	attentionModal: 'ion-modal.alert-modal-atention.show-modal',
 	blockingAlert: 'app-alert-modal'
+} as const;
+
+// ── RAMA NATIVA (sin Stripe) ──────────────────────────────────────────────────────────────────
+//
+// DOS hechos medidos el 2026-07-29 gobiernan estos selectores (dumps
+// `evidence/dom-dump/driver-cargo-decline-failure-2026-07-29T23-05-50-769Z.txt` y `…T23-28-12-884Z.txt`):
+//
+//  1. `id` / `formcontrolname` / `data-checkout` viven en el HOST `<ion-input>`, NO en el `<input>`
+//     interno:
+//         <ion-input formcontrolname="cardNumber" id="cardNumber" data-checkout="cardNumber" …>
+//           <input class="native-input sc-ion-input-md" placeholder="Número de tarjeta" required>
+//         </ion-input>
+//     ⇒ `input#cardNumber` y `input[formcontrolname="cardNumber"]` NO matchean NADA. Hay que
+//     apuntar al host y bajar al input interno — que es exactamente lo que hacen
+//     `AppiumSessionBase.setDomValue` (shadow o light DOM) y el probe
+//     `scripts/driver-charge-from-resume.ts` (`probe('#cardNumber')` → `h.querySelector('input')`).
+//
+//  2. Puede haber VARIOS `credit-card-payment-data` montados a la vez, todos con `show-modal`: cada
+//     corrida que muere en el cobro deja su `ion-modal` huérfano en el DOM (se observaron
+//     `ion-overlay-243` stale + `ion-overlay-256` activo, y los `id` quedan DUPLICADOS). Un
+//     `document.querySelector('#cardNumber')` pega en el STALE. ⇒ todo se scopea al overlay
+//     TOPMOST vía el marcador de test `data-qa-charge-modal` que pone `markActiveChargeModal()`.
+const CHARGE_MODAL_MARK = 'data-qa-charge-modal';
+const MARKED = `[${CHARGE_MODAL_MARK}="1"]`;
+
+/** Variantes de selector del HOST `ion-input` de `name`, scopeadas al overlay activo. */
+const hostVariants = (name: string): readonly string[] => [
+	`${MARKED} #${name}`,
+	`${MARKED} ion-input#${name}`,
+	`${MARKED} ion-input[formcontrolname="${name}"]`,
+	`${MARKED} ion-input[data-checkout="${name}"]`
+];
+
+const NATIVE = {
+	/** Marcador del overlay de cobro activo (lo setea `markActiveChargeModal`). */
+	marked: MARKED,
+	number: hostVariants('cardNumber'),
+	expiry: hostVariants('cardExpirationDate'),
+	cvc: hostVariants('securityCode'),
+	holder: hostVariants('cardholderName'),
+	/**
+	 * El probe del driver NO vio `zipCode` en su modal (sí existe en el form del pasajero) ⇒ se
+	 * llena SÓLO si el campo aparece en vivo; no se asume obligatorio.
+	 */
+	zip: hostVariants('zipCode'),
+	/** COBRAR del overlay ACTIVO — sin scopear, pegaría en el botón (disabled eterno) del stale. */
+	cobrar: `${MARKED} button.btn.primary`
 } as const;
 
 export type CardData = {
@@ -126,22 +146,99 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 		super(config, driver);
 	}
 
-	/** Detecta el modal de cobro (credit-card-payment-data / iframe Stripe) en el WebView. */
+	/**
+	 * Detecta el modal de cobro (credit-card-payment-data / iframe Stripe) en el WebView.
+	 *
+	 * ⚠️ BASELINE DE OVERLAYS STALE (2026-07-29): la app NO desmonta el `ion-modal` del cobro cuando
+	 * una corrida muere ahí — quedan varios `credit-card-payment-data` con `show-modal` y los MISMOS
+	 * `id` duplicados (medido: `ion-overlay-243` muerto + `ion-overlay-256` vivo). Con el chequeo
+	 * "existe alguno" esta función daba `true` en 0.5s contra el modal MUERTO, cuando la app tarda
+	 * ~2.5s en abrir el nuevo (`closeTravel → payTravelCreditCard`) ⇒ el fill iba al form equivocado.
+	 *
+	 * Por eso, en la PRIMERA iteración se marcan como `stale` los overlays ya presentes y después se
+	 * espera uno NUEVO, que queda marcado como el activo para el resto del flujo. Si el timeout se
+	 * agota sin overlay nuevo, se degrada al comportamiento anterior (topmost) con un warning: es
+	 * preferible intentar el cobro que abortar un viaje real por una heurística.
+	 */
 	async waitForPaymentScreen(timeout = 30_000): Promise<boolean> {
 		const driver = this.getDriver();
 		const deadline = Date.now() + timeout;
+		const staleCount = await this.snapshotStaleModals();
+		if (staleCount > 0) {
+			console.log(
+				`[DriverTripPaymentScreen] ${staleCount} modal(es) de cobro STALE en el DOM (corridas previas) — se ignoran; se espera el nuevo.`
+			);
+		}
+
 		while (Date.now() < deadline) {
 			await this.switchToWebView(3_000);
-			const present = await driver
-				.execute<
-					boolean,
-					[string, string]
-				>((modalSel, iframeSel) => !!document.querySelector(modalSel) || !!document.querySelector(iframeSel), SEL.modal, SEL.iframeNumber)
+			if ((await this.markActiveChargeModal()) === 'fresh') return true;
+			const stripeReady = await driver
+				.execute<boolean, [string]>(iframeSel => !!document.querySelector(iframeSel), SEL.iframeNumber)
 				.catch(() => false);
-			if (present) return true;
+			if (stripeReady) return true;
 			await driver.pause(400);
 		}
+
+		// Degradación: ningún overlay NUEVO. Puede ser un build que reusa el modal existente.
+		if ((await this.markActiveChargeModal(true)) !== 'none') {
+			console.warn(
+				'[DriverTripPaymentScreen] No apareció un modal de cobro NUEVO; se usa el topmost existente (posible overlay stale).'
+			);
+			return true;
+		}
 		return false;
+	}
+
+	/**
+	 * Marca como `stale` todos los `credit-card-payment-data` presentes AHORA y limpia el marcador
+	 * activo. Baseline para distinguir el modal de ESTE cobro de los huérfanos. Devuelve cuántos marcó.
+	 */
+	private async snapshotStaleModals(): Promise<number> {
+		return this.executeInWebView((attr: string) => {
+			const all = Array.from(document.querySelectorAll('credit-card-payment-data')) as HTMLElement[];
+			for (const el of all) el.setAttribute(attr, 'stale');
+			return all.length;
+		}, CHARGE_MODAL_MARK).catch(() => 0);
+	}
+
+	/**
+	 * Marca el overlay de cobro ACTIVO con `data-qa-charge-modal="1"`, para que TODO lo que sigue
+	 * (guard de rama, fill, readback, COBRAR) opere sobre el mismo form y nunca sobre un stale.
+	 *
+	 * Preferencia: (1) el que ya esté marcado activo; (2) el último overlay visible SIN marcar —
+	 * o sea, aparecido después del baseline; (3) sólo con `allowStale`, el último visible aunque sea
+	 * stale. En Ionic el último overlay del DOM es el de mayor z-index (medido: 20256 > 20243).
+	 *
+	 * El marcador es una anotación de TEST sobre el DOM, no un selector de la app (mismo criterio que
+	 * el `style.pointerEvents = 'none'` que ya aplica `PassengerWalletScreen`).
+	 */
+	private async markActiveChargeModal(allowStale = false): Promise<'fresh' | 'fallback' | 'none'> {
+		return this.executeInWebView(
+			(attr: string, permitStale: boolean) => {
+				const all = Array.from(document.querySelectorAll('credit-card-payment-data')) as HTMLElement[];
+				const isVisible = (el: HTMLElement): boolean => {
+					const overlay = el.closest('ion-modal');
+					return overlay ? overlay.classList.contains('show-modal') : el.offsetParent !== null;
+				};
+
+				const already = all.find(el => el.getAttribute(attr) === '1');
+				if (already && isVisible(already)) return 'fresh';
+
+				const visible = all.filter(isVisible);
+				const fresh = visible.filter(el => el.getAttribute(attr) !== 'stale');
+				const target = fresh[fresh.length - 1] ?? (permitStale ? visible[visible.length - 1] : null);
+				if (!target) return 'none';
+
+				for (const el of all) {
+					if (el.getAttribute(attr) === '1') el.setAttribute(attr, 'stale');
+				}
+				target.setAttribute(attr, '1');
+				return fresh.length > 0 ? 'fresh' : 'fallback';
+			},
+			CHARGE_MODAL_MARK,
+			allowStale
+		).catch(() => 'none' as const);
 	}
 
 	/**
@@ -169,7 +266,7 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 		// 0) ¿Form NATIVO (sin iframes)? → rama nativa y salir.
 		await this.switchToWebView();
 		await this.switchFrameTarget(null).catch(() => undefined);
-		if (await this.findAnyElement(SEL.nativeGuard)) {
+		if (await this.hasNativeCardForm(10_000)) {
 			await this.fillNativeCardForm(card);
 			return;
 		}
@@ -231,6 +328,27 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 	}
 
 	/**
+	 * ¿El overlay de cobro activo es el form NATIVO? Asegura que haya un overlay marcado como activo
+	 * y verifica que exponga el HOST `#cardNumber`. Poleado: que el `credit-card-payment-data` exista
+	 * no implica que sus `ion-input` ya estén hidratados.
+	 *
+	 * La detección va por `driver.execute` + `document.querySelector` y NO por `$$` de WebdriverIO:
+	 * es la mecánica que TODO el resto del camino driver usa con éxito en este WebView
+	 * (`jsTapActive`, `selectCreditCardMethod`, el probe `driver-charge-from-resume`).
+	 */
+	private async hasNativeCardForm(timeout: number): Promise<boolean> {
+		const driver = this.getDriver();
+		const deadline = Date.now() + timeout;
+		while (Date.now() < deadline) {
+			if ((await this.markActiveChargeModal(true)) !== 'none' && (await this.existsInWebView(NATIVE.number))) {
+				return true;
+			}
+			await driver.pause(400);
+		}
+		return false;
+	}
+
+	/**
 	 * RAMA NATIVA: llena el form Ionic propio del modal de cobro (`credit-card-payment-data`), el que
 	 * renderiza la Driver App cuando NO hay Stripe Elements (medido con Authorize el 2026-07-29).
 	 *
@@ -249,10 +367,10 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 		const number = digits(card.number);
 
 		// 1) Número → dispara validación + reveal del resto del form.
-		if (!(await this.fillWebInputField(SEL.nativeNumber, number).catch(() => false))) {
+		if (!(await this.fillWebInputField(NATIVE.number, number).catch(() => false))) {
 			throw new Error(
 				'[DriverTripPaymentScreen] No se pudo llenar #cardNumber en el form NATIVO ' +
-					`(selectores: ${SEL.nativeNumber.join(', ')}).`
+					`(selectores: ${NATIVE.number.join(', ')}).`
 			);
 		}
 		// Reveal progresivo: esperar a que el campo de vencimiento se MONTE (ng-if false → true) en
@@ -260,32 +378,32 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 		// (la marca puede tardar en resolverse) y como techo el poll — si no monta, el diagnóstico de
 		// `submitPayment` va a nombrar el campo faltante.
 		await driver.pause(2_500);
-		await this.waitForNativeField(SEL.nativeExpiry, 8_000);
+		await this.waitForNativeField(NATIVE.expiry, 8_000);
 
 		// 2) Vencimiento MM/AA. Se verifica por READBACK y, si la máscara del campo rechazó el
 		//    formato con barra, se reintenta compacto (MMAA). No es un reintento a ciegas: el
 		//    segundo intento sólo ocurre si el valor NO quedó escrito.
 		const { combined, compact } = this.parseExpiryParts(card.expiry);
-		await this.fillWebInputField(SEL.nativeExpiry, combined).catch(() => false);
-		if (!(await this.hasDigits(SEL.nativeExpiry, 4))) {
+		await this.fillWebInputField(NATIVE.expiry, combined).catch(() => false);
+		if (!(await this.hasDigits(NATIVE.expiry, 4))) {
 			console.warn(
 				`[DriverTripPaymentScreen] #cardExpirationDate quedó vacío con "${combined}" — reintentando compacto "${compact}".`
 			);
-			await this.fillWebInputField(SEL.nativeExpiry, compact).catch(() => false);
+			await this.fillWebInputField(NATIVE.expiry, compact).catch(() => false);
 		}
 
 		// 3) CVV / código de seguridad.
-		await this.fillWebInputField(SEL.nativeCvc, digits(card.cvc)).catch(() => false);
+		await this.fillWebInputField(NATIVE.cvc, digits(card.cvc)).catch(() => false);
 
 		// 4) Titular (sólo si el caso lo trae — el dato es del fixture de la pasarela).
 		if (card.holderName) {
-			await this.fillWebInputField(SEL.nativeHolder, card.holderName).catch(() => false);
+			await this.fillWebInputField(NATIVE.holder, card.holderName).catch(() => false);
 		}
 
 		// 5) Código postal SÓLO si el campo existe: el probe del driver no lo vio, el del pasajero sí.
 		//    No se asume obligatorio (`postal` tampoco existe en todas las pasarelas).
-		if (card.postal && (await this.findAnyElement(SEL.nativeZip.join(', ')))) {
-			await this.fillWebInputField(SEL.nativeZip, card.postal).catch(() => false);
+		if (card.postal && (await this.existsInWebView(NATIVE.zip))) {
+			await this.fillWebInputField(NATIVE.zip, card.postal).catch(() => false);
 		}
 
 		await driver.pause(500);
@@ -295,13 +413,19 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 		);
 	}
 
+	/** ¿Alguno de `selectors` existe en el documento? (in-document, no `$$` de WebdriverIO). */
+	private async existsInWebView(selectors: readonly string[]): Promise<boolean> {
+		return this.executeInWebView((sel: string) => !!document.querySelector(sel), selectors.join(', ')).catch(
+			() => false
+		);
+	}
+
 	/** Espera a que alguno de `selectors` exista en el DOM (reveal progresivo). No lanza. */
 	private async waitForNativeField(selectors: readonly string[], timeout: number): Promise<boolean> {
 		const driver = this.getDriver();
 		const deadline = Date.now() + timeout;
-		const joined = selectors.join(', ');
 		while (Date.now() < deadline) {
-			if (await this.findAnyElement(joined)) return true;
+			if (await this.existsInWebView(selectors)) return true;
 			await driver.pause(400);
 		}
 		return false;
@@ -313,12 +437,21 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 		return state.replace(/\D/g, '').length >= min;
 	}
 
-	/** Valor actual del primer campo que resuelva de `selectors` ('' si no existe). */
+	/**
+	 * Valor actual del primer campo que resuelva de `selectors` ('' si no existe). Los selectores
+	 * apuntan al HOST `ion-input`, así que hay que bajar al `<input>` interno (shadow o light DOM):
+	 * la property `value` del host no siempre refleja lo que ve el FormControl.
+	 */
 	private async readFieldValue(selectors: readonly string[]): Promise<string> {
 		return this.executeInWebView((sels: string[]) => {
 			for (const sel of sels) {
-				const node = document.querySelector(sel) as HTMLInputElement | null;
-				if (node) return String(node.value ?? '');
+				const host = document.querySelector(sel) as (HTMLElement & { shadowRoot?: ShadowRoot | null }) | null;
+				if (!host) continue;
+				const inner = (host.matches('input, textarea')
+					? host
+					: (host.shadowRoot?.querySelector('input, textarea') ??
+						host.querySelector('input, textarea'))) as HTMLInputElement | null;
+				return String(inner?.value ?? '');
 			}
 			return '';
 		}, selectors).catch(() => '');
@@ -332,44 +465,52 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 	 */
 	private async readNativeFormState(): Promise<NativeFormState> {
 		const groups: Array<[string, readonly string[]]> = [
-			['cardNumber', SEL.nativeNumber],
-			['cardExpirationDate', SEL.nativeExpiry],
-			['securityCode', SEL.nativeCvc],
-			['cardholderName', SEL.nativeHolder],
-			['zipCode', SEL.nativeZip]
+			['cardNumber', NATIVE.number],
+			['cardExpirationDate', NATIVE.expiry],
+			['securityCode', NATIVE.cvc],
+			['cardholderName', NATIVE.holder],
+			['zipCode', NATIVE.zip]
 		];
 
 		return this.executeInWebView(
-			(entries: Array<[string, readonly string[]]>, cobrarSel: string) => {
+			(entries: Array<[string, readonly string[]]>, markedSel: string, cobrarFallback: string) => {
+				// Todo lo que se lee va scopeado al overlay ACTIVO (marcado); sin eso, con un modal
+				// stale en el DOM el diagnóstico describiría el form MUERTO y mandaría al analista
+				// a perseguir un fantasma.
+				const scope = (document.querySelector(markedSel) ?? document) as ParentNode;
 				const fields: Record<string, { found: boolean; value: string; invalid: boolean }> = {};
 				for (const [name, sels] of entries) {
-					let node: HTMLInputElement | null = null;
+					let host: (HTMLElement & { shadowRoot?: ShadowRoot | null }) | null = null;
 					for (const sel of sels) {
-						node = document.querySelector(sel) as HTMLInputElement | null;
-						if (node) break;
+						host = document.querySelector(sel) as (HTMLElement & { shadowRoot?: ShadowRoot | null }) | null;
+						if (host) break;
 					}
-					if (!node) {
+					if (!host) {
 						fields[name] = { found: false, value: '', invalid: false };
 						continue;
 					}
-					const host = (node.closest('ion-input') ?? node) as HTMLElement;
+					const inner = (host.matches('input, textarea')
+						? host
+						: (host.shadowRoot?.querySelector('input, textarea') ??
+							host.querySelector('input, textarea'))) as HTMLInputElement | null;
 					fields[name] = {
 						found: true,
-						value: String(node.value ?? ''),
+						value: String(inner?.value ?? ''),
 						invalid: /\b(ng-invalid|ion-invalid)\b/.test(host.className)
 					};
 				}
 
-				const form = document.querySelector('credit-card-payment-data form') as HTMLElement | null;
-				const button = document.querySelector(cobrarSel) as HTMLButtonElement | null;
+				const form = scope.querySelector('form') as HTMLElement | null;
+				const button = (scope.querySelector('button.btn.primary') ??
+					document.querySelector(cobrarFallback)) as HTMLButtonElement | null;
 
 				return {
 					form: form ? form.className : '<no-form>',
 					fields,
-					chargeValidVisible: Array.from(document.querySelectorAll('.header.end span.title')).some(s =>
+					chargeValidVisible: Array.from(scope.querySelectorAll('.header.end span.title')).some(s =>
 						/cobrar/i.test((s as HTMLElement).innerText || '')
 					),
-					chargeInvalidVisible: !!document.querySelector('span.invalid-charge'),
+					chargeInvalidVisible: !!scope.querySelector('span.invalid-charge'),
 					submit: {
 						found: !!button,
 						disabled: button ? button.disabled || button.getAttribute('disabled') !== null : true,
@@ -378,6 +519,7 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 				};
 			},
 			groups,
+			NATIVE.marked,
 			SEL.cobrar
 		).catch(
 			(): NativeFormState => ({
@@ -456,26 +598,39 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 		const driver = this.getDriver();
 		await this.switchToWebView();
 
+		// El COBRAR del overlay ACTIVO primero (`NATIVE.cobrar`), con el selector histórico como
+		// fallback para la rama Stripe. Sin el scope, con un modal de cobro stale en el DOM se
+		// poleaba el botón del modal MUERTO — disabled para siempre ⇒ timeout garantizado.
 		const deadline = Date.now() + enableTimeout;
 		while (Date.now() < deadline) {
 			const state = await driver
-				.execute<{ found: boolean; disabled: boolean }, [string]>(sel => {
-					const b = document.querySelector(sel) as HTMLButtonElement | null;
-					if (!b) return { found: false, disabled: true };
-					return { found: true, disabled: b.disabled || b.getAttribute('disabled') !== null };
-				}, SEL.cobrar)
+				.execute<{ found: boolean; disabled: boolean }, [string, string]>(
+					(activeSel, fallbackSel) => {
+						const b = (document.querySelector(activeSel) ??
+							document.querySelector(fallbackSel)) as HTMLButtonElement | null;
+						if (!b) return { found: false, disabled: true };
+						return { found: true, disabled: b.disabled || b.getAttribute('disabled') !== null };
+					},
+					NATIVE.cobrar,
+					SEL.cobrar
+				)
 				.catch(() => ({ found: false, disabled: true }));
 
 			if (state.found && !state.disabled) {
 				await driver
-					.execute<boolean, [string]>(sel => {
-						const b = document.querySelector(sel) as HTMLElement | null;
-						if (b) {
-							b.click();
-							return true;
-						}
-						return false;
-					}, SEL.cobrar)
+					.execute<boolean, [string, string]>(
+						(activeSel, fallbackSel) => {
+							const b = (document.querySelector(activeSel) ??
+								document.querySelector(fallbackSel)) as HTMLElement | null;
+							if (b) {
+								b.click();
+								return true;
+							}
+							return false;
+						},
+						NATIVE.cobrar,
+						SEL.cobrar
+					)
 					.catch(() => false);
 				console.log('[DriverTripPaymentScreen] COBRAR tapeado');
 				return;
