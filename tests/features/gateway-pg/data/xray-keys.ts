@@ -179,7 +179,16 @@ export type AuthorizeContractCase =
 
 /**
  * Keys Xray del pack de CONTRATO del sandbox Authorize — issues REALES creadas en MG
- * el 2026-07-28 y verificadas en Jira; miembros del Test Execution `MG-558`.
+ * el 2026-07-28 y verificadas en Jira; miembros del Test Execution `MG-558` y del
+ * Test Set `MG-602` ("ATP · SBX — Contrato sandbox Authorize.Net (BL-036)").
+ *
+ * TCID LOCAL (label `tcid:` en Jira, área SBX del idmap del ATP):
+ *   MG-590 = TC-PAY-SBX-01 · MG-591 = TC-PAY-SBX-02 · MG-592 = TC-PAY-SBX-03
+ *   MG-593 = TC-PAY-SBX-04 · MG-594 = TC-PAY-SBX-05 · MG-595 = TC-PAY-SBX-06
+ *   MG-596 = TC-PAY-SBX-07 · MG-597 = TC-PAY-SBX-08 · MG-598 = TC-PAY-SBX-09
+ *   MG-599 = TC-PAY-SBX-10 · MG-600 = TC-PAY-SBX-11 · MG-601 = TC-PAY-SBX-12
+ * Los summaries en Jira siguen el estándar del generador del ATP:
+ * `MG-602 | TC<n>: Validar …` (n = 1..12, mismo orden que este registry).
  *
  * NIVEL DE ABSTRACCIÓN (load-bearing — no reutilizar estas keys para otra cosa):
  * estos 12 Tests acreditan el CONTRATO del sandbox de Authorize.net (la respuesta del
@@ -191,19 +200,26 @@ export type AuthorizeContractCase =
  * en `docs/gateway-pg/authorize/matriz_cases.md` §§2.2-2.5.
  */
 export const AUTHORIZE_CONTRACT_XRAY_KEYS: Record<AuthorizeContractCase, XrayIssueKey> = {
-	happyVisa: 'MG-590',
-	happyMastercard: 'MG-591',
-	happyAmex: 'MG-592',
-	echoCvv: 'MG-593',
-	declineZip46282: 'MG-594',
-	cvv901: 'MG-595',
-	cvv904: 'MG-596',
-	avs46205: 'MG-597',
-	happyDiscover: 'MG-598',
-	avs46204: 'MG-599',
-	partial46225: 'MG-600',
-	prepaid46228: 'MG-601'
+	happyVisa: 'MG-590', /*       TC1  · tcid TC-PAY-SBX-01 */
+	happyMastercard: 'MG-591', /* TC2  · tcid TC-PAY-SBX-02 */
+	happyAmex: 'MG-592', /*       TC3  · tcid TC-PAY-SBX-03 */
+	echoCvv: 'MG-593', /*         TC4  · tcid TC-PAY-SBX-04 */
+	declineZip46282: 'MG-594', /* TC5  · tcid TC-PAY-SBX-05 */
+	cvv901: 'MG-595', /*          TC6  · tcid TC-PAY-SBX-06 */
+	cvv904: 'MG-596', /*          TC7  · tcid TC-PAY-SBX-07 */
+	avs46205: 'MG-597', /*        TC8  · tcid TC-PAY-SBX-08 */
+	happyDiscover: 'MG-598', /*   TC9  · tcid TC-PAY-SBX-09 */
+	avs46204: 'MG-599', /*        TC10 · tcid TC-PAY-SBX-10 */
+	partial46225: 'MG-600', /*    TC11 · tcid TC-PAY-SBX-11 */
+	prepaid46228: 'MG-601' /*     TC12 · tcid TC-PAY-SBX-12 */
 };
+
+/**
+ * Test Set Xray que agrupa el pack de CONTRATO del sandbox Authorize (los 12 de arriba).
+ * Es el prefijo de los summaries (`MG-602 | TC<n>: …`), el eje de agrupación por feature.
+ * NO es un Test Execution: los resultados siguen yendo a `MG-558` (ver más abajo).
+ */
+export const AUTHORIZE_CONTRACT_XRAY_TEST_SET: XrayIssueKey = 'MG-602';
 
 /**
  * Test Executions por pasarela (creados 2026-07-25, env `test`).
@@ -230,4 +246,4 @@ export const XRAY_EXECUTION_ENV_VAR: Record<GatewayCompany, string> = {
  * resultado como Test (épicas/planes/executions/containers — no son Tests Xray).
  */
 export const XRAY_KEY_DENYLIST_RECOMMENDED =
-	'MG-3,MG-178,MG-509,MG-510,MG-511,MG-512,MG-513,MG-514,MG-515,MG-516,MG-553,MG-557,MG-558,MG-559,MG-560,MG-561';
+	'MG-3,MG-178,MG-509,MG-510,MG-511,MG-512,MG-513,MG-514,MG-515,MG-516,MG-553,MG-557,MG-558,MG-559,MG-560,MG-561,MG-602';
