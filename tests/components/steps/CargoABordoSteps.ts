@@ -278,6 +278,23 @@ export class CargoABordoSteps extends UiBase {
 					);
 					return;
 				}
+				// Con asignación MANUAL el viaje se despacha directo a un conductor (Send Manual →
+				// Assign), así que NUNCA pasa por "Buscando chofer" — ese estado es del camino Send
+				// Service. Falló en vivo así el 2026-07-29 (viaje 67733, `CARGO_MANUAL_ASSIGN=1` sin
+				// Appium). El oráculo se degrada a PRESENCIA en la grilla, que es lo que sí se sostiene
+				// en los dos caminos, y el estado real se REGISTRA en vez de asertarse:
+				// TODO(live): pinnear el texto exacto del estado asignado una vez observado en el log.
+				if (options.manualAssign) {
+					await this.management.goto();
+					await this.management.expectPassengerInPorAsignar(scenario.passenger ?? scenario.client);
+					const column = await this.management.findTripColumn(scenario.passenger ?? scenario.client);
+					debugLog(
+						'gateway-pg:carrier',
+						`[cargo] asignación manual: viaje presente en gestión, pestaña observada="${column ?? 'ninguna'}" (no se asserta "Buscando chofer": ese estado es del camino Send Service).`
+					);
+
+					return;
+				}
 				await this.management.goto();
 				await this.management.expectPassengerInPorAsignar(
 					scenario.passenger ?? scenario.client,
@@ -332,12 +349,20 @@ export class CargoABordoSteps extends UiBase {
 				// al JSON de Xray (queda como evidencia de QUÉ viaje cobrar), y el log lo deja
 				// visible en la consola de la corrida sin abrir el reporte.
 				const travelId = travelIdRef.travelId;
+				// Y con el id va la TARJETA del caso: en cobro manual la elige la persona en el
+				// Resumen de la Driver App, así que sin este dato los 6 casos de rechazo son
+				// indistinguibles del happy (todos serían "cobrar y ver qué pasa"). Son tarjetas de
+				// sandbox del PSP, no credenciales.
+				const charge = options.driverAppStep?.charge;
+				const cardHint = charge
+					? ` | tarjeta ${charge.card.number} exp ${charge.card.expiry} cvc ${charge.card.cvc}${charge.card.postal ? ` zip ${charge.card.postal}` : ''} → esperado: ${charge.expectedOutcome === 'success' ? 'COBRO APROBADO' : 'COBRO RECHAZADO'}`
+					: '';
 				test.info().annotations.push({
 					type: 'travel-id',
-					description: `${travelId} — viaje VIVO para cobrar manualmente desde la Driver App (keepTravel activo: no se canceló)`
+					description: `${travelId} — viaje VIVO para cobrar manualmente desde la Driver App (keepTravel activo: no se canceló)${cardHint}`
 				});
 				await test.step(`Viaje ${travelId} queda VIVO para cobro manual en la Driver App`, async () => {
-					console.log(`[cargo-a-bordo] travelId=${travelId} — cobrar desde la Driver App; NO se canceló.`);
+					console.log(`[cargo-a-bordo] travelId=${travelId} — cobrar desde la Driver App; NO se canceló.${cardHint}`);
 				});
 			}
 		}
