@@ -45,13 +45,37 @@ import { AuthorizeSandboxApi, hasAuthorizeCredentials } from '@api/AuthorizeSand
 const CANNED_TRANS_ID = '0';
 const CANNED_AUTH_CODE = '000000';
 
-/** Monto de control del probe — distintivo a propósito para reconocerlo en el Merchant Interface. */
-const GUARD_AMOUNT = '1.11';
+/**
+ * Monto de control del probe. El prefijo `1.` se mantiene fijo a propósito (todo probe del guard
+ * es un cargo de $1.xx, reconocible de un vistazo en el Merchant Interface) pero los centavos
+ * VARÍAN por invocación.
+ *
+ * Por qué: Authorize.Net rechaza transacciones DUPLICADAS (misma tarjeta + mismo monto dentro de
+ * una ventana de ~2 min) y ese rechazo responde `transId "0"` con `authCode ""`. Con el monto fijo
+ * en `1.11`, el segundo probe de una misma corrida (otro worker / otro project — el memo es por
+ * proceso) recibía ese rechazo y el guard lo interpretaba como cuenta REAL, porque su
+ * discriminador exigía `authCode === '000000'`. Observado en vivo el 2026-07-29: dos probes
+ * consecutivos, el primero `transId "80057740303"`, el segundo `transId "0"` / `authCode ""`,
+ * ambos reportados 🟢 REAL. Variar los centavos saca al probe de la ventana de duplicados.
+ */
+function guardAmount(): string {
+	// 2 dígitos derivados del reloj: suficiente para no repetir monto dentro de la ventana.
+	const cents = String(Math.floor(Date.now() / 1000) % 100).padStart(2, '0');
+
+	return `1.${cents}`;
+}
 
 /** Veredicto sobre la cuenta que responde a las credenciales del entorno. */
 export interface AuthorizeAccountVerdict {
 	/** `true` = cuenta en Test Mode: respuesta enlatada, triggers inertes, medición de pago INVÁLIDA. */
 	canned: boolean;
+	/**
+	 * `true` = la respuesta NO prueba que la cuenta mida autorizaciones reales, pero tampoco es la
+	 * firma enlatada conocida (típicamente `transId "0"` por rechazo/duplicado/error). Se trata
+	 * como INDETERMINADO y BLOQUEA: es la misma doctrina del Hallazgo 6 (un verde que no puede
+	 * probar la cuenta no prueba nada).
+	 */
+	inconclusive: boolean;
 	transId: string;
 	authCode: string;
 	testRequest: string;
@@ -60,17 +84,25 @@ export interface AuthorizeAccountVerdict {
 }
 
 /**
- * Clasifica una respuesta cruda del sandbox. El discriminador es el par
- * `transId '0'` + `authCode '000000'`: una cuenta que procesa de verdad SIEMPRE devuelve un
- * `transId` real en una autorización aprobada. `testRequest` se reporta como corroboración
- * (no se exige, porque es un campo que el sandbox no documenta como estable).
+ * Clasifica una respuesta cruda del sandbox.
+ *
+ * El invariante duro es `transId`: una autorización APROBADA por una cuenta que procesa de verdad
+ * SIEMPRE devuelve un `transId` no-cero. De ahí los tres estados:
+ *   - `transId '0'` + `authCode '000000'` → cuenta enlatada de Test Mode (`canned`).
+ *   - `transId '0'` con cualquier otro `authCode` → `inconclusive`. No es la firma enlatada, pero
+ *     tampoco una autorización: es rechazo, duplicado o error. NUNCA es "real".
+ *   - `transId` no-cero → la cuenta mide de verdad.
+ * `testRequest` se reporta como corroboración (no se exige: el sandbox no lo documenta como estable).
  */
 export function classifyAuthorizeAccount(response: AuthorizeApiResponse): AuthorizeAccountVerdict {
 	const tx = response.transactionResponse;
 	const transId = tx?.transId ?? '';
 	const authCode = tx?.authCode ?? '';
+	const canned = transId === CANNED_TRANS_ID && authCode === CANNED_AUTH_CODE;
+
 	return {
-		canned: transId === CANNED_TRANS_ID && authCode === CANNED_AUTH_CODE,
+		canned,
+		inconclusive: !canned && transId === CANNED_TRANS_ID,
 		transId,
 		authCode,
 		testRequest: tx?.testRequest ?? '',
@@ -96,7 +128,7 @@ export async function readAuthorizeAccountMode(request?: APIRequestContext): Pro
 		const api = new AuthorizeSandboxApi({ request: request ?? ownContext! });
 		const response = await api.authorizeOnly({
 			card: AUTHORIZE_CARDS.SUCCESS,
-			amount: GUARD_AMOUNT,
+			amount: guardAmount(),
 			refId: `acct-guard-${Date.now()}`.slice(0, 20)
 		});
 		cachedVerdict = classifyAuthorizeAccount(response);
@@ -133,6 +165,18 @@ export async function assertAuthorizeAccountMeasuresRealAuthorizations(request?:
 				'así que la medición de pago se BLOQUEA en vez de correr a ciegas (Hallazgo 6, RUN-LOG: un verde ' +
 				'bajo guard fail-open no prueba nada). Revisar conectividad con apitest.authorize.net y re-correr; ' +
 				'el probe se reintenta en cada llamada (el veredicto nulo no se memoiza).'
+		);
+	}
+
+	if (verdict.inconclusive) {
+		throw new Error(
+			'[GUARD][AUTHORIZE-ACCOUNT] Veredicto INDETERMINADO: el probe authOnly de control respondió ' +
+				`transId "${verdict.transId}" (authCode "${verdict.authCode}", avs "${verdict.avsResultCode}", ` +
+				`cvv "${verdict.cvvResultCode}"). Un transId cero NO es una autorización: es rechazo, error o ` +
+				'transacción DUPLICADA. No prueba que la cuenta mida de verdad, así que la medición de pago se ' +
+				'BLOQUEA en vez de correr a ciegas.\n' +
+				'CAUSA MÁS PROBABLE: duplicado. Authorize rechaza misma tarjeta + mismo monto dentro de ~2 min; ' +
+				'esperá ese lapso y re-corré. Si persiste, revisá el estado de la cuenta en el Merchant Interface.'
 		);
 	}
 
