@@ -193,8 +193,9 @@ export function defineCardOutcomeMatrixSuite(gateway: GatewayName, options: Card
 							type: 'area-f',
 							description:
 								`[${gateway}/${intent}] El outcome se evalúa en el área F, no en el alta. ${addCard.relocation.reason} ` +
-								`Evidencia: ${addCard.relocation.evidence} Este caso verifica el área C (el alta aprueba); ` +
-								'el rechazo se cubre en la suite de hold con el mismo intent.'
+								`Evidencia: ${addCard.relocation.evidence} Este caso verifica el área C (el alta aprueba). ` +
+								'El rechazo NO está cubierto hoy: la ronda 4 del RUN-LOG corrió el hold con estos intents y el área F ' +
+								'tampoco rechaza (viaje en SEARCHING_DRIVER). Gap declarado, no cobertura pendiente de otra suite.'
 						});
 					}
 

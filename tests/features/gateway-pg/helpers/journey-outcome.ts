@@ -200,16 +200,35 @@ export function liveVerifiedIntents(): CardIntent[] {
  * el alta de la tarjeta aprueba, y aprueba con razón: no hay nada que rechazar todavía.
  *
  * Sin esta tabla el área C exigía un rechazo que la pasarela no emite en esa área, y el
- * único test que "pasaba" lo hacía de forma vacua. Declararlo acá reubica la cobertura del
- * decline en el área F —donde sí se manifiesta— en vez de simular un rechazo inexistente,
- * y deja el área C assertando el comportamiento REAL y observado (la tarjeta se acepta).
+ * único test que "pasaba" lo hacía de forma vacua. Declararlo acá deja el área C assertando
+ * el comportamiento REAL y observado (la tarjeta se acepta) en vez de simular un rechazo
+ * inexistente.
  *
  * NO es una excepción para tapar un rojo: `addCardShouldSucceed` pasa a `true` porque eso
  * es lo que se observó en vivo, y el caso del área C sigue corriendo con una aserción de
  * PRESENCIA ("Tarjeta válida" visible), que es más fuerte que la de ausencia que tenía.
  *
  * La celda de `CARD_MATRIX` NO se toca: la pasarela SÍ expone el outcome (`{card}` sigue
- * siendo correcto), sólo lo expone en otra área.
+ * siendo correcto), sólo lo decide en otra área.
+ *
+ * ═══ LO QUE LA RONDA 4 CORRIGIÓ DE ESTA TABLA (leer antes de confiar en el área F) ═══
+ *
+ * La ronda 3 dedujo —correctamente— que el ZIP/CVV se evalúan en la transacción, y de ahí
+ * concluyó que "la cobertura del rechazo vive en la suite de hold". La ronda 4 corrió el hold
+ * con estos intents y esa segunda mitad resultó **FALSA**: el área F tampoco rechaza. El viaje
+ * se crea en `SEARCHING_DRIVER` y aparece en "Asignar", igual que el happy path
+ * (`docs/gateway-pg/authorize/RUN-LOG.md` §Ronda 4: ZIP 46282 limpio 2/2, CVV 901 1/1,
+ * ZIP 46228 1/1; `POST /carriers/1521/travels` → `"state":"SEARCHING_DRIVER"`).
+ *
+ * Por eso el `basis` de esos intents sigue en `documented-class` y NO subió a `live-verified`:
+ * `expectedTravelStatus: 'No autorizado'` es la regla de negocio documentada (y verificada en
+ * vivo en Stripe y MercadoPago), pero en Authorize **no se pudo observar**, y lo observado la
+ * contradice. Declarar `live-verified` acá sería declarar un oráculo que nadie vio.
+ *
+ * Esta tabla, entonces, sólo sostiene lo del área C (el alta aprueba — eso SÍ está observado).
+ * NO promete cobertura del rechazo en el área F: hoy no existe. El blocker para conseguirla
+ * está en el RUN-LOG §Ronda 4 (las creds sandbox de `.env.test` y la cuenta Authorize que usa
+ * el backend NO son la misma, así que la pata API no es oráculo válido del flujo E2E).
  */
 export type AreaFRelocation = {
 	/** El área donde la pasarela realmente evalúa el outcome. */
@@ -224,13 +243,18 @@ const AUTHORIZE_TRANSACTION_SCOPED = (trigger: string): AreaFRelocation => ({
 	area: 'F',
 	reason:
 		`En Authorize.net el outcome lo dispara ${trigger}, y ese dato se evalúa en la RESPUESTA DE AUTORIZACIÓN ` +
-		'(campos AVS / CVV2), no al crear el perfil de pago del alta. El alta de la tarjeta aprueba legítimamente; ' +
-		'el rechazo pertenece al área F (hold / cobro).',
+		'(campos AVS / CVV2), no al crear el perfil de pago del alta. El alta de la tarjeta aprueba legítimamente. ' +
+		'ATENCIÓN (ronda 4): el área F TAMPOCO rechaza — el viaje se crea en SEARCHING_DRIVER. El rechazo NO está ' +
+		'cubierto hoy en ninguna de las dos áreas; ver el bloque de la ronda 4 en el header de este archivo.',
 	evidence:
-		'Observado en vivo 2026-07-28 (probe `specs/authorize/probe/decline-oracle-probe.spec.ts`, ronda 3 del ' +
+		'Área C observada en vivo 2026-07-28 (probe `specs/authorize/probe/decline-oracle-probe.spec.ts`, ronda 3 del ' +
 		'RUN-LOG): las 3 tarjetas producen `POST /passengers/{id}/cards` → HTTP 200 con la tarjeta PERSISTIDA ' +
 		'(`id` + `cardId` de Authorize + `lastFourDigits`) y el cartel "Tarjeta válida" visible desde t+2s y estable ' +
-		'hasta t+30s — idéntico al control HAPPY_NO_AUTH de la misma corrida. Cero mensajes de rechazo en la página.'
+		'hasta t+30s — idéntico al control HAPPY_NO_AUTH de la misma corrida. Cero mensajes de rechazo en la página. ' +
+		'Área F observada en vivo 2026-07-29 (probe `specs/authorize/probe/hold-area-f-probe.spec.ts`, ronda 4): con ' +
+		'hold ON el alta llama `POST /cards/passengers/{id}/cardValidationWithHold/{carrierId}` → `true` y ' +
+		'`POST /carriers/1521/travels` → `"state":"SEARCHING_DRIVER"`; el viaje queda en "Asignar", NO en ' +
+		'"En Conflicto". Es decir: la pasarela no rechaza en ninguna de las dos áreas.'
 });
 
 /**

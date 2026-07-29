@@ -391,3 +391,155 @@ También quedó una falla **preexistente y ajena** a esta ronda en el proyecto `
 documentada en la precondición de la ronda 1: en el carrier 1521 la pasarela vinculada es Authorize y
 Stripe está `unavailable` por la regla de exclusividad, así que el form de Elements nunca se renderiza.
 No se tocó.
+
+---
+
+# Ronda 4 — el área F, medida (2026-07-29)
+
+Objetivo: cerrar el hueco que la ronda 3 dejó declarado a propósito. El alta de tarjeta (área C)
+de los 3 declines **aprueba** —observado en vivo—, así que si el rechazo existe sólo puede estar en
+el cobro. La ronda 3 dedujo que "la cobertura del rechazo vive en la suite de hold". Esta ronda
+corrió el hold y esa conclusión resultó **falsa**.
+
+Artefactos (`@probe`, fuera de `@gateway`/`@authorize`):
+
+| Archivo | Qué mide |
+|---|---|
+| `specs/authorize/probe/hold-area-f-probe.spec.ts` | journey de hold completo por intent: área C muestreada, submit, `state` del `POST /travels`, detalle del viaje y las pestañas de gestión. Cancela el viaje que crea. |
+| `specs/authorize/probe/sandbox-avs-cvv-account-probe.spec.ts` | respuesta CRUDA de `authOnlyTransaction` contra el sandbox, sin pasar por MAGIIS. Es el discriminador entre "MAGIIS ignora un rechazo" y "la pasarela no rechaza". |
+
+## F1 — resultado por intent (sólo corridas con guard de atribución OK)
+
+Con hold ON el alta llama `POST /cards/passengers/{id}/cardValidationWithHold/{carrierId}` (devuelve
+`true` en todos los casos) y el submit `POST /carriers/1521/travels`.
+
+| Intent | Trigger | Corridas limpias | `state` del POST /travels | Pestaña | Veredicto |
+|---|---|---|---|---|---|
+| `HAPPY_NO_AUTH` (control) | CVV 900 / ZIP 90210 | 1/1 | `SEARCHING_DRIVER` | Asignar | OK esperado |
+| `DECLINE_AUTHORIZE` | ZIP **46282** | **2/2** | `SEARCHING_DRIVER` | Asignar | **NO queda "No autorizado"** |
+| `DECLINE_INVALID_CVC` | CVV **901** | 1/1 | `SEARCHING_DRIVER` | Asignar | ídem |
+| `DECLINE_PREPAID_ZERO_BALANCE` | ZIP **46228** | 1/1 | `SEARCHING_DRIVER` | Asignar | ídem |
+
+**El discriminador que faltaba salió negativo.** Los 3 declines de Authorize no se manifiestan ni en
+el área C ni en el área F: el viaje se crea normal y sale a buscar chofer, indistinguible del happy
+path. Es exactamente la rama que el brief marcó como HALLAZGO, no como test a arreglar.
+
+### `basis` NO subió a `live-verified` — y no por falta de corridas
+
+`expectedTravelStatus: 'No autorizado'` sigue en `documented-class` para los 3 intents. La razón es
+la contraria a la de la ronda 3: no es que no se observó, es que **lo observado lo contradice**. El
+mapeo decline a `NO_AUTORIZADO` sigue verificado en vivo en Stripe y MercadoPago (ahí el `basis` sí
+es `live-verified`); en Authorize no hay decline que mapear. Subir el `basis` habría sido declarar un
+oráculo que nadie vio; bajar `expectedTravelStatus` a "Buscando chofer" habría sido peor: convertiría
+un gap en comportamiento esperado.
+
+Se corrigió, eso sí, la **documentación** que prometía cobertura inexistente:
+
+| Archivo | Cambio |
+|---|---|
+| `helpers/journey-outcome.ts` | header del bloque de áreas: la ronda 3 afirmaba "la cobertura del rechazo vive en la suite de hold"; ahora dice que el área F tampoco rechaza, con la evidencia, y explicita por qué el `basis` se queda en `documented-class`. `AUTHORIZE_TRANSACTION_SCOPED` suma la evidencia del área F. |
+| `factories/card-outcome-matrix.factory.ts` | la annotation `area-f` decía "el rechazo se cubre en la suite de hold con el mismo intent". Ahora declara el gap. |
+
+`CARD_MATRIX` **no se tocó** y no se agregó ningún `skip` / `fixme`: los 3 casos del área C siguen
+corriendo con su aserción de presencia.
+
+## Por qué no se puede acusar a MAGIIS con esta evidencia
+
+Dos explicaciones incompatibles: (1) MAGIIS ignora un rechazo de la pasarela, defecto grave de
+dinero; (2) la pasarela nunca rechaza, y entonces el comportamiento de MAGIIS es correcto. El
+discriminador es la respuesta cruda de Authorize, y ahí apareció el dato importante.
+
+`sandbox-avs-cvv-account-probe` contra las creds de `.env.test`, monto USD 25.50, **15/15
+reproducible** (`--repeat-each=3`): las 5 tarjetas devuelven la **misma** respuesta.
+
+```
+responseCode="1"  authCode="000000"  transId="0"  testRequest="1"
+avsResultCode="P"  cvvResultCode=""   messages=[{code:1,"This transaction has been approved."}]
+```
+
+`transId=0` + `authCode=000000` + `avsResultCode="P"` + `cvvResultCode=""` es la **respuesta enlatada
+de Test Mode** de Authorize.net: la cuenta no procesa la transacción, así que **los triggers de
+ZIP/CVV no se evalúan**. En esa cuenta el decline no es exercitable — ni en el área C ni en la F.
+
+Eso también explica los **8 rojos** de `api/authorize-sandbox/` (incluido el happy path, donde
+`cvvResultCode` esperaba `M` y recibió `""`): codifican expectativas que esta configuración de cuenta
+no puede cumplir. No son drift del producto.
+
+### El dato que impide cerrar el caso: las dos cuentas NO son la misma
+
+En una corrida, `HAPPY_PARTIAL_AUTH` (ZIP 46225) produjo `POST /travels` con **`"state":"NO_AUTH"`** y
+el viaje cayó en "En Conflicto" con "No Autorizado" (viaje 67541; el board del 28/07 pasó de
+`En Conflicto (1)` a `(2)`). Una cuenta en Test Mode **no puede** producir eso: devuelve aprobación
+enlatada siempre. Conclusión: **la cuenta Authorize que usa el backend de MAGIIS no es la de las
+creds de `.env.test`** (o no está en el mismo modo).
+
+Impacto directo: **la pata API de la trifuerza no es oráculo válido del flujo E2E de Authorize.** Sin
+alinear eso, ninguna cobertura de decline de Authorize es confiable, porque no hay forma de saber qué
+le contestó la pasarela a MAGIIS.
+
+**Acción propuesta, en orden:**
+1. Obtener las creds (o el modo) de la cuenta Authorize que usa el backend en `test`, y setearlas en
+   `.env.test` — o documentar explícitamente que son cuentas distintas y qué valida cada una.
+2. Sacar esa cuenta de Test Mode (o usar una que procese) para que los triggers de ZIP/CVV se evalúen.
+3. Recién entonces re-correr `hold-area-f-probe` con los 3 declines. Si ahí el viaje sigue quedando
+   `SEARCHING_DRIVER` con la pasarela devolviendo Response Code 2, **eso sí es un defecto de producto
+   de severidad alta** (pre-autorización rechazada tratada como aprobada) y hay que reportarlo.
+4. Mientras dure el desalineo, no marcar los rojos de `api/authorize-sandbox/` como regresión.
+
+## Hallazgo — el cleanup de tarjeta falla con 500 y contamina la medición
+
+El `DELETE` de la tarjeta del pax devolvió **500** en 4 corridas (cards 4706, 4709, 4712, 4715).
+Efecto directo observado: en el primer intento de `DECLINE_AUTHORIZE` la tarjeta `4706` del happy path
+**sobrevivió al cleanup y quedó `defaultCard: true`**, así que el alta de viaje pudo haber cobrado esa
+y no la del intent. Esa medición quedó **no atribuible** y se descartó.
+
+Por eso el probe ganó un **guard de atribución**: lee el inventario de `paymentMethodsByPax` y si el
+pax tiene más de una tarjeta con ese `last4`, corta **antes** del submit (ni siquiera crea el viaje) y
+lo reporta. Los resultados de la tabla de arriba son sólo corridas con guard OK. Las corridas
+descartadas por esta vía se ven en el log como "el journey no llega al submit".
+
+Segundo efecto: re-validar una tarjeta ya vinculada deja "Seleccionar Vehículo" deshabilitado, así
+que un `DELETE` fallido tumba la corrida siguiente. Consistente con el confusor ya documentado en la
+ronda 2 ("Error al validar" al re-vincular).
+
+## Hallazgo — con hold ON el cartel "Tarjeta válida" NO existe
+
+Muestreado a t+3s / t+10s / t+20s en las 10 corridas: **0 nodos** que matcheen
+`/Tarjeta v[áa]lida|Valid card|Card valid/`. Lo que aparece es `"Tarjeta de crédito VISA *** 1111"`.
+Con hold ON el alta va por `cardValidationWithHold` y la confirmación es la tarjeta listada, no el
+cartel del flujo sin hold.
+
+Consecuencia práctica: `validateNativeCard()` (que espera ese cartel visible hasta 20s) **no es el
+oráculo del flujo con hold**. Hoy no rompe nada porque el hold se orquesta por `runHoldScenario`, que
+en el camino no-stripe llama `validateNativeGatewayCard` — a revisar si alguna vez se usa esa
+aserción con hold ON. La primera versión de este probe gateaba con
+`getByText(...).first().waitFor(visible)` y por eso reportó falsos "SIN cartel": el gate medía el
+índice 0, no el estado. Corregido a conteo por nodo + visibilidad por nodo.
+
+## Viajes creados y cerrados
+
+**10 creados, 10 cancelados, 0 abiertos.**
+
+| travelId | Intent | Cancelado |
+|---|---|---|
+| 67536 | `DECLINE_PREPAID_ZERO_BALANCE` | sí |
+| 67537 | `HAPPY_NO_AUTH` (control) | sí |
+| 67538 | `DECLINE_AUTHORIZE` (descartado — guard) | sí |
+| 67539 | `DECLINE_INVALID_CVC` | sí |
+| 67540 | `DECLINE_PREPAID_ZERO_BALANCE` | sí |
+| 67541 | `HAPPY_PARTIAL_AUTH` (el `NO_AUTH`) | sí |
+| 67542 | `DECLINE_AUTHORIZE` | sí |
+| 67543 | `DECLINE_AUTHORIZE` | sí |
+| 67544 | `HAPPY_PARTIAL_AUTH` | sí |
+| 67545 | `HAPPY_PARTIAL_AUTH` | sí |
+
+Queda como residuo la tarjeta `•••• 1111` (id 4715) vinculada al pax 8669, porque su `DELETE` devolvió
+500. No es un viaje abierto; el `cleanupGatewayCardByLast4` del próximo caso vuelve a intentarlo.
+
+## Nota de entorno
+
+Una corrida de `HAPPY_PARTIAL_AUTH` murió con `POST /passengers/8669/cards` devolviendo **500**:
+`I/O error ... "https://apps-test2.magiis.com:3000/api/card": Connection refused`. Se clasificó
+**ENVIRONMENT**, se **descartó la medición** y no se tocó ningún spec. Salud re-verificada con
+`curl --ssl-no-revoke https://apps-test.magiis.com/magiis-v0.2/` devolviendo 403 (vivo), y se
+re-corrió.
