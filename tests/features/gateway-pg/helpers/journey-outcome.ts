@@ -147,6 +147,20 @@ export const OUTCOME_BY_INTENT: Partial<Record<CardIntent, JourneyOutcome>> = {
 	// HAPPY_PARTIAL_AUTH  — se autoriza un monto MENOR al pedido. Qué hace MAGIIS con el
 	//                       faltante (¿cobra el parcial? ¿rechaza? ¿pide otra tarjeta?) es
 	//                       precisamente lo que habría que decidir con producto.
+	//                       RONDA 4 (2026-07-29) — se OBSERVÓ y sigue sin oráculo, ahora por un
+	//                       motivo más fuerte: el resultado NO ES DETERMINÍSTICO. Con la misma
+	//                       tarjeta (ZIP 46225), el mismo journey de hold y el guard de
+	//                       atribución en verde, `POST /carriers/1521/travels` devolvió
+	//                       `"state":"NO_AUTH"` 1 vez (viaje 67541 → "En Conflicto"/"No
+	//                       Autorizado") y `"state":"SEARCHING_DRIVER"` 2 veces (67544, 67545 →
+	//                       "Asignar"). Un oráculo sobre un comportamiento 1-de-3 sería un test
+	//                       flaky disfrazado de regla de negocio.
+	//                       RIESGO ABIERTO (no normalizado acá a propósito): si en las 2 corridas
+	//                       que pasaron la pasarela devolvió una autorización PARCIAL, MAGIIS la
+	//                       trató como completa — riesgo de dinero. No se puede probar desde acá:
+	//                       la cuenta Authorize del backend no es observable y la de `.env.test`
+	//                       devuelve aprobación enlatada de Test Mode para este ZIP. Se
+	//                       desbloquea alineando las cuentas (RUN-LOG §Ronda 4, pasos 1-2).
 	// DECLINE_CAPTURE     — autoriza y falla al capturar: el viaje SÍ se crea y falla más
 	//                       tarde, así que no encaja en un oráculo de estado inicial. Es el
 	//                       escenario del TC F-04, con su propio flujo.

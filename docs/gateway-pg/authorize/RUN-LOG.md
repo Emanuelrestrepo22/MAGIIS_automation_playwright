@@ -486,6 +486,51 @@ le contestó la pasarela a MAGIIS.
    de severidad alta** (pre-autorización rechazada tratada como aprobada) y hay que reportarlo.
 4. Mientras dure el desalineo, no marcar los rojos de `api/authorize-sandbox/` como regresión.
 
+## F2 — `HAPPY_PARTIAL_AUTH`: observado, y SIGUE sin oráculo
+
+Authorize documenta ZIP `46225` como autorización parcial (autoriza USD 1.23 del total). En la
+matriz skipea con motivo "sin oráculo" porque nadie definió qué debe hacer MAGIIS con el faltante.
+Se observó antes de declarar nada, y el resultado impide declarar.
+
+Mismo journey de hold, misma tarjeta, guard de atribución en verde en las 3 corridas:
+
+| Corrida | travelId | `state` del POST /travels | Pestaña de gestión |
+|---|---|---|---|
+| 1 | 67541 | **`NO_AUTH`** | En Conflicto + "No Autorizado" (board 28/07 pasó de 1 a 2) |
+| 2 | 67544 | `SEARCHING_DRIVER` | Asignar |
+| 3 | 67545 | `SEARCHING_DRIVER` | Asignar |
+
+`cardValidationWithHold` devolvió `true` en las 3. El precio simulado del viaje fue el mismo
+(USD 163.92), el pax el mismo (8669) y el hold estaba ON en las 3 (read-back por API).
+
+**No se declaró oráculo.** Un comportamiento 1-de-3 no es una regla de negocio: declarar
+`expectedTravelStatus: 'No autorizado'` con esta evidencia produciría un test flaky disfrazado de
+oráculo, y declarar `'Buscando chofer'` bendeciría como correcto justamente el caso peligroso. El
+intent sigue fuera de `OUTCOME_BY_INTENT` y sigue skipeando "sin oráculo" — pero el comentario de
+exclusión ahora cita esta corrida, así que el skip pasó de "nadie lo decidió" a "medido y no
+determinístico".
+
+### Riesgo abierto — no se normalizó a propósito
+
+Si en las 2 corridas que quedaron `SEARCHING_DRIVER` la pasarela devolvió una autorización
+**parcial**, entonces MAGIIS creó el viaje con una pre-autorización insuficiente: cubriría USD 1.23
+de un viaje de USD 163.92. Eso es riesgo de dinero directo.
+
+**No se puede afirmar todavía**, y la razón es la misma que bloquea F1: la respuesta que la pasarela
+le da al backend no es observable, y la cuenta de `.env.test` devuelve aprobación enlatada de Test
+Mode para este mismo ZIP (`transId=0`, `authCode=000000`), así que no sirve de contraprueba. Lo único
+seguro es que el backend **sí** distinguió el caso alguna vez — el `NO_AUTH` de la corrida 1 no puede
+salir de una cuenta enlatada.
+
+Cómo cerrarlo, en orden:
+1. Alinear las cuentas Authorize (RUN-LOG §Ronda 4, pasos 1-2). Sin eso ninguna medición de este
+   intent es concluyente.
+2. Con la cuenta alineada, re-correr `hold-area-f-probe --grep PARTIAL --repeat-each=5` y comparar el
+   `authAmount` de la respuesta de la pasarela contra el monto del hold que MAGIIS pidió.
+3. Si con autorización parcial confirmada el viaje queda `SEARCHING_DRIVER`, reportar defecto de
+   producto **severidad alta** (pre-autorización insuficiente aceptada como completa) y recién ahí
+   declarar el oráculo con lo que producto decida.
+
 ## Hallazgo — el cleanup de tarjeta falla con 500 y contamina la medición
 
 El `DELETE` de la tarjeta del pax devolvió **500** en 4 corridas (cards 4706, 4709, 4712, 4715).
