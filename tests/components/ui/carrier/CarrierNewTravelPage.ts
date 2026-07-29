@@ -387,14 +387,25 @@ export class CarrierNewTravelPage extends UiBase {
 	 * Opción del desplegable de métodos de pago correspondiente a una tarjeta vinculada cuyos
 	 * últimos 4 dígitos son `last4`.
 	 *
-	 * Cada tarjeta guardada es un `.ng-star-inserted` que trae su propio trash
+	 * Cada tarjeta guardada es una OPCIÓN (`listitem`) del desplegable que trae su propio trash
 	 * (`.deselect-payment-method`) — ese `has` distingue las tarjetas de las otras opciones del
 	 * desplegable (Efectivo, Cuenta Corriente, etc.), que no se pueden borrar.
+	 *
+	 * ⚠️ El ancla es el `role=listitem`, NO `.ng-star-inserted`. Angular pone esa clase en MUCHOS
+	 * nodos del componente, incluido el `<select-dropdown>` que envuelve a todo el desplegable: con
+	 * ella, `.first()` resolvía al ENVOLTORIO —que está `hidden`— en vez de a la fila de la tarjeta.
+	 * Efecto observado en la corrida del 2026-07-29 (TS-AUTHORIZE-TC1053, 3/3): `count() > 0` daba
+	 * true (el nodo existe en el DOM) pero `toBeVisible()` fallaba con
+	 * `14 × locator resolved to <select-dropdown … ng-reflect-is-below="false">  unexpected value "hidden"`,
+	 * mientras el snapshot del fallo mostraba el desplegable ABIERTO exponiendo la opción
+	 * "Tarjeta de crédito VISA *** 1111" con su ícono de borrado. O sea: el desplegable sí publica la
+	 * tarjeta guardada; el locator apuntaba al ancestro equivocado. Mismo ancla que
+	 * `chooseNewPreauthorizedCardOption()`, que ya venía resolviendo bien por esta vía.
 	 */
 	private savedCardByLast4(last4: string): Locator {
 		return this.page
 			.locator('#add_travel_payment_methods')
-			.locator('.ng-star-inserted')
+			.getByRole('listitem')
 			.filter({ has: this.page.locator('.deselect-payment-method') })
 			.filter({ hasText: last4 });
 	}

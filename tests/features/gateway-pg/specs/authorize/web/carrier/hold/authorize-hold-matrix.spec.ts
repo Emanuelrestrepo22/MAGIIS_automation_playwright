@@ -65,7 +65,10 @@ defineHoldSuite('authorize', {
 		'empresaDecline',
 		// Hold OFF — el motor apaga el toggle y lo restaura (gate GATEWAY_ALLOW_DESTRUCTIVE_SWITCH).
 		'personalHappyHoldOff',
-		// fixme: el oráculo de decline + Hold OFF no está verificado (ver el docblock).
+		// ÚNICO `fixme` del archivo, y aplica SÓLO a la línea siguiente: el oráculo de decline +
+		// Hold OFF no está verificado (ver el docblock). Los dos Hold OFF happy que vienen después
+		// (`colaboradorHappyNewHoldOff` / `empresaHappyNewHoldOff`) SÍ son EJECUTABLES — el
+		// comentario previo, sin este alcance explícito, los leía como `fixme` y no lo son.
 		'personalDeclineHoldOff',
 		'colaboradorHappyNewHoldOff',
 		'empresaHappyNewHoldOff',
