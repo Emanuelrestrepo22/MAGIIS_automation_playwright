@@ -8,6 +8,52 @@ Estos bloqueos requieren acción humana, decisión del líder o configuración d
 
 ---
 
+## 0. 🔴 BLOQUEANTE ACTIVO — desalineación de cuentas Authorize (medición de pago inválida)
+
+**Estado:** 🔴 Pendiente · **Owner:** dueño de la cuenta Authorize (QA lead) · **Detectado:** 2026-07-29 (ronda 4 del `RUN-LOG.md`, cierre de campaña)
+**Bloqueante para:** TODO test que mida dinero con Authorize — hold, alta de tarjeta, matriz de outcomes, cobro a bordo, E2E híbrido (MG-540).
+
+### Hallazgo
+
+**Hay DOS cuentas Authorize en juego y no son la misma.**
+
+| Circuito | Cuenta | Evidencia |
+|---|---|---|
+| Tests (creds `AUTHORIZE_API_LOGIN_ID` / `AUTHORIZE_TRANSACTION_KEY` de `.env.test`) | **Test Mode** | Respuesta **enlatada idéntica para los 5 triggers**, 15/15 reproducible: `responseCode '1'` · `authCode '000000'` · `transId '0'` · `testRequest '1'` · `avsResultCode 'P'` · `cvvResultCode ''`. Los triggers de ZIP/CVV **nunca se evalúan**. |
+| Backend MAGIIS | **otra cuenta / otro modo** | Produjo `state: NO_AUTH` con ZIP 46225 — imposible en Test Mode. Coincide con transacciones de `transId` real (`80057692216`…) y con el filtro AVS disparando en el Merchant Interface. |
+
+### Por qué es un bloqueante y no una curiosidad
+
+1. **Los verdes son vacíos.** Con la cuenta enlatada el hold "aprueba" sin autorizar nada: el test pasa sin haber medido. Es un **falso positivo**, no un skip — el modo de fallo más caro.
+2. **La matriz de outcomes miente por construcción.** Los 5 intents devuelven la misma respuesta ⇒ un único comportamiento se reporta como cinco.
+3. **Nuestra propia suite contamina el entorno.** `GatewaySwitchSteps.linkAuthorize` vincula la pasarela con **estas mismas** credenciales, así que **un run de la suite CFG deja al carrier apuntando a la cuenta enlatada**. Es la causa raíz de la no-determinación observada entre rondas (ZIP 46225: 1× `NO_AUTH` vs 2× `SEARCHING_DRIVER`) y de los viajes "No Authorized" del tablero.
+4. **Invalida la pata API de la trifuerza** como oráculo del flujo E2E de Authorize hasta que se alineen.
+
+### Mitigación ya implementada en el repo (no reemplaza la acción requerida)
+
+`tests/features/gateway-pg/helpers/authorize-account-guard.ts` — gate de **validez de medición**. Detecta la firma enlatada (`transId '0'` + `authCode '000000'`) con un `authOnly` de control (memoizado por worker) y **falla ruidosamente** con mensaje accionable antes de crear el viaje. Cableado en las tres costuras que miden dinero: `CarrierHoldSteps.runHoldScenario`, `defineWalletAddCardSuite`, `defineCardOutcomeMatrixSuite`. **NO** se aplica a la suite CFG (link/unlink/exclusividad/status no miden dinero y son válidos contra cualquier cuenta).
+
+Read-out del entorno en 5 s: `ENV=test npx playwright test -c playwright.gateway-pg.config.ts --grep "@probe veredicto del guard" --workers=1` → `specs/authorize/probe/account-mode-probe.spec.ts` imprime el veredicto y el mensaje exacto del corte.
+
+### Acción requerida
+
+Poner en `.env.test` las credenciales (**API Login ID + Transaction Key**) de la **misma** cuenta Authorize que administra el equipo — la que tiene los filtros AVS configurados y devuelve `transId` reales — y **re-vincular la pasarela**. Con una sola cuenta en todo el circuito:
+
+- los 8 contract tests rojos de `api/authorize-sandbox/` pasan a ser medibles (hoy fallan por la cuenta, **no** por drift de producto);
+- los triggers ZIP/CVV dejan de ser inertes y la matriz de outcomes mide 5 comportamientos distintos;
+- la pata API vuelve a ser oráculo válido (incluido `getTransactionDetails` para verificar la captura de MG-540);
+- la contaminación del link se vuelve inocua (vincular con `.env` = vincular con la cuenta correcta).
+
+Nunca al repo: solo `.env.test` (gitignored).
+
+### Validación post-resolución
+
+1. El probe de arriba imprime **🟢 REAL**.
+2. `sandbox-avs-cvv-account-probe.spec.ts` muestra `avsResultCode`/`cvvResultCode` **distintos entre triggers** (hoy: `P` / `''` en los 5).
+3. Los specs de pago dejan de cortar por el guard.
+
+---
+
 ## 1. Sandbox keys Authorize.net
 
 **Estado:** 🔴 Pendiente

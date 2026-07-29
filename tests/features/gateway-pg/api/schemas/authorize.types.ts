@@ -117,6 +117,12 @@ export interface AuthorizeTransactionResponse {
 	/** M, N, P, S, U (Card Code Verification). */
 	cvvResultCode?: string;
 	transId?: string;
+	/**
+	 * `'1'` cuando la cuenta procesó la transacción en **Test Mode**: la respuesta es
+	 * enlatada (`transId '0'`, `authCode '000000'`) y los triggers de ZIP/CVV NO se
+	 * evalúan. Discriminador de la cuenta — ver `helpers/authorize-account-guard.ts`.
+	 */
+	testRequest?: string;
 	/** Últimos 4 dígitos. */
 	accountNumber?: string;
 	/** Visa, MasterCard, AmericanExpress, etc. */

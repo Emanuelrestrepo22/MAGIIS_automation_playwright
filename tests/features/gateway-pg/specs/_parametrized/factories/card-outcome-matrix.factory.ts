@@ -52,6 +52,7 @@ import { gatewayTag } from '@features/gateway-pg/helpers/adapters/gateway-tag';
 import { loginAsDispatcher } from '@features/gateway-pg/fixtures/gateway.fixtures';
 import { addCardExpectation, areaFRelocationFor, hasObservedOutcome, outcomeFor } from '@features/gateway-pg/helpers/journey-outcome';
 import { cleanupGatewayCardByLast4 } from '@features/gateway-pg/helpers/card-precondition';
+import { assertAuthorizeAccountMeasuresRealAuthorizations } from '@features/gateway-pg/helpers/authorize-account-guard';
 
 export type CardOutcomeMatrixSuiteOptions = {
 	/** Subconjunto de intents. Default: `ALL_CARD_INTENTS` (matriz completa). */
@@ -99,6 +100,13 @@ export function defineCardOutcomeMatrixSuite(gateway: GatewayName, options: Card
 			test.use({ storageState: { cookies: [], origins: [] } });
 
 			test.skip(!adapter.isConfigured(), `Requiere ${adapter.credsEnvKeys.join(' + ')} en .env.test (gate del adapter ${gateway}).`);
+
+			// Gate de validez de medición — CRÍTICO en esta suite: si la cuenta es la enlatada de
+			// Test Mode, TODOS los triggers de ZIP/CVV devuelven lo mismo y la matriz de outcomes
+			// mediría un único comportamiento haciéndolo pasar por cinco. Ver ronda 4 del RUN-LOG.
+			test.beforeAll(async () => {
+				if (gateway === 'authorize') await assertAuthorizeAccountMeasuresRealAuthorizations();
+			});
 
 			// ALCANCE DE ESCRITURA de esta suite: da de alta tarjetas en la wallet del pax, con
 			// cleanup idempotente previo por API. Es EXACTAMENTE el alcance de

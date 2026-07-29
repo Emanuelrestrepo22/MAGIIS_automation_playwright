@@ -37,6 +37,7 @@ import { gatewayTag } from '@features/gateway-pg/helpers/adapters/gateway-tag';
 import { loginAsDispatcher } from '@features/gateway-pg/fixtures/gateway.fixtures';
 import { validateAndSelectMercadoPagoCard } from '@features/gateway-pg/helpers/mercadoPago.helpers';
 import { cleanupGatewayCardByLast4 } from '@features/gateway-pg/helpers/card-precondition';
+import { assertAuthorizeAccountMeasuresRealAuthorizations } from '@features/gateway-pg/helpers/authorize-account-guard';
 
 export type WalletAddCardSuiteOptions = {
 	/** TC ID de matriz para el título (ej. 'TS-AUTHORIZE-WAL-01'). Omitido → sin corchete. */
@@ -82,6 +83,12 @@ export function defineWalletAddCardSuite(gateway: GatewayName, options: WalletAd
 		test.describe.configure({ mode: 'serial', timeout: 180_000 });
 		// El fixture KATA no define la opción `role` — login explícito vía loginAsDispatcher.
 		test.use({ storageState: { cookies: [], origins: [] } });
+
+		// Gate de validez de medición: la cuenta Authorize de `.env.test` está en Test Mode y
+		// devuelve respuestas enlatadas → el alta "validaría" la tarjeta sin autorizar nada.
+		test.beforeAll(async () => {
+			if (gateway === 'authorize') await assertAuthorizeAccountMeasuresRealAuthorizations();
+		});
 
 		test(`${titlePrefix}${extraTags}@wallet vincular tarjeta ${adapter.displayName} (•••• ${card.last4}) desde el alta de viaje (${env.toUpperCase()})`, async ({ page }) => {
 			const dashboard = new CarrierDashboardPage({ page });
