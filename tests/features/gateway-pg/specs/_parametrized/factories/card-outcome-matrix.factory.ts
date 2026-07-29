@@ -52,7 +52,7 @@ import { gatewayTag } from '@features/gateway-pg/helpers/adapters/gateway-tag';
 import { loginAsDispatcher } from '@features/gateway-pg/fixtures/gateway.fixtures';
 import { addCardExpectation, areaFRelocationFor, hasObservedOutcome, outcomeFor } from '@features/gateway-pg/helpers/journey-outcome';
 import { cleanupGatewayCardByLast4 } from '@features/gateway-pg/helpers/card-precondition';
-import { assertAuthorizeAccountMeasuresRealAuthorizations } from '@features/gateway-pg/helpers/authorize-account-guard';
+import { assertAuthorizeAccountMeasuresRealAuthorizations, readAuthorizeAccountMode } from '@features/gateway-pg/helpers/authorize-account-guard';
 
 export type CardOutcomeMatrixSuiteOptions = {
 	/** Subconjunto de intents. Default: `ALL_CARD_INTENTS` (matriz completa). */
@@ -101,12 +101,18 @@ export function defineCardOutcomeMatrixSuite(gateway: GatewayName, options: Card
 
 			test.skip(!adapter.isConfigured(), `Requiere ${adapter.credsEnvKeys.join(' + ')} en .env.test (gate del adapter ${gateway}).`);
 
-			// Gate de validez de medición — CRÍTICO en esta suite: si la cuenta es la enlatada de
-			// Test Mode, TODOS los triggers de ZIP/CVV devuelven lo mismo y la matriz de outcomes
-			// mediría un único comportamiento haciéndolo pasar por cinco. Ver ronda 4 del RUN-LOG.
-			test.beforeAll(async () => {
-				if (gateway === 'authorize') await assertAuthorizeAccountMeasuresRealAuthorizations();
-			});
+			// Gate de validez de medición — CALIBRADO POR CASO (ronda 6 del RUN-LOG, 2026-07-29).
+			// El blanket `beforeAll` original era anterior a la reubicación de área
+			// (AREA_F_SCOPED_OUTCOMES, commit 18ee8ba): hoy TODOS los intents ejecutables de
+			// Authorize assertan una APROBACIÓN en el área C, y la doctrina escrita en
+			// EXTERNAL-BLOCKERS §0 es explícita: "la aprobación es verificable contra cualquier
+			// cuenta" — el gate corta solo cuando el ORÁCULO ES UN TRIGGER (rechazo por ZIP/CVV),
+			// exactamente igual que en los contract specs de api/authorize-sandbox/. El gate ahora
+			// vive dentro del cuerpo del test (per-case, ver abajo): si algún día se revierte la
+			// reubicación y un intent vuelve a assertar rechazo, el guard vuelve a cortar ese caso.
+			// Los verdes de oráculo-aprobación llevan annotation `measurement-caveat` cuando la
+			// cuenta detectada es la enlatada: el verde acredita el alta (área C), NO una
+			// evaluación real de triggers.
 
 			// ALCANCE DE ESCRITURA de esta suite: da de alta tarjetas en la wallet del pax, con
 			// cleanup idempotente previo por API. Es EXACTAMENTE el alcance de
@@ -162,6 +168,31 @@ export function defineCardOutcomeMatrixSuite(gateway: GatewayName, options: Card
 					// La latencia del sandbox es dato de la celda (eBiz DELAY_*), no un número mágico.
 					if (support.slowMs) test.setTimeout(180_000 + support.slowMs);
 
+					// `addCardExpectation` es puro → se resuelve acá arriba para gatear ANTES de gastar
+					// el journey UI. Gate de validez de medición per-case (calibración ronda 6):
+					//   - oráculo = rechazo disparado por un trigger ZIP/CVV → la cuenta enlatada de Test
+					//     Mode NO evalúa el trigger: el guard CORTA (fail ruidoso, no skip).
+					//   - oráculo = aprobación → medible contra cualquier cuenta; si la cuenta es la
+					//     enlatada se deja constancia auditable vía annotation, sin cortar.
+					const addCard = addCardExpectation(gateway, intent);
+					if (gateway === 'authorize') {
+						if (!addCard.shouldSucceed) {
+							await assertAuthorizeAccountMeasuresRealAuthorizations();
+						} else {
+							const verdict = await readAuthorizeAccountMode();
+							if (verdict?.canned) {
+								test.info().annotations.push({
+									type: 'measurement-caveat',
+									description:
+										`[${gateway}/${intent}] Cuenta Authorize en Test Mode (respuesta enlatada: transId "${verdict.transId}", ` +
+										`authCode "${verdict.authCode}"). Este verde acredita el ALTA aprobada (área C) — oráculo de aprobación, ` +
+										'válido contra cualquier cuenta — pero NO una evaluación real de triggers ZIP/CVV. ' +
+										'Bloqueante §0 de docs/gateway-pg/authorize/EXTERNAL-BLOCKERS.md sigue abierto.'
+								});
+							}
+						}
+					}
+
 					const dashboard = new CarrierDashboardPage({ page });
 					const travel = new CarrierNewTravelPage({ page });
 
@@ -195,7 +226,7 @@ export function defineCardOutcomeMatrixSuite(gateway: GatewayName, options: Card
 					// outcome en la transacción y no en el alta (Authorize con triggers de ZIP/CVV), el
 					// área C debe esperar un alta APROBADA — es lo observado en vivo — y la cobertura del
 					// rechazo vive en el área F. Ver AREA_F_SCOPED_OUTCOMES en journey-outcome.ts.
-					const addCard = addCardExpectation(gateway, intent);
+					// (`addCard` se resolvió arriba, antes del journey, para alimentar el gate per-case.)
 					if (addCard.relocation) {
 						test.info().annotations.push({
 							type: 'area-f',

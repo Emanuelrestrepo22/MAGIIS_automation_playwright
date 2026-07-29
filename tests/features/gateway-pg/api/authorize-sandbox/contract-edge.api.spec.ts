@@ -26,6 +26,7 @@ import { AUTHORIZE_CARDS } from '@fixtures/gateways/authorize/card-policy';
 import { AuthorizeSandboxApi, hasAuthorizeCredentials } from '@api/AuthorizeSandboxApi';
 import type { AuthorizeApiResponse } from '@schemas/authorize.types';
 import { AUTHORIZE_CONTRACT_XRAY_KEYS } from '@features/gateway-pg/data/xray-keys';
+import { assertAuthorizeAccountMeasuresRealAuthorizations } from '@features/gateway-pg/helpers/authorize-account-guard';
 
 test.describe('[BL-036][API] Authorize.net sandbox — Edge triggers @gateway @authorize @regression', () => {
 	test.skip(!hasAuthorizeCredentials(), 'AUTHORIZE_API_LOGIN_ID/TRANSACTION_KEY no seteadas en env');
@@ -52,6 +53,12 @@ test.describe('[BL-036][API] Authorize.net sandbox — Edge triggers @gateway @a
 		'AVS issuer no-USA (ZIP 46204) → avsResultCode "G"',
 		{ annotation: [{ type: 'tms', description: AUTHORIZE_CONTRACT_XRAY_KEYS.avs46204 }] },
 		async ({ request }) => {
+			// GATE DE VALIDEZ DE MEDICIÓN (2026-07-29): único test de este archivo cuyo oráculo es un
+			// trigger de ZIP (avsResultCode "G"). Una cuenta en Test Mode devuelve 'P' para cualquier
+			// tarjeta, así que sin el gate el fallo se lee como drift del sandbox en vez de la cuenta.
+			// Los otros tres tests (Discover / partial / prepaid) NO llevan gate: su oráculo es la
+			// aprobación, verificable contra cualquier cuenta. Ver bloqueante §0 de EXTERNAL-BLOCKERS.md.
+			await assertAuthorizeAccountMeasuresRealAuthorizations(request);
 			const api = new AuthorizeSandboxApi({ request });
 
 			const response: AuthorizeApiResponse = await api.authorizeOnly({

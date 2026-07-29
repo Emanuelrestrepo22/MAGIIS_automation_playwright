@@ -37,7 +37,7 @@ import { gatewayTag } from '@features/gateway-pg/helpers/adapters/gateway-tag';
 import { loginAsDispatcher } from '@features/gateway-pg/fixtures/gateway.fixtures';
 import { validateAndSelectMercadoPagoCard } from '@features/gateway-pg/helpers/mercadoPago.helpers';
 import { cleanupGatewayCardByLast4 } from '@features/gateway-pg/helpers/card-precondition';
-import { assertAuthorizeAccountMeasuresRealAuthorizations } from '@features/gateway-pg/helpers/authorize-account-guard';
+import { readAuthorizeAccountMode } from '@features/gateway-pg/helpers/authorize-account-guard';
 
 export type WalletAddCardSuiteOptions = {
 	/** TC ID de matriz para el título (ej. 'TS-AUTHORIZE-WAL-01'). Omitido → sin corchete. */
@@ -84,13 +84,27 @@ export function defineWalletAddCardSuite(gateway: GatewayName, options: WalletAd
 		// El fixture KATA no define la opción `role` — login explícito vía loginAsDispatcher.
 		test.use({ storageState: { cookies: [], origins: [] } });
 
-		// Gate de validez de medición: la cuenta Authorize de `.env.test` está en Test Mode y
-		// devuelve respuestas enlatadas → el alta "validaría" la tarjeta sin autorizar nada.
-		test.beforeAll(async () => {
-			if (gateway === 'authorize') await assertAuthorizeAccountMeasuresRealAuthorizations();
-		});
+		// Gate de validez de medición — CALIBRADO (ronda 6 del RUN-LOG, 2026-07-29). El único
+		// oráculo de esta suite es una APROBACIÓN (alta de tarjeta validada), y la doctrina de
+		// EXTERNAL-BLOCKERS §0 es explícita: la aprobación es verificable contra cualquier
+		// cuenta — el guard corta solo cuando el oráculo ES un trigger ZIP/CVV (contract specs,
+		// hold). El blanket `beforeAll` original cortaba este happy path válido; se reemplaza
+		// por una annotation auditable dentro del test cuando la cuenta detectada es la enlatada.
 
 		test(`${titlePrefix}${extraTags}@wallet vincular tarjeta ${adapter.displayName} (•••• ${card.last4}) desde el alta de viaje (${env.toUpperCase()})`, async ({ page }) => {
+			if (gateway === 'authorize') {
+				const verdict = await readAuthorizeAccountMode();
+				if (verdict?.canned) {
+					test.info().annotations.push({
+						type: 'measurement-caveat',
+						description:
+							`[${gateway}/WAL] Cuenta Authorize en Test Mode (respuesta enlatada: transId "${verdict.transId}", ` +
+							`authCode "${verdict.authCode}"). Este verde acredita el ALTA aprobada — oráculo de aprobación, válido ` +
+							'contra cualquier cuenta — pero NO una evaluación real de triggers ZIP/CVV. ' +
+							'Bloqueante §0 de docs/gateway-pg/authorize/EXTERNAL-BLOCKERS.md sigue abierto.'
+					});
+				}
+			}
 			const dashboard = new CarrierDashboardPage({ page });
 			const travel = new CarrierNewTravelPage({ page });
 
