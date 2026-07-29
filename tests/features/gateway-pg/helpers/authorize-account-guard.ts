@@ -109,16 +109,34 @@ export async function readAuthorizeAccountMode(request?: APIRequestContext): Pro
 }
 
 /**
- * Gate público (fail-fast): lanza si la cuenta que responde es la ENLATADA de Test Mode, porque
- * cualquier oráculo de pago sobre ella es un falso positivo.
+ * Gate público (fail-fast) TRI-ESTADO — endurecido en Ronda 7 (Hallazgo 6 del RUN-LOG):
+ *   - `real`          → la medición vale, no lanza.
+ *   - `canned`        → cuenta enlatada de Test Mode: lanza (falso positivo garantizado).
+ *   - `indeterminado` → hay credenciales pero el probe no obtuvo veredicto: TAMBIÉN lanza.
+ *     El fail-open anterior (`return` con veredicto nulo) era la quinta trampa de vacuidad:
+ *     un verde bajo este guard no probaba que la cuenta estuviera bien — podía significar
+ *     que el guard no pudo determinarlo. En la ronda limpia cada verde debe PROBAR cuenta real.
  *
- * No lanza cuando no hay señal (`null`): sin credenciales el spec ya se auto-skipea por su
- * propio `test.skip(!hasAuthorizeCredentials())`, y un sandbox caído es un fallo de entorno que
- * el propio test reportará con su mensaje — este guard solo habla de la VALIDEZ de la medición.
+ * Única excepción que no lanza: SIN credenciales — ahí la medición nunca ocurre y el spec ya
+ * se auto-skipea por su propio `test.skip(!hasAuthorizeCredentials())`.
  */
 export async function assertAuthorizeAccountMeasuresRealAuthorizations(request?: APIRequestContext): Promise<void> {
 	const verdict = await readAuthorizeAccountMode(request);
-	if (!verdict || !verdict.canned) return;
+
+	if (!verdict) {
+		if (!hasAuthorizeCredentials()) return; // sin creds: gate propio del spec, la medición no corre
+
+		throw new Error(
+			'[GUARD][AUTHORIZE-ACCOUNT] Veredicto INDETERMINADO: hay credenciales AUTHORIZE_* en el entorno ' +
+				'pero el probe authOnly de control no obtuvo una respuesta clasificable del sandbox (excepción o ' +
+				'respuesta sin transactionResponse). NO se puede probar que la cuenta mida autorizaciones reales, ' +
+				'así que la medición de pago se BLOQUEA en vez de correr a ciegas (Hallazgo 6, RUN-LOG: un verde ' +
+				'bajo guard fail-open no prueba nada). Revisar conectividad con apitest.authorize.net y re-correr; ' +
+				'el probe se reintenta en cada llamada (el veredicto nulo no se memoiza).'
+		);
+	}
+
+	if (!verdict.canned) return;
 
 	throw new Error(
 		'[GUARD][AUTHORIZE-ACCOUNT] La cuenta detrás de AUTHORIZE_API_LOGIN_ID está en TEST MODE: ' +
