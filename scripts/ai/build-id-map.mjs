@@ -124,7 +124,18 @@ function* walk(dir) {
 		else if (p.endsWith('.ts')) yield p;
 	}
 }
-const TS_TOKEN = /TS-(?:STRIPE-P2|STRIPE|AUTHORIZE|EBIZ)-TC\d{3,4}/g;
+// SOLO la forma BRACKETED `[TS-<GW>-TCxxxx]` cuenta como cobertura declarada — es la que
+// aparece en los TÍTULOS de los tests (`test('[TS-AUTHORIZE-TC1002] @cfg Validar …')`), tal
+// como declara el contrato de la fuente #2 de este generador.
+// FIX 2026-07-28: el patrón anterior (sin corchetes) escaneaba TODO el texto del spec,
+// docblocks incluidos. Los contract tests del sandbox Authorize nombran sus contrapartes de
+// matriz (`TS-AUTHORIZE-TC1021`, en prosa) precisamente para declarar que **NO** las cubren
+// (son nivel CONTRATO, no alta de viaje UI) — y el generador las marcaba como confirmed/
+// needs-review acreditadas por un spec API: exactamente la inflación de evidencia que
+// prohíbe el docblock de `data/xray-keys.ts` y las notas de gap §§2.2-2.5 de la matriz.
+// Efecto del fix: las menciones en prosa dejan de contar (47 de 204 tokens del repo);
+// las declaraciones reales en título (157) se conservan intactas.
+const TS_TOKEN = /\[(TS-(?:STRIPE-P2|STRIPE|AUTHORIZE|EBIZ)-TC\d{3,4})\]/g;
 const TMS_ANNOT = /type:\s*'tms',\s*description:\s*'(MG-\d+)'/g;
 
 const specRoot = rp('tests/features/gateway-pg');
@@ -132,7 +143,7 @@ for (const abs of walk(specRoot)) {
 	const p = rel(abs);
 	if (!p.endsWith('.spec.ts')) continue; // solo specs (excluye data/, helpers, registry)
 	const text = readFileSync(abs, 'utf8');
-	const tsIds = [...new Set([...text.matchAll(TS_TOKEN)].map((m) => m[0]))];
+	const tsIds = [...new Set([...text.matchAll(TS_TOKEN)].map((m) => m[1]))];
 	const tmsKeys = [...new Set([...text.matchAll(TMS_ANNOT)].map((m) => m[1]))].filter((k) => !DENYLIST.has(k));
 	for (const id of tsIds) addSpec(id, p);
 	if (tmsKeys.length === 1 && tsIds.length >= 1) {

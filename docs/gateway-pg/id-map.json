@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-27T12:54:42.003Z",
+  "generated_at": "2026-07-29T01:55:58.938Z",
   "generator": "scripts/ai/build-id-map.mjs",
   "notes": [
     "SoT central de trazabilidad TS-ID ↔ MG-key ↔ spec (Fase 4, 2026-07-26).",
@@ -11,10 +11,10 @@
     "stripe": {
       "total": 224,
       "confirmed": 16,
-      "needs-review": 153,
-      "unmapped": 55,
-      "with_mg_key": 165,
-      "with_specs": 169
+      "needs-review": 145,
+      "unmapped": 63,
+      "with_mg_key": 157,
+      "with_specs": 161
     },
     "authorize": {
       "total": 164,
@@ -2843,8 +2843,7 @@
       "tcid": "P2-TC001",
       "mg_key": "MG-158",
       "spec_paths": [
-        "tests/features/gateway-pg/specs/stripe/web/contractor/colaborador-hold-no3ds.spec.ts",
-        "tests/features/gateway-pg/specs/stripe/web/contractor/vinculacion-tarjeta.spec.ts"
+        "tests/features/gateway-pg/specs/stripe/web/contractor/colaborador-hold-no3ds.spec.ts"
       ],
       "status": "needs-review",
       "sources": [
@@ -4266,112 +4265,80 @@
       "gateway": "stripe",
       "stripe_ref": null,
       "tcid": "TC1017",
-      "mg_key": "MG-158",
-      "spec_paths": [
-        "tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-no3ds.e2e.spec.ts"
-      ],
-      "status": "needs-review",
-      "sources": [
-        "tms describe-level en tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-no3ds.e2e.spec.ts (heurístico)"
-      ]
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
     },
     {
       "ts_id": "TS-STRIPE-TC1018",
       "gateway": "stripe",
       "stripe_ref": null,
       "tcid": "TC1018",
-      "mg_key": "MG-158",
-      "spec_paths": [
-        "tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-no3ds.e2e.spec.ts"
-      ],
-      "status": "needs-review",
-      "sources": [
-        "tms describe-level en tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-no3ds.e2e.spec.ts (heurístico)"
-      ]
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
     },
     {
       "ts_id": "TS-STRIPE-TC1019",
       "gateway": "stripe",
       "stripe_ref": null,
       "tcid": "TC1019",
-      "mg_key": "MG-158",
-      "spec_paths": [
-        "tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-no3ds.e2e.spec.ts"
-      ],
-      "status": "needs-review",
-      "sources": [
-        "tms describe-level en tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-no3ds.e2e.spec.ts (heurístico)"
-      ]
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
     },
     {
       "ts_id": "TS-STRIPE-TC1020",
       "gateway": "stripe",
       "stripe_ref": null,
       "tcid": "TC1020",
-      "mg_key": "MG-158",
-      "spec_paths": [
-        "tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-no3ds.e2e.spec.ts"
-      ],
-      "status": "needs-review",
-      "sources": [
-        "tms describe-level en tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-no3ds.e2e.spec.ts (heurístico)"
-      ]
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
     },
     {
       "ts_id": "TS-STRIPE-TC1021",
       "gateway": "stripe",
       "stripe_ref": null,
       "tcid": "TC1021",
-      "mg_key": "MG-158",
-      "spec_paths": [
-        "tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-3ds.e2e.spec.ts"
-      ],
-      "status": "needs-review",
-      "sources": [
-        "tms describe-level en tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-3ds.e2e.spec.ts (heurístico)"
-      ]
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
     },
     {
       "ts_id": "TS-STRIPE-TC1022",
       "gateway": "stripe",
       "stripe_ref": null,
       "tcid": "TC1022",
-      "mg_key": "MG-158",
-      "spec_paths": [
-        "tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-3ds.e2e.spec.ts"
-      ],
-      "status": "needs-review",
-      "sources": [
-        "tms describe-level en tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-3ds.e2e.spec.ts (heurístico)"
-      ]
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
     },
     {
       "ts_id": "TS-STRIPE-TC1023",
       "gateway": "stripe",
       "stripe_ref": null,
       "tcid": "TC1023",
-      "mg_key": "MG-158",
-      "spec_paths": [
-        "tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-3ds.e2e.spec.ts"
-      ],
-      "status": "needs-review",
-      "sources": [
-        "tms describe-level en tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-3ds.e2e.spec.ts (heurístico)"
-      ]
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
     },
     {
       "ts_id": "TS-STRIPE-TC1024",
       "gateway": "stripe",
       "stripe_ref": null,
       "tcid": "TC1024",
-      "mg_key": "MG-158",
-      "spec_paths": [
-        "tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-3ds.e2e.spec.ts"
-      ],
-      "status": "needs-review",
-      "sources": [
-        "tms describe-level en tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-3ds.e2e.spec.ts (heurístico)"
-      ]
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
     },
     {
       "ts_id": "TS-STRIPE-TC1025",
@@ -4687,14 +4654,12 @@
       "mg_key": "MG-158",
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-no3ds.spec.ts",
-        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/hold-capture.spec.ts",
-        "tests/features/gateway-pg/specs/_parametrized/hold-happy-no3ds.parametrized.spec.ts"
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/hold-capture.spec.ts"
       ],
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-no3ds.spec.ts (heurístico)",
-        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/hold-capture.spec.ts (heurístico)",
-        "tms describe-level en tests/features/gateway-pg/specs/_parametrized/hold-happy-no3ds.parametrized.spec.ts"
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/hold-capture.spec.ts (heurístico)"
       ]
     },
     {
