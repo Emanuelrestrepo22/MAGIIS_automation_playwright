@@ -15,6 +15,16 @@ export interface CardInput {
 }
 
 export class PassengerWalletScreen extends AppiumSessionBase {
+	/**
+	 * La billetera puede tener VARIAS instancias de `app-credit-card-payment-data` montadas a la
+	 * vez (ion-pages ocultas), así que el scope del form no es "el documento" sino la instancia
+	 * con más señales de estar activa. Mantiene el comportamiento previo a promover
+	 * `findAnyElement`/`fillWebInputField` a `AppiumSessionBase`.
+	 */
+	protected override async getWebFormScope(): Promise<any | null> {
+		return this.getVisibleCreditCardPaymentModal();
+	}
+
 	private async getVisibleCreditCardPaymentModal(): Promise<any | null> {
 		const driver = this.getDriver();
 		let modals: any = [];
@@ -168,111 +178,6 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 		}
 
 		return null;
-	}
-
-	private async findAnyElement(selector: string, scope?: any): Promise<any | null> {
-		const driver = this.getDriver();
-		if (scope) {
-			let candidates: any = [];
-
-			try {
-				candidates = await scope.$$(selector);
-			} catch {
-				candidates = [];
-			}
-
-			if (candidates.length > 0) {
-				return candidates[0];
-			}
-		} else {
-			const modal = await this.getVisibleCreditCardPaymentModal().catch(() => null);
-			if (modal) {
-				let candidates: any = [];
-
-				try {
-					candidates = await modal.$$(selector);
-				} catch {
-					candidates = [];
-				}
-
-				if (candidates.length > 0) {
-					return candidates[0];
-				}
-			}
-		}
-
-		let candidates: any = [];
-
-		try {
-			candidates = await driver.$$(selector);
-		} catch {
-			candidates = [];
-		}
-
-		return candidates[0] ?? null;
-	}
-
-	private async switchFrameTarget(target: any): Promise<void> {
-		const driver = this.getDriver() as any;
-
-		if (typeof driver.switchFrame === 'function') {
-			await driver.switchFrame(target);
-			return;
-		}
-
-		if (typeof driver.switchToFrame === 'function') {
-			await driver.switchToFrame(target);
-			return;
-		}
-
-		throw new Error('Driver does not support frame switching');
-	}
-
-	private async setDomValue(element: any, value: string): Promise<boolean> {
-		const driver = this.getDriver();
-		return (await driver.execute(
-			(target: HTMLElement, nextValue: string) => {
-				const host = target as HTMLElement & {
-					shadowRoot?: ShadowRoot | null;
-					querySelector?: (selectors: string) => Element | null;
-				};
-
-				const input =
-					(host.shadowRoot?.querySelector('input, textarea') as
-						| HTMLInputElement
-						| HTMLTextAreaElement
-						| null) ??
-					(host.matches?.('input, textarea') ? (host as HTMLInputElement | HTMLTextAreaElement) : null) ??
-					(host.querySelector?.('input, textarea') as HTMLInputElement | HTMLTextAreaElement | null);
-
-				if (!input) {
-					return false;
-				}
-
-				const setter =
-					Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set ??
-					Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set;
-
-				if (!setter) {
-					return false;
-				}
-
-				input.focus?.();
-				setter.call(input, nextValue);
-				input.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
-				input.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
-
-				try {
-					input.setSelectionRange?.(nextValue.length, nextValue.length);
-				} catch {
-					// Ignore selection errors on Stripe iframes.
-				}
-
-				return true;
-			},
-			element as never,
-			value
-		)) as boolean;
 	}
 
 	private async typeValueIntoElement(element: any, value: string): Promise<boolean> {
@@ -1043,68 +948,6 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 		);
 	}
 
-	private async fillWebInputField(selectors: string[], value: string, scope?: any): Promise<boolean> {
-		const modal = scope ?? (await this.getVisibleCreditCardPaymentModal().catch(() => null));
-
-		for (const selector of selectors) {
-			const element = modal
-				? ((await modal.$(selector).catch(() => null)) ?? (await this.findAnyElement(selector, scope)))
-				: await this.findAnyElement(selector, scope);
-			if (!element) {
-				continue;
-			}
-
-			try {
-				if (await this.setDomValue(element, value)) {
-					return true;
-				}
-			} catch {
-				// Fallback below.
-			}
-		}
-
-		return this.executeInWebView(
-			(candidateSelectors: string[], targetValue: string) => {
-				const setNativeValue = (input: HTMLInputElement | HTMLTextAreaElement, nextValue: string): boolean => {
-					const setter =
-						Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set ??
-						Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set;
-
-					if (!setter) {
-						return false;
-					}
-
-					input.focus();
-					setter.call(input, nextValue);
-					input.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
-					input.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
-					return true;
-				};
-
-				for (const selector of candidateSelectors) {
-					const nodes = Array.from(document.querySelectorAll(selector)) as HTMLElement[];
-					for (const node of nodes) {
-						const input = node.matches('input, textarea')
-							? (node as HTMLInputElement | HTMLTextAreaElement)
-							: (node.querySelector('input, textarea') as HTMLInputElement | HTMLTextAreaElement | null);
-
-						if (!input) {
-							continue;
-						}
-
-						if (setNativeValue(input, targetValue)) {
-							return true;
-						}
-					}
-				}
-
-				return false;
-			},
-			selectors,
-			value
-		).catch(() => false);
-	}
-
 	private async fillStripeExpiryFrame(expiry: string, scope?: any): Promise<void> {
 		const { month, year, combined } = this.parseExpiryParts(expiry);
 		const combinedSelectors = [
@@ -1168,18 +1011,6 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 
 	private async findStripeCardFrameIndex(timeout = 10_000, scope?: any): Promise<number> {
 		return this.findFirstFrameWithSelector('input[name="cardnumber"]', timeout, scope);
-	}
-
-	private parseExpiryParts(expiry: string): { month: string; year: string; combined: string; compact: string } {
-		const normalized = expiry.trim().replace(/\s+/g, '');
-		const match = normalized.match(/^(\d{1,2})\/(\d{2}|\d{4})$/);
-		if (!match) {
-			throw new Error(`Invalid card expiry "${expiry}". Expected MM/YY or MM/YYYY.`);
-		}
-
-		const month = match[1].padStart(2, '0');
-		const year = match[2].slice(-2);
-		return { month, year, combined: `${month}/${year}`, compact: `${month}${year}` };
 	}
 
 	private cardCandidates(last4: string): string[] {
