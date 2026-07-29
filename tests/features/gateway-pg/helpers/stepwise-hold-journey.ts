@@ -15,12 +15,30 @@
  * exacto sin abrir el trace. Los `test.step` se reportan con su nombre desde acá, así que cada
  * spec consumidor sigue mostrando sus pasos en el reporte.
  *
- * Diferencia con `runHoldScenario`: éste NO gestiona el toggle de hold — lo asume como
- * precondición declarada del spec (el default del carrier 1521, confirmado en la grabación
- * validada `tests/test-3.spec.ts`, que no toca ningún toggle).
- * ⚠️ Deuda conocida: al no aseverar el toggle, un carrier con hold en OFF haría pasar estos
- * specs igual (sin hold el viaje también queda "Por asignar") y se acreditaría un TC "Hold ON"
- * ejecutando en realidad el escenario Hold OFF. Resolver antes de derivar los TC de Hold OFF.
+ * ── DOS EJES OPT-IN (`holdMode`, `cardFlow`) ─────────────────────────────────────────────────
+ * Ambos son OPCIONALES y su ausencia reproduce el comportamiento histórico byte a byte: sin
+ * `holdMode` no se emite ningún paso de toggle, y sin `cardFlow` el journey ejercita el alta de
+ * tarjeta NUEVA de siempre. Los pasos se numeran en el ORDEN EN QUE SE EMITEN (contador), así que
+ * el camino default sigue reportando 1..13 con los mismos títulos.
+ *
+ *   · `holdMode: 'on'`  → ASEVERA (sin escribir) que la pre-autorización está activa. Cierra la
+ *     deuda histórica: al no aseverar el toggle, un carrier con hold en OFF hacía pasar estos
+ *     specs igual (sin hold el viaje también queda "Por asignar") y se acreditaba un TC "Hold ON"
+ *     ejecutando en realidad el escenario Hold OFF.
+ *   · `holdMode: 'off'` → APAGA el toggle vía API y lo RESTAURA en el `finally`. Es una operación
+ *     DESTRUCTIVA sobre el carrier COMPARTIDO (1521), así que exige el mismo guard explícito que
+ *     la suite CFG (`GATEWAY_ALLOW_DESTRUCTIVE_SWITCH=true`, `isGatewayDestructiveSwitchAllowed`)
+ *     y skipea limpio sin él. Sin restore, una corrida Hold OFF envenena a TODA spec de hold
+ *     posterior — por eso el restore corre incluso si el journey falla o si el caso skipea a mitad.
+ *   · `cardFlow: 'existing'` → NO borra la tarjeta guardada: la SELECCIONA. Con la tarjeta ya
+ *     vinculada no hay hold de vinculación, así que los pasos de fill + "Validar" no se emiten.
+ *     Si el pasajero no la tiene vinculada el caso SKIPEA (precondición no satisfecha) en vez de
+ *     vincularla: el seed es otro TC de la matriz (TS-AUTHORIZE-TC1051 / TS-EBIZ-TC1058), y
+ *     vincularla acá convertiría el caso en el de tarjeta nueva — justamente lo que debe distinguir.
+ *
+ * ⚠️ El toggle se fija sobre el carrier de `parameters-api` (`CARRIER_ID` ?? 1521), que NO es el
+ * carrier ARG de Mercado Pago. `holdMode` sólo es seguro para las pasarelas del carrier 1521
+ * (Authorize / eBizCharge). No hay dato verificado del carrier de MP: no se inventa acá.
  *
  * Sí gestiona el cleanup: captura el `travelId` del `POST /travels` y cancela el viaje en un
  * `finally`, para no dejar residuos en el carrier compartido que contaminen la assertión final.
@@ -59,8 +77,9 @@ import { loginAsDispatcher } from '@features/gateway-pg/fixtures/gateway.fixture
 import { getGatewayPgAdapter } from '@features/gateway-pg/helpers/adapters';
 import { cleanupCardsByLast4 } from '@features/gateway-pg/helpers/card-precondition';
 import { outcomeForIntent, type JourneyOutcome } from '@features/gateway-pg/helpers/journey-outcome';
+import { readHoldEnabled, setHoldViaApi } from '@features/gateway-pg/helpers/parameters-api';
 import { cancelTravelIfCreated, captureCreatedTravelId } from '@features/gateway-pg/helpers/travel-cleanup';
-import { CarrierNewTravelPage, CarrierTravelManagementPage } from '@ui/carrier';
+import { CarrierNewTravelPage, CarrierTravelManagementPage, isGatewayDestructiveSwitchAllowed } from '@ui/carrier';
 import { cardFormFor } from '@ui/carrier/card-forms';
 
 /**
@@ -94,6 +113,15 @@ function shortDestination(destination: string): string {
  * NO incluye "No autorizado" / "En conflicto" — ése es el estado de hold FALLIDO y debe romper.
  */
 const HOLD_APPROVED_ROW_STATUS = /Buscando chofer|Searching Driver|En progreso|In Progress|Viaje programado|Scheduled Trip/i;
+
+/**
+ * Eje "toggle de pre-autorización" del journey. `undefined` (default) = el motor NI fija NI
+ * asevera el toggle: comportamiento histórico, precondición declarada del spec.
+ */
+export type HoldMode = 'on' | 'off';
+
+/** Eje "flujo de tarjeta" del journey. Default `'new'` (alta de tarjeta nueva, histórico). */
+export type StepwiseCardFlow = 'new' | 'existing';
 
 export type StepwiseHoldJourneyInput = {
 	gateway: GatewayName;
@@ -132,6 +160,17 @@ export type StepwiseHoldJourneyInput = {
 	 * ahí el spec declara qué espera, con el motivo escrito al lado.
 	 */
 	expectOutcome?: JourneyOutcome;
+	/**
+	 * Eje del toggle de pre-autorización del carrier. OMITIDO = histórico: el motor no lo toca ni
+	 * lo asevera. Ver el docblock del módulo ('on' asevera; 'off' apaga + restaura + exige guard).
+	 */
+	holdMode?: HoldMode;
+	/**
+	 * Eje del flujo de tarjeta. Default `'new'` (borra la guardada y da de alta una nueva, BL-050).
+	 * `'existing'` selecciona la tarjeta YA vinculada y omite fill + "Validar"; skipea si el
+	 * pasajero no la tiene.
+	 */
+	cardFlow?: StepwiseCardFlow;
 };
 
 /**
@@ -144,6 +183,24 @@ export async function runStepwiseHoldJourney(page: Page, input: StepwiseHoldJour
 	const gridName = input.expectInGrid ?? passenger;
 	// Comportamiento esperado: constante entre pasarelas, derivado del INTENT (no del gateway).
 	const outcome: JourneyOutcome = input.expectOutcome ?? outcomeForIntent(intent);
+	const holdMode = input.holdMode;
+	const cardFlow: StepwiseCardFlow = input.cardFlow ?? 'new';
+
+	// Guard DESTRUCTIVO — el mismo que la suite CFG (`gateway-config.factory.ts`): apagar el hold
+	// escribe sobre los parámetros del carrier COMPARTIDO. Va ANTES de abrir el browser para que el
+	// caso skipee sin consumir sesión, y vive en el MOTOR (no sólo en la factory) para que ningún
+	// consumidor directo pueda mutar el carrier sin habilitarlo explícito.
+	if (holdMode === 'off') {
+		test.skip(!isGatewayDestructiveSwitchAllowed(), 'Caso DESTRUCTIVO (apaga la pre-autorización del carrier compartido 1521 y la restaura al final): ' + 'requiere GATEWAY_ALLOW_DESTRUCTIVE_SWITCH=true explícito (alias legacy AUTHORIZE_ALLOW_DESTRUCTIVE_SWITCH). ' + 'Correr SOLO en ventana exclusiva — con specs de hold concurrentes el toggle apagado las haría fallar.');
+	}
+
+	// Con la tarjeta ya vinculada NO hay hold de vinculación, así que no hay rechazo que aseverar:
+	// el único desenlace que este flujo modela es el happy. Lanza en vez de aseverar un oráculo que
+	// nadie observó (misma regla que `outcomeForIntent`).
+	if (cardFlow === 'existing' && outcome !== 'trip-created') {
+		throw new Error(`runStepwiseHoldJourney: cardFlow 'existing' sólo modela el desenlace 'trip-created' y se pidió '${outcome}' (intent '${intent}'). Con la tarjeta YA vinculada el paso "Validar" no se ejecuta, así que no hay hold de vinculación que la pasarela pueda declinar — el desenlace de un decline sobre tarjeta guardada NO está verificado. Observar una corrida real antes de modelarlo.`);
+	}
+
 	const adapter = getGatewayPgAdapter(gateway);
 	// Queries de búsqueda del pax por pasarela — las consume la precondición API del paso 2.
 	const defaults = journeyDefaultsFor(gateway);
@@ -161,6 +218,23 @@ export async function runStepwiseHoldJourney(page: Page, input: StepwiseHoldJour
 	// Listener del POST /travels: se engancha ANTES de navegar para no perder la respuesta.
 	// Da identidad al viaje (paso 11) y habilita el cleanup del `finally`.
 	const travelRef = await captureCreatedTravelId(page);
+	/**
+	 * Valor del toggle de hold ANTES de que este journey lo apagara, o `null` si no lo mutó.
+	 * Sólo se setea cuando efectivamente hubo cambio: con el toggle ya en OFF no hay nada que
+	 * restaurar y una escritura de más sobre el carrier compartido es riesgo gratis.
+	 */
+	let holdToRestore: boolean | null = null;
+	/**
+	 * Numeración de pasos por ORDEN DE EMISIÓN. Los ejes opt-in agregan o quitan pasos, así que
+	 * fijar el número en el título produciría huecos ("…9…12") que se leen como un bug del reporte.
+	 * El camino default emite exactamente los mismos 13 títulos que antes.
+	 */
+	let stepIndex = 0;
+	const step = async (title: string, body: () => Promise<void>): Promise<void> => {
+		stepIndex += 1;
+
+		await test.step(`${stepIndex}. ${title}`, body);
+	};
 
 	try {
 		await runJourneySteps();
@@ -170,34 +244,92 @@ export async function runStepwiseHoldJourney(page: Page, input: StepwiseHoldJour
 		// constantes entre corridas— podría matchear ese residuo y reportar PASS con el hold roto.
 		// `cancelTravelIfCreated` es no-op si no se capturó ningún id y nunca lanza.
 		await cancelTravelIfCreated(page, travelRef);
+		// Restaurar el toggle, SIEMPRE — también si el journey falló o si el caso skipeó a mitad
+		// (precondición de tarjeta existente no satisfecha). Dejar el carrier compartido en OFF
+		// envenena a toda spec de hold posterior, que fallaría por un motivo que no es suyo.
+		await restoreHoldIfMutated();
+	}
+
+	/**
+	 * Devuelve el toggle a su valor previo. NO lanza: si lanzara desde el `finally` taparía el
+	 * error real del journey, que es lo que hay que leer primero. El fallo se grita por consola
+	 * (no por `debugLog`, que puede estar apagado) porque deja el carrier compartido inconsistente
+	 * y alguien tiene que arreglarlo a mano antes de la próxima corrida.
+	 */
+	async function restoreHoldIfMutated(): Promise<void> {
+		if (holdToRestore === null) {
+			return;
+		}
+
+		const target = holdToRestore;
+		holdToRestore = null;
+
+		try {
+			await test.step(`Cleanup: restaurar la pre-autorización del carrier a ${target ? 'ON' : 'OFF'}`, async () => {
+				await setHoldViaApi(page, target);
+				// Debería quedar como estaba: verificarlo es el punto del restore, no sólo postearlo.
+				expect(await readHoldEnabled(page), 'El toggle de pre-autorización no volvió a su valor previo tras el restore.').toBe(target);
+			});
+		} catch (error) {
+			console.error(`[stepwise-hold-journey] ⚠️ NO SE PUDO RESTAURAR la pre-autorización a ${target ? 'ON' : 'OFF'} en el carrier compartido: ${(error as Error).message}\n` + 'El carrier queda INCONSISTENTE y las specs de hold siguientes van a fallar por este motivo, no por el suyo. Restaurarlo a mano (Configuración Parámetros → Aplicar Pre-Autorización) antes de la próxima corrida.');
+		}
 	}
 
 	async function runJourneySteps(): Promise<void> {
-		await test.step(`1. Login como dispatcher del carrier (creds chain ${gateway})`, async () => {
+		await step(`Login como dispatcher del carrier (creds chain ${gateway})`, async () => {
 			await loginAsDispatcher(page, { gateway });
 			// Debería alcanzar el shell del portal carrier (no quedarse en /authentication/login).
 			await expect(page).not.toHaveURL(/\/authentication\/login/);
 		});
 
-		await test.step(`2. Precondición API: limpiar del wallet la tarjeta •••• ${card.last4}`, async () => {
-			// WORKAROUND (2026-07-28) — borrar la tarjeta desde la UI del alta y volver a adicionarla
-			// hace que el backend responda HTTP 500 en `POST /passengers/{id}/cards`: reproducido en
-			// TC1011 (pax 8669) y TC1061 (pax 4951), mientras TC1051 pasó porque su pasajero no tenía
-			// tarjeta previa. El borrado por API usa otro recurso (`DELETE /users/{id}/cards/{cardId}`)
-			// y deja el perfil consistente, así que se limpia ACÁ —antes de abrir el form— y el
-			// borrado por UI del paso 8 queda sólo como respaldo.
-			// El 500 es un hallazgo de producto pendiente de reportar; esto lo esquiva, no lo arregla.
-			const deleted = await cleanupCardsByLast4(page, defaults.paxSearchQueries, card.last4);
-			debugLog('gateway-pg:stepwise', `[precond API] tarjetas borradas con last4=${card.last4}: ${deleted}`);
-		});
+		if (holdMode) {
+			await step(`Precondición API: pre-autorización del carrier en ${holdMode.toUpperCase()}`, async () => {
+				const current = await readHoldEnabled(page);
 
-		await test.step('3. Abrir el formulario de Alta de Viaje (New trip)', async () => {
+				if (holdMode === 'on') {
+					// SÓLO se asevera: encenderlo también sería una escritura sobre el carrier
+					// compartido, y "reparar" en silencio una precondición rota esconde justamente lo
+					// que hay que ver — que alguien dejó el toggle en OFF (típicamente una corrida Hold
+					// OFF cuyo restore no llegó a completarse).
+					expect(current, 'El carrier debe tener la pre-autorización ACTIVA para este caso (Hold ON). Está en OFF: habilitarla en Configuración Parámetros → "Aplicar Pre-Autorización", o revisar si una corrida Hold OFF previa no restauró el toggle.').toBe(true);
+
+					return;
+				}
+
+				// Hold OFF: sólo se registra el valor a restaurar si de verdad hay cambio.
+				if (current) {
+					holdToRestore = current;
+				}
+				await setHoldViaApi(page, false);
+				// Debería quedar apagado: sin verificarlo, un POST que el backend ignore haría correr
+				// el caso con el hold ACTIVO y acreditaría un TC "Hold OFF" ejecutando Hold ON — el
+				// mismo falso positivo que este eje viene a cerrar.
+				expect(await readHoldEnabled(page), 'La pre-autorización no quedó apagada tras el POST de parámetros — el caso correría con hold ACTIVO.').toBe(false);
+				debugLog('gateway-pg:stepwise', `[hold] apagado (valor previo: ${current ? 'ON' : 'OFF'}; ${holdToRestore === null ? 'sin restore pendiente' : 'se restaura en el finally'})`);
+			});
+		}
+
+		if (cardFlow === 'new') {
+			await step(`Precondición API: limpiar del wallet la tarjeta •••• ${card.last4}`, async () => {
+				// WORKAROUND (2026-07-28) — borrar la tarjeta desde la UI del alta y volver a adicionarla
+				// hace que el backend responda HTTP 500 en `POST /passengers/{id}/cards`: reproducido en
+				// TC1011 (pax 8669) y TC1061 (pax 4951), mientras TC1051 pasó porque su pasajero no tenía
+				// tarjeta previa. El borrado por API usa otro recurso (`DELETE /users/{id}/cards/{cardId}`)
+				// y deja el perfil consistente, así que se limpia ACÁ —antes de abrir el form— y el
+				// borrado por UI del paso 8 queda sólo como respaldo.
+				// El 500 es un hallazgo de producto pendiente de reportar; esto lo esquiva, no lo arregla.
+				const deleted = await cleanupCardsByLast4(page, defaults.paxSearchQueries, card.last4);
+				debugLog('gateway-pg:stepwise', `[precond API] tarjetas borradas con last4=${card.last4}: ${deleted}`);
+			});
+		}
+
+		await step('Abrir el formulario de Alta de Viaje (New trip)', async () => {
 			await travel.goto();
 			// Debería renderizar el formulario de alta con sus campos disponibles.
 			await travel.ensureLoaded();
 		});
 
-		await test.step(`4. Seleccionar el cliente "${client}" → Tipo de Servicio auto = "Regular"`, async () => {
+		await step(`Seleccionar el cliente "${client}" → Tipo de Servicio auto = "Regular"`, async () => {
 			await travel.selectClient(client);
 			// Debería quedar el cliente seleccionado en el form.
 			await travel.assertClientSelected(client);
@@ -206,7 +338,7 @@ export async function runStepwiseHoldJourney(page: Page, input: StepwiseHoldJour
 			await travel.assertDefaultServiceTypeRegular();
 		});
 
-		await test.step(autoAssignsPassenger ? `5. Pasajero auto-asignado por el cliente "${passenger}" (no se toca el campo)` : `5. Seleccionar el pasajero "${passenger}"`, async () => {
+		await step(autoAssignsPassenger ? `Pasajero auto-asignado por el cliente "${passenger}" (no se toca el campo)` : `Seleccionar el pasajero "${passenger}"`, async () => {
 			if (!autoAssignsPassenger) {
 				await travel.selectPassenger(passenger);
 			}
@@ -217,7 +349,7 @@ export async function runStepwiseHoldJourney(page: Page, input: StepwiseHoldJour
 			await travel.assertPassengerSelected(passenger);
 		});
 
-		await test.step(`6. Fijar origen "${origin}"`, async () => {
+		await step(`Fijar origen "${origin}"`, async () => {
 			await travel.setOrigin(origin);
 			// Debería quedar el origen commiteado. `setOrigin` tiene un camino de éxito SILENCIOSO
 			// (si el autocomplete no devuelve opciones presiona Escape y retorna sin error): en la
@@ -226,26 +358,61 @@ export async function runStepwiseHoldJourney(page: Page, input: StepwiseHoldJour
 			await travel.assertOriginSet(origin);
 		});
 
-		await test.step(`7. Fijar destino "${destination}"`, async () => {
+		await step(`Fijar destino "${destination}"`, async () => {
 			await travel.setDestination(destination);
 			// Debería quedar el destino commiteado (mismo riesgo de éxito silencioso que el origen).
 			await travel.assertDestinationSet(destination);
 		});
 
-		await test.step(`8. Método de pago pre-autorizado, listo para tarjeta nueva (•••• ${card.last4})`, async () => {
+		if (cardFlow === 'existing') {
+			await step(`Seleccionar la tarjeta pre-autorizada YA VINCULADA (•••• ${card.last4})`, async () => {
+				// La precondición se verifica en la UI —no por API— a propósito: `paxSearchQueries` es
+				// una lista de fragmentos compartida por los tres actores ('smith'/'fast'/'Emanuel'), así
+				// que puede resolver un pasajero DISTINTO al del caso y acreditar la tarjeta de otro.
+				// El desplegable de Forma de Pago de ESTE formulario, con ESTE cliente y ESTE pasajero
+				// ya elegidos, es el oráculo exacto de lo que el caso necesita.
+				const hasSavedCard = await travel.hasSavedCardWithLast4(card.last4);
+
+				// SKIP, no fallo: la tarjeta la vincula otro TC de la matriz (el caso "seed" —
+				// TS-AUTHORIZE-TC1051 / TS-EBIZ-TC1058). Vincularla acá convertiría este caso en el de
+				// tarjeta NUEVA, que es precisamente lo que debe distinguir; y fallar culparía a este
+				// caso de una precondición que no le toca crear.
+				// El diagnóstico se lee DENTRO del `if`: en el template del `test.skip` se evaluaría
+				// siempre, agregando una lectura de UI (y su posible fallo) al camino que sí encontró
+				// la tarjeta.
+				if (!hasSavedCard) {
+					const paymentMethod = await travel.getPaymentMethodText().catch(() => '(ilegible)');
+
+					test.skip(true, `[cardFlow=existing] Precondición no satisfecha: el pasajero "${passenger}" debe tener la tarjeta •••• ${card.last4} YA vinculada. Forma de Pago muestra: "${paymentMethod}". Correr antes el caso seed de tarjeta nueva (colaboradorHappyNewHoldOn / empresaHappyNewHoldOn) o vincularla a mano.`);
+				}
+
+				await travel.selectSavedPreauthorizedCard(card.last4);
+				debugLog('gateway-pg:stepwise', `[paso ${stepIndex}] tarjeta existente •••• ${card.last4} seleccionada sin re-vincular`);
+			});
+
+			// Los pasos de fill + "Validar" NO se emiten: con la tarjeta ya vinculada no hay hold de
+			// vinculación (la primera de las DOS transacciones de la regla de negocio). El caso
+			// ejercita únicamente el hold DEL VIAJE, que es exactamente lo que la matriz distingue
+			// entre "tarjeta nueva" y "tarjeta vinculada existente".
+			await runPostCardSteps();
+
+			return;
+		}
+
+		await step(`Método de pago pre-autorizado, listo para tarjeta nueva (•••• ${card.last4})`, async () => {
 			// UNA sola llamada que modela las DOS ramas de las grabaciones validadas (ver el JSDoc de
 			// `selectPreauthorizedCardMethod`): con tarjeta previa hay que seleccionar la guardada,
 			// borrarla, REABRIR el desplegable y reseleccionar; sin tarjeta previa alcanza con elegir
 			// la opción por texto. El helper antes usaba sólo la rama simple y por eso TC1051 pasaba
 			// (pax sin tarjeta) mientras TC1011/TC1061 morían más adelante (pax con tarjeta).
 			const hadSavedCard = await travel.selectPreauthorizedCardMethod(card.last4);
-			debugLog('gateway-pg:stepwise', `[paso 8] tarjeta previa •••• ${card.last4}: ${hadSavedCard ? 'existía y se eliminó' : 'no había'}`);
+			debugLog('gateway-pg:stepwise', `[paso ${stepIndex}] tarjeta previa •••• ${card.last4}: ${hadSavedCard ? 'existía y se eliminó' : 'no había'}`);
 			// Debería quedar el wallet sin la tarjeta de prueba: si sobrevive, el form de tarjeta nueva
 			// no se renderiza y el test moriría en el paso siguiente culpando al fill.
 			expect(await travel.hasSavedCardWithLast4(card.last4), `La tarjeta •••• ${card.last4} sigue vinculada — el form de tarjeta nueva no va a aparecer. Forma de Pago muestra: "${await travel.getPaymentMethodText()}"`).toBe(false);
 		});
 
-		await test.step(`9. Llenar el form nativo de tarjeta (•••• ${card.last4}) y verificar los valores`, async () => {
+		await step(`Llenar el form nativo de tarjeta (•••• ${card.last4}) y verificar los valores`, async () => {
 			expect(adapter.cardForm, `${gateway} debe usar el form nativo Angular`).toBe('native-angular');
 			const form = cardFormFor(gateway);
 			await form.fill(page, card);
@@ -260,7 +427,7 @@ export async function runStepwiseHoldJourney(page: Page, input: StepwiseHoldJour
 			await travel.assertVehicleSelectionBlocked();
 		});
 
-		await test.step(`10. Validar la tarjeta contra la pasarela (esperado: ${outcome === 'card-rejected' ? 'RECHAZO' : 'aprobación'})`, async () => {
+		await step(`Validar la tarjeta contra la pasarela (esperado: ${outcome === 'card-rejected' ? 'RECHAZO' : 'aprobación'})`, async () => {
 			// La UI muestra el MISMO mensaje ("Error al validar tarjeta. Por favor, revise los datos
 			// ingresados.") tanto si el backend MAGIIS falló como si el gateway rechazó la tarjeta.
 			// Sin discriminar, un ambiente TEST degradado se confunde con un decline real — pasó el
@@ -286,7 +453,7 @@ export async function runStepwiseHoldJourney(page: Page, input: StepwiseHoldJour
 					// con lo ya verificado en Stripe (smoke SMOKE-GW-TC14, card 0002: el botón de
 					// vehículo nunca se habilita y el viaje no se crea).
 					const errorText = await travel.expectNativeCardRejected(card.last4);
-					debugLog('gateway-pg:stepwise', `[paso 10] rechazo esperado, mensaje al usuario: "${errorText}"`);
+					debugLog('gateway-pg:stepwise', `[paso ${stepIndex}] rechazo esperado, mensaje al usuario: "${errorText}"`);
 				} else {
 					// Debería confirmar la tarjeta sin error. El `last4` habilita el oráculo persistente
 					// (tarjeta vinculada en Forma de Pago) además del toast, que se pierde por carrera.
@@ -294,35 +461,44 @@ export async function runStepwiseHoldJourney(page: Page, input: StepwiseHoldJour
 				}
 			} catch (error) {
 				const diagnosis = failedResponses.length ? `AMBIENTE/BACKEND: se observaron respuestas HTTP no-2xx durante la validación →\n  ${failedResponses.join('\n  ')}` : 'GATEWAY o DATOS: no hubo respuestas HTTP no-2xx, así que el backend respondió OK y el rechazo vino de la pasarela (o el form no disparó el request).';
-				throw new Error(`${(error as Error).message}\n\n[diagnóstico paso 9] ${diagnosis}`);
+				throw new Error(`${(error as Error).message}\n\n[diagnóstico paso ${stepIndex}] ${diagnosis}`);
 			} finally {
 				page.off('response', onResponse);
 			}
 		});
 
 		if (outcome === 'card-rejected') {
-			await test.step('11. RECHAZO: el alta NO puede avanzar y NO se crea viaje', async () => {
+			await step('RECHAZO: el alta NO puede avanzar y NO se crea viaje', async () => {
 				// REGLA DE NEGOCIO: una tarjeta rechazada no debe habilitar el armado del viaje.
-				// Se re-asevera DESPUÉS del rechazo (el paso 9 ya lo verificó antes de validar): lo
-				// que interesa acá es que el rechazo NO desbloqueó el flujo.
+				// Se re-asevera DESPUÉS del rechazo (el paso del fill ya lo verificó antes de validar):
+				// lo que interesa acá es que el rechazo NO desbloqueó el flujo.
 				await travel.assertVehicleSelectionBlocked();
 				// Debería NO existir ningún POST /travels: sin tarjeta vinculada no hay alta posible.
-				// Es la contracara exacta del paso 12 del camino feliz.
+				// Es la contracara exacta del paso de alta del camino feliz.
 				expect(travelRef.travelId, `Se creó el viaje ${travelRef.travelId} con una tarjeta que la pasarela rechazó — el rechazo no cortó el alta.`).toBeNull();
 			});
 
 			// El journey termina acá: sin tarjeta vinculada no hay vehículo, ni alta, ni fila en la
-			// grilla. Seguir a los pasos 12-13 buscaría un viaje que por diseño no debe existir.
+			// grilla. Seguir a los pasos siguientes buscaría un viaje que por diseño no debe existir.
 			return;
 		}
 
-			await test.step(`11. Verificar que ${adapter.displayName} NO dispara challenge 3DS`, async () => {
+		await runPostCardSteps();
+	}
+
+	/**
+	 * Pasos posteriores a la resolución de la tarjeta — COMPARTIDOS por los dos `cardFlow`: desde
+	 * acá el journey es idéntico tenga la tarjeta recién vinculada o ya vinculada de antes. Se
+	 * extraen para que la rama `existing` no duplique las assertions del alta y la grilla.
+	 */
+	async function runPostCardSteps(): Promise<void> {
+		await step(`Verificar que ${adapter.displayName} NO dispara challenge 3DS`, async () => {
 			// Authorize/eBiz/MP resuelven el outcome sin modal de challenge — 3DS es exclusivo Stripe.
 			expect(adapter.requires3ds, `${gateway} no debe requerir 3DS`).toBe(false);
 			await expect(page.locator('iframe[name*="3ds" i], iframe[src*="3ds" i]')).toHaveCount(0);
 		});
 
-		await test.step('12. Seleccionar vehículo y enviar el servicio → capturar el travelId creado', async () => {
+		await step('Seleccionar vehículo y enviar el servicio → capturar el travelId creado', async () => {
 			// "Seleccionar Vehículo" no se habilita hasta que el alta está completa Y la tarjeta
 			// validada, así que su timeout es el punto donde convergen causas muy distintas: la
 			// pasarela (hold no aprobado), el backend (tarifa/ruta que no se computa aunque el
@@ -337,14 +513,14 @@ export async function runStepwiseHoldJourney(page: Page, input: StepwiseHoldJour
 				const paymentMethod = await travel.getPaymentMethodText().catch(() => '(ilegible)');
 				const cardLinked = paymentMethod.includes(card.last4);
 				const diagnosis = cardLinked ? `La tarjeta •••• ${card.last4} SÍ quedó vinculada (Forma de Pago: "${paymentMethod}"), así que el paso de tarjeta se completó. Si el botón igual no habilita, el faltante está AGUAS ARRIBA de la pasarela: tarifa/ruta sin computar (verificar que el ambiente resuelva origen y destino), o un hold aceptado pero NO aprobado — en el dashboard del sandbox eso se ve como transacción en "Fraud Review" (Response Code 4) en vez de "Authorized".` : `La tarjeta •••• ${card.last4} NO figura vinculada (Forma de Pago: "${paymentMethod}"): el problema está en el paso de tarjeta, no en el armado del viaje.`;
-				throw new Error(`${(error as Error).message}\n\n[diagnóstico paso 12] ${diagnosis}`);
+				throw new Error(`${(error as Error).message}\n\n[diagnóstico paso ${stepIndex}] ${diagnosis}`);
 			}
 			await travel.clickSelectVehicle();
 			await travel.clickSendService();
 			// Debería haber un POST /travels exitoso con id: le da IDENTIDAD al viaje de ESTA corrida.
-			// Sin esto el paso 12 buscaría una fila por (pasajero + destino), que son CONSTANTES entre
-			// corridas: si el hold falla y quedó un viaje de una corrida anterior sin cancelar, la
-			// assertion matchearía el residuo y reportaría PASS con el hold roto.
+			// Sin esto el paso de la grilla buscaría una fila por (pasajero + destino), que son
+			// CONSTANTES entre corridas: si el hold falla y quedó un viaje de una corrida anterior sin
+			// cancelar, la assertion matchearía el residuo y reportaría PASS con el hold roto.
 			await expect
 				.poll(() => travelRef.travelId, {
 					message: 'No se capturó ningún POST /travels con id — el alta de viaje no se completó.',
@@ -353,7 +529,7 @@ export async function runStepwiseHoldJourney(page: Page, input: StepwiseHoldJour
 				.not.toBeNull();
 		});
 
-		await test.step(`13. Verificar el viaje en Gestión de Viajes → columna "${outcome === 'trip-unauthorized' ? 'En conflicto' : 'Por asignar'}" (${gridName})`, async () => {
+		await step(`Verificar el viaje en Gestión de Viajes → columna "${outcome === 'trip-unauthorized' ? 'En conflicto' : 'Por asignar'}" (${gridName})`, async () => {
 			await management.goto();
 
 			if (outcome === 'trip-unauthorized') {
@@ -379,7 +555,18 @@ export async function runStepwiseHoldJourney(page: Page, input: StepwiseHoldJour
 			// existe pero está en cualquier estado, incluido "No autorizado". Se acepta el conjunto
 			// de estados post-hold-aprobado (ver `HOLD_APPROVED_ROW_STATUS`) porque el driver puede
 			// haber aceptado el viaje entre la creación y esta lectura.
-			await management.expectPassengerInPorAsignar(gridName, shortDestination(destination), HOLD_APPROVED_ROW_STATUS);
+			//
+			// El diagnóstico del catch distingue dos situaciones OPUESTAS que el mensaje crudo tapa:
+			// el viaje cayó en "En conflicto" (existe y el hold NO se aprobó → hallazgo de pago) o no
+			// hay fila en ninguna columna (el alta no se completó → causa aguas arriba). En la corrida
+			// de TC1011 del 2026-07-28 esa ambigüedad dejó sin responder justamente la pregunta del caso.
+			try {
+				await management.expectPassengerInPorAsignar(gridName, shortDestination(destination), HOLD_APPROVED_ROW_STATUS);
+			} catch (error) {
+				const column = await management.findTripColumn(gridName, shortDestination(destination)).catch(() => null);
+				const diagnosis = column ? `El viaje SÍ existe pero está en la columna "${column}": se creó y el hold no quedó aprobado. Es un hallazgo de PAGO — verificar en el dashboard de la pasarela si la transacción quedó declinada o retenida para revisión (Response Code 4), y escalar a dev con esa evidencia.` : 'El viaje NO aparece en NINGUNA columna: el alta no se completó, así que la causa está aguas arriba del pago (tarifa/ruta sin computar, o el submit no llegó al backend). NO es un hallazgo de la pasarela.';
+				throw new Error(`${(error as Error).message}\n\n[diagnóstico paso final] ${diagnosis}`);
+			}
 		});
 	}
 }

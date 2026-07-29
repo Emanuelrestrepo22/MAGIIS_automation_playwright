@@ -38,9 +38,15 @@ import type { CardIntent, GenericTestCard, ResolveCardArgs } from './types';
 
 /**
  * Mapping Stripe — qué key del namespace `CARDS` resuelve cada intent.
- * Todos los intents canónicos están soportados en Stripe.
+ *
+ * `DECLINE_ZIP_MISMATCH` queda deliberadamente SIN mapear: la card de Stripe que falla el
+ * `zip_check` (`4000 0000 0000 0036`) **aprueba el cargo igual** salvo que la cuenta tenga la
+ * Radar rule `Block if :card_address_zip_check: = 'fail'`, que hoy NO está verificada en la
+ * cuenta MAGIIS. Mapearlo produciría un spec que espera un rechazo que no ocurre.
+ * Al confirmar la regla: agregar la card a `stripe/cards.ts` + `card-policy.ts` y mapear acá,
+ * en un commit propio (la fixture Stripe no se toca en la campaña Authorize).
  */
-const STRIPE_INTENT_MAP: Record<CardIntent, keyof typeof CARDS> = {
+const STRIPE_INTENT_MAP: Partial<Record<CardIntent, keyof typeof CARDS>> = {
 	HAPPY_NO_AUTH: 'SUCCESS_NO_3DS',
 	HAPPY_AUTH: 'HAPPY_3DS',
 	FAIL_AUTH: 'FAIL_3DS',
@@ -57,7 +63,11 @@ const STRIPE_INTENT_MAP: Record<CardIntent, keyof typeof CARDS> = {
 const AUTHORIZE_INTENT_MAP: Partial<Record<CardIntent, AuthorizeCardId>> = {
 	HAPPY_NO_AUTH: 'SUCCESS',
 	DECLINE_AUTHORIZE: 'DECLINE_GENERIC',
-	DECLINE_INVALID_CVC: 'DECLINE_CVV'
+	DECLINE_INVALID_CVC: 'DECLINE_CVV',
+	// ZIP 46205 → el banco responde "no coincide". Que eso RECHACE la operación no es propiedad
+	// del trigger sino de la política de la cuenta (Enhanced AVS `N = Decline`, aplicada por el
+	// líder de QA el 2026-07-28 con la regla de negocio USA "sin match de ZIP = falla").
+	DECLINE_ZIP_MISMATCH: 'AVS_NO_MATCH'
 };
 
 /**

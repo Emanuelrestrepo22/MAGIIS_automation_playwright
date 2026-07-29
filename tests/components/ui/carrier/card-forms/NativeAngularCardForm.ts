@@ -23,6 +23,13 @@
 import type { Page } from '@playwright/test';
 import type { CardFormFillInput, CardFormStrategy } from './CardFormStrategy';
 
+import { expect } from '@playwright/test';
+
+/** Normaliza un valor de campo para comparar ignorando la máscara (espacios). */
+function unmasked(value: string): string {
+	return value.replace(/\s/g, '');
+}
+
 /** 5° campo del form nativo (espejo de `adapter.nativeExtraField`). */
 export type NativeAngularExtraField = 'zip' | 'document';
 
@@ -53,6 +60,43 @@ export class NativeAngularCardForm implements CardFormStrategy {
 		}
 	}
 
+	/**
+	 * Verifica que los 5 campos quedaron con el valor esperado, re-tipeando el NÚMERO si el
+	 * re-render reactivo lo limpió (hasta 3 intentos). Ver el JSDoc de `CardFormStrategy.expectFilled`
+	 * para el caso que motivó esto (TS-AUTHORIZE-TC1061, 2026-07-27).
+	 */
+	async expectFilled(page: Page, card: CardFormFillInput): Promise<void> {
+		const numberField = page.locator('input[formcontrolname="creditCardNumber"]');
+
+		// El número es el único campo que se observó perdiéndose: re-tipear antes de aseverar.
+		for (let attempt = 0; attempt < 3; attempt++) {
+			if (unmasked(await numberField.inputValue().catch(() => '')) === unmasked(card.number)) {
+				break;
+			}
+			await numberField.click();
+			await numberField.fill('');
+			await numberField.pressSequentially(card.number, { delay: 60 });
+		}
+
+		// Debería tener el número completo tras el fill (la máscara agrega espacios).
+		await expect
+			.poll(async () => unmasked(await numberField.inputValue().catch(() => '')), {
+				message: `El número de tarjeta quedó vacío o incompleto tras el fill (el form reactivo lo limpió). Esperado ${card.number}.`,
+				timeout: 10_000,
+			})
+			.toBe(unmasked(card.number));
+
+		// Debería conservar vencimiento, CVV y titular.
+		await expect(page.locator('input[formcontrolname="expiryDate"]'), 'vencimiento').toHaveValue(card.expiry);
+		await expect(page.locator('input[formcontrolname="creditCardCVV"]'), 'CVV').toHaveValue(card.cvc);
+		await expect(page.locator('input[formcontrolname="creditCardOwnerName"]'), 'titular').toHaveValue(card.holderName);
+
+		// El 5° campo sólo si la pasarela lo exige; el ZIP se resuelve igual que en fill().
+		if (this.options.extraField === 'zip' && card.zip) {
+			await expect(this.zipField(page), 'código postal').toHaveValue(card.zip);
+		}
+	}
+
 	/** 5° campo Mercado Pago: tipo de documento (custom select) + número. */
 	private async fillDocumentField(page: Page, card: CardFormFillInput): Promise<void> {
 		const docType = card.docType ?? 'DNI';
@@ -77,14 +121,26 @@ export class NativeAngularCardForm implements CardFormStrategy {
 			throw new Error("NativeAngularCardForm: la tarjeta no trae `zip` pero la pasarela exige el 5° campo ZIP (extraField: 'zip').");
 		}
 
-		const zipCandidates = page.locator(
+		await this.zipField(page).pressSequentially(card.zip, { delay: 40 });
+	}
+
+	/**
+	 * Locator del campo ZIP. Compartido por `fill()` y `expectFilled()` para que ambos apunten
+	 * exactamente al mismo campo — si divergieran, `expectFilled` podría aseverar un campo
+	 * distinto del que llenó `fill`.
+	 *
+	 * Orden de resolución: (1) `formcontrolname` conocido; (2) por etiqueta accesible, bilingüe
+	 * — en el portal en ES es "Codigo Postal de Facturación de la Tarjeta" (sin tilde en "Codigo",
+	 * verificado en el snapshot de la corrida TC1011 del 2026-07-27); (3) fallback posicional del
+	 * recording (5º textbox), que funcionó en vivo pero es frágil: el orden depende de cuántos
+	 * textbox haya montados y de si el CVV expone role textbox (varía según idioma del portal).
+	 */
+	private zipField(page: Page) {
+		const byFormControl = page.locator(
 			'input[formcontrolname="creditCardOwnerZipCode"], input[formcontrolname="zipCode"], input[formcontrolname="postalCode"], input[formcontrolname="creditCardOwnerZip"]',
 		);
-		if (await zipCandidates.count()) {
-			await zipCandidates.first().pressSequentially(card.zip, { delay: 40 });
-		} else {
-			// Fallback: en la grabación el ZIP era el 5º textbox del form.
-			await page.getByRole('textbox').nth(4).pressSequentially(card.zip, { delay: 40 });
-		}
+		const byLabel = page.getByRole('textbox', { name: /c[oó]digo postal|postal code|zip/i });
+
+		return byFormControl.first().or(byLabel.first()).or(page.getByRole('textbox').nth(4)).first();
 	}
 }

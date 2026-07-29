@@ -12,6 +12,8 @@
  */
 import type { Page } from '@playwright/test';
 
+import { debugLog } from '@helpers/index';
+
 /** Carrier ID del ambiente TEST (confirmado en .env.test y specs) */
 const DEFAULT_CARRIER_ID = process.env.CARRIER_ID ?? '1521';
 
@@ -76,7 +78,7 @@ export async function extractAuthToken(page: Page): Promise<string | null> {
 
 	// Instalar interceptor transparente (no modifica el request, solo lee el header)
 	let resolveToken: (token: string | null) => void;
-	const tokenPromise = new Promise<string | null>((resolve) => {
+	const tokenPromise = new Promise<string | null>(resolve => {
 		resolveToken = resolve;
 		// Timeout: si no se captura en 8s, devolver null
 		setTimeout(() => resolve(null), 8_000);
@@ -120,31 +122,23 @@ export async function getApiHeaders(page: Page): Promise<Record<string, string>>
  * Endpoint: GET /magiis-v0.2/passengers/carrier/{carrierId}?lastName={query}
  * Ejemplo: ?lastName=marce → passengerUserId: 4951 (Marcelle Stripe)
  */
-export async function getPassengerId(
-	page: Page,
-	lastNameQuery: string,
-	carrierId = DEFAULT_CARRIER_ID,
-): Promise<number> {
+export async function getPassengerId(page: Page, lastNameQuery: string, carrierId = DEFAULT_CARRIER_ID): Promise<number> {
 	const apiBase = resolveApiBase(page);
 	const url = `${apiBase}/passengers/carrier/${carrierId}?lastName=${encodeURIComponent(lastNameQuery)}`;
 	const headers = await getApiHeaders(page);
 
 	const response = await page.request.get(url, { headers });
 	if (!response.ok()) {
-		throw new Error(
-			`[card-precondition] getPassengerId failed: ${response.status()} ${response.statusText()} — URL: ${url}`,
-		);
+		throw new Error(`[card-precondition] getPassengerId failed: ${response.status()} ${response.statusText()} — URL: ${url}`);
 	}
 
 	const data = await response.json();
 	// La API devuelve un array de pasajeros. Tomamos el primero que tenga passengerUserId.
 	const passengers: PassengerSearchResult[] = Array.isArray(data) ? data : [data];
-	const match = passengers.find((p) => typeof p.passengerUserId === 'number');
+	const match = passengers.find(p => typeof p.passengerUserId === 'number');
 
 	if (!match) {
-		throw new Error(
-			`[card-precondition] No se encontró pasajero con lastName="${lastNameQuery}". Response: ${JSON.stringify(data).slice(0, 500)}`,
-		);
+		throw new Error(`[card-precondition] No se encontró pasajero con lastName="${lastNameQuery}". Response: ${JSON.stringify(data).slice(0, 500)}`);
 	}
 
 	return match.passengerUserId;
@@ -156,24 +150,18 @@ export async function getPassengerId(
  * Endpoint: POST /magiis-v0.2/carriers/{carrierId}/paymentMethodsByPax
  * Payload: { passengerId, typeConfig: "CARRIER" }
  */
-export async function getPassengerCards(
-	page: Page,
-	passengerId: number,
-	carrierId = DEFAULT_CARRIER_ID,
-): Promise<PaymentMethodsByPaxResponse> {
+export async function getPassengerCards(page: Page, passengerId: number, carrierId = DEFAULT_CARRIER_ID): Promise<PaymentMethodsByPaxResponse> {
 	const apiBase = resolveApiBase(page);
 	const url = `${apiBase}/carriers/${carrierId}/paymentMethodsByPax`;
 	const headers = await getApiHeaders(page);
 
 	const response = await page.request.post(url, {
 		data: { passengerId, typeConfig: 'CARRIER' },
-		headers,
+		headers
 	});
 
 	if (!response.ok()) {
-		throw new Error(
-			`[card-precondition] getPassengerCards failed: ${response.status()} ${response.statusText()} — URL: ${url}`,
-		);
+		throw new Error(`[card-precondition] getPassengerCards failed: ${response.status()} ${response.statusText()} — URL: ${url}`);
 	}
 
 	return response.json() as Promise<PaymentMethodsByPaxResponse>;
@@ -184,7 +172,7 @@ export async function getPassengerCards(
  * con los últimos 4 dígitos especificados.
  */
 export function hasActiveCardWithLast4(cards: PassengerCard[], last4: string): boolean {
-	return cards.some((card) => card.lastFourDigits === last4 && !card.expired);
+	return cards.some(card => card.lastFourDigits === last4 && !card.expired);
 }
 
 /**
@@ -192,7 +180,7 @@ export function hasActiveCardWithLast4(cards: PassengerCard[], last4: string): b
  * Útil para detectar exceso de tarjetas (Stripe limita a ~100 por customer).
  */
 export function countActiveCards(cards: PassengerCard[]): number {
-	return cards.filter((card) => !card.expired).length;
+	return cards.filter(card => !card.expired).length;
 }
 
 /** Umbral máximo de tarjetas por pasajero antes de limpiar */
@@ -206,20 +194,14 @@ const MAX_CARDS_THRESHOLD = 20;
  *
  * Evidencia: network capture del portal carrier (2026-04-16).
  */
-export async function deletePassengerCard(
-	page: Page,
-	passengerId: number,
-	cardId: number,
-): Promise<boolean> {
+export async function deletePassengerCard(page: Page, passengerId: number, cardId: number): Promise<boolean> {
 	const apiBase = resolveApiBase(page);
 	const url = `${apiBase}/users/${passengerId}/cards/${cardId}`;
 	const headers = await getApiHeaders(page);
 
 	const response = await page.request.delete(url, { headers });
 	if (!response.ok()) {
-		console.warn(
-			`[card-cleanup] DELETE card ${cardId} failed: ${response.status()} — skipping`,
-		);
+		console.warn(`[card-cleanup] DELETE card ${cardId} failed: ${response.status()} — skipping`);
 		return false;
 	}
 	return true;
@@ -248,7 +230,7 @@ export async function cleanupExcessCards(
 		preserveLast4?: string[];
 		/** Cuántas copias de cada last4 preservado mantener (default: 2) */
 		keepPerLast4?: number;
-	} = {},
+	} = {}
 ): Promise<number> {
 	const maxCards = opts.maxCards ?? MAX_CARDS_THRESHOLD;
 	if (cards.length <= maxCards) return 0;
@@ -286,9 +268,7 @@ export async function cleanupExcessCards(
 		keepList.push(...keep);
 		deleteList.push(...discard);
 		if (discard.length > 0) {
-			console.log(
-				`[card-cleanup] last4=${last4}: ${group.length} tarjetas → conservando ${keep.length} más recientes, eliminando ${discard.length}`,
-			);
+			console.log(`[card-cleanup] last4=${last4}: ${group.length} tarjetas → conservando ${keep.length} más recientes, eliminando ${discard.length}`);
 		}
 	}
 
@@ -302,9 +282,7 @@ export async function cleanupExcessCards(
 	// Ordenar deleteList por id ascendente (eliminar las más antiguas primero)
 	deleteList.sort((a, b) => a.id - b.id);
 
-	console.log(
-		`[card-cleanup] Pasajero ${passengerId}: ${cards.length} tarjetas → eliminando ${deleteList.length}, conservando ${keepList.length}`,
-	);
+	console.log(`[card-cleanup] Pasajero ${passengerId}: ${cards.length} tarjetas → eliminando ${deleteList.length}, conservando ${keepList.length}`);
 
 	let deleted = 0;
 	for (const card of deleteList) {
@@ -377,7 +355,7 @@ export async function validateCardPrecondition(
 		carrierId?: string;
 		/** Si true (default), limpia tarjetas excedentes automáticamente */
 		autoCleanup?: boolean;
-	},
+	}
 ): Promise<CardPreconditionResult> {
 	const carrierId = opts.carrierId ?? DEFAULT_CARRIER_ID;
 	const autoCleanup = opts.autoCleanup ?? true;
@@ -390,9 +368,7 @@ export async function validateCardPrecondition(
 		// aparece en el listado carrier directo). Devolver resultado neutro con
 		// apiResolved=false para que el caller distinga "API cayó" vs "API ok pero
 		// no hay tarjeta" (BL-008, post-revert MR !36).
-		console.warn(
-			`[card-precondition] No se pudo obtener passengerId para "${opts.passengerName}" — continuando sin precondición API. Error: ${(err as Error).message}`,
-		);
+		console.warn(`[card-precondition] No se pudo obtener passengerId para "${opts.passengerName}" — continuando sin precondición API. Error: ${(err as Error).message}`);
 		return {
 			passengerId: -1,
 			totalCards: 0,
@@ -401,7 +377,7 @@ export async function validateCardPrecondition(
 			matchingCards: [],
 			creditCardEnabled: false,
 			cardsDeleted: 0,
-			apiResolved: false,
+			apiResolved: false
 		};
 	}
 
@@ -411,9 +387,7 @@ export async function validateCardPrecondition(
 	} catch (err) {
 		// Idem: si paymentMethodsByPax cae después de resolver passengerId,
 		// no podemos afirmar nada sobre tarjetas. Marcar apiResolved=false.
-		console.warn(
-			`[card-precondition] paymentMethodsByPax falló para passengerId=${passengerId} (${opts.passengerName}) — Error: ${(err as Error).message}`,
-		);
+		console.warn(`[card-precondition] paymentMethodsByPax falló para passengerId=${passengerId} (${opts.passengerName}) — Error: ${(err as Error).message}`);
 		return {
 			passengerId,
 			totalCards: 0,
@@ -422,7 +396,7 @@ export async function validateCardPrecondition(
 			matchingCards: [],
 			creditCardEnabled: false,
 			cardsDeleted: 0,
-			apiResolved: false,
+			apiResolved: false
 		};
 	}
 	let cards = paymentData.cards ?? [];
@@ -430,26 +404,20 @@ export async function validateCardPrecondition(
 	// Cleanup automático si excede el umbral
 	let cardsDeleted = 0;
 	if (autoCleanup && cards.length > MAX_CARDS_THRESHOLD) {
-		console.log(
-			`[card-precondition] ⚠ ${opts.passengerName} tiene ${cards.length} tarjetas (umbral: ${MAX_CARDS_THRESHOLD}) — ejecutando cleanup`,
-		);
+		console.log(`[card-precondition] ⚠ ${opts.passengerName} tiene ${cards.length} tarjetas (umbral: ${MAX_CARDS_THRESHOLD}) — ejecutando cleanup`);
 		cardsDeleted = await cleanupExcessCards(page, passengerId, cards, {
-			preserveLast4: [opts.requiredLast4],
+			preserveLast4: [opts.requiredLast4]
 		});
 
 		// Re-fetch tarjetas post-cleanup para tener el estado actualizado
 		if (cardsDeleted > 0) {
 			paymentData = await getPassengerCards(page, passengerId, carrierId);
 			cards = paymentData.cards ?? [];
-			console.log(
-				`[card-precondition] Post-cleanup: ${cards.length} tarjetas restantes`,
-			);
+			console.log(`[card-precondition] Post-cleanup: ${cards.length} tarjetas restantes`);
 		}
 	}
 
-	const matchingCards = cards.filter(
-		(c) => c.lastFourDigits === opts.requiredLast4 && !c.expired,
-	);
+	const matchingCards = cards.filter(c => c.lastFourDigits === opts.requiredLast4 && !c.expired);
 
 	return {
 		passengerId,
@@ -459,6 +427,46 @@ export async function validateCardPrecondition(
 		matchingCards,
 		creditCardEnabled: (paymentData.paymentMethods ?? []).includes('CREDIT_CARD'),
 		cardsDeleted,
-		apiResolved: true,
+		apiResolved: true
 	};
+}
+
+/**
+ * Borra por API las tarjetas del pasajero cuyos últimos 4 dígitos coincidan con `last4`.
+ *
+ * Prueba varias queries de búsqueda porque la tarjeta se adjunta al pasajero del alta y el nombre
+ * con el que se lo encuentra varía por pasarela (`journeyDefaults.paxSearchQueries`). Corta en la
+ * primera query que efectivamente borre algo. Nunca lanza: si ninguna query resuelve, devuelve 0 y
+ * el caller decide (la limpieza por UI queda como respaldo).
+ *
+ * POR QUÉ POR API Y NO POR UI (workaround del 2026-07-28): borrar la tarjeta desde el desplegable
+ * del alta de viaje y volver a adicionarla hace que el backend responda
+ * **HTTP 500 en `POST /passengers/{id}/cards`** — reproducido en TS-AUTHORIZE-TC1011 (pax 8669) y
+ * TC1061 (pax 4951), mientras TC1051 pasó porque su pasajero NO tenía tarjeta previa. El borrado por
+ * API usa otro recurso (`DELETE /users/{id}/cards/{cardId}`) y deja el perfil consistente.
+ * El 500 en sí es un hallazgo de producto pendiente de reportar — esto sólo lo esquiva.
+ *
+ * @returns cantidad de tarjetas borradas.
+ */
+export async function cleanupCardsByLast4(page: Page, searchQueries: readonly string[], last4: string): Promise<number> {
+	for (const query of searchQueries) {
+		try {
+			const passengerId = await getPassengerId(page, query);
+			const response = await getPassengerCards(page, passengerId);
+			const cards = (response.cards ?? []) as Array<{ id: number; lastFourDigits: string }>;
+			const toDelete = cards.filter(card => card.lastFourDigits === last4);
+
+			for (const card of toDelete) {
+				await deletePassengerCard(page, passengerId, card.id);
+			}
+			debugLog('gateway-pg:card-precondition', `[cleanup] query="${query}" pax=${passengerId}: ${cards.length} tarjetas, borradas ${toDelete.length} con last4=${last4}`);
+			if (toDelete.length > 0) {
+				return toDelete.length;
+			}
+		} catch (error) {
+			debugLog('gateway-pg:card-precondition', `[cleanup] query="${query}" skip: ${(error as Error).message}`);
+		}
+	}
+
+	return 0;
 }
