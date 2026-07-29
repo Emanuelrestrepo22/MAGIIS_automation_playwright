@@ -602,3 +602,81 @@ Una corrida de `HAPPY_PARTIAL_AUTH` murió con `POST /passengers/8669/cards` dev
 **ENVIRONMENT**, se **descartó la medición** y no se tocó ningún spec. Salud re-verificada con
 `curl --ssl-no-revoke https://apps-test.magiis.com/magiis-v0.2/` devolviendo 403 (vivo), y se
 re-corrió.
+
+---
+
+# Cierre de campaña (2026-07-29)
+
+Cuatro rondas contra el ambiente `test`, carrier 1521, pasarela Authorize.Net vinculada. Lo que la
+campaña dejó, en orden de importancia.
+
+## El bloqueante que cambia cómo se lee todo lo anterior
+
+**Las dos cuentas de Authorize no son la misma.** La cuenta de las creds de `.env.test` está en Test
+Mode y devuelve la **misma respuesta enlatada** para los 5 triggers (`responseCode 1`,
+`authCode 000000`, `transId 0`, `avsResultCode P`, `cvvResultCode ""`), **15/15 reproducible** — los
+triggers de ZIP y CVV no se evalúan, así que en esa cuenta **el decline no es exercitable**. Pero el
+backend produjo `state: "NO_AUTH"` una vez (viaje 67541), y una cuenta enlatada no puede producir eso.
+
+Consecuencia dura: **la pata API de la trifuerza no es oráculo válido del flujo E2E de Authorize.**
+Mientras dure el desalineo:
+
+- Ninguna cobertura de decline de Authorize es confiable — no hay forma de saber qué le contestó la
+  pasarela a MAGIIS.
+- Un **verde** en un caso de decline de Authorize **no prueba cobertura de decline**. Es el resultado
+  esperado de una cuenta que aprueba todo.
+- Los **8 rojos** de `api/authorize-sandbox/` **no son drift de producto** — codifican expectativas
+  que esta configuración de cuenta no puede cumplir. No marcarlos como regresión.
+
+Pasos de desbloqueo, en orden: (1) obtener las creds o el modo de la cuenta que usa el backend en
+`test` y setearlas en `.env.test`, o documentar explícitamente que son distintas y qué valida cada
+una; (2) sacar esa cuenta de Test Mode; (3) re-correr `hold-area-f-probe` con los 3 declines. Si ahí
+el viaje sigue quedando `SEARCHING_DRIVER` con Response Code 2 desde la pasarela, **eso sí es defecto
+de producto de severidad alta** (pre-autorización rechazada tratada como aprobada) y hay que
+reportarlo.
+
+## Las 4 trampas de vacuidad — patrón reusable
+
+Las cuatro se encontraron en esta campaña, todas produciendo **verdes que no verificaban nada**. Son
+independientes del dominio de pasarelas: aplican a cualquier suite Playwright que espere el resultado
+de una operación asíncrona.
+
+| # | Construcción | Por qué pasa vacuamente | Reemplazo |
+|---|---|---|---|
+| 1 | `await expect(x).not.toBeVisible({ timeout })` / `toBeHidden()` | Se satisface con el **primer** chequeo. En t≈0 el elemento todavía no llegó, así que la aserción de ausencia pasa antes de que la operación conteste. El `timeout` no se consume. | Aserción de **PRESENCIA** del estado esperado, con espera. Si sólo se puede aseverar ausencia, primero asentar con una presencia observable. |
+| 2 | `locator.isVisible({ timeout })` | `isVisible()` es un chequeo **inmediato** — **ignora el `timeout`**. No es una aserción, es una lectura. | `expect(locator).toBeVisible({ timeout })`, o conteo por nodo + visibilidad por nodo si hay que muestrear. |
+| 3 | `await expect(botón).toBeDisabled({ timeout })` como asentamiento | En este formulario `disabled` significa "ya se submiteó", **no** "está procesando". Resuelve en milisegundos y aporta ~0 de espera; lo que venga detrás se evalúa antes de que la pasarela contestara. | No usar el estado del botón como proxy de "operación en curso". Esperar la **respuesta** (red) o el estado terminal en la UI. |
+| 4 | `getByText(...).first().waitFor({ state: 'visible' })` | Mide **el índice 0**, no el estado del conjunto. Con 0 nodos matcheando reporta un falso negativo; con N nodos mide uno arbitrario. | Contar nodos (`locator.count()`) y evaluar visibilidad **por nodo**. |
+
+Regla que las resume: **una aserción de ausencia nunca es un oráculo por sí sola**, y **un lector
+inmediato (`isVisible`, `toBeDisabled` sobre un estado no-transitorio) nunca es un asentamiento**.
+
+## Estado real de los oráculos de Authorize al cierre
+
+| Intent | Área C (alta de tarjeta) | Área F (alta de viaje) | `basis` | Oráculo |
+|---|---|---|---|---|
+| `HAPPY_NO_AUTH` (control) | aprueba | `SEARCHING_DRIVER` | live-verified | ✅ |
+| `DECLINE_AUTHORIZE` (ZIP 46282) | **aprueba (200)** | **`SEARCHING_DRIVER`** 2/2 | `documented-class` | ❌ lo observado **contradice** `expectedTravelStatus: 'No autorizado'` |
+| `DECLINE_INVALID_CVC` (CVV 901) | **aprueba** | **`SEARCHING_DRIVER`** 4/4 | `documented-class` | ❌ ídem |
+| `DECLINE_PREPAID_ZERO_BALANCE` (ZIP 46228) | **aprueba** | **`SEARCHING_DRIVER`** 2/2 | `documented-class` | ❌ ídem |
+| `HAPPY_PARTIAL_AUTH` (ZIP 46225) | aprueba | `NO_AUTH` 1 · `SEARCHING_DRIVER` 2 | — | ❌ **no determinístico**, sigue fuera de `OUTCOME_BY_INTENT` |
+
+Los 3 declines **no rechazan en ninguna área**: el viaje se crea y sale a buscar chofer,
+indistinguible del happy path. `basis` se dejó a propósito en `documented-class` — subirlo a
+`live-verified` habría declarado un oráculo que nadie vio; bajar `expectedTravelStatus` a "Buscando
+chofer" habría convertido un gap en comportamiento esperado.
+
+## Otros hallazgos que sobreviven al cierre
+
+| Hallazgo | Estado | Riesgo |
+|---|---|---|
+| **Discover bloqueada en la UI** mientras Authorize.net la aprueba (confirmado 2 vías) | Reportado como comentario en `MG-527` (#34511) y `MG-178` (#34512). **Sin ticket `Error`** — decisión explícita del usuario para honrar la regla de gobierno de MG | Defecto pre-release, severidad moderada, módulo Gateway Pagos |
+| **`DELETE` de tarjeta → 500 intermitente** | Mitigado con guard de atribución (corta antes del submit si el pax tiene >1 tarjeta con el mismo `last4`) | Sobrevive una tarjeta con `defaultCard: true` y el alta puede cobrar esa y no la del intent → **medición no atribuible**. Residuo al cierre: card `4723` (`•••• 1111`) en el pax 8669 |
+| **Con hold ON el cartel "Tarjeta válida" NO existe** — 0 nodos en 14 corridas | Documentado | `validateNativeCard()` **no es el oráculo** del flujo con hold; lo que aparece es la tarjeta listada |
+| **`HAPPY_PARTIAL_AUTH` podría crear el viaje con pre-autorización insuficiente** (USD 1.23 sobre USD 163.92) | No afirmable — bloqueado por el desalineo de cuentas | Riesgo de dinero directo si se confirma |
+
+## Higiene del ambiente
+
+**14 viajes creados, 14 cancelados, 0 abiertos.** Ningún spec quedó con `skip` o `fixme` agregado por
+esta campaña; `CARD_MATRIX` no se tocó y los 3 casos del área C siguen corriendo con su aserción de
+presencia real.
