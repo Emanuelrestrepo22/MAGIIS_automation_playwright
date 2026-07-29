@@ -1,5 +1,15 @@
 /**
- * DriverTripPaymentScreen — Cargo a Bordo (build TEST driver 2026-07, STRIPE ELEMENTS).
+ * DriverTripPaymentScreen — Cargo a Bordo (build TEST driver 2026-07).
+ *
+ * DOS RAMAS de form de tarjeta, elegidas por PRESENCIA del campo nativo (ver `fillCardForm`):
+ *
+ *   A) NATIVA — `credit-card-payment-data` con inputs Ionic propios (`#cardNumber`,
+ *      `#cardExpirationDate`, `#securityCode`, `#cardholderName`), SIN ningún iframe. Es lo que
+ *      renderiza la app cuando el carrier tiene vinculada una pasarela que no monta Stripe
+ *      Elements (medido con Authorize el 2026-07-29, dump
+ *      `evidence/dom-dump/driver-cargo-decline-failure-2026-07-29T23-05-50-769Z.txt`).
+ *   B) STRIPE ELEMENTS — cada campo en SU propio iframe `__privateStripeFrame`. Único camino con
+ *      3DS; lo consumen los 12 specs de cargo de Stripe. INTACTO.
  *
  * ⚠️ REESCRITO 2026-07-21 para el BUILD INSTALADO (más nuevo que el source
  * magiis-mobile-driver-v2). Arquitectura HÍBRIDA confirmada por DOM real del device:
@@ -50,6 +60,33 @@ const SEL = {
 	fHolderNameOutside:
 		'credit-card-payment-data input[formcontrolname="cardholderName"], #cardholderName, input[formcontrolname="cardholderName"]',
 	fPostalOutside: 'credit-card-payment-data input[formcontrolname="zipCode"], input[formcontrolname="zipCode"]',
+	// ── RAMA NATIVA (sin Stripe) ───────────────────────────────────────────────────────────────
+	// Guard de rama: presencia del campo de número NATIVO. Los 3 sabores del selector son los
+	// mismos que ya resuelve `PassengerWalletScreen.fillCardForm` para este componente; el
+	// atributo `id`/`formcontrolname`/`data-checkout` de `cardNumber` está medido en el dump del
+	// modal del driver (`credit-card-payment-data > form > .first-segment ion-input#cardNumber`).
+	nativeGuard:
+		'credit-card-payment-data input#cardNumber, input#cardNumber, input[formcontrolname="cardNumber"], input[data-checkout="cardNumber"]',
+	// Los 4 campos del form nativo del DRIVER, medidos por el probe
+	// `tests/mobile/appium/scripts/driver-charge-from-resume.ts` (#cardNumber #cardExpirationDate
+	// #securityCode #cardholderName). Las variantes formcontrolname/data-checkout son las que ya
+	// usa el pasajero para el MISMO componente.
+	nativeNumber: ['input#cardNumber', 'input[formcontrolname="cardNumber"]', 'input[data-checkout="cardNumber"]'],
+	nativeExpiry: [
+		'input#cardExpirationDate',
+		'input[formcontrolname="cardExpirationDate"]',
+		'input[data-checkout="cardExpirationDate"]'
+	],
+	nativeCvc: ['input#securityCode', 'input[formcontrolname="securityCode"]', 'input[data-checkout="securityCode"]'],
+	nativeHolder: [
+		'input#cardholderName',
+		'input[formcontrolname="cardholderName"]',
+		'input[data-checkout="cardholderName"]',
+		'ion-input[formcontrolname="cardholderName"] input'
+	],
+	// El probe del driver NO vio `zipCode` en su modal (sí existe en el form del pasajero) ⇒ se
+	// llena SOLO si el campo aparece en vivo. Selectores medidos, sin inventar un `#zipCode`.
+	nativeZip: ['input[formcontrolname="zipCode"]', 'input[data-checkout="zipCode"]'],
 	// Botón COBRAR (WebView MAGIIS, fuera del iframe) — selector real del build.
 	cobrar: 'credit-card-payment-data ion-content form button, credit-card-payment-data button.btn.primary',
 	// Resultado / alerts.
@@ -63,6 +100,18 @@ export type CardData = {
 	cvc: string;
 	holderName?: string;
 	postal?: string;
+};
+
+/** Radiografía del form NATIVO — diagnóstico de por qué COBRAR sigue deshabilitado. */
+type NativeFormState = {
+	/** classList del `<form>` (trae `ng-valid`/`ng-invalid` del FormGroup de Angular). */
+	form: string;
+	fields: Record<string, { found: boolean; value: string; invalid: boolean }>;
+	/** `.header.end span.title` con texto /cobrar/i ⇒ el form se considera válido. */
+	chargeValidVisible: boolean;
+	/** `span.invalid-charge` presente ⇒ el form se considera inválido. */
+	chargeInvalidVisible: boolean;
+	submit: { found: boolean; disabled: boolean; text: string };
 };
 
 export type PaymentOutcome =
@@ -96,7 +145,17 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 	}
 
 	/**
-	 * Llena la tarjeta. Stripe Elements CLÁSICO ⇒ CADA campo en SU PROPIO iframe → hay que
+	 * Llena la tarjeta eligiendo la rama por **PRESENCIA DEL CAMPO NATIVO**, no por nombre de
+	 * pasarela: si el modal expone `#cardNumber` (form Ionic propio) va por la rama NATIVA; si no,
+	 * por Stripe Elements. Elegir por presencia y no por `gateway` es lo que hace que eBizCharge y
+	 * Mercado Pago entren por el camino nativo sin tocar una línea acá — el screen no tiene por qué
+	 * saber qué pasarela vinculó el carrier, sólo qué form renderizó la app.
+	 *
+	 * El guard corre con el frame ALINEADO al top del WebView (`switchFrameTarget(null)`), mismo
+	 * criterio que `PassengerWalletScreen.fillCardForm`: sin eso el guard puede resolver el form
+	 * estando el frame activo en el iframe de firebase-auth y el fill posterior fallaría.
+	 *
+	 * Rama Stripe (sin cambios): Stripe Elements CLÁSICO ⇒ CADA campo en SU PROPIO iframe → hay que
 	 * switchFrame a cada uno por separado (llenar número+expiry+cvc en un solo iframe falla con
 	 * "element not interactable"). Nombre y código postal son inputs NATIVOS del form MAGIIS.
 	 */
@@ -106,6 +165,14 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 		const number = digits(card.number);
 		const exp = digits(card.expiry); // "12/34" → "1234"
 		const cvc = digits(card.cvc);
+
+		// 0) ¿Form NATIVO (sin iframes)? → rama nativa y salir.
+		await this.switchToWebView();
+		await this.switchFrameTarget(null).catch(() => undefined);
+		if (await this.findAnyElement(SEL.nativeGuard)) {
+			await this.fillNativeCardForm(card);
+			return;
+		}
 
 		// 1) Cada campo Stripe en SU iframe.
 		const okNum = await this.typeInStripeIframe(SEL.iframeNumber, number);
@@ -164,6 +231,166 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 	}
 
 	/**
+	 * RAMA NATIVA: llena el form Ionic propio del modal de cobro (`credit-card-payment-data`), el que
+	 * renderiza la Driver App cuando NO hay Stripe Elements (medido con Authorize el 2026-07-29).
+	 *
+	 * Reusa la receta ya probada en device por `PassengerWalletScreen.fillNativeCardForm` para el
+	 * MISMO componente, hoy en `AppiumSessionBase.fillWebInputField`: setter nativo + dispatch de
+	 * `input`/`change`. Es la única mecánica válida acá — el input tiene máscara
+	 * (`**** **** **** ****`) y `onpaste`/`oncopy`/`ondrag`/`ondrop` bloqueados.
+	 *
+	 * REVEAL PROGRESIVO: al abrir, el modal SÓLO tiene `#cardNumber` montado; el resto vive detrás
+	 * de `ng-if` en `false` y aparece cuando la marca queda reconocida por un número válido. De ahí
+	 * la pausa entre el número y los demás campos.
+	 */
+	private async fillNativeCardForm(card: CardData): Promise<void> {
+		const driver = this.getDriver();
+		const digits = (v: string) => v.replace(/\D/g, '');
+		const number = digits(card.number);
+
+		// 1) Número → dispara validación + reveal del resto del form.
+		if (!(await this.fillWebInputField(SEL.nativeNumber, number).catch(() => false))) {
+			throw new Error(
+				'[DriverTripPaymentScreen] No se pudo llenar #cardNumber en el form NATIVO ' +
+					`(selectores: ${SEL.nativeNumber.join(', ')}).`
+			);
+		}
+		// Reveal progresivo: esperar a que el campo de vencimiento se MONTE (ng-if false → true) en
+		// vez de dormir a ciegas. El fixed-pause de 2.5s de la receta del pasajero queda como piso
+		// (la marca puede tardar en resolverse) y como techo el poll — si no monta, el diagnóstico de
+		// `submitPayment` va a nombrar el campo faltante.
+		await driver.pause(2_500);
+		await this.waitForNativeField(SEL.nativeExpiry, 8_000);
+
+		// 2) Vencimiento MM/AA. Se verifica por READBACK y, si la máscara del campo rechazó el
+		//    formato con barra, se reintenta compacto (MMAA). No es un reintento a ciegas: el
+		//    segundo intento sólo ocurre si el valor NO quedó escrito.
+		const { combined, compact } = this.parseExpiryParts(card.expiry);
+		await this.fillWebInputField(SEL.nativeExpiry, combined).catch(() => false);
+		if (!(await this.hasDigits(SEL.nativeExpiry, 4))) {
+			console.warn(
+				`[DriverTripPaymentScreen] #cardExpirationDate quedó vacío con "${combined}" — reintentando compacto "${compact}".`
+			);
+			await this.fillWebInputField(SEL.nativeExpiry, compact).catch(() => false);
+		}
+
+		// 3) CVV / código de seguridad.
+		await this.fillWebInputField(SEL.nativeCvc, digits(card.cvc)).catch(() => false);
+
+		// 4) Titular (sólo si el caso lo trae — el dato es del fixture de la pasarela).
+		if (card.holderName) {
+			await this.fillWebInputField(SEL.nativeHolder, card.holderName).catch(() => false);
+		}
+
+		// 5) Código postal SÓLO si el campo existe: el probe del driver no lo vio, el del pasajero sí.
+		//    No se asume obligatorio (`postal` tampoco existe en todas las pasarelas).
+		if (card.postal && (await this.findAnyElement(SEL.nativeZip.join(', ')))) {
+			await this.fillWebInputField(SEL.nativeZip, card.postal).catch(() => false);
+		}
+
+		await driver.pause(500);
+		const state = await this.readNativeFormState();
+		console.log(
+			`[DriverTripPaymentScreen] form NATIVO credit-card-payment-data completado (tarjeta ${number.slice(-4)}): ${JSON.stringify(state)}`
+		);
+	}
+
+	/** Espera a que alguno de `selectors` exista en el DOM (reveal progresivo). No lanza. */
+	private async waitForNativeField(selectors: readonly string[], timeout: number): Promise<boolean> {
+		const driver = this.getDriver();
+		const deadline = Date.now() + timeout;
+		const joined = selectors.join(', ');
+		while (Date.now() < deadline) {
+			if (await this.findAnyElement(joined)) return true;
+			await driver.pause(400);
+		}
+		return false;
+	}
+
+	/** ¿El primer campo que resuelva de `selectors` tiene al menos `min` dígitos? (readback). */
+	private async hasDigits(selectors: readonly string[], min: number): Promise<boolean> {
+		const state = await this.readFieldValue(selectors);
+		return state.replace(/\D/g, '').length >= min;
+	}
+
+	/** Valor actual del primer campo que resuelva de `selectors` ('' si no existe). */
+	private async readFieldValue(selectors: readonly string[]): Promise<string> {
+		return this.executeInWebView((sels: string[]) => {
+			for (const sel of sels) {
+				const node = document.querySelector(sel) as HTMLInputElement | null;
+				if (node) return String(node.value ?? '');
+			}
+			return '';
+		}, selectors).catch(() => '');
+	}
+
+	/**
+	 * Radiografía del form NATIVO: valor + validez por campo, clases del `<form>`, señales de
+	 * cobro (`.header.end span.title` ⇒ válido / `span.invalid-charge` ⇒ inválido, medidas por
+	 * `scripts/driver-charge-from-resume.ts`) y estado del botón COBRAR. Alimenta el log del fill y
+	 * el mensaje de error de `submitPayment` — que es EXACTAMENTE donde el flujo moría a ciegas.
+	 */
+	private async readNativeFormState(): Promise<NativeFormState> {
+		const groups: Array<[string, readonly string[]]> = [
+			['cardNumber', SEL.nativeNumber],
+			['cardExpirationDate', SEL.nativeExpiry],
+			['securityCode', SEL.nativeCvc],
+			['cardholderName', SEL.nativeHolder],
+			['zipCode', SEL.nativeZip]
+		];
+
+		return this.executeInWebView(
+			(entries: Array<[string, readonly string[]]>, cobrarSel: string) => {
+				const fields: Record<string, { found: boolean; value: string; invalid: boolean }> = {};
+				for (const [name, sels] of entries) {
+					let node: HTMLInputElement | null = null;
+					for (const sel of sels) {
+						node = document.querySelector(sel) as HTMLInputElement | null;
+						if (node) break;
+					}
+					if (!node) {
+						fields[name] = { found: false, value: '', invalid: false };
+						continue;
+					}
+					const host = (node.closest('ion-input') ?? node) as HTMLElement;
+					fields[name] = {
+						found: true,
+						value: String(node.value ?? ''),
+						invalid: /\b(ng-invalid|ion-invalid)\b/.test(host.className)
+					};
+				}
+
+				const form = document.querySelector('credit-card-payment-data form') as HTMLElement | null;
+				const button = document.querySelector(cobrarSel) as HTMLButtonElement | null;
+
+				return {
+					form: form ? form.className : '<no-form>',
+					fields,
+					chargeValidVisible: Array.from(document.querySelectorAll('.header.end span.title')).some(s =>
+						/cobrar/i.test((s as HTMLElement).innerText || '')
+					),
+					chargeInvalidVisible: !!document.querySelector('span.invalid-charge'),
+					submit: {
+						found: !!button,
+						disabled: button ? button.disabled || button.getAttribute('disabled') !== null : true,
+						text: button ? String(button.innerText ?? '').trim() : ''
+					}
+				};
+			},
+			groups,
+			SEL.cobrar
+		).catch(
+			(): NativeFormState => ({
+				form: '<unavailable>',
+				fields: {},
+				chargeValidVisible: false,
+				chargeInvalidVisible: false,
+				submit: { found: false, disabled: true, text: '' }
+			})
+		);
+	}
+
+	/**
 	 * Escribe `value` en el input del iframe Stripe identificado por `iframeSelector` (title).
 	 * Vuelve al top del WebView al terminar. Typing REAL (addValue) — Stripe escucha key events.
 	 */
@@ -216,7 +443,15 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 		}
 	}
 
-	/** Tap COBRAR (WebView MAGIIS). Espera a que deje de estar disabled (form Stripe válido). */
+	/**
+	 * Tap COBRAR (`credit-card-payment-data button.btn.primary`, texto ` COBRAR `). Espera a que
+	 * deje de estar `disabled` — el botón arranca deshabilitado y la app lo habilita sólo con el
+	 * form válido, así que el click nunca se fuerza.
+	 *
+	 * Si se agota el tiempo, el error incluye la RADIOGRAFÍA del form (`readNativeFormState`): qué
+	 * campo no se montó, cuál quedó vacío y cuál quedó `ng-invalid`. Sin eso el fallo era un
+	 * "quedó deshabilitado" ciego, y cada reintento cuesta un viaje real.
+	 */
 	async submitPayment(enableTimeout = 12_000): Promise<void> {
 		const driver = this.getDriver();
 		await this.switchToWebView();
@@ -247,9 +482,21 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 			}
 			await driver.pause(500);
 		}
+
+		const state = await this.readNativeFormState();
+		const culprits = Object.entries(state.fields)
+			.filter(([, f]) => f.found && (f.invalid || f.value.length === 0))
+			.map(([name, f]) => `${name}(value="${f.value}"${f.invalid ? ',ng-invalid' : ',vacío'})`);
+		const missing = Object.entries(state.fields)
+			.filter(([, f]) => !f.found)
+			.map(([name]) => name);
+
 		throw new Error(
-			'[DriverTripPaymentScreen] COBRAR quedó deshabilitado (form Stripe inválido/incompleto) ' +
-				`en ${enableTimeout}ms — el fill del iframe Stripe no habilitó el botón.`
+			`[DriverTripPaymentScreen] COBRAR quedó deshabilitado en ${enableTimeout}ms (form inválido/incompleto). ` +
+				`form="${state.form}" | campos inválidos/vacíos: ${culprits.length ? culprits.join(', ') : 'ninguno'} ` +
+				`| campos NO montados: ${missing.length ? missing.join(', ') : 'ninguno'} ` +
+				`| señales: chargeValid=${state.chargeValidVisible} chargeInvalid=${state.chargeInvalidVisible} ` +
+				`| botón: ${JSON.stringify(state.submit)}`
 		);
 	}
 
