@@ -3,11 +3,11 @@
 > **GENERATED — no editar a mano.** Regenerar con `node scripts/ai/build-id-map.mjs`.
 > Fuente de verdad: [`docs/gateway-pg/id-map.json`](../id-map.json). Keys MG desde `tests/features/gateway-pg/data/xray-keys.ts` + annotations `tms` en specs — nunca fabricadas.
 
-Total: 111 · confirmed: 9 · needs-review: 0 · unmapped: 102 · con MG-key: 0 · con spec: 9
+Total: 111 · confirmed: 8 · needs-review: 0 · unmapped: 103 · con MG-key: 0 · con spec: 8
 
 | TS-ID | Ref Stripe | MG key | Specs | Status |
 | --- | --- | --- | --- | --- |
-| TS-EBIZ-TC1001 | — | — | `tests/features/gateway-pg/specs/ebizcharge/web/carrier/cardmatrix/ebizcharge-card-outcomes.spec.ts` | confirmed |
+| TS-EBIZ-TC1001 | — | — | — | unmapped |
 | TS-EBIZ-TC1002 | — | — | — | unmapped |
 | TS-EBIZ-TC1003 | — | — | — | unmapped |
 | TS-EBIZ-TC1010 | — | — | — | unmapped |

@@ -224,7 +224,7 @@ export function defineGatewayConfigSuite(gateway: GatewayName, options: GatewayC
 				switch (cfgCase) {
 					case 'viewUnlinked': {
 						await test.step('Given: slot de pasarela libre (unlink de la activa si hay)', async () => {
-							await switcher.unlinkActiveGateway();
+							await switcher.ensureGatewayLinkable(gateway);
 						});
 						await test.step(`Then: la card ${gateway} es visible y vinculable`, async () => {
 							expect(await appStore.readState(gateway), `${gateway} debe mostrarse vinculable (no vinculada)`).toBe('linkable');
@@ -233,7 +233,7 @@ export function defineGatewayConfigSuite(gateway: GatewayName, options: GatewayC
 					}
 					case 'linkValid': {
 						await test.step('Given: slot de pasarela libre', async () => {
-							await switcher.unlinkActiveGateway();
+							await switcher.ensureGatewayLinkable(gateway);
 							expect(await appStore.readState(gateway), `${gateway} debe quedar vinculable tras liberar el slot`).toBe('linkable');
 						});
 						await test.step('When: vinculo con credenciales válidas', async () => {
@@ -246,7 +246,7 @@ export function defineGatewayConfigSuite(gateway: GatewayName, options: GatewayC
 					}
 					case 'linkInvalid': {
 						await test.step('Given: slot de pasarela libre', async () => {
-							await switcher.unlinkActiveGateway();
+							await switcher.ensureGatewayLinkable(gateway);
 							expect(await appStore.readState(gateway), `${gateway} debe estar vinculable`).toBe('linkable');
 						});
 						await test.step('When/Then: intento vincular con credenciales inválidas → rechazo controlado, gateway inactivo', async () => {
@@ -305,7 +305,7 @@ export function defineGatewayConfigSuite(gateway: GatewayName, options: GatewayC
 					}
 					case 'linkStatus': {
 						await test.step('Given: slot de pasarela libre', async () => {
-							await switcher.unlinkActiveGateway();
+							await switcher.ensureGatewayLinkable(gateway);
 							expect(await appStore.readState(gateway), `${gateway} debe estar vinculable`).toBe('linkable');
 						});
 						await test.step('When/Then: la request de vinculación retorna un status de éxito conocido', async () => {

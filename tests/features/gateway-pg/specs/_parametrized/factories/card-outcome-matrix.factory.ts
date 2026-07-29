@@ -212,7 +212,7 @@ export function defineCardOutcomeMatrixSuite(gateway: GatewayName, options: Card
 							? `${expected.label} — pero el outcome se decide en el área ${addCard.relocation.area}: acá el alta APRUEBA (live-verified)`
 							: `${expected.label}, base: ${expected.basis}`;
 						await test.step(`Then: el sistema da la tarjeta por válida (${etiquetaThen})`, async () => {
-							await travel.validateNativeCard();
+							await travel.validateNativeCard(card.last4);
 						});
 					} else {
 						await test.step(`Then: el sistema NO da la tarjeta por válida (${expected.label}, base: ${expected.basis})`, async () => {

@@ -232,15 +232,56 @@ export class CarrierNewTravelPage extends UiBase {
 	}
 
 	/**
-	 * Click en "Validar" del form NATIVO Angular y espera el oráculo de tarjeta válida
-	 * ("Tarjeta válida" / "Valid card") — VERIFICADO en vivo para Authorize (4111/900/10001);
-	 * eBiz comparte el form (oráculo asumido, TODO live). Para Stripe Elements usar el flujo
-	 * `fillMinimum`/`selectCardByLast4` (valida vía `clickValidateCard` del POM legacy).
+	 * Detecta si la Forma de Pago ya quedó RESUELTA a la tarjeta guardada del pax
+	 * ("Tarjeta de crédito VISA *** <last4>") — con tarjeta vigente el form nativo NO se
+	 * renderiza y el dropdown la preselecciona (confirmado por screenshot live 2026-07-27,
+	 * carrier 1521 / Authorize). Utility read-only: silent-fail → false.
 	 */
 	@step
-	async validateNativeCard(): Promise<void> {
+	async isSavedCardPreselected(last4: string): Promise<boolean> {
+		try {
+			await this.page
+				.getByText(new RegExp(`\\*+\\s*${last4}`))
+				.first()
+				.waitFor({ state: 'visible', timeout: 3_000 });
+			return true;
+		} catch {
+			return false;
+		}
+	}
+
+	/**
+	 * Click en "Validar" del form NATIVO Angular y espera el oráculo de tarjeta validada.
+	 *
+	 * ORÁCULO = CUALQUIERA de las dos manifestaciones observables del éxito (`.or()`), porque
+	 * el flujo tiene DOS presentaciones verificadas live y ambas prueban lo mismo:
+	 *   (a) TOAST "Tarjeta válida"/"Valid card" — señal inmediata del alta de tarjeta nueva
+	 *       (flujo WAL: verificado live 2026-07-28 junto a `POST passengers/{id}/cards → 200`
+	 *       y la tarjeta presente en `paymentMethodsByPax`).
+	 *   (b) ESTADO "… *** <last4>" — la Forma de Pago queda RESUELTA a la tarjeta (flujo de
+	 *       alta de viaje con tarjeta ya vinculada: verificado live 2026-07-27/28 por screenshot).
+	 *
+	 * HISTORIA DEL ORÁCULO (para no repetir el error): el 2026-07-28 el toast dejó de
+	 * observarse y se reemplazó por (b) creyendo que era un cambio de comportamiento del FE.
+	 * El log de red probó la causa real: la política AVS estricta de la cuenta sandbox
+	 * (A/Z/Y → "authorize and hold for review", luego Z → Decline) RETENÍA la transacción de
+	 * validación → sin aprobación no hay toast. Corregida la política (Z/W/Y → Allow), el toast
+	 * volvió. Aceptar ambas señales es MÁS fuerte que cualquiera sola: cubre las dos
+	 * presentaciones sin depender de la config de la cuenta.
+	 * Para Stripe Elements usar `fillMinimum`/`selectCardByLast4` (POM legacy).
+	 */
+	@step
+	async validateNativeCard(last4: string): Promise<void> {
 		await this.page.getByRole('button', { name: /^(Valid|Validar)$/i }).click();
-		await expect(this.page.getByText(/Tarjeta v[áa]lida|Valid card|Card valid/i).first()).toBeVisible({ timeout: 20_000 });
+		// 45s: la validación viaja al sandbox del PSP (Authorize.Net) y el RTT excede 20s
+		// de forma intermitente bajo carga (observado 2026-07-27).
+		const validated = this.page
+			.getByText(/Tarjeta v[áa]lida|Valid card|Card valid/i)
+			.or(this.page.getByText(new RegExp(`\\*+\\s*${last4}`)));
+		await expect(
+			validated.first(),
+			`validación OK: toast "Tarjeta válida" o Forma de Pago resuelta a *** ${last4}`
+		).toBeVisible({ timeout: 45_000 });
 	}
 
 	/**

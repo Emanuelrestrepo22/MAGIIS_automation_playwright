@@ -117,14 +117,23 @@ export class ContractorNewTravelPage extends UiBase {
 	}
 
 	/**
-	 * Click en "Validar" del form NATIVO Angular y espera el oráculo de tarjeta válida
-	 * ("Tarjeta válida" / "Valid card") — mismo contrato que el delegate carrier
-	 * (`CarrierNewTravelPage.validateNativeCard`; verificado live en Authorize, eBiz asumido).
+	 * Click en "Validar" del form NATIVO Angular y espera el oráculo de tarjeta validada.
+	 * Mismo contrato que el delegate carrier (`CarrierNewTravelPage.validateNativeCard`):
+	 * acepta CUALQUIERA de las dos manifestaciones verificadas live del éxito — toast
+	 * "Tarjeta válida" (alta de tarjeta nueva) o Forma de Pago resuelta a "*** <last4>"
+	 * (tarjeta ya vinculada). Ver la historia del oráculo en el docblock del carrier: el
+	 * toast desaparecía por la política AVS de la cuenta sandbox, no por cambio del FE.
 	 */
 	@step
-	async validateNativeCard(): Promise<void> {
+	async validateNativeCard(last4: string): Promise<void> {
 		await this.page.getByRole('button', { name: /^(Valid|Validar)$/i }).click();
-		await expect(this.page.getByText(/Tarjeta v[áa]lida|Valid card|Card valid/i).first()).toBeVisible({ timeout: 20_000 });
+		const validated = this.page
+			.getByText(/Tarjeta v[áa]lida|Valid card|Card valid/i)
+			.or(this.page.getByText(new RegExp(`\\*+\\s*${last4}`)));
+		await expect(
+			validated.first(),
+			`validación OK: toast "Tarjeta válida" o Forma de Pago resuelta a *** ${last4}`
+		).toBeVisible({ timeout: 45_000 });
 	}
 
 	/** Espera a que el botón "Seleccionar Vehículo" esté habilitado. */

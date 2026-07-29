@@ -37,7 +37,12 @@ import { expectNoThreeDSModal, loginAsDispatcher } from '@features/gateway-pg/fi
 import { validateAndSelectMercadoPagoCard } from '@features/gateway-pg/helpers/mercadoPago.helpers';
 import { getCarrierParameters, readHoldRaw, setHoldViaApi } from '@features/gateway-pg/helpers/parameters-api';
 import { assertAuthorizeAccountMeasuresRealAuthorizations } from '@features/gateway-pg/helpers/authorize-account-guard';
-import { validateCardPrecondition, type CardPreconditionResult } from '@features/gateway-pg/helpers/card-precondition';
+import {
+	cleanupGatewayCardByLast4,
+	extractAuthToken,
+	validateCardPrecondition,
+	type CardPreconditionResult
+} from '@features/gateway-pg/helpers/card-precondition';
 import {
 	captureCreatedTravelId,
 	cancelTravelIfCreated,
@@ -213,9 +218,10 @@ export class CarrierHoldSteps extends UiBase {
 	 *     resaltada): 'linked' continúa; 'validation-unavailable' → test.skip (limitación sandbox
 	 *     MP en TEST — incluye el error explícito "Error al validar tarjeta", su manifestación
 	 *     documentada; UAT-only); 'validation-failed' RESERVADO (guard future-proof, hoy inerte).
-	 *   - authorize/ebizcharge: "Validar" + oráculo "Tarjeta válida" (verificado live Authorize).
+	 *   - authorize/ebizcharge: "Validar" + oráculo de ESTADO (Forma de Pago resuelta a
+	 *     "*** <last4>" — live 2026-07-28, ver CarrierNewTravelPage.validateNativeCard).
 	 */
-	private async validateNativeGatewayCard(gateway: GatewayName): Promise<void> {
+	private async validateNativeGatewayCard(gateway: GatewayName, cardLast4: string): Promise<void> {
 		if (gateway === 'mercado-pago') {
 			const mpLink = await validateAndSelectMercadoPagoCard(this.page);
 			// Guard future-proof (hoy INERTE): 'validation-failed' está RESERVADO a evidencia live
@@ -229,7 +235,7 @@ export class CarrierHoldSteps extends UiBase {
 			);
 			return;
 		}
-		await this.travel.validateNativeCard();
+		await this.travel.validateNativeCard(cardLast4);
 	}
 
 	/**
@@ -274,6 +280,28 @@ export class CarrierHoldSteps extends UiBase {
 		await test.step('Login carrier', async () => {
 			await this.login(scenario.gateway);
 		});
+
+		// Precondición de idempotencia (form nativo): si la MISMA tarjeta quedó vinculada al
+		// pax por un run previo, el alta diverge y "Tarjeta válida" nunca aparece (falso
+		// negativo confirmado live 2026-07-27 — el piloto hold reproducía el fallo que WAL
+		// evitaba con su cleanup). Mismo helper compartido; silent-fail por query.
+		if (adapter.cardForm === 'native-angular') {
+			await test.step('Precondición: limpiar tarjeta nativa previa (idempotencia)', async () => {
+				// Warm-up del JWT ANTES del cleanup (root-cause live 2026-07-28): extractAuthToken
+				// sin retry devuelve null recién logueado → 401 → catch silencioso por query →
+				// cleanup no-op y el alta diverge a tarjeta-guardada. Patrón retry ×3 establecido
+				// (allcards beforeAll). Con cache poblado, getApiHeaders del cleanup ya no falla.
+				let token: string | null = null;
+				for (let attempt = 0; attempt < 3 && !token; attempt++) {
+					token = await extractAuthToken(this.page);
+				}
+				if (!token) {
+					debugLog('gateway-pg:carrier', '[card-cleanup] JWT no capturado tras 3 intentos — cleanup correrá sin auth y no-op');
+				}
+				const queries = [scenario.passenger, ...(adapter.journeyDefaults.paxSearchQueries ?? [])];
+				await cleanupGatewayCardByLast4(this.page, queries, cardLast4);
+			});
+		}
 
 		let preferSavedCard = false;
 		if (useCardFlow) {
@@ -327,9 +355,17 @@ export class CarrierHoldSteps extends UiBase {
 						origin: scenario.origin,
 						destination: scenario.destination
 					});
-					await this.travel.selectPaymentMethod('Preautorizada');
-					await cardFormFor(gateway).fill(this.page, card);
-					await this.validateNativeGatewayCard(gateway);
+					// Rama tarjeta-vigente (live 2026-07-27, screenshot): con la tarjeta del pax ya
+					// vinculada, el dropdown la PRESELECCIONA y el form nativo no se renderiza —
+					// fill+Validar divergen y "Tarjeta válida" nunca aparece (falso negativo).
+					// Oráculo funcional de esta rama: la selección visible "*** <last4>".
+					if (await this.travel.isSavedCardPreselected(cardLast4)) {
+						debugLog('gateway-pg:hold', `[card] tarjeta guardada *** ${cardLast4} preseleccionada — se omite fill/Validar (rama CARD-EXISTING nativa)`);
+					} else {
+						await this.travel.selectPaymentMethod('Preautorizada');
+						await cardFormFor(gateway).fill(this.page, card);
+						await this.validateNativeGatewayCard(gateway, cardLast4);
+					}
 				}
 			});
 

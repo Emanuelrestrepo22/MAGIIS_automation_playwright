@@ -31,6 +31,18 @@
  *     pero estructurado para demostrar el patrón cross-gateway.
  *   - authorize ejercita la card `4111 1111 1111 1111` con CVV `900` (SUCCESS sandbox);
  *     mercado-pago la Visa 3704 con holder APRO (trigger del outcome).
+ *   - La instancia **authorize** es el análogo de la fila de matriz
+ *     **TS-AUTHORIZE-TC1011** (`docs/gateway-pg/authorize/matriz_cases.md` §1): Visa
+ *     4111…1111 + CVV 900, Hold ON, viaje visible en la columna "Por asignar". Se mapea
+ *     como ANÁLOGO, no como 1:1 — este piloto valida el patrón cross-gateway, mientras
+ *     TC1011 exige además el oráculo de DB (`payments.gateway=authorize`, `response_code=1`,
+ *     `transaction_id` no nulo) que este spec no cubre.
+ *   - ⚠️ La key `MG-158` del describe raíz pertenece al **ATR de Stripe** (área E del ATP
+ *     MG-178); Authorize NO tiene área E en el membership. Por eso, en el run por pasarela
+ *     de authorize (`test:test:gateway:authorize:xray`) `MG-158` va **denylisteada**
+ *     (`XRAY_KEY_DENYLIST`) para no escribir un run ajeno en el execution MG-558 — su
+ *     evidencia se acredita en el ATR de origen (MG-560, Stripe). Criterio y tabla por
+ *     pasarela: `docs/gateway-pg/reports/RUNBOOK-executions-por-gateway.md` §2.3.
  *
  * Cómo extender:
  *   1. Configurar las creds del adapter en .env.test (o pinnear `GATEWAYS`) — el gateway

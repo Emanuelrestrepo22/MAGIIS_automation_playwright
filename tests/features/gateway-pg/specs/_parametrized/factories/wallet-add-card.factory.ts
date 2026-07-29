@@ -132,7 +132,7 @@ export function defineWalletAddCardSuite(gateway: GatewayName, options: WalletAd
 						'MP: validación de tarjeta no completa en TEST (sandbox MP no transacciona) — UAT-only. Form-fill + habilitación de "Validar" verificados.'
 					);
 				} else {
-					await travel.validateNativeCard();
+					await travel.validateNativeCard(card.last4);
 				}
 			});
 
