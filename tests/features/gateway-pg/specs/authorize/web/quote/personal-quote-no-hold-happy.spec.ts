@@ -32,6 +32,7 @@
 import { expect, test } from '@TestFixture';
 import { resolveCard } from '@fixtures/gateways/_shared';
 import { journeyDefaultsFor } from '@features/gateway-pg/data/journey-defaults';
+import { clearQuoteRequesterCard } from '@features/gateway-pg/helpers/quote-card-precondition';
 import { confirmQuoteByMail } from '@features/gateway-pg/helpers/quote-mail-confirmation';
 import { expectQuoteTripInPortal } from '@features/gateway-pg/helpers/quote-trip-verification';
 import { cardFormFor } from '@ui/carrier/card-forms';
@@ -39,6 +40,14 @@ import { QuoteWidgetPage } from '@ui/QuoteWidgetPage';
 
 const env = process.env.ENV ?? 'test';
 const AUTH = journeyDefaultsFor('authorize');
+
+/**
+ * Origen dentro de la GEOCERCA del teléfono driver físico (radio ~500 m). El viaje que crea este
+ * caso queda ABIERTO a propósito: QA lo finaliza a mano desde la App Driver, y eso sólo es posible
+ * si el alta cae en rango. Con el origen default de `journey-defaults` el viaje no le llega al
+ * driver y el tramo de finalización queda sin verificar.
+ */
+const DRIVER_E2E_PICKUP = 'Ciudad de la Paz 2238, Buenos Aires, Argentina';
 
 /**
  * Solicitante de la cotización: usuario personal YA REGISTRADO en la plataforma — es el eje del
@@ -72,39 +81,54 @@ test.describe(`Gateway PG · Quote · Authorize — usuario personal SIN hold [$
 			// Visa 4111…1111 · CVV 900 · ZIP 90210 · exp 12/30.
 			const card = resolveCard({ gateway: 'authorize', intent: 'HAPPY_NO_AUTH' });
 
+			await test.step('0. Precondición: el solicitante no debe tener ya esta tarjeta', async () => {
+				// El widget registra la tarjeta contra el pasajero resuelto por el mail. Si ya la
+				// tiene de una corrida anterior, el backend responde 500 y el caso se cae en el pago
+				// midiendo estado acumulado en vez del alta del viaje (hallazgo QUOTE-CARD-500).
+				await clearQuoteRequesterCard(browser, {
+					paxSearchQueries: AUTH.paxSearchQueries,
+					last4: card.last4,
+					gateway: 'authorize'
+				});
+			});
+
 			await test.step('1. Abrir el widget público de cotización del carrier', async () => {
 				await quote.goto({ language: 'EN' });
 			});
 
-			await test.step(`2. Fijar origen "${AUTH.origin}"`, async () => {
-				await quote.setOrigin(AUTH.origin);
+			await test.step(`2. Fijar origen "${DRIVER_E2E_PICKUP}"`, async () => {
+				await quote.setOrigin(DRIVER_E2E_PICKUP);
 			});
 
 			await test.step(`3. Fijar destino "${AUTH.destination}"`, async () => {
 				await quote.setDestination(AUTH.destination);
 			});
 
-			await test.step('4. Avanzar a selección de vehículo', async () => {
+			await test.step('4. Fijar 1 pasajero (el widget nace en 0 y bloquea el avance)', async () => {
+				await quote.setPassengerCount(1);
+			});
+
+			await test.step('5. Avanzar a selección de vehículo', async () => {
 				await quote.selectVehicle();
 			});
 
-			await test.step('5. Completar la nota del viaje y confirmar el vehículo', async () => {
+			await test.step('6. Completar la nota del viaje y confirmar el vehículo', async () => {
 				await quote.setTripNote('TC1215 quote authorize sin hold (automatizado)');
 				await quote.confirmVehicle();
 			});
 
-			await test.step('6. Completar los datos de contacto del solicitante', async () => {
+			await test.step('7. Completar los datos de contacto del solicitante', async () => {
 				// Vínculo por MAIL a un usuario personal YA EXISTENTE: es el eje del caso — el sistema
 				// debe reconocerlo, no crear uno nuevo. Nota: aun con mail registrado, el widget NO
 				// auto-completa los demás datos; hay que llenarlos igual (verificado por QA).
 				await quote.fillContact({ ...QUOTE_REQUESTER });
 			});
 
-			await test.step('7. Solicitar la cotización', async () => {
+			await test.step('8. Solicitar la cotización', async () => {
 				await quote.requestQuote();
 			});
 
-			await test.step(`8. Abrir el paso de pago y llenar la tarjeta (•••• ${card.last4})`, async () => {
+			await test.step(`9. Abrir el paso de pago y llenar la tarjeta (•••• ${card.last4})`, async () => {
 				await quote.goToPayment();
 				const form = cardFormFor('authorize');
 				await form.fill(page, card);
@@ -113,13 +137,13 @@ test.describe(`Gateway PG · Quote · Authorize — usuario personal SIN hold [$
 				await form.expectFilled?.(page, card);
 			});
 
-			await test.step('9. Confirmar la cotización (aún NO crea el viaje)', async () => {
+			await test.step('10. Confirmar la cotización (aún NO crea el viaje)', async () => {
 				await quote.confirmQuote();
 				// Debería salir del paso de pago (el form de tarjeta ya no está montado).
 				await expect(page.getByRole('textbox', { name: /Card number|N[uú]mero de tarjeta/i })).toHaveCount(0, { timeout: 30_000 });
 			});
 
-			await test.step('10. Confirmar el viaje desde el mail del solicitante → alta como PROGRAMADO', async () => {
+			await test.step('11. Confirmar el viaje desde el mail del solicitante → alta como PROGRAMADO', async () => {
 				// REGLA DE NEGOCIO: todo viaje de Quote requiere que el solicitante lo confirme desde su
 				// casilla; el alta se produce recién con ese click y queda como viaje PROGRAMADO.
 				// Sin este paso el viaje NO existe — el spec estaría verificando nada.
@@ -129,7 +153,7 @@ test.describe(`Gateway PG · Quote · Authorize — usuario personal SIN hold [$
 				await confirmPage.close();
 			});
 
-			await test.step('11. Verificar el viaje en el portal del carrier (oráculo del caso)', async () => {
+			await test.step('12. Verificar el viaje en el portal del carrier (oráculo del caso)', async () => {
 				// El oráculo vive en el PORTAL, que es una sesión autenticada distinta del widget
 				// anónimo. El helper abre un contexto nuevo a propósito — reusar la página del widget o
 				// el popup de yopmail mezclaría sesiones y arrastraría cookies de otro dominio.
