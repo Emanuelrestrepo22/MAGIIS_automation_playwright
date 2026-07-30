@@ -887,3 +887,82 @@ lo desmienten: **MG-524 = COB-25** (no COB-21), **MG-540 = COB-44** (no COB-37),
 **MG-547 = COB-32**. Además los 33 summaries de MG-519..551 **no existen en ningún archivo local**
 (el propio idmap lo declara para no fabricarlos) — se leyeron de Jira. Corregir el idmap queda como
 tarea aparte.
+
+# Ronda 7 — regresión viva de UI/API/DB con trifuerza (2026-07-30)
+
+Objetivo del líder de QA: correr **todo** el automatizado de Authorize uno por uno, arreglar por
+causa raíz **sin debilitar ningún oráculo**, dejar reporte Allure y emitir GO/NO-GO. Autorización
+explícita para usar **solo las credenciales sandbox de `.env.test`** en link/unlink. Premisas nuevas:
+los viajes creados los finaliza QA a mano desde la App Driver, y el **origen debe ser la geocerca
+`Ciudad de la Paz 2238`** (radio ~500 m del teléfono driver físico) o el viaje no le llega al driver.
+
+## Hold — 8 casos ejecutables, 8 verdes
+
+| TC | Caso | Resultado |
+|---|---|---|
+| TC1011 / TC1051 / TC1061 | Hold ON · personal / colaborador / empresa | verde (ronda previa, toggle en ON) |
+| TC1012 / TC1054 / TC1063 | Hold OFF · personal / colaborador / empresa | verde |
+| TC1055 | Colaborador · tarjeta existente · Hold OFF | verde |
+| TC1065 | Empresa · tarjeta declinada (`holdAxis: null`) | verde |
+| TC1064 | Empresa · tarjeta existente · Hold OFF | **skipped** — el pax empresa no tenía tarjeta previa |
+| TC1016 / TC1031 | Decline · ZIP no match — ambos **Hold ON** | **bloqueados por precondición**: el carrier tiene la pre-autorización en OFF. El motor exige `expect(readHoldEnabled()).toBe(true)` y **no enciende el toggle a propósito** |
+| TC1017 | Decline + Hold OFF | `fixme` preexistente — oráculo no observado; el cuerpo lanza para que flipearlo dé rojo, no un PASS falso |
+
+Los 3 verdes de Hold ON siguen siendo válidos aunque hoy el toggle esté en OFF: se corrieron con el
+toggle en ON y ese camino **nunca escribe** el parámetro.
+
+## Quote TC1215 — verde tras cerrar cuatro causas raíz independientes
+
+El caso estaba rojo por cuatro motivos distintos, todos medidos en vivo, ninguno resuelto aflojando
+un assert (commit `77e4199`):
+
+1. **`paxCount` nace en 0**, no en 1 como afirmaba el comentario del POM. Con 0, "Select Vehicle"
+   **no avanza y no emite ninguna validación visible** → hallazgo **QUOTE-PAX-0**. Además el control
+   necesita **blur** para commitear: sin blur no avanza ni al tercer click.
+2. **El control de dirección queda `ng-invalid`** hasta que resuelve el geocode (~2-5 s). Pulsar
+   antes descarta el submit en silencio; el síntoma era un timeout en `setTripNote` que parecía un
+   problema de selector. Se agregó gate por estado observable, no un sleep.
+3. **La plantilla del mail cambió**: asunto `BOOK YOUR TRIP` y CTA de imagen sin nombre accesible
+   hacia `#/mv?bt=<token>`. El locator `confirm_your_trip` no matchea nada. Se ancla por
+   remitente + asunto, se lee el `href` real y se assertea que la landing resuelve el token.
+4. **La grilla abre en la pestaña "Asignar"**, que para un viaje de Quote está siempre vacía (el
+   alta entra directo como PROGRAMADO). Medido: Asignar (0) / Programados (2).
+
+### Hallazgo QUOTE-CARD-500 (nuevo)
+
+Re-registrar una tarjeta que el pasajero **ya tiene** responde:
+
+```
+POST /magiis-v0.2/passengers/8669/cards → 500
+java.lang.IllegalStateException: Expected a string but was BEGIN_OBJECT at line 1 column 55 path $.error
+```
+
+MAGIIS no sabe deserializar el error que devuelve la pasarela (espera `error` string, recibe objeto)
+y responde 500 con traza Java en el body. La UI lo traduce a *"Card validation error. Please, check
+the data entered."* — engañoso: los datos están bien, la tarjeta está duplicada. Mitigado del lado
+test con la precondición explícita `clearQuoteRequesterCard`, que **no tapa el hallazgo**.
+
+## CFG link/unlink — 7 de 8 verdes, con un incidente de estado
+
+Corridos con `GATEWAY_ALLOW_DESTRUCTIVE_SWITCH=true` y credenciales sandbox de `.env.test`:
+TC1001, TC1002, TC1004, TC1005, TC1006, TC1007, TC1008 **verdes**.
+
+**TC1003 rojo** (impedir vincular con credenciales inválidas): no se muestra el error de
+autenticación esperado. Es el rojo-a-propósito ya conocido del defecto.
+
+**Incidente**: como la suite corre en serie, al caer TC1003 quedó **la pasarela vinculada con las
+credenciales inválidas** — o sea, el defecto no solo omite el mensaje: acepta el vínculo. Se detectó
+con el probe read-only y se restauró re-ejecutando TC1002 (desvincula y vincula con las credenciales
+válidas). Cierre de la fase: TC1005 (unlink) al final, TC1002 de restauración, smoke de pasarela
+vinculada verde, y **re-siembra de la tarjeta** con `TS-AUTHORIZE-WAL-01` verde (el unlink dispara
+`cleaningWallets` y borra las tarjetas del pax).
+
+## Viajes abiertos para cierre manual desde la App Driver
+
+| Código | Fecha/hora | Pasajero | Origen | Destino | Importe | Estado |
+|---|---|---|---|---|---|---|
+| 3664-S | 07/30/2026 3:29 AM | Restrepo, Emanuel | Ciudad de la Paz 2238 | Cazadores 1987 | $61.66 | Viaje programado |
+| 3665-S | 07/30/2026 3:40 AM | Restrepo, Emanuel | Ciudad de la Paz 2238 | Cazadores 1987 | $61.66 | Viaje programado |
+| 3666-S | 07/30/2026 3:43 AM | Restrepo, Emanuel | Ciudad de la Paz 2238 | Cazadores 1987 | $61.66 | Viaje programado |
+
+Las pestañas Asignar / En curso / En Conflicto quedaron en 0.
