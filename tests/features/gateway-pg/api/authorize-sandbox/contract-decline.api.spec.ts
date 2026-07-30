@@ -31,8 +31,11 @@ test.describe('[BL-036][API] Authorize.net sandbox — Declines (Response Code 2
 		expect(response.transactionResponse?.responseCode).toBe('2');
 
 		// La transacción declinada normalmente NO devuelve authCode válido.
-		// transId puede o no estar presente según versión del sandbox.
-		const messages = response.transactionResponse?.messages ?? [];
-		expect(messages.length).toBeGreaterThan(0);
+		// El motivo del decline vive en `transactionResponse.errors[]` — `.messages[]` es el
+		// campo que Authorize.net puebla en transacciones EXITOSAS (ej. "This transaction
+		// has been approved"), por diseño va vacío en un decline. Verificado en vivo contra
+		// el sandbox real (2026-07-24): `errors` trae el código/motivo, `messages` viene [].
+		const errors = response.transactionResponse?.errors ?? [];
+		expect(errors.length).toBeGreaterThan(0);
 	});
 });

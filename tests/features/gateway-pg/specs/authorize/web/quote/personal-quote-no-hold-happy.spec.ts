@@ -65,7 +65,7 @@ test.describe(`Gateway PG · Quote · Authorize — usuario personal SIN hold [$
 		// (registry `xray-keys.ts` sin sección quote). Key null = sin annotation, para que el gap
 		// quede visible en el summary del reporter — no inventar keys.
 		{},
-		// `browser` se usa en el paso 11: la verificación en el portal abre una SESIÓN NUEVA, aislada
+		// `browser` se usa en el paso 12: la verificación en el portal abre una SESIÓN NUEVA, aislada
 		// de la sesión anónima del widget (ver `expectQuoteTripInPortal`).
 		async ({ page, browser }) => {
 			const quote = new QuoteWidgetPage({ page });
@@ -84,27 +84,33 @@ test.describe(`Gateway PG · Quote · Authorize — usuario personal SIN hold [$
 				await quote.setDestination(AUTH.destination);
 			});
 
-			await test.step('4. Avanzar a selección de vehículo', async () => {
+			await test.step('4. Fijar la cantidad de pasajeros (1)', async () => {
+				// El widget arranca en 0 pasajeros y con 0 NO avanza al paso de vehículo (medido en
+				// vivo 2026-07-29). No es un detalle cosmético: es precondición del paso 5.
+				await quote.setPassengerCount(1);
+			});
+
+			await test.step('5. Avanzar a selección de vehículo', async () => {
 				await quote.selectVehicle();
 			});
 
-			await test.step('5. Completar la nota del viaje y confirmar el vehículo', async () => {
+			await test.step('6. Completar la nota del viaje y confirmar el vehículo', async () => {
 				await quote.setTripNote('TC1215 quote authorize sin hold (automatizado)');
 				await quote.confirmVehicle();
 			});
 
-			await test.step('6. Completar los datos de contacto del solicitante', async () => {
+			await test.step('7. Completar los datos de contacto del solicitante', async () => {
 				// Vínculo por MAIL a un usuario personal YA EXISTENTE: es el eje del caso — el sistema
 				// debe reconocerlo, no crear uno nuevo. Nota: aun con mail registrado, el widget NO
 				// auto-completa los demás datos; hay que llenarlos igual (verificado por QA).
 				await quote.fillContact({ ...QUOTE_REQUESTER });
 			});
 
-			await test.step('7. Solicitar la cotización', async () => {
+			await test.step('8. Solicitar la cotización', async () => {
 				await quote.requestQuote();
 			});
 
-			await test.step(`8. Abrir el paso de pago y llenar la tarjeta (•••• ${card.last4})`, async () => {
+			await test.step(`9. Abrir el paso de pago y llenar la tarjeta (•••• ${card.last4})`, async () => {
 				await quote.goToPayment();
 				const form = cardFormFor('authorize');
 				await form.fill(page, card);
@@ -113,13 +119,13 @@ test.describe(`Gateway PG · Quote · Authorize — usuario personal SIN hold [$
 				await form.expectFilled?.(page, card);
 			});
 
-			await test.step('9. Confirmar la cotización (aún NO crea el viaje)', async () => {
+			await test.step('10. Confirmar la cotización (aún NO crea el viaje)', async () => {
 				await quote.confirmQuote();
 				// Debería salir del paso de pago (el form de tarjeta ya no está montado).
 				await expect(page.getByRole('textbox', { name: /Card number|N[uú]mero de tarjeta/i })).toHaveCount(0, { timeout: 30_000 });
 			});
 
-			await test.step('10. Confirmar el viaje desde el mail del solicitante → alta como PROGRAMADO', async () => {
+			await test.step('11. Confirmar el viaje desde el mail del solicitante → alta como PROGRAMADO', async () => {
 				// REGLA DE NEGOCIO: todo viaje de Quote requiere que el solicitante lo confirme desde su
 				// casilla; el alta se produce recién con ese click y queda como viaje PROGRAMADO.
 				// Sin este paso el viaje NO existe — el spec estaría verificando nada.
@@ -129,7 +135,7 @@ test.describe(`Gateway PG · Quote · Authorize — usuario personal SIN hold [$
 				await confirmPage.close();
 			});
 
-			await test.step('11. Verificar el viaje en el portal del carrier (oráculo del caso)', async () => {
+			await test.step('12. Verificar el viaje en el portal del carrier (oráculo del caso)', async () => {
 				// El oráculo vive en el PORTAL, que es una sesión autenticada distinta del widget
 				// anónimo. El helper abre un contexto nuevo a propósito — reusar la página del widget o
 				// el popup de yopmail mezclaría sesiones y arrastraría cookies de otro dominio.

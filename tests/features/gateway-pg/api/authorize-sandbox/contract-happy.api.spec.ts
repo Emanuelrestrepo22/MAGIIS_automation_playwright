@@ -69,7 +69,12 @@ test.describe('[BL-036][API] Authorize.net sandbox — Happy paths (Response Cod
 		expect(response.messages.resultCode).toBe('Ok');
 		expect(response.transactionResponse?.responseCode).toBe('1');
 		expect(response.transactionResponse?.accountType).toBe('AmericanExpress');
-		// Amex CVV de 4 dígitos también dispara match con prefijo 9000
-		expect(response.transactionResponse?.cvvResultCode).toBe('M');
+		// El sandbox de Authorize.net NO soporta el magic-trigger "M" (match) para CVV de
+		// 4 dígitos: verificado en vivo probando 5 valores distintos (9000/0900/9001/0999/9999),
+		// TODOS devuelven cvvResultCode "P" (Not Processed) con responseCode=1 (Approved) —
+		// el mecanismo de triggers del sandbox solo opera sobre códigos de 3 dígitos. La
+		// transacción SÍ aprueba (lo que el título del test promete); "P" es el resultado
+		// real y consistente para Amex, no "M".
+		expect(response.transactionResponse?.cvvResultCode).toBe('P');
 	});
 });
