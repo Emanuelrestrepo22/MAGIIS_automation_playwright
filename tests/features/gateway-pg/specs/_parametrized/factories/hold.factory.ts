@@ -92,6 +92,7 @@ import { SUPPORTED_INTENTS_BY_GATEWAY } from '@fixtures/gateways/_shared';
 import { debugLog } from '@helpers/index';
 import { journeyDefaultsFor } from '@features/gateway-pg/data/journey-defaults';
 import { getGatewayPgAdapter } from '@features/gateway-pg/helpers/adapters';
+import { assertActiveGatewayInDb } from '@features/gateway-pg/helpers/gateway-identity-guard';
 import { runStepwiseHoldJourney } from '@features/gateway-pg/helpers/stepwise-hold-journey';
 
 /** Tipo de actor del alta — determina cliente / pasajero / nombre esperado en la grilla. */
@@ -251,6 +252,15 @@ export function defineHoldSuite(gateway: GatewayName, options: HoldSuiteOptions 
 		test.use({ storageState: { cookies: [], origins: [] } });
 
 		test.skip(!adapter.isConfigured(), `Requiere ${adapter.credsEnvKeys.join(' + ')} en .env.test (gate del adapter ${gateway}).`);
+
+		// Guard de IDENTIDAD de pasarela (DB): la suite mide dinero contra la pasarela ACTIVA del
+		// carrier, y el form de tarjeta es agnóstico — sin esto, correr la suite de eBiz con
+		// Authorize vinculada produce resultados de OTRA pasarela sin que ningún test lo note
+		// (pasó en la campaña Authorize, rondas 4-5). Lanza si MGW_LINKED contradice a la suite;
+		// avisa y sigue si no hay config de Oracle (ver política de fallo en el helper).
+		test.beforeAll(async () => {
+			await assertActiveGatewayInDb(gateway);
+		});
 
 		for (const holdCase of generated) {
 			const spec = HOLD_CASE_SPECS[holdCase];

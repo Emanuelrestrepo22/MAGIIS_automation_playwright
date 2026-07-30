@@ -10,11 +10,11 @@
  *   reusa estructuralmente en magiis-test-v2):
  *   - USER_WALLET.CARRIERACCOUNT_ID  (SIN guion) · MERCADOPAGO_APP_ID · USER_ID
  *   - CARD.USER_WALLET_ID (FK) · LAST_FOUR_DIGITS · MERCADOPAGO_APP_ID
- *   - MGW_LINKED.CARRIER_ACCOUNT_ID (CON guion) · PROVIDER · ACTIVE · DELETE_DATE
- *     → NO existe columna STATUS en el esquema observado. El estado CLEANING_WALLETS→UNLINKED
- *       descrito por backend NO es una columna física acá: la desvinculación se infiere de
- *       ACTIVE=0 y/o DELETE_DATE seteado. Si TEST tuviera STATUS, sobreescribir con
- *       `ORACLE_WALLET_MGW_SQL` (incluir alias "status"). [confirmar en TEST]
+ *   - MGW_LINKED.CARRIER_ACCOUNT_ID (CON guion) · PROVIDER · ACTIVE · DELETE_DATE · STATUS
+ *     → CORRECCIÓN (verificado en TEST via MCP, 2026-07-30): la columna STATUS SÍ existe.
+ *       Valores observados: NULL en la fila activa, 'UNLINKED' tras desvincular (fila 164,
+ *       AUTHORIZE). La desvinculación se acredita por ACTIVE=0 + DELETE_DATE seteado +
+ *       STATUS='UNLINKED'; el SQL default no la proyecta aún para no romper overrides.
  *
  * Toda la tabla / SQL es overridable por env para ajustar identificadores sin tocar código:
  *   ORACLE_WALLET_TABLE   (default USER_WALLET)
@@ -184,6 +184,52 @@ export async function countCardsByCarrierAndLast4(cfg: OracleReadConfig, filter:
  *   ORACLE_MGWTX_TABLE  (default MGW_TRANSACTIONS)
  *   ORACLE_MGWTX_SQL    (query completa; binds :ref + :st0.. — debe alias "cnt")
  */
+/** Fila de MGW_TRANSACTIONS con las columnas que acreditan un cobro (verificadas en TEST, 2026-07-30). */
+export type MgwTransactionRow = {
+	id: number;
+	transactionRef: string;
+	amount: number;
+	paymentProvider: string;
+	status: string;
+	transactionType: string;
+};
+
+/**
+ * Lee las transacciones de un VIAJE, opcionalmente filtradas por pasarela.
+ *
+ * Hallazgos verificados en vivo (2026-07-30, MCP sobre magiis-test-v2) que esta función
+ * capitaliza y que `countMgwTransactionsByRef` no conocía:
+ *   1. `TRANSACTION_REF` **es el travelId** (fila 545: ref='67815' = viaje del exploratorio).
+ *      No hace falta inyectar el ref por env: la fase web ya lo captura
+ *      (`travel-cleanup.captureCreatedTravelId`).
+ *   2. `PAYMENT_PROVIDER` existe como columna ('EBIZ' | 'AUTHORIZE' | …) → la identidad de
+ *      pasarela de una transacción ES observable en DB, contra lo que decía el doc previo.
+ *   3. El estado final difiere por pasarela: eBiz cierra en 'CONFIRM'; Authorize en 'APPROVED'.
+ *
+ * Oráculo del cobro eBizCharge (trifuerza, capa DB — reemplaza a MGW.logs, que vive en la base
+ * del servicio de gateway y NO es alcanzable desde Oracle):
+ *   `readMgwTransactionsByTravel(cfg, { travelId, provider: 'EBIZ' })` → 1 fila con
+ *   status 'CONFIRM' y el monto cobrado.
+ *
+ * Oráculo del NO-cobro (viaje NO_AUTORIZADO, STATE=10): **cero filas** — verificado con los
+ * viajes 67797/67798/67799/67813.
+ */
+export async function readMgwTransactionsByTravel(
+	cfg: OracleReadConfig,
+	filter: { travelId: number | string; provider?: string }
+): Promise<MgwTransactionRow[]> {
+	const table = process.env.ORACLE_MGWTX_TABLE ?? 'MGW_TRANSACTIONS';
+	const providerClause = filter.provider ? ' AND payment_provider = :provider' : '';
+	const sql = `SELECT id AS "id", transaction_ref AS "transactionRef", amount AS "amount",
+	       payment_provider AS "paymentProvider", status AS "status", transaction_type AS "transactionType"
+	  FROM ${table}
+	 WHERE transaction_ref = :ref${providerClause}
+	 ORDER BY id DESC`;
+	const binds: Record<string, unknown> = { ref: String(filter.travelId) };
+	if (filter.provider) binds.provider = filter.provider;
+	return new OracleDb(cfg).query<MgwTransactionRow>(sql, binds);
+}
+
 export async function countMgwTransactionsByRef(cfg: OracleReadConfig, filter: MgwTransactionsByRefFilter): Promise<number> {
 	const table = process.env.ORACLE_MGWTX_TABLE ?? 'MGW_TRANSACTIONS';
 	const statuses = filter.statuses && filter.statuses.length > 0 ? filter.statuses : ['APPROVED', 'CONFIRM'];
