@@ -112,6 +112,15 @@ export async function countCardsByCarrierAndApp(
  *   ORACLE_WALLET_TABLE      (default USER_WALLET)
  *   ORACLE_CARD_BY_PAX_SQL   (query completa; binds :pax [y :last4] — debe alias "cnt")
  */
+/**
+ * ⚠️ TRAMPA DE ESPACIO DE IDs (verificado en vivo 2026-07-29, carrier 1521):
+ * `passengerUserId` acá es el **USER_ID de plataforma** (`USER_WALLET.USER_ID`), que NO es el
+ * `passengerUserId` que devuelve la API del carrier (`GET /passengers/carrier/{id}?lastName=`).
+ * Medición: la API devolvió pax 8669 para `emanuel.restrepo@yopmail.com`; su wallet real es
+ * id 3383 con `USER_ID = 12055`. Alimentar esta fn con el id de la API devuelve **0 en silencio**
+ * — un falso "no hay tarjetas" que parece un fallo de persistencia y no lo es.
+ * Si tenés el id de la API, NO uses esta fn: usá `countCardsByCarrierAndLast4`.
+ */
 export async function countCardsByPassenger(cfg: OracleReadConfig, filter: PassengerCardFilter): Promise<number> {
 	const cardTable = process.env.ORACLE_CARD_TABLE ?? 'CARD';
 	const walletTable = process.env.ORACLE_WALLET_TABLE ?? 'USER_WALLET';
@@ -125,6 +134,41 @@ export async function countCardsByPassenger(cfg: OracleReadConfig, filter: Passe
 		binds.last4 = filter.last4;
 	}
 	const rows = await new OracleDb(cfg).query<{ cnt: number }>(sql, binds);
+	return Number(rows[0]?.cnt ?? 0);
+}
+
+/** Filtro por carrier + last4 — no depende del espacio de ids de pasajero. */
+export interface CarrierCardLast4Filter {
+	/** `USER_WALLET.CARRIERACCOUNT_ID` (el carrier_account.id, ej. 1521). */
+	carrierAccountId: number | string;
+	/** Últimos 4 dígitos de la tarjeta (ej. '1111'). */
+	last4: string;
+}
+
+/**
+ * Count de cards con un `last4` dado bajo un carrier. Read-only.
+ *
+ * Es el oráculo DB correcto cuando el id de pasajero disponible viene de la **API del carrier**
+ * (`getPassengerId`), porque ese id NO es `USER_WALLET.USER_ID` — ver la advertencia de
+ * `countCardsByPassenger`. El join por `CARRIERACCOUNT_ID` evita el problema por completo:
+ * confirma la persistencia física de la tarjeta bajo el carrier bajo prueba, que es lo que el
+ * área WAL/C necesita acreditar.
+ *
+ * Overridable por env (mismo patrón que las otras fns):
+ *   ORACLE_CARD_TABLE               (default CARD)
+ *   ORACLE_WALLET_TABLE             (default USER_WALLET)
+ *   ORACLE_CARD_BY_CARRIER_LAST4_SQL (query completa; binds :carrier y :last4 — debe alias "cnt")
+ */
+export async function countCardsByCarrierAndLast4(cfg: OracleReadConfig, filter: CarrierCardLast4Filter): Promise<number> {
+	const cardTable = process.env.ORACLE_CARD_TABLE ?? 'CARD';
+	const walletTable = process.env.ORACLE_WALLET_TABLE ?? 'USER_WALLET';
+	const defaultSql = `SELECT COUNT(*) AS "cnt" FROM ${cardTable} c JOIN ${walletTable} w ON c.user_wallet_id = w.id
+		  WHERE w.carrieraccount_id = :carrier AND c.last_four_digits = :last4`;
+	const sql = process.env.ORACLE_CARD_BY_CARRIER_LAST4_SQL ?? defaultSql;
+	const rows = await new OracleDb(cfg).query<{ cnt: number }>(sql, {
+		carrier: filter.carrierAccountId,
+		last4: filter.last4
+	});
 	return Number(rows[0]?.cnt ?? 0);
 }
 
