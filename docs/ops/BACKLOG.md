@@ -1152,6 +1152,46 @@ Checklist (en orden):
 - **Impacto en la automatización:** las assertions de los TC de hold deberían contemplar **dos** transacciones, no una. Documentado en el JSDoc de `tests/features/gateway-pg/helpers/stepwise-hold-journey.ts`.
 - **Referencias:** `tests/test-3.spec.ts`, `tests/test-4.spec.ts` (grabaciones, untracked), `tests/features/gateway-pg/helpers/stepwise-hold-journey.ts`, BL-049 (la pasarela no evalúa triggers), BL-050 (duplicado en wallet), `docs/gateway-pg/authorize/matriz_cases2.md` §5 (Voids)
 
+### BL-052 — `AppStoreGatewaysPage.readState()` da FALSO NEGATIVO por race condition de la card
+
+- **Estado:** 🔴 Pendiente — causa raíz confirmada en vivo, fix no aplicado
+- **Prioridad:** P2
+- **Tipo:** Bug de automatización (POM)
+- **Reportado:** 2026-07-29
+- **Contexto:** `TS-AUTHORIZE-SMOKE-01` falla intermitentemente con `Expected: "linked" · Received: "linkable"` **aunque la pasarela SÍ está vinculada**. Bloqueó la campaña Authorize dos veces como si fuera una precondición incumplida, cuando era un defecto de lectura.
+
+  **Diagnóstico en vivo (spec temporal, no commiteado):**
+
+  ```
+  .card que matchean /authorize/i => 1              ← NO hay colisión de scope
+  card[0] a.green=0 a.red=1                         ← el selector a.red-text SÍ funciona
+  card[0] textContent: "Authorize.Net … Vincular"   ← el TEXTO dice "Vincular"
+  readState('authorize') => linked                  ← al leer más tarde, correcto
+  elemento "Desvincular" => A.red-text pointer ng-star-inserted
+  ```
+
+  **Causa raíz**: es el estado optimista/cacheado ya documentado en `docs/gateway-pg/authorize/HANDOFF-live-reconciliation-2026-07-24.md` §3.3 punto 5 — *la card renderiza un estado inicial (ej. "Vincular") que ~750 ms después el fetch real corrige (ej. "Desvincular")*. El `waitForLoadState('networkidle')` del `goto()` **no siempre alcanza**: el `a.red-text` correcto ya está en el DOM mientras el `textContent` de la card todavía dice "Vincular", así que el resultado depende de en qué instante se lea.
+
+  Dos hipótesis se descartaron por evidencia: (a) que `cardFor()` capturara un contenedor amplio y viera el "Vincular" de otra card — hay **una sola** card que matchea; (b) que el needle `/authorize/i` colisionara con el `oauth2/authorize` del href de Mailchimp — `hasText` compara `textContent`, no atributos.
+- **Próxima acción:** hacer determinista la lectura en lugar de depender del instante: `expect.poll` sobre `readState` hasta que el estado se estabilice, o esperar explícitamente la response del endpoint que corrige la card antes de leer (en vez de `networkidle`). Mientras no se arregle, **un fallo de `SMOKE-01` con `linkable` NO es evidencia de que la pasarela esté desvinculada** — verificar visualmente antes de concluir.
+- **Nota de alcance:** no se aplicó el fix por decisión del líder de QA (*"no nos metemos con vinculación o desvinculación de pasarela de pago en esta sesión"*).
+- **Referencias:** `tests/components/ui/carrier/AppStoreGatewaysPage.ts` (`cardFor` L103, `readState` L352), `tests/features/gateway-pg/specs/authorize/web/carrier/smoke/authorize-linked-smoke.spec.ts:43`, HANDOFF-live-reconciliation-2026-07-24 §3.3
+
+### BL-053 — Capa API Authorize: `resultCode "Error"` intermitente por transacciones duplicadas
+
+- **Estado:** 🔴 Pendiente
+- **Prioridad:** P3
+- **Tipo:** Bug de automatización (datos de test)
+- **Reportado:** 2026-07-29
+- **Contexto:** Tras vincular la cuenta **sandbox** correcta, los contract tests pasaron de **1 passed / 11 failed** a **7 passed / 4 failed** — lo que **cierra BL-049**: la causa era la cuenta equivocada, no Test Mode ni los filtros AVS/CCV (ambas hipótesis descartadas). Los AVS ahora discriminan por ZIP (`46205`→`N`, `46204`→`G`; antes devolvían el mismo código) y el CVV mismatch se evalúa.
+
+  De los 4 que siguen rojos, dos fallan con `messages.resultCode: "Error"` (el request se rechaza, no la transacción). **El `refId` >20 chars NO es la causa** — las longitudes no correlacionan: `cvv-mismatch` (33 chars) pasa y `happy-visa` (31) falla; `happy-mc` (29) pasa y `cvv-notproc` (32) falla.
+
+  Hipótesis vigente: **detección de transacciones duplicadas de Authorize**. Todos los specs usan `amount: '10.00'` con la misma Visa `4111 1111 1111 1111`; el proveedor rechaza duplicados (misma tarjeta + mismo monto en ventana corta). Explica que el primero pase y el siguiente falle, y que el patrón se mueva entre corridas.
+- **Próxima acción:** dar un **monto único por spec** (recomendación del propio proveedor para evitar la detección de duplicados) y re-correr los 12. Los otros 2 rojos son comportamiento del sandbox con Amex (`cvvResultCode` `P` en vez de `M`) — verificar si es esperado para esa marca antes de tratarlo como defecto.
+- **Dato validado por el líder de QA:** el happy path es `4111 1111 1111 1111` + CVV **900** + ZIP **90210**, y "siempre funciona" — coincide con `AUTHORIZE_TEST_CARDS.visaSuccess`. Así que los fallos no son del dato.
+- **Referencias:** `tests/features/gateway-pg/api/authorize-sandbox/*.api.spec.ts`, `tests/components/api/AuthorizeSandboxApi.ts`, `tests/fixtures/gateways/authorize/cards.ts`, BL-049 (cerrado por esta evidencia), BL-036
+
 ---
 
 ## Archivo (cerrado, >30 días)
