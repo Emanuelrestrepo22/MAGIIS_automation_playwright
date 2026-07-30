@@ -132,6 +132,26 @@ El área E (MG-183) tiene exactamente 3 casos y **ninguno aplica a eBizCharge**:
 ⇒ **El hold happy sin 3DS no tiene dónde acreditarse.** No es un problema de eBiz: afecta igual a
 **Authorize**, que tampoco tiene 3DS. Es un caso faltante del ATP, no un error de mapeo.
 
+#### El gap es CENTRAL, no marginal (aclaración del líder de QA, 2026-07-30)
+
+**Todos los casos que se están ejecutando son con hold** — este E2E de eBizCharge y también los
+records de Authorize (`ebizcharge-e2e-…`, `authorize-hold-on-personal-apppax`,
+`authorize-hold-on-colaborador-contractor`, `authorize-hold-on-empresa-individuo`). Confirmado por
+evidencia: `MGW.logs` registra `Ebiz::hold` (180.31) antes del `Ebiz::capture`.
+
+Eso reencuadra el gap: no falta *un* caso de borde, falta **EL caso que se ejecuta en todas las
+pasarelas sin 3DS**. Consecuencias:
+
+1. **Ninguna** de las corridas de hold de Authorize ni de eBizCharge tiene un Xray Test propio
+   donde acreditarse. Todo el eje hold de las dos PSP sin 3DS queda sin destino de acreditación.
+2. `MG-158` se está usando como `@atc` del hold en los POMs
+   (`expectPassengerInPorAsignar → MG-158`) para acreditar holds que **no son 3DS**. El título de
+   MG-158 dice *"cuando el 3DS del hold es exitoso"* y su dato de prueba es la tarjeta 3DS de
+   Stripe, así que un PASS ahí con evidencia de eBiz/Authorize afirma algo que no se probó.
+3. Prioridad real: **crear el caso del área E "hold happy sin 3DS" es previo** a acreditar
+   cualquier ronda de hold de Authorize o eBizCharge. Sin él no hay forma correcta de reportar lo
+   ya ejecutado.
+
 Consecuencia práctica: `MG-158` se usa hoy como `@atc` del hold en los POMs
 (`expectPassengerInPorAsignar → MG-158`), con la nota explícita de que es un **mapeo por área
 aceptado** porque el idmap es API-level. Para acreditar el hold de una PSP sin 3DS hay que **crear
