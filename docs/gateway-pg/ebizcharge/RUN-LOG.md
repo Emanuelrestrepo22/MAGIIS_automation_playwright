@@ -70,6 +70,23 @@ runTransaction.data { runTransactionResult: { resultCode: 'A', result: 'Approved
                       remainingBalance: 0, refNum: '3234121359' } }
 ```
 
+### La query de `MGW.logs` es el oráculo GENERAL del front
+
+Práctica del líder de QA (2026-07-30): **cualquier acción del front se valida con esta consulta**,
+no sólo el cobro. `MGW.logs` registra request/response de cada operación contra la pasarela, así que
+sirve como oráculo transversal — vinculación, alta de tarjeta, hold, capture — y es la única vía
+cuando el proveedor no tiene dashboard accesible (el caso de eBizCharge).
+
+```sql
+SELECT l.* FROM MGW.logs AS l
+ORDER BY l.id DESC
+```
+
+Columnas útiles: `type` (request/response/`<gateway>`), `endpoint`, `func` (`Payment::holdCard`,
+`Ebiz::capture`, …), `customer`, `carrier`, `driver`, `transactionRef`, `data`, `timestamp`.
+El patrón de lectura es por pares: un `request` con el payload, el `<gateway>` con el ref de la
+pasarela y el `response` con el resultado.
+
 ### Oráculo del cobro eBiz (queda establecido para la automatización)
 
 ```
@@ -87,6 +104,46 @@ JourneyContext y la validación se hace después.
 | CFG (vinculación) | declarada, 0 ejecuciones | `TC1051` **acreditado manual** · `TC1055`/`TC1057` parciales |
 | Hold colaborador + cobro driver | declarada, 0 ejecuciones | `TC1058` **acreditado manual**, con evidencia en 3 fuentes |
 | Los otros 19 TC de las 4 áreas | declarada | sin cambios — sin ejecutar |
+
+## Dónde plasmar la evidencia: los Xray Tests ANÁLOGOS por área
+
+Los Tests con label `ebizcharge` son sólo 3 y ninguno es este happy path (ver más abajo). Pero el
+ATP **sí tiene** Tests agnósticos por área, y los deltas de eBiz están documentados **dentro de
+cada uno**. Son los que corresponden para plasmar la evidencia de esta ronda:
+
+| Tramo del E2E | Xray Test análogo | `tcid` | Delta eBiz que el propio Test declara |
+|---|---|---|---|
+| Desvincular la pasarela previa | **MG-166** | `TC-PAY-G-02` | *"aplica también AUTHORIZE/EBIZ"*; delete `@Async` |
+| **Vinculación de pasarela de pago** | **MG-141** | `TC-PAY-A-01` | *"la vinculacion exige `zipCode` del carrier"* |
+| **Vinculación de tarjeta** | **MG-148** | `TC-PAY-C-01` | *"EBIZ ademas requiere direccion del pax"* |
+| **Alta de viaje con hold** | ❌ **NINGUNO** — ver gap abajo | — | — |
+| **Finalización desde App Driver (cobro)** | **MG-161** | `TC-PAY-F-01` | — |
+
+### ❌ GAP del ATP: el área E (hold) no tiene caso happy SIN 3DS
+
+El área E (MG-183) tiene exactamente 3 casos y **ninguno aplica a eBizCharge**:
+
+| Key | `tcid` | Caso | Por qué no aplica a eBiz |
+|---|---|---|---|
+| MG-158 | `TC-PAY-E-01` | el hold se confirma **cuando el 3DS es exitoso** | eBiz **no tiene 3DS** (`requires3ds: false`); usa la tarjeta 3DS de Stripe como dato |
+| MG-159 | — | el hold se libera **cuando el 3DS falla** | ídem |
+| MG-160 | `TC-PAY-E-03` | el alta cae a `verificationFoundsCard` **cuando la PSP no soporta hold** | eBiz **sí** soporta hold |
+
+⇒ **El hold happy sin 3DS no tiene dónde acreditarse.** No es un problema de eBiz: afecta igual a
+**Authorize**, que tampoco tiene 3DS. Es un caso faltante del ATP, no un error de mapeo.
+
+Consecuencia práctica: `MG-158` se usa hoy como `@atc` del hold en los POMs
+(`expectPassengerInPorAsignar → MG-158`), con la nota explícita de que es un **mapeo por área
+aceptado** porque el idmap es API-level. Para acreditar el hold de una PSP sin 3DS hay que **crear
+el caso** (área E, "hold happy sin 3DS") en lugar de forzar `MG-158`, cuyo título dice otra cosa.
+
+### Bonus: la diferencia hold vs capture ESTÁ prevista en el ATP
+
+El hallazgo de esta ronda (hold **180.31** → capture **18.26**) no es una anomalía:
+**MG-488** (`TC-PAY-F-05`) es *"Validar reconciliación monto final vs hold (peajes/parking/edición
+de precio)"*. O sea el ATP ya modela que el monto capturado difiera del reservado. Este E2E lo
+observó por primera vez en vivo con eBiz — candidato natural a acreditar MG-488 en una ronda que
+lo verifique explícitamente.
 
 ## ⚠️ Xray: no hay Test donde marcar PASS
 
