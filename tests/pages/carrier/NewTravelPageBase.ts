@@ -948,23 +948,60 @@ export abstract class NewTravelPageBase extends BasePage {
 	}
 
 	/**
-	 * ASIGNACIÓN MANUAL (ref: tests/test-5.spec.ts). En vez de "Send Service" (que despacha al
-	 * pool de conductores con un timer de oferta), asigna el viaje DIRECTO a un conductor:
-	 *   "Send Manual" → "Assign" (fila del conductor) → "Assign" (confirmar).
-	 * Elimina el timer de oferta-candidato: el driver queda dueño del viaje.
+	 * ASIGNACIÓN MANUAL. En vez de "Send Service" (que despacha al pool de conductores con un timer
+	 * de oferta), asigna el viaje DIRECTO a un conductor. Elimina el timer de oferta-candidato: el
+	 * driver queda dueño del viaje.
+	 *
+	 * ── Por qué NO se usa un índice (regresión medida 2026-07-29) ──────────────────────────────────
+	 * La versión anterior hacía `getByText(/Asignar|Assign/i).nth(1)` ("según el recorder") y luego
+	 * exigía `getByRole('button', {name:/Asignar|Assign/i})`. Fallaba 3/3 en los casos con pasajero
+	 * distinto del cliente (colaborador TC1096/TC1097, empresa TC1111) y pasaba 3/3 en app pax.
+	 * El dump del DOM real (`evidence/web-dump/send-manual-*.html`) mostró por qué:
+	 *   - "Enviar Manual" NO abre un modal: NAVEGA a la página "Choferes / Gestión de Choferes /
+	 *     Asignar". Los únicos `.modal` del DOM son invisibles (Changelog + onboarding).
+	 *   - Los textos que matchean /Asignar/ son: [0] el BREADCRUMB de esa página (un `span`), y
+	 *     [1..N] el control de acción de CADA fila de chofer. O sea `nth(1)` dependía de que el
+	 *     breadcrumb ocupara exactamente el índice 0 — cualquier texto "Asignar" extra corre el
+	 *     índice y se clickea otra cosa.
+	 *   - El control de la fila es un `div.btn.btn-primary.btn-sm` dentro de `td.td-with-icon`, NO un
+	 *     `<button>` ⇒ `getByRole('button')` no lo ve nunca.
+	 *   - Tras clickear la fila NO aparece ningún diálogo de confirmación: la asignación se completa
+	 *     ahí (los viajes 67758/67759 llegaron al conductor aunque el paso de "confirmar" reventara).
+	 * De ahí: ancla por FILA (no por índice global) + confirmación OPCIONAL.
 	 */
 	async clickSendManualAndAssign(): Promise<void> {
 		await this.waitForLoadingOverlayToDisappear();
 		// Locale-robusto: el ambiente puede estar en ES ("Enviar Manual"/"Asignar") o EN ("Send Manual"/"Assign").
 		await this.page.getByRole('button', { name: /Enviar Manual|Send Manual/i }).click();
-		// Modal con lista de conductores: "Asignar"/"Assign" de la fila (nth(1) según el recorder).
-		const assignRow = this.page.getByText(/Asignar|Assign/i);
-		await assignRow.nth(1).waitFor({ state: 'visible', timeout: 15_000 });
-		await assignRow.nth(1).click();
-		// Confirmar la asignación.
-		const assignConfirm = this.page.getByRole('button', { name: /Asignar|Assign/i });
-		await assignConfirm.waitFor({ state: 'visible', timeout: 15_000 });
-		await assignConfirm.click();
+		// Listado de choferes: es una PAGINA con tabla, no un modal. Cada fila trae su control de
+		// accion (`div.btn.btn-primary.btn-sm` dentro de `td.td-with-icon`). Anclamos a la FILA.
+		const driverRows = this.page.locator('tr:has(.td-with-icon .btn.btn-primary)');
+		await driverRows.first().waitFor({ state: 'visible', timeout: 20_000 });
+
+		// Preferir un chofer DISPONIBLE (`.icon-circle-online` en la celda de estado); si el listado no
+		// marca ninguno, caer a la primera fila para no bloquear la corrida.
+		const availableRows = driverRows.filter({ has: this.page.locator('.icon-circle-online') });
+		const targetRow =
+			(await availableRows.count().catch(() => 0)) > 0 ? availableRows.first() : driverRows.first();
+		await targetRow.locator('.td-with-icon .btn.btn-primary').first().click();
+
+		// Confirmacion OPCIONAL: en el build medido el click de la fila asigna directo y NO abre dialogo.
+		// Si algun build si la pide, la aceptamos (cubre `<button>` real y `div.btn` dentro de dialogo).
+		const assignConfirm = this.page
+			.getByRole('button', { name: /Asignar|Assign|Confirmar|Confirm/i })
+			.or(
+				this.page
+					.locator('.modal .btn, [role="dialog"] .btn, .swal2-popup .btn')
+					.filter({ hasText: /Asignar|Assign|Confirmar|Confirm/i })
+			);
+		const needsConfirm = await assignConfirm
+			.first()
+			.waitFor({ state: 'visible', timeout: 3_000 })
+			.then(() => true)
+			.catch(() => false);
+		if (needsConfirm) {
+			await assignConfirm.first().click();
+		}
 		await this.waitForLoadingOverlayToDisappear();
 	}
 
