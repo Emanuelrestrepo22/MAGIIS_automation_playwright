@@ -471,6 +471,27 @@ export class DriverHomeScreen extends AppiumSessionBase {
 				if (await overlay.isDisplayed().catch(() => false)) {
 					await overlay.click().catch(() => undefined);
 				}
+				// El tap sobre `.carrier-overlay` NO alcanza en el build TEST 2026-07: el overlay expone
+				// un botón "Aceptar" propio (`app-pre-home button.btn.primary` dentro de
+				// `div.button-accept-absolute`) y es ÉSE el que dispara hideOverlay(). Medido el
+				// 2026-07-30: sin este click el driver se queda en /pre-home, `#availability` ni existe,
+				// y las ofertas entrantes quedan TAPADAS por el overlay — el harness no las ve nunca.
+				// JS .click() porque el click coordinado se intercepta (mismo patrón que el resto del driver).
+				await driver
+					.execute<boolean, []>(() => {
+						const vis = (el: Element | null): boolean => !!el && (el as HTMLElement).offsetParent !== null;
+						const btn = (
+							Array.from(
+								document.querySelectorAll('app-pre-home button.btn.primary, app-pre-home button')
+							) as HTMLElement[]
+						).find(b => vis(b) && /aceptar/i.test(b.innerText ?? ''));
+						if (btn) {
+							btn.click();
+							return true;
+						}
+						return false;
+					})
+					.catch(() => false);
 				if (!ready) {
 					// servicios aún cargando: dar tiempo antes de reintentar.
 					await driver.pause(1_500);

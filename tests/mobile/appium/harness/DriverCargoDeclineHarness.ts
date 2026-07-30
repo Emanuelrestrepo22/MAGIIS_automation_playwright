@@ -95,6 +95,12 @@ export class DriverCargoDeclineHarness {
 	 */
 	async prewarm(options: DriverCargoDeclineOptions = {}): Promise<void> {
 		await this.startSession();
+		// SIEMPRE salir del overlay /pre-home antes de cualquier otra cosa. Antes esto sólo pasaba
+		// DENTRO de goOnline(), así que un driver parado en /pre-home que ya se reportaba "online"
+		// se quedaba ahí: el overlay TAPA la oferta entrante y `waitForTripConfirmPage` expiraba a los
+		// 90s con el viaje ya asignado (medido 2026-07-30, viajes 67780 y 67783 — al bajar el overlay a
+		// mano apareció el TravelConfirmPage que el harness nunca había visto).
+		await this.home.dismissPreHomeOverlayIfPresent().catch(() => false);
 		await this.dismissStaleModals();
 		const ensureOnline = options.ensureDriverOnline ?? true;
 		if (ensureOnline && !(await this.home.isDriverOnline())) {

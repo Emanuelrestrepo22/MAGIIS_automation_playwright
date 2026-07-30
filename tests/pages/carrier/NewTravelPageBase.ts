@@ -978,11 +978,22 @@ export abstract class NewTravelPageBase extends BasePage {
 		const driverRows = this.page.locator('tr:has(.td-with-icon .btn.btn-primary)');
 		await driverRows.first().waitFor({ state: 'visible', timeout: 20_000 });
 
-		// Preferir un chofer DISPONIBLE (`.icon-circle-online` en la celda de estado); si el listado no
-		// marca ninguno, caer a la primera fila para no bloquear la corrida.
-		const availableRows = driverRows.filter({ has: this.page.locator('.icon-circle-online') });
+		// QUE fila: la PRIMERA del listado por defecto. En TEST el listado llega ordenado por
+		// proximidad y la fila 1 es el conductor del device (es lo que el `nth(1)` anterior clickeaba
+		// de hecho, y por eso app pax funcionaba). Si se corre contra otro conductor, apuntarlo por
+		// texto con CARGO_ASSIGN_DRIVER (nombre, codigo o patente) en vez de depender del orden.
+		const driverHint = process.env.CARGO_ASSIGN_DRIVER?.trim();
+		const hintedRows = driverHint ? driverRows.filter({ hasText: driverHint }) : null;
 		const targetRow =
-			(await availableRows.count().catch(() => 0)) > 0 ? availableRows.first() : driverRows.first();
+			hintedRows && (await hintedRows.count().catch(() => 0)) > 0 ? hintedRows.first() : driverRows.first();
+
+		// Log de A QUIEN se asigno: si el viaje no le llega al device, este dato distingue
+		// "se asigno a otro conductor" de "no se asigno nada" sin gastar otra corrida.
+		const assignedTo = (await targetRow.innerText().catch(() => ''))
+			.replace(/\s+/g, ' ')
+			.trim()
+			.slice(0, 90);
+		console.log(`[clickSendManualAndAssign] asignando a: ${assignedTo || '<fila sin texto>'}`);
 		await targetRow.locator('.td-with-icon .btn.btn-primary').first().click();
 
 		// Confirmacion OPCIONAL: en el build medido el click de la fila asigna directo y NO abre dialogo.
