@@ -243,7 +243,9 @@ export function defineCardOutcomeMatrixSuite(gateway: GatewayName, options: Card
 							? `${expected.label} — pero el outcome se decide en el área ${addCard.relocation.area}: acá el alta APRUEBA (live-verified)`
 							: `${expected.label}, base: ${expected.basis}`;
 						await test.step(`Then: el sistema da la tarjeta por válida (${etiquetaThen})`, async () => {
-							await travel.validateNativeCard(card.last4);
+							// La demora del procesador es dato de la celda (slowMs, tarjetas DELAY_* de eBiz):
+							// se suma al piso del oráculo para que la espera cubra la demora declarada.
+							await travel.validateNativeCard(card.last4, support.slowMs ? 20_000 + support.slowMs : undefined);
 						});
 					} else {
 						await test.step(`Then: el sistema NO da la tarjeta por válida (${expected.label}, base: ${expected.basis})`, async () => {

@@ -34,7 +34,7 @@ import type { StripeTestCard } from '../stripe/cards';
 import { resolveCard as authorizeResolveCard, type AuthorizeCardId } from '../authorize/card-resolver';
 import type { AuthorizeTestCard } from '../authorize/cards';
 import { resolveCard as ebizResolveCard, type EbizCardId } from '../ebizcharge/card-resolver';
-import type { EbizTestCard } from '../ebizcharge/cards';
+import { EBIZ_DEFAULT_BILLING_ADDRESS, EBIZ_DEFAULT_BILLING_ADDRESS_OPTION, type EbizTestCard } from '../ebizcharge/cards';
 import { resolveCard as mpResolveCard, type MercadoPagoCardId } from '../mercado-pago/card-resolver';
 import type { MercadoPagoTestCard } from '../mercado-pago/cards';
 import { CARD_MATRIX, isSupported, type CardMatrixCell } from './card-matrix';
@@ -89,8 +89,11 @@ function normalizeEbizchargeCard(card: EbizTestCard): GenericTestCard {
 		holderName: card.holderName,
 		// eBiz: la dirección es INPUT y el ZIP es DERIVADO (el sistema lo autocompleta) — por eso
 		// se propaga `address`/`addressOption`/`expectedZip` y NO se setea `zip`.
-		address: card.billingAddress,
-		addressOption: card.addressOption,
+		// Default documentado (cards.ts): la dirección es INERTE al outcome en eBiz (el trigger es
+		// el número y la respuesta AVS la fija la fila del sandbox) → toda card la necesita para el
+		// 5° campo del form, y solo declara la suya la que exija una específica.
+		address: card.billingAddress ?? EBIZ_DEFAULT_BILLING_ADDRESS,
+		addressOption: card.addressOption ?? EBIZ_DEFAULT_BILLING_ADDRESS_OPTION,
 		expectedZip: card.expectedZip,
 		expectedOutcome: card.expectedOutcome,
 		requires3ds: false

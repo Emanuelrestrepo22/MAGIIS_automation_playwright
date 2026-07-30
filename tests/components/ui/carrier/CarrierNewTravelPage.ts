@@ -303,8 +303,11 @@ export class CarrierNewTravelPage extends UiBase {
 	 * otra (ambas sólo ocurren si la pasarela aprobó).
 	 */
 	@step
-	async validateNativeCard(last4?: string): Promise<void> {
-		const outcome = await this.readNativeCardValidationOutcome(last4);
+	async validateNativeCard(last4?: string, timeoutMs?: number): Promise<void> {
+		// `timeoutMs` viene del DATO de la celda (slowMs de las tarjetas DELAY_* de eBiz: el
+		// procesador demora a propósito) — sin él, el default de 20s cortaría antes de que la
+		// pasarela responda y un caso de demora legítima se reportaría como timeout de ambiente.
+		const outcome = await this.readNativeCardValidationOutcome(last4, timeoutMs);
 
 		// Debería confirmar la tarjeta. `readNativeCardValidationOutcome` explica por qué el oráculo
 		// no es sólo el toast "Tarjeta válida".

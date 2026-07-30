@@ -119,14 +119,11 @@ export const EBIZ_TEST_CARDS = {
 		expectedOutcome: 'approved',
 		avsResponse: 'YYY',
 		cvv2Result: 'M',
-		// Dirección usada en el exploratorio en vivo (2026-07-30). El ZIP NO se declara: el
-		// sistema lo deriva al elegir la sugerencia, y el oráculo asserta que llegó.
-		billingAddress: '1234 Main street',
-		// Texto EXACTO de la sugerencia del geocoder (snapshot del DOM real, 2026-07-30). Incluye el
-		// número: el geocoder devuelve 4 variantes de "1234 Main Street" (Los Angeles, Buffalo,
-		// City TX, Green Bay), así que sin el sufijo de ciudad se elegiría una arbitraria y el ZIP
-		// derivado dependería de un orden que no controlamos.
-		addressOption: '1234 Main Street, Los Angeles, CA, USA',
+		// Dirección verificada en el exploratorio en vivo (2026-07-30). El ZIP NO se declara: el
+		// sistema lo deriva al elegir la sugerencia, y el oráculo asserta que llegó. Explícita acá
+		// (misma que el default del resolver) porque es la card del happy path canónico.
+		billingAddress: EBIZ_DEFAULT_BILLING_ADDRESS,
+		addressOption: EBIZ_DEFAULT_BILLING_ADDRESS_OPTION,
 		description: 'Visa → approved (AVS YYY, CVV2 M). Default happy path.'
 	},
 
