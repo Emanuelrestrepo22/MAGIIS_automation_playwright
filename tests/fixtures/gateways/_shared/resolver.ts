@@ -87,6 +87,11 @@ function normalizeEbizchargeCard(card: EbizTestCard): GenericTestCard {
 		expiry,
 		cvc: card.cvc,
 		holderName: card.holderName,
+		// eBiz: la dirección es INPUT y el ZIP es DERIVADO (el sistema lo autocompleta) — por eso
+		// se propaga `address`/`addressOption`/`expectedZip` y NO se setea `zip`.
+		address: card.billingAddress,
+		addressOption: card.addressOption,
+		expectedZip: card.expectedZip,
 		expectedOutcome: card.expectedOutcome,
 		requires3ds: false
 	};

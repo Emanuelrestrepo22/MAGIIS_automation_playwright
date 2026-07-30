@@ -96,7 +96,8 @@ function ebizchargeCredsFromEnv(): EbizchargeCreds {
 	return {
 		merchantUser: process.env.EBIZ_MERCHANT_USER ?? '',
 		merchantPassword: process.env.EBIZ_MERCHANT_PASSWORD ?? '',
-		securityKey: process.env.EBIZ_SECURITY_KEY ?? ''
+		securityKey: process.env.EBIZ_SECURITY_KEY ?? '',
+		subscriptionKey: process.env.EBIZ_SUBSCRIPTION_KEY ?? ''
 	};
 }
 
@@ -104,7 +105,8 @@ const INVALID_AUTHORIZE_CREDS: AuthorizeCreds = { apiLoginId: 'INVALID_LOGIN_ID'
 const INVALID_EBIZCHARGE_CREDS: EbizchargeCreds = {
 	merchantUser: 'INVALID_MERCHANT_USER',
 	merchantPassword: 'INVALID_MERCHANT_PASSWORD',
-	securityKey: 'INVALID_SECURITY_KEY'
+	securityKey: 'INVALID_SECURITY_KEY',
+	subscriptionKey: 'INVALID_SUBSCRIPTION_KEY'
 };
 
 const LINK_DRIVERS: Partial<Record<GatewayName, GatewayLinkDriver>> = {

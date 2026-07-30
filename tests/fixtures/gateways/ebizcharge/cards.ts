@@ -57,6 +57,16 @@ export type EbizTestCard = {
 	declineMessage?: string;
 	/** Código AVS devuelto por la tarjeta approved (ej. 'YYY', 'NNN'). */
 	avsResponse?: string;
+	/**
+	 * Dirección de facturación — AUTOCOMPLETE exclusivo de eBizCharge (verificado en vivo
+	 * 2026-07-30). Se escribe, aparecen sugerencias como en pick-up/drop-off, y al elegir la
+	 * que matchea el sistema DERIVA el código postal. Obligatorio en el alta de tarjeta.
+	 */
+	billingAddress?: string;
+	/** Sugerencia del geocoder a elegir — evita depender del orden de la lista. */
+	addressOption?: string;
+	/** ZIP que el sistema debe autocompletar. Valor DERIVADO: se asserta, nunca se tipea. */
+	expectedZip?: string;
 	/** Resultado CVV2 (M/N/P/S/U/X/n-a). */
 	cvv2Result?: string;
 	profilerResponse?: 'review' | 'reject';
@@ -95,6 +105,10 @@ export const EBIZ_TEST_CARDS = {
 		expectedOutcome: 'approved',
 		avsResponse: 'YYY',
 		cvv2Result: 'M',
+		// Dirección usada en el exploratorio en vivo (2026-07-30). El ZIP NO se declara: el
+		// sistema lo deriva al elegir la sugerencia, y el oráculo asserta que llegó.
+		billingAddress: '1234 Main street',
+		addressOption: 'Main Street, Los Angeles, CA, USA',
 		description: 'Visa → approved (AVS YYY, CVV2 M). Default happy path.'
 	},
 

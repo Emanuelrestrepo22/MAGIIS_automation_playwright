@@ -271,6 +271,16 @@ export type GenericTestCard = {
 	cvc: string;
 	holderName: string;
 	zip?: string;
+	/**
+	 * Dirección de facturación (solo eBizCharge). Es un AUTOCOMPLETE: se escribe, aparecen
+	 * sugerencias y al elegir la que matchea el sistema DERIVA el ZIP. Verificado en vivo
+	 * 2026-07-30. No confundir con `zip`, que en Authorize es trigger de outcome.
+	 */
+	address?: string;
+	/** Texto de la sugerencia del geocoder a elegir (evita depender del orden de la lista). */
+	addressOption?: string;
+	/** ZIP que el sistema debe autocompletar al elegir la dirección — valor DERIVADO, no de entrada. */
+	expectedZip?: string;
 	/** Documento (solo Mercado Pago): tipo, ej. 'DNI' — del fixture MP (`identificationType`). */
 	docType?: string;
 	/** Documento (solo Mercado Pago): número — del fixture MP (`identificationNumber`). */

@@ -5,7 +5,8 @@ import type { GatewayPgAdapter } from './types';
 import { areEnvKeysConfigured } from './types';
 
 /** Credenciales merchant del modal de link eBizCharge (ver `.env.example`). */
-const EBIZCHARGE_CREDS_ENV_KEYS = ['EBIZ_MERCHANT_USER', 'EBIZ_MERCHANT_PASSWORD', 'EBIZ_SECURITY_KEY'];
+// 4 factores del modal real (verificado en vivo 2026-07-30): Subscription-Key + Security Id + User Id + Password.
+const EBIZCHARGE_CREDS_ENV_KEYS = ['EBIZ_MERCHANT_USER', 'EBIZ_MERCHANT_PASSWORD', 'EBIZ_SECURITY_KEY', 'EBIZ_SUBSCRIPTION_KEY'];
 
 /**
  * Adapter declarativo eBizCharge.
@@ -32,7 +33,10 @@ export const ebizchargeGatewayAdapter: GatewayPgAdapter = {
 	cardForm: 'native-angular',
 	// eBiz dispara el outcome por número de tarjeta (como Stripe).
 	outcomeTrigger: 'number',
-	// Sin 5° campo confirmado para eBiz (los campos del modal NO están verificados live — S4).
+	// 5º campo VERIFICADO EN VIVO (2026-07-30): autocomplete de DIRECCIÓN que deriva el ZIP.
+	// Se comporta como pick-up/drop-off — escribir, elegir la sugerencia, y el sistema completa el
+	// código postal. Para eBiz el ZIP es valor derivado, no dato de entrada.
+	nativeExtraField: 'address-zip',
 	// TODO(live): [200] asumido — status real de la request de link eBiz NO verificado.
 	// FUENTE ÚNICA compartida con el POM (data/link-status-defaults.ts — anti-drift T11).
 	linkSuccessStatuses: [...EBIZCHARGE_LINK_SUCCESS_STATUSES],
