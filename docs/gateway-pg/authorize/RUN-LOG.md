@@ -966,3 +966,70 @@ vinculada verde, y **re-siembra de la tarjeta** con `TS-AUTHORIZE-WAL-01` verde 
 | 3666-S | 07/30/2026 3:43 AM | Restrepo, Emanuel | Ciudad de la Paz 2238 | Cazadores 1987 | $61.66 | Viaje programado |
 
 Las pestañas Asignar / En curso / En Conflicto quedaron en 0.
+
+## Cierre de la Ronda 7 — reporte Allure y veredicto
+
+Reporte: `allure-report/index.html` (fuente `allure-results/`). **53 passed · 8 failed · 65 skipped**
+acumulados. Aviso de método: el reporte acumula TODAS las corridas de la ronda, así que los dos
+fallos transitorios de `DELETE /cards` figuran junto a sus reintentos en verde.
+
+> **GOTCHA que costó re-correr la campaña entera**: pasar `--reporter=list` por CLI **anula** los
+> reporters del config, `allure-playwright` incluido, aunque `ALLURE=1` esté seteado. Mismo modo de
+> fallo ya documentado para el `xray-reporter`. Para generar evidencia hay que correr **sin**
+> `--reporter=` en la línea de comandos.
+>
+> **Segundo gotcha**: la carpeta de la matriz de outcomes es `cardmatrix`, no `card-outcomes`. Un
+> path inexistente hace que Playwright termine con **exit code 0 y 0 tests** — silencioso.
+
+### Trifuerza por área
+
+| Área | UI | API | DB | Resultado |
+|---|---|---|---|---|
+| CFG link/unlink | 7/8 | TC1008 verifica el status de la request | — | 1 rojo: TC1003 |
+| WAL alta de tarjeta | verde | `paymentMethodsByPax` verde | `[WAL-DB]` **verde** | trifuerza cerrada |
+| Card matrix | 3/4 ejecutados | pack de contrato sandbox | — | 1 rojo: Discover |
+| Hold | 13/14 | — | — | verde (TC1017 `fixme`) |
+| Quote | verde | — | — | verde |
+
+### Clasificación de los 8 rojos
+
+| Rojo | Clase | Detalle |
+|---|---|---|
+| TC1003 · vincular con credenciales inválidas | **DEFECTO DE PRODUCTO** | No muestra el error de autenticación **y acepta el vínculo** |
+| Discover happy (•••• 0012) | **DEFECTO DE PRODUCTO (MG-527)** | Botón "Validar" queda `disabled`; Authorize.Net sí aprueba la tarjeta |
+| `Visa + ZIP 46282 → Response Code 2` | Configuración de cuenta (B4) | La cuenta sandbox no tiene regla de rechazo AVS para ese ZIP |
+| `Echo CVV (M)` — recibido `P` | Configuración de cuenta (B4) | La cuenta no devuelve el echo `M` |
+| TC1031 y TC1061 · `500 DELETE /users/<id>/cards/<cardId>` | **TRANSITORIO** | Verdes al reintentarlos aislados. La tarjeta queda referenciada por el viaje del caso serial anterior y el backend responde 500 en vez de un 4xx controlado — misma clase que QUOTE-CARD-500 |
+| `@probe Visa 16 dígitos` | Entorno | `dashboard URL no alcanzada` — flake de login |
+| `[EC-DT-02/AC1] reset por colaborador` | **Fuera de alcance** | Spec de MX/countsReset que corre bajo el project `api`; nada que ver con Authorize |
+
+### Auditoría anti-debilitamiento (`338337f..HEAD`, 29 archivos, +2082/−439)
+
+**0** asserts borrados · **0** `skip`/`fixme` nuevos para esquivar casos · **0** `expect.soft` ·
+**0** `try/catch` tragando asserts · **0** timeouts inflados dentro de `tests/`.
+
+Único debilitamiento real, **fuera de Authorize**: `tests/components/steps/CargoABordoSteps.ts:287-297`,
+rama opt-in `CARGO_MANUAL_ASSIGN`. El oráculo pasó de estado a **presencia** con un `TODO(live)` sin
+cerrar. Es correcto que ya no espere "Buscando chofer" (inalcanzable con Send Manual), pero mientras
+siga en presencia pura un verde acredita "el viaje existe", no "el viaje se asignó". Riesgo bajo hoy
+por ser opt-in; alto si esa env var pasa a ser el default.
+
+### Estado final del entorno
+
+Authorize **vinculada** con las credenciales sandbox de `.env.test` (`[PROBE][GATE] authorize-UI=GO`),
+tarjeta del pax re-sembrada, smoke verde.
+
+**Viajes**: Asignar 0 · En curso 0 · **Programados 1 (3680-S)** · **En Conflicto 3 (3664-S, 3665-S,
+3666-S — "No Autorizado")**. Los tres en conflicto son **efecto colateral del propio ciclo CFG**: el
+unlink dispara `cleaningWallets` y borra la tarjeta que esos viajes programados tenían asociada, así
+que al intentar autorizar quedaron sin medio de pago. No son finalizables desde la App Driver. El
+único cerrable a mano es **3680-S**.
+
+### Veredicto
+
+**Regresión happy-path de Authorize: GO.** Todo lo ejecutable quedó verde sin aflojar un solo
+oráculo; los rojos restantes son dos defectos de producto ya identificados, dos límites de la cuenta
+sandbox, un flake de entorno y un spec ajeno al alcance.
+
+**Release MG-178: el NO-GO por veto se mantiene** y esta ronda no lo cambia — el verde de Authorize
+no toca los AC9/AC13 de Stripe, que siguen yendo a producción sin corrección.
