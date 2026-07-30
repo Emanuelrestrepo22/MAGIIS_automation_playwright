@@ -87,6 +87,20 @@ export const EBIZ_ANY_CVV_AMEX = '1234' as const;
 export const EBIZ_DEFAULT_HOLDER = 'MAGIIS QA Test';
 
 /**
+ * Dirección de facturación por defecto para el 5° campo del form nativo (eBiz la exige y el
+ * ZIP se DERIVA de la sugerencia elegida). Es un dato INERTE al outcome: en eBizCharge el
+ * trigger es el NÚMERO de tarjeta y la respuesta AVS está fijada por fila de la tabla del
+ * sandbox, no por la dirección ingresada. Por eso puede ser default compartido — una card
+ * que necesite una dirección específica declara la suya (`billingAddress`/`addressOption`
+ * en la celda pisan el default en el resolver).
+ * Texto de la opción = sugerencia EXACTA del geocoder (snapshot DOM real, 2026-07-30):
+ * devuelve 4 variantes de "1234 Main Street"; sin sufijo de ciudad la elección sería
+ * arbitraria y el ZIP derivado dependería de un orden que no controlamos.
+ */
+export const EBIZ_DEFAULT_BILLING_ADDRESS = '1234 Main street' as const;
+export const EBIZ_DEFAULT_BILLING_ADDRESS_OPTION = '1234 Main Street, Los Angeles, CA, USA' as const;
+
+/**
  * Registry de tarjetas eBizCharge con outcome de negocio.
  * El número determina el resultado; holderName/CVV "any" son inertes al outcome.
  */
@@ -108,7 +122,11 @@ export const EBIZ_TEST_CARDS = {
 		// Dirección usada en el exploratorio en vivo (2026-07-30). El ZIP NO se declara: el
 		// sistema lo deriva al elegir la sugerencia, y el oráculo asserta que llegó.
 		billingAddress: '1234 Main street',
-		addressOption: 'Main Street, Los Angeles, CA, USA',
+		// Texto EXACTO de la sugerencia del geocoder (snapshot del DOM real, 2026-07-30). Incluye el
+		// número: el geocoder devuelve 4 variantes de "1234 Main Street" (Los Angeles, Buffalo,
+		// City TX, Green Bay), así que sin el sufijo de ciudad se elegiría una arbitraria y el ZIP
+		// derivado dependería de un orden que no controlamos.
+		addressOption: '1234 Main Street, Los Angeles, CA, USA',
 		description: 'Visa → approved (AVS YYY, CVV2 M). Default happy path.'
 	},
 

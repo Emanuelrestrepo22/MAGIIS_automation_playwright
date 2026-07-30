@@ -128,15 +128,68 @@ export class NativeAngularCardForm implements CardFormStrategy {
 			);
 		}
 
-		const field = this.addressField(page);
-		await field.click();
-		await field.pressSequentially(card.address, { delay: 60 });
+		const combo = this.addressField(page);
 
-		// Sugerencias del geocoder: mismo control que usa el alta de viaje para origen/destino.
-		const option = card.addressOption
-			? page.getByRole('listitem').filter({ hasText: card.addressOption }).first()
-			: page.getByRole('listitem').first();
+		// Abrir el typeahead. Mismos targets que `NewTravelPageBase.openPlaceDropdown` (el widget
+		// es el MISMO componente): el placeholder cuando está vacío, el valor cuando ya trae uno.
+		const openTargets = [
+			combo.locator('.search-container-input > .bootstrap > .below > .single > .placeholder').first(),
+			combo.locator('.search-container-input').first(),
+			combo.locator('.placeholder').first(),
+			combo.locator('.below .single .value').first()
+		];
+		for (const target of openTargets) {
+			if ((await target.count()) === 0) continue;
+			await target.click({ timeout: 5_000 }).catch(() => undefined);
+			if ((await combo.getByRole('textbox').count()) > 0) break;
+		}
+
+		const search = combo.getByRole('textbox').first();
+		// Se busca por el tramo corto (calle + número): el geocoder devuelve su propio sufijo de
+		// localidad, distinto del string canónico del fixture — misma razón que documenta
+		// `searchPlace` tras el falso verde de TC1061.
+		await search.fill(card.address.split(',')[0].trim() || card.address);
+
+		// Debounce del autocomplete: esperar opciones REALES renderizadas.
+		//
+		// ⚠️ Contar `listitem` a secas es VACUO: mientras el geocoder resuelve, el componente
+		// renderiza un listitem con "No se encontraron resultados", así que el conteo pasa a 1 de
+		// inmediato y lo que venga detrás mide el placeholder. Verificado en vivo 2026-07-30: la
+		// misma query devolvió 5 sugerencias en una corrida y el placeholder en la siguiente.
+		// Por eso el poll excluye ese texto: espera una sugerencia de verdad.
+		const sugerencias = combo.getByRole('listitem').filter({ hasNotText: /no se encontraron resultados|no results/i });
+		await expect
+			.poll(async () => sugerencias.count(), {
+				message: `El autocomplete de dirección no devolvió sugerencias reales para "${card.address}" (sólo el placeholder de sin-resultados).`,
+				timeout: 15_000
+			})
+			.toBeGreaterThan(0);
+
+		const preferida = card.addressOption ? sugerencias.filter({ hasText: card.addressOption }).first() : null;
+		const usaPreferida = Boolean(preferida && (await preferida.count()) > 0);
+		if (card.addressOption && !usaPreferida) {
+			// Falla RUIDOSA en vez de caer al primer listitem: el geocoder devuelve varias variantes
+			// de la misma calle en ciudades distintas (verificado: 4 para "1234 Main Street"), así que
+			// elegir "la primera" haría que el ZIP derivado dependa de un orden que no controlamos —
+			// y el caso pasaría midiendo otra dirección.
+			const disponibles = await sugerencias.allInnerTexts();
+			throw new Error(
+				`NativeAngularCardForm: la sugerencia declarada "${card.addressOption}" no está entre las que ` +
+					`devolvió el geocoder para "${card.address}". Opciones reales: ${JSON.stringify(disponibles)}. ` +
+					'Ajustar `addressOption` en el fixture al texto exacto.'
+			);
+		}
+		const option = usaPreferida ? preferida! : sugerencias.first();
 		await option.click();
+
+		// COMMIT: el click debe cerrar la lista. Si sigue abierta el valor no se tomó y el ZIP nunca
+		// se deriva — es el modo de fallo que se observó en la primera corrida viva.
+		await expect
+			.poll(async () => combo.getByRole('listitem').count(), {
+				message: `La lista de sugerencias siguió abierta tras elegir "${card.addressOption ?? 'la primera opción'}": el valor no se comprometió.`,
+				timeout: 10_000
+			})
+			.toBe(0);
 	}
 
 	/**
@@ -153,10 +206,11 @@ export class NativeAngularCardForm implements CardFormStrategy {
 	 */
 	private async expectAddressAndDerivedZip(page: Page, card: CardFormFillInput): Promise<void> {
 		if (card.address) {
-			await expect(this.addressField(page), 'dirección de facturación').not.toHaveValue('');
+			// El combo no es un input: se asserta su TEXTO visible, no `toHaveValue`.
+			await expect(this.addressField(page), 'dirección de facturación seleccionada').not.toHaveText('');
 		}
 
-		const zip = this.zipField(page, { allowPositionalFallback: false });
+		const zip = this.billingZipField(page);
 
 		if (card.expectedZip) {
 			await expect
@@ -186,17 +240,38 @@ export class NativeAngularCardForm implements CardFormStrategy {
 	 * origen del viaje.
 	 */
 	private addressField(page: Page) {
-		const cardFormScope = page
-			.locator('form, .modal, [role="dialog"], #add_travel_payment_methods')
-			.filter({ has: page.locator('input[formcontrolname="creditCardNumber"]') })
-			.first();
+		// El campo de dirección NO es un input: es el componente `app-input-search-place`, el MISMO
+		// widget de origen/destino del alta de viaje (verificado en el snapshot del DOM real,
+		// 2026-07-30 — la etiqueta es "Dirección de Facturación de la Tarjeta" y el control es un
+		// combo con chevron ▼, sin textbox visible hasta abrirlo). Por eso no se resuelve por rol.
+		//
+		// Se scopea al bloque de tarjeta: en la página del alta conviven los combos de origen y
+		// destino, que son el mismo componente.
+		return page
+			.locator('app-input-search-place')
+			.filter({ has: page.locator('.placeholder, .value, .search-container-input') })
+			.last();
+	}
 
-		const byFormControl = cardFormScope.locator(
-			'input[formcontrolname="address"], input[formcontrolname="creditCardOwnerAddress"], input[formcontrolname="billingAddress"]'
+	/**
+	 * ZIP de facturación cuando el 5° campo es `address-zip`.
+	 *
+	 * Resolución anclada a la ETIQUETA porque el input NO tiene nombre accesible: en el DOM real la
+	 * etiqueta "Codigo Postal de Facturación de la Tarjeta" es un `div` HERMANO, no un `<label for>`,
+	 * así que `getByRole('textbox', { name: … })` no lo alcanza (y el fallback posicional está
+	 * desactivado a propósito para esta pasarela). El XPath `following::input[1]` toma el primer
+	 * input después de esa etiqueta, que es exactamente el campo.
+	 */
+	private billingZipField(page: Page) {
+		const byFormControl = page.locator(
+			'input[formcontrolname="creditCardOwnerZipCode"], input[formcontrolname="zipCode"], input[formcontrolname="postalCode"], input[formcontrolname="creditCardOwnerZip"]'
 		);
-		const byLabel = cardFormScope.getByRole('textbox', { name: /enter an address|ingrese una direcci[oó]n|direcci[oó]n/i });
+		const byLabelAnchor = page
+			.getByText(/c[oó]digo postal de facturaci[oó]n/i)
+			.first()
+			.locator('xpath=following::input[1]');
 
-		return byFormControl.first().or(byLabel.first()).first();
+		return byFormControl.first().or(byLabelAnchor).first();
 	}
 
 	/** 5° campo Mercado Pago: tipo de documento (custom select) + número. */
