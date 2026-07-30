@@ -53,6 +53,12 @@ export interface AuthorizeBillTo {
 	zip: string;
 }
 
+/** Un setting individual dentro de `transactionSettings.setting[]` (ej. duplicateWindow). */
+export interface AuthorizeTransactionSetting {
+	settingName: string;
+	settingValue: string;
+}
+
 /** Cuerpo `transactionRequest` del payload createTransactionRequest. */
 export interface AuthorizeTransactionRequestBody {
 	transactionType: AuthorizeTransactionType;
@@ -62,6 +68,10 @@ export interface AuthorizeTransactionRequestBody {
 	};
 	billTo?: AuthorizeBillTo;
 	refTransId?: string;
+	/** Config per-transacción (ej. deshabilitar Duplicate Transaction Detection en tests repetidos). */
+	transactionSettings?: {
+		setting: AuthorizeTransactionSetting[];
+	};
 }
 
 /** Payload raíz enviado al endpoint sandbox. */

@@ -58,3 +58,19 @@ export async function waitForTravelCreation(page: Page, timeout = 30_000): Promi
 export async function extractTravelIdFromUrl(page: Page): Promise<string> {
 	return waitForTravelCreation(page);
 }
+
+/**
+ * Primera parte del destino (calle + número) para filtrar filas en la grilla de gestión.
+ *
+ * La grilla y el autocomplete NO devuelven el mismo sufijo de localidad que el string canónico de
+ * `JOURNEY_DEFAULTS`, y el match de fila es token-based: pasar el destino completo hace fallar el
+ * filtro. Es gateway-agnóstico (comportamiento de la grilla MAGIIS, no del SDK de ninguna pasarela),
+ * por eso vive acá junto a los demás helpers de journey.
+ *
+ * SoT única (2026-07-29): antes estaba copiado textualmente en 4 lugares — `CarrierHoldSteps`,
+ * `stepwise-hold-journey`, `quote-trip-verification` y el spec `apppax-hold-3ds` — con el comentario
+ * "Espeja shortDestination() de CarrierHoldSteps" admitiendo la duplicación.
+ */
+export function shortDestination(destination: string): string {
+	return destination.split(',')[0].trim();
+}

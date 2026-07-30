@@ -134,6 +134,23 @@ export class GatewaySwitchSteps extends UiBase {
 	 *   - Implementar el switch a Stripe vía Connect test-mode (TODO F5 en ensureActiveGateway).
 	 *   - Re-seed de la tarjeta 4242 del pax (cleaningWallets la borró al desvincular) —
 	 *     confirmar el helper de alta de tarjeta (wallet add-card) antes de habilitar.
+	 *
+	 * ── DEUDA DE CONVENCIÓN (documentada 2026-07-29) ─────────────────────────────────────────
+	 * El resto de la capa Steps auto-limpia con `try/finally` DENTRO del propio orquestador
+	 * (`CarrierHoldSteps.runHoldScenario`, `ContractorHoldSteps.runColaboradorScenario`,
+	 * `CargoABordoSteps.runCargoScenario`): el caller no puede olvidarse del cleanup. Acá, en
+	 * cambio, el restore es un método público SEPARADO que el spec debe acordarse de invocar — y
+	 * es justamente el Step cuyas operaciones son destructivas sobre estado COMPARTIDO (carrier
+	 * 1521), donde olvidarse duele más.
+	 *
+	 * NO se convierte al patrón self-cleaning todavía a propósito: mientras `restoreStripe()` siga
+	 * incompleto (los dos TODOs de arriba), envolverlo en un `try/finally` automático haría que
+	 * CADA spec que switchee pasarela emita el warning de "RESTAURACIÓN MANUAL" — ruido sin
+	 * beneficio, porque el restore real no ocurre.
+	 *
+	 * CRITERIO DE CIERRE: cuando el OAuth Connect test-mode + el re-seed de tarjeta estén
+	 * implementados, mover la restauración a un `try/finally` dentro de `ensureActiveGateway`
+	 * (o de un wrapper `withGateway(gateway, fn)`), convergiendo con los otros tres Steps.
 	 */
 	async restoreStripe(): Promise<void> {
 		await test.step('Teardown: restaurar Stripe (DESTRUCTIVO / INCOMPLETO)', async () => {

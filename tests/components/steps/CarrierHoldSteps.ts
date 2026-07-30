@@ -15,6 +15,18 @@
  * NOTA @atc — los ATC mapeados a MG viven en las Page components (fillMinimum → MG-148,
  * expectPassengerInPorAsignar → MG-158, 3DS → MG-152/153); este Step orquesta, no mapea
  * TCs directamente.
+ *
+ * ── ROL EN LA ARQUITECTURA (declarado 2026-07-29) ────────────────────────────────────────────
+ * ⚠️ `runHoldScenario` NO es el motor de hold de las pasarelas de form nativo. Hoy alimenta:
+ *   · el spec PILOTO parametrizado `specs/_parametrized/hold-happy-no3ds.parametrized.spec.ts` (`[BL-028]`), y
+ *   · el camino Stripe Elements (`fillMinimum` + los 3 iframes).
+ *
+ * El motor productivo de **Authorize / eBizCharge / Mercado Pago** (form nativo Angular) es
+ * `runStepwiseHoldJourney` (`@features/gateway-pg/helpers/stepwise-hold-journey`): a pedido del líder
+ * de QA (2026-07-27) cada paso lleva su propia assertion, para que el step que falla identifique el
+ * punto exacto sin abrir el trace — algo que este orquestador, al ser una "caja negra" de journey
+ * completo, no da. La bifurcación es DELIBERADA; ambos motores coexisten a propósito.
+ * Antes de refactorizar cualquiera de los dos, leer también el docblock del otro.
  */
 
 import type { TestContextOptions } from '@TestContext';
@@ -38,7 +50,7 @@ import { validateAndSelectMercadoPagoCard } from '@features/gateway-pg/helpers/m
 import { setHoldViaApi } from '@features/gateway-pg/helpers/parameters-api';
 import { validateCardPrecondition, type CardPreconditionResult } from '@features/gateway-pg/helpers/card-precondition';
 import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '@features/gateway-pg/helpers/travel-cleanup';
-import { waitForTravelCreation } from '@features/gateway-pg/helpers/stripe.helpers';
+import { shortDestination, waitForTravelCreation } from '@features/gateway-pg/helpers/journey-url.helpers';
 
 export type CardFlow = 'new' | 'existing';
 
@@ -95,10 +107,6 @@ export type HoldRunOptions = {
 	 */
 	restoreHold?: boolean;
 };
-
-function shortDestination(destination: string): string {
-	return destination.split(',')[0].trim();
-}
 
 export class CarrierHoldSteps extends UiBase {
 	readonly dashboard: CarrierDashboardPage;

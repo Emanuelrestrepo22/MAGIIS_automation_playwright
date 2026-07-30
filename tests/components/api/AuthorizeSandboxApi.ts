@@ -84,7 +84,18 @@ export class AuthorizeSandboxApi extends ApiBase {
 		return this.post(payload);
 	}
 
-	/** Arma el payload canónico `createTransactionRequest` para un authOnlyTransaction. */
+	/**
+	 * Arma el payload canónico `createTransactionRequest` para un authOnlyTransaction.
+	 *
+	 * `transactionSettings.duplicateWindow=0` deshabilita la Duplicate Transaction Detection
+	 * de Authorize.net (rechaza con resultCode="Error" si card+amount+billTo... se repiten
+	 * dentro de una ventana de 120s por defecto — confirmado contra la doc oficial:
+	 * https://developer.authorize.net/api/reference/dist/json/responseCodes.json). Los
+	 * fixtures usan combinaciones fijas (mismo número+CVV+ZIP+amount) por diseño para que el
+	 * outcome sea determinístico → correr la suite más de una vez en <2min dispara falsos
+	 * "Error" que no son un fallo del contrato. Deshabilitar el window es la práctica estándar
+	 * de la plataforma para test suites repetibles (no baja ningún assert de negocio).
+	 */
 	private buildAuthOnlyPayload(input: AuthorizeAuthOnlyInput): AuthorizeCreateTransactionRequest {
 		const { card, amount, refId } = input;
 		// expirationDate en formato MMYY (ej. "1230" para 12/2030).
@@ -103,6 +114,9 @@ export class AuthorizeSandboxApi extends ApiBase {
 						firstName: card.holderName.split(' ')[0] ?? 'MAGIIS',
 						lastName: card.holderName.split(' ').slice(1).join(' ') || 'Test',
 						zip: card.zip
+					},
+					transactionSettings: {
+						setting: [{ settingName: 'duplicateWindow', settingValue: '0' }]
 					}
 				}
 			}

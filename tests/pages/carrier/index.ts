@@ -1,6 +1,5 @@
 export * from './DashboardPage';
 export * from './ErrorPopup';
-export * from './GatewayPgCardLinkingPage';
 export * from './NewTravelPage';
 export * from './NewTravelPageBase';
 export * from './OperationalPreferencesPage';

@@ -34,13 +34,23 @@
 
 import type { Locator, Route } from '@playwright/test';
 import type { TestContextOptions } from '@TestContext';
+import type { GatewayName } from '@fixtures/gateways/_shared';
 
 import { expect } from '@playwright/test';
 import { atc, step } from '@utils/decorators';
 import { UiBase } from '@ui/UiBase';
 
-/** Pasarelas de pago censables en el App Store (match case-insensitive por texto de card). */
-export type GatewayCompany = 'stripe' | 'authorize' | 'ebizcharge' | 'mercado-pago';
+/**
+ * Pasarelas de pago censables en el App Store (match case-insensitive por texto de card).
+ *
+ * ALIAS del tipo canónico `GatewayName` (`tests/fixtures/gateways/_shared`) — NO una unión paralela.
+ * Antes se declaraba acá una unión propia con los mismos 4 miembros, mientras TODO el resto del
+ * código multi-gateway (Steps, adapters, `resolveCard`, `stepwise-hold-journey`) usa `GatewayName`:
+ * dos tipos independientes para el mismo dominio obligan a recordar actualizar ambos al agregar una
+ * 5ª pasarela. Se conserva el nombre `GatewayCompany` porque es el vocabulario de esta pantalla
+ * (la "empresa" que muestra la card) y ya lo consumen `GatewaySwitchSteps` / `xray-keys`.
+ */
+export type GatewayCompany = GatewayName;
 
 /** Estado de una card de pasarela clasificado por el link de acción (i18n-proof). */
 export type GatewayCardState = 'linked' | 'linkable' | 'unavailable' | 'unknown';
