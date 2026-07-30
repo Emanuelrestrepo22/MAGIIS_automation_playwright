@@ -111,8 +111,16 @@ function shortDestination(destination: string): string {
  * puede estar en inglés (puente de BL-048).
  *
  * NO incluye "No autorizado" / "En conflicto" — ése es el estado de hold FALLIDO y debe romper.
+ *
+ * "Chofer Asignado" / "Driver Assigned" (agregado 2026-07-29, evidencia en vivo: viaje 3650-W,
+ * carrier 1521): es la MISMA carrera que este comentario describe, disparada por correr con el
+ * pickup dentro de la geocerca del teléfono driver físico — hay un conductor real disponible a
+ * metros, así que el viaje salta de "Buscando chofer" a asignado antes de que la grilla se lea.
+ * Es un estado ESTRICTAMENTE POSTERIOR del mismo flujo exitoso (el hold ya fue aprobado y el
+ * viaje está vivo), no una relajación: los estados de fallo siguen fuera y siguen rompiendo.
  */
-const HOLD_APPROVED_ROW_STATUS = /Buscando chofer|Searching Driver|En progreso|In Progress|Viaje programado|Scheduled Trip/i;
+const HOLD_APPROVED_ROW_STATUS =
+	/Buscando chofer|Searching Driver|En progreso|In Progress|Viaje programado|Scheduled Trip|Chofer Asignado|Driver Assigned/i;
 
 /**
  * Eje "toggle de pre-autorización" del journey. `undefined` (default) = el motor NI fija NI

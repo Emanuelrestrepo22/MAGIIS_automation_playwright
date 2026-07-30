@@ -202,6 +202,19 @@ export type HoldSuiteOptions = {
 	suiteSuffix?: string;
 	/** Timeout del describe en ms. Default 240_000 — el de los specs hold Authorize migrados. */
 	timeout?: number;
+	/**
+	 * Override del ORIGEN del viaje. Default: `journeyDefaults.origin` de la pasarela.
+	 *
+	 * Se expone para las campañas cuyo viaje debe ser **finalizable desde la App Driver**: el
+	 * conductor solo recibe viajes cuyo pickup cae dentro del radio de ~500 m de la ubicación
+	 * física del teléfono (geocerca). Con el origen por defecto el viaje se crea igual, pero
+	 * queda fuera de rango y nadie puede cerrarlo desde el device.
+	 *
+	 * NO se cambia el default global de `JOURNEY_DEFAULTS.origin` — lo consumen ~399 tests web
+	 * que no asertan origen; el override es por suite, igual que el `DRIVER_E2E_PICKUP` que ya
+	 * usa la factory de cargo a bordo.
+	 */
+	origin?: string;
 };
 
 /**
@@ -273,7 +286,7 @@ export function defineHoldSuite(gateway: GatewayName, options: HoldSuiteOptions 
 					intent: spec.intent,
 					client,
 					passenger,
-					origin: defaults.origin,
+					origin: options.origin ?? defaults.origin,
 					destination: defaults.destination,
 					// `holdAxis: null` (la matriz no fija el eje) → se omite `holdMode` y el motor no
 					// toca ni asevera el toggle, que es exactamente lo que declara la matriz.
