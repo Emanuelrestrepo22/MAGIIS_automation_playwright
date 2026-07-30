@@ -1192,6 +1192,43 @@ Checklist (en orden):
 - **Dato validado por el líder de QA:** el happy path es `4111 1111 1111 1111` + CVV **900** + ZIP **90210**, y "siempre funciona" — coincide con `AUTHORIZE_TEST_CARDS.visaSuccess`. Así que los fallos no son del dato.
 - **Referencias:** `tests/features/gateway-pg/api/authorize-sandbox/*.api.spec.ts`, `tests/components/api/AuthorizeSandboxApi.ts`, `tests/fixtures/gateways/authorize/cards.ts`, BL-049 (cerrado por esta evidencia), BL-036
 
+### BL-054 — 🔴 SEGURIDAD: CloudWatch loguea las credenciales del merchant eBizCharge en texto plano
+
+- **Estado:** 🔴 Pendiente — **reportar a DEV/MX** (nunca en MG: MG es sólo entidades Xray)
+- **Prioridad:** **P1** (exposición de credenciales de pasarela de pago)
+- **Tipo:** Bug de producto / Seguridad
+- **Reportado:** 2026-07-30 (hallazgo del líder de QA durante el E2E exploratorio de eBizCharge)
+- **Contexto:** El log group **`Test-Logs`** → stream **`Test-PaymentGateway`** (región `us-east-2`, backend NestJS) registra las credenciales del merchant **sin enmascarar**, en la traza del `captureCard`:
+
+  ```
+  { password: '<securityId>', userId: '<userId>', securityId: '<securityId>' }
+  ```
+
+  Cualquiera con acceso de lectura al log group obtiene las credenciales de la pasarela. Aplica a **cualquier ambiente**, no sólo TEST — el patrón de logueo es del código, no de la config.
+- **Segundo problema en la misma línea:** `password` y `securityId` llevan **el mismo valor** — el del campo *Security Id* del modal de vinculación, **no** el del campo *Password* que se cargó. O el backend envía el `securityId` como `password`, o el password real viaja por otra vía. La transacción salió `Approved` igual, así que hay que determinar cuál de las dos cosas ocurre: si el `Password` del modal no se usa, es un campo muerto en la UI; si se usa, el log está mal armado.
+- **Próxima acción:** (1) abrir defect en DEV/MX pidiendo enmascarar credenciales antes de loguear (patrón `***` o elisión del objeto completo); (2) preguntar a dev por el mapeo real de los 4 campos del modal (`EBizSubscription-Key`, `Security Id`, `User Id`, `Password`) hacia el payload de eBiz; (3) evaluar si corresponde rotar las credenciales sandbox expuestas.
+- **Nota:** los valores concretos **no se transcriben** en este backlog ni en el repo. Están en el log group para quien tenga acceso.
+- **Referencias:** `tests/test-1.spec.ts` (grabación exploratoria, gitignored — documenta el hallazgo), BL-055
+
+### BL-055 — Hallazgos del E2E eBizCharge: origen==destino, comisión 5% y el 4.º campo del modal
+
+- **Estado:** 🔴 Pendiente
+- **Prioridad:** P2
+- **Tipo:** Bug / Investigación / Cobertura
+- **Reportado:** 2026-07-30
+- **Contexto:** Tres hallazgos del mismo E2E exploratorio de eBizCharge (evidencia en CloudWatch `Test-PaymentGateway` + `MGW.logs`).
+
+  **(a) El viaje quedó con ORIGEN == DESTINO.** El `description` del `captureCard` muestra `'Reconquista 661, Buenos Aires, Argentina => Reconquista 661, Buenos Aires, Argentina (smith Emanuel)'`, cuando en el flujo se eligió **Cazadores 1987** como destino. Encaja con el defecto de `searchPlace` corregido el 2026-07-29 para el ORIGEN (commit `9310c87`: el shortcut `keepExistingOnNoResults` cortaba antes del retry path y conservaba el valor previo). El destino usa el mismo helper pero con `keepExistingOnNoResults: false`, así que hay que determinar si el problema es del fill o de cómo el backend arma la descripción.
+
+  **(b) Comisión del 5% no documentada.** `commission: 0.91` sobre `amount: 18.26`. No figura en `docs/gateway-pg/ebizcharge/matriz_cases.md`. Si es parte del contrato comercial merece su propio caso de prueba; si no, es un dato a confirmar con negocio.
+
+  **(c) El modal de vinculación tiene 4 campos y el adapter declara 3 env keys.** Campos reales verificados: `EBizSubscription-Key` · `Security Id` · `User Id` · `Password`. `ebizchargeGatewayAdapter.credsEnvKeys` sólo declara `EBIZ_MERCHANT_USER`, `EBIZ_MERCHANT_PASSWORD`, `EBIZ_SECURITY_KEY` — **falta una para el Subscription-Key**. Mapeo propuesto: `User Id`→`EBIZ_MERCHANT_USER`, `Password`→`EBIZ_MERCHANT_PASSWORD`, `Security Id`→`EBIZ_SECURITY_KEY`, `EBizSubscription-Key`→`EBIZ_SUBSCRIPTION_KEY` (nueva).
+
+  **(d) eBizCharge pide DIRECCIÓN y autocompleta el ZIP** — campo que no existe en las otras pasarelas. `ebizchargeGatewayAdapter` no declara `nativeExtraField`, así que `NativeAngularCardForm` no llena ningún 5.º campo para eBiz, pero este flujo necesita dos (dirección + ZIP derivado). Modelar `nativeExtraField: 'address'`: seleccionar del autocomplete y **aseverar** que el ZIP se autocompletó, en lugar de tipearlo.
+- **Próxima acción:** (a) reproducir con el destino verificado y, si se confirma, abrir defect; (b) confirmar la comisión con negocio y agregar el TC a la matriz; (c)+(d) implementar en el adapter y en `NativeAngularCardForm` antes de correr los 23 tests `@ebizcharge`.
+- **Bloqueante previo a cualquier corrida eBiz:** las credenciales `EBIZ_*` **no están en `.env.test`** ⇒ `isConfigured()` es false ⇒ los 23 tests skipean.
+- **Referencias:** `tests/test-1.spec.ts`, `tests/features/gateway-pg/helpers/adapters/ebizchargeGatewayAdapter.ts`, `tests/components/ui/carrier/card-forms/NativeAngularCardForm.ts`, `tests/pages/carrier/NewTravelPageBase.ts` (`searchPlace`), BL-054
+
 ---
 
 ## Archivo (cerrado, >30 días)
