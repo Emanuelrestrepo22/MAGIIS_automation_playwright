@@ -32,8 +32,8 @@ import type { MobilePhaseResult } from '../shared/e2eFlowConfig';
 
 // ─── Config desde env ────────────────────────────────────────────────────────
 
-const JOURNEY_ID  = process.env.E2E_JOURNEY_ID;
-const TIMEOUT_MS  = Number(process.env.E2E_MOBILE_TIMEOUT_MS ?? '180000');
+const JOURNEY_ID = process.env.E2E_JOURNEY_ID;
+const TIMEOUT_MS = Number(process.env.E2E_MOBILE_TIMEOUT_MS ?? '180000');
 
 if (!JOURNEY_ID) {
 	console.error('[mobile-phase] ERROR: E2E_JOURNEY_ID no está definido.');
@@ -57,8 +57,8 @@ async function run(): Promise<void> {
 	if (ctx.status !== 'ready-for-driver') {
 		throw new Error(
 			`JourneyContext status inválido: "${ctx.status}". ` +
-			`Se esperaba "ready-for-driver". ` +
-			`Verificar que la fase web completó exitosamente.`
+				`Se esperaba "ready-for-driver". ` +
+				`Verificar que la fase web completó exitosamente.`
 		);
 	}
 
@@ -80,11 +80,11 @@ async function run(): Promise<void> {
 		timeoutsMs: {
 			// El timeout de "confirm" incluye el tiempo que tarda la push
 			// notification en llegar al dispositivo desde la creación del viaje.
-			confirm:     Math.min(TIMEOUT_MS, 90_000),
+			confirm: Math.min(TIMEOUT_MS, 90_000),
 			'in-progress': 60_000,
-			resume:      60_000,
-			closed:      60_000,
-		},
+			resume: 60_000,
+			closed: 60_000
+		}
 	});
 
 	log(`✓ Harness completado — amount: ${harnessResult.totalAmount} | method: ${harnessResult.paymentMethod}`);
@@ -92,11 +92,11 @@ async function run(): Promise<void> {
 
 	// ── 4. Serializar resultado ───────────────────────────────────────────────
 	const result: MobilePhaseResult = {
-		journeyId:     JOURNEY_ID!,
-		status:        'driver-completed',
-		totalAmount:   harnessResult.totalAmount,
+		journeyId: JOURNEY_ID!,
+		status: 'driver-completed',
+		totalAmount: harnessResult.totalAmount,
 		paymentMethod: harnessResult.paymentMethod,
-		checkpoints:   harnessResult.checkpoints.map(c => c.stage),
+		checkpoints: harnessResult.checkpoints.map(c => c.stage)
 	};
 
 	// ── 5. Actualizar JourneyContext con resultado final ──────────────────────
@@ -119,12 +119,12 @@ run().catch((error: unknown) => {
 
 	// Intentar escribir estado fallido en el context aunque sea parcial
 	markMobileCompleted({
-		journeyId:     JOURNEY_ID!,
-		status:        'failed',
-		totalAmount:   '',
+		journeyId: JOURNEY_ID!,
+		status: 'failed',
+		totalAmount: '',
 		paymentMethod: '',
-		checkpoints:   [],
-		errorMessage:  message,
+		checkpoints: [],
+		errorMessage: message
 	}).catch(() => {
 		// Si falla la escritura del context ignoramos — ya salimos con error.
 	});

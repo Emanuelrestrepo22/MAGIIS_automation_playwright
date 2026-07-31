@@ -92,6 +92,7 @@ import { SUPPORTED_INTENTS_BY_GATEWAY } from '@fixtures/gateways/_shared';
 import { debugLog } from '@helpers/index';
 import { journeyDefaultsFor } from '@features/gateway-pg/data/journey-defaults';
 import { getGatewayPgAdapter } from '@features/gateway-pg/helpers/adapters';
+import { assertActiveGatewayInDb } from '@features/gateway-pg/helpers/gateway-identity-guard';
 import { runStepwiseHoldJourney } from '@features/gateway-pg/helpers/stepwise-hold-journey';
 
 /** Tipo de actor del alta — determina cliente / pasajero / nombre esperado en la grilla. */
@@ -202,6 +203,19 @@ export type HoldSuiteOptions = {
 	suiteSuffix?: string;
 	/** Timeout del describe en ms. Default 240_000 — el de los specs hold Authorize migrados. */
 	timeout?: number;
+	/**
+	 * Override del ORIGEN del viaje. Default: `journeyDefaults.origin` de la pasarela.
+	 *
+	 * Se expone para las campañas cuyo viaje debe ser **finalizable desde la App Driver**: el
+	 * conductor solo recibe viajes cuyo pickup cae dentro del radio de ~500 m de la ubicación
+	 * física del teléfono (geocerca). Con el origen por defecto el viaje se crea igual, pero
+	 * queda fuera de rango y nadie puede cerrarlo desde el device.
+	 *
+	 * NO se cambia el default global de `JOURNEY_DEFAULTS.origin` — lo consumen ~399 tests web
+	 * que no asertan origen; el override es por suite, igual que el `DRIVER_E2E_PICKUP` que ya
+	 * usa la factory de cargo a bordo.
+	 */
+	origin?: string;
 };
 
 /**
@@ -239,6 +253,15 @@ export function defineHoldSuite(gateway: GatewayName, options: HoldSuiteOptions 
 
 		test.skip(!adapter.isConfigured(), `Requiere ${adapter.credsEnvKeys.join(' + ')} en .env.test (gate del adapter ${gateway}).`);
 
+		// Guard de IDENTIDAD de pasarela (DB): la suite mide dinero contra la pasarela ACTIVA del
+		// carrier, y el form de tarjeta es agnóstico — sin esto, correr la suite de eBiz con
+		// Authorize vinculada produce resultados de OTRA pasarela sin que ningún test lo note
+		// (pasó en la campaña Authorize, rondas 4-5). Lanza si MGW_LINKED contradice a la suite;
+		// avisa y sigue si no hay config de Oracle (ver política de fallo en el helper).
+		test.beforeAll(async () => {
+			await assertActiveGatewayInDb(gateway);
+		});
+
 		for (const holdCase of generated) {
 			const spec = HOLD_CASE_SPECS[holdCase];
 			const tcId = registry.holdTcIds[holdCase];
@@ -273,7 +296,7 @@ export function defineHoldSuite(gateway: GatewayName, options: HoldSuiteOptions 
 					intent: spec.intent,
 					client,
 					passenger,
-					origin: defaults.origin,
+					origin: options.origin ?? defaults.origin,
 					destination: defaults.destination,
 					// `holdAxis: null` (la matriz no fija el eje) → se omite `holdMode` y el motor no
 					// toca ni asevera el toggle, que es exactamente lo que declara la matriz.

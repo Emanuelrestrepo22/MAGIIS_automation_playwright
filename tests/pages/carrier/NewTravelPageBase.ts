@@ -6,7 +6,12 @@ import { getPortalUrl } from '../../config/gatewayPortalRuntime';
 // BL-024 mejora continua: data Stripe viene del fixture canónico, no del legacy.
 // El POM sigue acoplado a Stripe Elements (deuda TIER A — BL-038 Strategy Pattern),
 // pero al menos las constantes y mappings centralizados en el fixture.
-import { STRIPE_BILLING_ZIP, STRIPE_CARD_HOLDER_NAME, STRIPE_CVC, STRIPE_EXPIRY } from '../../fixtures/gateways/stripe/cards';
+import {
+	STRIPE_BILLING_ZIP,
+	STRIPE_CARD_HOLDER_NAME,
+	STRIPE_CVC,
+	STRIPE_EXPIRY
+} from '../../fixtures/gateways/stripe/cards';
 import { resolveStripeCardByLast4 } from '../../fixtures/gateways/stripe/card-by-last4';
 import { BasePage } from '../shared/BasePage';
 
@@ -135,7 +140,9 @@ export abstract class NewTravelPageBase extends BasePage {
 		this.guestPassengerRadio = page.getByRole('radio', { name: 'PAX invitado' });
 		this.guestPassengerNameInput = page.getByRole('textbox', { name: 'Nombre*' });
 		this.originSelect = page.locator('app-input-search-place[formcontrolname="origin"]');
-		this.destinationSelect = page.locator('div.form-group-address[formarrayname="destination"] app-input-search-place');
+		this.destinationSelect = page.locator(
+			'div.form-group-address[formarrayname="destination"] app-input-search-place'
+		);
 		this.serviceTypeRow = page.locator('#id_tab_add_travel .row').filter({ hasText: 'Tipo de Servicio' }).first();
 		this.serviceTypeValue = this.serviceTypeRow.locator('.value').first();
 		this.tariffTypeButtons = page.locator('.btn-tariff');
@@ -163,7 +170,9 @@ export abstract class NewTravelPageBase extends BasePage {
 		// cuando el SetupIntent es rechazado (ej: card 9995 "insufficient funds", 1629 declined after 3DS).
 		// Selector confirmado en validación manual:
 		//   #id_tab_add_travel > app-credit-card-payment-data-validate > div > div > div.w-100.text-right.error-text.ng-star-inserted
-		this.cardValidationErrorText = page.locator('app-credit-card-payment-data-validate .error-text.ng-star-inserted');
+		this.cardValidationErrorText = page.locator(
+			'app-credit-card-payment-data-validate .error-text.ng-star-inserted'
+		);
 	}
 
 	async goto(): Promise<void> {
@@ -175,10 +184,19 @@ export abstract class NewTravelPageBase extends BasePage {
 		await this.clientSelect.waitFor({ state: 'visible', timeout });
 	}
 
-	private async selectAutocompleteOption(select: Locator, searchInput: Locator, name: string, roleLabel: string): Promise<void> {
+	private async selectAutocompleteOption(
+		select: Locator,
+		searchInput: Locator,
+		name: string,
+		roleLabel: string
+	): Promise<void> {
 		const searchValue = name.replace(/[,()]/g, ' ').replace(/\s+/g, ' ').trim();
 		const firstToken = searchValue.split(' ').find(token => token.trim().length > 0) ?? searchValue;
-		const fallbackQueries = Array.from(new Set([searchValue, firstToken, firstToken.slice(0, 4), firstToken.slice(0, 3), name.trim()].filter(Boolean)));
+		const fallbackQueries = Array.from(
+			new Set(
+				[searchValue, firstToken, firstToken.slice(0, 4), firstToken.slice(0, 3), name.trim()].filter(Boolean)
+			)
+		);
 		const dropdown = select.locator('select-dropdown').first();
 		const options = select.locator('select-dropdown .options li');
 
@@ -334,7 +352,11 @@ export abstract class NewTravelPageBase extends BasePage {
 		return false;
 	}
 
-	private async searchPlace(place: Locator, address: string, options: { keepExistingOnNoResults: boolean; avoidText?: string } = { keepExistingOnNoResults: false }): Promise<void> {
+	private async searchPlace(
+		place: Locator,
+		address: string,
+		options: { keepExistingOnNoResults: boolean; avoidText?: string } = { keepExistingOnNoResults: false }
+	): Promise<void> {
 		const currentText = normalizeText(await place.textContent());
 		const desiredText = normalizeText(address);
 		const queryText = address.split(',')[0].trim() || address;
@@ -442,7 +464,14 @@ export abstract class NewTravelPageBase extends BasePage {
 
 	/** Selecciona Preautorizada, Cuenta Corriente, Efectivo o CargoABordo. */
 	async selectPaymentMethod(method: PaymentMethod): Promise<void> {
-		const optionText = method === 'Preautorizada' ? 'Preautorizada' : method === 'CuentaCorriente' ? 'Cuenta Corriente' : method === 'CargoABordo' ? 'Tarjeta de Crédito - Cargo' : 'Efectivo';
+		const optionText =
+			method === 'Preautorizada'
+				? 'Preautorizada'
+				: method === 'CuentaCorriente'
+					? 'Cuenta Corriente'
+					: method === 'CargoABordo'
+						? 'Tarjeta de Crédito - Cargo'
+						: 'Efectivo';
 
 		await this.chooseDropdownOption(this.paymentMethodSelector, optionText);
 
@@ -654,14 +683,39 @@ export abstract class NewTravelPageBase extends BasePage {
 		await preauthOption.waitFor({ state: 'visible', timeout: 10_000 });
 		await preauthOption.click();
 
-		await new StripeElementsCardForm().fill(this.page, {
-			number: cardNumber,
-			expiry: STRIPE_EXPIRY,
-			cvc: STRIPE_CVC,
-			holderName: STRIPE_CARD_HOLDER_NAME,
-			zip: STRIPE_BILLING_ZIP
-		});
+		// card-new (MG-178): Stripe Elements en TEST v1.72.8 a veces NO registra el primer llenado
+		// → el botón "Validar" no habilita y el test falla (bucket card-new). El Strategy tipea
+		// char-por-char (`pressSequentially` dispara los listeners internos de Stripe); acá se
+		// reintenta el llenado hasta que "Validar" habilite. El retry vive en el POM, no en el
+		// Strategy, porque "Validar" es un control de ESTA pantalla y el Strategy no lo conoce.
+		const cardForm = new StripeElementsCardForm();
+		const CARD_FILL_RETRIES = 3;
+		for (let attempt = 1; attempt <= CARD_FILL_RETRIES; attempt++) {
+			await cardForm.fill(this.page, {
+				number: cardNumber,
+				expiry: STRIPE_EXPIRY,
+				cvc: STRIPE_CVC,
+				holderName: STRIPE_CARD_HOLDER_NAME,
+				zip: STRIPE_BILLING_ZIP
+			});
+			if (await this.waitForValidateEnabled(attempt < CARD_FILL_RETRIES ? 4_000 : 8_000)) {
+				break;
+			}
+		}
 		await this.assertPaymentMethodPreauthorizedSelected();
+	}
+
+	/** Poll hasta que el botón "Validar" habilite (Stripe considera la tarjeta completa). */
+	private async waitForValidateEnabled(timeoutMs: number): Promise<boolean> {
+		const deadline = Date.now() + timeoutMs;
+		while (Date.now() < deadline) {
+			if (await this.validateCardButton.isEnabled().catch(() => false)) {
+				return true;
+			}
+			// NOTE(tier3-kept): Stripe Elements no emite evento al completar el campo — poll obligado
+			await this.page.waitForTimeout(400);
+		}
+		return false;
 	}
 
 	async selectCardByLast4(last4: string, skipValidate = false, allowDecline = false): Promise<void> {
@@ -691,7 +745,9 @@ export abstract class NewTravelPageBase extends BasePage {
 	 * debe validar selección de tarjeta existente (TC003, TC004 contractor).
 	 */
 	async selectSavedCard(): Promise<void> {
-		const dropdownTrigger = this.paymentMethodSelector.locator('.below > .single > .value > .data-with-icon-col').first();
+		const dropdownTrigger = this.paymentMethodSelector
+			.locator('.below > .single > .value > .data-with-icon-col')
+			.first();
 		await expect(dropdownTrigger).toBeVisible({ timeout: 10_000 });
 		await dropdownTrigger.click();
 
@@ -723,7 +779,9 @@ export abstract class NewTravelPageBase extends BasePage {
 		// Abrir el dropdown de métodos de pago.
 		// Intentar el trigger del recording primero, luego fallback.
 		const valueTrigger = this.paymentMethodSelector.locator('div > div > div.value.ng-star-inserted > div').first();
-		const iconTrigger = this.paymentMethodSelector.locator('.below > .single > .value > .data-with-icon-col').first();
+		const iconTrigger = this.paymentMethodSelector
+			.locator('.below > .single > .value > .data-with-icon-col')
+			.first();
 
 		if (await valueTrigger.isVisible().catch(() => false)) {
 			await valueTrigger.click();
@@ -788,7 +846,11 @@ export abstract class NewTravelPageBase extends BasePage {
 				return;
 			}
 
-			if (!vehicleSelectionOpened && (await this.vehicleButton.isVisible().catch(() => false)) && (await this.vehicleButton.isEnabled().catch(() => false))) {
+			if (
+				!vehicleSelectionOpened &&
+				(await this.vehicleButton.isVisible().catch(() => false)) &&
+				(await this.vehicleButton.isEnabled().catch(() => false))
+			) {
 				await this.vehicleButton.click();
 				vehicleSelectionOpened = true;
 				// NOTE(tier3-kept): dentro de loop submit — espera que submitButton aparezca tras abrir selector vehículo; reemplazar rompería la lógica del loop
@@ -796,7 +858,10 @@ export abstract class NewTravelPageBase extends BasePage {
 				continue;
 			}
 
-			if ((await this.submitButton.isVisible().catch(() => false)) && (await this.submitButton.isEnabled().catch(() => false))) {
+			if (
+				(await this.submitButton.isVisible().catch(() => false)) &&
+				(await this.submitButton.isEnabled().catch(() => false))
+			) {
 				await this.submitButton.click();
 				return;
 			}
@@ -883,11 +948,25 @@ export abstract class NewTravelPageBase extends BasePage {
 			.textContent()
 			.then(text => /preautorizad/i.test(text ?? ''))
 			.catch(() => false);
-		return { success: preauthOk, errorMessage: preauthOk ? null : 'Preautorizada no confirmada tras click Validar' };
+		return {
+			success: preauthOk,
+			errorMessage: preauthOk ? null : 'Preautorizada no confirmada tras click Validar'
+		};
 	}
 
 	async waitForVehicleSelectionReady(timeout = 45_000): Promise<void> {
 		await this.waitForEnabledButton(this.vehicleButton, timeout);
+	}
+
+	/**
+	 * True si el botón "Seleccionar Vehículo" ya está visible+habilitado (form válido, el flujo
+	 * avanzó sin challenge). Es un PREDICADO, no un waiter: `waitForVehicleSelectionReady` bloquea
+	 * hasta 45s, y esto se usa como escape-hatch de `ThreeDSModal.waitForOptionalVisible` para no
+	 * esperar a ciegas un modal 3DS que quizá no aparezca.
+	 */
+	async isVehicleSelectionReady(): Promise<boolean> {
+		const visible = await this.vehicleButton.isVisible().catch(() => false);
+		return visible ? this.vehicleButton.isEnabled().catch(() => false) : false;
 	}
 
 	async clickSelectVehicle(): Promise<void> {
@@ -905,23 +984,71 @@ export abstract class NewTravelPageBase extends BasePage {
 	}
 
 	/**
-	 * ASIGNACIÓN MANUAL (ref: tests/test-5.spec.ts). En vez de "Send Service" (que despacha al
-	 * pool de conductores con un timer de oferta), asigna el viaje DIRECTO a un conductor:
-	 *   "Send Manual" → "Assign" (fila del conductor) → "Assign" (confirmar).
-	 * Elimina el timer de oferta-candidato: el driver queda dueño del viaje.
+	 * ASIGNACIÓN MANUAL. En vez de "Send Service" (que despacha al pool de conductores con un timer
+	 * de oferta), asigna el viaje DIRECTO a un conductor. Elimina el timer de oferta-candidato: el
+	 * driver queda dueño del viaje.
+	 *
+	 * ── Por qué NO se usa un índice (regresión medida 2026-07-29) ──────────────────────────────────
+	 * La versión anterior hacía `getByText(/Asignar|Assign/i).nth(1)` ("según el recorder") y luego
+	 * exigía `getByRole('button', {name:/Asignar|Assign/i})`. Fallaba 3/3 en los casos con pasajero
+	 * distinto del cliente (colaborador TC1096/TC1097, empresa TC1111) y pasaba 3/3 en app pax.
+	 * El dump del DOM real (`evidence/web-dump/send-manual-*.html`) mostró por qué:
+	 *   - "Enviar Manual" NO abre un modal: NAVEGA a la página "Choferes / Gestión de Choferes /
+	 *     Asignar". Los únicos `.modal` del DOM son invisibles (Changelog + onboarding).
+	 *   - Los textos que matchean /Asignar/ son: [0] el BREADCRUMB de esa página (un `span`), y
+	 *     [1..N] el control de acción de CADA fila de chofer. O sea `nth(1)` dependía de que el
+	 *     breadcrumb ocupara exactamente el índice 0 — cualquier texto "Asignar" extra corre el
+	 *     índice y se clickea otra cosa.
+	 *   - El control de la fila es un `div.btn.btn-primary.btn-sm` dentro de `td.td-with-icon`, NO un
+	 *     `<button>` ⇒ `getByRole('button')` no lo ve nunca.
+	 *   - Tras clickear la fila NO aparece ningún diálogo de confirmación: la asignación se completa
+	 *     ahí (los viajes 67758/67759 llegaron al conductor aunque el paso de "confirmar" reventara).
+	 * De ahí: ancla por FILA (no por índice global) + confirmación OPCIONAL.
 	 */
 	async clickSendManualAndAssign(): Promise<void> {
 		await this.waitForLoadingOverlayToDisappear();
 		// Locale-robusto: el ambiente puede estar en ES ("Enviar Manual"/"Asignar") o EN ("Send Manual"/"Assign").
 		await this.page.getByRole('button', { name: /Enviar Manual|Send Manual/i }).click();
-		// Modal con lista de conductores: "Asignar"/"Assign" de la fila (nth(1) según el recorder).
-		const assignRow = this.page.getByText(/Asignar|Assign/i);
-		await assignRow.nth(1).waitFor({ state: 'visible', timeout: 15_000 });
-		await assignRow.nth(1).click();
-		// Confirmar la asignación.
-		const assignConfirm = this.page.getByRole('button', { name: /Asignar|Assign/i });
-		await assignConfirm.waitFor({ state: 'visible', timeout: 15_000 });
-		await assignConfirm.click();
+		// Listado de choferes: es una PAGINA con tabla, no un modal. Cada fila trae su control de
+		// accion (`div.btn.btn-primary.btn-sm` dentro de `td.td-with-icon`). Anclamos a la FILA.
+		const driverRows = this.page.locator('tr:has(.td-with-icon .btn.btn-primary)');
+		await driverRows.first().waitFor({ state: 'visible', timeout: 20_000 });
+
+		// QUE fila: la PRIMERA del listado por defecto. En TEST el listado llega ordenado por
+		// proximidad y la fila 1 es el conductor del device (es lo que el `nth(1)` anterior clickeaba
+		// de hecho, y por eso app pax funcionaba). Si se corre contra otro conductor, apuntarlo por
+		// texto con CARGO_ASSIGN_DRIVER (nombre, codigo o patente) en vez de depender del orden.
+		const driverHint = process.env.CARGO_ASSIGN_DRIVER?.trim();
+		const hintedRows = driverHint ? driverRows.filter({ hasText: driverHint }) : null;
+		const targetRow =
+			hintedRows && (await hintedRows.count().catch(() => 0)) > 0 ? hintedRows.first() : driverRows.first();
+
+		// Log de A QUIEN se asigno: si el viaje no le llega al device, este dato distingue
+		// "se asigno a otro conductor" de "no se asigno nada" sin gastar otra corrida.
+		const assignedTo = (await targetRow.innerText().catch(() => ''))
+			.replace(/\s+/g, ' ')
+			.trim()
+			.slice(0, 90);
+		console.log(`[clickSendManualAndAssign] asignando a: ${assignedTo || '<fila sin texto>'}`);
+		await targetRow.locator('.td-with-icon .btn.btn-primary').first().click();
+
+		// Confirmacion OPCIONAL: en el build medido el click de la fila asigna directo y NO abre dialogo.
+		// Si algun build si la pide, la aceptamos (cubre `<button>` real y `div.btn` dentro de dialogo).
+		const assignConfirm = this.page
+			.getByRole('button', { name: /Asignar|Assign|Confirmar|Confirm/i })
+			.or(
+				this.page
+					.locator('.modal .btn, [role="dialog"] .btn, .swal2-popup .btn')
+					.filter({ hasText: /Asignar|Assign|Confirmar|Confirm/i })
+			);
+		const needsConfirm = await assignConfirm
+			.first()
+			.waitFor({ state: 'visible', timeout: 3_000 })
+			.then(() => true)
+			.catch(() => false);
+		if (needsConfirm) {
+			await assignConfirm.first().click();
+		}
 		await this.waitForLoadingOverlayToDisappear();
 	}
 
@@ -938,7 +1065,13 @@ export abstract class NewTravelPageBase extends BasePage {
 		if (!passengerIsDisabled && normalizeText(opts.passenger) !== normalizeText(clientName)) {
 			await this.selectPassenger(opts.passenger);
 		} else {
-			await expect.poll(async () => matchesSearchText((await this.passengerSelect.textContent().catch(() => '')) ?? '', clientName), { timeout: 10_000 }).toBe(true);
+			await expect
+				.poll(
+					async () =>
+						matchesSearchText((await this.passengerSelect.textContent().catch(() => '')) ?? '', clientName),
+					{ timeout: 10_000 }
+				)
+				.toBe(true);
 		}
 
 		await this.assertDefaultServiceTypeRegular();

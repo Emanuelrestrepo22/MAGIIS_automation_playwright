@@ -62,6 +62,15 @@ export interface AuthorizeTransactionRequestBody {
 	};
 	billTo?: AuthorizeBillTo;
 	refTransId?: string;
+	/**
+	 * Settings de la transacción. `duplicateWindow=0` es la recomendación OFICIAL de la guía de
+	 * testing de Authorize.net para transacciones de prueba repetidas: sin él, misma tarjeta +
+	 * mismo monto dentro de la ventana de dedupe devuelve responseCode 3 (error 11, duplicate).
+	 * OJO: la API JSON de Authorize es sensible al ORDEN de campos — este bloque va DESPUÉS de billTo.
+	 */
+	transactionSettings?: {
+		setting: Array<{ settingName: string; settingValue: string }>;
+	};
 }
 
 /** Payload raíz enviado al endpoint sandbox. */
@@ -117,6 +126,12 @@ export interface AuthorizeTransactionResponse {
 	/** M, N, P, S, U (Card Code Verification). */
 	cvvResultCode?: string;
 	transId?: string;
+	/**
+	 * `'1'` cuando la cuenta procesó la transacción en **Test Mode**: la respuesta es
+	 * enlatada (`transId '0'`, `authCode '000000'`) y los triggers de ZIP/CVV NO se
+	 * evalúan. Discriminador de la cuenta — ver `helpers/authorize-account-guard.ts`.
+	 */
+	testRequest?: string;
 	/** Últimos 4 dígitos. */
 	accountNumber?: string;
 	/** Visa, MasterCard, AmericanExpress, etc. */

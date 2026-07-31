@@ -320,7 +320,9 @@ export async function installWebViewNetworkCapture(driver: Browser): Promise<voi
 			};
 
 			xhrProto.setRequestHeader = function (name: string, value: string) {
-				const context = (this as typeof this & { __magiisNetworkCapture?: { requestHeaders: Record<string, string> } }).__magiisNetworkCapture;
+				const context = (
+					this as typeof this & { __magiisNetworkCapture?: { requestHeaders: Record<string, string> } }
+				).__magiisNetworkCapture;
 				if (context) {
 					context.requestHeaders[name] = value;
 				}
@@ -449,7 +451,18 @@ export async function dumpWebViewNetworkCapture(driver: Browser, label: string):
 		`Entries: ${capture.entries.length}`,
 		'',
 		...capture.entries.flatMap((entry, index) => {
-			const lines = [`#${index + 1} [${entry.kind}] ${entry.method} ${entry.url}`, `  status: ${typeof entry.status === 'number' ? entry.status : '<n/a>'}`, `  ok: ${typeof entry.ok === 'boolean' ? String(entry.ok) : '<n/a>'}`, `  startedAt: ${entry.startedAt}`, `  endedAt: ${entry.endedAt ?? '<n/a>'}`, `  durationMs: ${typeof entry.durationMs === 'number' ? entry.durationMs : '<n/a>'}`, `  requestHeaders: ${formatHeaders(entry.requestHeaders)}`, `  requestBody: ${formatBody(entry.requestBody)}`, `  responseHeaders: ${formatHeaders(entry.responseHeaders)}`, `  responseBody: ${formatBody(entry.responseBody)}`];
+			const lines = [
+				`#${index + 1} [${entry.kind}] ${entry.method} ${entry.url}`,
+				`  status: ${typeof entry.status === 'number' ? entry.status : '<n/a>'}`,
+				`  ok: ${typeof entry.ok === 'boolean' ? String(entry.ok) : '<n/a>'}`,
+				`  startedAt: ${entry.startedAt}`,
+				`  endedAt: ${entry.endedAt ?? '<n/a>'}`,
+				`  durationMs: ${typeof entry.durationMs === 'number' ? entry.durationMs : '<n/a>'}`,
+				`  requestHeaders: ${formatHeaders(entry.requestHeaders)}`,
+				`  requestBody: ${formatBody(entry.requestBody)}`,
+				`  responseHeaders: ${formatHeaders(entry.responseHeaders)}`,
+				`  responseBody: ${formatBody(entry.responseBody)}`
+			];
 
 			if (entry.error) {
 				lines.push(`  error: ${entry.error}`);

@@ -74,12 +74,21 @@ export class ThreeDsChallengePage extends UiBase {
 		await expect(completeButton).toBeVisible({ timeout });
 	}
 
+	/**
+	 * Espera NO bloqueante por el overlay 3DS. Si el challenge es opcional (p.ej. tarjeta guardada
+	 * que reusa autorización), una ventana de tiempo fija es una fuente clásica de flakiness
+	 * (TC1062): si el challenge tarda más que la ventana se pierde. Con `settled` cortamos apenas
+	 * el flujo avanzó sin challenge (señal determinista, p.ej. botón de vehículo habilitado o URL de
+	 * detalle), en vez de agotar el timeout a ciegas.
+	 */
 	@step
-	async waitForOptionalVisible(timeout = THREE_DS_TIMEOUT): Promise<boolean> {
+	async waitForOptionalVisible(timeout = THREE_DS_TIMEOUT, settled?: () => Promise<boolean>): Promise<boolean> {
 		const deadline = Date.now() + timeout;
 
 		while (Date.now() < deadline) {
 			if (await this.overlay.isVisible().catch(() => false)) return true;
+			// El challenge tiene prioridad: solo damos por "asentado sin challenge" si NO hay overlay.
+			if (settled && (await settled().catch(() => false))) return false;
 
 			// NOTE(tier3-kept): polling propio con deadline — overlay 3DS es iframe Stripe sin evento DOM propio.
 			await this.page.waitForTimeout(500);

@@ -34,6 +34,18 @@
  *     pero estructurado para demostrar el patrón cross-gateway.
  *   - authorize ejercita la card `4111 1111 1111 1111` con CVV `900` (SUCCESS sandbox);
  *     mercado-pago la Visa 3704 con holder APRO (trigger del outcome).
+ *   - La instancia **authorize** es el análogo de la fila de matriz
+ *     **TS-AUTHORIZE-TC1011** (`docs/gateway-pg/authorize/matriz_cases.md` §1): Visa
+ *     4111…1111 + CVV 900, Hold ON, viaje visible en la columna "Por asignar". Se mapea
+ *     como ANÁLOGO, no como 1:1 — este piloto valida el patrón cross-gateway, mientras
+ *     TC1011 exige además el oráculo de DB (`payments.gateway=authorize`, `response_code=1`,
+ *     `transaction_id` no nulo) que este spec no cubre.
+ *   - ⚠️ La key `MG-158` del describe raíz pertenece al **ATR de Stripe** (área E del ATP
+ *     MG-178); Authorize NO tiene área E en el membership. Por eso, en el run por pasarela
+ *     de authorize (`test:test:gateway:authorize:xray`) `MG-158` va **denylisteada**
+ *     (`XRAY_KEY_DENYLIST`) para no escribir un run ajeno en el execution MG-558 — su
+ *     evidencia se acredita en el ATR de origen (MG-560, Stripe). Criterio y tabla por
+ *     pasarela: `docs/gateway-pg/reports/RUNBOOK-executions-por-gateway.md` §2.3.
  *
  * Cómo extender:
  *   1. Configurar las creds del adapter en .env.test (o pinnear `GATEWAYS`) — el gateway
@@ -47,6 +59,7 @@ import { resolveCard, type GatewayName } from '@fixtures/gateways/_shared';
 import { journeyDefaultsFor } from '@features/gateway-pg/data/journey-defaults';
 import { XRAY_KEYS_BY_GATEWAY, type XrayIssueKey } from '@features/gateway-pg/data/xray-keys';
 import { resolveActiveGateways } from '@features/gateway-pg/helpers/adapters';
+import { gatewayTag } from '@features/gateway-pg/helpers/adapters/gateway-tag';
 import { CarrierHoldSteps, type HoldScenario, type HoldRunOptions } from '@steps/index';
 
 /**
@@ -65,11 +78,11 @@ const HAPPY_NO_AUTH_OPTIONS: Omit<HoldRunOptions, 'hold'> = {
 	waitForCreation: false,
 	waitForVehicleReady: true,
 	matchDestination: false,
-	expectStatus: 'Buscando chofer',
+	expectStatus: 'Buscando chofer'
 };
 
 // El fixture KATA no define la opción `role` (login explícito vía CarrierHoldSteps.login()).
-test.use({ storageState: undefined });
+test.use({ storageState: { cookies: [], origins: [] } });
 test.describe.configure({ timeout: 180_000 });
 
 // FIX trazabilidad: el describe RAÍZ tenía `annotation: [{ type: 'tms', description: 'MG-158' }]`,
@@ -89,7 +102,10 @@ test.describe('[BL-028][parametrized] Hold happy path sin 3DS @gateway @hold @re
 		const details = key ? { annotation: [{ type: 'tms', description: key }] } : {};
 		const title = `${tcId ? `[${tcId}] ` : ''}crea viaje con HAPPY_NO_AUTH y queda visible en grilla "Por asignar"`;
 
-		test.describe(`gateway=${gateway}`, () => {
+		// Tag normalizado por pasarela vía `gatewayTag()` (SoT única, fix F3 del code review):
+		// sin él el piloto es invisible a `--grep "@authorize"` y se cae de los runs :xray
+		// por pasarela.
+		test.describe(`gateway=${gateway} ${gatewayTag(gateway)}`, () => {
 			test(title, details, async ({ page }) => {
 				const card = resolveCard({ gateway, intent: 'HAPPY_NO_AUTH' });
 
@@ -105,10 +121,13 @@ test.describe('[BL-028][parametrized] Hold happy path sin 3DS @gateway @hold @re
 					client: defaults.appPaxPassenger,
 					passenger: defaults.appPaxPassenger,
 					origin: defaults.origin,
-					destination: defaults.destination,
+					destination: defaults.destination
 				};
 
-				await new CarrierHoldSteps({ page }).runHoldScenario(scenario, { hold: 'on', ...HAPPY_NO_AUTH_OPTIONS });
+				await new CarrierHoldSteps({ page }).runHoldScenario(scenario, {
+					hold: 'on',
+					...HAPPY_NO_AUTH_OPTIONS
+				});
 			});
 		});
 	}

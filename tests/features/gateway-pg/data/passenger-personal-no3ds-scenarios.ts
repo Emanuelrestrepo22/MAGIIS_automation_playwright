@@ -2,11 +2,7 @@ import { PASSENGERS } from './passengers';
 import { STRIPE_TEST_CARDS, type StripeTestCard } from './stripe-cards';
 import { TEST_DATA } from './stripeTestData';
 
-export type PassengerPersonalNo3dsStep =
-	| 'wallet-add-card'
-	| 'wallet-select-card'
-	| 'trip-create'
-	| 'trip-assigned';
+export type PassengerPersonalNo3dsStep = 'wallet-add-card' | 'wallet-select-card' | 'trip-create' | 'trip-assigned';
 
 export type PassengerPersonalNo3dsScenario = {
 	testCaseId: string;
@@ -47,12 +43,12 @@ export const PASSENGER_PERSONAL_NO3DS_SCENARIOS: PassengerPersonalNo3dsScenario[
 			'Billetera',
 			'AGREGAR',
 			'GUARDAR',
-			'Stripe iframe cardnumber / cc-exp-month / cc-exp-year / cc-csc',
+			'Stripe iframe cardnumber / cc-exp-month / cc-exp-year / cc-csc'
 		],
 		technicalRisks: [
 			'Wallet state can persist across runs when APPIUM_NO_RESET=true.',
-			'Stripe iframe name can vary while keeping the same fields.',
-		],
+			'Stripe iframe name can vary while keeping the same fields.'
+		]
 	},
 	{
 		testCaseId: 'TC-PAX-08',
@@ -71,12 +67,12 @@ export const PASSENGER_PERSONAL_NO3DS_SCENARIOS: PassengerPersonalNo3dsScenario[
 			'Modo Personal',
 			'Mi cuenta',
 			'Billetera',
-			'Saved card label ending in the last 4 digits',
+			'Saved card label ending in the last 4 digits'
 		],
 		technicalRisks: [
 			'The card may already be selected as default, so the action can become a no-op.',
-			'Card label formatting can vary slightly across app versions.',
-		],
+			'Card label formatting can vary slightly across app versions.'
+		]
 	},
 	{
 		testCaseId: 'TC-PAX-09',
@@ -98,12 +94,12 @@ export const PASSENGER_PERSONAL_NO3DS_SCENARIOS: PassengerPersonalNo3dsScenario[
 			'Seleccionar Vehiculo',
 			'Ahora',
 			'Efectivo',
-			'Tarjeta de crédito',
+			'Tarjeta de crédito'
 		],
 		technicalRisks: [
 			'Trip confirmation can return without a stable trip id on some builds.',
-			'Payment methods can change order depending on the current profile state and carrier defaults.',
-		],
+			'Payment methods can change order depending on the current profile state and carrier defaults.'
+		]
 	},
 	{
 		testCaseId: 'TC-PAX-10',
@@ -118,16 +114,10 @@ export const PASSENGER_PERSONAL_NO3DS_SCENARIOS: PassengerPersonalNo3dsScenario[
 		destination: TEST_DATA.destination,
 		requiresDriverPhase: true,
 		targetSpecPath: TARGET_SPEC_PATH,
-		requiredScreenObjects: [
-			'Modo Personal',
-			'assigned driver keywords',
-			'conductor',
-			'driver',
-			'en camino',
-		],
+		requiredScreenObjects: ['Modo Personal', 'assigned driver keywords', 'conductor', 'driver', 'en camino'],
 		technicalRisks: [
 			'Driver handoff is not wired in this lane yet.',
-			'The current status screen uses keyword heuristics until a dedicated dump is captured.',
-		],
-	},
+			'The current status screen uses keyword heuristics until a dedicated dump is captured.'
+		]
+	}
 ];

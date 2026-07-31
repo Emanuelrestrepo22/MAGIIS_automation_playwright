@@ -78,6 +78,17 @@ export default defineConfig({
     },
     {
       name: "gateway-pg-chromium",
+      // El journey de alta de viaje con hold (13 pasos: login + cliente/pasajero + direcciones
+      // + form de tarjeta + validación contra la pasarela + vehículo + envío + grilla + cleanup)
+      // supera los 120s globales cuando `apps-test` está lento — tarda ~1.5 min en verde.
+      // Timeout dedicado para no cortar pasos legítimos, mismo criterio que el project
+      // `e2e-mobile`. Sin esto el reporte da FALSOS NEGATIVOS: en la campaña Authorize del
+      // 2026-07-29 hubo casos donde el viaje se creó, el oráculo "Por asignar" pasó y el
+      // cleanup canceló el viaje, y el test igual se reportó `failed` por
+      // "Test timeout of 120000ms exceeded" — el peor tipo de fallo para triar.
+      // Nota: `test.describe.configure({ timeout })` dentro de las factories NO alcanza
+      // (hold.factory declara 240s y aun así vencía a los 120s); el project sí manda.
+      timeout: 300 * 1000,
       use: {
         browserName: "chromium",
       },

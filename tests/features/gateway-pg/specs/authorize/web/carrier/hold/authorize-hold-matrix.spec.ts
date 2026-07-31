@@ -58,14 +58,23 @@
 //      (la deja el caso seed TC1051 / TC1061); sin ella el caso skipea con el motivo.
 import { defineHoldSuite } from '@features/gateway-pg/specs/_parametrized/factories/hold.factory';
 
+// Pickup dentro de la geocerca (~500 m) del telefono driver fisico: sin esto el viaje se crea
+// pero NO le llega al conductor y no puede finalizarse desde la App Driver. Mismo valor y misma
+// razon que el DRIVER_E2E_PICKUP de la factory de cargo a bordo. No toca el default global.
+const DRIVER_E2E_PICKUP = 'Ciudad de la Paz 2238, Buenos Aires, Argentina';
+
 defineHoldSuite('authorize', {
 	suiteSuffix: 'resto de la taxonomía',
+	origin: DRIVER_E2E_PICKUP,
 	cases: [
 		// Ejecutable con el motor actual.
 		'empresaDecline',
 		// Hold OFF — el motor apaga el toggle y lo restaura (gate GATEWAY_ALLOW_DESTRUCTIVE_SWITCH).
 		'personalHappyHoldOff',
-		// fixme: el oráculo de decline + Hold OFF no está verificado (ver el docblock).
+		// ÚNICO `fixme` del archivo, y aplica SÓLO a la línea siguiente: el oráculo de decline +
+		// Hold OFF no está verificado (ver el docblock). Los dos Hold OFF happy que vienen después
+		// (`colaboradorHappyNewHoldOff` / `empresaHappyNewHoldOff`) SÍ son EJECUTABLES — el
+		// comentario previo, sin este alcance explícito, los leía como `fixme` y no lo son.
 		'personalDeclineHoldOff',
 		'colaboradorHappyNewHoldOff',
 		'empresaHappyNewHoldOff',

@@ -30,6 +30,13 @@ import { DriverTripNavigationScreen } from '../driver/DriverTripNavigationScreen
 import { DriverTripSummaryScreen } from '../driver/DriverTripSummaryScreen';
 import { DriverTripPaymentScreen, type CardData, type PaymentOutcome } from '../driver/DriverTripPaymentScreen';
 import { dumpAppiumState } from '../helpers/appiumDebug';
+import {
+	DRIVER_BUSY_ROUTE_PATTERN,
+	describeStaleTripRecovery,
+	recoverDriverToHome,
+	shortRoute,
+	type StaleTripRecoveryResult
+} from '../helpers/driverStaleTripRecovery';
 
 export type DriverCargoDeclineResult = {
 	outcome: PaymentOutcome;
@@ -50,7 +57,7 @@ const DEFAULTS = {
 	inProgressTimeoutMs: 60_000,
 	resumeTimeoutMs: 60_000,
 	paymentModalTimeoutMs: 30_000,
-	outcomeTimeoutMs: 30_000,
+	outcomeTimeoutMs: 30_000
 } as const;
 
 export class DriverCargoDeclineHarness {
@@ -62,7 +69,7 @@ export class DriverCargoDeclineHarness {
 
 	constructor(
 		private readonly config: MobileActorConfig,
-		driver?: AppiumDriver,
+		driver?: AppiumDriver
 	) {
 		this.home = new DriverHomeScreen(this.config, driver);
 		if (driver) this.bind(driver);
@@ -88,6 +95,12 @@ export class DriverCargoDeclineHarness {
 	 */
 	async prewarm(options: DriverCargoDeclineOptions = {}): Promise<void> {
 		await this.startSession();
+		// SIEMPRE salir del overlay /pre-home antes de cualquier otra cosa. Antes esto sólo pasaba
+		// DENTRO de goOnline(), así que un driver parado en /pre-home que ya se reportaba "online"
+		// se quedaba ahí: el overlay TAPA la oferta entrante y `waitForTripConfirmPage` expiraba a los
+		// 90s con el viaje ya asignado (medido 2026-07-30, viajes 67780 y 67783 — al bajar el overlay a
+		// mano apareció el TravelConfirmPage que el harness nunca había visto).
+		await this.home.dismissPreHomeOverlayIfPresent().catch(() => false);
 		await this.dismissStaleModals();
 		const ensureOnline = options.ensureDriverOnline ?? true;
 		if (ensureOnline && !(await this.home.isDriverOnline())) {
@@ -99,73 +112,44 @@ export class DriverCargoDeclineHarness {
 		// recibirá nuevos offers → hay que limpiar ese viaje stale (app/API) antes de correr.
 		const driver = this.home.getDriver();
 		const contexts = (await driver.getContexts().catch(() => [])) as string[];
-		const wv = contexts.find((c) => c.startsWith('WEBVIEW'));
+		const wv = contexts.find(c => c.startsWith('WEBVIEW'));
 		if (wv) await driver.switchContext(wv);
 		let url = await driver.execute<string, []>(() => window.location.href).catch(() => '');
-		if (/Travel(InProgress|ToStart|Resume|Confirm)Page/i.test(url)) {
+		if (DRIVER_BUSY_ROUTE_PATTERN.test(url)) {
 			// Self-heal: un viaje stale de una corrida previa deja al driver OCUPADO (no recibe
 			// offers). En lugar de abortar, lo liberamos in-situ para que cada test sea independiente.
-			console.warn(`[PRE-WARM] Driver ocupado en ${url} — liberando viaje stale para no bloquear el test...`);
-			await this.freeStaleTrip();
-			url = await driver.execute<string, []>(() => window.location.href).catch(() => '');
-			if (/Travel(InProgress|ToStart|Resume|Confirm)Page/i.test(url)) {
-				throw new Error(
-					`[PRE-WARM] No se pudo liberar al driver del viaje stale (sigue en ${url}). ` +
-					`Cancelar manualmente (app o API PUT travels/cancel) antes de reintentar.`,
-				);
+			console.warn(
+				`[PRE-WARM] Driver ocupado en ${shortRoute(url)} — liberando viaje stale para no bloquear el test...`
+			);
+			const recovery = await this.freeStaleTrip();
+			url = recovery.finalUrl;
+			if (!recovery.freed) {
+				throw new Error(`[PRE-WARM] ${describeStaleTripRecovery(recovery, this.config.appPackage)}`);
 			}
-			console.log(`[PRE-WARM] Driver liberado → ${url}`);
+			console.log(`[PRE-WARM] Driver liberado → ${shortRoute(url)}`);
 		}
 		console.log(`[DriverCargoDeclineHarness] PRE-WARM listo (driver online en ${url}, esperando viaje).`);
 	}
 
 	/**
-	 * Libera al driver de un viaje stale atascado en TravelResumePage, sobre la sesión ya abierta:
-	 * cicla los payment buttons y cierra el viaje con el botón de cierre que se habilite
-	 * ("Cerrar Viaje"/"Firmar y Cerrar"). NO usa "Ingresar tarjeta" (queda disabled si total=0).
-	 * Deja al driver de vuelta en /navigator/home. Espeja tests/mobile/appium/scripts/driver-free-stale-trip.ts
-	 * pero sin abrir/cerrar sesión (reutiliza la del harness).
+	 * Libera al driver de un viaje stale sobre la sesión YA abierta del harness.
+	 *
+	 * La lógica NO vive acá: es la función compartida `recoverDriverToHome()`
+	 * (`../helpers/driverStaleTripRecovery`), la MISMA que consume
+	 * `scripts/driver-free-stale-trip.ts`. Antes estaba duplicada entre ese script y este
+	 * método, y ambas copias sólo sabían salir de `TravelResumePage`: un conductor varado en
+	 * `TravelConfirmPage` / `TravelToStartPage` / `TravelInProgressPage` hacía early-return
+	 * silencioso y el pre-warm abortaba igual. La función compartida cubre las cuatro rutas
+	 * del `DRIVER_BUSY_ROUTE_PATTERN` + los overlays (alerta, firma, pre-home) y verifica el
+	 * éxito por polling de URL hasta `/navigator/home`, con force-stop + relaunch como
+	 * último recurso documentado.
 	 */
-	private async freeStaleTrip(): Promise<void> {
-		const driver = this.home.getDriver();
+	private async freeStaleTrip(): Promise<StaleTripRecoveryResult> {
 		await this.switchToWebView();
-		const footer = async (): Promise<{ text: string; disabled: boolean }> =>
-			driver.execute<{ text: string; disabled: boolean }, []>(() => {
-				const norm = (v: unknown) => String(v ?? '').replace(/\s+/g, ' ').trim();
-				const r = document.querySelector('app-travel-resume:not(.ion-page-hidden)') || document.querySelector('app-travel-resume');
-				const b = r?.querySelector('ion-footer button.btn.finish') as HTMLButtonElement | null;
-				return { text: b ? norm(b.innerText) : '', disabled: b ? (b.disabled || b.getAttribute('disabled') !== null) : true };
-			}).catch(() => ({ text: '', disabled: true }));
-
-		const u = await driver.execute<string, []>(() => window.location.href).catch(() => '');
-		if (!/TravelResumePage/i.test(u)) return;
-
-		const payCount = await driver.execute<number, []>(() => {
-			const r = document.querySelector('app-travel-resume:not(.ion-page-hidden)') || document.querySelector('app-travel-resume');
-			return Array.from(r?.querySelectorAll('.travel-payment button.payment') || []).filter(b => (b as HTMLElement).offsetParent !== null).length;
-		}).catch(() => 0);
-
-		for (let i = 0; i < Math.max(payCount, 2); i++) {
-			await driver.execute<boolean, [number]>((idx) => {
-				const r = document.querySelector('app-travel-resume:not(.ion-page-hidden)') || document.querySelector('app-travel-resume');
-				const pays = Array.from(r?.querySelectorAll('.travel-payment button.payment') || []).filter(b => (b as HTMLElement).offsetParent !== null) as HTMLElement[];
-				if (!pays.length) return false;
-				pays[idx % pays.length].click();
-				return true;
-			}, i).catch(() => false);
-			await driver.pause(3_000);
-			const fs = await footer();
-			if (!/ingresar tarjeta/i.test(fs.text) && !fs.disabled && fs.text.length > 0) {
-				await driver.execute<boolean, []>(() => {
-					const r = document.querySelector('app-travel-resume:not(.ion-page-hidden)') || document.querySelector('app-travel-resume');
-					const b = r?.querySelector('ion-footer button.btn.finish') as HTMLElement | null;
-					if (b) { b.click(); return true; }
-					return false;
-				}).catch(() => false);
-				await driver.pause(4_000);
-				break;
-			}
-		}
+		return recoverDriverToHome(this.home.getDriver(), {
+			appPackage: this.config.appPackage,
+			log: message => console.log(`[DriverCargoDeclineHarness][stale-trip] ${message}`)
+		});
 	}
 
 	/**
@@ -176,7 +160,8 @@ export class DriverCargoDeclineHarness {
 		const confirmTimeout = options.confirmTimeoutMs ?? DEFAULTS.confirmTimeoutMs;
 		let reachedPaymentModal = false;
 		const t0 = Date.now();
-		const mark = (m: string) => console.log(`[DriverCargoDeclineHarness][t+${((Date.now() - t0) / 1000).toFixed(1)}s] ${m}`);
+		const mark = (m: string) =>
+			console.log(`[DriverCargoDeclineHarness][t+${((Date.now() - t0) / 1000).toFixed(1)}s] ${m}`);
 
 		const expect3ds = options.expect3ds ?? false;
 		try {
@@ -186,7 +171,7 @@ export class DriverCargoDeclineHarness {
 			if (!confirmReached) {
 				throw new Error(
 					`No llegó/asignó ningún viaje al conductor (TravelConfirmPage) en ${confirmTimeout}ms. ` +
-					`Verificar que la fase web creó y ASIGNÓ (Send Manual → Assign) el viaje a este driver.`,
+						`Verificar que la fase web creó y ASIGNÓ (Send Manual → Assign) el viaje a este driver.`
 				);
 			}
 			mark('request recibido → aceptar');
@@ -198,18 +183,24 @@ export class DriverCargoDeclineHarness {
 			// 2. "Empezar Viaje" (selector real) → modal "¿Desea empezar el Viaje?" → "Si" (geocerca in-range).
 			await this.jsTapActive(
 				['app-page-travel-to-start ion-footer ion-toolbar button', 'button.btn.primary.trip-pax-start'],
-				'Empezar Viaje',
+				'Empezar Viaje'
 			);
 			await this.getDriverPause(1_500);
 			await this.jsTapConfirmSi();
 			const inProgress = await this.waitForWebUrl('TravelInProgressPage', DEFAULTS.inProgressTimeoutMs);
-			if (!inProgress) throw new Error(`No se alcanzó TravelInProgressPage tras "Empezar Viaje" (travelId=${travelId ?? '?'}).`);
+			if (!inProgress)
+				throw new Error(
+					`No se alcanzó TravelInProgressPage tras "Empezar Viaje" (travelId=${travelId ?? '?'}).`
+				);
 			mark('en-progreso → Finalizar Viaje');
 
 			// 3. "Finalizar Viaje" (selector real) → "¿Finalizar Viaje?" → "Si".
 			await this.jsTapActive(
-				['app-page-travel-in-progress .btn-finish-container button', 'app-page-travel-in-progress button.btn.finish'],
-				'Finalizar Viaje',
+				[
+					'app-page-travel-in-progress .btn-finish-container button',
+					'app-page-travel-in-progress button.btn.finish'
+				],
+				'Finalizar Viaje'
 			);
 			await this.getDriverPause(1_500);
 			await this.jsTapConfirmSi();
@@ -222,7 +213,7 @@ export class DriverCargoDeclineHarness {
 			await this.selectCreditCardMethod().catch(() => false);
 			await this.jsTapActive(
 				['app-travel-resume ion-footer ion-toolbar button', 'app-travel-resume ion-footer button.btn.finish'],
-				'Ingresar tarjeta',
+				'Ingresar tarjeta'
 			);
 			mark('Ingresar tarjeta → esperando modal de cobro Stripe');
 
@@ -230,7 +221,7 @@ export class DriverCargoDeclineHarness {
 			const modalReady = await this.getPayment().waitForPaymentScreen(DEFAULTS.paymentModalTimeoutMs);
 			if (!modalReady) {
 				throw new Error(
-					`No apareció el modal de cobro (credit-card-payment-data / Stripe Elements) tras "Ingresar tarjeta" (travelId=${travelId ?? '?'}).`,
+					`No apareció el modal de cobro (credit-card-payment-data / Stripe Elements) tras "Ingresar tarjeta" (travelId=${travelId ?? '?'}).`
 				);
 			}
 			reachedPaymentModal = true;
@@ -248,7 +239,9 @@ export class DriverCargoDeclineHarness {
 
 			return { outcome, totalAmount: '', reachedPaymentModal };
 		} catch (error) {
-			const dumpPath = await dumpAppiumState(this.home.getDriver(), 'driver-cargo-decline-failure').catch(() => null);
+			const dumpPath = await dumpAppiumState(this.home.getDriver(), 'driver-cargo-decline-failure').catch(
+				() => null
+			);
 			const suffix = dumpPath ? ` Appium dump: ${dumpPath}` : '';
 			const message = error instanceof Error ? error.message : String(error);
 			throw new Error(`[DriverCargoDeclineHarness] ${message}.${suffix}`);
@@ -279,8 +272,13 @@ export class DriverCargoDeclineHarness {
 		const readFooter = async (): Promise<string> =>
 			driver
 				.execute<string, []>(() => {
-					const norm = (v: unknown) => String(v ?? '').replace(/\s+/g, ' ').trim();
-					const resume = document.querySelector('app-travel-resume:not(.ion-page-hidden)') ?? document.querySelector('app-travel-resume');
+					const norm = (v: unknown) =>
+						String(v ?? '')
+							.replace(/\s+/g, ' ')
+							.trim();
+					const resume =
+						document.querySelector('app-travel-resume:not(.ion-page-hidden)') ??
+						document.querySelector('app-travel-resume');
 					const b = resume?.querySelector('ion-footer button.btn.finish') as HTMLElement | null;
 					return norm(b?.innerText);
 				})
@@ -297,11 +295,13 @@ export class DriverCargoDeclineHarness {
 
 			// Si no, click (JS, página activa) al siguiente payment button y reevaluar.
 			await driver
-				.execute<boolean, [number]>((idx) => {
-					const resume = document.querySelector('app-travel-resume:not(.ion-page-hidden)') ?? document.querySelector('app-travel-resume');
+				.execute<boolean, [number]>(idx => {
+					const resume =
+						document.querySelector('app-travel-resume:not(.ion-page-hidden)') ??
+						document.querySelector('app-travel-resume');
 					if (!resume) return false;
 					const pays = Array.from(resume.querySelectorAll('.travel-payment button.payment')).filter(
-						(b) => (b as HTMLElement).offsetParent !== null,
+						b => (b as HTMLElement).offsetParent !== null
 					) as HTMLElement[];
 					if (!pays.length) return false;
 					pays[idx % pays.length].click();
@@ -332,12 +332,25 @@ export class DriverCargoDeclineHarness {
 
 			const clicked = await driver
 				.execute<boolean, []>(() => {
-					const norm = (v: unknown) => String(v ?? '').replace(/\s+/g, ' ').trim().toLowerCase();
-					const page = document.querySelector('app-page-travel-confirm:not(.ion-page-hidden)') ?? document.querySelector('app-page-travel-confirm');
+					const norm = (v: unknown) =>
+						String(v ?? '')
+							.replace(/\s+/g, ' ')
+							.trim()
+							.toLowerCase();
+					const page =
+						document.querySelector('app-page-travel-confirm:not(.ion-page-hidden)') ??
+						document.querySelector('app-page-travel-confirm');
 					const scope: ParentNode = page ?? document;
-					const btns = Array.from(scope.querySelectorAll('ion-footer button, button.btn.primary, button')) as HTMLElement[];
-					const b = btns.find((x) => x.offsetParent !== null && /aceptar|buscar pasajero/.test(norm(x.innerText)));
-					if (b) { b.click(); return true; }
+					const btns = Array.from(
+						scope.querySelectorAll('ion-footer button, button.btn.primary, button')
+					) as HTMLElement[];
+					const b = btns.find(
+						x => x.offsetParent !== null && /aceptar|buscar pasajero/.test(norm(x.innerText))
+					);
+					if (b) {
+						b.click();
+						return true;
+					}
 					return false;
 				})
 				.catch(() => false);
@@ -345,7 +358,9 @@ export class DriverCargoDeclineHarness {
 			// Fallback una vez al screen verificado (por si el DOM difiere).
 			if (!clicked && !usedFallback) {
 				usedFallback = true;
-				await this.getRequest().acceptTrip().catch(() => undefined);
+				await this.getRequest()
+					.acceptTrip()
+					.catch(() => undefined);
 			}
 			await driver.pause(2_000);
 		}
@@ -357,15 +372,22 @@ export class DriverCargoDeclineHarness {
 		await this.switchToWebView().catch(() => undefined);
 		const info = await driver
 			.execute<Record<string, unknown>, []>(() => {
-				const norm = (v: unknown) => String(v ?? '').replace(/\s+/g, ' ').trim();
-				const payBtns = Array.from(document.querySelectorAll('.travel-payment button.payment, button.payment')).map((b) => ({
+				const norm = (v: unknown) =>
+					String(v ?? '')
+						.replace(/\s+/g, ' ')
+						.trim();
+				const payBtns = Array.from(
+					document.querySelectorAll('.travel-payment button.payment, button.payment')
+				).map(b => ({
 					iconSrc: b.querySelector('ion-icon')?.getAttribute('src') ?? '',
-					text: norm((b as HTMLElement).innerText),
+					text: norm((b as HTMLElement).innerText)
 				}));
-				const footer = Array.from(document.querySelectorAll('ion-footer button, button.btn.finish')).map((b) => norm((b as HTMLElement).innerText));
+				const footer = Array.from(document.querySelectorAll('ion-footer button, button.btn.finish')).map(b =>
+					norm((b as HTMLElement).innerText)
+				);
 				return { url: window.location.href, payButtonsCount: payBtns.length, payBtns, footer };
 			})
-			.catch((e) => ({ error: String(e) }));
+			.catch(e => ({ error: String(e) }));
 		return JSON.stringify(info);
 	}
 
@@ -383,11 +405,20 @@ export class DriverCargoDeclineHarness {
 			await this.switchToWebView();
 			const state = await driver
 				.execute<{ found: boolean; disabled: boolean; text: string }, []>(() => {
-					const norm = (v: unknown) => String(v ?? '').replace(/\s+/g, ' ').trim();
-					const resume = document.querySelector('app-travel-resume:not(.ion-page-hidden)') ?? document.querySelector('app-travel-resume');
+					const norm = (v: unknown) =>
+						String(v ?? '')
+							.replace(/\s+/g, ' ')
+							.trim();
+					const resume =
+						document.querySelector('app-travel-resume:not(.ion-page-hidden)') ??
+						document.querySelector('app-travel-resume');
 					const b = resume?.querySelector('ion-footer button.btn.finish') as HTMLButtonElement | null;
 					if (!b) return { found: false, disabled: true, text: '' };
-					return { found: true, disabled: b.disabled || b.getAttribute('disabled') !== null, text: norm(b.innerText) };
+					return {
+						found: true,
+						disabled: b.disabled || b.getAttribute('disabled') !== null,
+						text: norm(b.innerText)
+					};
 				})
 				.catch(() => ({ found: false, disabled: true, text: '' }));
 
@@ -395,9 +426,14 @@ export class DriverCargoDeclineHarness {
 				// JS .click() en la página activa (evita interceptación por ion-content).
 				await driver
 					.execute<boolean, []>(() => {
-						const resume = document.querySelector('app-travel-resume:not(.ion-page-hidden)') ?? document.querySelector('app-travel-resume');
+						const resume =
+							document.querySelector('app-travel-resume:not(.ion-page-hidden)') ??
+							document.querySelector('app-travel-resume');
 						const b = resume?.querySelector('ion-footer button.btn.finish') as HTMLElement | null;
-						if (b) { b.click(); return true; }
+						if (b) {
+							b.click();
+							return true;
+						}
 						return false;
 					})
 					.catch(() => false);
@@ -408,7 +444,7 @@ export class DriverCargoDeclineHarness {
 		}
 		throw new Error(
 			'[DriverCargoDeclineHarness] Botón de cierre del resumen ("Ingresar tarjeta") no encontrado o quedó deshabilitado ' +
-			'(totalCostFinal=0). Verificar que el viaje calculó costo al finalizar.',
+				'(totalCostFinal=0). Verificar que el viaje calculó costo al finalizar.'
 		);
 	}
 
@@ -421,7 +457,11 @@ export class DriverCargoDeclineHarness {
 		await this.switchToWebView();
 		const url = await driver.execute<string, []>(() => window.location.href).catch(() => '');
 		let decoded = url;
-		try { decoded = decodeURIComponent(url); } catch { /* keep raw */ }
+		try {
+			decoded = decodeURIComponent(url);
+		} catch {
+			/* keep raw */
+		}
 		const match = decoded.match(/travelId["']?\s*:\s*(\d+)/i);
 		return match ? match[1] : null;
 	}
@@ -452,8 +492,10 @@ export class DriverCargoDeclineHarness {
 		// 3. Caso FUERA DE RANGO: el ConfirmModal de geocerca sigue abierto con "Ingresar código".
 		const geocerca = await driver
 			.execute<boolean, []>(() => {
-				const btns = Array.from(document.querySelectorAll('app-confirm-modal button, ion-modal button')) as HTMLElement[];
-				return btns.some((b) => /ingresar c[oó]digo/i.test(b.textContent ?? ''));
+				const btns = Array.from(
+					document.querySelectorAll('app-confirm-modal button, ion-modal button')
+				) as HTMLElement[];
+				return btns.some(b => /ingresar c[oó]digo/i.test(b.textContent ?? ''));
 			})
 			.catch(() => false);
 
@@ -461,31 +503,40 @@ export class DriverCargoDeclineHarness {
 			await this.clickModalButton(
 				['app-confirm-modal', 'ion-modal'],
 				['Ingresar código', 'Ingresar codigo'],
-				'button.btn.primary',
+				'button.btn.primary'
 			);
 			await driver.pause(1_800);
 		}
 
 		// 4. Modal de código de geocerca (CodeConfirmationModalComponent).
 		const needsCode = await driver
-			.execute<boolean, []>(() => !!document.querySelector('app-code-confirmation-modal, ion-input.code-input, .code-input'))
+			.execute<
+				boolean,
+				[]
+			>(() => !!document.querySelector('app-code-confirmation-modal, ion-input.code-input, .code-input'))
 			.catch(() => false);
 
 		if (needsCode) {
 			const code = (travelId ?? '').replace(/\D/g, '').slice(-4);
 			if (code.length < 4) {
 				throw new Error(
-					`[startTripHandlingGeofence] Geocerca pide código (últimos 4 del travelId) pero no se capturó travelId (got "${travelId}").`,
+					`[startTripHandlingGeofence] Geocerca pide código (últimos 4 del travelId) pero no se capturó travelId (got "${travelId}").`
 				);
 			}
-			console.log(`[DriverCargoDeclineHarness] Geocerca fuera de rango → ingresando código ${code} (last4 travelId ${travelId}).`);
+			console.log(
+				`[DriverCargoDeclineHarness] Geocerca fuera de rango → ingresando código ${code} (last4 travelId ${travelId}).`
+			);
 
 			// Llenar ion-input.code-input (Ionic 6 shadow DOM).
 			await driver.execute((value: string) => {
-				const host = document.querySelector('ion-input.code-input, .code-input') as (HTMLElement & { value?: unknown }) | null;
+				const host = document.querySelector('ion-input.code-input, .code-input') as
+					| (HTMLElement & { value?: unknown })
+					| null;
 				if (!host) return;
 				const root = (host as unknown as { shadowRoot?: ShadowRoot }).shadowRoot;
-				const inner = (root ? root.querySelector('input') : host.querySelector('input')) as HTMLInputElement | null;
+				const inner = (
+					root ? root.querySelector('input') : host.querySelector('input')
+				) as HTMLInputElement | null;
 				const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
 				if (inner && setter) {
 					inner.focus();
@@ -493,7 +544,11 @@ export class DriverCargoDeclineHarness {
 					inner.dispatchEvent(new Event('input', { bubbles: true }));
 					inner.dispatchEvent(new Event('change', { bubbles: true }));
 				}
-				try { host.value = value; } catch { /* noop */ }
+				try {
+					host.value = value;
+				} catch {
+					/* noop */
+				}
 				host.dispatchEvent(new CustomEvent('ionInput', { detail: { value }, bubbles: true }));
 				host.dispatchEvent(new CustomEvent('ionChange', { detail: { value }, bubbles: true }));
 			}, code);
@@ -503,10 +558,12 @@ export class DriverCargoDeclineHarness {
 			const codeConfirmed = await this.clickModalButton(
 				['app-code-confirmation-modal', 'ion-modal'],
 				['Confirmar'],
-				'button.btn.primary',
+				'button.btn.primary'
 			);
 			if (!codeConfirmed) {
-				throw new Error('[startTripHandlingGeofence] No se pudo confirmar el código de geocerca ("Confirmar").');
+				throw new Error(
+					'[startTripHandlingGeofence] No se pudo confirmar el código de geocerca ("Confirmar").'
+				);
 			}
 			await driver.pause(2_000);
 		}
@@ -515,13 +572,13 @@ export class DriverCargoDeclineHarness {
 	/** Click real del botón (btnSel) visible con alguno de los textos dados, dentro de algún containerSel. */
 	private async clickModalButton(containerSelectors: string[], texts: string[], btnSel: string): Promise<boolean> {
 		const driver = this.home.getDriver();
-		const lc = texts.map((t) => t.toLowerCase());
+		const lc = texts.map(t => t.toLowerCase());
 		for (const container of containerSelectors) {
 			const btns = await driver.$$(`${container} ${btnSel}`);
 			for (const btn of btns) {
 				if (!(await btn.isDisplayed().catch(() => false))) continue;
 				const t = (await btn.getText().catch(() => '')).trim().toLowerCase();
-				if (lc.some((x) => t === x || t.includes(x))) {
+				if (lc.some(x => t === x || t.includes(x))) {
 					await btn.click().catch(() => undefined);
 					return true;
 				}
@@ -532,7 +589,7 @@ export class DriverCargoDeclineHarness {
 		for (const btn of anyBtns) {
 			if (!(await btn.isDisplayed().catch(() => false))) continue;
 			const t = (await btn.getText().catch(() => '')).trim().toLowerCase();
-			if (lc.some((x) => t === x || t.includes(x))) {
+			if (lc.some(x => t === x || t.includes(x))) {
 				await btn.click().catch(() => undefined);
 				return true;
 			}
@@ -553,15 +610,24 @@ export class DriverCargoDeclineHarness {
 		const closeTexts = ['Volver', 'Cerrar', 'No', 'Salir', 'Cancelar', 'Aceptar', 'Captar'];
 		for (let i = 0; i < maxRounds; i++) {
 			const closed = await driver
-				.execute<boolean, [string[]]>((texts) => {
+				.execute<boolean, [string[]]>(texts => {
 					const isVisible = (el: HTMLElement) => el.offsetParent !== null;
 					// Solo dentro de modales para no tocar la página TravelConfirmPage.
-					const scopes = Array.from(document.querySelectorAll('ion-modal.show-modal, ion-modal, app-confirm-modal, app-code-confirmation-modal, app-alert-modal, .alert-modal-atention'));
+					const scopes = Array.from(
+						document.querySelectorAll(
+							'ion-modal.show-modal, ion-modal, app-confirm-modal, app-code-confirmation-modal, app-alert-modal, .alert-modal-atention'
+						)
+					);
 					for (const scope of scopes) {
-						const btns = Array.from(scope.querySelectorAll('button, [role="button"], .alert-button')) as HTMLElement[];
+						const btns = Array.from(
+							scope.querySelectorAll('button, [role="button"], .alert-button')
+						) as HTMLElement[];
 						for (const t of texts) {
-							const btn = btns.find((b) => isVisible(b) && (b.textContent ?? '').trim() === t);
-							if (btn) { btn.click(); return true; }
+							const btn = btns.find(b => isVisible(b) && (b.textContent ?? '').trim() === t);
+							if (btn) {
+								btn.click();
+								return true;
+							}
 						}
 					}
 					return false;
@@ -575,7 +641,7 @@ export class DriverCargoDeclineHarness {
 	private async switchToWebView(): Promise<void> {
 		const driver = this.home.getDriver();
 		const contexts = (await driver.getContexts().catch(() => [])) as string[];
-		const webview = contexts.find((c) => c.startsWith('WEBVIEW'));
+		const webview = contexts.find(c => c.startsWith('WEBVIEW'));
 		if (webview) await driver.switchContext(webview);
 	}
 
@@ -588,7 +654,11 @@ export class DriverCargoDeclineHarness {
 	 * bucle, hasta estado terminal. El orden es NO determinista (3DS→firma, firma→3DS, o cierre
 	 * directo) — reacciona a lo que haya, no asume secuencia.
 	 */
-	private async resolvePostCharge(mark: (m: string) => void, expect3ds: boolean, timeout = 120_000): Promise<PaymentOutcome> {
+	private async resolvePostCharge(
+		mark: (m: string) => void,
+		expect3ds: boolean,
+		timeout = 120_000
+	): Promise<PaymentOutcome> {
 		const driver = this.home.getDriver();
 		const deadline = Date.now() + timeout;
 		let signed = false;
@@ -623,7 +693,9 @@ export class DriverCargoDeclineHarness {
 			const alertText = await this.detectBlockingAlert();
 			if (alertText) {
 				mark(`alert: ${alertText.slice(0, 100)}`);
-				await this.getPayment().dismissAttentionModal().catch(() => false);
+				await this.getPayment()
+					.dismissAttentionModal()
+					.catch(() => false);
 				if (/cancelad|rechaz|no autoriz|declin|error|fALL|falló|fallo/i.test(alertText)) {
 					return { status: 'declined', reason: alertText.slice(0, 200) };
 				}
@@ -637,7 +709,10 @@ export class DriverCargoDeclineHarness {
 
 			await driver.pause(1_500);
 		}
-		return { status: 'unknown', raw: `state-machine timeout (3ds=${did3ds}, firma=${signed}, expect3ds=${expect3ds})` };
+		return {
+			status: 'unknown',
+			raw: `state-machine timeout (3ds=${did3ds}, firma=${signed}, expect3ds=${expect3ds})`
+		};
 	}
 
 	/**
@@ -662,12 +737,21 @@ export class DriverCargoDeclineHarness {
 			.catch((): SignerInfo => ({ present: false }));
 
 		if (!info.present) return false;
-		if (!info.rect || info.rect.w < 5) { await driver.pause(1_000); return true; }
+		if (!info.rect || info.rect.w < 5) {
+			await driver.pause(1_000);
+			return true;
+		}
 
 		const { x, y, w, h } = info.rect;
 		const px = (fx: number) => Math.round(x + w * fx);
 		const py = (fy: number) => Math.round(y + h * fy);
-		const stroke = [[0.2, 0.5], [0.35, 0.3], [0.5, 0.7], [0.65, 0.35], [0.8, 0.6]] as const;
+		const stroke = [
+			[0.2, 0.5],
+			[0.35, 0.3],
+			[0.5, 0.7],
+			[0.65, 0.35],
+			[0.8, 0.6]
+		] as const;
 		try {
 			await driver.performActions([
 				{
@@ -677,12 +761,16 @@ export class DriverCargoDeclineHarness {
 					actions: [
 						{ type: 'pointerMove', duration: 0, x: px(stroke[0][0]), y: py(stroke[0][1]) },
 						{ type: 'pointerDown', button: 0 },
-						...stroke.slice(1).map(([fx, fy]) => ({ type: 'pointerMove' as const, duration: 120, x: px(fx), y: py(fy) })),
-						{ type: 'pointerUp', button: 0 },
-					],
-				},
+						...stroke
+							.slice(1)
+							.map(([fx, fy]) => ({ type: 'pointerMove' as const, duration: 120, x: px(fx), y: py(fy) })),
+						{ type: 'pointerUp', button: 0 }
+					]
+				}
 			]);
-			await (driver as unknown as { releaseActions?: () => Promise<void> }).releaseActions?.().catch(() => undefined);
+			await (driver as unknown as { releaseActions?: () => Promise<void> })
+				.releaseActions?.()
+				.catch(() => undefined);
 		} catch (e) {
 			console.warn('[DriverCargoDeclineHarness] firma performActions error:', e instanceof Error ? e.message : e);
 		}
@@ -691,8 +779,13 @@ export class DriverCargoDeclineHarness {
 		// Guardar.
 		await driver
 			.execute<boolean, []>(() => {
-				const btn = document.querySelector('app-page-signer ion-footer ion-row button.btn.primary, app-page-signer ion-footer button.btn.primary') as HTMLElement | null;
-				if (btn && (btn as HTMLButtonElement).offsetParent !== null) { btn.click(); return true; }
+				const btn = document.querySelector(
+					'app-page-signer ion-footer ion-row button.btn.primary, app-page-signer ion-footer button.btn.primary'
+				) as HTMLElement | null;
+				if (btn && (btn as HTMLButtonElement).offsetParent !== null) {
+					btn.click();
+					return true;
+				}
 				return false;
 			})
 			.catch(() => false);
@@ -704,10 +797,13 @@ export class DriverCargoDeclineHarness {
 		await this.switchToWebView();
 		return driver
 			.execute<string, []>(() => {
-				const norm = (v: unknown) => String(v ?? '').replace(/\s+/g, ' ').trim();
+				const norm = (v: unknown) =>
+					String(v ?? '')
+						.replace(/\s+/g, ' ')
+						.trim();
 				const a = document.querySelector('app-alert-modal') as HTMLElement | null;
 				const m = document.querySelector('ion-modal.alert-modal-atention.show-modal') as HTMLElement | null;
-				const el = (a && a.offsetParent !== null) ? a : (m && m.offsetParent !== null ? m : null);
+				const el = a && a.offsetParent !== null ? a : m && m.offsetParent !== null ? m : null;
 				return el ? norm(el.innerText ?? el.textContent) : '';
 			})
 			.catch(() => '');
@@ -724,13 +820,17 @@ export class DriverCargoDeclineHarness {
 		while (Date.now() < deadline) {
 			await this.switchToWebView();
 			const clicked = await driver
-				.execute<boolean, [string[]]>((sels) => {
+				.execute<boolean, [string[]]>(sels => {
 					const vis = (el: Element) => (el as HTMLElement).offsetParent !== null;
 					for (const sel of sels) {
 						// Preferir dentro de una página/host activo (no oculto).
 						const scoped = sel.replace(/^(app-[a-z-]+)/i, '$1:not(.ion-page-hidden)');
-						const el = (document.querySelector(scoped) || document.querySelector(sel)) as HTMLElement | null;
-						if (el && vis(el) && !(el as HTMLButtonElement).disabled) { el.click(); return true; }
+						const el = (document.querySelector(scoped) ||
+							document.querySelector(sel)) as HTMLElement | null;
+						if (el && vis(el) && !(el as HTMLButtonElement).disabled) {
+							el.click();
+							return true;
+						}
 					}
 					return false;
 				}, selectors)
@@ -738,7 +838,9 @@ export class DriverCargoDeclineHarness {
 			if (clicked) return;
 			await driver.pause(700);
 		}
-		throw new Error(`[jsTapActive] No se pudo clickear "${label}" (selectores: ${selectors.join(' | ')}) en ${timeout}ms.`);
+		throw new Error(
+			`[jsTapActive] No se pudo clickear "${label}" (selectores: ${selectors.join(' | ')}) en ${timeout}ms.`
+		);
 	}
 
 	/** JS .click() del botón primario "Si" del app-confirm-modal (¿empezar/finalizar viaje?). */
@@ -750,14 +852,24 @@ export class DriverCargoDeclineHarness {
 			const clicked = await driver
 				.execute<boolean, []>(() => {
 					const vis = (el: Element) => (el as HTMLElement).offsetParent !== null;
-					const btns = Array.from(document.querySelectorAll('app-confirm-modal button.btn.primary, ion-modal app-confirm-modal button.btn.primary')) as HTMLElement[];
-					const si = btns.find((b) => vis(b) && /^s[ií]$/i.test((b.textContent ?? '').trim()));
-					const target = si ?? btns.find((b) => vis(b));
-					if (target) { target.click(); return true; }
+					const btns = Array.from(
+						document.querySelectorAll(
+							'app-confirm-modal button.btn.primary, ion-modal app-confirm-modal button.btn.primary'
+						)
+					) as HTMLElement[];
+					const si = btns.find(b => vis(b) && /^s[ií]$/i.test((b.textContent ?? '').trim()));
+					const target = si ?? btns.find(b => vis(b));
+					if (target) {
+						target.click();
+						return true;
+					}
 					return false;
 				})
 				.catch(() => false);
-			if (clicked) { await driver.pause(1_500); return true; }
+			if (clicked) {
+				await driver.pause(1_500);
+				return true;
+			}
 			await driver.pause(500);
 		}
 		return false;
@@ -822,7 +934,7 @@ export class DriverCargoDeclineHarness {
 export async function runDriverCargoDeclinePhase(
 	config: MobileActorConfig,
 	card: CardData,
-	options: DriverCargoDeclineOptions = {},
+	options: DriverCargoDeclineOptions = {}
 ): Promise<DriverCargoDeclineResult> {
 	const harness = new DriverCargoDeclineHarness(config);
 	try {

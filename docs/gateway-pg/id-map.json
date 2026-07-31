@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-28T19:39:19.623Z",
+  "generated_at": "2026-07-31T19:22:55.779Z",
   "generator": "scripts/ai/build-id-map.mjs",
   "notes": [
     "SoT central de trazabilidad TS-ID ↔ MG-key ↔ spec (Fase 4, 2026-07-26).",
@@ -15,31 +15,31 @@
     "stripe": {
       "total": 224,
       "confirmed": 12,
-      "needs-review": 157,
-      "unmapped": 55,
-      "with_mg_key": 169,
-      "with_specs": 169,
-      "with_executable_specs": 169,
+      "needs-review": 149,
+      "unmapped": 63,
+      "with_mg_key": 161,
+      "with_specs": 161,
+      "with_executable_specs": 161,
       "with_fixme_only_specs": 0
     },
     "authorize": {
       "total": 164,
       "confirmed": 23,
-      "needs-review": 2,
-      "unmapped": 139,
-      "with_mg_key": 10,
-      "with_specs": 25,
-      "with_executable_specs": 17,
+      "needs-review": 1,
+      "unmapped": 140,
+      "with_mg_key": 9,
+      "with_specs": 24,
+      "with_executable_specs": 16,
       "with_fixme_only_specs": 8
     },
     "ebizcharge": {
       "total": 111,
-      "confirmed": 18,
+      "confirmed": 17,
       "needs-review": 0,
-      "unmapped": 93,
-      "with_mg_key": 0,
-      "with_specs": 18,
-      "with_executable_specs": 11,
+      "unmapped": 94,
+      "with_mg_key": 4,
+      "with_specs": 17,
+      "with_executable_specs": 10,
       "with_fixme_only_specs": 7
     }
   },
@@ -201,17 +201,14 @@
       "gateway": "authorize",
       "stripe_ref": "TS-STRIPE-TC1049",
       "tcid": "TC1011",
-      "mg_key": "MG-158",
+      "mg_key": null,
       "spec_paths": [
-        "tests/features/gateway-pg/specs/_parametrized/hold-happy-no3ds.parametrized.spec.ts",
         "tests/features/gateway-pg/specs/authorize/web/carrier/hold/personal-hold-on-happy.spec.ts"
       ],
       "fixme_spec_paths": [],
       "spec_coverage": "executable",
-      "status": "needs-review",
-      "sources": [
-        "tms describe-level en tests/features/gateway-pg/specs/_parametrized/hold-happy-no3ds.parametrized.spec.ts (heurístico)"
-      ]
+      "status": "confirmed",
+      "sources": []
     },
     {
       "ts_id": "TS-AUTHORIZE-TC1012",
@@ -741,12 +738,10 @@
       "stripe_ref": "TS-STRIPE-TC1081",
       "tcid": "TC1081",
       "mg_key": null,
-      "spec_paths": [
-        "tests/features/gateway-pg/specs/authorize/web/carrier/cargo-a-bordo/authorize-cargo-a-bordo.spec.ts"
-      ],
+      "spec_paths": [],
       "fixme_spec_paths": [],
-      "spec_coverage": "executable",
-      "status": "confirmed",
+      "spec_coverage": "none",
+      "status": "unmapped",
       "sources": []
     },
     {
@@ -2322,14 +2317,16 @@
       "gateway": "ebizcharge",
       "stripe_ref": "TS-STRIPE-TC1002",
       "tcid": "TC1051",
-      "mg_key": null,
+      "mg_key": "MG-141",
       "spec_paths": [
         "tests/features/gateway-pg/specs/ebizcharge/web/carrier/config/ebizcharge-link-unlink.spec.ts"
       ],
       "fixme_spec_paths": [],
       "spec_coverage": "executable",
       "status": "confirmed",
-      "sources": []
+      "sources": [
+        "xray-keys.ts cfg.linkValid"
+      ]
     },
     {
       "ts_id": "TS-EBIZ-TC1052",
@@ -2350,42 +2347,48 @@
       "gateway": "ebizcharge",
       "stripe_ref": "TS-STRIPE-TC1004",
       "tcid": "TC1053",
-      "mg_key": null,
+      "mg_key": "MG-165",
       "spec_paths": [
         "tests/features/gateway-pg/specs/ebizcharge/web/carrier/config/ebizcharge-link-unlink.spec.ts"
       ],
       "fixme_spec_paths": [],
       "spec_coverage": "executable",
       "status": "confirmed",
-      "sources": []
+      "sources": [
+        "xray-keys.ts cfg.cancelUnlink"
+      ]
     },
     {
       "ts_id": "TS-EBIZ-TC1054",
       "gateway": "ebizcharge",
       "stripe_ref": "TS-STRIPE-TC1005",
       "tcid": "TC1054",
-      "mg_key": null,
+      "mg_key": "MG-165",
       "spec_paths": [
         "tests/features/gateway-pg/specs/ebizcharge/web/carrier/config/ebizcharge-link-unlink.spec.ts"
       ],
       "fixme_spec_paths": [],
       "spec_coverage": "executable",
       "status": "confirmed",
-      "sources": []
+      "sources": [
+        "xray-keys.ts cfg.unlink"
+      ]
     },
     {
       "ts_id": "TS-EBIZ-TC1055",
       "gateway": "ebizcharge",
       "stripe_ref": "TS-STRIPE-TC1006",
       "tcid": "TC1055",
-      "mg_key": null,
+      "mg_key": "MG-143",
       "spec_paths": [
         "tests/features/gateway-pg/specs/ebizcharge/web/carrier/config/ebizcharge-link-unlink.spec.ts"
       ],
       "fixme_spec_paths": [],
       "spec_coverage": "executable",
       "status": "confirmed",
-      "sources": []
+      "sources": [
+        "xray-keys.ts cfg.exclusivity"
+      ]
     },
     {
       "ts_id": "TS-EBIZ-TC1056",
@@ -2705,12 +2708,10 @@
       "stripe_ref": "TS-STRIPE-TC1081",
       "tcid": "TC1108",
       "mg_key": null,
-      "spec_paths": [
-        "tests/features/gateway-pg/specs/ebizcharge/web/carrier/cargo-a-bordo/ebizcharge-cargo-a-bordo.spec.ts"
-      ],
+      "spec_paths": [],
       "fixme_spec_paths": [],
-      "spec_coverage": "executable",
-      "status": "confirmed",
+      "spec_coverage": "none",
+      "status": "unmapped",
       "sources": []
     },
     {
@@ -3488,8 +3489,7 @@
       "tcid": "P2-TC001",
       "mg_key": "MG-158",
       "spec_paths": [
-        "tests/features/gateway-pg/specs/stripe/web/contractor/colaborador-hold-no3ds.spec.ts",
-        "tests/features/gateway-pg/specs/stripe/web/contractor/vinculacion-tarjeta.spec.ts"
+        "tests/features/gateway-pg/specs/stripe/web/contractor/colaborador-hold-no3ds.spec.ts"
       ],
       "fixme_spec_paths": [],
       "spec_coverage": "executable",
@@ -5139,128 +5139,96 @@
       "gateway": "stripe",
       "stripe_ref": null,
       "tcid": "TC1017",
-      "mg_key": "MG-158",
-      "spec_paths": [
-        "tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-no3ds.e2e.spec.ts"
-      ],
+      "mg_key": null,
+      "spec_paths": [],
       "fixme_spec_paths": [],
-      "spec_coverage": "executable",
-      "status": "needs-review",
-      "sources": [
-        "tms describe-level en tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-no3ds.e2e.spec.ts (heurístico)"
-      ]
+      "spec_coverage": "none",
+      "status": "unmapped",
+      "sources": []
     },
     {
       "ts_id": "TS-STRIPE-TC1018",
       "gateway": "stripe",
       "stripe_ref": null,
       "tcid": "TC1018",
-      "mg_key": "MG-158",
-      "spec_paths": [
-        "tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-no3ds.e2e.spec.ts"
-      ],
+      "mg_key": null,
+      "spec_paths": [],
       "fixme_spec_paths": [],
-      "spec_coverage": "executable",
-      "status": "needs-review",
-      "sources": [
-        "tms describe-level en tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-no3ds.e2e.spec.ts (heurístico)"
-      ]
+      "spec_coverage": "none",
+      "status": "unmapped",
+      "sources": []
     },
     {
       "ts_id": "TS-STRIPE-TC1019",
       "gateway": "stripe",
       "stripe_ref": null,
       "tcid": "TC1019",
-      "mg_key": "MG-158",
-      "spec_paths": [
-        "tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-no3ds.e2e.spec.ts"
-      ],
+      "mg_key": null,
+      "spec_paths": [],
       "fixme_spec_paths": [],
-      "spec_coverage": "executable",
-      "status": "needs-review",
-      "sources": [
-        "tms describe-level en tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-no3ds.e2e.spec.ts (heurístico)"
-      ]
+      "spec_coverage": "none",
+      "status": "unmapped",
+      "sources": []
     },
     {
       "ts_id": "TS-STRIPE-TC1020",
       "gateway": "stripe",
       "stripe_ref": null,
       "tcid": "TC1020",
-      "mg_key": "MG-158",
-      "spec_paths": [
-        "tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-no3ds.e2e.spec.ts"
-      ],
+      "mg_key": null,
+      "spec_paths": [],
       "fixme_spec_paths": [],
-      "spec_coverage": "executable",
-      "status": "needs-review",
-      "sources": [
-        "tms describe-level en tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-no3ds.e2e.spec.ts (heurístico)"
-      ]
+      "spec_coverage": "none",
+      "status": "unmapped",
+      "sources": []
     },
     {
       "ts_id": "TS-STRIPE-TC1021",
       "gateway": "stripe",
       "stripe_ref": null,
       "tcid": "TC1021",
-      "mg_key": "MG-158",
-      "spec_paths": [
-        "tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-3ds.e2e.spec.ts"
-      ],
+      "mg_key": null,
+      "spec_paths": [],
       "fixme_spec_paths": [],
-      "spec_coverage": "executable",
-      "status": "needs-review",
-      "sources": [
-        "tms describe-level en tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-3ds.e2e.spec.ts (heurístico)"
-      ]
+      "spec_coverage": "none",
+      "status": "unmapped",
+      "sources": []
     },
     {
       "ts_id": "TS-STRIPE-TC1022",
       "gateway": "stripe",
       "stripe_ref": null,
       "tcid": "TC1022",
-      "mg_key": "MG-158",
-      "spec_paths": [
-        "tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-3ds.e2e.spec.ts"
-      ],
+      "mg_key": null,
+      "spec_paths": [],
       "fixme_spec_paths": [],
-      "spec_coverage": "executable",
-      "status": "needs-review",
-      "sources": [
-        "tms describe-level en tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-3ds.e2e.spec.ts (heurístico)"
-      ]
+      "spec_coverage": "none",
+      "status": "unmapped",
+      "sources": []
     },
     {
       "ts_id": "TS-STRIPE-TC1023",
       "gateway": "stripe",
       "stripe_ref": null,
       "tcid": "TC1023",
-      "mg_key": "MG-158",
-      "spec_paths": [
-        "tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-3ds.e2e.spec.ts"
-      ],
+      "mg_key": null,
+      "spec_paths": [],
       "fixme_spec_paths": [],
-      "spec_coverage": "executable",
-      "status": "needs-review",
-      "sources": [
-        "tms describe-level en tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-3ds.e2e.spec.ts (heurístico)"
-      ]
+      "spec_coverage": "none",
+      "status": "unmapped",
+      "sources": []
     },
     {
       "ts_id": "TS-STRIPE-TC1024",
       "gateway": "stripe",
       "stripe_ref": null,
       "tcid": "TC1024",
-      "mg_key": "MG-158",
-      "spec_paths": [
-        "tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-3ds.e2e.spec.ts"
-      ],
+      "mg_key": null,
+      "spec_paths": [],
       "fixme_spec_paths": [],
-      "spec_coverage": "executable",
-      "status": "needs-review",
-      "sources": [
-        "tms describe-level en tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-3ds.e2e.spec.ts (heurístico)"
-      ]
+      "spec_coverage": "none",
+      "status": "unmapped",
+      "sources": []
     },
     {
       "ts_id": "TS-STRIPE-TC1025",
@@ -5624,16 +5592,14 @@
       "mg_key": "MG-158",
       "spec_paths": [
         "tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-no3ds.spec.ts",
-        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/hold-capture.spec.ts",
-        "tests/features/gateway-pg/specs/_parametrized/hold-happy-no3ds.parametrized.spec.ts"
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/hold-capture.spec.ts"
       ],
       "fixme_spec_paths": [],
       "spec_coverage": "executable",
       "status": "needs-review",
       "sources": [
         "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-no3ds.spec.ts (heurístico)",
-        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/hold-capture.spec.ts (heurístico)",
-        "tms describe-level en tests/features/gateway-pg/specs/_parametrized/hold-happy-no3ds.parametrized.spec.ts (heurístico)"
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/hold-capture.spec.ts (heurístico)"
       ]
     },
     {

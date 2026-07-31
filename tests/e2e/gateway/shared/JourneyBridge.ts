@@ -16,7 +16,7 @@ import { randomUUID } from 'node:crypto';
 import {
 	writeJourneyContext,
 	readJourneyContext,
-	findLatestJourneyContextId,
+	findLatestJourneyContextId
 } from '../../../features/gateway-pg/context/gatewayJourneyContext';
 import type { GatewayPgJourneyContext } from '../../../features/gateway-pg/contracts/gateway-pg.types';
 import type { GatewayFlowConfig, MobilePhaseResult } from './e2eFlowConfig';
@@ -41,40 +41,40 @@ function buildJourneyId(config: GatewayFlowConfig): string {
  * Status: 'web-created'.
  */
 export async function initJourneyContext(
-	config:     GatewayFlowConfig,
-	testCaseId: string,
+	config: GatewayFlowConfig,
+	testCaseId: string
 ): Promise<GatewayPgJourneyContext> {
 	const journeyId = buildJourneyId(config);
-	const now       = nowIso();
+	const now = nowIso();
 
 	const context: GatewayPgJourneyContext = {
 		journeyId,
 		testCaseId,
-		flowType:    'carrier-web-driver-app',
-		gateway:     config.gateway,
-		portal:      'carrier',
-		role:        'carrier',
+		flowType: 'carrier-web-driver-app',
+		gateway: config.gateway,
+		portal: 'carrier',
+		role: 'carrier',
 		currentActor: 'carrier-dispatcher',
-		phase:       'web_trip_creation',
-		status:      'web-created',
-		createdAt:   now,
-		updatedAt:   now,
-		sharedCardForm:          false,
+		phase: 'web_trip_creation',
+		status: 'web-created',
+		createdAt: now,
+		updatedAt: now,
+		sharedCardForm: false,
 		requiresMobileCompletion: true,
-		requires3ds:             config.requires3DS,
-		tags:                    ['@e2e', `@${config.gateway}`, config.holdEnabled ? '@hold' : '@no-hold'],
+		requires3ds: config.requires3DS,
+		tags: ['@e2e', `@${config.gateway}`, config.holdEnabled ? '@hold' : '@no-hold'],
 		driverHandoff: {
-			actor:           'driver',
-			platform:        'android',
-			status:          'pending',
-			appPathEnv:      'ANDROID_DRIVER_APP_PATH',
-			appiumServerEnv: 'APPIUM_SERVER_URL',
+			actor: 'driver',
+			platform: 'android',
+			status: 'pending',
+			appPathEnv: 'ANDROID_DRIVER_APP_PATH',
+			appiumServerEnv: 'APPIUM_SERVER_URL'
 		},
-		validationSources:   [],
+		validationSources: [],
 		gatewaySpecificTodos: [],
-		mobileTodos:         [],
-		validationTodos:     [],
-		notes:               [`Config: ${config.label}`],
+		mobileTodos: [],
+		validationTodos: [],
+		notes: [`Config: ${config.label}`]
 	};
 
 	await writeJourneyContext(context);
@@ -85,20 +85,17 @@ export async function initJourneyContext(
  * Marca el journey como listo para el driver una vez que la fase web
  * creó el viaje exitosamente y extrajo el tripId.
  */
-export async function markReadyForDriver(
-	journeyId: string,
-	tripId:    string,
-): Promise<GatewayPgJourneyContext> {
+export async function markReadyForDriver(journeyId: string, tripId: string): Promise<GatewayPgJourneyContext> {
 	const ctx = await readJourneyContext(journeyId);
 
 	const updated: GatewayPgJourneyContext = {
 		...ctx,
 		tripId,
-		phase:         'driver_trip_acceptance',
-		status:        'ready-for-driver',
-		currentActor:  'driver',
-		updatedAt:     nowIso(),
-		driverHandoff: { ...ctx.driverHandoff, status: 'ready' },
+		phase: 'driver_trip_acceptance',
+		status: 'ready-for-driver',
+		currentActor: 'driver',
+		updatedAt: nowIso(),
+		driverHandoff: { ...ctx.driverHandoff, status: 'ready' }
 	};
 
 	await writeJourneyContext(updated);
@@ -109,25 +106,23 @@ export async function markReadyForDriver(
  * Escribe el resultado de la fase mobile en el journeyContext.
  * Llamado desde mobile-phase.ts al finalizar el harness.
  */
-export async function markMobileCompleted(
-	result: MobilePhaseResult,
-): Promise<GatewayPgJourneyContext> {
+export async function markMobileCompleted(result: MobilePhaseResult): Promise<GatewayPgJourneyContext> {
 	const ctx = await readJourneyContext(result.journeyId);
 
 	const updated: GatewayPgJourneyContext = {
 		...ctx,
-		phase:        'payment_validation',
-		status:       result.status === 'driver-completed' ? 'driver-completed' : 'failed',
+		phase: 'payment_validation',
+		status: result.status === 'driver-completed' ? 'driver-completed' : 'failed',
 		currentActor: 'carrier-dispatcher',
-		updatedAt:    nowIso(),
+		updatedAt: nowIso(),
 		driverHandoff: { ...ctx.driverHandoff, status: 'completed' },
 		notes: [
 			...ctx.notes,
 			`Driver total: ${result.totalAmount}`,
 			`Payment method: ${result.paymentMethod}`,
 			`Checkpoints: ${result.checkpoints.join(' → ')}`,
-			...(result.errorMessage ? [`Error: ${result.errorMessage}`] : []),
-		],
+			...(result.errorMessage ? [`Error: ${result.errorMessage}`] : [])
+		]
 	};
 
 	await writeJourneyContext(updated);
@@ -137,9 +132,7 @@ export async function markMobileCompleted(
 /**
  * Lee el journeyContext final para que el spec Playwright pueda asertar.
  */
-export async function readFinalContext(
-	journeyId: string,
-): Promise<GatewayPgJourneyContext> {
+export async function readFinalContext(journeyId: string): Promise<GatewayPgJourneyContext> {
 	return readJourneyContext(journeyId);
 }
 

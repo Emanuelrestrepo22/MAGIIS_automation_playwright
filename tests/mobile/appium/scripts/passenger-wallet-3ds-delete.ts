@@ -18,7 +18,11 @@ import { STRIPE_TEST_CARDS } from '../../../features/gateway-pg/data/stripe-card
 import { getPassengerAppConfig } from '../config/appiumRuntime';
 import { dumpAppiumState } from '../helpers/appiumDebug';
 import { handleThreeDsPopup } from '../helpers/threeDsChallenge';
-import { clearWebViewNetworkCapture, dumpWebViewNetworkCapture, installWebViewNetworkCapture } from '../helpers/webViewNetworkCapture';
+import {
+	clearWebViewNetworkCapture,
+	dumpWebViewNetworkCapture,
+	installWebViewNetworkCapture
+} from '../helpers/webViewNetworkCapture';
 import { PassengerTripHappyPathHarness } from '../harness/PassengerTripHappyPathHarness';
 import type { CardInput } from '../passenger/PassengerWalletScreen';
 
@@ -26,12 +30,20 @@ const log = (message: string): void => {
 	console.log(`[passenger-wallet-3ds-delete] ${message}`);
 };
 
-async function removeStaleThreeDsOverlay(driver: ReturnType<PassengerTripHappyPathHarness['getDriver']>): Promise<void> {
+async function removeStaleThreeDsOverlay(
+	driver: ReturnType<PassengerTripHappyPathHarness['getDriver']>
+): Promise<void> {
 	try {
 		await driver.execute(() => {
-			const overlays = Array.from(document.querySelectorAll('div[data-react-aria-top-layer], ion-modal, [class*="3ds"], [class*="stripe-challenge"]')) as HTMLElement[];
+			const overlays = Array.from(
+				document.querySelectorAll(
+					'div[data-react-aria-top-layer], ion-modal, [class*="3ds"], [class*="stripe-challenge"]'
+				)
+			) as HTMLElement[];
 			for (const overlay of overlays) {
-				const challengeFrame = overlay.querySelector('iframe[src*="three-ds-2-challenge"], iframe[src*="stripe-challenge-frame"], iframe[src*="3d_secure_2"], iframe[src*="challenge"]');
+				const challengeFrame = overlay.querySelector(
+					'iframe[src*="three-ds-2-challenge"], iframe[src*="stripe-challenge-frame"], iframe[src*="3d_secure_2"], iframe[src*="challenge"]'
+				);
 				if (challengeFrame) {
 					overlay.remove();
 				}
@@ -78,10 +90,17 @@ async function run(): Promise<void> {
 		await dumpAppiumState(activeDriver, 'passenger-personal-wallet-3ds-delete-before-save');
 
 		log('Preflighting 3DS overlay');
-		const preflightThreeDsResult = await handleThreeDsPopup(activeDriver, label => dumpAppiumState(activeDriver, label), 5_000, 'passenger-personal-wallet-3ds-delete-preflight');
+		const preflightThreeDsResult = await handleThreeDsPopup(
+			activeDriver,
+			label => dumpAppiumState(activeDriver, label),
+			5_000,
+			'passenger-personal-wallet-3ds-delete-preflight'
+		);
 		log(`Preflight 3DS result: ${preflightThreeDsResult}`);
 		if (preflightThreeDsResult === 'failed') {
-			log('Preflight 3DS overlay was not cleared; continuing because the flow may still proceed once the add form is open');
+			log(
+				'Preflight 3DS overlay was not cleared; continuing because the flow may still proceed once the add form is open'
+			);
 			await removeStaleThreeDsOverlay(activeDriver);
 		}
 
@@ -89,23 +108,34 @@ async function run(): Promise<void> {
 		await harness.ensureWalletCard(walletCard);
 		await dumpAppiumState(activeDriver, 'passenger-personal-wallet-3ds-delete-after-save');
 
-		const addNetworkPath = await dumpWebViewNetworkCapture(activeDriver, 'passenger-personal-wallet-3ds-add-network');
+		const addNetworkPath = await dumpWebViewNetworkCapture(
+			activeDriver,
+			'passenger-personal-wallet-3ds-add-network'
+		);
 		log(`Add network capture saved: ${addNetworkPath}`);
 
 		await clearWebViewNetworkCapture(activeDriver);
 		log('Deleting card');
 		await wallet.deleteCard(card.last4);
 		await dumpAppiumState(activeDriver, 'passenger-personal-wallet-3ds-delete-after-delete');
-		const deleteNetworkPath = await dumpWebViewNetworkCapture(activeDriver, 'passenger-personal-wallet-3ds-delete-network');
+		const deleteNetworkPath = await dumpWebViewNetworkCapture(
+			activeDriver,
+			'passenger-personal-wallet-3ds-delete-network'
+		);
 		log(`Delete network capture saved: ${deleteNetworkPath}`);
 	} catch (error) {
 		if (driver !== null) {
 			const activeDriver = driver;
 			try {
-				const failureNetworkPath = await dumpWebViewNetworkCapture(activeDriver, 'passenger-personal-wallet-3ds-delete-failure-network');
+				const failureNetworkPath = await dumpWebViewNetworkCapture(
+					activeDriver,
+					'passenger-personal-wallet-3ds-delete-failure-network'
+				);
 				log(`Failure network capture saved: ${failureNetworkPath}`);
 			} catch (captureError) {
-				log(`Failure network capture could not be saved: ${captureError instanceof Error ? captureError.message : String(captureError)}`);
+				log(
+					`Failure network capture could not be saved: ${captureError instanceof Error ? captureError.message : String(captureError)}`
+				);
 			}
 		}
 

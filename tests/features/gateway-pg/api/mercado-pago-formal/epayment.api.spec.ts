@@ -43,12 +43,14 @@ const CREDS_READY = Boolean(process.env.USER_CARRIER && process.env.PASS_CARRIER
 const MP_UAT_EXEC = process.env.MP_SANDBOX_TRANSACTS === '1';
 
 test.describe(`[MG · E/F/COB][API] ${mercadoPagoGatewayAdapter.displayName} — ePayment → finalize @regression @gateway @gateway-pg @mercadopago`, {
+	// MG-162 y MG-164 salieron de esta lista: ningún test de este spec valida idempotencia (F-02) ni
+	// finalize-falla/webhook-ausente (F-04). MG-146 entra porque `[F-02]` de acá SÍ valida el gate
+	// "operar sin pasarela conectada" (B-01) con su 412 CARRIER_NOT_LINKED.
 	annotation: [
 		{ type: 'tms', description: 'MG-160' },
 		{ type: 'tms', description: 'MG-161' },
-		{ type: 'tms', description: 'MG-162' },
 		{ type: 'tms', description: 'MG-163' },
-		{ type: 'tms', description: 'MG-164' }
+		{ type: 'tms', description: 'MG-146' }
 	]
 }, () => {
 	test.skip(!CREDS_READY, 'Faltan USER_CARRIER / PASS_CARRIER / BASE_URL (carrier ARG) — configurar .env.test');
@@ -102,8 +104,9 @@ test.describe(`[MG · E/F/COB][API] ${mercadoPagoGatewayAdapter.displayName} —
 	});
 
 	// F-01 — MG-161: alta Cargo a Bordo (sin hold) → startEpayment + finalize aprobado.
+	// MG-162 removido: cobrar UNA vez con éxito no acredita "un reintento no genera doble cargo".
 	test('[F-01] startEpayment (sin hold) + finalize → aprobado', {
-		annotation: [{ type: 'tms', description: 'MG-161' }, { type: 'tms', description: 'MG-162' }]
+		annotation: [{ type: 'tms', description: 'MG-161' }]
 	}, async ({ request }) => {
 		test.skip(!CARRIER_ACCOUNT_ID || !PASSENGER_ID || !MP_CARD_ID, 'Faltan CARRIER_ID / MP_PASSENGER_ID / MP_CARD_ID (datos de UAT) [confirmar].');
 		const api = new EpaymentApi({ request });
@@ -147,9 +150,12 @@ test.describe(`[MG · E/F/COB][API] ${mercadoPagoGatewayAdapter.displayName} —
 		expect(res.body?.status, `esperado rejected, body=${res.raw}`).toBe('rejected');
 	});
 
-	// F-02 — MG-164: cobro sobre carrier SIN pasarela vinculada → 412 CARRIER_NOT_LINKED.
+	// MG-146 (B-01), no MG-164: el Test que dice "el sistema bloquea operar cuando no hay pasarela
+	// conectada" es B-01, y su Step 2 es "intentar una operación de dinero sobre ese carrier" — este
+	// 412 CARRIER_NOT_LINKED es su oráculo exacto. MG-164 (F-04) es finalize-falla/webhook-ausente.
+	// El id local del test se deja en `[F-02]` para no romper greps ni el histórico de corridas.
 	test('[F-02] carrier sin pasarela vinculada → 412 CARRIER_NOT_LINKED', {
-		annotation: [{ type: 'tms', description: 'MG-164' }]
+		annotation: [{ type: 'tms', description: 'MG-146' }]
 	}, async ({ request }) => {
 		test.skip(!UNLINKED_CARRIER_ID || !PASSENGER_ID, 'Faltan MP_UNLINKED_CARRIER_ID / MP_PASSENGER_ID (carrier sin MP en UAT) [confirmar].');
 		const res = await new EpaymentApi({ request }).startEpayment({

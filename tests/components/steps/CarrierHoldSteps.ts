@@ -27,7 +27,7 @@ import {
 	CarrierDashboardPage,
 	CarrierNewTravelPage,
 	CarrierOperationalPreferencesPage,
-	CarrierTravelManagementPage,
+	CarrierTravelManagementPage
 } from '@ui/carrier';
 import { cardFormFor } from '@ui/carrier/card-forms';
 import { debugLog } from '@helpers/index';
@@ -35,9 +35,19 @@ import { resolveCard } from '@fixtures/gateways/_shared';
 import { getGatewayPgAdapter } from '@features/gateway-pg/helpers/adapters';
 import { expectNoThreeDSModal, loginAsDispatcher } from '@features/gateway-pg/fixtures/gateway.fixtures';
 import { validateAndSelectMercadoPagoCard } from '@features/gateway-pg/helpers/mercadoPago.helpers';
-import { setHoldViaApi } from '@features/gateway-pg/helpers/parameters-api';
-import { validateCardPrecondition, type CardPreconditionResult } from '@features/gateway-pg/helpers/card-precondition';
-import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '@features/gateway-pg/helpers/travel-cleanup';
+import { getCarrierParameters, readHoldRaw, setHoldViaApi } from '@features/gateway-pg/helpers/parameters-api';
+import { assertAuthorizeAccountMeasuresRealAuthorizations } from '@features/gateway-pg/helpers/authorize-account-guard';
+import {
+	cleanupGatewayCardByLast4,
+	extractAuthToken,
+	validateCardPrecondition,
+	type CardPreconditionResult
+} from '@features/gateway-pg/helpers/card-precondition';
+import {
+	captureCreatedTravelId,
+	cancelTravelIfCreated,
+	type TravelIdRef
+} from '@features/gateway-pg/helpers/travel-cleanup';
 import { waitForTravelCreation } from '@features/gateway-pg/helpers/stripe.helpers';
 
 export type CardFlow = 'new' | 'existing';
@@ -72,8 +82,9 @@ export type HoldRunOptions = {
 	hold: 'on' | 'off';
 	/**
 	 * true = aprueba el modal 3DS; false = verifica que NO aparezca.
-	 * S7: el branch 3DS solo aplica si además `adapter.requires3ds` (solo Stripe) —
-	 * para las demás pasarelas el flujo asevera la AUSENCIA del modal.
+	 * S7 + post-review A5: 3DS es EXCLUSIVO de Stripe — `threeDs: true` con un adapter
+	 * sin 3DS LANZA (fail-fast; el caso está excluido de la matriz de esa pasarela,
+	 * no se degrada silenciosamente a no-3DS).
 	 */
 	threeDs: boolean;
 	/** Resolver `cardFlow` vía API (default true). false = preferSavedCard=false directo. */
@@ -125,18 +136,33 @@ export class CarrierHoldSteps extends UiBase {
 		await loginAsDispatcher(this.page, gateway ? { gateway } : undefined);
 	}
 
-	/** Habilita el hold vía API (BL-i18n/v1.72.8) y valida los parámetros posteados. */
+	/** Habilita el hold vía API (BL-i18n/v1.72.8) y verifica el efecto con read-back CRUDO (GET posterior). */
 	async enableHoldViaApi(): Promise<void> {
-		const params = await setHoldViaApi(this.page, true);
-		expect(params.enableCreditCardHold).toBe(true);
-		expect(params.ccHoldPreviousHs).toBe(2);
-		expect(params.ccHoldCoverage).toBe(10);
+		await setHoldViaApi(this.page, true);
+		// Read-back CRUDO como oráculo (auditoría R2): assertar el payload que `setHoldViaApi`
+		// acababa de mutar era tautológico. UN solo GET posterior y los 3 campos de hold se
+		// assertan desde ESE objeto leído del backend — campo ausente (undefined) = fallo.
+		const persisted = await getCarrierParameters(this.page);
+		expect(persisted.enableCreditCardHold, 'read-back API: enableCreditCardHold debe quedar true tras el POST (campo ausente = fallo)').toBe(true);
+		expect(persisted.ccHoldPreviousHs, 'read-back API: ccHoldPreviousHs debe persistir en 2 (campo ausente = fallo)').toBe(2);
+		expect(persisted.ccHoldCoverage, 'read-back API: ccHoldCoverage debe persistir en 10 (campo ausente = fallo)').toBe(10);
 	}
 
-	/** Deshabilita el hold vía API y valida el parámetro posteado. */
+	/**
+	 * Deshabilita el hold vía API y verifica el efecto con READ-BACK CRUDO (GET posterior).
+	 *
+	 * Endurecimiento de oráculo (auditoría R2): el assert anterior sobre el payload
+	 * retornado por `setHoldViaApi` era tautológico — validaba el objeto que la propia
+	 * función acababa de mutar, no el estado persistido en el backend. El read-back usa
+	 * `readHoldRaw` (sin coerción): un campo ausente FALLA en vez de pasar como `false`.
+	 *
+	 * El oráculo UI del toggle "Aplicar Pre-Autorización" es NO-automatizable: la pantalla
+	 * Configuración Parámetros está rota (BL-i18n/v1.72.8 — el toggle no habilita Guardar
+	 * ni persiste, ver header de `parameters-api.ts`) → el read-back es vía API.
+	 */
 	async disableHoldViaApi(): Promise<void> {
-		const params = await setHoldViaApi(this.page, false);
-		expect(params.enableCreditCardHold).toBe(false);
+		await setHoldViaApi(this.page, false);
+		expect(await readHoldRaw(this.page), 'read-back API: enableCreditCardHold debe quedar false tras el POST (campo ausente = fallo)').toBe(false);
 	}
 
 	/**
@@ -144,22 +170,28 @@ export class CarrierHoldSteps extends UiBase {
 	 *  - 'new': valida (para cleanup) y fuerza preferSavedCard=false.
 	 *  - 'existing': exige hasRequiredCard=true, sino test.skip() con motivo.
 	 */
-	async resolveCardFlow(scenario: HoldScenario, cardLast4: string): Promise<{ cardCheck: CardPreconditionResult | null; preferSavedCard: boolean }> {
+	async resolveCardFlow(
+		scenario: HoldScenario,
+		cardLast4: string
+	): Promise<{ cardCheck: CardPreconditionResult | null; preferSavedCard: boolean }> {
 		const cardFlow: CardFlow = scenario.cardFlow ?? 'new';
 		let cardCheck: CardPreconditionResult | null = null;
 
 		if (scenario.apiSearchQuery) {
 			cardCheck = await validateCardPrecondition(this.page, {
 				passengerName: scenario.apiSearchQuery,
-				requiredLast4: cardLast4,
+				requiredLast4: cardLast4
 			});
-			debugLog('gateway-pg:carrier', `[card-precondition] ${scenario.passenger} (cardFlow=${cardFlow}): ${cardCheck.activeCards} tarjetas, tiene ${cardLast4}: ${cardCheck.hasRequiredCard}`);
+			debugLog(
+				'gateway-pg:carrier',
+				`[card-precondition] ${scenario.passenger} (cardFlow=${cardFlow}): ${cardCheck.activeCards} tarjetas, tiene ${cardLast4}: ${cardCheck.hasRequiredCard}`
+			);
 		}
 
 		if (cardFlow === 'existing') {
 			test.skip(
 				!cardCheck?.hasRequiredCard,
-				`[card-existing] Precondición: pasajero ${scenario.passenger} debe tener tarjeta ${cardLast4} vinculada.`,
+				`[card-existing] Precondición: pasajero ${scenario.passenger} debe tener tarjeta ${cardLast4} vinculada.`
 			);
 			return { cardCheck, preferSavedCard: true };
 		}
@@ -182,20 +214,28 @@ export class CarrierHoldSteps extends UiBase {
 
 	/**
 	 * Valida la tarjeta del form NATIVO según la pasarela (S7, privado — no es ATC):
-	 *   - mercado-pago: `validateAndSelectMercadoPagoCard` (oráculo tarjeta resaltada) +
-	 *     test.skip si la validación no completa en TEST (limitación sandbox MP — UAT-only).
-	 *   - authorize/ebizcharge: "Validar" + oráculo "Tarjeta válida" (verificado live Authorize).
+	 *   - mercado-pago: `validateAndSelectMercadoPagoCard` (contrato tri-estado, oráculo tarjeta
+	 *     resaltada): 'linked' continúa; 'validation-unavailable' → test.skip (limitación sandbox
+	 *     MP en TEST — incluye el error explícito "Error al validar tarjeta", su manifestación
+	 *     documentada; UAT-only); 'validation-failed' RESERVADO (guard future-proof, hoy inerte).
+	 *   - authorize/ebizcharge: "Validar" + oráculo de ESTADO (Forma de Pago resuelta a
+	 *     "*** <last4>" — live 2026-07-28, ver CarrierNewTravelPage.validateNativeCard).
 	 */
-	private async validateNativeGatewayCard(gateway: GatewayName): Promise<void> {
+	private async validateNativeGatewayCard(gateway: GatewayName, cardLast4: string): Promise<void> {
 		if (gateway === 'mercado-pago') {
 			const mpLink = await validateAndSelectMercadoPagoCard(this.page);
+			// Guard future-proof (hoy INERTE): 'validation-failed' está RESERVADO a evidencia live
+			// (UAT/entorno transaccional) de un fallo distinguible de la limitación sandbox — hoy
+			// ningún camino lo retorna en TEST (el error explícito "Error al validar tarjeta" es la
+			// manifestación documentada del sandbox → habilita el skip de abajo).
+			expect(mpLink, 'MP: señal de fallo real de validación distinguible de la limitación sandbox (evidencia live)').not.toBe('validation-failed');
 			test.skip(
 				mpLink !== 'linked',
-				'MP: validación de tarjeta no completa en TEST (sandbox MP no transacciona) — UAT-only. Form-fill + habilitación de "Validar" verificados.',
+				'MP: validación de tarjeta no completa en TEST (sandbox MP no transacciona) — UAT-only. Form-fill + habilitación de "Validar" verificados.'
 			);
 			return;
 		}
-		await this.travel.validateNativeCard();
+		await this.travel.validateNativeCard(cardLast4);
 	}
 
 	/**
@@ -208,6 +248,22 @@ export class CarrierHoldSteps extends UiBase {
 	async runHoldScenario(scenario: HoldScenario, options: HoldRunOptions): Promise<void> {
 		const gateway: GatewayName = scenario.gateway ?? 'stripe';
 		const adapter = getGatewayPgAdapter(gateway);
+		// Fail-fast doctrina 3DS (post-review A5): 3DS es EXCLUSIVO de Stripe. Pedir
+		// threeDs=true para un adapter sin 3DS es un error de invocación — el caso está
+		// EXCLUIDO de la matriz de la pasarela, no se convierte silenciosamente en no-3DS.
+		if (options.threeDs && !adapter.requires3ds) {
+			throw new Error(
+				`runHoldScenario: threeDs=true con gateway '${gateway}' (requires3ds=false) — 3DS es EXCLUSIVO de Stripe; ` +
+					`no parametrizar threeDs para ${gateway} (doctrina: caso excluido, no convertido).`
+			);
+		}
+		// Gate de VALIDEZ DE MEDICIÓN (ronda 4 del RUN-LOG): con Authorize hay DOS cuentas en juego
+		// y la de `.env.test` está en Test Mode — devuelve respuestas enlatadas, así que el hold
+		// "aprueba" sin autorizar nada y el test daría un VERDE VACÍO. Falla ruidosa acá, antes de
+		// crear el viaje, en vez de reportar cobertura inexistente. Memoizado por worker (1 request).
+		if (gateway === 'authorize') {
+			await assertAuthorizeAccountMeasuresRealAuthorizations();
+		}
 		// 3DS: exclusivo de las pasarelas que lo soportan (hoy solo Stripe).
 		const wants3ds = options.threeDs && adapter.requires3ds;
 		const useCardFlow = options.useCardFlow ?? true;
@@ -224,6 +280,28 @@ export class CarrierHoldSteps extends UiBase {
 		await test.step('Login carrier', async () => {
 			await this.login(scenario.gateway);
 		});
+
+		// Precondición de idempotencia (form nativo): si la MISMA tarjeta quedó vinculada al
+		// pax por un run previo, el alta diverge y "Tarjeta válida" nunca aparece (falso
+		// negativo confirmado live 2026-07-27 — el piloto hold reproducía el fallo que WAL
+		// evitaba con su cleanup). Mismo helper compartido; silent-fail por query.
+		if (adapter.cardForm === 'native-angular') {
+			await test.step('Precondición: limpiar tarjeta nativa previa (idempotencia)', async () => {
+				// Warm-up del JWT ANTES del cleanup (root-cause live 2026-07-28): extractAuthToken
+				// sin retry devuelve null recién logueado → 401 → catch silencioso por query →
+				// cleanup no-op y el alta diverge a tarjeta-guardada. Patrón retry ×3 establecido
+				// (allcards beforeAll). Con cache poblado, getApiHeaders del cleanup ya no falla.
+				let token: string | null = null;
+				for (let attempt = 0; attempt < 3 && !token; attempt++) {
+					token = await extractAuthToken(this.page);
+				}
+				if (!token) {
+					debugLog('gateway-pg:carrier', '[card-cleanup] JWT no capturado tras 3 intentos — cleanup correrá sin auth y no-op');
+				}
+				const queries = [scenario.passenger, ...(adapter.journeyDefaults.paxSearchQueries ?? [])];
+				await cleanupGatewayCardByLast4(this.page, queries, cardLast4);
+			});
+		}
 
 		let preferSavedCard = false;
 		if (useCardFlow) {
@@ -266,7 +344,7 @@ export class CarrierHoldSteps extends UiBase {
 						origin: scenario.origin,
 						destination: scenario.destination,
 						cardLast4,
-						preferSavedCard,
+						preferSavedCard
 					});
 				} else {
 					// No-stripe (S7): formulario plano + método Preautorizada + estrategia de
@@ -275,11 +353,19 @@ export class CarrierHoldSteps extends UiBase {
 						client: scenario.client,
 						passenger: scenario.passenger,
 						origin: scenario.origin,
-						destination: scenario.destination,
+						destination: scenario.destination
 					});
-					await this.travel.selectPaymentMethod('Preautorizada');
-					await cardFormFor(gateway).fill(this.page, card);
-					await this.validateNativeGatewayCard(gateway);
+					// Rama tarjeta-vigente (live 2026-07-27, screenshot): con la tarjeta del pax ya
+					// vinculada, el dropdown la PRESELECCIONA y el form nativo no se renderiza —
+					// fill+Validar divergen y "Tarjeta válida" nunca aparece (falso negativo).
+					// Oráculo funcional de esta rama: la selección visible "*** <last4>".
+					if (await this.travel.isSavedCardPreselected(cardLast4)) {
+						debugLog('gateway-pg:hold', `[card] tarjeta guardada *** ${cardLast4} preseleccionada — se omite fill/Validar (rama CARD-EXISTING nativa)`);
+					} else {
+						await this.travel.selectPaymentMethod('Preautorizada');
+						await cardFormFor(gateway).fill(this.page, card);
+						await this.validateNativeGatewayCard(gateway, cardLast4);
+					}
 				}
 			});
 
@@ -322,7 +408,7 @@ export class CarrierHoldSteps extends UiBase {
 				await this.management.expectPassengerInPorAsignar(
 					scenario.passenger,
 					matchDestination ? shortDestination(scenario.destination) : undefined,
-					options.expectStatus,
+					options.expectStatus
 				);
 			});
 		} finally {

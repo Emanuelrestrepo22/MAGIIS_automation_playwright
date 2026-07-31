@@ -270,7 +270,21 @@ export const XRAY_KEYS_BY_GATEWAY: Record<GatewayCompany, GatewayXrayRegistry> =
 			empresaHappyExistingHoldOff: 'TS-AUTHORIZE-TC1064',
 			empresaDecline: 'TS-AUTHORIZE-TC1065'
 		},
-		cargo: noCargoKeys(),
+		// Sólo los DOS casos happy tienen Test Xray, y las keys se leyeron EN VIVO de Jira
+		// (2026-07-29) para no cablear por inferencia:
+		//   · MG-529 = "MG-200 | TC33: Validar cargo a bordo Authorize usuario personal happy y
+		//     pago exitoso" (label `tcid:TC-PAY-COB-33`).
+		//   · MG-539 = "MG-200 | TC36: Validar cargo a bordo Authorize usuario colaborador happy y
+		//     pago exitoso" (label `tcid:TC-PAY-COB-36`).
+		// Ambos títulos describen el flujo desde Carrier con cobro exitoso, que es exactamente lo
+		// que ejecutan `personalHappy` y `colaboradorHappy` de la factory. Los 6 declines y el caso
+		// `empresaHappy` quedan `null` a propósito: NO existe Test Xray para ellos y fabricar una
+		// key inflaría evidencia. Quedan unmapped VISIBLES (el reporter los cuenta como tales).
+		cargo: {
+			...noCargoKeys(),
+			personalHappy: 'MG-529',
+			colaboradorHappy: 'MG-539'
+		},
 		// Matriz authorize/matriz_cases.md §7.1 (personal TC1081-1083), §8 (colaborador
 		// TC1096-1098) y §9 (empresa TC1111/1112 + TC1105 "CVC incorrecto").
 		cargoTcIds: {
@@ -288,22 +302,60 @@ export const XRAY_KEYS_BY_GATEWAY: Record<GatewayCompany, GatewayXrayRegistry> =
 		wallet: { addCard: 'MG-285' }
 	},
 	ebizcharge: {
-		// TODO(xray): eBizCharge aún sin NINGUNA issue MG creada — `id-map.json` →
-		// `summary.ebizcharge.with_mg_key = 0`. Todas las keys `null` en las 4 áreas
-		// (CFG/WAL/HOLD/CARGO). Poblar cuando QA cree las issues espejo en MG.
+		// REFUTADO el 2026-07-31 el "eBizCharge aún sin NINGUNA issue MG creada" que decía este
+		// bloque. Los Tests de eBizCharge SÍ existen: son las **acciones estandarizadas** del Test
+		// Execution MG-559 ("ATR · EBIZCHARGE — acciones estandarizadas, Ronda 1", 33 Tests, leídos
+		// en vivo con `bun xray exec get MG-559`). No están redactados por pasarela — un mismo Test
+		// se ejecuta una vez por PSP y el ATR fija cuál (MG-558 Authorize · MG-559 eBizCharge ·
+		// MG-560 Stripe · MG-561 MercadoPago). Por eso la búsqueda por summary/label "eBizCharge"
+		// devolvía casi nada y se concluyó que no existían.
+		//
+		// Lo que se cablea acá es SOLO donde el caso CFG cubre lo que el Test valida, verificado
+		// contra los Steps reales de cada issue. Las keys que siguen en `null` NO son olvidos:
+		// cada una tiene su motivo escrito. Sigue vigente que las keys las crea QA y el código
+		// jamás las fabrica.
 		cfg: {
+			// Sin Test entre los 33: ninguno valida "ver la pasarela NO vinculada" como caso propio
+			// (es precondición de MG-141, su Step 2).
 			viewUnlinked: null,
-			linkValid: null,
+			// MG-141 (A-01) "vincular la pasarela cuando el carrier tiene una cuenta PSP válida".
+			// Steps 3-4: vincular y volver a consultar el connectedAccount → MGWLinked activo. El caso
+			// `linkValid` hace exactamente eso y además lo acredita por DB (`MGW_LINKED`).
+			linkValid: 'MG-141',
+			// Sin Test: MG-145 es el negativo eBiz por `zipCode` FALTANTE, no por credenciales
+			// inválidas. Son cosas distintas y el modal eBiz no tiene campo zipCode (4 campos,
+			// verificado en vivo) → cablear MG-145 acá sería cruzar la key.
 			linkInvalid: null,
-			cancelUnlink: null,
-			unlink: null,
-			exclusivity: null,
+			// MG-165 (G-01) "se muestra el modal de aviso antes de desvincular". Su Step 4 es
+			// "Presionar Cancelar → el modal se cierra SIN invocar cleaningWallets; la pasarela sigue
+			// conectada", que es literal lo que asserta `cancelUnlink`.
+			cancelUnlink: 'MG-165',
+			// MG-165 Step 5: "Reabrir el modal y presionar Confirmar → se invoca cleaningWallets e
+			// inicia la desvinculación". `unlink` cubre ese paso.
+			// NO se cablea MG-166 acá a propósito: MG-166 (G-02) exige que las wallets/tarjetas
+			// locales queden VACÍAS y el link desactivado, y este caso UI sólo mira que el estado
+			// vuelva a `linkable` (tiene su propio TODO por la mitad del AC que no verifica). Ese
+			// Test ya lo acredita `api/vendor-cleaning-wallets/cleaning-wallets-db.api.spec.ts`, que
+			// sí cuenta filas en Oracle. Cablearlo también acá lo pondría PASSED sin haber mirado
+			// una sola wallet.
+			unlink: 'MG-165',
+			// MG-143 (A-03) "se garantiza una sola PSP conectada por carrier (exclusividad)".
+			exclusivity: 'MG-143',
+			// Sin Test: la persistencia tras recargar no es un caso del ATP estandarizado.
 			reloadPersistence: null,
+			// Queda `null` a propósito aunque MG-141 Step 3 diga "deberia responder 200": el
+			// `linkSuccessStatuses: [200]` del adapter eBiz está declarado como ASUMIDO, nunca
+			// verificado en vivo. Si el status real fuera 201, este caso daría rojo y arrastraría
+			// MG-141 a FAILED por una suposición nuestra, no por un fallo del producto. Cablear
+			// cuando se confirme el status contra el backend.
 			linkStatus: null
 		},
 		// Los TC IDs de matriz SÍ existen desde la derivación determinística Fase 4 (2026-07-26):
-		// ebizcharge/matriz_cases.md §"Configuración de Pasarela eBizCharge" → TC1050..TC1057,
-		// espejo 1:1 de TS-STRIPE-TC1001..TC1008 (columna "Ref Stripe" de la propia matriz).
+		// ebizcharge/matriz_cases.md §"Configuración de Pasarela eBizCharge" → TC1050..TC1057
+		// (matriz_cases.md:55-62 + normalized-test-cases.json), espejo 1:1 de
+		// TS-STRIPE-TC1001..TC1008 (columna "Ref Stripe" de la propia matriz).
+		// Son IDs LOCALES de la matriz, no keys de Jira: poblarlos no inventa nada, y
+		// recupera el `[TS-EBIZ-TCxxxx]` en el título de cada caso.
 		cfgTcIds: {
 			viewUnlinked: 'TS-EBIZ-TC1050',
 			linkValid: 'TS-EBIZ-TC1051',
@@ -314,7 +366,14 @@ export const XRAY_KEYS_BY_GATEWAY: Record<GatewayCompany, GatewayXrayRegistry> =
 			reloadPersistence: 'TS-EBIZ-TC1056',
 			linkStatus: 'TS-EBIZ-TC1057'
 		},
-		hold: noHoldKeys(),
+		// MG-148 (C-01) "poder dar de alta una tarjeta válida cuando el pax va a pagar sus viajes".
+		// Se cablea SÓLO al caso seed (TC1058, `colaboradorHappyNewHoldOn`), que es el que existe para
+		// vincular la tarjeta — los otros cuatro casos de tarjeta nueva también la dan de alta, pero su
+		// propósito es la permutación de Hold ON/OFF, y si uno de ellos fallara por el hold arrastraría
+		// MG-148 a FAILED culpando al alta de tarjeta. El seed corrió verde en vivo el 2026-07-30
+		// (viaje 67831) con la tarjeta 4000100011112224 y su fila en `CARD_HOLDS` con
+		// PROVIDER_CODE='EBIZ'.
+		hold: { ...noHoldKeys(), colaboradorHappyNewHoldOn: 'MG-148' },
 		// Matriz ebizcharge/matriz_cases.md — colaborador TC1058..1062, personal TC1063..1066,
 		// empresa TC1067..1070. Asimetrías reales frente a Authorize/Stripe:
 		//   · personal: las 4 filas (TC1063..1066) son TODAS "Hold OFF" (variantes de
@@ -419,6 +478,84 @@ export const XRAY_KEYS_BY_GATEWAY: Record<GatewayCompany, GatewayXrayRegistry> =
 };
 
 /**
+ * Casos del pack de CONTRATO del sandbox Authorize (`api/authorize-sandbox/*`), en el
+ * orden de los 4 spec files: happy → decline → cvv/avs → edge.
+ */
+export type AuthorizeContractCase =
+	| 'happyVisa' /*       Visa + CVV 900 + ZIP neutro → Response Code 1 */
+	| 'happyMastercard' /* Mastercard + CVV 900 + ZIP neutro → Response Code 1 */
+	| 'happyAmex' /*       Amex + CVV 4 dígitos + ZIP neutro → Response Code 1 */
+	| 'echoCvv' /*         echo cvvResultCode "M" (contrato Security Settings) */
+	| 'declineZip46282' /* ZIP 46282 → Response Code 2 (decline genérico) */
+	| 'cvv901' /*          CVV 901 → cvvResultCode "N" */
+	| 'cvv904' /*          CVV 904 → cvvResultCode "P" */
+	| 'avs46205' /*        ZIP 46205 → avsResultCode "N" */
+	| 'happyDiscover' /*   Discover + CVV 900 → Response Code 1 */
+	| 'avs46204' /*        ZIP 46204 → avsResultCode "G" (issuer no-USA) */
+	| 'partial46225' /*    ZIP 46225 → aprobación parcial */
+	| 'prepaid46228'; /*   ZIP 46228 → prepaid balance cero procesado */
+
+/**
+ * Keys Xray del pack de CONTRATO del sandbox Authorize — issues REALES creadas en MG
+ * el 2026-07-28 y verificadas en Jira; miembros del Test Execution `MG-558`, del
+ * Test Set `MG-602` ("ATP · SBX — Contrato sandbox Authorize.Net (BL-036)") y del
+ * Test Plan `MG-178` ("ATP · Release Pasarelas de Pago (Gateway) — 4 PSP").
+ *
+ * TCID LOCAL (label `tcid:` en Jira, área SBX del idmap del ATP):
+ *   MG-590 = TC-PAY-SBX-01 · MG-591 = TC-PAY-SBX-02 · MG-592 = TC-PAY-SBX-03
+ *   MG-593 = TC-PAY-SBX-04 · MG-594 = TC-PAY-SBX-05 · MG-595 = TC-PAY-SBX-06
+ *   MG-596 = TC-PAY-SBX-07 · MG-597 = TC-PAY-SBX-08 · MG-598 = TC-PAY-SBX-09
+ *   MG-599 = TC-PAY-SBX-10 · MG-600 = TC-PAY-SBX-11 · MG-601 = TC-PAY-SBX-12
+ *
+ * NOMENCLATURA CANÓNICA EN JIRA (normalizada 2026-07-29 al estándar del generador
+ * del ATP, `scripts/atp-bulk-create.mjs` del boilerplate):
+ *   - summary  = `MG-602 | TC<n>: Validar contrato sandbox Authorize.Net: <caso>`
+ *                (n = 1..12, mismo orden que este registry).
+ *   - labels   = `atp-mg-gateway-release` + `tcid:<TCID>` + payment · gateway ·
+ *                authorize · automatable-api · automation-candidate · regression ·
+ *                automated. (La label `api` se retiró: el vocabulario del ATP usa
+ *                `automatable-api`.)
+ *   - Test Type = `Cucumber` con Gherkin poblado (igual que el hermano API MG-551),
+ *                no `Generic`. El Gherkin va sin acentos, como el resto del ATP.
+ *   - description = ADF de 9 secciones h3 del generador (User Story · Clasificación ·
+ *                Precondiciones · Datos · Resultado esperado · Resultado obtenido ·
+ *                Endpoints / DB · Trazabilidad · Observaciones).
+ *   - parent   = `MG-135` (epic *QA Test Repository*) · issue link `tests` → `MG-3`
+ *                (ancla del release). BL-036 no es issue de MG: va en Trazabilidad.
+ *
+ * NIVEL DE ABSTRACCIÓN (load-bearing — no reutilizar estas keys para otra cosa):
+ * estos 12 Tests acreditan el CONTRATO del sandbox de Authorize.net (la respuesta del
+ * PSP: `responseCode`, `cvvResultCode`, `avsResultCode`), NO el flujo UI de Alta de
+ * Viaje que describen los TC de matriz `TS-AUTHORIZE-TC1016/1021/1031/1041` & co.
+ * Cablear estos contract tests API a esos TC de matriz sería INFLAR EVIDENCIA: el test
+ * solo verifica lo que devuelve la pasarela, no que el viaje se cree (ni el estado en
+ * DB, ni el error en UI). El flujo UI de esos TC sigue SIN automatizar — gap declarado
+ * en `docs/gateway-pg/authorize/matriz_cases.md` §§2.2-2.5.
+ */
+export const AUTHORIZE_CONTRACT_XRAY_KEYS: Record<AuthorizeContractCase, XrayIssueKey> = {
+	happyVisa: 'MG-590', /*       TC1  · tcid TC-PAY-SBX-01 */
+	happyMastercard: 'MG-591', /* TC2  · tcid TC-PAY-SBX-02 */
+	happyAmex: 'MG-592', /*       TC3  · tcid TC-PAY-SBX-03 */
+	echoCvv: 'MG-593', /*         TC4  · tcid TC-PAY-SBX-04 */
+	declineZip46282: 'MG-594', /* TC5  · tcid TC-PAY-SBX-05 */
+	cvv901: 'MG-595', /*          TC6  · tcid TC-PAY-SBX-06 */
+	cvv904: 'MG-596', /*          TC7  · tcid TC-PAY-SBX-07 */
+	avs46205: 'MG-597', /*        TC8  · tcid TC-PAY-SBX-08 */
+	happyDiscover: 'MG-598', /*   TC9  · tcid TC-PAY-SBX-09 */
+	avs46204: 'MG-599', /*        TC10 · tcid TC-PAY-SBX-10 */
+	partial46225: 'MG-600', /*    TC11 · tcid TC-PAY-SBX-11 */
+	prepaid46228: 'MG-601' /*     TC12 · tcid TC-PAY-SBX-12 */
+};
+
+/**
+ * Test Set Xray que agrupa el pack de CONTRATO del sandbox Authorize (los 12 de arriba).
+ * Es el prefijo de los summaries (`MG-602 | TC<n>: …`), el eje de agrupación por feature.
+ * NO es un Test Execution: los resultados siguen yendo a `MG-558` (ver más abajo).
+ * NO es el Test Plan: el ATP del release es `MG-178`, del que los 12 también son miembros.
+ */
+export const AUTHORIZE_CONTRACT_XRAY_TEST_SET: XrayIssueKey = 'MG-602';
+
+/**
  * Test Executions por pasarela (creados 2026-07-25, env `test`).
  * La EXECUTION key se pasa por shell al importar resultados
  * (ej. `XRAY_EXECUTION_KEY=MG-558 npm run test:test:gateway:authorize:xray`).
@@ -443,4 +580,4 @@ export const XRAY_EXECUTION_ENV_VAR: Record<GatewayCompany, string> = {
  * resultado como Test (épicas/planes/executions/containers — no son Tests Xray).
  */
 export const XRAY_KEY_DENYLIST_RECOMMENDED =
-	'MG-3,MG-178,MG-509,MG-510,MG-511,MG-512,MG-513,MG-514,MG-515,MG-516,MG-553,MG-557,MG-558,MG-559,MG-560,MG-561';
+	'MG-3,MG-178,MG-509,MG-510,MG-511,MG-512,MG-513,MG-514,MG-515,MG-516,MG-553,MG-557,MG-558,MG-559,MG-560,MG-561,MG-602';

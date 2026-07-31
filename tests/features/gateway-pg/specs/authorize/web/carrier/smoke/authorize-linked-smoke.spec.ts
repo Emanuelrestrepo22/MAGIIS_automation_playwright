@@ -20,16 +20,20 @@ import { loginAsDispatcher } from '@features/auth/helpers/login.helpers';
 // texto "Authorize.Net … Desvincular". Sesión vacía EXPLÍCITA, igual que `gateway-config.factory`.
 test.use({ storageState: { cookies: [], origins: [] } });
 
-// TRAZABILIDAD (corregido 2026-07-28): este smoke apuntaba a MG-220 (TC10 · "vincular Authorize
-// con credenciales válidas"), pero NO ejecuta el link — solo LEE el estado ya vinculado. Dos tests
-// distintos reportando a la misma key pisan resultados en el mismo Test Execution. El dueño único de
-// MG-220 es `authorize-link-unlink.spec.ts` (que sí ejecuta el link real).
-// Key correcta = MG-225 (TC15 · "persistencia de estado Vinculado tras recargar página y navegar
-// entre secciones de Carrier"): es exactamente lo que este smoke verifica — sesión nueva → navegar
-// al App Store → el estado vinculado persiste.
+// TRAZABILIDAD — este smoke queda deliberadamente SIN key Xray (unmapped visible, post-review F4).
+//   · NO puede ser MG-220 (TC10 · "vincular Authorize con credenciales válidas"): el smoke no ejecuta
+//     el link, solo LEE el estado ya vinculado. El dueño único de MG-220 es
+//     `authorize-link-unlink.spec.ts`, que sí ejecuta el link real.
+//   · NO puede ser MG-225 tampoco: MG-225 (TC1007 · "persistencia de estado Vinculado tras recargar")
+//     PERTENECE al caso `reloadPersistence` de la suite CFG — ver `data/xray-keys.ts` (authorize →
+//     `reloadPersistence: 'MG-225'`) + `authorize-link-unlink.spec.ts`, que pasa
+//     `GATEWAY_CFG_ALL_CASES` y por lo tanto YA genera ese caso. Anotar MG-225 acá crearía DOS
+//     dueños de la misma key: los dos tests se pisan el resultado en el mismo Test Execution —
+//     exactamente la colisión que este comentario existe para evitar.
+// Conclusión: acreditar cualquiera de las dos keys desde este smoke inflaría evidencia. Si en el
+// futuro hace falta una key propia, hay que crear el Test en Xray y registrarlo en `xray-keys.ts`.
 test.describe(
 	'Gateway PG · Carrier · Smoke Authorize vinculada @gateway @authorize @smoke @regression',
-	{ annotation: [{ type: 'tms', description: 'MG-225' }] },
 	() => {
 		test.describe.configure({ timeout: 120_000 });
 
@@ -46,7 +50,14 @@ test.describe(
 
 			await test.step('Then: la card Authorize.Net muestra estado vinculado (Unlink/Desvincular)', async () => {
 				await expect(appStore.cardFor('authorize'), 'la card Authorize.Net debe estar visible').toBeVisible({ timeout: 20_000 });
-				expect(await appStore.readState('authorize'), 'Authorize debe figurar vinculada (Unlink/Desvincular)').toBe('linked');
+				// Retry-window sobre readState: el App Store renderiza un estado OPTIMISTA que el
+				// fetch real corrige (~750ms; más bajo carga — ver root-cause en el POM goto()).
+				// Confirmado en vivo 2026-07-27: one-shot leía 'linkable' con la pasarela vinculada
+				// (el probe simultáneo veía "Desvincular"). Oráculo MÁS fuerte: exige 'linked'
+				// sostenido dentro de la ventana, nunca acepta el frame optimista como veredicto.
+				await expect(async () => {
+					expect(await appStore.readState('authorize'), 'Authorize debe figurar vinculada (Unlink/Desvincular)').toBe('linked');
+				}).toPass({ timeout: 20_000 });
 			});
 		});
 	},

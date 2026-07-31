@@ -11,5 +11,5 @@ export {
 	type AuthorizeTestCard,
 	type AuthorizeTestCardKey,
 	type AuthorizeCardBrand,
-	type AuthorizeOutcome,
+	type AuthorizeOutcome
 } from '../gateways/authorize/cards';

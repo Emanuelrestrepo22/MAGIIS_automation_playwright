@@ -68,7 +68,12 @@ async function run(): Promise<void> {
 
 		await dumpAppiumState(driver, 'passenger-personal-trip-before-3ds');
 
-		const threeDsResult = await handleThreeDsPopup(driver, label => dumpAppiumState(driver, label), threeDsTimeoutMs, 'passenger-personal');
+		const threeDsResult = await handleThreeDsPopup(
+			driver,
+			label => dumpAppiumState(driver, label),
+			threeDsTimeoutMs,
+			'passenger-personal'
+		);
 
 		log(`3DS result: ${threeDsResult}`);
 		if (threeDsResult !== 'completed') {

@@ -260,7 +260,11 @@ function appendRowCells(d) {
 	const cells = [d.id, d.title];
 	for (const col of d.map.columns || []) {
 		if (col === 'card') cells.push(cardCell(d.intent, d.stripe.card_flow, d.stripe));
-		else if (col === 'hold') cells.push(d.title.toLowerCase().includes('sin hold') ? 'OFF' : 'ON');
+		else if (col === 'hold') {
+			// Heurística Hold: los títulos derivados usan tanto "sin Hold" como "con Hold OFF".
+			const t = d.title.toLowerCase();
+			cells.push(t.includes('sin hold') || t.includes('hold off') ? 'OFF' : 'ON');
+		}
 		else if (col === 'outcome') cells.push(outcomeCell(d.intent));
 		else if (col === 'stripe_ref') cells.push(`\`${d.stripe.test_case_id}\``);
 	}
@@ -374,6 +378,14 @@ const with3ds = allCases.filter((c) => (c.tags || []).includes('@3ds'));
 if (with3ds.length) {
 	console.error(`ASSERT FAIL: ${with3ds.length} casos con @3ds en el L1 derivado de ${GATEWAY}`);
 	process.exit(1);
+}
+// Assert de unicidad: ningún test_case_id puede repetirse en el L1 resultante
+// (existentes + derivados) — un duplicado rompería la trazabilidad L0↔L1↔Xray.
+const idCounts = new Map();
+for (const c of allCases) idCounts.set(c.test_case_id, (idCounts.get(c.test_case_id) ?? 0) + 1);
+const dupIds = [...idCounts].filter(([, n]) => n > 1).map(([id, n]) => `${id} (x${n})`);
+if (dupIds.length) {
+	throw new Error(`ASSERT FAIL: ${dupIds.length} test_case_id duplicados en el L1 resultante de ${GATEWAY}: ${dupIds.join(', ')}`);
 }
 const l1 = {
 	generated_at: new Date().toISOString(),

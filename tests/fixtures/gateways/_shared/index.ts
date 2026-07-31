@@ -9,9 +9,39 @@
 
 export type {
 	CardIntent,
+	LegacyCardIntent,
+	ApprovalIntent,
+	DeclineIntent,
+	FraudIntent,
+	SoftVerificationIntent,
+	ReferralIntent,
 	GatewayName,
 	GenericTestCard,
 	ResolveCardArgs,
+	CardAnnotationKind,
+	CardAnnotationEntry,
+	CardAnnotationRegistry
 } from './types';
 
-export { resolveCard, SUPPORTED_INTENTS_BY_GATEWAY } from './resolver';
+export {
+	CARD_ANNOTATIONS,
+	listAnnotations,
+	countAnnotations,
+	assertAnnotationReferenceIntegrity
+} from './annotations';
+
+export { ALL_CARD_INTENTS } from './types';
+
+export { resolveCard, intentSupport, SUPPORTED_INTENTS_BY_GATEWAY, type IntentSupport } from './resolver';
+
+export {
+	CARD_MATRIX,
+	isSupported,
+	assertCardMatrixIntegrity,
+	EXPECTED_SUPPORTED_COUNTS,
+	type CardMatrixCell,
+	type CardMatrixRow,
+	type CardMatrixShape,
+	type CardMatrixSupported,
+	type CardMatrixNotApplicable
+} from './card-matrix';

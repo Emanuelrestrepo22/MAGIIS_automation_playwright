@@ -78,6 +78,11 @@ export async function expectQuoteTripInPortal(browser: Browser, options: ExpectQ
 
 			const management = new CarrierTravelManagementPage({ page: portalPage });
 			await management.goto();
+			// La grilla abre en la pestaña "Asignar", que para un viaje de Quote está VACÍA: el alta
+			// de cotización entra directo como PROGRAMADO. Sin cambiar de pestaña el oráculo miraba
+			// una lista donde el viaje nunca puede estar y fallaba con "No travel row found" aunque
+			// el viaje existiera — medido en vivo 2026-07-30 (Asignar 0 / Programados 2).
+			await management.openScheduledTrips();
 			// Debería aparecer el viaje del solicitante con un estado post-confirmación válido.
 			// Si cae en "En conflicto"/"No autorizado", el pago falló → escalar a dev.
 			await management.expectPassengerInPorAsignar(requester, shortDestination(destination), QUOTE_TRIP_ROW_STATUS);

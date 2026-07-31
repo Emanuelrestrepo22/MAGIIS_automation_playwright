@@ -28,7 +28,7 @@ test.describe(`[FLIGHT][${env.toUpperCase()}] Alta de viaje con vuelo — Portal
 		dashboard,
 		travel,
 		flightModal,
-		management,
+		management
 	}) => {
 		await test.step(`Given: dispatcher logueado en carrier (${env.toUpperCase()})`, async () => {
 			await loginAsDispatcher(page);
