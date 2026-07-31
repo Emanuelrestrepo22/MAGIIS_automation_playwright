@@ -60,6 +60,20 @@ export class CarrierTravelManagementPage extends UiBase {
 	}
 
 	/**
+	 * Contraparte del oráculo para el viaje PROGRAMADO: con hora futura el viaje NO entra en "Por
+	 * asignar" sino en la pestaña "Programados", y ahí espera hasta su horario. Verificado en las dos
+	 * grabaciones eBizCharge del 2026-07-30 (alta programada desde carrier y desde el widget Quote,
+	 * donde la pestaña mostró "Programados (1)").
+	 *
+	 * Sin decorar con @atc: la matriz tiene el caso (`TS-EBIZ-TC1261`) pero el ATP no tiene key para
+	 * la verificación UI de un alta programada, y las keys jamás se inventan. Queda unmapped-visible.
+	 */
+	@step
+	async expectPassengerInProgramados(passenger: string, destination?: string, status?: string | RegExp): Promise<void> {
+		await this.legacy.expectPassengerInProgramados(passenger, destination, status);
+	}
+
+	/**
 	 * Contraparte UNHAPPY: confirma que el viaje quedó en "En conflicto" con estado "No autorizado"
 	 * — el hold del viaje falló DESPUÉS de vincular la tarjeta, así que el viaje existe y queda
 	 * marcado (desenlace `trip-unauthorized` de `journey-outcome.ts`).

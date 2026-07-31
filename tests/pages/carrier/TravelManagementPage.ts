@@ -170,6 +170,26 @@ export class TravelManagementPage {
 		}
 	}
 
+	/**
+	 * Oráculo del viaje PROGRAMADO (alta con hora futura): NO cae en "Por asignar" sino en la pestaña
+	 * "Programados". Mismo patrón que `expectPassengerInEnConflicto` — hay que cambiar de pestaña
+	 * primero porque la grilla arranca en otra y la fila no existe en el DOM hasta el click.
+	 *
+	 * `status` acepta RegExp por la misma razón que `expectPassengerInPorAsignar`: el estado de la fila
+	 * de un programado depende de si ya se le asignó conductor, y fijar un literal introduce una
+	 * condición de carrera.
+	 */
+	async expectPassengerInProgramados(passenger: string, destination?: string, status?: string | RegExp): Promise<void> {
+		await this.openScheduledTrips();
+		await this.page.waitForSelector('table tbody', { state: 'visible', timeout: 15_000 }).catch(() => {});
+		const row = await this.tripRow(passenger, destination);
+		await expect(row).toBeVisible({ timeout: 10_000 });
+
+		if (status) {
+			await expect(row).toContainText(status, { timeout: 10_000 });
+		}
+	}
+
 	async expectPassengerInEnConflicto(passenger: string, destination?: string): Promise<void> {
 		const enConflictoTab = this.page.locator('tabset ul li a').filter({ hasText: /en conflicto/i }).first();
 		await expect(enConflictoTab).toBeVisible({ timeout: 10_000 });
