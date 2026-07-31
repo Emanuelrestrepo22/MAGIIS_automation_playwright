@@ -114,3 +114,51 @@ reloj del PSP corre 7 h detrás del de la DB. Ciclo confirmado de `CARD_HOLDS.ST
 Evidencia: `evidence/test/ebizcharge/hold-release/VALIDACION-hold-release-67962-67969.md`
 (+ 3 respuestas XML crudas del PSP en la misma carpeta). Barrido de cierre: **cero retenciones
 vivas** en la ventana del merchant.
+
+## Ronda de trifuerza sobre los declines (2026-07-31) — el Hallazgo 1 se DESCOMPONE en 3 causas
+
+Se agregó la **pata PSP forense** al camino de decline de `card-outcome-matrix.factory.ts`: cuando el
+oráculo UI falla, el diagnóstico consulta el procesador por SOAP (filtrando por last4) y
+`paymentMethodsByPax` para ver si la tarjeta persistió. Helper nuevo:
+`tests/features/gateway-pg/helpers/ebiz-psp.ts`. Utilities silenciosas — sin creds o error de red
+NO alteran el veredicto UI (la capa es forense, no decide).
+
+Re-corrida caso por caso de los 6 declines. **No son un solo hallazgo:**
+
+### Causa 1 — Defecto de integración CONFIRMADO en 3 capas (4 casos, no 6)
+
+El PSP declinó **esa transacción puntual** con su código, y la tarjeta **quedó vinculada** como
+método de pago del pax 5289:
+
+| TC | Tarjeta | RefNum del PSP | Veredicto del procesador | Persistencia |
+|---|---|---|---|---|
+| TC1011 | …2228 | 3234213576 | `D-Declined` · 10205 "Do not Honor" | **quedó vinculada** |
+| TC1012 | …2224 (`4000300611112224`) | 3234213591 | `D-Declined` · 10251 "Insufficient funds" | **quedó vinculada** |
+| TC1013 | …2227 | 3234213603 | `D-Declined` · 10212 "Invalid Transaction" | **quedó vinculada** |
+| TC1014 | …2221 | 3234213606 | `D-Declined` · 10262 "Restricted Card" | **quedó vinculada** |
+
+Esto **eleva** la evidencia del defecto: antes era "el PSP declina según la doc del vendor"; ahora es
+"el PSP declinó ESTA transacción, con RefNum y código, y la tarjeta igual quedó como medio de pago".
+
+### Causa 2 — TC1031 (FRAUD_REJECT, …2223) NO es el mismo defecto
+
+El PSP **APROBÓ** (RefNum 3234213621, `A-Approved`, luego `Voided`). El fraud profiler de esta cuenta
+merchant no declina, o el trigger no está activo. Que MAGIIS vincule la tarjeta es **coherente** con
+lo que contestó el procesador: el rojo es del ORÁCULO (la doc promete un rechazo antifraude que el
+sandbox no produce), no de la integración. Refuta además la hipótesis "Fraud Review / Response Code 4"
+que sugería el mensaje de error: no hubo review, hubo approve.
+
+### Causa 3 — TC1015 (DECLINE_INVALID_ISSUER, …2226) es gap del MODELO del test
+
+Cero transacciones en el PSP **y** la tarjeta no persistió. Es el único caso con `exp 0922`
+(vencida): la expiración se valida del lado del cliente, la request nunca sale, y no hay mensaje de
+rechazo **de pasarela** que `expectNativeCardRejected` pueda assertar. No es defecto de producto —
+el caso necesita otro oráculo (validación de formulario, área del futuro MG-482).
+
+### Dos gotchas que costaron intentos
+
+- **last4 colisionados**: `…2224` es last4 del happy `4000100011112224` **y** del insufficient-funds
+  `4000300611112224`; `…2221` es del CVV-mismatch **y** del restricted-card. El filtro forense por
+  last4 devuelve filas de ambas tarjetas → leer la transacción de la ventana, no la primera fila.
+- **`mode: 'serial'`** (`card-outcome-matrix.factory.ts:99`): un rojo **saltea el resto** de la matriz
+  (`N did not run`) y `--max-failures` no lo evita. Los declines se corren **de uno** por `--grep`.
