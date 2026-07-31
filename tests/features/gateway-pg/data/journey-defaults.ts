@@ -79,7 +79,11 @@ export type GatewayJourneyDefaults = JourneyDefaults & {
 /** Entrada base: los defaults neutros + los datos WAL del carrier 1521 (suite gateway US). */
 const BASE_GATEWAY_JOURNEY_DEFAULTS: GatewayJourneyDefaults = {
 	...JOURNEY_DEFAULTS,
-	paxSearchQueries: ['smith', 'fast', 'Emanuel'],
+	// 'restrepo' = apiSearchQuery del appPax (PASSENGERS.appPax, pax 8669 en TEST) — el pax
+	// del piloto hold; sin él, el cleanup de idempotencia no encuentra su tarjeta nativa
+	// previa y el alta diverge a tarjeta-guardada (falso negativo confirmado live 2026-07-28).
+	// La búsqueda del endpoint es por lastName: nombres completos ('Emanuel Restrepo') NO matchean.
+	paxSearchQueries: ['restrepo', 'smith', 'fast', 'Emanuel'],
 	// Datos del add-card Authorize (verificados en vivo): cliente contractor 'fast car',
 	// destino canónico del happy path.
 	walletClient: JOURNEY_DEFAULTS.contractorClient,

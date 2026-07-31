@@ -153,7 +153,7 @@ export class ContractorHoldSteps extends UiBase {
 							'MP: validación de tarjeta no completa en TEST (sandbox MP no transacciona) — UAT-only. Form-fill + habilitación de "Validar" verificados.'
 						);
 					} else {
-						await this.travel.validateNativeCard();
+						await this.travel.validateNativeCard(card.last4);
 					}
 				});
 			} else if (scenario.card.kind === 'new') {

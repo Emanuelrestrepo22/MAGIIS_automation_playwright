@@ -15,23 +15,35 @@
  * excepción de capas ACEPTADA (precedente: `card-forms` → `@features/.../adapters`),
  * registrada en judgment-day 2026-07-27.
  *
- * Semántica Authorize (quirk backend VERIFICADO — HANDOFF §2 + addendum 2026-07-25):
- * 500 = conectada desde estado limpio; 409 = ya vinculada por otra sesión; 400 = NO
- * conectada. TODO revert a 2xx cuando DEV corrija el endpoint (odnService, MG-476) —
- * ver `docs/gateway-pg/authorize/DRAFT-improvement-backend-link-500.md`.
+ * Semántica Authorize — CORREGIDA con evidencia live 2026-07-28 (campaña exploratoria):
+ * el endpoint del link es **`POST vendor/authorize`** y responde **200**, con el estado de la
+ * card quedando en `linked`. Verificado con dos probes de red independientes (creds válidas y
+ * creds inválidas), ambos con un ÚNICO POST durante el submit.
+ *
+ * ⚠️ HISTÓRICO — el quirk `500|409` y el endpoint `odnService` (HANDOFF §2 + addendum
+ * 2026-07-25) **YA NO REPRODUCEN**. El AC original de la matriz (TS-AUTHORIZE-TC1008: "status
+ * 200") vuelve a ser el oráculo correcto, así que el assert deja de tolerar códigos de error:
+ * si un deploy futuro devuelve 500/409, el test DEBE fallar (era justamente lo que el quirk
+ * tapaba). El TODO de revert-a-2xx queda CERRADO por esta vía.
+ *
+ * ⚠️ PERO 200 ≠ credenciales validadas: el mismo endpoint devuelve 200 y deja la pasarela
+ * `linked` con credenciales INVÁLIDAS (defecto de backend hallado el 2026-07-28, ver
+ * `docs/gateway-pg/authorize/DRAFT-improvement-backend-link-500.md`). Por eso el caso de status
+ * asserta ADEMÁS la persistencia del estado, y TS-AUTHORIZE-TC1003 (rechazo de credenciales
+ * inválidas) queda ROJO a propósito: revela el defecto en vez de taparlo.
  */
 
-/** Statuses de éxito del link Authorize (quirk 500|409 verificado — nunca 400). */
-export const AUTHORIZE_LINK_SUCCESS_STATUSES = [500, 409] as const;
+/** Status de éxito del link Authorize: 200 (AC de matriz), verificado live 2026-07-28. */
+export const AUTHORIZE_LINK_SUCCESS_STATUSES = [200] as const;
 
 /**
- * Matcher VERIFICADO live de la mutación de link Authorize (endpoint = odnService, MG-476).
- * Caveat de amplitud (juicio R2): el endpoint verificado es odnService; los needles adicionales
- * (vendor|integration|authorize|payment.?gateway) se conservan como red de seguridad pre-campaña —
- * estrechar a /odnservice/i tras confirmar en la primera corrida viva que ninguna otra mutación
- * no-GET se dispara durante el submit.
+ * Matcher VERIFICADO live 2026-07-28: la ÚNICA mutación del submit de link es
+ * `POST vendor/authorize`. Estrechado desde el regex amplio anterior (que incluía
+ * `odnservice|payment.?gateway|integration|…`) — con el endpoint confirmado, la amplitud solo
+ * agregaba riesgo de latchear otra request (p. ej. `vendor/cleaningWallets` del unlink previo,
+ * que también responde 200) y asertar su status como si fuera el del link.
  */
-export const AUTHORIZE_LINK_MUTATION_URL_PATTERN = /odnservice|payment.?gateway|paymentgateway|vendor|integration|authorize/i;
+export const AUTHORIZE_LINK_MUTATION_URL_PATTERN = /vendor\/authorize/i;
 
 /** TODO(live): [200] ASUMIDO — status real de la request de link eBizCharge NO verificado. */
 export const EBIZCHARGE_LINK_SUCCESS_STATUSES = [200] as const;

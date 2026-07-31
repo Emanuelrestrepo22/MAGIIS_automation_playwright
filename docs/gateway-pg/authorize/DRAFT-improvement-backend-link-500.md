@@ -1,53 +1,87 @@
-# DRAFT — Improvement backend: link de pasarela Authorize responde 500/409 en caso de éxito (odnService)
+# DRAFT — Defecto de backend: el link de pasarela Authorize acepta credenciales INVÁLIDAS
 
-> **DRAFT — filing sujeto a confirmación (scope MG = solo Xray; destino DEV/MX).**
-> NO crear en Jira desde este repo sin confirmación explícita del líder QA. Este borrador
-> existe para que el quirk documentado (HANDOFF §2) tenga su reporte listo y los oráculos
-> de QA que hoy toleran 500/409 tengan un TODO de revert rastreable.
+> **Estado:** BORRADOR listo para filear · **NO creado en Jira**.
+> **Scope:** en MG la gobernanza QA se limita a entidades Xray (`mg-scope-xray-only`), así que este
+> hallazgo NO se abre en MG: destino **DEV/MX**, con autorización explícita del owner.
+> **Hallado:** 2026-07-28, campaña exploratoria Authorize (Fase 6, ATP MG-178) · Ambiente: `test`
+> (apps-test.magiis.com, carrier 1521 Remises EEUU).
+> **SUPERSEDE al borrador anterior de este archivo** (Improvement por el quirk `500|409` del link):
+> ese comportamiento **ya no reproduce** — el endpoint responde **200** con credenciales válidas, y
+> el oráculo de `TS-AUTHORIZE-TC1008` volvió al AC original. El defecto real es el que sigue.
 
-## Título
+## Resumen
 
-Backend: link de pasarela Authorize responde 500/409 en caso de éxito (odnService)
+`POST /magiis-v0.2/vendor/authorize` **no valida las credenciales contra Authorize.Net**: acepta
+cualquier `apiLoginId` / `transactionKey`, responde **200** y deja la pasarela **vinculada**. El
+operador queda con una configuración que aparenta estar correcta y que fallará en todos los cobros.
 
-## Tipo / Severidad / Prioridad
+## Pasos para reproducir
 
-- Tipo: Improvement (API smell — no bloquea la operación, la vinculación SÍ funciona)
-- Severidad: Low / mejora
-- Prioridad: derivada de severidad (Low)
-
-## Ambiente
-
-- TEST (`apps-test`), carrier 1521 (compartido por la suite gateway), portal Carrier → Magiis App Store.
-
-## Pasos
-
-1. Loguearse en el portal Carrier como dispatcher (carrier 1521).
-2. Navegar a Magiis App Store (`/#/home/carrier/integrations/list`).
-3. Con el slot de pasarela libre, click "Vincular"/"Link" en la card Authorize.Net.
-4. Completar el modal de credenciales (`apiLoginKey` + `transactionKey` sandbox válidas) y click "Continuar".
-5. Observar en la pestaña Network la request de mutación del link (endpoint del backend MAGIIS: `odnService` — NO `/vendor/`).
+1. Loguearse en el portal Carrier (`apps-test.magiis.com`) con un carrier con Authorize disponible
+   (probado: carrier 1521 · usuario dispatcher).
+2. Ir a **MAGIIS Apps Store → Interfaces de pago** (`/#/home/carrier/integrations/list`).
+3. Si Authorize.Net figura **Desvincular**, desvincularla primero (la card debe quedar en **Vincular**).
+4. Click en **Vincular** de la card Authorize.Net.
+5. Completar el modal con credenciales **claramente inválidas**, p. ej.
+   `API Login ID = INVALID_LOGIN_QA` · `Transaction Key = INVALID_KEY_QA`.
+6. Confirmar (**Continuar**).
 
 ## Resultado esperado
 
-La vinculación exitosa responde un status **2xx** (convención HTTP: éxito = 2xx).
+- Debería rechazar la vinculación con un **error controlado y visible** (el AC de matriz
+  `TS-AUTHORIZE-TC1003` lo redacta como "mostrar error controlado sin activar el gateway"; el código
+  de Authorize.Net para credenciales inválidas es **E00008 / Invalid authentication**).
+- Debería **NO** activar la pasarela: la card debe permanecer en **Vincular**.
 
 ## Resultado obtenido
 
-- **HTTP 500** cuando la vinculación se hace desde estado limpio → la pasarela queda CONECTADA (éxito funcional con status de error de servidor).
-- **HTTP 409** cuando el carrier ya estaba vinculado por otra sesión → también CONECTADA.
-- **HTTP 400** = NO conectada (único código que sí refleja fallo).
+| Capa (trifuerza) | Observado |
+|---|---|
+| **API** | `POST /magiis-v0.2/vendor/authorize` → **200** (sin cuerpo de error) |
+| **UI** | **Ningún** mensaje de error, toast ni validación — el modal cierra como si fuera exitoso |
+| **Estado** | La card Authorize.Net pasa a **Desvincular** → la pasarela queda **VINCULADA** con credenciales basura |
+
+Contraste que confirma la ausencia de validación: con credenciales **válidas** el mismo endpoint
+responde también **200** — la respuesta es indistinguible del caso inválido.
 
 ## Evidencia
 
-- `docs/gateway-pg/authorize/HANDOFF-live-reconciliation-2026-07-24.md` §2 + addendum 2026-07-25 (verificación en vivo, apps-test, carrier 1521).
-- Oráculo automatizado que tolera el quirk: `tests/components/ui/carrier/AppStoreGatewaysPage.ts` → `expectLinkStatusOk` (MG-226) + `authorizeGatewayAdapter.linkSuccessStatuses = [500, 409]`.
+- Probe de red automatizado (campaña exploratoria, temporal bajo
+  `tests/features/gateway-pg/specs/authorize/probe/`): log con `POST vendor/authorize -> 200` usando
+  `INVALID_LOGIN_QA`/`INVALID_KEY_QA`, cero líneas de error en el texto de la página y
+  `readState('authorize') = linked` posterior.
+- El test automatizado **`TS-AUTHORIZE-TC1003`** (Xray **MG-221**, suite CFG del ATP MG-178) queda
+  **FALLANDO a propósito**: su oráculo exige el error de autenticación y la no-activación. No se
+  debilitó — revela este defecto. Ese rojo es la evidencia viva del bug.
 
 ## Impacto
 
-- Los oráculos de QA quedan obligados a **tolerar códigos de error como éxito** (`[500, 409]`), debilitando la señal del test: un 500 real (fallo genuino del backend durante el link) es indistinguible del 500-de-éxito actual.
-- Cualquier consumidor del endpoint (FE, monitoreo, alertas) que siga la convención HTTP clasifica vinculaciones exitosas como errores de servidor.
-- Al corregirse a 2xx: revertir `linkSuccessStatuses` en `tests/features/gateway-pg/data/` (fuente única), el assert de `expectLinkStatusOk`, y la nota de `matriz_cases.md` TS-AUTHORIZE-TC1008 (TODO revert documentado en ambos).
+- **Configuración falsamente exitosa**: el carrier cree tener la pasarela operativa; los cobros
+  fallarán recién en runtime, con el viaje ya tomado (usuario final afectado).
+- **Regla de exclusividad ocupada por una configuración inválida**: al quedar "vinculada", bloquea
+  vincular otra pasarela válida hasta desvincularla.
+- **Diagnóstico costoso**: sin error en el alta, el soporte no tiene señal de la causa.
+- Ambiente `test` verificado; **presumible en producción** (mismo endpoint) → confirmar antes de cerrar.
 
-## DB Queries
+## Severidad / Prioridad sugerida
 
-- N/A (comportamiento observable por HTTP status; el estado vinculado se verifica por UI/API del App Store).
+**Severidad Major / Prioridad High** — no rompe el sistema, pero permite persistir una configuración
+de cobro inválida sin señal alguna, y su síntoma aparece lejos de la causa.
+
+## Notas para DEV
+
+- La validación esperada es una llamada de verificación al PSP antes de persistir el vínculo
+  (Authorize.Net expone `authenticateTestRequest` para exactamente esto).
+- Al corregir: devolver un 4xx con el código/mensaje del PSP para que el FE muestre el error, y
+  **no** persistir `MGWLinked`.
+- Cuando esté corregido, `TS-AUTHORIZE-TC1003` (MG-221) pasa a verde **sin tocar el test**.
+
+## Correcciones de documentación derivadas (ya aplicadas en el repo)
+
+Dos afirmaciones del `HANDOFF-live-reconciliation-2026-07-24.md` §2 quedaron desmentidas por la
+evidencia del 2026-07-28 y fueron corregidas en `data/link-status-defaults.ts` + el ATC `MG-226`:
+
+| Afirmación previa | Evidencia 2026-07-28 |
+|---|---|
+| Endpoint del link = `odnService` (MG-476), "NO /vendor/" | Es **`POST vendor/authorize`** — única mutación del submit |
+| Quirk de éxito = `500` (limpio) / `409` (ya vinculada) | Responde **200**; el quirk no reproduce |

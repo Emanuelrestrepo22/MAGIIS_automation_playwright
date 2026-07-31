@@ -188,7 +188,43 @@ export class AppStoreGatewaysPage extends UiBase {
 	}
 
 	/** FRAGILE: popup de confirmación de desvinculación (SweetAlert / modal). */
-	private readonly confirmPopup = (): Locator => this.page.locator('.swal2-popup, [role="dialog"], .modal').first();
+	/**
+	 * Popup de confirmación de desvinculación — filtrado por VISIBILIDAD, no `.first()` del DOM.
+	 *
+	 * POR QUÉ (fix live 2026-07-28): el selector matchea **7 diálogos** en esta página (la app
+	 * pre-renderiza modales ocultos, p. ej. el login de GNET) y el primero en orden de DOM está
+	 * OCULTO. Con `.first()` el `expect(...).toBeVisible()` evaluaba ese modal ajeno y fallaba
+	 * aunque el popup real estuviera abierto — diagnóstico live: tras el click el popup SÍ estaba
+	 * en pantalla (botones visibles "Cancelar"/"Confirmar") y el assert daba rojo igual.
+	 * `filter({ visible: true })` selecciona el diálogo realmente presentado.
+	 */
+	private readonly confirmPopup = (): Locator =>
+		this.page.locator('.swal2-popup, [role="dialog"], .modal').filter({ visible: true }).first();
+
+	/**
+	 * Botones del popup de confirmación de desvinculación, anclados AL BOTÓN y no al contenedor.
+	 *
+	 * POR QUÉ (fix live 2026-07-28): el popup real de MAGIIS NO usa ninguno de los contenedores
+	 * que `confirmPopup()` busca — un probe con el popup ABIERTO mostró `.swal2-popup`,
+	 * `[role=dialog]` y `.modal` con 7 matches TODOS invisibles (son el modal oculto de login de
+	 * GNET del App Store), mientras los botones "Cancelar" y "Confirmar" del popup sí estaban
+	 * visibles. Por eso `expect(confirmPopup()).toBeVisible()` fallaba aunque el popup estuviera
+	 * en pantalla, y la suite CFG nunca podía desvincular.
+	 * El filtro `{ visible: true }` es OBLIGATORIO: el modal oculto de GNET también tiene un
+	 * botón "Cancelar" y sin filtrar `.first()` devolvía ese.
+	 */
+	private readonly unlinkConfirmButton = (): Locator =>
+		this.page
+			.getByRole('button', { name: /^\s*(confirmar|aceptar|s[ií]|yes|ok)\s*$/i })
+			.filter({ visible: true })
+			.first();
+
+	/** Botón de cancelación del mismo popup (ver `unlinkConfirmButton` para el por qué del anclaje). */
+	private readonly unlinkCancelButton = (): Locator =>
+		this.page
+			.getByRole('button', { name: /^\s*(cancelar|cancel|cerrar|close|no)\s*$/i })
+			.filter({ visible: true })
+			.first();
 
 	// ── Helpers privados de interacción (usados por varios ATC; NO son ATC) ──────────
 
@@ -298,20 +334,33 @@ export class AppStoreGatewaysPage extends UiBase {
 		).toContain(response.status());
 	}
 
-	/** Abre el popup de desvinculación — mismo patrón (ver openAuthorizeLinkModal). */
+	/**
+	 * Abre el popup de desvinculación — mismo patrón (ver openAuthorizeLinkModal), con
+	 * `force: true` por el refresh periódico del FE.
+	 *
+	 * POR QUÉ `force` (fix live 2026-07-28): la lista del App Store se re-renderiza cada
+	 * ~700 ms (ver `goto()`), así que el link de acción rara vez cumple el check de
+	 * ESTABILIDAD de Playwright (mismo bounding box en 2 frames consecutivos) → el click
+	 * expiraba a los 4 s en cada intento y el `toPass` agotaba sus 120 s sin llegar a
+	 * clickear nunca. `force` saltea el check de actionability pero SIGUE siendo un evento
+	 * de mouse por CDP (trusted) en la posición del elemento — requisito del handler Angular
+	 * (un `el.click()` por `evaluate()` NO abre el popup, verificado en diagnóstico previo).
+	 * El oráculo real del intento es el popup visible: si el click cayó al vacío, el `toPass`
+	 * reintenta; no se pierde robustez, se elimina la espera imposible.
+	 */
 	private async openUnlinkPopup(company: GatewayCompany): Promise<void> {
 		await expect(async () => {
-			await this.desvincularLink(company).click({ timeout: 4_000 });
-			await expect(this.confirmPopup()).toBeVisible({ timeout: 8_000 });
+			const link = this.desvincularLink(company);
+			await link.scrollIntoViewIfNeeded({ timeout: 4_000 });
+			await link.click({ timeout: 4_000, force: true });
+			// Oráculo del popup abierto = su botón afirmativo VISIBLE (ver `unlinkConfirmButton`).
+			await expect(this.unlinkConfirmButton()).toBeVisible({ timeout: 8_000 });
 		}).toPass({ timeout: 120_000, intervals: [300, 600, 1_000] });
 	}
 
-	/** FRAGILE: confirma el popup de desvinculación (botón afirmativo). */
+	/** Confirma el popup de desvinculación (botón afirmativo visible — ver `unlinkConfirmButton`). */
 	private async confirmUnlink(): Promise<void> {
-		await this.confirmPopup()
-			.getByRole('button', { name: /s[ií]|confirmar|aceptar|desvincular|yes|ok/i })
-			.first()
-			.click();
+		await this.unlinkConfirmButton().click();
 	}
 
 	// ── API pública KATA ─────────────────────────────────────────────────────────────
@@ -353,20 +402,64 @@ export class AppStoreGatewaysPage extends UiBase {
 
 	/**
 	 * Clasifica el estado de la card de `company`. Query read-only (`unknown` es un resultado
-	 * válido de la clasificación, NO un error tragado). i18n-proof: prioriza la clase de color
-	 * del link de acción; cae al texto del footer para "No Disponible".
+	 * válido de la clasificación, NO un error tragado).
+	 *
+	 * CLASIFICA POR EL **TEXTO** DEL LINK DE ACCIÓN, no por su clase de color (fix live
+	 * 2026-07-28): la clase es AMBIGUA — "No Disponible" (pasarela bloqueada por la regla de
+	 * exclusividad) también se renderiza como `a.red-text`, igual que "Desvincular". El check
+	 * por clase devolvía `linked` para una pasarela NO vinculada → `currentActiveGateway()`
+	 * elegía la pasarela equivocada y la suite CFG intentaba desvincular una card cuyo link no
+	 * abre popup (click al vacío → timeout del toPass). Evidencia: dump del DOM con
+	 * `a.red-text` presente y visible en una card cuya acción era "No Disponible".
+	 * El locator SIGUE siendo por clase (discriminador estable, ver `vincularLink`); lo que
+	 * cambia es que se decide por el texto DE ESE elemento — mismo criterio que el probe
+	 * read-only del App Store, cuya clasificación coincidió con la realidad en todos los dumps.
 	 */
 	@step
 	async readState(company: GatewayCompany): Promise<GatewayCardState> {
 		const card = this.cardFor(company);
 		await card.waitFor({ state: 'visible', timeout: 20_000 });
-		const redText = card.locator('a.red-text').first();
-		if (await redText.isVisible().catch(() => false)) return 'linked';
-		const greenText = card.locator('a.green-text').first();
-		if (await greenText.isVisible().catch(() => false)) return 'linkable';
+		// ESTADO ESTABILIZADO (fix live 2026-07-28): el FE pinta un render OPTIMISTA con el
+		// estado ANTERIOR/cacheado del carrier y lo corrige ~750 ms después con el fetch real
+		// (más un refresh periódico ~700 ms — ver `goto()`). Leer el primer frame devolvía el
+		// estado histórico del carrier: con Authorize REALMENTE vinculada, el frame optimista
+		// mostraba "Stripe: Desvincular / Authorize: Vincular" (verificado contra el probe
+		// read-only, que espera más y sí veía el estado real). Consecuencias que esto causaba:
+		// `currentActiveGateway()` elegía la pasarela equivocada y la suite CFG clickeaba un
+		// link que desaparecía al corregirse el DOM → timeout de 120 s del toPass; y el smoke
+		// era intermitente (1er intento rojo, 2º verde).
+		// Se devuelve el valor sólo cuando DOS lecturas consecutivas coinciden.
+		let previous: GatewayCardState | null = null;
+		for (let attempt = 0; attempt < 6; attempt++) {
+			const current = await this.classifyCardState(card);
+			if (previous === current) return current;
+			previous = current;
+			// Ventana de settle deliberada (> el ciclo de refresh del FE), no un sleep arbitrario.
+			await this.page.waitForTimeout(900);
+		}
+		return previous ?? 'unknown';
+	}
+
+	/**
+	 * Clasificación pura de una card ya visible (sin esperas de settle — eso lo hace `readState`).
+	 * Decide por el **TEXTO** del link de acción, no por su clase de color: la clase es AMBIGUA —
+	 * "No Disponible" (pasarela bloqueada por exclusividad) también se renderiza como `a.red-text`,
+	 * igual que "Desvincular". El locator sigue siendo por clase (discriminador estable, ver
+	 * `vincularLink`); lo que decide es el texto de ESE elemento — mismo criterio que el probe
+	 * read-only del App Store, cuya clasificación coincidió con la realidad en todos los dumps.
+	 */
+	private async classifyCardState(card: Locator): Promise<GatewayCardState> {
+		const actionLink = card.locator('a.red-text, a.green-text').first();
+		if (await actionLink.isVisible().catch(() => false)) {
+			const action = ((await actionLink.textContent().catch(() => '')) ?? '').trim().toLowerCase();
+			if (action.includes('no disponible') || action.includes('not available')) return 'unavailable';
+			if (action.includes('desvincular') || action.includes('unlink')) return 'linked';
+			if (action.includes('vincular') || action.includes('link') || action.includes('habilitar')) return 'linkable';
+		}
+		// Fallback al texto completo de la card (sin link de acción visible, p.ej. MP fuera de región).
 		const raw = ((await card.textContent().catch(() => '')) ?? '').trim().toLowerCase();
-		if (raw.includes('desvincular') || raw.includes('unlink')) return 'linked';
 		if (raw.includes('no disponible') || raw.includes('not available')) return 'unavailable';
+		if (raw.includes('desvincular') || raw.includes('unlink')) return 'linked';
 		if (raw.includes('vincular') || raw.includes('link') || raw.includes('habilitar')) return 'linkable';
 		return 'unknown';
 	}
@@ -436,8 +529,16 @@ export class AppStoreGatewaysPage extends UiBase {
 		}
 		await this.openUnlinkPopup(company);
 		await this.confirmUnlink();
-		await expect(this.vincularLink(company), `la card ${company} debe quedar desvinculada (green-text / "Vincular")`).toBeVisible({ timeout: 20_000 });
-		expect(await this.readState(company), 'estado esperado tras desvincular = linkable').toBe('linkable');
+		// El detach del backend es `@Async` + cascade `cleaningWallets`, y la lista del App Store
+		// sirve un render cacheado: el estado real puede tardar MÁS que la ventana del assert
+		// (verificado live 2026-07-28: la desvinculación SÍ se aplicó en backend — el probe
+		// read-only la confirmó — pero la card seguía mostrando "Desvincular" al expirar los 20 s).
+		// `reload()` + `readState` estabilizado dentro de `toPass` espera el efecto REAL sin
+		// depender del refresh optimista del FE.
+		await expect(async () => {
+			await this.reload();
+			expect(await this.readState(company), 'estado esperado tras desvincular = linkable').toBe('linkable');
+		}).toPass({ timeout: 60_000, intervals: [2_000, 4_000, 6_000] });
 	}
 
 	/** ATC — desvincula Authorize. Wrapper por pasarela (key ESTRUCTURAL — TS-AUTHORIZE-TC1005). */
@@ -491,11 +592,9 @@ export class AppStoreGatewaysPage extends UiBase {
 	@step
 	async cancelUnlink(company: GatewayCompany): Promise<void> {
 		await this.openUnlinkPopup(company);
-		await this.confirmPopup()
-			.getByRole('button', { name: /cancelar|no|cerrar|cancel|close/i })
-			.first()
-			.click();
-		await expect(this.confirmPopup(), 'el popup debe cerrarse sin desvincular').toBeHidden({ timeout: 10_000 });
+		await this.unlinkCancelButton().click();
+		// El cierre se verifica por la desaparición del botón afirmativo (mismo anclaje que la apertura).
+		await expect(this.unlinkConfirmButton(), 'el popup debe cerrarse sin desvincular').toBeHidden({ timeout: 10_000 });
 		expect(await this.readState(company), `${company} sigue vinculada tras cancelar`).toBe('linked');
 	}
 
@@ -640,18 +739,21 @@ export class AppStoreGatewaysPage extends UiBase {
 	}
 
 	/**
-	 * ATC — observa la request de vinculación de Authorize y verifica un status de éxito conocido (500|409).
+	 * ATC — observa la request de vinculación de Authorize y verifica el status de éxito del AC (200).
 	 * Precondición: Authorize "Vincular" (liberar slot antes). Deja Authorize vinculada.
-	 * Wrapper por pasarela (S4); lógica compartida en `expectLinkStatusOkImpl`. Defaults espejo del
-	 * adapter authorize (`linkSuccessStatuses: [500, 409]`); `options` permite pasar los del adapter.
+	 * Wrapper por pasarela (S4); lógica compartida en `expectLinkStatusOkImpl`. Defaults desde la
+	 * fuente única `data/link-status-defaults.ts`; `options` permite pasar los del adapter.
 	 *
-	 * Quirk backend VERIFICADO (HANDOFF §2, actualizado 2026-07-25): 500 = pasarela CONECTADA desde
-	 * estado limpio; 409 = CONECTADA cuando el carrier 1521 (compartido por la suite gateway) ya
-	 * estaba vinculado por otra sesión — ambos son éxito funcional, ninguno es bug de test.
-	 * 400 = NO conectada. El 500/409-en-éxito es smell de API (debería ser 2xx) → Improvement/Defect a DEV/MX (no MG).
-	 * Endpoint del link Authorize = odnService (MG-476), NO /vendor/. El matcher incluye odnService.
+	 * EVIDENCIA LIVE 2026-07-28 (campaña exploratoria, dos probes de red independientes): el submit
+	 * dispara UNA sola mutación, `POST vendor/authorize`, y responde **200** dejando la card en
+	 * `linked`. Corrige DOS afirmaciones del HANDOFF §2 que ya no reproducen: el quirk `500|409` y
+	 * el endpoint `odnService`. Se vuelve al AC original de la matriz (status 200): el assert ya NO
+	 * tolera códigos de error, así que un 500/409 futuro FALLA (era lo que el quirk tapaba).
+	 * ⚠️ 200 ≠ credenciales validadas: el endpoint responde 200 y vincula incluso con credenciales
+	 * INVÁLIDAS (defecto de backend, ver DRAFT-improvement en docs/gateway-pg/authorize/) — por eso
+	 * el caso asserta además la persistencia del estado.
 	 */
-	@atc('MG-226', { severity: 'normal', description: 'La request de link de Authorize retorna un status de éxito conocido (500|409)' })
+	@atc('MG-226', { severity: 'normal', description: 'La request de link de Authorize retorna status 200 (AC de matriz) y la pasarela queda vinculada' })
 	async expectLinkStatusOk(creds: AuthorizeCreds, options: LinkStatusOptions = {}): Promise<void> {
 		await this.expectLinkStatusOkImpl('authorize', {
 			fields: this.authorizeLinkFields(creds),

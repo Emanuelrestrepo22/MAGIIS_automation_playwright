@@ -38,6 +38,7 @@ import { validateAndSelectMercadoPagoCard } from '@features/gateway-pg/helpers/m
 import { getCarrierParameters, readHoldRaw, setHoldViaApi } from '@features/gateway-pg/helpers/parameters-api';
 import {
 	cleanupGatewayCardByLast4,
+	extractAuthToken,
 	validateCardPrecondition,
 	type CardPreconditionResult
 } from '@features/gateway-pg/helpers/card-precondition';
@@ -216,9 +217,10 @@ export class CarrierHoldSteps extends UiBase {
 	 *     resaltada): 'linked' continúa; 'validation-unavailable' → test.skip (limitación sandbox
 	 *     MP en TEST — incluye el error explícito "Error al validar tarjeta", su manifestación
 	 *     documentada; UAT-only); 'validation-failed' RESERVADO (guard future-proof, hoy inerte).
-	 *   - authorize/ebizcharge: "Validar" + oráculo "Tarjeta válida" (verificado live Authorize).
+	 *   - authorize/ebizcharge: "Validar" + oráculo de ESTADO (Forma de Pago resuelta a
+	 *     "*** <last4>" — live 2026-07-28, ver CarrierNewTravelPage.validateNativeCard).
 	 */
-	private async validateNativeGatewayCard(gateway: GatewayName): Promise<void> {
+	private async validateNativeGatewayCard(gateway: GatewayName, cardLast4: string): Promise<void> {
 		if (gateway === 'mercado-pago') {
 			const mpLink = await validateAndSelectMercadoPagoCard(this.page);
 			// Guard future-proof (hoy INERTE): 'validation-failed' está RESERVADO a evidencia live
@@ -232,7 +234,7 @@ export class CarrierHoldSteps extends UiBase {
 			);
 			return;
 		}
-		await this.travel.validateNativeCard();
+		await this.travel.validateNativeCard(cardLast4);
 	}
 
 	/**
@@ -277,6 +279,17 @@ export class CarrierHoldSteps extends UiBase {
 		// evitaba con su cleanup). Mismo helper compartido; silent-fail por query.
 		if (adapter.cardForm === 'native-angular') {
 			await test.step('Precondición: limpiar tarjeta nativa previa (idempotencia)', async () => {
+				// Warm-up del JWT ANTES del cleanup (root-cause live 2026-07-28): extractAuthToken
+				// sin retry devuelve null recién logueado → 401 → catch silencioso por query →
+				// cleanup no-op y el alta diverge a tarjeta-guardada. Patrón retry ×3 establecido
+				// (allcards beforeAll). Con cache poblado, getApiHeaders del cleanup ya no falla.
+				let token: string | null = null;
+				for (let attempt = 0; attempt < 3 && !token; attempt++) {
+					token = await extractAuthToken(this.page);
+				}
+				if (!token) {
+					debugLog('gateway-pg:carrier', '[card-cleanup] JWT no capturado tras 3 intentos — cleanup correrá sin auth y no-op');
+				}
 				const queries = [scenario.passenger, ...(adapter.journeyDefaults.paxSearchQueries ?? [])];
 				await cleanupGatewayCardByLast4(this.page, queries, cardLast4);
 			});
@@ -343,7 +356,7 @@ export class CarrierHoldSteps extends UiBase {
 					} else {
 						await this.travel.selectPaymentMethod('Preautorizada');
 						await cardFormFor(gateway).fill(this.page, card);
-						await this.validateNativeGatewayCard(gateway);
+						await this.validateNativeGatewayCard(gateway, cardLast4);
 					}
 				}
 			});
