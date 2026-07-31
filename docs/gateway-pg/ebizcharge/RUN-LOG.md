@@ -162,3 +162,22 @@ el caso necesita otro oráculo (validación de formulario, área del futuro MG-4
   last4 devuelve filas de ambas tarjetas → leer la transacción de la ventana, no la primera fila.
 - **`mode: 'serial'`** (`card-outcome-matrix.factory.ts:99`): un rojo **saltea el resto** de la matriz
   (`N did not run`) y `--max-failures` no lo evita. Los declines se corren **de uno** por `--grep`.
+
+### Nota del QA lead sobre la configuración de la cuenta sandbox (2026-07-31)
+
+Hipótesis planteada: las tarjetas que deberían rechazar y sin embargo se vinculan y permiten pagar
+se comportan así por la configuración de la cuenta merchant, y sin acceso a la consola no podemos
+cambiarla para que el servidor de eBiz responda distinto.
+
+La verificación por transacción separa dónde aplica:
+
+- **Aplica a TC1031 (FRAUD_REJECT).** El PSP contestó `A-Approved` — la cuenta **no discriminó** esa
+  tarjeta. El Fraud Profiler es configuración de cuenta y no está activo; sin consola no es
+  habilitable. El caso pasa a **NO EJECUTABLE en este ambiente → ENVIRONMENT/BLOCKED con motivo**,
+  no FAILED. El fixture conserva la tarjeta y su outcome documentado (la doc del vendor es correcta);
+  lo que falta es el trigger habilitado en la cuenta.
+- **No aplica a TC1011/1012/1013/1014.** Ahí la cuenta **sí discriminó**: `ResultCode D — Declined`
+  con `ErrorCode` 10205/10251/10212/10262 sobre la transacción que MAGIIS disparó al validar.
+  El servidor **ya responde el rechazo**; el alta no lo lee. Reconfigurar la cuenta no cambiaría ese
+  dato porque ya viene correcto — y viaja en la MISMA respuesta que el `AvsResultCode` que sí se
+  está mirando. El defecto se sostiene.
