@@ -1229,6 +1229,92 @@ Checklist (en orden):
 - **Bloqueante previo a cualquier corrida eBiz:** las credenciales `EBIZ_*` **no están en `.env.test`** ⇒ `isConfigured()` es false ⇒ los 23 tests skipean.
 - **Referencias:** `tests/test-1.spec.ts`, `tests/features/gateway-pg/helpers/adapters/ebizchargeGatewayAdapter.ts`, `tests/components/ui/carrier/card-forms/NativeAngularCardForm.ts`, `tests/pages/carrier/NewTravelPageBase.ts` (`searchPlace`), BL-054
 
+### BL-056 — Typo de producto en la confirmación del widget Quote: "Your Trip was confimed!"
+
+- **Estado:** 🔴 Pendiente
+- **Prioridad:** P3
+- **Tipo:** Bug
+- **Reportado:** 2026-07-30
+- **Contexto:** El heading de confirmación del widget Quote dice **"Your Trip was confimed!"** — falta
+  la R de "confirmed". No es texto interno: el widget Quote es el **embebible público** que ven los
+  clientes finales del carrier (`#/quote?...&pluginKey=<carrier>`), así que el typo llega al usuario.
+  Observado en la grabación `recorded/ebizcharge-quote-hold-invitado-viaje-programado.recorded.ts`.
+  Efecto colateral en la automatización: el assert del heading tiene que matchear el texto REAL con el
+  typo, o el spec falla contra el ambiente. Está marcado con un comentario en la grabación para que
+  nadie lo "corrija" al portarlo.
+- **Próxima acción:** Reportar a **DEV/MX** (no a MG — en MG sólo se crean entidades Xray). Cuando se
+  corrija, actualizar el literal del assert en la grabación y en el spec portado.
+- **Referencias:** `docs/gateway-pg/ebizcharge/RUN-LOG.md` §Ronda 2 · hallazgo 1
+
+### BL-057 — Máscara del campo "Card number" vs Amex de 15 dígitos (sin confirmar)
+
+- **Estado:** 🟡 Sin confirmar
+- **Prioridad:** P3
+- **Tipo:** Bug / Validación
+- **Reportado:** 2026-07-30
+- **Contexto:** En el E2E eBizCharge #2, los dos tramos que usaron Amex necesitaron ~25 acciones de
+  forcejeo (`ArrowRight` repetido + refill) para dejar el número completo. Amex agrupa **4-6-5**
+  (`3711 222233 32225`), no 4-4-4-4, y la máscara parece pelearse con eso.
+  **Puede ser artefacto del codegen**: el `fill` de Playwright reescribe el valor entero y la máscara
+  reacciona en cada keystroke, así que el forcejeo podría no reproducirse con un humano tipeando.
+  Hallazgo relacionado: el CVV tampoco indica el largo esperado por marca (Amex 4 dígitos, resto 3) —
+  la grabación muestra el ida y vuelta `123` → `1234` → `123` → `1235` → `3214` hasta acertar.
+- **Próxima acción:** Reproducir a mano con la Amex `371122223332225` y observar si un humano también
+  pierde dígitos. Si se reproduce → filear a DEV/MX. Si no → cerrar como artefacto del codegen y
+  dejar la nota en el `NativeAngularCardForm` para el fill de Amex.
+- **Referencias:** `docs/gateway-pg/ebizcharge/RUN-LOG.md` §Ronda 2 · hallazgos 2 y 3 ·
+  `recorded/ebizcharge-e2e-3actores-hold-onoff-delete-recard-programado.recorded.ts`
+
+### BL-058 — Carrier 1521 quedó con la pre-autorización en OFF tras el E2E eBizCharge #2
+
+- **Estado:** 🔴 Pendiente
+- **Prioridad:** **P1**
+- **Tipo:** Configuración
+- **Reportado:** 2026-07-30
+- **Contexto:** El tramo 5 del E2E #2 apagó la pre-autorización del carrier compartido 1521 desde
+  Operational Preferences → Card Payments, y la grabación **no la volvió a encender**. Cualquier spec
+  de hold que corra antes de restaurarla da un falso resultado: el hold no se aplica y el caso reporta
+  un desenlace que no corresponde a su intent. El motor `runStepwiseHoldJourney` restaura el toggle
+  cuando el caso declara `holdMode: 'off'`, pero acá el apagado fue **manual**, fuera del motor.
+- **Próxima acción:** Encender la pre-autorización a mano en Operational Preferences del carrier 1521,
+  y verificarlo con un caso Hold ON (`TS-EBIZ-TC1067`) antes de correr cualquier otra cosa.
+- **Referencias:** `docs/gateway-pg/ebizcharge/RUN-LOG.md` §Ronda 2 · Límite de alcance declarado
+
+### BL-059 — Actor sin resolver del tramo 5 (E2E eBizCharge #2): bloquea acreditar TC1059 o TC1063
+
+- **Estado:** 🔴 Pendiente
+- **Prioridad:** P2
+- **Tipo:** Validación
+- **Reportado:** 2026-07-30
+- **Contexto:** En el tramo 5 el titular de la tarjeta dice `sinhold happycolaborador` pero el cliente
+  seleccionado es `Restrepo, Emanuel`, que en el tramo 6 es usuario **personal**. Los dos caminos
+  acreditan TC distintos: si el cliente es empresa con colaborador asociado → `TS-EBIZ-TC1059`; si es
+  personal → `TS-EBIZ-TC1063` y **"colaborador sin hold" queda pendiente de ejecutar**. No se puede
+  resolver por inspección de la grabación. El único `travelId` conocido es 67817 (tramo 1).
+- **Próxima acción:** Correr en DBeaver (o vía el MCP "Magiis BD de test" cuando esté disponible) la
+  query del RUN-LOG §Ronda 2 sobre `MGW.travels` + `MGW.clients` en el rango 67810-67840, y leer el
+  `client_type` del viaje del tramo 5.
+- **Referencias:** `docs/gateway-pg/ebizcharge/RUN-LOG.md` §Ronda 2 · "El tramo 5 no se acredita"
+
+### BL-060 — Grabación cruda rota en el repo HUB: `agentic-qa-boilerplate/tests/setup/test-14.spec.ts`
+
+- **Estado:** 🔴 Pendiente
+- **Prioridad:** P2
+- **Tipo:** Deuda técnica
+- **Reportado:** 2026-07-30
+- **Contexto:** El codegen del flujo Quote quedó guardado en el repo **orquestador**
+  (`agentic-qa-boilerplate`), no en este. Dos problemas ahí: (a) **no compila** — el widget Quote abre
+  una pestaña nueva y el codegen usó `page1` sin declararla nunca (perdió el
+  `waitForEvent('page')`); (b) tiene la **contraseña del carrier en texto plano**. Y está dentro del
+  `testDir` de ese repo (`./tests` global + un project con `./tests/setup`), así que se **colecta** y
+  crearía viajes reales si alguien corre la suite.
+  La versión corregida ya vive en este repo como
+  `recorded/ebizcharge-quote-hold-invitado-viaje-programado.recorded.ts`, con la pestaña reconstruida
+  y las credenciales por env var — el crudo del HUB es redundante.
+- **Próxima acción:** Eliminar `tests/setup/test-14.spec.ts` del repo `agentic-qa-boilerplate`.
+  **Requiere decisión del dev**: es otro repositorio y no se toca desde acá sin autorización.
+- **Referencias:** `recorded/ebizcharge-quote-hold-invitado-viaje-programado.recorded.ts` §Imperfecciones
+
 ---
 
 ## Archivo (cerrado, >30 días)
