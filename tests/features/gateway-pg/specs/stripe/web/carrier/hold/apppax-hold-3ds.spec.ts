@@ -124,7 +124,8 @@ async function runHoldOnScenario(page: Page, scenario: Hold3dsScenario): Promise
 		// Si la tarjeta se seleccionó del dropdown (saved), puede saltar validación 3DS inicial.
 		// Si se vinculó nueva (Stripe iframe), siempre dispara 3DS.
 		await test.step('Aprobar modal 3DS de Stripe (validacion inicial)', async () => {
-			if (await threeDS.waitForOptionalVisible(5_000)) {
+			// Determinista: si el botón de vehículo ya habilitó, el flujo avanzó sin challenge → no esperamos a ciegas.
+			if (await threeDS.waitForOptionalVisible(15_000, () => travel.isVehicleSelectionReady())) {
 				await threeDS.completeSuccess();
 				await threeDS.waitForHidden();
 			}
@@ -137,8 +138,9 @@ async function runHoldOnScenario(page: Page, scenario: Hold3dsScenario): Promise
 
 		await test.step('Aprobar 3DS adicional si aparece post-envio', async () => {
 			// Con saved card el backend puede reutilizar la autorización previa → no hay 3DS.
-			// Con nueva card se dispara 3DS post-hold. Wait corto no-bloqueante.
-			if (await threeDS.waitForOptionalVisible(5_000)) {
+			// Con nueva card se dispara 3DS post-hold. Determinista: si ya navegó al detalle del
+			// viaje, el flujo cerró sin challenge → cortamos sin agotar el timeout.
+			if (await threeDS.waitForOptionalVisible(15_000, async () => /\/travels\/[\w-]+/.test(page.url()))) {
 				await threeDS.completeSuccess();
 				await threeDS.waitForHidden();
 			}
@@ -212,7 +214,8 @@ async function runHoldOffScenario(page: Page, scenario: Hold3dsScenario): Promis
 		});
 
 		await test.step('Aprobar modal 3DS de Stripe (validacion inicial)', async () => {
-			if (await threeDS.waitForOptionalVisible(5_000)) {
+			// Determinista: si el botón de vehículo ya habilitó, el flujo avanzó sin challenge → no esperamos a ciegas.
+			if (await threeDS.waitForOptionalVisible(15_000, () => travel.isVehicleSelectionReady())) {
 				await threeDS.completeSuccess();
 				await threeDS.waitForHidden();
 			}
@@ -225,8 +228,9 @@ async function runHoldOffScenario(page: Page, scenario: Hold3dsScenario): Promis
 
 		await test.step('Aprobar 3DS adicional si aparece post-envio', async () => {
 			// Con saved card el backend puede reutilizar la autorización previa → no hay 3DS.
-			// Con nueva card se dispara 3DS post-hold. Wait corto no-bloqueante.
-			if (await threeDS.waitForOptionalVisible(5_000)) {
+			// Con nueva card se dispara 3DS post-hold. Determinista: si ya navegó al detalle del
+			// viaje, el flujo cerró sin challenge → cortamos sin agotar el timeout.
+			if (await threeDS.waitForOptionalVisible(15_000, async () => /\/travels\/[\w-]+/.test(page.url()))) {
 				await threeDS.completeSuccess();
 				await threeDS.waitForHidden();
 			}

@@ -11,7 +11,7 @@
  * iframes, holder y ZIP (avsZipcode) son inputs nativos de la página.
  */
 
-import type { Frame, Page } from '@playwright/test';
+import type { Frame, Locator, Page } from '@playwright/test';
 import type { CardFormFillInput, CardFormStrategy } from './CardFormStrategy';
 
 type StripeComponentName = 'cardNumber' | 'cardExpiry' | 'cardCvc';
@@ -44,9 +44,23 @@ export class StripeElementsCardForm implements CardFormStrategy {
 		const expiryFrame = await this.waitForStripeFrame(page, 'cardExpiry');
 		const cvcFrame = await this.waitForStripeFrame(page, 'cardCvc');
 
-		await numberFrame.locator('input[name="cardnumber"]').fill(card.number);
-		await expiryFrame.locator('input[name="exp-date"]').fill(card.expiry);
-		await cvcFrame.locator('input[name="cvc"]').fill(card.cvc);
+		// MG-178: los 3 campos DENTRO de los iframes se tipean char-por-char, no con `fill()`.
+		// Stripe Elements no siempre registra el `fill()` programático: deja el campo en estado
+		// "incompleto" y el botón "Validar" del POM nunca habilita. `pressSequentially` dispara los
+		// listeners internos de Stripe. El `click()` + `fill('')` previo limpia el residuo de un
+		// intento anterior, porque el POM reintenta el llenado hasta que "Validar" habilite.
+		// Holder y ZIP son inputs nativos de Angular: no necesitan el tipeo lento.
+		const iframeFields: Array<[Locator, string]> = [
+			[numberFrame.locator('input[name="cardnumber"]'), card.number],
+			[expiryFrame.locator('input[name="exp-date"]'), card.expiry],
+			[cvcFrame.locator('input[name="cvc"]'), card.cvc]
+		];
+		for (const [input, value] of iframeFields) {
+			await input.click();
+			await input.fill('');
+			await input.pressSequentially(value, { delay: 30 });
+		}
+
 		await page.locator('input[formcontrolname="creditCardOwnerName"]').fill(card.holderName);
 		if (card.zip) {
 			await page.locator('input[formcontrolname="avsZipcode"]').fill(card.zip);

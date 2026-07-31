@@ -91,9 +91,24 @@ export async function captureCreatedTravelId(page: Page, carrierId = DEFAULT_CAR
 			if (!response.ok()) return;
 
 			const body = await response.json().catch(() => null);
-			if (body && typeof body.travelId === 'number') {
-				ref.travelId = body.travelId;
-				console.log(`[travel-cleanup] Capturado travelId=${body.travelId}`);
+			// El service FE consume `response.travelId` (travel.service.ts:410), pero la interfaz
+			// del command declara `id?` (addTravelcommand.ts:33) y el DTO trae también
+			// `travelIdForCarrier`. Aceptamos cualquiera de los tres, number o string-numérico,
+			// para no perder la captura por diferencia de nombre/tipo entre endpoints.
+			const rawId = body?.travelId ?? body?.travelIdForCarrier ?? body?.id;
+			const id =
+				typeof rawId === 'number'
+					? rawId
+					: typeof rawId === 'string' && /^\d+$/.test(rawId)
+						? Number(rawId)
+						: null;
+			if (id !== null) {
+				ref.travelId = id;
+				console.log(`[travel-cleanup] Capturado travelId=${id}`);
+			} else if (body) {
+				console.warn(
+					`[travel-cleanup] POST ${response.url()} 2xx sin travelId/id numérico (keys: ${Object.keys(body).join(', ')})`,
+				);
 			}
 		} catch {
 			// Silenciar errores de parseo — no bloquear el test

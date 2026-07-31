@@ -90,11 +90,32 @@ export class TravelManagementPage {
 		);
 	}
 
+	/**
+	 * Activa la pestaña "Por Asignar". En este FE (Angular, release/v1.72.x) el tablero NO es
+	 * Kanban ni expone `data-testid`: es un `<tabset>` de ngx-bootstrap cuya pestaña se identifica
+	 * por el heading traducido (`carrier.travels.management.table_tab_to_assign` = "Asignar"). Mismo
+	 * patrón que `expectPassengerInEnConflicto`.
+	 */
+	async openPorAsignarTab(): Promise<void> {
+		const tab = this.page.locator('tabset ul li a').filter({ hasText: /asignar/i }).first();
+		if (await tab.count()) {
+			await expect(tab).toBeVisible({ timeout: 10_000 });
+			await tab.click();
+			await this.page.waitForSelector('table tbody', { state: 'visible', timeout: 15_000 }).catch(() => {});
+		}
+	}
+
+	/**
+	 * Tabla de viajes de la pestaña activa. Antes usaba `getByTestId('column-por-asignar')`, un
+	 * testid que NO existe en el FE → el locator nunca matcheaba. El tablero comparte una única
+	 * `<table>` cuyo contenido cambia según la pestaña seleccionada (no hay columnas Kanban).
+	 */
 	porAsignarColumn() {
-		return this.page.getByTestId('column-por-asignar');
+		return this.page.locator('table.table, table').first();
 	}
 
 	async expectPassengerInPorAsignar(passenger: string, destination?: string, status?: string): Promise<void> {
+		await this.openPorAsignarTab();
 		const row = await this.tripRow(passenger, destination);
 		await expect(row).toBeVisible({ timeout: 10_000 });
 		await expect
@@ -110,6 +131,43 @@ export class TravelManagementPage {
 		if (status) {
 			await expect(row).toContainText(status, { timeout: 10_000 });
 		}
+	}
+
+	/**
+	 * Abre la pestaña "Cancelados". Selector verificado por codegen contra TEST v1.72.8: la pestaña
+	 * es un `link` cuyo nombre incluye el contador (p.ej. "Cancelados (68)") → match por regex.
+	 */
+	async openCanceladosTab(): Promise<void> {
+		const tab = this.page.getByRole('link', { name: /Cancelados/i }).first();
+		await expect(tab).toBeVisible({ timeout: 10_000 });
+		await tab.click();
+		await this.page.waitForSelector('table tbody', { state: 'visible', timeout: 15_000 }).catch(() => {});
+	}
+
+	/**
+	 * Reactiva un viaje cancelado (pestaña Cancelados → filtrar → botón Reactivar).
+	 * Locators verificados por codegen contra TEST v1.72.8: buscador `textbox "Buscar..."` para aislar
+	 * la fila y botón `Reactivar Viaje` (tooltip → `getByRole('button', { description })`). FE:
+	 * `cloneTravel(travelId)` = API + navegación a `listDriverOnline`.
+	 * Nota: tras filtrar se reactiva la primera coincidencia (el viaje recién cancelado suele ser el más reciente).
+	 */
+	async reactivate(passenger: string, destination?: string): Promise<void> {
+		await this.openCanceladosTab();
+
+		const search = this.page.getByRole('textbox', { name: 'Buscar...' });
+		if (await search.count()) {
+			await search.fill(destination ?? passenger);
+			await this.page.waitForTimeout(500); // debounce del filtro de la grilla
+		}
+
+		// El codegen (PW nuevo) lo grabó como `getByRole('button', { description: 'Reactivar Viaje' })`,
+		// opción no soportada en PW 1.56 → equivalente por atributo (tooltip title/aria-description) con
+		// fallback al ícono `fa-refresh` confirmado en el FE (robusto a versión y locale).
+		const reactivateBtn = this.page
+			.locator('button[title="Reactivar Viaje"], button[aria-description="Reactivar Viaje"], button.action-btn-primary:has(i.fa-refresh)')
+			.first();
+		await expect(reactivateBtn).toBeVisible({ timeout: 10_000 });
+		await reactivateBtn.click();
 	}
 
 	async expectPassengerInEnConflicto(passenger: string, destination?: string): Promise<void> {

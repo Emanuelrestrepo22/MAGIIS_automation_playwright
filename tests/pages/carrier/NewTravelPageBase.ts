@@ -638,14 +638,39 @@ export abstract class NewTravelPageBase extends BasePage {
 		await preauthOption.waitFor({ state: 'visible', timeout: 10_000 });
 		await preauthOption.click();
 
-		await new StripeElementsCardForm().fill(this.page, {
-			number: cardNumber,
-			expiry: STRIPE_EXPIRY,
-			cvc: STRIPE_CVC,
-			holderName: STRIPE_CARD_HOLDER_NAME,
-			zip: STRIPE_BILLING_ZIP
-		});
+		// card-new (MG-178): Stripe Elements en TEST v1.72.8 a veces NO registra el primer llenado
+		// → el botón "Validar" no habilita y el test falla (bucket card-new). El Strategy tipea
+		// char-por-char (`pressSequentially` dispara los listeners internos de Stripe); acá se
+		// reintenta el llenado hasta que "Validar" habilite. El retry vive en el POM, no en el
+		// Strategy, porque "Validar" es un control de ESTA pantalla y el Strategy no lo conoce.
+		const cardForm = new StripeElementsCardForm();
+		const CARD_FILL_RETRIES = 3;
+		for (let attempt = 1; attempt <= CARD_FILL_RETRIES; attempt++) {
+			await cardForm.fill(this.page, {
+				number: cardNumber,
+				expiry: STRIPE_EXPIRY,
+				cvc: STRIPE_CVC,
+				holderName: STRIPE_CARD_HOLDER_NAME,
+				zip: STRIPE_BILLING_ZIP
+			});
+			if (await this.waitForValidateEnabled(attempt < CARD_FILL_RETRIES ? 4_000 : 8_000)) {
+				break;
+			}
+		}
 		await this.assertPaymentMethodPreauthorizedSelected();
+	}
+
+	/** Poll hasta que el botón "Validar" habilite (Stripe considera la tarjeta completa). */
+	private async waitForValidateEnabled(timeoutMs: number): Promise<boolean> {
+		const deadline = Date.now() + timeoutMs;
+		while (Date.now() < deadline) {
+			if (await this.validateCardButton.isEnabled().catch(() => false)) {
+				return true;
+			}
+			// NOTE(tier3-kept): Stripe Elements no emite evento al completar el campo — poll obligado
+			await this.page.waitForTimeout(400);
+		}
+		return false;
 	}
 
 	async selectCardByLast4(last4: string, skipValidate = false, allowDecline = false): Promise<void> {
@@ -886,6 +911,17 @@ export abstract class NewTravelPageBase extends BasePage {
 
 	async waitForVehicleSelectionReady(timeout = 45_000): Promise<void> {
 		await this.waitForEnabledButton(this.vehicleButton, timeout);
+	}
+
+	/**
+	 * True si el botón "Seleccionar Vehículo" ya está visible+habilitado (form válido, el flujo
+	 * avanzó sin challenge). Es un PREDICADO, no un waiter: `waitForVehicleSelectionReady` bloquea
+	 * hasta 45s, y esto se usa como escape-hatch de `ThreeDSModal.waitForOptionalVisible` para no
+	 * esperar a ciegas un modal 3DS que quizá no aparezca.
+	 */
+	async isVehicleSelectionReady(): Promise<boolean> {
+		const visible = await this.vehicleButton.isVisible().catch(() => false);
+		return visible ? this.vehicleButton.isEnabled().catch(() => false) : false;
 	}
 
 	async clickSelectVehicle(): Promise<void> {
