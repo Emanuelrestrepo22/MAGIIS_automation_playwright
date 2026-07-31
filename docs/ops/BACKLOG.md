@@ -651,7 +651,8 @@
 
 ### BL-036 — Pruebas API smoke: MAGIIS backend + Authorize.net sandbox
 
-- **Estado:** 🟡 Frente B (Authorize sandbox) plantilla técnica completa (commit `8eda8b7`, 2026-05-13). Frente A (MAGIIS backend) pendiente. Ambos esperan ejecución contra ambiente real.
+- **Estado:** 🟢 **Frente B ACREDITADO (2026-07-30)** — los 4 specs de contrato del sandbox Authorize corren verdes contra la cuenta real: **11/11**, incluidos todos los magic triggers (CVV 901/904, ZIP 46205/46204/46282, partial 46225, prepaid 46228, happy Visa/MC/Amex/Discover). Se desbloqueó al habilitar el filtro CCV de la cuenta — ver **BL-049**, que documenta la causa raíz y las hipótesis descartadas. Esta capa es además la **única cobertura Authorize que sobrevive al switch de pasarela**: pega directo al sandbox con credenciales de API, sin pasar por MAGIIS, así que sigue siendo válida con otra pasarela vinculada al carrier 1521.
+  🟡 Frente A (MAGIIS backend) sigue pendiente. Plantilla técnica original: commit `8eda8b7`, 2026-05-13.
 - **Prioridad:** P2
 - **Tipo:** Automatización (testing nuevo de tipo API)
 - **Reportado:** 2026-05-13
@@ -1081,7 +1082,25 @@ Checklist (en orden):
 
 ### BL-049 — Cuenta Authorize.net del ambiente TEST: los magic triggers ZIP/CVV no se evalúan
 
-- **Estado:** 🔴 Pendiente — diagnóstico avanzado, causa raíz no confirmada
+- **Estado:** 🟢 **RESUELTO (2026-07-30)** — era la **hipótesis secundaria**: los filtros antifraude de la cuenta estaban deshabilitados. La causa concreta fue el filtro **Enhanced Card Code Verification (CCV)** en `Status: Disabled`. Al habilitarlo (con `N → Decline`, `P`/`S`/`U` → Allow) la cuenta empezó a evaluar **tanto el CVV como el ZIP**.
+
+  Evidencia: los 4 specs de contrato del sandbox (`tests/features/gateway-pg/api/authorize-sandbox/contract-*.api.spec.ts`) pasaron de 1/12 a **11/11 verdes**, sin cambiar una línea de código de los specs. Antes → después de cada trigger:
+
+  | Trigger | Esperado | 2026-07-28 | 2026-07-30 |
+  | --- | --- | --- | --- |
+  | CVV `901` | `cvvResultCode = "N"` | `""` | **`"N"`** ✅ |
+  | CVV `904` | `cvvResultCode = "P"` | `""` | **`"P"`** ✅ |
+  | ZIP `46205` | `avsResultCode = "N"` | `"P"` | **`"N"`** ✅ |
+  | ZIP `46204` | `avsResultCode = "G"` | `"P"` | **`"G"`** ✅ |
+  | ZIP `46282` | Response Code 2 | RC 1 (aprobaba) | **RC 2** ✅ |
+  | Visa/MC/Amex/Discover + CVV `900` | Response Code 1 | RC 1 | **RC 1** ✅ |
+
+  **Hipótesis descartadas**, para que no se vuelvan a investigar: (a) *cuenta de producción en vez de sandbox* — el API Login ID siempre fue el correcto; (b) *Test Mode* — la cuenta estaba en Live, confirmado por el dev y por screenshot; (c) *política AVS mal configurada* — la política estaba bien, pero era inalcanzable porque sin CCV habilitado la cuenta devolvía `avsResultCode = "P"` (*AVS not applicable*) para cualquier ZIP, así que ninguna fila del filtro se evaluaba.
+
+  **Lección de atribución**: el síntoma se investigó durante 8 días como credenciales, como modo de cuenta y como política de filtros. Los expected de la matriz nunca estuvieron mal — faltaba que la cuenta pudiera producirlos. Cuando dos triggers distintos devuelven el mismo valor, el sospechoso es la evaluación, no el dato.
+
+  **Queda pendiente**: re-correr por UI los casos que dependían de estos triggers (TC1016/TC1017 §2.2, TC1021/TC1022 §2.3, TC1031 §2.4). Requiere re-vincular Authorize en el carrier 1521, que pasó a eBizCharge por la exclusividad de pasarela activa. Los rojos de la corrida UI del 2026-07-28 ("la pasarela ACEPTÓ la tarjeta que debía rechazar") eran el síntoma de este BL, **no** defectos de código.
+- **Estado anterior:** 🔴 Pendiente — diagnóstico avanzado, causa raíz no confirmada
 - **Prioridad:** P2
 - **Tipo:** Configuración / Investigación
 - **Reportado:** 2026-07-27
