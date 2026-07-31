@@ -92,3 +92,25 @@ Los 3 casos verdes crearon 1 viaje cada uno (TC1001, TC1003, TC1020) — quedan 
 4. Acreditación en MG-559 con evidencia adjunta por run (directiva del usuario): verdes PASSED +
    evidencia; los 6 del Hallazgo 1 FAILED + defecto.
 5. Decisión de negocio del Hallazgo 2 → ajustar (o no) el oráculo de TC1002 con base citada.
+
+## Validación exploratoria — devolución del hold al cancelar viaje programado (2026-07-31, QA lead + verificación API/DB)
+
+**PASS en trifuerza para el viaje 67969** (colaborador desde carrier, programado, Hold ON $207.93,
+cancelado por el carrier): `CARD_HOLDS` fila 1683 transicionó **`HOLD` → `RELEASE`** (mismo intent
+`3234201165`, mismo monto) · logs MGW `Approved, remainingBalance 0` → `CANCELLED BY_COLLECTOR`
+(21:11:41–43) · PSP directo **`Voided` / "Voided Sale"** (AuthCode 178428).
+Para el 67962 el release también se acreditó (PSP `Voided`, $10), con la observación de que lo
+liberado fue el hold de VALIDACIÓN de la tarjeta — nunca se colocó hold de monto de viaje y
+`CARD_HOLDS` no tiene fila (IDs consecutivos 1678→1683: nunca se escribió, no se borró). Decisión
+del QA lead: no es bug; queda como observación de diseño de trazabilidad.
+
+**Capacidad nueva para la campaña — capa PSP por SOAP** (cumple la restricción sin-dashboard):
+`GetTransactionDetails(securityToken, transactionRefNum)` y `SearchTransactions(...)` contra
+`soap.ebizcharge.net/eBizService.svc` (ns `http://eBizCharge.ServiceModel.SOAP`), token con las
+3 creds de `.env.test`. El `RefNum` del PSP == `intentId` de MGW == `CARD_HOLDS.INTENT_ID`. El
+reloj del PSP corre 7 h detrás del de la DB. Ciclo confirmado de `CARD_HOLDS.STATUS`:
+`HOLD` → `RELEASE` (cancelación) | `CAPTURE` (cobro).
+
+Evidencia: `evidence/test/ebizcharge/hold-release/VALIDACION-hold-release-67962-67969.md`
+(+ 3 respuestas XML crudas del PSP en la misma carpeta). Barrido de cierre: **cero retenciones
+vivas** en la ventana del merchant.
