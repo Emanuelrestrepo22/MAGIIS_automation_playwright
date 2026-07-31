@@ -20,6 +20,22 @@
 
 El resolver cross-gateway lanza error claro si se pide un intent no soportado para `ebizcharge`.
 
+> **ID-MAP central:** [`ID-MAP.md`](./ID-MAP.md) (generado desde [`../id-map.json`](../id-map.json) por `scripts/ai/build-id-map.mjs`) — trazabilidad TS-ID ↔ MG-key ↔ spec, incluye los derivados Fase 4.
+
+## Asignación de rangos TS-EBIZ (derivación Fase 4 — espejo de authorize §6)
+
+Los TCs derivados del L1 Stripe (2026-07-26, `scripts/ai/derive-gateway-matrix.mjs` + `scripts/ai/gateway-deltas/ebizcharge.json`) arrancan en **TC1050** para no colisionar con los outcome-level preexistentes y espejan la semántica de rangos de [`../authorize/TRACEABILITY.md`](../authorize/TRACEABILITY.md) §6:
+
+| Rango | Semántica | Asignado en Fase 4 |
+| --- | --- | --- |
+| `TC1001..TC1049` | Reservado — casos outcome-level preexistentes (approved / declines / CVV2 / fraud / cross-gateway) | `TC1001..TC1041` (17 TCs, intactos) |
+| `TC1050..TC1099` | Configuración de pasarela + alta carrier (personal / colaborador / empresa) | `TC1050..TC1070` (21) |
+| `TC1100..TC1130` | Alta App Pax + cargo a bordo | `TC1100..TC1116` (17) |
+| `TC1200..TC1299` | Parte 2 — contractor, Quote, recurrentes, reactivación / clonación / edición | `TC1200..TC1255` (56) |
+| `TC1300..TC1399` | E2E híbridos (reservado, sin asignar) | — |
+
+Reglas: NUNCA renumerar IDs existentes; IDs nuevos = menor libre dentro del rango del grupo, en orden del L1 Stripe. Casos 3DS excluidos por diseño (eBiz no expone challenge).
+
 ## Cobertura eBiz exclusiva (no cross-gateway)
 
 Categorías de respuesta que eBiz tiene y que se documentan como referencia, sin intent canónico:

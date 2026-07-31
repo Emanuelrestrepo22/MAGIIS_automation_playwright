@@ -167,6 +167,8 @@ Esta tabla es la traducción semántica entre el dominio MAGIIS (Hold, Capture, 
 
 > Nota arquitectónica: MAGIIS expone el concepto "Hold ON / Hold OFF" desde el portal. En Authorize.net esa decisión se traduce en elegir `authOnlyTransaction` (Hold ON) vs `authCaptureTransaction` (Hold OFF + cargo directo). El backend MAGIIS resuelve el routing.
 
+> **Hold por API en tests (BL-i18n/v1.72.8):** el toggle "Aplicar Pre-Autorización" de la pantalla Configuración Parámetros **no persiste desde la UI** (no habilita el botón Guardar — verificado por exploratory 2026-07-20). Los tests automatizados fijan el estado de hold **vía la parameters API** (`GET/POST /carriers/{id}/parameters` → `enableCreditCardHold`) y verifican el efecto — **en ON y en OFF** — con **read-back crudo** posterior (`readHoldRaw`: GET del campo sin coerción; campo ausente = fallo, no `false`) como oráculo; el oráculo UI del toggle queda **fuera de alcance hasta el fix del FE**. Detalle operativo: header de `tests/features/gateway-pg/helpers/parameters-api.ts` (antes esto vivía SOLO ahí).
+
 ---
 
 ## 5. Endpoints y autenticación
@@ -217,6 +219,24 @@ Equivalente JSON:
 | **Transaction Reporting** | `getSettledBatchListRequest`, `getTransactionDetailsRequest`, `getUnsettledTransactionListRequest`, `getBatchStatisticsRequest` |
 | **Fraud Management** | `getUnsettledTransactionListRequest` (filter `Pending Approval`), `updateHeldTransactionRequest` (approve/decline) |
 | **Accept Suite** | Accept.js (form embedded), Accept Hosted (redirect), Accept Customer (hosted profile mgmt) |
+
+### Endpoint de link del backend MAGIIS (odnService)
+
+> Verificado en vivo — cierra la contradicción doc-vs-código: el POM (`AppStoreGatewaysPage.expectLinkStatusOk`, MG-226) ya asserta este comportamiento pero este documento no lo mencionaba.
+
+La vinculación/desvinculación de la pasarela desde el Magiis App Store **no** va contra la API de Authorize.net de esta sección ni contra `/vendor/`: la mutación real del link la sirve el **backend MAGIIS vía `odnService`** (verificado live, MG-476).
+
+Semántica de status **verificada** ([`HANDOFF-live-reconciliation-2026-07-24.md`](./HANDOFF-live-reconciliation-2026-07-24.md) §2 + addendum 2026-07-25):
+
+| Status | Significado real |
+| --- | --- |
+| `500` | Pasarela **CONECTADA** (link desde estado limpio) — éxito funcional |
+| `409` | Pasarela **CONECTADA** (el carrier ya estaba vinculado por otra sesión — conflicto de idempotencia) — éxito funcional |
+| `400` | Pasarela **NO conectada** |
+
+> **Unlink:** el status HTTP de la desvinculación **NO está verificado live** — esta tabla documenta solo el **link**. Capturar la semántica del unlink en una corrida viva antes de assertarla.
+
+El `500/409-en-éxito` es un *smell* de API (debería ser 2xx) → **candidato a Improvement al backend** (destino DEV/MX — ver borrador [`DRAFT-improvement-backend-link-500.md`](./DRAFT-improvement-backend-link-500.md)). Los oráculos de QA toleran `[500, 409]` (nunca 400) + assert de persistencia del estado vinculado, con **TODO revert a 2xx** cuando DEV corrija el endpoint.
 
 ---
 

@@ -80,6 +80,10 @@ export type GenericTestCard = {
 	cvc: string;
 	holderName: string;
 	zip?: string;
+	/** Documento (solo Mercado Pago): tipo, ej. 'DNI' — del fixture MP (`identificationType`). */
+	docType?: string;
+	/** Documento (solo Mercado Pago): número — del fixture MP (`identificationNumber`). */
+	docNumber?: string;
 	expectedOutcome: string;
 	requires3ds: boolean;
 };

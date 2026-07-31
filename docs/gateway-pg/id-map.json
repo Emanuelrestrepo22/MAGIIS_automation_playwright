@@ -1,0 +1,5772 @@
+{
+  "generated_at": "2026-07-27T12:54:42.003Z",
+  "generator": "scripts/ai/build-id-map.mjs",
+  "notes": [
+    "SoT central de trazabilidad TS-ID ↔ MG-key ↔ spec (Fase 4, 2026-07-26).",
+    "mg_key null = sin key Xray conocida (JAMÁS fabricar; ver xray-keys.ts).",
+    "status: confirmed = fuentes explícitas · needs-review = algún join heurístico · unmapped = sin key ni spec.",
+    "stripe_ref: equivalencia §3.1 / derivación Fase 4 hacia el caso Stripe canónico."
+  ],
+  "summary": {
+    "stripe": {
+      "total": 224,
+      "confirmed": 16,
+      "needs-review": 153,
+      "unmapped": 55,
+      "with_mg_key": 165,
+      "with_specs": 169
+    },
+    "authorize": {
+      "total": 164,
+      "confirmed": 8,
+      "needs-review": 1,
+      "unmapped": 155,
+      "with_mg_key": 9,
+      "with_specs": 9
+    },
+    "ebizcharge": {
+      "total": 111,
+      "confirmed": 0,
+      "needs-review": 8,
+      "unmapped": 103,
+      "with_mg_key": 0,
+      "with_specs": 8
+    }
+  },
+  "rows": [
+    {
+      "ts_id": "TS-AUTHORIZE-TC1001",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-TC1001",
+      "tcid": "TC1001",
+      "mg_key": "MG-219",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/authorize/web/carrier/config/authorize-link-unlink.spec.ts"
+      ],
+      "status": "confirmed",
+      "sources": [
+        "xray-keys.ts cfg.viewUnlinked"
+      ]
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1002",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-TC1002",
+      "tcid": "TC1002",
+      "mg_key": "MG-220",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/authorize/web/carrier/config/authorize-link-unlink.spec.ts"
+      ],
+      "status": "confirmed",
+      "sources": [
+        "xray-keys.ts cfg.linkValid"
+      ]
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1003",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-TC1003",
+      "tcid": "TC1003",
+      "mg_key": "MG-221",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/authorize/web/carrier/config/authorize-link-unlink.spec.ts"
+      ],
+      "status": "confirmed",
+      "sources": [
+        "xray-keys.ts cfg.linkInvalid"
+      ]
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1004",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-TC1004",
+      "tcid": "TC1004",
+      "mg_key": "MG-222",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/authorize/web/carrier/config/authorize-link-unlink.spec.ts"
+      ],
+      "status": "confirmed",
+      "sources": [
+        "xray-keys.ts cfg.cancelUnlink"
+      ]
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1005",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-TC1005",
+      "tcid": "TC1005",
+      "mg_key": "MG-223",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/authorize/web/carrier/config/authorize-link-unlink.spec.ts"
+      ],
+      "status": "confirmed",
+      "sources": [
+        "xray-keys.ts cfg.unlink"
+      ]
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1006",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-TC1006",
+      "tcid": "TC1006",
+      "mg_key": "MG-224",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/authorize/web/carrier/config/authorize-link-unlink.spec.ts"
+      ],
+      "status": "confirmed",
+      "sources": [
+        "xray-keys.ts cfg.exclusivity"
+      ]
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1007",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-TC1007",
+      "tcid": "TC1007",
+      "mg_key": "MG-225",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/authorize/web/carrier/config/authorize-link-unlink.spec.ts"
+      ],
+      "status": "confirmed",
+      "sources": [
+        "xray-keys.ts cfg.reloadPersistence"
+      ]
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1008",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-TC1008",
+      "tcid": "TC1008",
+      "mg_key": "MG-226",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/authorize/web/carrier/config/authorize-link-unlink.spec.ts"
+      ],
+      "status": "confirmed",
+      "sources": [
+        "xray-keys.ts cfg.linkStatus"
+      ]
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1009",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-TC1052",
+      "tcid": "TC1009",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1010",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-TC1058",
+      "tcid": "TC1010",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1011",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-TC1049",
+      "tcid": "TC1011",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1012",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-TC1050",
+      "tcid": "TC1012",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1013",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1013",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1014",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1014",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1015",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1015",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1016",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-TC1059",
+      "tcid": "TC1016",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1017",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1017",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1018",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-TC1060",
+      "tcid": "TC1018",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1021",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1021",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1022",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1022",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1023",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1023",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1024",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1024",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1025",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1025",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1026",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1026",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1031",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1031",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1032",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1032",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1033",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1033",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1034",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1034",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1035",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1035",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1036",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1036",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1037",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1037",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1041",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1041",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1042",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1042",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1043",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1043",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1051",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-TC1033",
+      "tcid": "TC1051",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1052",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-TC1035",
+      "tcid": "TC1052",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1053",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-TC1041",
+      "tcid": "TC1053",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1054",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-TC1034",
+      "tcid": "TC1054",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1055",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-TC1036",
+      "tcid": "TC1055",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1056",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1056",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1057",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1057",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1061",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-TC1065",
+      "tcid": "TC1061",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1062",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-TC1067",
+      "tcid": "TC1062",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1063",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-TC1066",
+      "tcid": "TC1063",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1064",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-TC1068",
+      "tcid": "TC1064",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1065",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1065",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1071",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-TC1009",
+      "tcid": "TC1071",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1072",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1072",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1073",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1073",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1075",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-TC1017",
+      "tcid": "TC1075",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1076",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-TC1019",
+      "tcid": "TC1076",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1081",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-TC1081",
+      "tcid": "TC1081",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1082",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-TC1082",
+      "tcid": "TC1082",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1083",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-TC1085",
+      "tcid": "TC1083",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1087",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1087",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1088",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1088",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1096",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-TC1096",
+      "tcid": "TC1096",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1097",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-TC1097",
+      "tcid": "TC1097",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1098",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-TC1100",
+      "tcid": "TC1098",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1099",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1099",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1100",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-TC1010",
+      "tcid": "TC1100",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1101",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-TC1011",
+      "tcid": "TC1101",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1102",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-TC1012",
+      "tcid": "TC1102",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1103",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-TC1018",
+      "tcid": "TC1103",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1104",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-TC1020",
+      "tcid": "TC1104",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1105",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-TC1115",
+      "tcid": "TC1105",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1111",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-TC1111",
+      "tcid": "TC1111",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1112",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-TC1112",
+      "tcid": "TC1112",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1200",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC009",
+      "tcid": "TC1200",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1201",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC001",
+      "tcid": "TC1201",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1202",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC002",
+      "tcid": "TC1202",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1203",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC003",
+      "tcid": "TC1203",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1204",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC004",
+      "tcid": "TC1204",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1205",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC090",
+      "tcid": "TC1205",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1206",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1206",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1207",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC010",
+      "tcid": "TC1207",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1208",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC011",
+      "tcid": "TC1208",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1209",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC012",
+      "tcid": "TC1209",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1210",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC013",
+      "tcid": "TC1210",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1211",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC014",
+      "tcid": "TC1211",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1212",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC019",
+      "tcid": "TC1212",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1213",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC020",
+      "tcid": "TC1213",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1214",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC021",
+      "tcid": "TC1214",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1215",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC022",
+      "tcid": "TC1215",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1216",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC027",
+      "tcid": "TC1216",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1217",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC028",
+      "tcid": "TC1217",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1218",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC029",
+      "tcid": "TC1218",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1219",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC030",
+      "tcid": "TC1219",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1220",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC035",
+      "tcid": "TC1220",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1221",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-TC1122",
+      "tcid": "TC1221",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1222",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1222",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1223",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1223",
+      "mg_key": "MG-285",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/authorize/web/carrier/wallet/authorize-add-card.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "xray-keys.ts wallet.addCard vía tests/features/gateway-pg/specs/authorize/web/carrier/wallet/authorize-add-card.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1224",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1224",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1225",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1225",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1226",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1226",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1227",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1227",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1228",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC036",
+      "tcid": "TC1228",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1229",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC037",
+      "tcid": "TC1229",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1230",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC038",
+      "tcid": "TC1230",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1231",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC041",
+      "tcid": "TC1231",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1232",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC042",
+      "tcid": "TC1232",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1233",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC043",
+      "tcid": "TC1233",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1234",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC044",
+      "tcid": "TC1234",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1235",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC047",
+      "tcid": "TC1235",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1236",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC048",
+      "tcid": "TC1236",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1237",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC049",
+      "tcid": "TC1237",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1238",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC050",
+      "tcid": "TC1238",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1239",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC051",
+      "tcid": "TC1239",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1240",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC054",
+      "tcid": "TC1240",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1241",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1241",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1242",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1242",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1243",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1243",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1244",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1244",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1245",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1245",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1246",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1246",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1247",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1247",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1248",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC055",
+      "tcid": "TC1248",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1249",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC056",
+      "tcid": "TC1249",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1250",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC057",
+      "tcid": "TC1250",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1251",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC060",
+      "tcid": "TC1251",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1252",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC061",
+      "tcid": "TC1252",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1253",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC062",
+      "tcid": "TC1253",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1254",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC063",
+      "tcid": "TC1254",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1255",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC066",
+      "tcid": "TC1255",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1256",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC067",
+      "tcid": "TC1256",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1257",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC068",
+      "tcid": "TC1257",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1258",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC069",
+      "tcid": "TC1258",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1259",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC072",
+      "tcid": "TC1259",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1260",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC073",
+      "tcid": "TC1260",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1261",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1261",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1262",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1262",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1263",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1263",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1264",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1264",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1265",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1265",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1266",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC074",
+      "tcid": "TC1266",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1267",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC075",
+      "tcid": "TC1267",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1268",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC078",
+      "tcid": "TC1268",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1269",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC079",
+      "tcid": "TC1269",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1270",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC080",
+      "tcid": "TC1270",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1271",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1271",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1272",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1272",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1273",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1273",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1274",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1274",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1275",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC081",
+      "tcid": "TC1275",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1276",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC084",
+      "tcid": "TC1276",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1277",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC085",
+      "tcid": "TC1277",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1278",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC086",
+      "tcid": "TC1278",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1279",
+      "gateway": "authorize",
+      "stripe_ref": "TS-STRIPE-P2-TC087",
+      "tcid": "TC1279",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1281",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1281",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1282",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1282",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1283",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1283",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1284",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1284",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1291",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1291",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1292",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1292",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1293",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1293",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1294",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1294",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1301",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1301",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1302",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1302",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1303",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1303",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1311",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1311",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1312",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1312",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1321",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1321",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1322",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1322",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-AUTHORIZE-TC1323",
+      "gateway": "authorize",
+      "stripe_ref": null,
+      "tcid": "TC1323",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1001",
+      "gateway": "ebizcharge",
+      "stripe_ref": null,
+      "tcid": "TC1001",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1002",
+      "gateway": "ebizcharge",
+      "stripe_ref": null,
+      "tcid": "TC1002",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1003",
+      "gateway": "ebizcharge",
+      "stripe_ref": null,
+      "tcid": "TC1003",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1010",
+      "gateway": "ebizcharge",
+      "stripe_ref": null,
+      "tcid": "TC1010",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1011",
+      "gateway": "ebizcharge",
+      "stripe_ref": null,
+      "tcid": "TC1011",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1012",
+      "gateway": "ebizcharge",
+      "stripe_ref": null,
+      "tcid": "TC1012",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1013",
+      "gateway": "ebizcharge",
+      "stripe_ref": null,
+      "tcid": "TC1013",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1014",
+      "gateway": "ebizcharge",
+      "stripe_ref": null,
+      "tcid": "TC1014",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1015",
+      "gateway": "ebizcharge",
+      "stripe_ref": null,
+      "tcid": "TC1015",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1016",
+      "gateway": "ebizcharge",
+      "stripe_ref": null,
+      "tcid": "TC1016",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1020",
+      "gateway": "ebizcharge",
+      "stripe_ref": null,
+      "tcid": "TC1020",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1021",
+      "gateway": "ebizcharge",
+      "stripe_ref": null,
+      "tcid": "TC1021",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1022",
+      "gateway": "ebizcharge",
+      "stripe_ref": null,
+      "tcid": "TC1022",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1030",
+      "gateway": "ebizcharge",
+      "stripe_ref": null,
+      "tcid": "TC1030",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1031",
+      "gateway": "ebizcharge",
+      "stripe_ref": null,
+      "tcid": "TC1031",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1040",
+      "gateway": "ebizcharge",
+      "stripe_ref": null,
+      "tcid": "TC1040",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1041",
+      "gateway": "ebizcharge",
+      "stripe_ref": null,
+      "tcid": "TC1041",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1050",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-TC1001",
+      "tcid": "TC1050",
+      "mg_key": null,
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/ebizcharge/web/carrier/config/ebizcharge-link-unlink.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1051",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-TC1002",
+      "tcid": "TC1051",
+      "mg_key": null,
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/ebizcharge/web/carrier/config/ebizcharge-link-unlink.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1052",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-TC1003",
+      "tcid": "TC1052",
+      "mg_key": null,
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/ebizcharge/web/carrier/config/ebizcharge-link-unlink.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1053",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-TC1004",
+      "tcid": "TC1053",
+      "mg_key": null,
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/ebizcharge/web/carrier/config/ebizcharge-link-unlink.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1054",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-TC1005",
+      "tcid": "TC1054",
+      "mg_key": null,
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/ebizcharge/web/carrier/config/ebizcharge-link-unlink.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1055",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-TC1006",
+      "tcid": "TC1055",
+      "mg_key": null,
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/ebizcharge/web/carrier/config/ebizcharge-link-unlink.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1056",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-TC1007",
+      "tcid": "TC1056",
+      "mg_key": null,
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/ebizcharge/web/carrier/config/ebizcharge-link-unlink.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1057",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-TC1008",
+      "tcid": "TC1057",
+      "mg_key": null,
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/ebizcharge/web/carrier/config/ebizcharge-link-unlink.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1058",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-TC1033",
+      "tcid": "TC1058",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1059",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-TC1034",
+      "tcid": "TC1059",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1060",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-TC1035",
+      "tcid": "TC1060",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1061",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-TC1036",
+      "tcid": "TC1061",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1062",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-TC1041",
+      "tcid": "TC1062",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1063",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-TC1050",
+      "tcid": "TC1063",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1064",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-TC1052",
+      "tcid": "TC1064",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1065",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-TC1058",
+      "tcid": "TC1065",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1066",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-TC1060",
+      "tcid": "TC1066",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1067",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-TC1065",
+      "tcid": "TC1067",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1068",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-TC1066",
+      "tcid": "TC1068",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1069",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-TC1067",
+      "tcid": "TC1069",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1070",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-TC1068",
+      "tcid": "TC1070",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1100",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-TC1009",
+      "tcid": "TC1100",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1101",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-TC1010",
+      "tcid": "TC1101",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1102",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-TC1011",
+      "tcid": "TC1102",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1103",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-TC1012",
+      "tcid": "TC1103",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1104",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-TC1017",
+      "tcid": "TC1104",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1105",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-TC1018",
+      "tcid": "TC1105",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1106",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-TC1019",
+      "tcid": "TC1106",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1107",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-TC1020",
+      "tcid": "TC1107",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1108",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-TC1081",
+      "tcid": "TC1108",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1109",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-TC1082",
+      "tcid": "TC1109",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1110",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-TC1085",
+      "tcid": "TC1110",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1111",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-TC1096",
+      "tcid": "TC1111",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1112",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-TC1097",
+      "tcid": "TC1112",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1113",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-TC1100",
+      "tcid": "TC1113",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1114",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-TC1111",
+      "tcid": "TC1114",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1115",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-TC1112",
+      "tcid": "TC1115",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1116",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-TC1115",
+      "tcid": "TC1116",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1200",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC001",
+      "tcid": "TC1200",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1201",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC002",
+      "tcid": "TC1201",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1202",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC003",
+      "tcid": "TC1202",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1203",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC004",
+      "tcid": "TC1203",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1204",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC090",
+      "tcid": "TC1204",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1205",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC009",
+      "tcid": "TC1205",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1206",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC010",
+      "tcid": "TC1206",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1207",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC011",
+      "tcid": "TC1207",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1208",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC012",
+      "tcid": "TC1208",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1209",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC013",
+      "tcid": "TC1209",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1210",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC014",
+      "tcid": "TC1210",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1211",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC019",
+      "tcid": "TC1211",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1212",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC020",
+      "tcid": "TC1212",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1213",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC021",
+      "tcid": "TC1213",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1214",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC022",
+      "tcid": "TC1214",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1215",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC027",
+      "tcid": "TC1215",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1216",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC028",
+      "tcid": "TC1216",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1217",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC029",
+      "tcid": "TC1217",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1218",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC030",
+      "tcid": "TC1218",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1219",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC035",
+      "tcid": "TC1219",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1220",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC036",
+      "tcid": "TC1220",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1221",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC037",
+      "tcid": "TC1221",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1222",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC038",
+      "tcid": "TC1222",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1223",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC041",
+      "tcid": "TC1223",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1224",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC042",
+      "tcid": "TC1224",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1225",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC043",
+      "tcid": "TC1225",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1226",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC044",
+      "tcid": "TC1226",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1227",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC047",
+      "tcid": "TC1227",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1228",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC048",
+      "tcid": "TC1228",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1229",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC049",
+      "tcid": "TC1229",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1230",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC050",
+      "tcid": "TC1230",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1231",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC051",
+      "tcid": "TC1231",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1232",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC054",
+      "tcid": "TC1232",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1233",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC055",
+      "tcid": "TC1233",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1234",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC056",
+      "tcid": "TC1234",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1235",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC057",
+      "tcid": "TC1235",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1236",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC060",
+      "tcid": "TC1236",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1237",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC061",
+      "tcid": "TC1237",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1238",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC062",
+      "tcid": "TC1238",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1239",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC063",
+      "tcid": "TC1239",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1240",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC066",
+      "tcid": "TC1240",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1241",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC067",
+      "tcid": "TC1241",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1242",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC068",
+      "tcid": "TC1242",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1243",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC069",
+      "tcid": "TC1243",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1244",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC072",
+      "tcid": "TC1244",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1245",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC073",
+      "tcid": "TC1245",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1246",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC074",
+      "tcid": "TC1246",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1247",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC075",
+      "tcid": "TC1247",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1248",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC078",
+      "tcid": "TC1248",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1249",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC079",
+      "tcid": "TC1249",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1250",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC080",
+      "tcid": "TC1250",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1251",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC081",
+      "tcid": "TC1251",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1252",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC084",
+      "tcid": "TC1252",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1253",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC085",
+      "tcid": "TC1253",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1254",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC086",
+      "tcid": "TC1254",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-EBIZ-TC1255",
+      "gateway": "ebizcharge",
+      "stripe_ref": "TS-STRIPE-P2-TC087",
+      "tcid": "TC1255",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC001",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC001",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/contractor/colaborador-hold-no3ds.spec.ts",
+        "tests/features/gateway-pg/specs/stripe/web/contractor/vinculacion-tarjeta.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/contractor/colaborador-hold-no3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC002",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC002",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/contractor/colaborador-hold-no3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/contractor/colaborador-hold-no3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC003",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC003",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/contractor/colaborador-hold-no3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/contractor/colaborador-hold-no3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC004",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC004",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/contractor/colaborador-hold-no3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/contractor/colaborador-hold-no3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC005",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC005",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/contractor/colaborador-hold-3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/contractor/colaborador-hold-3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC006",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC006",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/contractor/colaborador-hold-3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/contractor/colaborador-hold-3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC007",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC007",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC008",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC008",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC009",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC009",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC010",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC010",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC011",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC011",
+      "mg_key": "MG-361",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/quote/quote-colaborador.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/quote/quote-colaborador.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC012",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC012",
+      "mg_key": "MG-361",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/quote/quote-colaborador.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/quote/quote-colaborador.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC013",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC013",
+      "mg_key": "MG-361",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/quote/quote-colaborador.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/quote/quote-colaborador.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC014",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC014",
+      "mg_key": "MG-361",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/quote/quote-colaborador.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/quote/quote-colaborador.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC015",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC015",
+      "mg_key": "MG-361",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/quote/quote-colaborador.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/quote/quote-colaborador.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC016",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC016",
+      "mg_key": "MG-361",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/quote/quote-colaborador.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/quote/quote-colaborador.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC017",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC017",
+      "mg_key": "MG-361",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/quote/quote-colaborador.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/quote/quote-colaborador.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC018",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC018",
+      "mg_key": "MG-361",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/quote/quote-colaborador.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/quote/quote-colaborador.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC019",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC019",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC020",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC020",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC021",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC021",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC022",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC022",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC023",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC023",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC024",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC024",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC025",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC025",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC026",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC026",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC027",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC027",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC028",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC028",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC029",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC029",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC030",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC030",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC031",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC031",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC032",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC032",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC033",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC033",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC034",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC034",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC035",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC035",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC036",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC036",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC037",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC037",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC038",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC038",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC039",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC039",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC040",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC040",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC041",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC041",
+      "mg_key": "MG-390",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/colaborador-recurrente.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/colaborador-recurrente.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC042",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC042",
+      "mg_key": "MG-390",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/colaborador-recurrente.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/colaborador-recurrente.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC043",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC043",
+      "mg_key": "MG-390",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/colaborador-recurrente.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/colaborador-recurrente.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC044",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC044",
+      "mg_key": "MG-390",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/colaborador-recurrente.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/colaborador-recurrente.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC045",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC045",
+      "mg_key": "MG-390",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/colaborador-recurrente.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/colaborador-recurrente.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC046",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC046",
+      "mg_key": "MG-390",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/colaborador-recurrente.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/colaborador-recurrente.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC047",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC047",
+      "mg_key": "MG-390",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/colaborador-recurrente.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/colaborador-recurrente.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC048",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC048",
+      "mg_key": "MG-390",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/apppax-recurrente.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/apppax-recurrente.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC049",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC049",
+      "mg_key": "MG-390",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/apppax-recurrente.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/apppax-recurrente.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC050",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC050",
+      "mg_key": "MG-390",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/apppax-recurrente.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/apppax-recurrente.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC051",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC051",
+      "mg_key": "MG-390",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/apppax-recurrente.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/apppax-recurrente.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC052",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC052",
+      "mg_key": "MG-390",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/apppax-recurrente.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/apppax-recurrente.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC053",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC053",
+      "mg_key": "MG-390",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/apppax-recurrente.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/apppax-recurrente.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC054",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC054",
+      "mg_key": "MG-390",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/empresa-recurrente.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/empresa-recurrente.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC055",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC055",
+      "mg_key": "MG-390",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/empresa-recurrente.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/empresa-recurrente.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC056",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC056",
+      "mg_key": "MG-390",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/empresa-recurrente.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/empresa-recurrente.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC057",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC057",
+      "mg_key": "MG-390",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/empresa-recurrente.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/empresa-recurrente.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC058",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC058",
+      "mg_key": "MG-390",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/empresa-recurrente.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/empresa-recurrente.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC059",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC059",
+      "mg_key": "MG-390",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/empresa-recurrente.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recurrentes/empresa-recurrente.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC060",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC060",
+      "mg_key": "MG-440",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/reactivacion.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/reactivacion.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC061",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC061",
+      "mg_key": "MG-440",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/reactivacion.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/reactivacion.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC062",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC062",
+      "mg_key": "MG-440",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/reactivacion.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/reactivacion.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC063",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC063",
+      "mg_key": "MG-440",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/reactivacion.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/reactivacion.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC064",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC064",
+      "mg_key": "MG-440",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/reactivacion.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/reactivacion.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC065",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC065",
+      "mg_key": "MG-440",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/reactivacion.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/reactivacion.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC066",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC066",
+      "mg_key": "MG-428",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-cancelados.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-cancelados.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC067",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC067",
+      "mg_key": "MG-428",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-cancelados.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-cancelados.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC068",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC068",
+      "mg_key": "MG-428",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-cancelados.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-cancelados.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC069",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC069",
+      "mg_key": "MG-428",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-cancelados.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-cancelados.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC070",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC070",
+      "mg_key": "MG-428",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-cancelados.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-cancelados.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC071",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC071",
+      "mg_key": "MG-428",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-cancelados.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-cancelados.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC072",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC072",
+      "mg_key": "MG-428",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-finalizados.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-finalizados.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC073",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC073",
+      "mg_key": "MG-428",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-finalizados.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-finalizados.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC074",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC074",
+      "mg_key": "MG-428",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-finalizados.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-finalizados.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC075",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC075",
+      "mg_key": "MG-428",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-finalizados.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-finalizados.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC076",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC076",
+      "mg_key": "MG-428",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-finalizados.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-finalizados.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC077",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC077",
+      "mg_key": "MG-428",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-finalizados.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/clonacion-finalizados.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC078",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC078",
+      "mg_key": "MG-415",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-programados.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-programados.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC079",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC079",
+      "mg_key": "MG-415",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-programados.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-programados.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC080",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC080",
+      "mg_key": "MG-415",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-programados.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-programados.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC081",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC081",
+      "mg_key": "MG-415",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-programados.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-programados.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC082",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC082",
+      "mg_key": "MG-415",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-programados.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-programados.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC083",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC083",
+      "mg_key": "MG-415",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-programados.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-programados.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC084",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC084",
+      "mg_key": "MG-415",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-conflicto.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-conflicto.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC085",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC085",
+      "mg_key": "MG-415",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-conflicto.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-conflicto.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC086",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC086",
+      "mg_key": "MG-415",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-conflicto.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-conflicto.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC087",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC087",
+      "mg_key": "MG-415",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-conflicto.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-conflicto.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC088",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC088",
+      "mg_key": "MG-415",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-conflicto.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-conflicto.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC089",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC089",
+      "mg_key": "MG-415",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-conflicto.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/operaciones/edicion-conflicto.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-P2-TC090",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "P2-TC090",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-TC-RV001",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC-RV001",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-TC-RV002",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC-RV002",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-TC-RV003",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC-RV003",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-TC-RV004",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC-RV004",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-TC-RV005",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC-RV005",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-TC-RV006",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC-RV006",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-TC-RV007",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC-RV007",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-TC-RV008",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC-RV008",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1001",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1001",
+      "mg_key": "MG-211",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/config/gateway-config.spec.ts"
+      ],
+      "status": "confirmed",
+      "sources": [
+        "xray-keys.ts cfg.viewUnlinked"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1002",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1002",
+      "mg_key": "MG-212",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/config/gateway-config.spec.ts"
+      ],
+      "status": "confirmed",
+      "sources": [
+        "xray-keys.ts cfg.linkValid"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1003",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1003",
+      "mg_key": "MG-213",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/config/gateway-config.spec.ts"
+      ],
+      "status": "confirmed",
+      "sources": [
+        "xray-keys.ts cfg.linkInvalid"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1004",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1004",
+      "mg_key": "MG-214",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/config/gateway-config.spec.ts"
+      ],
+      "status": "confirmed",
+      "sources": [
+        "xray-keys.ts cfg.cancelUnlink"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1005",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1005",
+      "mg_key": "MG-215",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/config/gateway-config.spec.ts"
+      ],
+      "status": "confirmed",
+      "sources": [
+        "xray-keys.ts cfg.unlink"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1006",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1006",
+      "mg_key": "MG-216",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/config/gateway-config.spec.ts"
+      ],
+      "status": "confirmed",
+      "sources": [
+        "xray-keys.ts cfg.exclusivity"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1007",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1007",
+      "mg_key": "MG-217",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/config/gateway-config.spec.ts"
+      ],
+      "status": "confirmed",
+      "sources": [
+        "xray-keys.ts cfg.reloadPersistence"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1008",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1008",
+      "mg_key": "MG-218",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/config/gateway-config.spec.ts"
+      ],
+      "status": "confirmed",
+      "sources": [
+        "xray-keys.ts cfg.linkStatus"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1009",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1009",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1010",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1010",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1011",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1011",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1012",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1012",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1013",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1013",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1014",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1014",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1015",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1015",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1016",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1016",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1017",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1017",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-no3ds.e2e.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-no3ds.e2e.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1018",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1018",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-no3ds.e2e.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-no3ds.e2e.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1019",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1019",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-no3ds.e2e.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-no3ds.e2e.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1020",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1020",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-no3ds.e2e.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-no3ds.e2e.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1021",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1021",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-3ds.e2e.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-3ds.e2e.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1022",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1022",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-3ds.e2e.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-3ds.e2e.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1023",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1023",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-3ds.e2e.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-3ds.e2e.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1024",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1024",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-3ds.e2e.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-3ds.e2e.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1025",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1025",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1026",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1026",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1027",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1027",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1028",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1028",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1029",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1029",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1030",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1030",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1031",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1031",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1032",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1032",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1033",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1033",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-no3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-no3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1034",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1034",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-no3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-no3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1035",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1035",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-no3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-no3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1036",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1036",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-no3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-no3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1037",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1037",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1038",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1038",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1039",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1039",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-3ds.spec.ts",
+        "tests/features/gateway-pg/specs/stripe/web/carrier/recovery/recorded-3ds-preauth-failure.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-3ds.spec.ts (heurístico)",
+        "CONFLICTO key MG-158 vs MG-157 (tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recovery/recorded-3ds-preauth-failure.spec.ts)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1040",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1040",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1041",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1041",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-no3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-no3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1042",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1042",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-no3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-no3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1043",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1043",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-no3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-no3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1044",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1044",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-no3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-no3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1045",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1045",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1046",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1046",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1047",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1047",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1048",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1048",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1049",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1049",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-no3ds.spec.ts",
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/hold-capture.spec.ts",
+        "tests/features/gateway-pg/specs/_parametrized/hold-happy-no3ds.parametrized.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-no3ds.spec.ts (heurístico)",
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/hold-capture.spec.ts (heurístico)",
+        "tms describe-level en tests/features/gateway-pg/specs/_parametrized/hold-happy-no3ds.parametrized.spec.ts"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1050",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1050",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-no3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-no3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1051",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1051",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-no3ds.spec.ts",
+        "tests/features/gateway-pg/specs/stripe/web/carrier/recovery/3ds-failure.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-no3ds.spec.ts (heurístico)",
+        "CONFLICTO key MG-158 vs MG-154 (tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recovery/3ds-failure.spec.ts)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1052",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1052",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-no3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-no3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1053",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1053",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-3ds.spec.ts",
+        "tests/features/gateway-pg/specs/stripe/web/carrier/recovery/recorded-3ds-happy-path.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-3ds.spec.ts (heurístico)",
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recovery/recorded-3ds-happy-path.spec.ts"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1054",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1054",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1055",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1055",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1056",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1056",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1057",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1057",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-no3ds.spec.ts",
+        "tests/features/gateway-pg/specs/stripe/web/carrier/recovery/3ds-failure.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-no3ds.spec.ts (heurístico)",
+        "CONFLICTO key MG-158 vs MG-154 (tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recovery/3ds-failure.spec.ts)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1058",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1058",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-no3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-no3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1059",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1059",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-no3ds.spec.ts",
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/hold-capture.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-no3ds.spec.ts (heurístico)",
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/hold-capture.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1060",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1060",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-no3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-no3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1061",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1061",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-3ds.spec.ts",
+        "tests/features/gateway-pg/specs/stripe/web/carrier/recovery/3ds-failure.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-3ds.spec.ts (heurístico)",
+        "CONFLICTO key MG-158 vs MG-154 (tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recovery/3ds-failure.spec.ts)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1062",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1062",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1063",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1063",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-3ds.spec.ts",
+        "tests/features/gateway-pg/specs/stripe/web/carrier/recovery/3ds-retry-card-change.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-3ds.spec.ts (heurístico)",
+        "CONFLICTO key MG-158 vs MG-155 (tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recovery/3ds-retry-card-change.spec.ts)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1064",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1064",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-3ds.spec.ts",
+        "tests/features/gateway-pg/specs/stripe/web/carrier/recovery/3ds-retry-card-change.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-3ds.spec.ts (heurístico)",
+        "CONFLICTO key MG-158 vs MG-155 (tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/recovery/3ds-retry-card-change.spec.ts)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1065",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1065",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-no3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-no3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1066",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1066",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-no3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-no3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1067",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1067",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-no3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-no3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1068",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1068",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-no3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-no3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1069",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1069",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1070",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1070",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1071",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1071",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1072",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1072",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1073",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1073",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-no3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-no3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1074",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1074",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-no3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-no3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1075",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1075",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-no3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-no3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1076",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1076",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-no3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-no3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1077",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1077",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1078",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1078",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1079",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1079",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1080",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1080",
+      "mg_key": "MG-158",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/hold/empresa-hold-3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1081",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1081",
+      "mg_key": "MG-161",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/e2e-mobile/cargo-a-bordo/apppax-cargo-asignado-success.e2e.spec.ts",
+        "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-happy.spec.ts"
+      ],
+      "status": "confirmed",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/e2e-mobile/cargo-a-bordo/apppax-cargo-asignado-success.e2e.spec.ts",
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-happy.spec.ts"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1082",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1082",
+      "mg_key": "MG-161",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-declines.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-declines.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1083",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1083",
+      "mg_key": "MG-161",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-declines.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-declines.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1084",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1084",
+      "mg_key": "MG-161",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-declines.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-declines.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1085",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1085",
+      "mg_key": "MG-161",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-declines.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-declines.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1086",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1086",
+      "mg_key": "MG-161",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-declines.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-declines.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1087",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1087",
+      "mg_key": "MG-161",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-antifraud.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-antifraud.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1088",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1088",
+      "mg_key": "MG-161",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-antifraud.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-antifraud.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1089",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1089",
+      "mg_key": "MG-161",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-antifraud.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-antifraud.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1090",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1090",
+      "mg_key": "MG-161",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-antifraud.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-antifraud.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1091",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1091",
+      "mg_key": "MG-161",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-antifraud.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-antifraud.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1092",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1092",
+      "mg_key": null,
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/e2e-mobile/cargo-a-bordo/apppax-cargo-asignado-3ds.e2e.spec.ts",
+        "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-3ds.spec.ts"
+      ],
+      "status": "confirmed",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1093",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1093",
+      "mg_key": null,
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-3ds.spec.ts"
+      ],
+      "status": "confirmed",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1094",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1094",
+      "mg_key": null,
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-3ds.spec.ts"
+      ],
+      "status": "confirmed",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1095",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1095",
+      "mg_key": null,
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/apppax-cargo-3ds.spec.ts"
+      ],
+      "status": "confirmed",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1096",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1096",
+      "mg_key": "MG-161",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-happy.spec.ts"
+      ],
+      "status": "confirmed",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-happy.spec.ts"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1097",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1097",
+      "mg_key": "MG-161",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-declines.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-declines.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1098",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1098",
+      "mg_key": "MG-161",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-declines.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-declines.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1099",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1099",
+      "mg_key": "MG-161",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-declines.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-declines.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1100",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1100",
+      "mg_key": "MG-161",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-declines.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-declines.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1101",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1101",
+      "mg_key": "MG-161",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-declines.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-declines.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1102",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1102",
+      "mg_key": "MG-161",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-antifraud.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-antifraud.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1103",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1103",
+      "mg_key": "MG-161",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-antifraud.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-antifraud.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1104",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1104",
+      "mg_key": "MG-161",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-antifraud.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-antifraud.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1105",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1105",
+      "mg_key": "MG-161",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-antifraud.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-antifraud.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1106",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1106",
+      "mg_key": "MG-161",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-antifraud.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-antifraud.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1107",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1107",
+      "mg_key": "MG-161",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1108",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1108",
+      "mg_key": "MG-161",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1109",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1109",
+      "mg_key": "MG-161",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1110",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1110",
+      "mg_key": "MG-161",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-3ds.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/contractor-cargo-3ds.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1111",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1111",
+      "mg_key": "MG-161",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-happy.spec.ts"
+      ],
+      "status": "confirmed",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-happy.spec.ts"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1112",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1112",
+      "mg_key": "MG-161",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-declines.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-declines.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1113",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1113",
+      "mg_key": "MG-161",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-declines.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-declines.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1114",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1114",
+      "mg_key": "MG-161",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-declines.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-declines.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1115",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1115",
+      "mg_key": "MG-161",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-declines.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-declines.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1116",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1116",
+      "mg_key": "MG-161",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-declines.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-declines.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1117",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1117",
+      "mg_key": "MG-161",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-antifraud.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-antifraud.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1118",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1118",
+      "mg_key": "MG-161",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-antifraud.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-antifraud.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1119",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1119",
+      "mg_key": "MG-161",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-antifraud.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-antifraud.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1120",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1120",
+      "mg_key": "MG-161",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-antifraud.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-antifraud.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1121",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1121",
+      "mg_key": "MG-161",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-antifraud.spec.ts"
+      ],
+      "status": "needs-review",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-antifraud.spec.ts (heurístico)"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1122",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1122",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1123",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1123",
+      "mg_key": "MG-161",
+      "spec_paths": [
+        "tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-3ds.spec.ts"
+      ],
+      "status": "confirmed",
+      "sources": [
+        "tms describe-level en tests/features/gateway-pg/specs/stripe/web/carrier/cargo-a-bordo/empresa-cargo-3ds.spec.ts"
+      ]
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1124",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1124",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1125",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1125",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    },
+    {
+      "ts_id": "TS-STRIPE-TC1126",
+      "gateway": "stripe",
+      "stripe_ref": null,
+      "tcid": "TC1126",
+      "mg_key": null,
+      "spec_paths": [],
+      "status": "unmapped",
+      "sources": []
+    }
+  ]
+}

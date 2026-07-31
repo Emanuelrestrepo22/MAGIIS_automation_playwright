@@ -97,11 +97,7 @@ function getActorScopedEnv(actor: MobileActor, name: string): string | null {
 	return readOptionalEnv(`ANDROID_${actorKey}_${name}`) ?? readOptionalEnv(`ANDROID_${name}`);
 }
 
-function buildActorConfig(
-	actor: MobileActor,
-	appPathEnv: string,
-	activityEnv: string
-): MobileActorConfig {
+function buildActorConfig(actor: MobileActor, appPathEnv: string, activityEnv: string): MobileActorConfig {
 	const appiumServerUrl = readRequiredEnv('APPIUM_SERVER_URL');
 
 	return {
@@ -116,30 +112,30 @@ function buildActorConfig(
 		udid: getActorScopedEnv(actor, 'UDID'),
 		newCommandTimeout: readOptionalNumberEnv('APPIUM_NEW_COMMAND_TIMEOUT', 120),
 		noReset: readOptionalBooleanEnv('APPIUM_NO_RESET', false),
-		fullReset: readOptionalBooleanEnv('APPIUM_FULL_RESET', false),
+		fullReset: readOptionalBooleanEnv('APPIUM_FULL_RESET', false)
 	};
 }
 
 export function getDriverAppConfig(): MobileActorConfig {
 	return {
-		appiumServerUrl:  readRequiredEnv('APPIUM_SERVER_URL'),
-		appPath:          readRequiredEnv('ANDROID_DRIVER_APP_PATH'),
-		appPackage:       readOptionalEnv('ANDROID_APP_PACKAGE'),
-		appActivity:      readOptionalEnv('ANDROID_DRIVER_ACTIVITY'),
+		appiumServerUrl: readRequiredEnv('APPIUM_SERVER_URL'),
+		appPath: readRequiredEnv('ANDROID_DRIVER_APP_PATH'),
+		appPackage: readOptionalEnv('ANDROID_APP_PACKAGE'),
+		appActivity: readOptionalEnv('ANDROID_DRIVER_ACTIVITY'),
 		// Pixel_7 (Android 35) — emulador disponible en este equipo, más estable para Appium
-		deviceName:       readOptionalEnv('ANDROID_DEVICE_NAME') ?? 'Pixel_7',
-		platformVersion:  readOptionalEnv('ANDROID_PLATFORM_VERSION') ?? '15.0',
+		deviceName: readOptionalEnv('ANDROID_DEVICE_NAME') ?? 'Pixel_7',
+		platformVersion: readOptionalEnv('ANDROID_PLATFORM_VERSION') ?? '15.0'
 	};
 }
 
 export function getPassengerAppConfig(): MobileActorConfig {
 	return {
-		appiumServerUrl:  readRequiredEnv('APPIUM_SERVER_URL'),
-		appPath:          readRequiredEnv('ANDROID_PASSENGER_APP_PATH'),
-		appPackage:       readOptionalEnv('ANDROID_APP_PACKAGE'),
-		appActivity:      readOptionalEnv('ANDROID_PASSENGER_ACTIVITY'),
-		deviceName:       readOptionalEnv('ANDROID_DEVICE_NAME') ?? 'Pixel_7',
-		platformVersion:  readOptionalEnv('ANDROID_PLATFORM_VERSION') ?? '15.0',
+		appiumServerUrl: readRequiredEnv('APPIUM_SERVER_URL'),
+		appPath: readRequiredEnv('ANDROID_PASSENGER_APP_PATH'),
+		appPackage: readOptionalEnv('ANDROID_APP_PACKAGE'),
+		appActivity: readOptionalEnv('ANDROID_PASSENGER_ACTIVITY'),
+		deviceName: readOptionalEnv('ANDROID_DEVICE_NAME') ?? 'Pixel_7',
+		platformVersion: readOptionalEnv('ANDROID_PLATFORM_VERSION') ?? '15.0'
 	};
 }
 
@@ -149,14 +145,14 @@ export function getPassengerAppConfig(): MobileActorConfig {
  */
 export function buildAndroidCapabilities(config: MobileActorConfig): Record<string, unknown> {
 	return {
-		platformName:           'Android',
-		'appium:deviceName':    config.deviceName,
+		platformName: 'Android',
+		'appium:deviceName': config.deviceName,
 		'appium:platformVersion': config.platformVersion,
-		'appium:app':           config.appPath,
-		...(config.appPackage   ? { 'appium:appPackage':  config.appPackage }  : {}),
-		...(config.appActivity  ? { 'appium:appActivity': config.appActivity } : {}),
-		'appium:automationName':  'UiAutomator2',
-		'appium:noReset':         false,
-		'appium:fullReset':       false,
+		'appium:app': config.appPath,
+		...(config.appPackage ? { 'appium:appPackage': config.appPackage } : {}),
+		...(config.appActivity ? { 'appium:appActivity': config.appActivity } : {}),
+		'appium:automationName': 'UiAutomator2',
+		'appium:noReset': false,
+		'appium:fullReset': false
 	};
 }

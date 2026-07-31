@@ -8,7 +8,7 @@
  *   - orquestación compartida extraída al Step `ContractorHoldSteps.runColaboradorScenario` (@steps).
  *   - Page components KATA (@ui/contractor + @ui/carrier + @ui/ThreeDsChallengePage).
  * ATCs mapeados en las Page components: fillMinimum → MG-148 (área C), 3DS → MG-152
- *   (área D). PENDIENTE REASIGNAR (idmap API-level, sin 1:1 con TS-STRIPE-P2-TC00x).
+ *   (área D). mapeo por área aceptado (idmap API-level, sin 1:1 con TS-STRIPE-P2-TC00x).
  *
  * Precondiciones:
  * - Usuario contractor activo (USER_CONTRACTOR / PASS_CONTRACTOR) en TEST.
@@ -33,7 +33,7 @@ function colaborador3dsScenario(overrides: Partial<ContractorHoldScenario> = {})
 		destination: TEST_DATA.destination,
 		card: { kind: 'new', last4: STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4) }, // 3155
 		threeDs: 'link-then-service',
-		...overrides,
+		...overrides
 	};
 }
 
@@ -41,17 +41,25 @@ function colaborador3dsScenario(overrides: Partial<ContractorHoldScenario> = {})
 test.use({ storageState: undefined });
 test.describe.configure({ timeout: 180_000 });
 
-test.describe('Gateway PG · Contractor · Colaborador — Hold + 3DS (tarjeta 4000 0025 0000 3155) @gateway @stripe @hold @3ds @critical @regression', () => {
+test.describe(
+	'Gateway PG · Contractor · Colaborador — Hold + 3DS (tarjeta 4000 0025 0000 3155) @gateway @stripe @hold @3ds @critical @regression',
+	{ annotation: [{ type: 'tms', description: 'MG-158' }] },
+	() => {
+		test('[TS-STRIPE-P2-TC005] @regression @contractor @hold @3ds Hold ON + tarjeta 3DS 3155 + aprobación → viaje a "Buscando conductor"', async ({
+			page
+		}) => {
+			// Precondición: enableCreditCardHold=true en parámetros carrier.
+			await new ContractorHoldSteps({ page }).runColaboradorScenario(colaborador3dsScenario());
+		});
 
-	test('[TS-STRIPE-P2-TC005] @regression @contractor @hold @3ds Hold ON + tarjeta 3DS 3155 + aprobación → viaje a "Buscando conductor"', async ({ page }) => {
-		// Precondición: enableCreditCardHold=true en parámetros carrier.
-		await new ContractorHoldSteps({ page }).runColaboradorScenario(colaborador3dsScenario());
-	});
-
-	test('[TS-STRIPE-P2-TC006] @regression @contractor @3ds Hold OFF + tarjeta 3DS 3155 + aprobación → viaje a "Buscando conductor" sin hold', async ({ page }) => {
-		// Precondición: enableCreditCardHold=false en parámetros carrier.
-		// Con Hold OFF la tarjeta 3DS puede disparar hasta 2 challenges opcionales post-envío.
-		await new ContractorHoldSteps({ page }).runColaboradorScenario(colaborador3dsScenario({ threeDs: 'post-service-double' }));
-	});
-
-});
+		test('[TS-STRIPE-P2-TC006] @regression @contractor @3ds Hold OFF + tarjeta 3DS 3155 + aprobación → viaje a "Buscando conductor" sin hold', async ({
+			page
+		}) => {
+			// Precondición: enableCreditCardHold=false en parámetros carrier.
+			// Con Hold OFF la tarjeta 3DS puede disparar hasta 2 challenges opcionales post-envío.
+			await new ContractorHoldSteps({ page }).runColaboradorScenario(
+				colaborador3dsScenario({ threeDs: 'post-service-double' })
+			);
+		});
+	}
+);

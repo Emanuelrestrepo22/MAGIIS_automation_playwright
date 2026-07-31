@@ -1,9 +1,6 @@
 import type { AppiumDriver } from '../base/AppiumSessionBase';
 import type { MobileActorConfig } from '../config/appiumRuntime';
-import {
-	DRIVER_CHECKPOINT_SELECTORS,
-	type DriverCheckpointStage,
-} from '../driver/DriverFlowSelectors';
+import { DRIVER_CHECKPOINT_SELECTORS, type DriverCheckpointStage } from '../driver/DriverFlowSelectors';
 import { DriverHomeScreen } from '../driver/DriverHomeScreen';
 import { DriverTripNavigationScreen } from '../driver/DriverTripNavigationScreen';
 import { DriverTripRequestScreen } from '../driver/DriverTripRequestScreen';
@@ -32,7 +29,7 @@ const DEFAULT_TIMEOUTS_MS: Record<DriverCheckpointStage, number> = {
 	confirm: 60_000,
 	'in-progress': 60_000,
 	resume: 60_000,
-	closed: 60_000,
+	closed: 60_000
 };
 
 export class DriverTripHappyPathHarness {
@@ -43,7 +40,7 @@ export class DriverTripHappyPathHarness {
 
 	constructor(
 		private readonly config: MobileActorConfig,
-		driver?: AppiumDriver,
+		driver?: AppiumDriver
 	) {
 		this.homeScreen = new DriverHomeScreen(this.config, driver);
 		if (driver) {
@@ -68,7 +65,7 @@ export class DriverTripHappyPathHarness {
 		const checkpoints: DriverCheckpointEvidence[] = [];
 		const timeouts = {
 			...DEFAULT_TIMEOUTS_MS,
-			...(options.timeoutsMs ?? {}),
+			...(options.timeoutsMs ?? {})
 		};
 
 		try {
@@ -84,7 +81,9 @@ export class DriverTripHappyPathHarness {
 			await this.getRequestScreen().acceptTrip();
 
 			await this.getNavigationScreen().startTrip();
-			const inProgressReached = await this.getNavigationScreen().waitForTravelInProgressPage(timeouts['in-progress']);
+			const inProgressReached = await this.getNavigationScreen().waitForTravelInProgressPage(
+				timeouts['in-progress']
+			);
 			if (!inProgressReached) {
 				throw new Error(`Checkpoint "in-progress" not reached in ${timeouts['in-progress']}ms.`);
 			}
@@ -111,10 +110,12 @@ export class DriverTripHappyPathHarness {
 			return {
 				checkpoints,
 				totalAmount,
-				paymentMethod,
+				paymentMethod
 			};
 		} catch (error) {
-			const dumpPath = await dumpAppiumState(this.homeScreen.getDriver(), 'driver-happy-path-failure').catch(() => null);
+			const dumpPath = await dumpAppiumState(this.homeScreen.getDriver(), 'driver-happy-path-failure').catch(
+				() => null
+			);
 			const dumpMessage = dumpPath ? ` Appium dump: ${dumpPath}` : '';
 			const message = error instanceof Error ? error.message : String(error);
 			throw new Error(`[DriverTripHappyPathHarness] ${message}.${dumpMessage}`);
@@ -159,7 +160,7 @@ export class DriverTripHappyPathHarness {
 
 	private async waitForCheckpoint(
 		stage: DriverCheckpointStage,
-		timeoutMs: number,
+		timeoutMs: number
 	): Promise<DriverCheckpointEvidence> {
 		const driver = this.homeScreen.getDriver();
 		const checkpoint = DRIVER_CHECKPOINT_SELECTORS[stage];
@@ -167,13 +168,13 @@ export class DriverTripHappyPathHarness {
 
 		while (Date.now() < deadline) {
 			const url = await this.getCurrentWebUrl();
-			const matchedToken = checkpoint.urlTokens.find((token) => url.includes(token));
+			const matchedToken = checkpoint.urlTokens.find(token => url.includes(token));
 			if (matchedToken) {
 				return {
 					stage,
 					url,
 					matchedBy: `url:${matchedToken}`,
-					observedAt: new Date().toISOString(),
+					observedAt: new Date().toISOString()
 				};
 			}
 
@@ -183,7 +184,7 @@ export class DriverTripHappyPathHarness {
 					stage,
 					url,
 					matchedBy: `selector:${matchedSelector}`,
-					observedAt: new Date().toISOString(),
+					observedAt: new Date().toISOString()
 				};
 			}
 
@@ -191,15 +192,13 @@ export class DriverTripHappyPathHarness {
 		}
 
 		const lastUrl = await this.getCurrentWebUrl();
-		throw new Error(
-			`Checkpoint "${stage}" not reached in ${timeoutMs}ms. Last URL: ${lastUrl || '<unavailable>'}`
-		);
+		throw new Error(`Checkpoint "${stage}" not reached in ${timeoutMs}ms. Last URL: ${lastUrl || '<unavailable>'}`);
 	}
 
 	private async getCurrentWebUrl(): Promise<string> {
 		const driver = this.homeScreen.getDriver();
 		const contexts = (await driver.getContexts().catch(() => [])) as string[];
-		const webview = contexts.find((context) => context.startsWith('WEBVIEW'));
+		const webview = contexts.find(context => context.startsWith('WEBVIEW'));
 
 		if (!webview) {
 			return '';
@@ -213,7 +212,10 @@ export class DriverTripHappyPathHarness {
 		const driver = this.homeScreen.getDriver();
 
 		for (const selector of selectors) {
-			const visible = await driver.$(selector).isDisplayed().catch(() => false);
+			const visible = await driver
+				.$(selector)
+				.isDisplayed()
+				.catch(() => false);
 			if (visible) {
 				return selector;
 			}

@@ -8,7 +8,7 @@
 
 - Se usa un **keyword de estado** como nombre: `APRO`, `OTHE`, `CONT`, `SECU`, `FUND`, etc.
 - Número, CVV y expiración son **fijos**: CVV `123` (Amex `1234`), exp `11/30`, tarjeta del catálogo.
-- **Documento:** approved usa DNI `12345678`; la mayoría de rechazos no requieren documento.
+- **Documento:** `APRO` y `OTHE` usan DNI `12345678`; el resto de rechazos no requieren documento (doc oficial).
 - **3DS/SCA:** no aplica en el flujo MAGIIS (`mercadoPagoGatewayAdapter.requires3ds = false`).
 
 > ⚠️ A diferencia de las demás pasarelas, en MP `holderName` **es el trigger** — el spec debe llenar el nombre con el keyword exacto.
@@ -45,16 +45,39 @@
 | `BLAC` | rejected | cc_rejected_blacklist |
 | `UNSU` | not-supported | not_supported |
 
+> **Keyword especial `TEST`** (doc oficial): "usado para aplicar regla de montos" — el outcome lo determina el **monto** de la transacción, no el `holderName`. Por eso **no** vive en el registro determinista `MP_TEST_CARDS` (que mapea un outcome fijo por keyword). Si se necesita para probar reglas de monto, usar `holderName = TEST` y variar el importe. Fuera de alcance del smoke keyword-driven.
+
 Datos en [`tests/fixtures/gateways/mercado-pago/cards.ts`](../../../tests/fixtures/gateways/mercado-pago/cards.ts) (`MP_TEST_CARDS` + catálogo `MP_CARD_CATALOG`).
 
-## 4. Modelo de integración (runtime — TBD)
+## 4. Modelo de integración (runtime — observado)
 
-**Pendiente de confirmar con backend MAGIIS** antes de crear el POM:
-- ¿Checkout API, Bricks (Card Payment Brick), o Wallet/Checkout Pro?
-- ¿Form propio de MP o form MAGIIS que envía el nombre al SDK?
-- ¿Endpoints Hold/Capture?
+**Observado en recording del carrier ARG en TEST (alta de viaje, 2026-07-22):** el form de tarjeta de MP en el alta de viaje es el **form NATIVO de MAGIIS** (Angular), **no** un iframe de Stripe Elements. Confirma `usesSharedCardForm: true` del adapter y que el `holderName` + DNI viajan por el form MAGIIS.
 
-Ver [EXTERNAL-BLOCKERS.md](./EXTERNAL-BLOCKERS.md).
+Campos del form (portal carrier · Nuevo Viaje · método "Tarjeta de Crédito - Preautorizada"):
+
+| Campo | Selector observado | Valor de prueba |
+|---|---|---|
+| Número de tarjeta | `getByRole('textbox', { name: 'Número de tarjeta *' })` (input nativo, no iframe) | `4509 9535 6623 3704` |
+| Expiración | `getByRole('textbox', { name: 'MM/AA' })` | `11/30` |
+| CVV | `input[type="password"]` | `123` |
+| **Titular (trigger)** | textbox de nombre del titular | `apro` |
+| Tipo de documento | `#creditCardOwnerIdType` (dropdown) → `DNI` | DNI |
+| Número de documento | textbox de documento | `12345678` |
+| Confirmar | botón `Validar` | — |
+
+**Vinculación satisfactoria (oráculo):** tras `Validar`, la tarjeta aparece **resaltada** (`.ng-star-inserted.highlighted`) en el dropdown `#add_travel_payment_methods`; seleccionarla la deja activa para el viaje (recording test-15, líneas 44-49). `Validar` puede requerir reintento antes de que quede vinculada. Helper: `validateAndSelectMercadoPagoCard()`.
+
+Pendiente aún de confirmar con backend: endpoints Hold/Capture y **por qué el cobro de tarjeta vinculada no completa desde el driver** pero Cargo a Bordo sí (gap TEST). ¿Checkout API vs Brick? — el form nativo sugiere integración server-side (Checkout API) más que Brick/Wallet, a confirmar.
+
+### `MercadoPagoDriverPaymentScreen` — BLOQUEADO (2026-07-23)
+
+La variante MP del payment screen del **driver** (mobile) NO se construye aún. Doble bloqueo:
+1. **MP no transacciona en TEST** — la validación de tarjeta MP no completa (confirmado en vivo, "Error al validar tarjeta"; sandbox MP no procesa el cobro). El E2E de cobro MP desde el driver solo es verificable en **UAT con tarjeta real**.
+2. **Sin captura del modal de cobro MP en el driver** — la captura de viaje calle disponible fue **Stripe** (Stripe Elements iframe + 3DS `#test-source-authorize-3ds`), no MP. Construir el POM MP exigiría inventar selectores.
+
+Acción: cuando MP transaccione (UAT) o se capture el modal MP del driver, crear `MercadoPagoDriverPaymentScreen` reusando de `DriverTripPaymentScreen` los métodos agnósticos (`waitForPaymentScreen`/`waitForPaymentOutcome`/`dismissAttentionModal`) + `fillCardForm` MP (holderName=trigger + DNI, sin 3DS). El POM de navegación `DriverViajeCalleScreen` ya es agnóstico y no requiere cambios.
+
+Ver [EXTERNAL-BLOCKERS.md](./EXTERNAL-BLOCKERS.md) y [smoke-cases-no3ds.md](./smoke-cases-no3ds.md) §"Captura del modelo".
 
 ## 5. Consistencia con el adapter
 

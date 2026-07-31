@@ -10,7 +10,7 @@
  *     (`ThreeDsChallengePage`, `ThreeDsErrorPopup`).
  * ATCs mapeados en las Page components (área EDIT del idmap): linkAndValidatePreauthorizedCard
  *   → MG-415, confirmLinkedCardAndSave → MG-416, 3DS success/fail → MG-152/153.
- *   PENDIENTE REASIGNAR (idmap sin 1:1 entre TS-STRIPE-P2-TC078xx UI y TC-PAY-EDIT-*).
+ *   mapeo por área aceptado (idmap sin 1:1 entre TS-STRIPE-P2-TC078xx UI y TC-PAY-EDIT-*).
  */
 import { test } from '@TestFixture';
 import { CarrierTravelEditSteps } from '@steps/index';
@@ -19,7 +19,7 @@ import { CarrierTravelEditSteps } from '@steps/index';
 test.use({ storageState: undefined });
 test.describe.configure({ mode: 'serial' });
 
-test.describe('Gateway PG · Carrier · Empresa Individuo - Edicion de Viajes Programados @gateway @stripe @hold @3ds @regression', () => {
+test.describe('Gateway PG · Carrier · Empresa Individuo - Edicion de Viajes Programados @gateway @stripe @hold @3ds @regression', { annotation: [{ type: 'tms', description: 'MG-415' }] }, () => {
 	test('[TS-STRIPE-P2-TC078] @regression @hold alta + edicion hold+cobro', async ({ page }) => {
 		test.setTimeout(180_000);
 		await new CarrierTravelEditSteps({ page }).runScheduledTripCardEdit();

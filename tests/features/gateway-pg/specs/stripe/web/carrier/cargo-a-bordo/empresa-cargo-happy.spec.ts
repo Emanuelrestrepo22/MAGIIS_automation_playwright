@@ -14,7 +14,7 @@
  *
  * KATA conformance (feature/kata-conformance): fase web extraída a
  *   `CargoABordoSteps.runCargoScenario` (@steps); test desde @TestFixture. ATCs →
- *   MG-161 (área F cobro) / MG-158 (área E hold). PENDIENTE REASIGNAR (idmap API-level).
+ *   MG-161 (área F cobro) / MG-158 (área E hold). mapeo por área aceptado (idmap API-level).
  */
 import { test } from '@TestFixture';
 import { CargoABordoSteps, type CargoScenario } from '@steps/index';
@@ -27,13 +27,15 @@ const empresaScenario: CargoScenario = {
 	client: TEST_DATA.client,
 	passenger: TEST_DATA.passenger,
 	origin: TEST_DATA.origin,
-	destination: TEST_DATA.destination,
+	destination: TEST_DATA.destination
 };
 
-test.describe('Gateway PG · Carrier · Empresa Individuo — Cargo a Bordo @gateway @stripe @cargo-a-bordo @hold @critical @smoke', () => {
-
-	test('[TS-STRIPE-TC1111] @smoke @cargo-a-bordo pago exitoso sin 3DS', async ({ page }) => {
-		await new CargoABordoSteps({ page }).runCargoScenario(empresaScenario, { createTimeout: 30_000 });
-	});
-
-});
+test.describe(
+	'Gateway PG · Carrier · Empresa Individuo — Cargo a Bordo @gateway @stripe @cargo-a-bordo @hold @critical @smoke',
+	{ annotation: [{ type: 'tms', description: 'MG-161' }] },
+	() => {
+		test('[TS-STRIPE-TC1111] @smoke @cargo-a-bordo pago exitoso sin 3DS', async ({ page }) => {
+			await new CargoABordoSteps({ page }).runCargoScenario(empresaScenario, { createTimeout: 30_000 });
+		});
+	}
+);

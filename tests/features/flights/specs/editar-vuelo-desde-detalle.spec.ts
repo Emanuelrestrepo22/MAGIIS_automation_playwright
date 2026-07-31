@@ -20,15 +20,26 @@ test.describe(`[FLIGHT][${env.toUpperCase()}] Edición de vuelo desde detalle �
 	test.describe.configure({ timeout: 180_000 });
 	test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
 
-	async function openFirstScheduledInEdit(page: import('@playwright/test').Page, management: { goto: () => Promise<void>; openScheduledTrips: () => Promise<void> }): Promise<void> {
+	async function openFirstScheduledInEdit(
+		page: import('@playwright/test').Page,
+		management: { goto: () => Promise<void>; openScheduledTrips: () => Promise<void> }
+	): Promise<void> {
 		await management.goto();
 		await management.openScheduledTrips();
 		// NOTE(tier3-recorder): entra a edición del primer Programado vía el botón "Editar" (icon-button;
 		// tooltip en title/aria-label/aria-description — `description` no es opción válida en getByRole 1.56).
-		await page.locator('button[title="Editar"], button[aria-label="Editar"], button[aria-description="Editar"]').first().click();
+		await page
+			.locator('button[title="Editar"], button[aria-label="Editar"], button[aria-description="Editar"]')
+			.first()
+			.click();
 	}
 
-	test('@flight @carrier @edit [TS-MX5824-EDIT-VUELO] Cambiar el vuelo asociado desde detalle → Recalcular → Guardar', async ({ page, management, flightModal, travelDetail }) => {
+	test('@flight @carrier @edit [TS-MX5824-EDIT-VUELO] Cambiar el vuelo asociado desde detalle → Recalcular → Guardar', async ({
+		page,
+		management,
+		flightModal,
+		travelDetail
+	}) => {
 		await test.step(`Given: dispatcher logueado + primer Programado en edición (${env.toUpperCase()})`, async () => {
 			await loginAsDispatcher(page);
 			await openFirstScheduledInEdit(page, management);
@@ -50,7 +61,12 @@ test.describe(`[FLIGHT][${env.toUpperCase()}] Edición de vuelo desde detalle �
 		});
 	});
 
-	test('@flight @carrier @edit [TS-MX5824-DELETE-VUELO] Eliminar el vuelo asociado desde detalle → Recalcular', async ({ page, management, flightModal, travelDetail }) => {
+	test('@flight @carrier @edit [TS-MX5824-DELETE-VUELO] Eliminar el vuelo asociado desde detalle → Recalcular', async ({
+		page,
+		management,
+		flightModal,
+		travelDetail
+	}) => {
 		await test.step(`Given: dispatcher logueado + primer Programado en edición (${env.toUpperCase()})`, async () => {
 			await loginAsDispatcher(page);
 			await openFirstScheduledInEdit(page, management);

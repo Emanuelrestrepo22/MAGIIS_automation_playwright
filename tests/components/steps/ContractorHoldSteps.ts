@@ -17,19 +17,30 @@
  */
 
 import type { TestContextOptions } from '@TestContext';
+import type { GatewayName } from '@fixtures/gateways/_shared';
 
 import { test, expect } from '@TestFixture';
 import { UiBase } from '@ui/UiBase';
 import { ThreeDsChallengePage } from '@ui/ThreeDsChallengePage';
 import { CarrierDashboardPage } from '@ui/carrier';
+import { cardFormFor } from '@ui/carrier/card-forms';
 import { ContractorNewTravelPage } from '@ui/contractor';
+import { resolveCard } from '@fixtures/gateways/_shared';
 import { expectNoThreeDSModal, loginAsContractor } from '@features/gateway-pg/fixtures/gateway.fixtures';
-import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '@features/gateway-pg/helpers/travel-cleanup';
+import { getGatewayPgAdapter } from '@features/gateway-pg/helpers/adapters';
+import { validateAndSelectMercadoPagoCard } from '@features/gateway-pg/helpers/mercadoPago.helpers';
+import {
+	captureCreatedTravelId,
+	cancelTravelIfCreated,
+	type TravelIdRef
+} from '@features/gateway-pg/helpers/travel-cleanup';
 
-/** Flujo de tarjeta: nueva vinculación por last4, o tarjeta guardada del colaborador. */
-export type ContractorCardFlow =
-	| { kind: 'new'; last4: string }
-	| { kind: 'saved' };
+/**
+ * Flujo de tarjeta: nueva vinculación (last4 requerido SOLO en stripe — las demás
+ * pasarelas resuelven la tarjeta vía `resolveCard({gateway,intent:'HAPPY_NO_AUTH'})`),
+ * o tarjeta guardada del colaborador.
+ */
+export type ContractorCardFlow = { kind: 'new'; last4?: string } | { kind: 'saved' };
 
 /**
  * Modo de 3DS del escenario:
@@ -41,6 +52,12 @@ export type ContractorCardFlow =
 export type ContractorThreeDsMode = 'none' | 'link-then-service' | 'post-service-double';
 
 export type ContractorHoldScenario = {
+	/**
+	 * Pasarela del journey (S7). Default 'stripe' (comportamiento histórico intacto).
+	 * No-stripe: login contractor con creds por pasarela y tarjeta vía la CardFormStrategy
+	 * del adapter (form nativo Angular). 3DS es EXCLUSIVO Stripe → usar threeDs: 'none'.
+	 */
+	gateway?: GatewayName;
 	/** Colaborador (campo único usuario/pasajero en contractor). */
 	user: string;
 	origin: string;
@@ -62,9 +79,12 @@ export class ContractorHoldSteps extends UiBase {
 		this.threeDs = new ThreeDsChallengePage(opts);
 	}
 
-	/** Login como contractor. */
-	async login(): Promise<void> {
-		await loginAsContractor(this.page);
+	/**
+	 * Login como contractor. `gateway` selecciona la cadena de credenciales por pasarela
+	 * (`getContractorCollaborator(gateway)`); omitido = default histórico.
+	 */
+	async login(gateway?: GatewayName): Promise<void> {
+		await loginAsContractor(this.page, gateway ? { gateway } : undefined);
 	}
 
 	/** Aprueba el challenge 3DS si aparece (wait corto no-bloqueante). */
@@ -86,10 +106,20 @@ export class ContractorHoldSteps extends UiBase {
 	 * del portal carrier — este flujo no lo toggla.
 	 */
 	async runColaboradorScenario(scenario: ContractorHoldScenario): Promise<void> {
+		const gateway: GatewayName = scenario.gateway ?? 'stripe';
+		// Fail-fast doctrina 3DS (post-review A5): 3DS es EXCLUSIVO de Stripe. Un
+		// threeDs-mode con un adapter sin 3DS colgaba el flujo esperando un modal que
+		// nunca aparece (waitForVisible) — error de invocación, lanzar claro y temprano.
+		if (scenario.threeDs !== 'none' && !getGatewayPgAdapter(gateway).requires3ds) {
+			throw new Error(
+				`runColaboradorScenario: threeDs='${scenario.threeDs}' con gateway '${gateway}' (requires3ds=false) — ` +
+					`3DS es EXCLUSIVO de Stripe; usar threeDs: 'none' para ${gateway} (doctrina: caso excluido, no convertido).`
+			);
+		}
 		let travelIdRef: TravelIdRef | null = null;
 
 		await test.step('Login contractor', async () => {
-			await this.login();
+			await this.login(scenario.gateway);
 		});
 
 		try {
@@ -100,15 +130,46 @@ export class ContractorHoldSteps extends UiBase {
 				await this.travel.ensureLoaded();
 			});
 
-			if (scenario.card.kind === 'new') {
+			if (scenario.card.kind === 'new' && gateway !== 'stripe') {
+				// No-stripe (S7): journey contractor hasta el pago + método Preautorizada +
+				// estrategia de card form del adapter (form nativo Angular) + validación por pasarela.
+				await test.step(`Completar formulario — colaborador + tarjeta ${gateway} (form nativo)`, async () => {
+					await this.travel.fillJourneyUntilPayment({
+						client: scenario.user,
+						origin: scenario.origin,
+						destination: scenario.destination
+					});
+					await this.travel.selectPaymentMethod('Preautorizada');
+					const card = resolveCard({ gateway, intent: 'HAPPY_NO_AUTH' });
+					await cardFormFor(gateway).fill(this.page, card);
+					if (gateway === 'mercado-pago') {
+						const mpLink = await validateAndSelectMercadoPagoCard(this.page);
+						// Guard future-proof (hoy INERTE): 'validation-failed' está RESERVADO a evidencia
+						// live (UAT) de un fallo distinguible de la limitación sandbox — hoy ningún camino
+						// lo retorna en TEST (el error explícito es la manifestación documentada → skip).
+						expect(mpLink, 'MP: señal de fallo real de validación distinguible de la limitación sandbox (evidencia live)').not.toBe('validation-failed');
+						test.skip(
+							mpLink !== 'linked',
+							'MP: validación de tarjeta no completa en TEST (sandbox MP no transacciona) — UAT-only. Form-fill + habilitación de "Validar" verificados.'
+						);
+					} else {
+						await this.travel.validateNativeCard();
+					}
+				});
+			} else if (scenario.card.kind === 'new') {
 				const cardLast4 = scenario.card.last4;
+				if (!cardLast4) {
+					throw new Error(
+						"runColaboradorScenario: card.last4 es requerido en el flujo stripe (card kind 'new')."
+					);
+				}
 				await test.step(`Completar formulario — colaborador + tarjeta ${scenario.threeDs === 'none' ? 'sin 3DS' : 'con 3DS'}`, async () => {
 					await this.travel.fillMinimum({
 						client: scenario.user,
 						passenger: scenario.user,
 						origin: scenario.origin,
 						destination: scenario.destination,
-						cardLast4,
+						cardLast4
 					});
 				});
 			} else {
@@ -120,7 +181,10 @@ export class ContractorHoldSteps extends UiBase {
 
 				await test.step('Seleccionar tarjeta VISA guardada del colaborador', async () => {
 					const hasCard = await this.travel.hasHighlightedSavedCard();
-					test.skip(!hasCard, 'Precondición: colaborador no tiene tarjeta guardada en TEST. Vincular tarjeta primero.');
+					test.skip(
+						!hasCard,
+						'Precondición: colaborador no tiene tarjeta guardada en TEST. Vincular tarjeta primero.'
+					);
 					await this.travel.selectSavedCard();
 				});
 			}
@@ -156,10 +220,14 @@ export class ContractorHoldSteps extends UiBase {
 
 			await test.step('Esperar redirección fuera del formulario de alta', async () => {
 				// El portal contractor redirige a /dashboard tras crear el viaje (no a /travels/xxx).
-				await this.page.waitForURL(
-					url => !url.href.includes('/travel/create'),
-					{ timeout: 30_000, waitUntil: 'commit' },
-				);
+				await this.page.waitForURL(url => !url.href.includes('/travel/create'), {
+					timeout: 30_000,
+					waitUntil: 'commit'
+				});
+				// Oráculo explícito de destino (restaurado del original c3c99e8 — auditoría R2):
+				// "salió de /travel/create" NO asserta que llegó al dashboard; el redirect de
+				// éxito del contractor es /contractor/dashboard (MP-NOHOLD-04, smoke-cases-no3ds).
+				await expect(this.page).toHaveURL(/contractor\/dashboard/, { timeout: 10_000 });
 			});
 
 			// Validación API: el POST /travels devolvió un travelId — viaje creado en backend.

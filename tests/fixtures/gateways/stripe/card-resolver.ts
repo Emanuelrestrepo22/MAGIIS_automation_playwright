@@ -42,9 +42,7 @@ export type CardId = keyof typeof CARDS | string;
  * @throws Si el cardId no matchea ninguna entrada conocida en STRIPE_TEST_CARD_FIXTURES
  */
 export function resolveCard(cardId: CardId): StripeTestCard {
-	const cardNumber = cardId in CARDS
-		? CARDS[cardId as keyof typeof CARDS]
-		: cardId;
+	const cardNumber = cardId in CARDS ? CARDS[cardId as keyof typeof CARDS] : cardId;
 
 	const found = Object.values(STRIPE_TEST_CARD_FIXTURES).find(c => c.number === cardNumber);
 	if (!found) {

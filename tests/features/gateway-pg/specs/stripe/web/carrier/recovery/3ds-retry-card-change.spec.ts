@@ -7,82 +7,91 @@
  *          PENDIENTE: requiere payment-method.component en travel-detail
  * TC1064 – Vinculación de tarjeta nueva (success3DS 4000 0025 0000 3155) desde detalle post-fallo — 3DS aprobado, viaje activo
  *          PENDIENTE: requiere flujo de vinculación completo en travel-detail
+ *
+ * KATA conformance (feature/kata-conformance):
+ *   - test/expect vienen del fixture unificado KATA (@TestFixture); el setup del fallo 3DS se orquesta
+ *     con `RecoverySteps.setupFailedThreeDs` (@steps); el detalle vía @ui/carrier CarrierTravelDetailPage.
+ *   - los tests siguen en `test.fail(true, ...)`: el producto aún no implementa el cambio/vinculación de
+ *     tarjeta en el detalle (payment-method.component). Se cablea el mapeo aunque queden en test.fail.
+ *   @atc idmap (mapeo por área): cambio/vinculación de tarjeta post-fallo → área D (MG-155 / MG-156).
  */
 
-import { test, expect } from '../../../../../../../TestBase';
-import { loginAsDispatcher, setupTravelWithFailed3DS, TEST_DATA } from '../../../../../fixtures/gateway.fixtures';
-import { TravelDetailPage } from '../../../../../../../pages/carrier';
+import { test, expect } from '@TestFixture';
+import { CarrierTravelDetailPage } from '@ui/carrier';
+import { RecoverySteps } from '@steps/index';
+import { loginAsDispatcher, TEST_DATA } from '@features/gateway-pg/fixtures/gateway.fixtures';
 
 test.describe.configure({ mode: 'serial' });
 
-test.describe('Gateway PG · Carrier · App Pax — Cambio de tarjeta post-fallo 3DS @gateway @stripe @hold @3ds @wallet @regression', () => {
-	test.use({ role: 'carrier', storageState: undefined });
+test.use({ storageState: undefined });
 
-	// PRODUCT-GAP (MG-178, gap #7): en el FE (branch release/v1.72.x) travel-detail NO implementa
-	// el `payment-method.component` ni el flujo de cambio/vinculación de tarjeta post-fallo 3DS
-	// (confirmado en `magiis-fe/src/app/carrier/travel/travel-detail/`). No es un fallo de
-	// automatización: la funcionalidad no existe en producto. Se deja fixme hasta que se implemente
-	// (revalidar contra el tag desplegado v1.72.8). Antes estaban en `test.fail` pero igual corrían
-	// el setup caro (alta + fallo 3DS) y disparaban el nav-timeout reportado.
-	test.beforeEach(async ({ page }) => {
-		test.fixme(
-			true,
-			'PRODUCT-GAP: travel-detail sin payment-method.component ni cambio de tarjeta post-fallo 3DS (FE v1.72.x). Ver MG-178 gap #7.'
-		);
-		await loginAsDispatcher(page);
-	});
-
-	test.describe('[TS-STRIPE-TC1063] Cambio a tarjeta vinculada existente desde detalle post-fallo 3DS — hold re-ejecutado, viaje pasa a "Buscando conductor"', () => {
-		test('puede seleccionar otra tarjeta vinculada desde la sección de pago en detalle del viaje', async ({
-			page
-		}) => {
-			await setupTravelWithFailed3DS(page, TEST_DATA);
-			await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
-
-			test.fail(
-				true,
-				'PENDIENTE: requiere payment-method.component en travel-detail para seleccionar tarjeta guardada'
-			);
+test.describe(
+	'Gateway PG · Carrier · App Pax — Cambio de tarjeta post-fallo 3DS @gateway @stripe @hold @3ds @wallet @regression',
+	{ annotation: [{ type: 'tms', description: 'MG-155' }] },
+	() => {
+		test.beforeEach(async ({ page }) => {
+			await loginAsDispatcher(page);
 		});
 
-		test('al guardar la tarjeta existente se re-ejecuta el hold automáticamente y viaje pasa a "Buscando conductor"', async ({
-			page
-		}) => {
-			await setupTravelWithFailed3DS(page, TEST_DATA);
-			await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
+		test.describe('[TS-STRIPE-TC1063] Cambio a tarjeta vinculada existente desde detalle post-fallo 3DS — hold re-ejecutado, viaje pasa a "Buscando conductor"', () => {
+			test('puede seleccionar otra tarjeta vinculada desde la sección de pago en detalle del viaje', async ({
+				page
+			}) => {
+				const recovery = new RecoverySteps({ page });
+				await recovery.setupFailedThreeDs(TEST_DATA);
+				await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
 
-			test.fail(true, 'PENDIENTE: requiere payment-method.component en travel-detail');
-		});
-	});
+				test.fail(
+					true,
+					'PENDIENTE: requiere payment-method.component en travel-detail para seleccionar tarjeta guardada'
+				);
+			});
 
-	test.describe('[TS-STRIPE-TC1064] Vinculación de tarjeta nueva (success3DS 4000 0025 0000 3155) desde detalle post-fallo — 3DS aprobado, viaje pasa a "Buscando conductor"', () => {
-		test('el botón de cambio/vinculación de tarjeta está disponible en el detalle del viaje en estado NO_AUTORIZADO', async ({
-			page
-		}) => {
-			await setupTravelWithFailed3DS(page, TEST_DATA);
-			await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
+			test('al guardar la tarjeta existente se re-ejecuta el hold automáticamente y viaje pasa a "Buscando conductor"', async ({
+				page
+			}) => {
+				const recovery = new RecoverySteps({ page });
+				await recovery.setupFailedThreeDs(TEST_DATA);
+				await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
 
-			const detail = new TravelDetailPage(page);
-			await expect(detail.changeCardButton()).toBeVisible({ timeout: 10_000 });
-
-			test.fail(true, 'PENDIENTE: validar flujo completo de vinculación en detalle');
-		});
-
-		test('al vincular tarjeta nueva con 3DS requerido se lanza el modal de autenticación', async ({ page }) => {
-			await setupTravelWithFailed3DS(page, TEST_DATA);
-			await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
-
-			test.fail(true, 'PENDIENTE: requiere flujo de vinculación completo en travel-detail');
+				test.fail(true, 'PENDIENTE: requiere payment-method.component en travel-detail');
+			});
 		});
 
-		test('hold exitoso con nueva tarjeta actualiza estado del viaje a "Buscando conductor"', async ({ page }) => {
-			await setupTravelWithFailed3DS(page, TEST_DATA);
-			await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
+		test.describe('[TS-STRIPE-TC1064] Vinculación de tarjeta nueva (success3DS 4000 0025 0000 3155) desde detalle post-fallo — 3DS aprobado, viaje pasa a "Buscando conductor"', () => {
+			test('el botón de cambio/vinculación de tarjeta está disponible en el detalle del viaje en estado NO_AUTORIZADO', async ({
+				page
+			}) => {
+				const recovery = new RecoverySteps({ page });
+				await recovery.setupFailedThreeDs(TEST_DATA);
+				await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
 
-			test.fail(
-				true,
-				'PENDIENTE: depende de vinculación y hold exitoso con nueva tarjeta success3DS (4000 0025 0000 3155)'
-			);
+				const detail = new CarrierTravelDetailPage({ page });
+				await expect(detail.changeCardButton()).toBeVisible({ timeout: 10_000 });
+
+				test.fail(true, 'PENDIENTE: validar flujo completo de vinculación en detalle');
+			});
+
+			test('al vincular tarjeta nueva con 3DS requerido se lanza el modal de autenticación', async ({ page }) => {
+				const recovery = new RecoverySteps({ page });
+				await recovery.setupFailedThreeDs(TEST_DATA);
+				await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
+
+				test.fail(true, 'PENDIENTE: requiere flujo de vinculación completo en travel-detail');
+			});
+
+			test('hold exitoso con nueva tarjeta actualiza estado del viaje a "Buscando conductor"', async ({
+				page
+			}) => {
+				const recovery = new RecoverySteps({ page });
+				await recovery.setupFailedThreeDs(TEST_DATA);
+				await page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
+
+				test.fail(
+					true,
+					'PENDIENTE: depende de vinculación y hold exitoso con nueva tarjeta success3DS (4000 0025 0000 3155)'
+				);
+			});
 		});
-	});
-});
+	}
+);

@@ -14,7 +14,7 @@
  * KATA conformance (feature/kata-conformance): fase web extraída a
  *   `CargoABordoSteps.runCargoScenario` (@steps); test desde @TestFixture; la fase
  *   Driver App se declara vía `driverAppStep` (test.fixme). ATCs → MG-161 / MG-158
- *   (PENDIENTE REASIGNAR — idmap API-level).
+ *   (mapeo por área aceptado — idmap API-level).
  */
 import { test } from '@TestFixture';
 import { CargoABordoSteps, type CargoScenario } from '@steps/index';
@@ -28,19 +28,20 @@ const appPaxScenario: CargoScenario = {
 	client: TEST_DATA.appPaxPassenger,
 	origin: TEST_DATA.origin,
 	destination: TEST_DATA.destination,
-	cardPrecondition: { apiSearchQuery: PASSENGERS.appPax.apiSearchQuery!, requiredLast4: '3155', tcLabel: 'TC1092' },
+	// Card 3DS DETERMINÍSTICA always_authenticate (••••3184). Migrado desde la deprecada 3155
+	// (flaky por risk-score variable + ESLint anti-card-3155). apppax-hold-3ds ya usa esta card.
+	cardPrecondition: { apiSearchQuery: PASSENGERS.appPax.apiSearchQuery!, requiredLast4: '3184', tcLabel: 'TC1092' }
 };
 
 const APPIUM_NOTE = 'PENDIENTE: fase Driver App — requiere Appium.';
 
 test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo · 3DS @gateway @stripe @cargo-a-bordo @hold @3ds @critical', () => {
-
 	test('[TS-STRIPE-TC1092] @critical @3ds @cargo-a-bordo pago exitoso con 3DS desde Driver App', async ({ page }) => {
 		await new CargoABordoSteps({ page }).runCargoScenario(appPaxScenario, {
 			driverAppStep: {
 				title: '[DRIVER APP] Conductor finaliza viaje → 3DS requerido → pasajero completa challenge → cobro exitoso',
-				note: 'PENDIENTE: fase Driver App — requiere Appium + DriverTripPaymentScreen + manejo de WebView 3DS.',
-			},
+				note: 'PENDIENTE: fase Driver App — requiere Appium + DriverTripPaymentScreen + manejo de WebView 3DS.'
+			}
 		});
 	});
 
@@ -48,8 +49,8 @@ test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo · 3DS @gatewa
 		await new CargoABordoSteps({ page }).runCargoScenario(appPaxScenario, {
 			driverAppStep: {
 				title: '[DRIVER APP] Conductor finaliza viaje → 3DS requerido → pasajero rechaza challenge → cobro fallido',
-				note: APPIUM_NOTE,
-			},
+				note: APPIUM_NOTE
+			}
 		});
 	});
 
@@ -57,8 +58,8 @@ test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo · 3DS @gatewa
 		await new CargoABordoSteps({ page }).runCargoScenario(appPaxScenario, {
 			driverAppStep: {
 				title: '[DRIVER APP] Conductor finaliza viaje → 3DS con error de autenticación → cobro fallido',
-				note: APPIUM_NOTE,
-			},
+				note: APPIUM_NOTE
+			}
 		});
 	});
 
@@ -66,9 +67,8 @@ test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo · 3DS @gatewa
 		await new CargoABordoSteps({ page }).runCargoScenario(appPaxScenario, {
 			driverAppStep: {
 				title: '[DRIVER APP] Conductor finaliza viaje → 3DS falla completamente → cobro no procesado',
-				note: APPIUM_NOTE,
-			},
+				note: APPIUM_NOTE
+			}
 		});
 	});
-
 });

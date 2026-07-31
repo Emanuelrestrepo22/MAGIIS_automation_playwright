@@ -28,7 +28,12 @@ test.describe(`[FLIGHT][${env.toUpperCase()}] Happy path alta de vuelo — valid
 
 	// ── VA-1: dirección por defecto del radio según la POSICIÓN del aeropuerto ──────────────────
 	// Aeropuerto en DROPOFF/destino → "Partidas" pre-marcado (se deja al cliente → parte).
-	test('@flight @carrier @regression [TS-MX5826-VA1a] Aeropuerto en DESTINO → radio "Partidas" pre-seleccionado', async ({ page, dashboard, travel, flightModal }) => {
+	test('@flight @carrier @regression [TS-MX5826-VA1a] Aeropuerto en DESTINO → radio "Partidas" pre-seleccionado', async ({
+		page,
+		dashboard,
+		travel,
+		flightModal
+	}) => {
 		await loginAsDispatcher(page);
 		await dashboard.openNewTravel();
 		await travel.ensureLoaded();
@@ -42,7 +47,12 @@ test.describe(`[FLIGHT][${env.toUpperCase()}] Happy path alta de vuelo — valid
 	});
 
 	// Aeropuerto en PICKUP/origen → "Arribos" pre-marcado (se busca al cliente que llega).
-	test('@flight @carrier @regression [TS-MX5826-VA1b] Aeropuerto en ORIGEN → radio "Arribos" pre-seleccionado', async ({ page, dashboard, travel, flightModal }) => {
+	test('@flight @carrier @regression [TS-MX5826-VA1b] Aeropuerto en ORIGEN → radio "Arribos" pre-seleccionado', async ({
+		page,
+		dashboard,
+		travel,
+		flightModal
+	}) => {
 		await loginAsDispatcher(page);
 		await dashboard.openNewTravel();
 		await travel.ensureLoaded();
@@ -56,7 +66,12 @@ test.describe(`[FLIGHT][${env.toUpperCase()}] Happy path alta de vuelo — valid
 
 	// Aeropuerto en STOP/parada → radio SIN marcar (el carrier elige).
 	// NOTE(verify-uat): addStop del POM + índice de la parada; confirmar que el ✈ del stop abre el modal.
-	test('@flight @carrier @regression [TS-MX5826-VA1c] Aeropuerto en PARADA (stop) → radio sin marcar', async ({ page, dashboard, travel, flightModal }) => {
+	test('@flight @carrier @regression [TS-MX5826-VA1c] Aeropuerto en PARADA (stop) → radio sin marcar', async ({
+		page,
+		dashboard,
+		travel,
+		flightModal
+	}) => {
 		await loginAsDispatcher(page);
 		await dashboard.openNewTravel();
 		await travel.ensureLoaded();
@@ -70,7 +85,12 @@ test.describe(`[FLIGHT][${env.toUpperCase()}] Happy path alta de vuelo — valid
 	});
 
 	// ── VA-2: habilitación de Guardar/Aceptar por datos requisito ───────────────────────────────
-	test('@flight @carrier @regression [TS-MX5826-VA2] "Aceptar" deshabilitado sin datos requisito → habilitado al completarlos', async ({ page, dashboard, travel, flightModal }) => {
+	test('@flight @carrier @regression [TS-MX5826-VA2] "Aceptar" deshabilitado sin datos requisito → habilitado al completarlos', async ({
+		page,
+		dashboard,
+		travel,
+		flightModal
+	}) => {
 		await loginAsDispatcher(page);
 		await dashboard.openNewTravel();
 		await travel.ensureLoaded();
@@ -85,7 +105,12 @@ test.describe(`[FLIGHT][${env.toUpperCase()}] Happy path alta de vuelo — valid
 	});
 
 	// ── VA-3: limpieza al re-vincular + la fecha del viaje programado se mantiene ────────────────
-	test('@flight @carrier @regression [TS-MX5826-VA3] Asociar → eliminar → reabrir: modal limpio (Aceptar disabled) y fecha del viaje se mantiene', async ({ page, dashboard, travel, flightModal }) => {
+	test('@flight @carrier @regression [TS-MX5826-VA3] Asociar → eliminar → reabrir: modal limpio (Aceptar disabled) y fecha del viaje se mantiene', async ({
+		page,
+		dashboard,
+		travel,
+		flightModal
+	}) => {
 		await loginAsDispatcher(page);
 		await dashboard.openNewTravel();
 		await travel.ensureLoaded();
@@ -119,7 +144,14 @@ test.describe(`[FLIGHT][${env.toUpperCase()}] Happy path alta de vuelo — valid
 	// ── VA-4/5/6: detalle del viaje, nota autogenerada y flujo mismo-día con stop ────────────────
 	// NOTE(verify-uat): estos casos requieren crear el viaje (Enviar Servicio) + navegar al detalle y
 	// usan selectores recorder-derived (test-6.spec.ts). Confirmar en la 1ª corrida verde en UAT.
-	test('@flight @carrier @regression @detail [TS-MX5826-VA4-5] Detalle: ✈ visible + pop-up consistente; eliminar mantiene fecha y borra la nota del vuelo', async ({ page, dashboard, travel, management, flightModal, travelDetail }) => {
+	test('@flight @carrier @regression @detail [TS-MX5826-VA4-5] Detalle: ✈ visible + pop-up consistente; eliminar mantiene fecha y borra la nota del vuelo', async ({
+		page,
+		dashboard,
+		travel,
+		management,
+		flightModal,
+		travelDetail
+	}) => {
 		await loginAsDispatcher(page);
 		await dashboard.openNewTravel();
 		await travel.ensureLoaded();
@@ -138,7 +170,10 @@ test.describe(`[FLIGHT][${env.toUpperCase()}] Happy path alta de vuelo — valid
 		await management.goto();
 		await management.openScheduledTrips();
 		// NOTE(verify-uat): botón "Editar" (icon-button; tooltip en title/aria-label/aria-description).
-		await page.locator('button[title="Editar"], button[aria-label="Editar"], button[aria-description="Editar"]').first().click();
+		await page
+			.locator('button[title="Editar"], button[aria-label="Editar"], button[aria-description="Editar"]')
+			.first()
+			.click();
 
 		// VA-4a: ✈ visible en el detalle sobre la dirección aeropuerto.
 		await expect(page.locator('.btn.btn-primary.rounded-btn.btn-flight-round')).toBeVisible({ timeout: 10_000 });
@@ -171,7 +206,10 @@ test.describe(`[FLIGHT][${env.toUpperCase()}] Happy path alta de vuelo — valid
 
 	// VA-6: viaje programado MISMO DÍA con STOP = aeropuerto; cambiar fecha y vuelo → re-validar.
 	// NOTE(verify-uat): flujo largo (crear + editar); usa addStop + selectores de fecha del recording.
-	test.fixme('@flight @carrier @regression [TS-MX5826-VA6] Mismo día + stop aeropuerto: ✈ visible y consistente tras cambio de fecha/vuelo', async () => {
-		// Pendiente de habilitar tras confirmar selectores de fecha y edición en la 1ª corrida UAT.
-	});
+	test.fixme(
+		'@flight @carrier @regression [TS-MX5826-VA6] Mismo día + stop aeropuerto: ✈ visible y consistente tras cambio de fecha/vuelo',
+		async () => {
+			// Pendiente de habilitar tras confirmar selectores de fecha y edición en la 1ª corrida UAT.
+		}
+	);
 });

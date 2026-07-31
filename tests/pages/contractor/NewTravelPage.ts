@@ -26,7 +26,7 @@ export class ContractorNewTravelPage extends NewTravelPage {
 	constructor(page: Page) {
 		super(page);
 		this.userSelectTrigger = page.getByText('Seleccione un usuario', { exact: true }).first();
-		this.userSearchInput   = page.getByRole('textbox', { name: 'Seleccione un usuario' });
+		this.userSearchInput = page.getByRole('textbox', { name: 'Seleccione un usuario' });
 	}
 
 	/**
@@ -62,6 +62,19 @@ export class ContractorNewTravelPage extends NewTravelPage {
 	}
 
 	/**
+	 * Journey de contractor hasta el método de pago, SIN llenar la tarjeta.
+	 * Para gateways que NO usan Stripe Elements (ej. Mercado Pago, form nativo):
+	 * el caller completa la tarjeta con su propio helper y luego `clickValidateCard()`.
+	 * Reutiliza la selección de usuario + direcciones específicas de contractor.
+	 */
+	async fillJourneyUntilPayment(opts: { client: string; origin: string; destination: string }): Promise<void> {
+		await this.selectClient(opts.client);
+		await this.assertDefaultServiceTypeRegular();
+		await this.setOriginContractor(opts.origin);
+		await this.setDestinationContractor(opts.destination);
+	}
+
+	/**
 	 * Limpia un campo app-input-search-place si tiene un valor pre-cargado.
 	 * En contractor, tras seleccionar el usuario, el origen se auto-llena con la
 	 * dirección del colaborador. Hay que limpiarla (✕) antes de escribir la nueva.
@@ -69,7 +82,9 @@ export class ContractorNewTravelPage extends NewTravelPage {
 	 */
 	private async clearAddressFieldIfFilled(placeComponent: import('@playwright/test').Locator): Promise<void> {
 		// El botón ✕ es el primer elemento con esa clase o texto dentro del componente.
-		const clearBtn = placeComponent.locator('.close-btn, [class*="close"], [class*="clear"], [class*="remove"]').first();
+		const clearBtn = placeComponent
+			.locator('.close-btn, [class*="close"], [class*="clear"], [class*="remove"]')
+			.first();
 		const hasClearBtn = await clearBtn.isVisible().catch(() => false);
 		if (!hasClearBtn) {
 			// Fallback: buscar el caracter ✕ o × dentro del componente
@@ -93,13 +108,15 @@ export class ContractorNewTravelPage extends NewTravelPage {
 	 * PRECONDICIÓN: el campo debe estar en estado vacío (placeholder visible).
 	 * Retorna el search textbox visible dentro del componente.
 	 */
-	private async openAddressDropdown(placeComponent: import('@playwright/test').Locator): Promise<import('@playwright/test').Locator> {
+	private async openAddressDropdown(
+		placeComponent: import('@playwright/test').Locator
+	): Promise<import('@playwright/test').Locator> {
 		const searchInput = placeComponent.getByRole('textbox', { name: 'Ingrese una dirección' }).first();
 		const clickTargets = [
 			placeComponent.locator('.search-container-input > .bootstrap > .below > .single > .placeholder').first(),
 			placeComponent.locator('.placeholder').first(),
 			placeComponent.locator('.search-container-input').first(),
-			placeComponent.locator('.toggle').first(),
+			placeComponent.locator('.toggle').first()
 		];
 
 		for (const target of clickTargets) {
@@ -119,15 +136,24 @@ export class ContractorNewTravelPage extends NewTravelPage {
 	 * para manejar CDK overlay global, y como último recurso el primer listitem visible.
 	 * El queryText es el primer segmento de la dirección (ej: "Reconquista 661").
 	 */
-	private async clickAddressSuggestion(placeComponent: import('@playwright/test').Locator, queryText: string): Promise<void> {
+	private async clickAddressSuggestion(
+		placeComponent: import('@playwright/test').Locator,
+		queryText: string
+	): Promise<void> {
 		// Listitem dentro del componente con el texto de búsqueda
-		const inlineOption = placeComponent.getByRole('listitem').filter({ hasText: new RegExp(queryText, 'i') }).first();
+		const inlineOption = placeComponent
+			.getByRole('listitem')
+			.filter({ hasText: new RegExp(queryText, 'i') })
+			.first();
 		if (await inlineOption.isVisible({ timeout: 3_000 }).catch(() => false)) {
 			await inlineOption.click();
 			return;
 		}
 		// CDK overlay: listitem a nivel de página
-		const pageOption = this.page.getByRole('listitem').filter({ hasText: new RegExp(queryText, 'i') }).first();
+		const pageOption = this.page
+			.getByRole('listitem')
+			.filter({ hasText: new RegExp(queryText, 'i') })
+			.first();
 		if (await pageOption.isVisible({ timeout: 3_000 }).catch(() => false)) {
 			await pageOption.click();
 			return;
@@ -144,7 +170,7 @@ export class ContractorNewTravelPage extends NewTravelPage {
 	 * Evidencia recorder test-21.spec.ts línea 13.
 	 */
 	private async setOriginContractor(address: string): Promise<void> {
-		const queryText  = address.split(',')[0].trim();
+		const queryText = address.split(',')[0].trim();
 		const originComp = this.page.locator('app-input-search-place[formcontrolname="origin"]');
 
 		// Paso 1: limpiar si hay valor pre-cargado (ej: dirección del colaborador)
@@ -175,7 +201,8 @@ export class ContractorNewTravelPage extends NewTravelPage {
 	private async setDestinationContractor(address: string): Promise<void> {
 		const queryText = address.split(',')[0].trim();
 		// destination usa el wrapper formarrayname="destination"
-		const destComp  = this.page.locator('div.form-group-address[formarrayname="destination"] app-input-search-place')
+		const destComp = this.page
+			.locator('div.form-group-address[formarrayname="destination"] app-input-search-place')
 			.or(this.page.locator('app-input-search-place').nth(1));
 
 		// Limpiar si tiene valor (podría estar pre-llenado)
@@ -216,9 +243,7 @@ export class ContractorNewTravelPage extends NewTravelPage {
 	 * observable. Si el placeholder no existe (DOM ya estabilizado antes de llegar acá),
 	 * `.not.toBeVisible` resuelve inmediatamente.
 	 */
-	private async waitForPlaceFieldSelected(
-		placeComponent: import('@playwright/test').Locator,
-	): Promise<void> {
+	private async waitForPlaceFieldSelected(placeComponent: import('@playwright/test').Locator): Promise<void> {
 		const placeholder = placeComponent.locator('.placeholder').first();
 		await expect(placeholder).not.toBeVisible({ timeout: 3_000 });
 	}

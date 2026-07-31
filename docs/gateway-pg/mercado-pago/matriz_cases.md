@@ -43,3 +43,6 @@ Se suma `'mercado-pago'` a `ACTIVE_GATEWAYS` cuando exista runtime.
 
 - **3DS** (`HAPPY_AUTH`/`FAIL_AUTH`): MAGIIS trata MP como no-3DS.
 - **DECLINE_CAPTURE**: a confirmar con el modelo de integración backend.
+- **Keyword `TEST`** (regla de montos): el outcome depende del **monto**, no del `holderName` → no es un caso keyword-driven determinista; no está en `MP_TEST_CARDS`. Ver [ARCHITECTURE.md §3](./ARCHITECTURE.md).
+
+> Nota: `APRO` **y** `OTHE` requieren DNI `12345678` (doc oficial); el resto de rechazos no requieren documento.

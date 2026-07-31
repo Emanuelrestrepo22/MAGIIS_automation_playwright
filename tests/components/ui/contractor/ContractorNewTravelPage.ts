@@ -11,7 +11,7 @@
  * (origen, destino, tarjeta, validar, vehículo) se hereda del POM carrier vía el
  * legacy contractor.
  *
- * NOTA @atc — MAPEO PENDIENTE REASIGNAR: el idmap `atp-mg-gateway-idmap.md` es
+ * NOTA @atc — MAPEO POR ÁREA (aceptado): el idmap `atp-mg-gateway-idmap.md` es
  * API-level (TC-PAY-*); los TS-STRIPE-P2-TC00x (UI) no tienen 1:1. `fillMinimum`
  * (alta + validación tarjeta preautorizada) → MG-148 (área C, TC-PAY-C-01), mismo
  * mapeo que el carrier. `selectSavedCard` (selección de tarjeta guardada, UI) →
@@ -26,8 +26,9 @@
  */
 
 import type { TestContextOptions } from '@TestContext';
-import type { NewTravelFormInput } from '@pages/carrier';
+import type { NewTravelFormInput, PaymentMethod } from '@pages/carrier';
 
+import { expect } from '@playwright/test';
 import { ContractorNewTravelPage as LegacyContractorNewTravelPage } from '@pages/contractor';
 import { atc, step } from '@utils/decorators';
 import { UiBase } from '@ui/UiBase';
@@ -50,7 +51,10 @@ export class ContractorNewTravelPage extends UiBase {
 	 * Mini-flujo ATC: completa el formulario mínimo (usuario/origen/destino) y
 	 * vincula/valida la tarjeta preautorizada. @atc MG-148 (área C — pendiente reasignar).
 	 */
-	@atc('MG-148', { severity: 'critical', description: 'Alta de viaje contractor: completar formulario + validar tarjeta preautorizada' })
+	@atc('MG-148', {
+		severity: 'critical',
+		description: 'Alta de viaje contractor: completar formulario + validar tarjeta preautorizada'
+	})
 	async fillMinimum(opts: NewTravelFormInput): Promise<void> {
 		await this.legacy.fillMinimum(opts);
 	}
@@ -79,9 +83,7 @@ export class ContractorNewTravelPage extends UiBase {
 	 * usa como precondición para `test.skip`.
 	 */
 	async hasHighlightedSavedCard(timeout = 5_000): Promise<boolean> {
-		const highlighted = this.page
-			.locator('.ng-star-inserted.highlighted > .data-with-icon-col')
-			.first();
+		const highlighted = this.page.locator('.ng-star-inserted.highlighted > .data-with-icon-col').first();
 		return highlighted.isVisible({ timeout }).catch(() => false);
 	}
 
@@ -89,9 +91,40 @@ export class ContractorNewTravelPage extends UiBase {
 	 * Mini-flujo ATC: selecciona la tarjeta guardada resaltada del colaborador.
 	 * @atc MG-482 (área C UI — pendiente reasignar).
 	 */
-	@atc('MG-482', { severity: 'critical', description: 'Alta de viaje contractor: seleccionar tarjeta guardada del colaborador' })
+	@atc('MG-482', {
+		severity: 'critical',
+		description: 'Alta de viaje contractor: seleccionar tarjeta guardada del colaborador'
+	})
 	async selectSavedCard(): Promise<void> {
 		await this.legacy.selectSavedCard();
+	}
+
+	/**
+	 * Journey contractor hasta el método de pago, SIN llenar la tarjeta (S7): usuario +
+	 * direcciones con los campos ESPECÍFICOS de contractor (clear-if-filled del origen
+	 * auto-cargado). Para gateways de form nativo (MP/Authorize/eBiz): el caller sigue con
+	 * `selectPaymentMethod('Preautorizada')` + la CardFormStrategy de la pasarela.
+	 */
+	@step
+	async fillJourneyUntilPayment(opts: { client: string; origin: string; destination: string }): Promise<void> {
+		await this.legacy.fillJourneyUntilPayment(opts);
+	}
+
+	/** Selecciona el método de pago del alta (ej. 'Preautorizada' antes del card form). */
+	@step
+	async selectPaymentMethod(method: PaymentMethod): Promise<void> {
+		await this.legacy.selectPaymentMethod(method);
+	}
+
+	/**
+	 * Click en "Validar" del form NATIVO Angular y espera el oráculo de tarjeta válida
+	 * ("Tarjeta válida" / "Valid card") — mismo contrato que el delegate carrier
+	 * (`CarrierNewTravelPage.validateNativeCard`; verificado live en Authorize, eBiz asumido).
+	 */
+	@step
+	async validateNativeCard(): Promise<void> {
+		await this.page.getByRole('button', { name: /^(Valid|Validar)$/i }).click();
+		await expect(this.page.getByText(/Tarjeta v[áa]lida|Valid card|Card valid/i).first()).toBeVisible({ timeout: 20_000 });
 	}
 
 	/** Espera a que el botón "Seleccionar Vehículo" esté habilitado. */

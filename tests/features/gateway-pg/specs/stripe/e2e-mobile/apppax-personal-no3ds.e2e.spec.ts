@@ -9,7 +9,7 @@
  * fixture Appium; forzarlo inventaría arquitectura, así que se preserva TestBase + fixme.
  * Normalizado no-destructivo: imports por alias (@TestBase/@features); los de
  * tests/mobile/appium quedan relativos (no hay alias @mobile — Fase 4).
- * @atc idmap: wallet pax -> área H (MG-172..174, MG-495-496). PENDIENTE REASIGNAR
+ * @atc idmap: wallet pax -> área H (MG-172..174, MG-495-496). mapeo por área aceptado
  *   (idmap API-level, sin 1:1 con e2e-mobile UI).
  */
 
@@ -28,14 +28,26 @@ function createJourney(testCaseId: string) {
 		portal: 'pax',
 		role: 'passenger',
 		flowType: 'passenger-app-driver-app',
-		passengerProfileMode: 'personal',
+		passengerProfileMode: 'personal'
 	});
 }
 
-test.describe.serial('Gateway PG · E2E Mobile · App Pax Personal No 3DS @gateway @stripe @e2e-hybrid @wallet @regression', () => {
+test.describe
+	.serial('Gateway PG · E2E Mobile · App Pax Personal No 3DS @gateway @stripe @e2e-hybrid @wallet @regression', () => {
+	// Gate a nivel describe: sin servidor Appium el harness no se puede construir
+	// (getPassengerAppConfig lanza). El grupo SKIPea (no ERRORA) cuando no hay device.
+	test.skip(() => !process.env.APPIUM_SERVER_URL, 'Requiere servidor Appium Android activo (APPIUM_SERVER_URL).');
+
 	for (const scenario of PASSENGER_PERSONAL_NO3DS_SCENARIOS) {
 		test(
 			`[${scenario.testCaseId}] ${scenario.title} (${scenario.sourceCaseIds.join(' / ')})`,
+			{
+				annotation: [
+					{ type: 'tms', description: 'MG-148' },
+					{ type: 'tms', description: 'MG-158' },
+					{ type: 'tms', description: 'MG-161' }
+				]
+			},
 			async () => {
 				if (!scenario.active) {
 					test.fixme(
@@ -48,14 +60,14 @@ test.describe.serial('Gateway PG · E2E Mobile · App Pax Personal No 3DS @gatew
 				}
 
 				const harness = new PassengerTripHappyPathHarness(getPassengerAppConfig(), undefined, {
-					profileMode: 'personal',
+					profileMode: 'personal'
 				});
 				let journey = createJourney(scenario.testCaseId);
 				const card = {
 					number: scenario.card.number,
 					expiry: scenario.card.exp,
 					cvc: scenario.card.cvc,
-					holderName: scenario.card.holderName,
+					holderName: scenario.card.holderName
 				};
 
 				try {
@@ -97,11 +109,15 @@ test.describe.serial('Gateway PG · E2E Mobile · App Pax Personal No 3DS @gatew
 						case 'trip-create':
 							await test.step(`[${scenario.testCaseId}] create passenger trip`, async () => {
 								await harness.ensureWalletCard(card);
-								const tripId = await harness.createTrip(scenario.origin, scenario.destination, cardLast4);
+								const tripId = await harness.createTrip(
+									scenario.origin,
+									scenario.destination,
+									cardLast4
+								);
 								expect(tripId).toBeTruthy();
 
 								journey = orchestrator.attachTripData(journey, {
-									tripId: tripId ?? 'TODO',
+									tripId: tripId ?? 'TODO'
 								});
 								journey = orchestrator.prepareMobileHandoff(
 									journey,
@@ -112,7 +128,10 @@ test.describe.serial('Gateway PG · E2E Mobile · App Pax Personal No 3DS @gatew
 							break;
 
 						default:
-							test.fixme(true, 'Unhandled passenger personal flow step. Update the scenario mapping first.');
+							test.fixme(
+								true,
+								'Unhandled passenger personal flow step. Update the scenario mapping first.'
+							);
 					}
 				} catch (error) {
 					journey = orchestrator.fail(

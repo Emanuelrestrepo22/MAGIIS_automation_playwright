@@ -14,11 +14,11 @@
  *   pnpm mobile:passenger:personal-3ds-hold-flow
  */
 
-import type { Browser } from 'webdriverio';
 import { STRIPE_TEST_CARDS } from '../../../features/gateway-pg/data/stripe-cards';
 import { TEST_DATA } from '../../../features/gateway-pg/data/stripeTestData';
 import { getPassengerAppConfig } from '../config/appiumRuntime';
 import { dumpAppiumState } from '../helpers/appiumDebug';
+import { handleThreeDsPopup } from '../helpers/threeDsChallenge';
 import { PassengerTripHappyPathHarness } from '../harness/PassengerTripHappyPathHarness';
 import type { CardInput } from '../passenger/PassengerWalletScreen';
 
@@ -30,123 +30,6 @@ const threeDsTimeoutMs = Number(process.env.PASSENGER_3DS_TIMEOUT_MS ?? '25000')
 const log = (message: string): void => {
 	console.log(`[passenger-personal-3ds-hold] ${message}`);
 };
-
-async function handleThreeDsPopup(driver: Browser, dumpState: (label: string) => Promise<string>, timeoutMs: number): Promise<'completed' | 'not-present' | 'failed'> {
-	const approveTexts = ['Complete', 'Complete authentication', 'COMPLETE', 'Completar', 'Completar autenticación', 'Autorizar', 'Aprobar', 'Confirm', 'Submit'];
-
-	const deadline = Date.now() + timeoutMs;
-	let lastObservation: 'not-present' | 'failed' = 'not-present';
-
-	while (Date.now() < deadline) {
-		const contexts = (await driver.getContexts()) as string[];
-		const externalCtx = contexts.find(context => context.startsWith('WEBVIEW') && !context.includes('com.magiis'));
-		const mainCtx = contexts.find(context => context.includes('com.magiis'));
-
-		if (externalCtx) {
-			log(`3DS external context detected: ${externalCtx}`);
-			await driver.switchContext(externalCtx);
-			await dumpState('passenger-personal-3ds-external-context');
-
-			const clicked = (await driver.execute((texts: string[]) => {
-				const buttons = Array.from(document.querySelectorAll('button, [role="button"], a')) as HTMLElement[];
-				for (const text of texts) {
-					const button = buttons.find(item => (item.innerText ?? item.textContent ?? '').trim() === text && item.offsetParent !== null);
-					if (button) {
-						button.click();
-						return true;
-					}
-				}
-
-				return false;
-			}, approveTexts)) as boolean;
-
-			if (mainCtx) {
-				await driver.switchContext(mainCtx);
-			}
-
-			return clicked ? 'completed' : 'failed';
-		}
-
-		if (mainCtx) {
-			await driver.switchContext(mainCtx);
-		}
-
-		const inlineResult = (await driver.execute((texts: string[]) => {
-			const iframes = Array.from(document.querySelectorAll('iframe')) as HTMLIFrameElement[];
-			const threeDsFrame = iframes.find(frame => /stripe|hooks|acs|3ds|authenticate|verify/i.test(frame.src ?? frame.name ?? ''));
-			if (!threeDsFrame) {
-				return 'not-present';
-			}
-
-			try {
-				const frameDoc = threeDsFrame.contentDocument ?? threeDsFrame.contentWindow?.document;
-				if (!frameDoc) {
-					return 'iframe-no-access';
-				}
-
-				const buttons = Array.from(frameDoc.querySelectorAll('button, [role="button"], a')) as HTMLElement[];
-				for (const text of texts) {
-					const button = buttons.find(item => (item.innerText ?? item.textContent ?? '').trim() === text && item.offsetParent !== null);
-					if (button) {
-						button.click();
-						return 'completed';
-					}
-				}
-
-				return 'iframe-btn-not-found';
-			} catch {
-				return 'iframe-cross-origin';
-			}
-		}, approveTexts)) as string;
-
-		if (inlineResult === 'completed') {
-			return 'completed';
-		}
-
-		if (inlineResult === 'not-present') {
-			const modalResult = (await driver.execute((texts: string[]) => {
-				const isPaymentFormOverlay = (element: HTMLElement): boolean => Boolean(element.querySelector('app-credit-card-payment-data, app-credit-card-dialog'));
-				const overlays = Array.from(document.querySelectorAll('ion-modal, [class*="3ds"], [class*="stripe"], app-confirm-modal, [data-react-aria-top-layer]')) as HTMLElement[];
-				const visible = overlays.filter(element => element.offsetParent !== null && !isPaymentFormOverlay(element));
-				if (!visible.length) {
-					return 'not-present';
-				}
-
-				for (const overlay of visible) {
-					const buttons = Array.from(overlay.querySelectorAll('button, [role="button"]')) as HTMLElement[];
-					for (const text of texts) {
-						const button = buttons.find(item => (item.innerText ?? '').trim() === text && item.offsetParent !== null);
-						if (button) {
-							button.click();
-							return 'completed';
-						}
-					}
-				}
-
-				return 'modal-btn-not-found';
-			}, approveTexts)) as string;
-
-			if (modalResult === 'completed') {
-				return 'completed';
-			}
-
-			if (modalResult !== 'not-present') {
-				lastObservation = 'failed';
-				await dumpState('passenger-personal-3ds-modal-detected');
-				return 'failed';
-			}
-
-			await driver.pause(500);
-			continue;
-		}
-
-		lastObservation = 'failed';
-		await dumpState('passenger-personal-3ds-inline-detected');
-		return 'failed';
-	}
-
-	return lastObservation;
-}
 
 async function run(): Promise<void> {
 	const harness = new PassengerTripHappyPathHarness(getPassengerAppConfig(), undefined, {
@@ -185,7 +68,12 @@ async function run(): Promise<void> {
 
 		await dumpAppiumState(driver, 'passenger-personal-trip-before-3ds');
 
-		const threeDsResult = await handleThreeDsPopup(driver, label => dumpAppiumState(driver, label), threeDsTimeoutMs);
+		const threeDsResult = await handleThreeDsPopup(
+			driver,
+			label => dumpAppiumState(driver, label),
+			threeDsTimeoutMs,
+			'passenger-personal'
+		);
 
 		log(`3DS result: ${threeDsResult}`);
 		if (threeDsResult !== 'completed') {

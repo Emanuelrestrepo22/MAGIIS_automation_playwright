@@ -1,4 +1,7 @@
-import { expect, type Frame, type Locator, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
+// Import directo del módulo concreto (no del barrel card-forms) para no arrastrar la
+// factory `cardFormFor` (y su dependencia runtime en los adapters de gateway-pg) al POM legacy.
+import { StripeElementsCardForm } from '@ui/carrier/card-forms/StripeElementsCardForm';
 import { getPortalUrl } from '../../config/gatewayPortalRuntime';
 // BL-024 mejora continua: data Stripe viene del fixture canónico, no del legacy.
 // El POM sigue acoplado a Stripe Elements (deuda TIER A — BL-038 Strategy Pattern),
@@ -46,9 +49,9 @@ export type ValidateCardResult = {
 	errorMessage: string | null;
 };
 
-type StripeComponentName = 'cardNumber' | 'cardExpiry' | 'cardCvc';
 type TariffType = 'Distancia' | 'ADisposicion';
-type PaymentMethod = 'Preautorizada' | 'CuentaCorriente' | 'Efectivo' | 'CargoABordo';
+// Exportado (S7): lo referencian los delegates KATA (`CarrierNewTravelPage.selectPaymentMethod`).
+export type PaymentMethod = 'Preautorizada' | 'CuentaCorriente' | 'Efectivo' | 'CargoABordo';
 type TipType = 'SIN_PROPINA' | 'PCT_10' | 'PCT_15' | 'PCT_20' | 'CUSTOM';
 
 // BL-024 mejora continua (2026-05-13): el mapping `last4 → cardNumber` fue
@@ -235,33 +238,8 @@ export abstract class NewTravelPageBase extends BasePage {
 		await this.selectAutocompleteOption(this.clientSelect, this.clientSearchInput, name, 'client');
 	}
 
-	/**
-	 * Detecta si un `app-autocomplete-input`/`ng-select` está deshabilitado de forma
-	 * INDEPENDIENTE DEL BUILD. `ng-reflect-is-disabled` solo existe en builds no-prod de Angular;
-	 * en TEST/UAT con build optimizado ese atributo no aparece y la detección previa daba falso
-	 * negativo → se intentaba abrir un dropdown deshabilitado y fallaba como "select-dropdown".
-	 * La clase `.disabled` en el contenedor y el atributo `[disabled]` sí existen en todo build.
-	 */
-	private async isAutocompleteDisabled(select: Locator): Promise<boolean> {
-		return select
-			.evaluate(el => {
-				const ngSelect = el.querySelector('ng-select') ?? el;
-				if (ngSelect.getAttribute('ng-reflect-is-disabled') === 'true') return true;
-				if (ngSelect.getAttribute('ng-reflect-disabled') === 'true') return true;
-				if (ngSelect.hasAttribute('disabled')) return true;
-				return !!el.querySelector('.disabled');
-			})
-			.catch(() => false);
-	}
-
 	async selectPassenger(name: string): Promise<void> {
-		// El pasajero habilita async tras elegir el cliente (FE add-travel: [disabled]="!isClientSelect || !isContractor").
-		await expect
-			.poll(() => this.isAutocompleteDisabled(this.passengerSelect), {
-				timeout: 10_000,
-				message: 'El autocomplete de pasajero no se habilitó (¿cliente seleccionado? ¿contexto contractor?)'
-			})
-			.toBe(false);
+		await expect(this.passengerSelect).not.toHaveAttribute('ng-reflect-is-disabled', 'true', { timeout: 10_000 });
 		await this.selectAutocompleteOption(this.passengerSelect, this.passengerSearchInput, name, 'passenger');
 	}
 
@@ -638,30 +616,13 @@ export abstract class NewTravelPageBase extends BasePage {
 		await card.click();
 	}
 
-	private async waitForStripeFrame(component: StripeComponentName, timeoutMs = 15_000): Promise<Frame> {
-		const deadline = Date.now() + timeoutMs;
-
-		while (Date.now() < deadline) {
-			const frame = this.page.frames().find(candidate => candidate.url().includes(`componentName=${component}`));
-			if (frame) {
-				return frame;
-			}
-
-			// NOTE(tier3-kept): polling loop propio — Stripe iframe no emite evento DOM de aparición
-			await this.page.waitForTimeout(250);
-		}
-
-		throw new Error(`Stripe frame not found: ${component}`);
-	}
-
 	/**
 	 * Completa los datos de la tarjeta preautorizada sin disparar validación.
 	 *
-	 * NOTA deuda TIER A (BL-038): este método está atado a Stripe Elements
-	 * (3 iframes + constantes STRIPE_*). Cuando entre Authorize (que usa
-	 * Accept.js o form propio), hace falta Strategy Pattern para que
-	 * `fillPreauthorizedCard` delegue a una `CardFormStrategy` específica
-	 * del gateway activo.
+	 * Seam S3 (BL-038 saldada): la lógica de iframes de Stripe Elements vive en
+	 * `StripeElementsCardForm` (@ui/carrier/card-forms). Este método legacy queda
+	 * como WRAPPER delegando — misma firma, misma secuencia (dropdown "Preautorizada"
+	 * → llenado del form → aserción), CERO cambios para sus consumidores.
 	 */
 	async fillPreauthorizedCard(last4: string): Promise<void> {
 		// Resolución del cardNumber centralizada en el fixture Stripe canónico.
@@ -676,48 +637,37 @@ export abstract class NewTravelPageBase extends BasePage {
 			.first();
 		await preauthOption.waitFor({ state: 'visible', timeout: 10_000 });
 		await preauthOption.click();
-		// NOTE(tier3-kept): Stripe monta 3 iframes (cardNumber/cardExpiry/cardCvc) sin evento DOM de "ready"; reducir causa waitForStripeFrame timeout
-		await this.page.waitForTimeout(2_500);
 
-		// card-new (MG-178): Stripe Elements en TEST v1.72.8 a veces NO registra el primer llenado con fill()
-		// → el botón "Validar" no habilita y el test falla (bucket card-new). Tipeamos char-por-char
-		// (pressSequentially dispara los listeners internos de Stripe) y reintentamos hasta que "Validar" habilite.
+		// card-new (MG-178): Stripe Elements en TEST v1.72.8 a veces NO registra el primer llenado
+		// → el botón "Validar" no habilita y el test falla (bucket card-new). El Strategy tipea
+		// char-por-char (`pressSequentially` dispara los listeners internos de Stripe); acá se
+		// reintenta el llenado hasta que "Validar" habilite. El retry vive en el POM, no en el
+		// Strategy, porque "Validar" es un control de ESTA pantalla y el Strategy no lo conoce.
+		const cardForm = new StripeElementsCardForm();
 		const CARD_FILL_RETRIES = 3;
 		for (let attempt = 1; attempt <= CARD_FILL_RETRIES; attempt++) {
-			await this.typeStripeCardFields(cardNumber);
-			if (await this.waitForValidateEnabled(attempt < CARD_FILL_RETRIES ? 4_000 : 8_000)) break;
+			await cardForm.fill(this.page, {
+				number: cardNumber,
+				expiry: STRIPE_EXPIRY,
+				cvc: STRIPE_CVC,
+				holderName: STRIPE_CARD_HOLDER_NAME,
+				zip: STRIPE_BILLING_ZIP
+			});
+			if (await this.waitForValidateEnabled(attempt < CARD_FILL_RETRIES ? 4_000 : 8_000)) {
+				break;
+			}
 		}
 		await this.assertPaymentMethodPreauthorizedSelected();
 	}
 
-	/**
-	 * Tipea los 3 campos de Stripe Elements (número/exp/cvc) + owner/zip. Limpia y usa `pressSequentially`
-	 * en vez de `fill()` porque Stripe Elements no siempre registra el `fill()` programático (deja el campo
-	 * "incompleto" y "Validar" no habilita).
-	 */
-	private async typeStripeCardFields(cardNumber: string): Promise<void> {
-		const numberFrame = await this.waitForStripeFrame('cardNumber');
-		const expiryFrame = await this.waitForStripeFrame('cardExpiry');
-		const cvcFrame = await this.waitForStripeFrame('cardCvc');
-		const fields: Array<[Locator, string]> = [
-			[numberFrame.locator('input[name="cardnumber"]'), cardNumber],
-			[expiryFrame.locator('input[name="exp-date"]'), STRIPE_EXPIRY],
-			[cvcFrame.locator('input[name="cvc"]'), STRIPE_CVC]
-		];
-		for (const [input, value] of fields) {
-			await input.click();
-			await input.fill('');
-			await input.pressSequentially(value, { delay: 30 });
-		}
-		await this.cardOwnerNameInput.fill(STRIPE_CARD_HOLDER_NAME);
-		await this.billingZipInput.fill(STRIPE_BILLING_ZIP);
-	}
-
-	/** Poll hasta que el botón "Validar" habilite (tarjeta completa en Stripe). */
+	/** Poll hasta que el botón "Validar" habilite (Stripe considera la tarjeta completa). */
 	private async waitForValidateEnabled(timeoutMs: number): Promise<boolean> {
 		const deadline = Date.now() + timeoutMs;
 		while (Date.now() < deadline) {
-			if (await this.validateCardButton.isEnabled().catch(() => false)) return true;
+			if (await this.validateCardButton.isEnabled().catch(() => false)) {
+				return true;
+			}
+			// NOTE(tier3-kept): Stripe Elements no emite evento al completar el campo — poll obligado
 			await this.page.waitForTimeout(400);
 		}
 		return false;
@@ -963,7 +913,12 @@ export abstract class NewTravelPageBase extends BasePage {
 		await this.waitForEnabledButton(this.vehicleButton, timeout);
 	}
 
-	/** True si el botón "Seleccionar Vehículo" ya está visible+habilitado (form válido, flujo avanzó sin challenge). */
+	/**
+	 * True si el botón "Seleccionar Vehículo" ya está visible+habilitado (form válido, el flujo
+	 * avanzó sin challenge). Es un PREDICADO, no un waiter: `waitForVehicleSelectionReady` bloquea
+	 * hasta 45s, y esto se usa como escape-hatch de `ThreeDSModal.waitForOptionalVisible` para no
+	 * esperar a ciegas un modal 3DS que quizá no aparezca.
+	 */
 	async isVehicleSelectionReady(): Promise<boolean> {
 		const visible = await this.vehicleButton.isVisible().catch(() => false);
 		return visible ? this.vehicleButton.isEnabled().catch(() => false) : false;
@@ -983,12 +938,36 @@ export abstract class NewTravelPageBase extends BasePage {
 		await this.submitButton.click({ force: true });
 	}
 
+	/**
+	 * ASIGNACIÓN MANUAL (ref: tests/test-5.spec.ts). En vez de "Send Service" (que despacha al
+	 * pool de conductores con un timer de oferta), asigna el viaje DIRECTO a un conductor:
+	 *   "Send Manual" → "Assign" (fila del conductor) → "Assign" (confirmar).
+	 * Elimina el timer de oferta-candidato: el driver queda dueño del viaje.
+	 */
+	async clickSendManualAndAssign(): Promise<void> {
+		await this.waitForLoadingOverlayToDisappear();
+		// Locale-robusto: el ambiente puede estar en ES ("Enviar Manual"/"Asignar") o EN ("Send Manual"/"Assign").
+		await this.page.getByRole('button', { name: /Enviar Manual|Send Manual/i }).click();
+		// Modal con lista de conductores: "Asignar"/"Assign" de la fila (nth(1) según el recorder).
+		const assignRow = this.page.getByText(/Asignar|Assign/i);
+		await assignRow.nth(1).waitFor({ state: 'visible', timeout: 15_000 });
+		await assignRow.nth(1).click();
+		// Confirmar la asignación.
+		const assignConfirm = this.page.getByRole('button', { name: /Asignar|Assign/i });
+		await assignConfirm.waitFor({ state: 'visible', timeout: 15_000 });
+		await assignConfirm.click();
+		await this.waitForLoadingOverlayToDisappear();
+	}
+
 	async fillMinimum(opts: NewTravelFormInput): Promise<void> {
 		const clientName = opts.client ?? opts.passenger;
 		// En carrier, algunos clientes auto-completan el pasajero y otros requieren pax distinto.
 		await this.selectClient(clientName);
 
-		const passengerIsDisabled = await this.isAutocompleteDisabled(this.passengerSelect);
+		const passengerIsDisabled = await this.passengerSelect
+			.getAttribute('ng-reflect-is-disabled')
+			.then(value => value === 'true')
+			.catch(() => false);
 
 		if (!passengerIsDisabled && normalizeText(opts.passenger) !== normalizeText(clientName)) {
 			await this.selectPassenger(opts.passenger);

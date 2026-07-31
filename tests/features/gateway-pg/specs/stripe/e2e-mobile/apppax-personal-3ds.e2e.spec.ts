@@ -20,7 +20,7 @@
  * Normalizado no-destructivo: imports por alias (@TestBase/@features/@fixtures); los de
  * tests/mobile/appium quedan relativos (no hay alias @mobile — Fase 4).
  * @atc idmap: wallet pax -> área H (MG-172..174, MG-495-496); 3DS -> área D (MG-152..157).
- *   PENDIENTE REASIGNAR (idmap API-level, sin 1:1 con e2e-mobile UI).
+ *   mapeo por área aceptado (idmap API-level, sin 1:1 con e2e-mobile UI).
  */
 
 import { expect, test } from '@TestBase';
@@ -43,86 +43,133 @@ function createJourney(testCaseId: string) {
 	});
 }
 
-test.describe.serial('Gateway PG · E2E Mobile · App Pax Personal @gateway @stripe @e2e-hybrid @3ds @wallet @regression', () => {
+test.describe
+	.serial('Gateway PG · E2E Mobile · App Pax Personal @gateway @stripe @e2e-hybrid @3ds @wallet @regression', () => {
+	// Gate a nivel describe: sin servidor Appium el harness no se puede construir
+	// (getPassengerAppConfig lanza). El grupo SKIPea (no ERRORA) cuando no hay device.
+	test.skip(() => !process.env.APPIUM_SERVER_URL, 'Requiere servidor Appium Android activo (APPIUM_SERVER_URL).');
+
 	for (const scenario of PASSENGER_FLOW2_SCENARIOS) {
-		test(`[${scenario.testCaseId}] ${scenario.title} (${scenario.sourceCaseIds.join(' / ')})`, async () => {
-			if (!scenario.active) {
-				test.fixme(true, scenario.requiresDriverPhase ? 'Passenger wallet and trip setup are ready, but driver handoff/post-trip evidence is still pending.' : 'Passenger negative evidence is still pending validation.');
-				return;
-			}
-
-			const harness = new PassengerTripHappyPathHarness(getPassengerAppConfig(), undefined, {
-				profileMode: 'personal'
-			});
-			let journey = createJourney(scenario.testCaseId);
-			const resolvedCard = resolveCard(scenario.cardId);
-			const card = {
-				number: resolvedCard.number,
-				expiry: resolvedCard.exp,
-				cvc: resolvedCard.cvc,
-				holderName: resolvedCard.holderName
-			};
-
-			try {
-				await test.step(`[${scenario.testCaseId}] start passenger session`, async () => {
-					await harness.startSession();
-				});
-
-				const cardLast4 = card.number.replace(/\D/g, '').slice(-4);
-
-				switch (scenario.step) {
-					case 'wallet-add-card':
-						await test.step(`[${scenario.testCaseId}] add card to wallet`, async () => {
-							const walletState = await harness.ensureWalletCard(card);
-							expect(walletState).toMatch(/added|already-present/);
-							journey = orchestrator.updatePhase(journey, 'passenger_wallet_setup', 'draft', `Passenger wallet card ${walletState}`);
-							await orchestrator.persist(journey);
-						});
-						break;
-
-					case 'wallet-delete-linked-card':
-						await test.step(`[${scenario.testCaseId}] delete linked 3DS wallet card`, async () => {
-							await harness.cleanWallet();
-							await harness.ensureWalletCard(card);
-							await harness.deleteWalletCard(cardLast4);
-							journey = orchestrator.updatePhase(journey, 'passenger_wallet_setup', 'draft', 'Passenger deleted a linked 3DS wallet card');
-							await orchestrator.persist(journey);
-						});
-						break;
-
-					case 'wallet-select-card':
-						await test.step(`[${scenario.testCaseId}] select existing wallet card`, async () => {
-							await harness.ensureWalletCard(card);
-							await harness.selectExistingCard(cardLast4);
-							journey = orchestrator.updatePhase(journey, 'passenger_wallet_setup', 'draft', 'Passenger selected an existing wallet card');
-							await orchestrator.persist(journey);
-						});
-						break;
-
-					case 'trip-create':
-						await test.step(`[${scenario.testCaseId}] create passenger trip`, async () => {
-							await harness.ensureWalletCard(card);
-							const tripId = await harness.createTrip(scenario.origin, scenario.destination, cardLast4);
-							expect(tripId).toBeTruthy();
-
-							journey = orchestrator.attachTripData(journey, {
-								tripId: tripId ?? 'TODO'
-							});
-							journey = orchestrator.prepareMobileHandoff(journey, 'Passenger created the trip and handed it to the driver lane');
-							await orchestrator.persist(journey);
-						});
-						break;
-
-					default:
-						test.fixme(true, 'Unhandled passenger flow step. Update the scenario mapping first.');
+		test(
+			`[${scenario.testCaseId}] ${scenario.title} (${scenario.sourceCaseIds.join(' / ')})`,
+			{
+				annotation: [
+					{ type: 'tms', description: 'MG-148' },
+					{ type: 'tms', description: 'MG-152' },
+					{ type: 'tms', description: 'MG-153' },
+					{ type: 'tms', description: 'MG-158' },
+					{ type: 'tms', description: 'MG-161' }
+				]
+			},
+			async () => {
+				if (!scenario.active) {
+					test.fixme(
+						true,
+						scenario.requiresDriverPhase
+							? 'Passenger wallet and trip setup are ready, but driver handoff/post-trip evidence is still pending.'
+							: 'Passenger negative evidence is still pending validation.'
+					);
+					return;
 				}
-			} catch (error) {
-				journey = orchestrator.fail(journey, error instanceof Error ? error.message : 'Passenger flow failed');
-				await orchestrator.persist(journey);
-				throw error;
-			} finally {
-				await harness.endSession();
+
+				const harness = new PassengerTripHappyPathHarness(getPassengerAppConfig(), undefined, {
+					profileMode: 'personal'
+				});
+				let journey = createJourney(scenario.testCaseId);
+				const resolvedCard = resolveCard(scenario.cardId);
+				const card = {
+					number: resolvedCard.number,
+					expiry: resolvedCard.exp,
+					cvc: resolvedCard.cvc,
+					holderName: resolvedCard.holderName
+				};
+
+				try {
+					await test.step(`[${scenario.testCaseId}] start passenger session`, async () => {
+						await harness.startSession();
+					});
+
+					const cardLast4 = card.number.replace(/\D/g, '').slice(-4);
+
+					switch (scenario.step) {
+						case 'wallet-add-card':
+							await test.step(`[${scenario.testCaseId}] add card to wallet`, async () => {
+								const walletState = await harness.ensureWalletCard(card);
+								expect(walletState).toMatch(/added|already-present/);
+								journey = orchestrator.updatePhase(
+									journey,
+									'passenger_wallet_setup',
+									'draft',
+									`Passenger wallet card ${walletState}`
+								);
+								await orchestrator.persist(journey);
+							});
+							break;
+
+						case 'wallet-delete-linked-card':
+							await test.step(`[${scenario.testCaseId}] delete linked 3DS wallet card`, async () => {
+								await harness.cleanWallet();
+								await harness.ensureWalletCard(card);
+								await harness.deleteWalletCard(cardLast4);
+								journey = orchestrator.updatePhase(
+									journey,
+									'passenger_wallet_setup',
+									'draft',
+									'Passenger deleted a linked 3DS wallet card'
+								);
+								await orchestrator.persist(journey);
+							});
+							break;
+
+						case 'wallet-select-card':
+							await test.step(`[${scenario.testCaseId}] select existing wallet card`, async () => {
+								await harness.ensureWalletCard(card);
+								await harness.selectExistingCard(cardLast4);
+								journey = orchestrator.updatePhase(
+									journey,
+									'passenger_wallet_setup',
+									'draft',
+									'Passenger selected an existing wallet card'
+								);
+								await orchestrator.persist(journey);
+							});
+							break;
+
+						case 'trip-create':
+							await test.step(`[${scenario.testCaseId}] create passenger trip`, async () => {
+								await harness.ensureWalletCard(card);
+								const tripId = await harness.createTrip(
+									scenario.origin,
+									scenario.destination,
+									cardLast4
+								);
+								expect(tripId).toBeTruthy();
+
+								journey = orchestrator.attachTripData(journey, {
+									tripId: tripId ?? 'TODO'
+								});
+								journey = orchestrator.prepareMobileHandoff(
+									journey,
+									'Passenger created the trip and handed it to the driver lane'
+								);
+								await orchestrator.persist(journey);
+							});
+							break;
+
+						default:
+							test.fixme(true, 'Unhandled passenger flow step. Update the scenario mapping first.');
+					}
+				} catch (error) {
+					journey = orchestrator.fail(
+						journey,
+						error instanceof Error ? error.message : 'Passenger flow failed'
+					);
+					await orchestrator.persist(journey);
+					throw error;
+				} finally {
+					await harness.endSession();
+				}
 			}
-		});
+		);
 	}
 });

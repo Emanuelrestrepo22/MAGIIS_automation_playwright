@@ -11,7 +11,7 @@
  *   - Métodos públicos fail-fast; helpers de espera decorados con @step; el mini-flujo
  *     de aprobación decorado con @atc.
  *
- * NOTA @atc — MAPEO PENDIENTE REASIGNAR: el idmap `atp-mg-gateway-idmap.md` es API-level
+ * NOTA @atc — MAPEO POR ÁREA (aceptado): el idmap `atp-mg-gateway-idmap.md` es API-level
  * (TC-PAY-*); los TS-STRIPE-TC10xx (UI/3DS) no tienen 1:1. Se usa el MG más cercano del
  * área D (3DS / validación tarjeta): MG-152 (TC-PAY-D-01) para el success y MG-153
  * (TC-PAY-D-02) para el fail. Reasignar cuando el ATP tenga TCs UI del challenge 3DS.
@@ -143,5 +143,44 @@ export class ThreeDsChallengePage extends UiBase {
 		// NOTE(tier3-kept): estabilización 10s — mismo patrón que completeSuccess.
 		await this.page.waitForTimeout(THREE_DS_STABILIZATION_DELAY);
 		await failButton.click();
+	}
+
+	/**
+	 * Mini-flujo ATC: ABANDONA el challenge 3DS SIN pulsar COMPLETE ni FAIL — el usuario cierra
+	 * el modal / sale del challenge dejando el hold sin resolver del lado del PSP. Distinto de
+	 * `completeFail` (que sí resuelve el challenge con FAIL). Detecta el gap AC6 (MG-155, área D):
+	 * el viaje debe quedar en NO_AUTORIZADO recuperable, no "Buscando conductor" ni hold huérfano.
+	 *
+	 * Reusa los locators del challenge para confirmar que está arriba antes de abandonar; luego
+	 * cierra el modal con Escape + click fuera del overlay (no hay botón de cierre estable).
+	 * @atc MG-155 (área D — abandono/timeout 3DS).
+	 */
+	@atc('MG-155', { severity: 'critical', description: 'Abandonar el challenge 3DS sin COMPLETE/FAIL (cerrar el modal)' })
+	async abandonChallenge(): Promise<void> {
+		const challengeFrame = await this.waitForChallengeFrame();
+		const completeButton = challengeFrame.getByRole('button', { name: /^COMPLETE$/i });
+
+		// Confirmar que el challenge está realmente arriba antes de abandonar.
+		await expect(completeButton).toBeVisible({ timeout: THREE_DS_TIMEOUT });
+		// NOTE(tier3-kept): estabilización 10s — mismo patrón que completeSuccess/completeFail.
+		await this.page.waitForTimeout(THREE_DS_STABILIZATION_DELAY);
+
+		// Abandono: NO se pulsa COMPLETE ni FAIL. Cerrar el modal sin resolver el challenge.
+		await this.page.keyboard.press('Escape');
+		// Click fuera del overlay (esquina) por si Escape no descarta el modal de Stripe.
+		await this.page.mouse.click(5, 5);
+	}
+
+	/**
+	 * Helper: espera `ms` SIN actuar sobre el challenge (simula timeout/inacción del usuario).
+	 * Complementa `abandonChallenge` para el caso "el usuario deja el challenge abierto y no
+	 * responde". No pulsa COMPLETE ni FAIL. @step (helper de espera, no mini-flujo).
+	 */
+	@step
+	async timeoutChallenge(ms = 30_000): Promise<void> {
+		await this.waitForChallengeFrame();
+		// NOTE(tier3-kept): espera deliberada SIN actuar — el objetivo del test es NO resolver
+		// el challenge 3DS y observar el estado resultante del viaje (timeout/abandono).
+		await this.page.waitForTimeout(ms);
 	}
 }

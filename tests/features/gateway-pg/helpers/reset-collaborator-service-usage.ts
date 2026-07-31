@@ -24,14 +24,14 @@ export type ResetResult = 'reset-done' | 'already-clean' | 'error';
 
 export async function resetCollaboratorServiceUsage(
 	request: APIRequestContext,
-	opts: ResetCollaboratorOptions,
+	opts: ResetCollaboratorOptions
 ): Promise<ResetResult> {
 	const baseUrl = opts.baseUrl ?? process.env.BASE_URL ?? 'https://apps-test.magiis.com';
 	const url = `${baseUrl}/magiis-v0.2/contractorEmployees/${opts.contractorEmployeeId}/serviceType/${opts.serviceTypeId}/delete`;
 
 	try {
 		const res = await request.delete(url, {
-			headers: { Authorization: opts.authToken },
+			headers: { Authorization: opts.authToken }
 		});
 		if (!res.ok()) {
 			debugLog('reset-usage', `status=${res.status()} url=${url}`);

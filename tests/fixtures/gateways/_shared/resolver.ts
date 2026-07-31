@@ -139,6 +139,10 @@ function normalizeMercadoPagoCard(card: MercadoPagoTestCard): GenericTestCard {
 		expiry: card.exp,
 		cvc: card.cvc,
 		holderName: card.holderName,
+		// Documento del fixture MP (post-review A11): el form nativo lo consume vía
+		// NativeAngularCardForm.fillDocumentField (sus literales quedan como fallback).
+		docType: card.identificationType,
+		docNumber: card.identificationNumber,
 		expectedOutcome: card.expectedOutcome,
 		requires3ds: false
 	};
@@ -160,7 +164,9 @@ export function resolveCard({ gateway, intent }: ResolveCardArgs): GenericTestCa
 		case 'stripe': {
 			const policyKey = STRIPE_INTENT_MAP[intent];
 			if (!policyKey) {
-				throw new Error(`Intent '${intent}' no soportado por gateway 'stripe' — agregar mapping en STRIPE_INTENT_MAP.`);
+				throw new Error(
+					`Intent '${intent}' no soportado por gateway 'stripe' — agregar mapping en STRIPE_INTENT_MAP.`
+				);
 			}
 			const cardNumber = CARDS[policyKey] as StripeCardId;
 			const stripeCard = stripeResolveCard(cardNumber);
@@ -170,7 +176,9 @@ export function resolveCard({ gateway, intent }: ResolveCardArgs): GenericTestCa
 		case 'authorize': {
 			const policyKey = AUTHORIZE_INTENT_MAP[intent];
 			if (!policyKey) {
-				throw new Error(`Intent '${intent}' no soportado por gateway 'authorize' — el sandbox no expone ese comportamiento (verificar AUTHORIZE_INTENT_MAP).`);
+				throw new Error(
+					`Intent '${intent}' no soportado por gateway 'authorize' — el sandbox no expone ese comportamiento (verificar AUTHORIZE_INTENT_MAP).`
+				);
 			}
 			const authorizeCard = authorizeResolveCard(policyKey);
 			return normalizeAuthorizeCard(authorizeCard);
@@ -179,7 +187,9 @@ export function resolveCard({ gateway, intent }: ResolveCardArgs): GenericTestCa
 		case 'mercado-pago': {
 			const policyKey = MERCADO_PAGO_INTENT_MAP[intent];
 			if (!policyKey) {
-				throw new Error(`Intent '${intent}' no soportado por gateway 'mercado-pago' — MP no expone ese comportamiento (sin 3DS ni decline de capture; verificar MERCADO_PAGO_INTENT_MAP).`);
+				throw new Error(
+					`Intent '${intent}' no soportado por gateway 'mercado-pago' — MP no expone ese comportamiento (sin 3DS ni decline de capture; verificar MERCADO_PAGO_INTENT_MAP).`
+				);
 			}
 			const mpCard = mpResolveCard(policyKey);
 			return normalizeMercadoPagoCard(mpCard);
@@ -188,7 +198,9 @@ export function resolveCard({ gateway, intent }: ResolveCardArgs): GenericTestCa
 		case 'ebizcharge': {
 			const policyKey = EBIZCHARGE_INTENT_MAP[intent];
 			if (!policyKey) {
-				throw new Error(`Intent '${intent}' no soportado por gateway 'ebizcharge' — eBiz no expone ese comportamiento (sin 3DS ni decline de capture; verificar EBIZCHARGE_INTENT_MAP).`);
+				throw new Error(
+					`Intent '${intent}' no soportado por gateway 'ebizcharge' — eBiz no expone ese comportamiento (sin 3DS ni decline de capture; verificar EBIZCHARGE_INTENT_MAP).`
+				);
 			}
 			const ebizCard = ebizResolveCard(policyKey);
 			return normalizeEbizchargeCard(ebizCard);

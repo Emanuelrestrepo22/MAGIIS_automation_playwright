@@ -7,14 +7,17 @@
  *
  *   bun xray import xray --file evidence/<env>/xray-results.json
  *
- * Binding spec ↔ Test (en este orden de prioridad):
- *   1. annotation `tms`:       test.info().annotations.push({ type: 'tms', description: 'MX-6133' })
- *      (convención existente del org — misma que usan Allure links y carrier-v2)
+ * Binding spec ↔ Test (EMIT-ALL — un test puede acreditar VARIOS Test de Xray):
+ *   1. annotation `tms`:       test.info().annotations.push({ type: 'tms', description: 'MG-158' })
+ *      (convención del org — misma que usan Allure links y carrier-v2; la empuja @atc)
  *   2. annotation `test_key`:  alias aceptado
- *   3. título:                 test('[MX-6133] ...', ...)   → se parsea la primera key AAA-123
+ *   3. título:                 test('[MG-158] ...', ...)   → fallback, primera key AAA-123
+ *   Se recogen TODAS las keys tms/test_key distinctas (estáticas del TestCase +
+ *   runtime del TestResult) → una fila de resultado por cada Test cubierto.
  *
  * Specs SIN key NO se exportan (no están mapeados a un Test de Xray); se reporta
  * el conteo al final para que el gap sea visible y no un drop silencioso.
+ * XRAY_KEY_DENYLIST (CSV) excluye keys que no son Test (Executions/Plans/Stories).
  *
  * Config (playwright.config.ts):
  *   ['./tests/utils/reporters/xray-reporter.ts', { outputFile: `evidence/${env}/xray-results.json` }]
@@ -24,29 +27,26 @@
  *   XRAY_TEST_PLAN_KEY  → info.testPlanKey (crea/asocia la ejecución al ATP)
  *   XRAY_SUMMARY        → info.summary (si se crea una ejecución nueva)
  *   XRAY_VERSION        → info.version = fixVersion (si se crea una ejecución nueva)
+ *   XRAY_OUTPUT_FILE    → override del path de salida (gana sobre el outputFile de la
+ *                         config — habilita un JSON por pasarela: xray-results.<gw>.json)
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
-import type {
-	FullResult,
-	Reporter,
-	TestCase,
-	TestResult,
-} from '@playwright/test/reporter';
+import type { FullResult, Reporter, TestCase, TestResult } from '@playwright/test/reporter';
 
 // Estados Xray Cloud válidos para import.
 type XrayStatus = 'PASSED' | 'FAILED' | 'ABORTED' | 'TODO';
 
 interface XrayTestResult {
-	testKey: string
-	status: XrayStatus
-	start?: string
-	finish?: string
-	comment?: string
+	testKey: string;
+	status: XrayStatus;
+	start?: string;
+	finish?: string;
+	comment?: string;
 }
 
 interface ReporterOptions {
-	outputFile?: string
+	outputFile?: string;
 }
 
 // Tipos de annotation que portan la key del Test de Xray (orden = prioridad).
@@ -62,12 +62,17 @@ function clean(text: string): string {
 
 function mapStatus(status: TestResult['status']): XrayStatus {
 	switch (status) {
-		case 'passed': return 'PASSED';
+		case 'passed':
+			return 'PASSED';
 		case 'failed':
-		case 'timedOut': return 'FAILED';
-		case 'interrupted': return 'ABORTED';
-		case 'skipped': return 'TODO';
-		default: return 'FAILED';
+		case 'timedOut':
+			return 'FAILED';
+		case 'interrupted':
+			return 'ABORTED';
+		case 'skipped':
+			return 'TODO';
+		default:
+			return 'FAILED';
 	}
 }
 
@@ -75,13 +80,36 @@ function mapStatus(status: TestResult['status']): XrayStatus {
 // quedamos con el peor estado observado (un fallo en cualquier corrida manda).
 const SEVERITY: Record<XrayStatus, number> = { PASSED: 0, TODO: 1, ABORTED: 2, FAILED: 3 };
 
-function extractTestKey(test: TestCase): string | undefined {
+// Denylist de keys que NO son Test de Xray (Test Executions, Test Plans, Epics,
+// Stories) — se excluyen para no emitir un run contra un issue que no es Test.
+// Configurable por CI vía XRAY_KEY_DENYLIST (CSV). Default vacío (reporter genérico).
+const KEY_DENYLIST = new Set(
+	(process.env.XRAY_KEY_DENYLIST ?? '')
+		.split(',')
+		.map(s => s.trim())
+		.filter(Boolean)
+);
+
+// Emit-all: UNA automatización (un test) puede cubrir VARIOS Test de Xray — un spec
+// KATA orquesta varios @atc de componente, y cada @atc empuja su key. Devolvemos
+// TODAS las keys tms/test_key distinctas, uniendo las annotations ESTÁTICAS del
+// TestCase (declaradas en describe/test) con las de RUNTIME del TestResult (donde el
+// decorador @atc las agrega). Así la corrida acredita evidencia a cada Test cubierto.
+// Fallback al título solo si no hay ninguna annotation. Denylist filtra no-Tests.
+function extractTestKeys(test: TestCase, result: TestResult): string[] {
+	const keys = new Set<string>();
+	const all = [...test.annotations, ...(result.annotations ?? [])];
 	for (const type of KEY_ANNOTATION_TYPES) {
-		const ann = test.annotations.find(a => a.type === type);
-		if (ann?.description) return ann.description.trim();
+		for (const ann of all) {
+			if (ann.type === type && ann.description) keys.add(ann.description.trim());
+		}
 	}
-	const m = KEY_IN_TITLE.exec(test.title);
-	return m?.[1];
+	if (keys.size === 0) {
+		const m = KEY_IN_TITLE.exec(test.title);
+		if (m) keys.add(m[1]);
+	}
+	for (const k of [...keys]) if (KEY_DENYLIST.has(k)) keys.delete(k);
+	return [...keys];
 }
 
 class XrayReporter implements Reporter {
@@ -90,17 +118,22 @@ class XrayReporter implements Reporter {
 	private unmapped = 0;
 
 	constructor(options: ReporterOptions = {}) {
-		this.outputFile = options.outputFile
-			?? process.env.XRAY_RESULTS_FILE
-			?? 'evidence/xray-results.json';
+		// XRAY_OUTPUT_FILE gana sobre el outputFile fijado en playwright.config.ts:
+		// los scripts :xray por pasarela lo usan para emitir un JSON aislado por run
+		// (evidence/test/xray-results.<gw>.json) sin pisar el output default del env.
+		this.outputFile =
+			process.env.XRAY_OUTPUT_FILE ??
+			options.outputFile ??
+			process.env.XRAY_RESULTS_FILE ??
+			'evidence/xray-results.json';
 	}
 
 	onTestEnd(test: TestCase, result: TestResult): void {
 		// Ignorar corridas intermedias de retry: solo el resultado final cuenta.
 		if (result.status !== 'passed' && result.retry < test.retries) return;
 
-		const testKey = extractTestKey(test);
-		if (!testKey) {
+		const testKeys = extractTestKeys(test, result);
+		if (testKeys.length === 0) {
 			this.unmapped++;
 			return;
 		}
@@ -108,13 +141,17 @@ class XrayReporter implements Reporter {
 		const status = mapStatus(result.status);
 		const start = result.startTime.toISOString();
 		const finish = new Date(result.startTime.getTime() + result.duration).toISOString();
-		const comment = result.status === 'passed'
-			? undefined
-			: clean(result.error?.message ?? `status=${result.status}`).slice(0, 2000);
+		const comment =
+			result.status === 'passed'
+				? undefined
+				: clean(result.error?.message ?? `status=${result.status}`).slice(0, 2000);
 
-		const prev = this.results.get(testKey);
-		if (!prev || SEVERITY[status] > SEVERITY[prev.status]) {
-			this.results.set(testKey, { testKey, status, start, finish, comment });
+		// Una fila por cada Test cubierto (dedup por testKey, gana el peor estado).
+		for (const testKey of testKeys) {
+			const prev = this.results.get(testKey);
+			if (!prev || SEVERITY[status] > SEVERITY[prev.status]) {
+				this.results.set(testKey, { testKey, status, start, finish, comment });
+			}
 		}
 	}
 
@@ -124,8 +161,7 @@ class XrayReporter implements Reporter {
 		const payload: Record<string, unknown> = { tests };
 		if (process.env.XRAY_EXECUTION_KEY) {
 			payload.testExecutionKey = process.env.XRAY_EXECUTION_KEY;
-		}
-		else {
+		} else {
 			// Sin ejecución existente: describir una para que el import cree el ATR.
 			const info: Record<string, unknown> = {};
 			if (process.env.XRAY_SUMMARY) info.summary = process.env.XRAY_SUMMARY;
@@ -142,12 +178,28 @@ class XrayReporter implements Reporter {
 			: 'nueva ejecución (info)';
 		console.log(
 			'\n\x1b[36m%s\x1b[0m',
-			`🧾 Xray: ${tests.length} test(s) mapeados → ${this.outputFile} (${target})`,
+			`🧾 Xray: ${tests.length} test(s) mapeados → ${this.outputFile} (${target})`
 		);
 		if (this.unmapped > 0) {
 			console.log(
 				'\x1b[33m%s\x1b[0m',
-				`⚠️  Xray: ${this.unmapped} spec(s) sin key → NO exportados. Añade annotation type:'tms' (o [KEY] en el título).`,
+				`⚠️  Xray: ${this.unmapped} spec(s) sin key → NO exportados. Añade annotation type:'tms' (o [KEY] en el título).`
+			);
+		}
+
+		// Guarda F5 (post-review): un run POR PASARELA (GATEWAYS con UNA sola) sin
+		// XRAY_EXECUTION_KEY emite un JSON sin testExecutionKey — el import posterior con
+		// `--file` y sin `--execution` crearía una ejecución NUEVA en vez de alimentar el
+		// ATR por pasarela (MG-558..561). Aviso, NO fail: crear ejecuciones nuevas es un
+		// uso legítimo en otros contextos.
+		const pinnedGateways = (process.env.GATEWAYS ?? '')
+			.split(',')
+			.map(s => s.trim())
+			.filter(Boolean);
+		if (process.env.XRAY && pinnedGateways.length === 1 && !process.env.XRAY_EXECUTION_KEY) {
+			console.warn(
+				'\x1b[33m\x1b[1m%s\x1b[0m',
+				`⚠️⚠️  Xray: run por pasarela (GATEWAYS=${pinnedGateways[0]}) SIN XRAY_EXECUTION_KEY — importar ${this.outputFile} con --file y sin --execution creará una ejecución NUEVA en vez de alimentar el ATR de la pasarela. Exportá la key de su execution (env XRAY_EXECUTION_<GW> del RUNBOOK-executions-por-gateway.md §1.1, p. ej. XRAY_EXECUTION_KEY=$XRAY_EXECUTION_AUTHORIZE) o pasá --execution en el import.`
 			);
 		}
 	}

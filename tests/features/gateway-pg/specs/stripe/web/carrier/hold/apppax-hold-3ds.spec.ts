@@ -16,15 +16,21 @@ import type { Page } from '@playwright/test';
 //   - test/expect vienen del fixture unificado KATA (@TestFixture) en vez de TestBase.
 //   - el modal 3DS usa el componente KATA `ThreeDsChallengePage extends UiBase` (@ui) en vez del POM ThreeDSModal.
 //   - los POMs del sustrato carrier (Dashboard/NewTravel/OperationalPreferences/TravelManagement) siguen intactos.
-// Mapeo TS-STRIPE-TC10xx → MG: no hay 1:1 en el idmap (API-level). ATCs del challenge 3DS mapeados
-// al área D (MG-152/MG-153) dentro del componente — PENDIENTE REASIGNAR cuando el ATP tenga TCs UI 3DS.
+// Mapeo TS-STRIPE-TC10xx → MG: no hay 1:1 en el idmap (API-level). Key primaria del spec = MG-158
+// (área E · hold, anotada a nivel describe); los ATC del challenge 3DS mapean al área D (MG-152/MG-153)
+// dentro del componente. Mapeo por área aceptado (idmap API-level, sin 1:1 con los TS-STRIPE-TC10xx UI).
 import { test, expect } from '@TestFixture';
-import { DashboardPage, NewTravelPage, OperationalPreferencesPage, TravelManagementPage } from '../../../../../../../pages/carrier';
+import {
+	DashboardPage,
+	NewTravelPage,
+	OperationalPreferencesPage,
+	TravelManagementPage
+} from '../../../../../../../pages/carrier';
 import { ThreeDsChallengePage } from '@ui/ThreeDsChallengePage';
 import { loginAsDispatcher, STRIPE_TEST_CARDS, TEST_DATA } from '../../../../../fixtures/gateway.fixtures';
 import { waitForTravelCreation } from '../../../../../helpers/stripe.helpers';
 import { validateCardPrecondition, type CardPreconditionResult } from '../../../../../helpers/card-precondition';
-import { setHoldViaApi } from '../../../../../helpers/parameters-api';
+import { getCarrierParameters, readHoldRaw, setHoldViaApi } from '../../../../../helpers/parameters-api';
 import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../../../../helpers/travel-cleanup';
 import { PASSENGERS } from '../../../../../data/passengers';
 import { debugLog } from '../../../../../../../helpers';
@@ -35,16 +41,23 @@ function shortDestination(destination: string): string {
 
 // BL-i18n/v1.72.8: en v1.72.8 el toggle de pre-autorización en la UI no habilita
 // "Guardar" ni persiste (exploratory 2026-07-20). El setup fija el hold vía API.
+// Oráculo = read-back CRUDO posterior (`readHoldRaw`, GET sin coerción): assertar el payload
+// que `setHoldViaApi` acababa de mutar era tautológico, y un campo ausente debe FALLAR.
 async function disableHoldAndSave(preferences: OperationalPreferencesPage): Promise<void> {
-	const params = await setHoldViaApi(preferences.getPage(), false);
-	expect(params.enableCreditCardHold).toBe(false);
+	const page = preferences.getPage();
+	await setHoldViaApi(page, false);
+	expect(await readHoldRaw(page), 'read-back API: enableCreditCardHold debe quedar false tras el POST (campo ausente = fallo)').toBe(false);
 }
 
 async function restoreHoldAndSave(page: Page, _preferences: OperationalPreferencesPage): Promise<void> {
-	const params = await setHoldViaApi(page, true);
-	expect(params.enableCreditCardHold).toBe(true);
-	expect(params.ccHoldPreviousHs).toBe(2);
-	expect(params.ccHoldCoverage).toBe(10);
+	await setHoldViaApi(page, true);
+	// Read-back CRUDO como oráculo (auditoría R2): assertar el payload que `setHoldViaApi`
+	// acababa de mutar era tautológico. UN solo GET posterior y los 3 campos de hold se
+	// assertan desde ESE objeto leído del backend — campo ausente (undefined) = fallo.
+	const persisted = await getCarrierParameters(page);
+	expect(persisted.enableCreditCardHold, 'read-back API: enableCreditCardHold debe quedar true tras el POST (campo ausente = fallo)').toBe(true);
+	expect(persisted.ccHoldPreviousHs, 'read-back API: ccHoldPreviousHs debe persistir en 2 (campo ausente = fallo)').toBe(2);
+	expect(persisted.ccHoldCoverage, 'read-back API: ccHoldCoverage debe persistir en 10 (campo ausente = fallo)').toBe(10);
 }
 
 type Hold3dsScenario = {
@@ -62,7 +75,7 @@ async function runHoldOnScenario(page: Page, scenario: Hold3dsScenario): Promise
 	const travel = new NewTravelPage(page);
 	const management = new TravelManagementPage(page);
 	const threeDS = new ThreeDsChallengePage({ page });
-	const cardLast4 = scenario.cardLast4 || STRIPE_TEST_CARDS.success3DS.slice(-4);
+	const cardLast4 = scenario.cardLast4 || STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4);
 	let travelIdRef: TravelIdRef | null = null;
 
 	await test.step('Login carrier', async () => {
@@ -75,9 +88,12 @@ async function runHoldOnScenario(page: Page, scenario: Hold3dsScenario): Promise
 			await test.step('Precondición: validar tarjeta vinculada vía API', async () => {
 				cardCheck = await validateCardPrecondition(page, {
 					passengerName: scenario.apiSearchQuery!,
-					requiredLast4: cardLast4,
+					requiredLast4: cardLast4
 				});
-				debugLog('gateway-pg:carrier', `[card-precondition] ${scenario.passenger}: ${cardCheck.activeCards} tarjetas, tiene ${cardLast4}: ${cardCheck.hasRequiredCard}`);
+				debugLog(
+					'gateway-pg:carrier',
+					`[card-precondition] ${scenario.passenger}: ${cardCheck.activeCards} tarjetas, tiene ${cardLast4}: ${cardCheck.hasRequiredCard}`
+				);
 			});
 		}
 
@@ -101,7 +117,7 @@ async function runHoldOnScenario(page: Page, scenario: Hold3dsScenario): Promise
 				origin: scenario.origin,
 				destination: scenario.destination,
 				cardLast4,
-				preferSavedCard: cardCheck?.hasRequiredCard ?? false,
+				preferSavedCard: cardCheck?.hasRequiredCard ?? false
 			});
 		});
 
@@ -155,7 +171,7 @@ async function runHoldOffScenario(page: Page, scenario: Hold3dsScenario): Promis
 	const travel = new NewTravelPage(page);
 	const management = new TravelManagementPage(page);
 	const threeDS = new ThreeDsChallengePage({ page });
-	const cardLast4 = scenario.cardLast4 || STRIPE_TEST_CARDS.success3DS.slice(-4);
+	const cardLast4 = scenario.cardLast4 || STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4);
 	let travelIdRef: TravelIdRef | null = null;
 
 	await loginAsDispatcher(page);
@@ -165,9 +181,12 @@ async function runHoldOffScenario(page: Page, scenario: Hold3dsScenario): Promis
 		await test.step('Precondición: validar tarjeta vinculada vía API', async () => {
 			cardCheck = await validateCardPrecondition(page, {
 				passengerName: scenario.apiSearchQuery!,
-				requiredLast4: cardLast4,
+				requiredLast4: cardLast4
 			});
-			debugLog('gateway-pg:carrier', `[card-precondition] ${scenario.passenger}: ${cardCheck.activeCards} tarjetas, tiene ${cardLast4}: ${cardCheck.hasRequiredCard}`);
+			debugLog(
+				'gateway-pg:carrier',
+				`[card-precondition] ${scenario.passenger}: ${cardCheck.activeCards} tarjetas, tiene ${cardLast4}: ${cardCheck.hasRequiredCard}`
+			);
 		});
 	}
 
@@ -190,7 +209,7 @@ async function runHoldOffScenario(page: Page, scenario: Hold3dsScenario): Promis
 				origin: scenario.origin,
 				destination: scenario.destination,
 				cardLast4,
-				preferSavedCard: cardCheck?.hasRequiredCard ?? false,
+				preferSavedCard: cardCheck?.hasRequiredCard ?? false
 			});
 		});
 
@@ -242,99 +261,103 @@ async function runHoldOffScenario(page: Page, scenario: Hold3dsScenario): Promis
 // El fixture KATA no define la opción `role` (login explícito vía loginAsDispatcher(page)).
 test.use({ storageState: undefined });
 
-test.describe('Gateway PG · Carrier · App Pax — Hold con 3DS @gateway @stripe @hold @3ds @critical @regression', () => {
+test.describe(
+	'Gateway PG · Carrier · App Pax — Hold con 3DS @gateway @stripe @hold @3ds @critical @regression',
+	{ annotation: [{ type: 'tms', description: 'MG-158' }] },
+	() => {
+		test.describe('Hold ON — autenticación 3DS exitosa', () => {
+			// Debería crear un viaje con hold activo, completar 3DS con éxito,
+			// y dejar el viaje en estado "Buscando conductor" visible en gestión.
+			test('[TS-STRIPE-TC1053] @smoke @critical @3ds @hold hold+cobro app pax 3DS success', async ({ page }) => {
+				await runHoldOnScenario(page, {
+					client: TEST_DATA.appPaxPassenger,
+					passenger: TEST_DATA.appPaxPassenger,
+					origin: TEST_DATA.origin,
+					destination: TEST_DATA.destination,
+					cardLast4: STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4), // 3184
+					apiSearchQuery: PASSENGERS.appPax.apiSearchQuery
+				});
+			});
 
-	test.describe('Hold ON — autenticación 3DS exitosa', () => {
+			test('[TS-STRIPE-TC1055] @regression @3ds @hold hold+cobro app pax 3DS success variante', async ({
+				page
+			}) => {
+				await runHoldOnScenario(page, {
+					client: TEST_DATA.appPaxPassenger,
+					passenger: TEST_DATA.appPaxPassenger,
+					origin: TEST_DATA.origin,
+					destination: TEST_DATA.destination,
+					cardLast4: STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4),
+					apiSearchQuery: PASSENGERS.appPax.apiSearchQuery
+				});
+			});
 
-		// Debería crear un viaje con hold activo, completar 3DS con éxito,
-		// y dejar el viaje en estado "Buscando conductor" visible en gestión.
-		test('[TS-STRIPE-TC1053] @smoke @critical @3ds @hold hold+cobro app pax 3DS success', async ({ page }) => {
-			await runHoldOnScenario(page, {
-				client: TEST_DATA.appPaxPassenger,
-				passenger: TEST_DATA.appPaxPassenger,
-				origin: TEST_DATA.origin,
-				destination: TEST_DATA.destination,
-				cardLast4: STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4), // 3184
-				apiSearchQuery: PASSENGERS.appPax.apiSearchQuery,
+			test('[TS-STRIPE-TC1061] @regression @3ds @hold hold+cobro app pax 3DS success (set 2)', async ({
+				page
+			}) => {
+				await runHoldOnScenario(page, {
+					client: TEST_DATA.appPaxPassenger,
+					passenger: TEST_DATA.appPaxPassenger,
+					origin: TEST_DATA.origin,
+					destination: TEST_DATA.destination,
+					apiSearchQuery: PASSENGERS.appPax.apiSearchQuery
+				});
+			});
+
+			test('[TS-STRIPE-TC1063] @regression @3ds @hold hold+cobro app pax 3DS success variante 2', async ({
+				page
+			}) => {
+				await runHoldOnScenario(page, {
+					client: TEST_DATA.appPaxPassenger,
+					passenger: TEST_DATA.appPaxPassenger,
+					origin: TEST_DATA.origin,
+					destination: TEST_DATA.destination,
+					apiSearchQuery: PASSENGERS.appPax.apiSearchQuery
+				});
 			});
 		});
 
-		test('[TS-STRIPE-TC1055] @regression @3ds @hold hold+cobro app pax 3DS success variante', async ({ page }) => {
-			await runHoldOnScenario(page, {
-				client: TEST_DATA.appPaxPassenger,
-				passenger: TEST_DATA.appPaxPassenger,
-				origin: TEST_DATA.origin,
-				destination: TEST_DATA.destination,
-				cardLast4: STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4),
-				apiSearchQuery: PASSENGERS.appPax.apiSearchQuery,
+		test.describe('Hold OFF — sin cobro al finalizar', () => {
+			test('[TS-STRIPE-TC1054] @regression @3ds sin hold app pax 3DS success', async ({ page }) => {
+				await runHoldOffScenario(page, {
+					client: TEST_DATA.appPaxPassenger,
+					passenger: TEST_DATA.appPaxPassenger,
+					origin: TEST_DATA.origin,
+					destination: TEST_DATA.destination,
+					cardLast4: STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4), // 3184
+					apiSearchQuery: PASSENGERS.appPax.apiSearchQuery
+				});
+			});
+
+			test('[TS-STRIPE-TC1056] @regression @3ds sin hold app pax 3DS success variante', async ({ page }) => {
+				await runHoldOffScenario(page, {
+					client: TEST_DATA.appPaxPassenger,
+					passenger: TEST_DATA.appPaxPassenger,
+					origin: TEST_DATA.origin,
+					destination: TEST_DATA.destination,
+					apiSearchQuery: PASSENGERS.appPax.apiSearchQuery
+				});
+			});
+
+			test('[TS-STRIPE-TC1062] @regression @3ds sin hold app pax 3DS success (set 2)', async ({ page }) => {
+				await runHoldOffScenario(page, {
+					client: TEST_DATA.appPaxPassenger,
+					passenger: TEST_DATA.appPaxPassenger,
+					origin: TEST_DATA.origin,
+					destination: TEST_DATA.destination,
+					apiSearchQuery: PASSENGERS.appPax.apiSearchQuery
+				});
+			});
+
+			test('[TS-STRIPE-TC1064] @regression @3ds sin hold app pax 3DS success variante 2', async ({ page }) => {
+				await runHoldOffScenario(page, {
+					client: TEST_DATA.appPaxPassenger,
+					passenger: TEST_DATA.appPaxPassenger,
+					origin: TEST_DATA.origin,
+					destination: TEST_DATA.destination,
+					apiSearchQuery: PASSENGERS.appPax.apiSearchQuery
+				});
 			});
 		});
-
-		test('[TS-STRIPE-TC1061] @regression @3ds @hold hold+cobro app pax 3DS success (set 2)', async ({ page }) => {
-			await runHoldOnScenario(page, {
-				client: TEST_DATA.appPaxPassenger,
-				passenger: TEST_DATA.appPaxPassenger,
-				origin: TEST_DATA.origin,
-				destination: TEST_DATA.destination,
-				apiSearchQuery: PASSENGERS.appPax.apiSearchQuery,
-			});
-		});
-
-		test('[TS-STRIPE-TC1063] @regression @3ds @hold hold+cobro app pax 3DS success variante 2', async ({ page }) => {
-			await runHoldOnScenario(page, {
-				client: TEST_DATA.appPaxPassenger,
-				passenger: TEST_DATA.appPaxPassenger,
-				origin: TEST_DATA.origin,
-				destination: TEST_DATA.destination,
-				apiSearchQuery: PASSENGERS.appPax.apiSearchQuery,
-			});
-		});
-
-	});
-
-	test.describe('Hold OFF — sin cobro al finalizar', () => {
-
-		test('[TS-STRIPE-TC1054] @regression @3ds sin hold app pax 3DS success', async ({ page }) => {
-			await runHoldOffScenario(page, {
-				client: TEST_DATA.appPaxPassenger,
-				passenger: TEST_DATA.appPaxPassenger,
-				origin: TEST_DATA.origin,
-				destination: TEST_DATA.destination,
-				cardLast4: STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4), // 3184
-				apiSearchQuery: PASSENGERS.appPax.apiSearchQuery,
-			});
-		});
-
-		test('[TS-STRIPE-TC1056] @regression @3ds sin hold app pax 3DS success variante', async ({ page }) => {
-			await runHoldOffScenario(page, {
-				client: TEST_DATA.appPaxPassenger,
-				passenger: TEST_DATA.appPaxPassenger,
-				origin: TEST_DATA.origin,
-				destination: TEST_DATA.destination,
-				apiSearchQuery: PASSENGERS.appPax.apiSearchQuery,
-			});
-		});
-
-		test('[TS-STRIPE-TC1062] @regression @3ds sin hold app pax 3DS success (set 2)', async ({ page }) => {
-			await runHoldOffScenario(page, {
-				client: TEST_DATA.appPaxPassenger,
-				passenger: TEST_DATA.appPaxPassenger,
-				origin: TEST_DATA.origin,
-				destination: TEST_DATA.destination,
-				apiSearchQuery: PASSENGERS.appPax.apiSearchQuery,
-			});
-		});
-
-		test('[TS-STRIPE-TC1064] @regression @3ds sin hold app pax 3DS success variante 2', async ({ page }) => {
-			await runHoldOffScenario(page, {
-				client: TEST_DATA.appPaxPassenger,
-				passenger: TEST_DATA.appPaxPassenger,
-				origin: TEST_DATA.origin,
-				destination: TEST_DATA.destination,
-				apiSearchQuery: PASSENGERS.appPax.apiSearchQuery,
-			});
-		});
-
-	});
-
-});
+	}
+);

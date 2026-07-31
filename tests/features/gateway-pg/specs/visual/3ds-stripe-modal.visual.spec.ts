@@ -10,16 +10,19 @@
  * (@TestFixture) en vez de TestBase; el fixture no define `role` (login explícito en el
  * flujo cuando se implemente el baseline). Placeholder fixme — sin ATC aún (no hay flujo
  * disparado). Al implementar, reutilizar `ThreeDsChallengePage` (@ui) para localizar el
- * frame del challenge y mapear al área 3DS del idmap (MG-152/153, Level UI) — PENDIENTE REASIGNAR.
+ * frame del challenge y mapear al área 3DS del idmap (MG-152/153, Level UI) — mapeo por área aceptado.
  */
 import { test, expect } from '@TestFixture';
 
-test.describe('[BL-044] Visual regression — Modal 3DS Stripe @gateway @visual @stripe @3ds @regression', () => {
+test.describe('[BL-044] Visual regression — Modal 3DS Stripe @gateway @visual @stripe @3ds @regression', { annotation: [{ type: 'tms', description: 'MG-152' }] }, () => {
 	// El fixture KATA no define la opción `role` (login explícito en el flujo cuando se implemente).
 	test.use({ storageState: undefined });
 
 	test('modal 3DS challenge — layout visual', async ({ page }) => {
-		test.fixme(true, 'BL-044 piloto: requiere baseline generado en ambiente live. Ver tests/features/gateway-pg/specs/visual/README.md §"Política de baselines".');
+		test.fixme(
+			true,
+			'BL-044 piloto: requiere baseline generado en ambiente live. Ver tests/features/gateway-pg/specs/visual/README.md §"Política de baselines".'
+		);
 
 		// TODO(BL-044): completar flujo de disparo del modal 3DS con tarjeta 4000 0025 0000 3155.
 		//   Reutilizar helpers de specs/stripe/web/carrier/recovery cuando se genere el baseline.

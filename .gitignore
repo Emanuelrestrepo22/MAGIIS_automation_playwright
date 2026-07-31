@@ -76,3 +76,7 @@ GATEWAY_PG_ARCHITECTURE.md
 # Allure reporting
 allure-results/
 allure-report/
+
+# Grabaciones codegen y scratch e2e con credenciales vivas - NUNCA commitear
+tests/authorize2e2_happypath.ts
+tests/recordings/*.recorded.ts

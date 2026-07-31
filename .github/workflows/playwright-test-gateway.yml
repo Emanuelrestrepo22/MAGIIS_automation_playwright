@@ -1,0 +1,297 @@
+# ==========================================================================
+#  GitHub Actions — Gateway Stripe contra TEST (apps-test, carrier 1521)
+#
+#  Por qué existe: correr la suite gateway (Stripe) contra el entorno TEST en un
+#  runner Ubuntu limpio, fuera de OneDrive (el runner LOCAL falla bajo OneDrive con
+#  ERR_MODULE_NOT_FOUND / UNKNOWN al cargar playwright-core — problema del filesystem,
+#  no de los tests). Modelado sobre playwright-uat-e2e.yml pero apuntando a TEST.
+#
+#  Estado compartido: la suite corre contra el carrier 1521 (remises.eeuu@yopmail.com),
+#  cuenta compartida. Por eso el config gateway-pg fuerza workers:1 y fullyParallel:false
+#  — NO subir workers desde el workflow (rompería el aislamiento del estado en 1521).
+#
+#  Selección por PROJECT (NO --grep=@gateway suelto): --grep=@gateway arrastra los
+#  13 specs @e2e-hybrid (Appium/device) y rompe en CI sin emulador. Corremos los
+#  projects declarados en playwright.gateway-pg.config.ts:
+#    - WEB: regression-web + smoke + critical + cargo-a-bordo  (excluye e2e-mobile y visual)
+#    - API: api                                                 (contract tests / sandbox)
+#
+#  Caveat Xray (tms describe-level): el xray-reporter mapea @tms('KEY') a nivel
+#  describe → TODOS los resultados de la corrida colapsan a la key de ÁREA en el ATR
+#  (no un resultado por spec). Por eso hay UNA execution key por área: web y api se
+#  importan por separado (cada corrida emite su evidence/test/xray-results.json, que
+#  la corrida siguiente sobrescribe — de ahí que el import de WEB ocurra ANTES de
+#  correr API).
+#
+#  Manual-only (workflow_dispatch), igual que los demás workflows del repo.
+#
+#  Secrets requeridos (Settings → Secrets and variables → Actions, environment TEST):
+#    USER_CARRIER / PASS_CARRIER        (carrier 1521 — remises.eeuu@yopmail.com)
+#    USER_CONTRACTOR / PASS_CONTRACTOR  (contractor — emanuel.smith@yopmail.com)
+#    XRAY_CLIENT_ID / XRAY_CLIENT_SECRET (Xray Cloud API — habilita reporter + import)
+#  Vars:
+#    BASE_URL (default https://apps-test.magiis.com)
+#  Secrets OPCIONALES (área G / MG-515 capa DB — si faltan, esos specs skipean):
+#    ORACLE_USER / ORACLE_PASSWORD / ORACLE_CONNECT_STRING
+#      → se mapean a ORACLE_USER_TEST / ORACLE_PASSWORD_TEST / ORACLE_CONNECT_STRING_TEST
+#        (en ENV=test la capa DB lee las variables con sufijo _TEST → magiis-test-v2).
+# ==========================================================================
+
+name: Gateway Stripe — TEST Environment
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_filter:
+        description: 'Playwright -g pattern extra (vacío = todos los specs de cada project)'
+        required: false
+        default: ''
+      xray_execution_web:
+        description: 'Xray: Test Execution (ATR) destino para el ÁREA WEB. Default MG-511 (alt MG-512).'
+        required: false
+        default: 'MG-511'
+      xray_execution_api:
+        description: 'Xray: Test Execution (ATR) destino para el ÁREA API.'
+        required: false
+        default: 'MG-515'
+      xray_version:
+        description: 'Xray: fixVersion para ejecuciones nuevas (solo si la key correspondiente va vacía)'
+        required: false
+        default: ''
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quick-checks:
+    name: TypeScript + Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: Cache node_modules
+        id: cache-modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            **/node_modules
+          key: modules-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - name: Install dependencies
+        if: steps.cache-modules.outputs.cache-hit != 'true'
+        run: pnpm install --frozen-lockfile
+      - name: TypeScript compile check
+        run: pnpm exec tsc --noEmit
+      - name: Lint
+        run: pnpm --if-present run lint
+
+  gateway-test:
+    name: Gateway Stripe TEST
+    needs: quick-checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: TEST
+    env:
+      ENV: test
+      # HAS_XRAY habilita el reporter+import solo si el proyecto tiene creds Xray.
+      # (los secrets no se pueden usar directo en `if:`; se mapean a env aquí)
+      HAS_XRAY: ${{ secrets.XRAY_CLIENT_ID != '' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: Cache node_modules
+        id: cache-modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            **/node_modules
+          key: modules-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - name: Install dependencies
+        if: steps.cache-modules.outputs.cache-hit != 'true'
+        run: pnpm install --frozen-lockfile
+      - name: Cache Playwright browsers
+        id: cache-browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+      - name: Install Playwright browsers (chromium)
+        if: steps.cache-browsers.outputs.cache-hit != 'true'
+        run: pnpm run pw:install
+      - name: Install system deps for Playwright (cache hit)
+        if: steps.cache-browsers.outputs.cache-hit == 'true'
+        run: pnpm exec playwright install-deps chromium
+      - name: Create storage directory
+        run: mkdir -p storage
+      - name: Create .env.test from secrets
+        run: |
+          cat > .env.test << 'ENVEOF'
+          ENV=test
+          BASE_URL=${{ vars.BASE_URL || 'https://apps-test.magiis.com' }}
+          LOGIN_PATH="/#/authentication/login/carrier"
+          LOGIN_PATH_CONTRACTOR="/#/authentication/login/contractor"
+          DASHBOARD_URL_PATTERN="**/dashboard"
+          USER_CARRIER=${{ secrets.USER_CARRIER }}
+          PASS_CARRIER=${{ secrets.PASS_CARRIER }}
+          USER_CONTRACTOR=${{ secrets.USER_CONTRACTOR }}
+          PASS_CONTRACTOR=${{ secrets.PASS_CONTRACTOR }}
+          CARRIER_ID=1521
+          HEADLESS=true
+          ORACLE_USER_TEST=${{ secrets.ORACLE_USER }}
+          ORACLE_PASSWORD_TEST=${{ secrets.ORACLE_PASSWORD }}
+          ORACLE_CONNECT_STRING_TEST=${{ secrets.ORACLE_CONNECT_STRING }}
+          ENVEOF
+          if grep -q "^USER_CARRIER=$" .env.test || grep -q "^PASS_CARRIER=$" .env.test; then
+            echo "❌ ERROR: USER_CARRIER/PASS_CARRIER vacíos en GitHub Secrets (environment TEST)"
+            exit 1
+          fi
+
+      # ---- ÁREA WEB ---------------------------------------------------------
+      - name: Run gateway WEB (regression-web + smoke + critical + cargo-a-bordo)
+        id: run-web
+        env:
+          # XRAY=1 activa el xray-reporter (opt-in) → emite evidence/test/xray-results.json
+          XRAY: ${{ env.HAS_XRAY == 'true' && '1' || '' }}
+          XRAY_EXECUTION_KEY: ${{ inputs.xray_execution_web }}
+          XRAY_VERSION: ${{ inputs.xray_version }}
+          XRAY_SUMMARY: "Gateway TEST — WEB — run ${{ github.run_number }}"
+        run: |
+          set -e
+          FILTER='${{ inputs.test_filter }}'
+          pnpm exec playwright test -c playwright.gateway-pg.config.ts \
+            --project=regression-web --project=smoke --project=critical --project=cargo-a-bordo \
+            ${FILTER:+-g "$FILTER"}
+      - name: Import WEB results to Xray Cloud
+        if: ${{ always() && env.HAS_XRAY == 'true' }}
+        continue-on-error: true
+        env:
+          XRAY_CLIENT_ID: ${{ secrets.XRAY_CLIENT_ID }}
+          XRAY_CLIENT_SECRET: ${{ secrets.XRAY_CLIENT_SECRET }}
+          RESULTS_FILE: evidence/test/xray-results.json
+        run: |
+          set -e
+          if [ ! -f "$RESULTS_FILE" ]; then
+            echo "⚠️  No existe $RESULTS_FILE (¿la corrida WEB no mapeó ningún test_key?). Skip import."
+            exit 0
+          fi
+          # Preservamos una copia antes de que la corrida API sobrescriba el archivo.
+          cp "$RESULTS_FILE" xray-results-web.json
+          echo "🔑 Autenticando contra Xray Cloud (WEB)..."
+          TOKEN=$(curl -sf -H "Content-Type: application/json" -X POST \
+            --data "{\"client_id\":\"${XRAY_CLIENT_ID}\",\"client_secret\":\"${XRAY_CLIENT_SECRET}\"}" \
+            https://xray.cloud.getxray.app/api/v2/authenticate | tr -d '"')
+          if [ -z "$TOKEN" ]; then echo "❌ Falló autenticación Xray"; exit 1; fi
+          echo "📤 Importando $(jq '.tests | length' xray-results-web.json) resultado(s) WEB..."
+          HTTP=$(curl -s -o xray-import-web-response.json -w "%{http_code}" \
+            -H "Content-Type: application/json" -H "Authorization: Bearer ${TOKEN}" \
+            -X POST --data @"xray-results-web.json" \
+            https://xray.cloud.getxray.app/api/v2/import/execution)
+          echo "HTTP ${HTTP}:"; cat xray-import-web-response.json; echo
+          [ "$HTTP" = "200" ] || { echo "❌ Import WEB devolvió ${HTTP}"; exit 1; }
+          echo "✅ Resultados WEB importados a Xray."
+
+      # ---- ÁREA API ---------------------------------------------------------
+      - name: Run gateway API (--project=api)
+        id: run-api
+        if: always()
+        env:
+          XRAY: ${{ env.HAS_XRAY == 'true' && '1' || '' }}
+          XRAY_EXECUTION_KEY: ${{ inputs.xray_execution_api }}
+          XRAY_VERSION: ${{ inputs.xray_version }}
+          XRAY_SUMMARY: "Gateway TEST — API — run ${{ github.run_number }}"
+        run: |
+          set -e
+          FILTER='${{ inputs.test_filter }}'
+          pnpm exec playwright test -c playwright.gateway-pg.config.ts \
+            --project=api \
+            ${FILTER:+-g "$FILTER"}
+      - name: Import API results to Xray Cloud
+        if: ${{ always() && env.HAS_XRAY == 'true' }}
+        continue-on-error: true
+        env:
+          XRAY_CLIENT_ID: ${{ secrets.XRAY_CLIENT_ID }}
+          XRAY_CLIENT_SECRET: ${{ secrets.XRAY_CLIENT_SECRET }}
+          RESULTS_FILE: evidence/test/xray-results.json
+        run: |
+          set -e
+          if [ ! -f "$RESULTS_FILE" ]; then
+            echo "⚠️  No existe $RESULTS_FILE (¿la corrida API no mapeó ningún test_key?). Skip import."
+            exit 0
+          fi
+          cp "$RESULTS_FILE" xray-results-api.json
+          echo "🔑 Autenticando contra Xray Cloud (API)..."
+          TOKEN=$(curl -sf -H "Content-Type: application/json" -X POST \
+            --data "{\"client_id\":\"${XRAY_CLIENT_ID}\",\"client_secret\":\"${XRAY_CLIENT_SECRET}\"}" \
+            https://xray.cloud.getxray.app/api/v2/authenticate | tr -d '"')
+          if [ -z "$TOKEN" ]; then echo "❌ Falló autenticación Xray"; exit 1; fi
+          echo "📤 Importando $(jq '.tests | length' xray-results-api.json) resultado(s) API..."
+          HTTP=$(curl -s -o xray-import-api-response.json -w "%{http_code}" \
+            -H "Content-Type: application/json" -H "Authorization: Bearer ${TOKEN}" \
+            -X POST --data @"xray-results-api.json" \
+            https://xray.cloud.getxray.app/api/v2/import/execution)
+          echo "HTTP ${HTTP}:"; cat xray-import-api-response.json; echo
+          [ "$HTTP" = "200" ] || { echo "❌ Import API devolvió ${HTTP}"; exit 1; }
+          echo "✅ Resultados API importados a Xray."
+
+      - name: Upload Xray results + responses
+        if: ${{ always() && env.HAS_XRAY == 'true' }}
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: xray-results-test-${{ github.run_number }}
+          path: |
+            xray-results-web.json
+            xray-results-api.json
+            xray-import-web-response.json
+            xray-import-api-response.json
+          retention-days: 14
+
+      - name: Generate Allure report
+        if: always()
+        continue-on-error: true
+        run: pnpm run allure:gen
+      - name: Cleanup TEST travels
+        if: always()
+        continue-on-error: true
+        run: pnpm --if-present run cleanup:test:travels
+      - name: Upload Allure report (always, 14 days)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report-test-${{ github.run_number }}
+          path: allure-report
+          retention-days: 14
+      - name: Upload evidence (failures only, 7 days)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: evidence-test-${{ github.run_number }}
+          path: |
+            evidence/test
+            test-results
+          retention-days: 7

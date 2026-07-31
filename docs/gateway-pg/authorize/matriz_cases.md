@@ -27,6 +27,10 @@ Espeja `TS-STRIPE-TC1001..TC1008` pero adaptado a la UI Authorize.
 
 > **Precondición común sección 1:** acceso al Magiis App Store con rol de admin; credenciales Authorize.net sandbox cargadas en `.env.test`. Variables: `AUTHORIZE_API_LOGIN_ID`, `AUTHORIZE_TRANSACTION_KEY`.
 
+> **TS-AUTHORIZE-TC1005 — cobertura parcial del AC:** el caso automatizado cubre "desvincular" (con pre-assert de estado vinculado); la parte **"ocultar método tarjeta preautorizada en alta de viaje"** está **pendiente de automatizar — TODO F4+** (el título del test generado solo promete lo que asserta: `desvincular <GW>`).
+
+> **⚠ TS-AUTHORIZE-TC1008 — comportamiento real verificado (quirk backend):** el request de link **NO retorna 200** — quirk verificado (HANDOFF §2, addendum 2026-07-25): el link retorna **500** (conexión desde estado limpio) o **409** (ya vinculada); **400** = no conectada. El oráculo automatizado asserta `500|409` + persistencia del estado vinculado. El AC original de 2xx queda como **TODO revert** cuando DEV corrija el endpoint (`odnService`, ver `ARCHITECTURE.md` §5 + `DRAFT-improvement-backend-link-500.md`). La parte "unlink status" y "logs/auditoría" del AC **NO está automatizada** (gap documentado).
+
 ---
 
 ## 2. Alta de Viaje desde Carrier – Usuario Personal
@@ -42,6 +46,9 @@ Espeja `TS-STRIPE-TC1001..TC1008` pero adaptado a la UI Authorize.
 | TS-AUTHORIZE-TC1013 | Validar Alta de Viaje desde carrier para usuario personal con Mastercard exitosa (5424…0015 + CVV 900) Hold ON                                                       | `AUTHORIZE_CARDS.SUCCESS_MASTERCARD` | ON | Response Code 1 |
 | TS-AUTHORIZE-TC1014 | Validar Alta de Viaje desde carrier para usuario personal con Amex exitosa (370…002 + CVV 9000 — 4 dígitos) Hold ON                                                  | `AUTHORIZE_CARDS.SUCCESS_AMEX` | ON | Response Code 1 — validar que el form UI acepte 4 dígitos en CVV |
 | TS-AUTHORIZE-TC1015 | Validar Alta de Viaje desde carrier para usuario personal con Discover exitosa (6011…0012 + CVV 900) Hold ON                                                         | `AUTHORIZE_CARDS.SUCCESS_DISCOVER` | ON | Response Code 1 |
+| TS-AUTHORIZE-TC1009 | Validar alta de viaje desde carrier para usuario personal con tarjeta preautorizada exitosa (Visa 4111…1111 + CVV 900) con Hold OFF — variante origen/destino alternativo | `AUTHORIZE_CARDS.SUCCESS` | OFF | Response Code 1 |
+| TS-AUTHORIZE-TC1010 | Validar alta de viaje desde carrier para usuario personal con tarjeta preautorizada exitosa (Visa 4111…1111 + CVV 900) con Hold OFF — variante set 2 | `AUTHORIZE_CARDS.SUCCESS` | OFF | Response Code 1 |
+| TS-AUTHORIZE-TC1018 | Validar alta de viaje desde carrier para usuario personal con tarjeta preautorizada exitosa (Visa 4111…1111 + CVV 900) con Hold OFF — variante set 2 alternativo | `AUTHORIZE_CARDS.SUCCESS` | OFF | Response Code 1 |
 
 **Precondiciones comunes sección 2.1:**
 - Pasarela Authorize vinculada (TC1002 pasado).
@@ -133,6 +140,8 @@ Espeja `TS-STRIPE-TC1001..TC1008` pero adaptado a la UI Authorize.
 | TS-AUTHORIZE-TC1054 | Validar Alta de Viaje desde carrier para usuario colaborador con tarjeta preautorizada exitosa **Vincular tarjeta nueva** Hold OFF                                     | `AUTHORIZE_CARDS.SUCCESS` | new | OFF |
 | TS-AUTHORIZE-TC1055 | Validar Alta de Viaje desde carrier para usuario colaborador con tarjeta preautorizada exitosa **Usar tarjeta vinculada existente** Hold OFF                          | `AUTHORIZE_CARDS.SUCCESS` (stored) | existing | OFF |
 
+> **Oráculo automatizado del alta de tarjeta (flujos "Vincular tarjeta nueva" — TC1051/TC1052 y spec WAL `TS-AUTHORIZE-WAL-01`/MG-285):** la vinculación exitosa se asserta por el texto **"Tarjeta válida" / "Valid card"** visible tras "Validar" (`CarrierNewTravelPage.validateNativeCard`). **Alcance de la evidencia live** (commit `aa780b3`, 3x verde en TEST): aplica SOLO al spec WAL (Visa 4111 + CVV 900 + **ZIP 10001**) — TC1051/TC1052 usan `AUTHORIZE_CARDS.SUCCESS` (**ZIP 90210**), combinación AÚN sin captura live del oráculo. Nota: el spec de alta de tarjeta usa el ID `TS-AUTHORIZE-WAL-01`, que no existe como fila TC1xxx en esta matriz (numeración WAL propia del spec).
+
 ### 3.2 Declines y CVV
 
 | ID               | Descripción                                                                                                                                                              | Card |
@@ -170,6 +179,9 @@ Espeja `TS-STRIPE-TC1001..TC1008` pero adaptado a la UI Authorize.
 | TS-AUTHORIZE-TC1071 | Validar Alta de Viaje desde app pax para usuario personal con tarjeta preautorizada exitosa **Vincular tarjeta nueva** Hold ON (cobro desde App Driver al finalizar) | `AUTHORIZE_CARDS.SUCCESS` |
 | TS-AUTHORIZE-TC1072 | Validar Alta de Viaje desde app pax para usuario personal con tarjeta preautorizada exitosa **Usar tarjeta vinculada existente** Hold ON | `AUTHORIZE_CARDS.SUCCESS` (stored) |
 | TS-AUTHORIZE-TC1073 | Validar Alta de Viaje desde app pax para usuario personal con tarjeta declinada (ZIP 46282) — error visible en app, viaje no creado | `AUTHORIZE_CARDS.DECLINE_GENERIC` |
+| TS-AUTHORIZE-TC1100 | Validar Alta de Viaje desde app pax para usuario personal con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver | `AUTHORIZE_CARDS.SUCCESS` |
+| TS-AUTHORIZE-TC1101 | Validar Alta de Viaje desde app pax para usuario personal con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver | `AUTHORIZE_CARDS.SUCCESS` |
+| TS-AUTHORIZE-TC1102 | Validar Alta de Viaje desde app pax para usuario personal con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver | `AUTHORIZE_CARDS.SUCCESS` |
 
 ---
 
@@ -179,6 +191,8 @@ Espeja `TS-STRIPE-TC1001..TC1008` pero adaptado a la UI Authorize.
 | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ---- |
 | TS-AUTHORIZE-TC1075 | Validar Alta de Viaje desde app pax para usuario business con tarjeta preautorizada exitosa **Vincular tarjeta nueva** Hold ON | `AUTHORIZE_CARDS.SUCCESS` |
 | TS-AUTHORIZE-TC1076 | Validar Alta de Viaje desde app pax para usuario business con tarjeta preautorizada exitosa **Usar tarjeta vinculada existente** Hold ON | `AUTHORIZE_CARDS.SUCCESS` (stored) |
+| TS-AUTHORIZE-TC1103 | Validar Alta de Viaje desde app pax para usuario business con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Vincular tarjeta nueva | `AUTHORIZE_CARDS.SUCCESS` |
+| TS-AUTHORIZE-TC1104 | Validar Alta de Viaje desde app pax para usuario business con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Usar tarjeta vinculada existente | `AUTHORIZE_CARDS.SUCCESS` (stored) |
 
 ---
 
@@ -224,6 +238,7 @@ Espeja `TS-STRIPE-TC1001..TC1008` pero adaptado a la UI Authorize.
 | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
 | TS-AUTHORIZE-TC1111 | Validar Alta de viaje desde carrier para usuario empresa individuo – cargo a bordo – **pago exitoso** |
 | TS-AUTHORIZE-TC1112 | Validar Alta de viaje desde carrier para usuario empresa individuo – cargo a bordo – **pago rechazado genérico** (ZIP 46282) |
+| TS-AUTHORIZE-TC1105 | Validar Alta de viaje desde carrier para usuario empresa individuo – cargo a bordo – CVC incorrecto |
 
 ---
 

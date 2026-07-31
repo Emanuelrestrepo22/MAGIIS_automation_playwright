@@ -26,26 +26,23 @@ import type { EnvironmentMap, MobileUser } from '../types';
 const LABEL = 'driver (Android app)';
 
 function buildDriver(envSuffix: 'TEST' | 'UAT' | 'PROD', environment: MobileUser['environment']): MobileUser {
-  const emailEnv = lazyEnv([`DRIVER_EMAIL_${envSuffix}`, 'DRIVER_EMAIL'], `${LABEL} [${environment}] email`);
-  const passEnv = lazyEnv(
-    [`DRIVER_PASSWORD_${envSuffix}`, 'DRIVER_PASSWORD'],
-    `${LABEL} [${environment}] password`,
-  );
+	const emailEnv = lazyEnv([`DRIVER_EMAIL_${envSuffix}`, 'DRIVER_EMAIL'], `${LABEL} [${environment}] email`);
+	const passEnv = lazyEnv([`DRIVER_PASSWORD_${envSuffix}`, 'DRIVER_PASSWORD'], `${LABEL} [${environment}] password`);
 
-  return {
-    role: 'driver',
-    environment,
-    get email() {
-      return emailEnv.value;
-    },
-    get password() {
-      return passEnv.value;
-    },
-    notes:
-      `Driver app Android en ${environment}. ` +
-      `Scripts de soporte: tests/mobile/appium/scripts/driver-login-*.ts. ` +
-      `Package del ambiente vive en appiumRuntime.ts → APP_PACKAGES.`,
-  };
+	return {
+		role: 'driver',
+		environment,
+		get email() {
+			return emailEnv.value;
+		},
+		get password() {
+			return passEnv.value;
+		},
+		notes:
+			`Driver app Android en ${environment}. ` +
+			`Scripts de soporte: tests/mobile/appium/scripts/driver-login-*.ts. ` +
+			`Package del ambiente vive en appiumRuntime.ts → APP_PACKAGES.`
+	};
 }
 
 /**
@@ -56,7 +53,7 @@ function buildDriver(envSuffix: 'TEST' | 'UAT' | 'PROD', environment: MobileUser
  *   const { email, password } = DRIVER.test;
  */
 export const DRIVER = {
-  test: buildDriver('TEST', 'test'),
-  uat: buildDriver('UAT', 'uat'),
-  prod: buildDriver('PROD', 'prod'),
+	test: buildDriver('TEST', 'test'),
+	uat: buildDriver('UAT', 'uat'),
+	prod: buildDriver('PROD', 'prod')
 } as const satisfies EnvironmentMap<MobileUser>;

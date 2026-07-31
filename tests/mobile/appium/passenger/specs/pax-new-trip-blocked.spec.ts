@@ -31,118 +31,110 @@ import { getPassengerAppConfig } from '../../config/appiumRuntime';
 import { PassengerNewTripScreen } from '../PassengerNewTripScreen';
 import { PassengerHomeScreen } from '../PassengerHomeScreen';
 
-const ORIGIN      = process.env.E2E_ORIGIN      ?? 'Reconquista 661, Buenos Aires';
+const ORIGIN = process.env.E2E_ORIGIN ?? 'Reconquista 661, Buenos Aires';
 const DESTINATION = process.env.E2E_DESTINATION ?? 'Av. 9 de Julio 1000, Buenos Aires';
 
 test.describe('[TC-PAX-NEW-TRIP-BLOCKED] App Pax — bloqueo de alta de viaje por viaje activo o NO_AUTORIZADO', () => {
 	test.describe.configure({ mode: 'serial' });
 
-	test(
-		'[TC-PAX-NEW-TRIP-BLOCKED][PASO-4] modal "Ya tiene un viaje creado" aparece al intentar crear viaje con precondición activa',
-		async () => {
-			test.fixme(
-				!process.env.APPIUM_SERVER_URL,
-				'[TC-PAX-NEW-TRIP-BLOCKED] Bloqueado: APPIUM_SERVER_URL no definido. ' +
-				'Requiere dispositivo Android con Appium Server activo y viaje previo activo en Carrier.',
-			);
+	test('[TC-PAX-NEW-TRIP-BLOCKED][PASO-4] modal "Ya tiene un viaje creado" aparece al intentar crear viaje con precondición activa', async () => {
+		test.fixme(
+			!process.env.APPIUM_SERVER_URL,
+			'[TC-PAX-NEW-TRIP-BLOCKED] Bloqueado: APPIUM_SERVER_URL no definido. ' +
+				'Requiere dispositivo Android con Appium Server activo y viaje previo activo en Carrier.'
+		);
 
-			const config      = getPassengerAppConfig();
-			const homeScreen  = new PassengerHomeScreen(config);
-			const tripScreen  = new PassengerNewTripScreen(config);
+		const config = getPassengerAppConfig();
+		const homeScreen = new PassengerHomeScreen(config);
+		const tripScreen = new PassengerNewTripScreen(config);
 
-			await homeScreen.startSession();
+		await homeScreen.startSession();
 
-			try {
-				await homeScreen.openHome();
-				await homeScreen.ensureProfileMode('personal');
+		try {
+			await homeScreen.openHome();
+			await homeScreen.ensureProfileMode('personal');
 
-				await tripScreen.setOrigin(ORIGIN);
-				await tripScreen.setDestination(DESTINATION);
+			await tripScreen.setOrigin(ORIGIN);
+			await tripScreen.setDestination(DESTINATION);
 
-				// Tap Viajo Ahora — debería disparar el modal bloqueante
-				await tripScreen.confirmTrip().catch(() => {});
+			// Tap Viajo Ahora — debería disparar el modal bloqueante
+			await tripScreen.confirmTrip().catch(() => {});
 
-				// Debería: modal app-confirm-modal con "Ya tiene un viaje creado" visible
-				const isBlocked = await tripScreen.detectTripAlreadyCreatedModal(8_000);
-				expect(isBlocked).toBe(true);
-			} finally {
-				await homeScreen.endSession().catch(() => {});
-			}
-		},
-	);
+			// Debería: modal app-confirm-modal con "Ya tiene un viaje creado" visible
+			const isBlocked = await tripScreen.detectTripAlreadyCreatedModal(8_000);
+			expect(isBlocked).toBe(true);
+		} finally {
+			await homeScreen.endSession().catch(() => {});
+		}
+	});
 
-	test(
-		'[TC-PAX-NEW-TRIP-BLOCKED][PASO-5] CTA "Aceptar" cierra el modal y vuelve a app-travel-info con datos intactos',
-		async () => {
-			test.fixme(
-				!process.env.APPIUM_SERVER_URL,
-				'[TC-PAX-NEW-TRIP-BLOCKED] Bloqueado: requiere dispositivo Android disponible.',
-			);
+	test('[TC-PAX-NEW-TRIP-BLOCKED][PASO-5] CTA "Aceptar" cierra el modal y vuelve a app-travel-info con datos intactos', async () => {
+		test.fixme(
+			!process.env.APPIUM_SERVER_URL,
+			'[TC-PAX-NEW-TRIP-BLOCKED] Bloqueado: requiere dispositivo Android disponible.'
+		);
 
-			const config      = getPassengerAppConfig();
-			const homeScreen  = new PassengerHomeScreen(config);
-			const tripScreen  = new PassengerNewTripScreen(config);
+		const config = getPassengerAppConfig();
+		const homeScreen = new PassengerHomeScreen(config);
+		const tripScreen = new PassengerNewTripScreen(config);
 
-			await homeScreen.startSession();
+		await homeScreen.startSession();
 
-			try {
-				await homeScreen.openHome();
-				await homeScreen.ensureProfileMode('personal');
+		try {
+			await homeScreen.openHome();
+			await homeScreen.ensureProfileMode('personal');
 
-				await tripScreen.setOrigin(ORIGIN);
-				await tripScreen.setDestination(DESTINATION);
-				await tripScreen.confirmTrip().catch(() => {});
+			await tripScreen.setOrigin(ORIGIN);
+			await tripScreen.setDestination(DESTINATION);
+			await tripScreen.confirmTrip().catch(() => {});
 
-				const isBlocked = await tripScreen.detectTripAlreadyCreatedModal(8_000);
-				expect(isBlocked).toBe(true);
+			const isBlocked = await tripScreen.detectTripAlreadyCreatedModal(8_000);
+			expect(isBlocked).toBe(true);
 
-				// Tap Aceptar — modal debe cerrarse
-				await tripScreen.dismissTripAlreadyCreatedModal();
+			// Tap Aceptar — modal debe cerrarse
+			await tripScreen.dismissTripAlreadyCreatedModal();
 
-				// Debería: app-travel-info visible nuevamente con datos intactos
-				const backOnTravelInfo = await tripScreen['waitForWebUrlContains']?.('TravelInfo', 5_000)
-					?? await tripScreen['waitForWebText']?.('Seleccionar Vehiculo', 5_000, true);
-				expect(backOnTravelInfo).toBe(true);
-			} finally {
-				await homeScreen.endSession().catch(() => {});
-			}
-		},
-	);
+			// Debería: app-travel-info visible nuevamente con datos intactos
+			const backOnTravelInfo =
+				(await tripScreen['waitForWebUrlContains']?.('TravelInfo', 5_000)) ??
+				(await tripScreen['waitForWebText']?.('Seleccionar Vehiculo', 5_000, true));
+			expect(backOnTravelInfo).toBe(true);
+		} finally {
+			await homeScreen.endSession().catch(() => {});
+		}
+	});
 
-	test(
-		'[TC-PAX-NEW-TRIP-BLOCKED][PASO-6] bloqueo persiste mientras exista la precondición (segundo intento)',
-		async () => {
-			test.fixme(
-				!process.env.APPIUM_SERVER_URL,
-				'[TC-PAX-NEW-TRIP-BLOCKED] Bloqueado: requiere dispositivo Android disponible.',
-			);
+	test('[TC-PAX-NEW-TRIP-BLOCKED][PASO-6] bloqueo persiste mientras exista la precondición (segundo intento)', async () => {
+		test.fixme(
+			!process.env.APPIUM_SERVER_URL,
+			'[TC-PAX-NEW-TRIP-BLOCKED] Bloqueado: requiere dispositivo Android disponible.'
+		);
 
-			const config      = getPassengerAppConfig();
-			const homeScreen  = new PassengerHomeScreen(config);
-			const tripScreen  = new PassengerNewTripScreen(config);
+		const config = getPassengerAppConfig();
+		const homeScreen = new PassengerHomeScreen(config);
+		const tripScreen = new PassengerNewTripScreen(config);
 
-			await homeScreen.startSession();
+		await homeScreen.startSession();
 
-			try {
-				await homeScreen.openHome();
-				await homeScreen.ensureProfileMode('personal');
-				await tripScreen.setOrigin(ORIGIN);
-				await tripScreen.setDestination(DESTINATION);
+		try {
+			await homeScreen.openHome();
+			await homeScreen.ensureProfileMode('personal');
+			await tripScreen.setOrigin(ORIGIN);
+			await tripScreen.setDestination(DESTINATION);
 
-				// Primer intento → modal → Aceptar
-				await tripScreen.confirmTrip().catch(() => {});
-				await tripScreen.detectTripAlreadyCreatedModal(8_000);
-				await tripScreen.dismissTripAlreadyCreatedModal();
+			// Primer intento → modal → Aceptar
+			await tripScreen.confirmTrip().catch(() => {});
+			await tripScreen.detectTripAlreadyCreatedModal(8_000);
+			await tripScreen.dismissTripAlreadyCreatedModal();
 
-				// Segundo intento sin limpiar precondición → mismo modal
-				await tripScreen.confirmTrip().catch(() => {});
-				const stillBlocked = await tripScreen.detectTripAlreadyCreatedModal(8_000);
+			// Segundo intento sin limpiar precondición → mismo modal
+			await tripScreen.confirmTrip().catch(() => {});
+			const stillBlocked = await tripScreen.detectTripAlreadyCreatedModal(8_000);
 
-				// Debería: bloqueo persistente hasta que Carrier limpie los viajes
-				expect(stillBlocked).toBe(true);
-			} finally {
-				await homeScreen.endSession().catch(() => {});
-			}
-		},
-	);
+			// Debería: bloqueo persistente hasta que Carrier limpie los viajes
+			expect(stillBlocked).toBe(true);
+		} finally {
+			await homeScreen.endSession().catch(() => {});
+		}
+	});
 });

@@ -10,6 +10,8 @@ export interface CardInput {
 	expiry: string;
 	cvc: string;
 	holderName?: string;
+	/** Código postal para el form nativo (app-credit-card-payment-data zipCode). Default '76000'. */
+	zip?: string;
 }
 
 export class PassengerWalletScreen extends AppiumSessionBase {
@@ -55,7 +57,11 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 					score += 50;
 				}
 
-				if (await hasVisible('input[name="cc-exp-month"], input[name="cc-exp-year"], input[name="exp-date"], input[name="exp"], input[autocomplete="cc-exp"]')) {
+				if (
+					await hasVisible(
+						'input[name="cc-exp-month"], input[name="cc-exp-year"], input[name="exp-date"], input[name="exp"], input[autocomplete="cc-exp"]'
+					)
+				) {
 					score += 30;
 				}
 
@@ -63,7 +69,11 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 					score += 25;
 				}
 
-				if (await hasVisible('ion-input[formcontrolname="cardholderName"] input, ion-input[formcontrolname="cardholderName"] .native-input, ion-input[formcontrolname="cardholderName"], input[placeholder*="Nombre del T"]')) {
+				if (
+					await hasVisible(
+						'ion-input[formcontrolname="cardholderName"] input, ion-input[formcontrolname="cardholderName"] .native-input, ion-input[formcontrolname="cardholderName"], input[placeholder*="Nombre del T"]'
+					)
+				) {
 					score += 40;
 				}
 
@@ -227,13 +237,21 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 					querySelector?: (selectors: string) => Element | null;
 				};
 
-				const input = (host.shadowRoot?.querySelector('input, textarea') as HTMLInputElement | HTMLTextAreaElement | null) ?? (host.matches?.('input, textarea') ? (host as HTMLInputElement | HTMLTextAreaElement) : null) ?? (host.querySelector?.('input, textarea') as HTMLInputElement | HTMLTextAreaElement | null);
+				const input =
+					(host.shadowRoot?.querySelector('input, textarea') as
+						| HTMLInputElement
+						| HTMLTextAreaElement
+						| null) ??
+					(host.matches?.('input, textarea') ? (host as HTMLInputElement | HTMLTextAreaElement) : null) ??
+					(host.querySelector?.('input, textarea') as HTMLInputElement | HTMLTextAreaElement | null);
 
 				if (!input) {
 					return false;
 				}
 
-				const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set ?? Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set;
+				const setter =
+					Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set ??
+					Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set;
 
 				if (!setter) {
 					return false;
@@ -322,7 +340,9 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 
 					for (const frame of Array.from(root.querySelectorAll('iframe, frame'))) {
 						try {
-							const frameDocument = (frame as HTMLIFrameElement).contentDocument ?? (frame as HTMLFrameElement).contentDocument;
+							const frameDocument =
+								(frame as HTMLIFrameElement).contentDocument ??
+								(frame as HTMLFrameElement).contentDocument;
 							if (frameDocument) {
 								matches.push(...queryDeepAll(frameDocument, selector));
 							}
@@ -335,7 +355,9 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 				};
 
 				const setNativeValue = (input: HTMLInputElement | HTMLTextAreaElement, nextValue: string): boolean => {
-					const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set ?? Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set;
+					const setter =
+						Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set ??
+						Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set;
 
 					if (!setter) {
 						return false;
@@ -354,11 +376,18 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 						const html = node as HTMLElement;
 						const rect = html.getBoundingClientRect();
 						const style = window.getComputedStyle(html);
-						return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+						return (
+							style.display !== 'none' &&
+							style.visibility !== 'hidden' &&
+							rect.width > 0 &&
+							rect.height > 0
+						);
 					});
 
 					for (const node of visibleNodes.length ? visibleNodes : nodes) {
-						const input = node.matches('input, textarea') ? (node as HTMLInputElement | HTMLTextAreaElement) : (node.querySelector('input, textarea') as HTMLInputElement | HTMLTextAreaElement | null);
+						const input = node.matches('input, textarea')
+							? (node as HTMLInputElement | HTMLTextAreaElement)
+							: (node.querySelector('input, textarea') as HTMLInputElement | HTMLTextAreaElement | null);
 
 						if (!input) {
 							continue;
@@ -379,7 +408,11 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 		)) as boolean;
 	}
 
-	private async typeValueIntoFocusedFrame(frameElement: any, value: string, completionMatcher?: string): Promise<boolean> {
+	private async typeValueIntoFocusedFrame(
+		frameElement: any,
+		value: string,
+		completionMatcher?: string
+	): Promise<boolean> {
 		const driver = this.getDriver();
 
 		try {
@@ -396,7 +429,11 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 		}
 	}
 
-	private async typeValueViaStripeFrameFocus(frameElement: any, value: string, completionMatcher?: string): Promise<boolean> {
+	private async typeValueViaStripeFrameFocus(
+		frameElement: any,
+		value: string,
+		completionMatcher?: string
+	): Promise<boolean> {
 		const driver = this.getDriver();
 
 		try {
@@ -415,7 +452,11 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 		}
 	}
 
-	private async typeValueViaStripeContainerClick(frameElement: any, value: string, completionMatcher?: string): Promise<boolean> {
+	private async typeValueViaStripeContainerClick(
+		frameElement: any,
+		value: string,
+		completionMatcher?: string
+	): Promise<boolean> {
 		const driver = this.getDriver();
 
 		try {
@@ -446,7 +487,11 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 		}
 	}
 
-	private async waitForStripeFrameCompletion(frameElement: any, timeout = 2_000, completionMatcher?: string): Promise<boolean> {
+	private async waitForStripeFrameCompletion(
+		frameElement: any,
+		timeout = 2_000,
+		completionMatcher?: string
+	): Promise<boolean> {
 		const driver = this.getDriver();
 		const deadline = Date.now() + timeout;
 		const matcher = completionMatcher?.trim().toLowerCase() ?? '';
@@ -464,7 +509,8 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 							return /StripeElement--complete/.test(classes) && !/StripeElement--invalid/.test(classes);
 						};
 
-						const signature = `${iframe.getAttribute('name') ?? ''} ${iframe.getAttribute('src') ?? ''} ${iframe.getAttribute('title') ?? ''}`.toLowerCase();
+						const signature =
+							`${iframe.getAttribute('name') ?? ''} ${iframe.getAttribute('src') ?? ''} ${iframe.getAttribute('title') ?? ''}`.toLowerCase();
 						if (matcherText && !signature.includes(matcherText)) {
 							return false;
 						}
@@ -486,7 +532,11 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 		return false;
 	}
 
-	private async typeValueViaStripeProxyInput(frameElement: any, value: string, completionMatcher?: string): Promise<boolean> {
+	private async typeValueViaStripeProxyInput(
+		frameElement: any,
+		value: string,
+		completionMatcher?: string
+	): Promise<boolean> {
 		const driver = this.getDriver();
 
 		try {
@@ -542,7 +592,15 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 				while (current) {
 					const tag = current.tagName.toUpperCase();
 					const role = normalize(current.getAttribute('role'));
-					if (tag === 'BUTTON' || tag === 'ION-BUTTON' || tag === 'A' || tag === 'ION-ITEM' || tag === 'ION-COL' || role === 'button' || current.classList.contains('btn')) {
+					if (
+						tag === 'BUTTON' ||
+						tag === 'ION-BUTTON' ||
+						tag === 'A' ||
+						tag === 'ION-ITEM' ||
+						tag === 'ION-COL' ||
+						role === 'button' ||
+						current.classList.contains('btn')
+					) {
 						return current;
 					}
 
@@ -553,14 +611,21 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 			};
 
 			const targetText = normalize(target);
-			const candidates = Array.from(document.querySelectorAll('button, ion-button, a, [role="button"], span, div')) as HTMLElement[];
+			const candidates = Array.from(
+				document.querySelectorAll('button, ion-button, a, [role="button"], span, div')
+			) as HTMLElement[];
 
 			const match = candidates.find(element => {
 				if (!isVisible(element)) {
 					return false;
 				}
 
-				const values = [normalize(element.innerText || element.textContent), normalize(element.getAttribute('aria-label')), normalize(element.getAttribute('content-desc')), normalize(element.getAttribute('title'))];
+				const values = [
+					normalize(element.innerText || element.textContent),
+					normalize(element.getAttribute('aria-label')),
+					normalize(element.getAttribute('content-desc')),
+					normalize(element.getAttribute('title'))
+				];
 
 				return values.some(value => value === targetText);
 			});
@@ -579,7 +644,25 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 		const deadline = Date.now() + timeout;
 
 		while (Date.now() < deadline) {
+			// Reset al webview/top-document: tras "AGREGAR" el foco puede quedar en el iframe
+			// de firebase-auth, y findAnyElement (driver.$$) no vería el form del doc principal.
+			await this.switchToWebView().catch(() => {});
+			await this.switchFrameTarget(null).catch(() => {});
+
 			if (await this.findAnyElement('input[name="cardnumber"]')) {
+				return true;
+			}
+
+			// Form NATIVO Angular/Ionic (app-credit-card-payment-data): el campo de número es un
+			// input nativo `#cardNumber` / data-checkout. Se chequea vía JS en el webview
+			// (document.querySelector, robusto a frame-focus) — no por WDIO $$ (context-frágil).
+			const nativePresent = await this.executeInWebView(
+				() =>
+					!!document.querySelector(
+						'app-credit-card-payment-data input#cardNumber, input[formcontrolname="cardNumber"], input[data-checkout="cardNumber"]'
+					)
+			).catch(() => false);
+			if (nativePresent) {
 				return true;
 			}
 
@@ -594,7 +677,9 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 		return false;
 	}
 
-	private async listIframeEntries(scope?: any): Promise<Array<{ index: number; element: any; name: string; src: string }>> {
+	private async listIframeEntries(
+		scope?: any
+	): Promise<Array<{ index: number; element: any; name: string; src: string }>> {
 		const driver = this.getDriver();
 		let frames: any = [];
 
@@ -655,7 +740,10 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 				.map(frame => frame.index);
 
 			const candidateSet = new Set(candidates);
-			const orderedCandidates = [...frames.filter(frame => candidateSet.has(frame.index)).reverse(), ...frames.filter(frame => !candidateSet.has(frame.index)).reverse()];
+			const orderedCandidates = [
+				...frames.filter(frame => candidateSet.has(frame.index)).reverse(),
+				...frames.filter(frame => !candidateSet.has(frame.index)).reverse()
+			];
 
 			for (const frame of orderedCandidates) {
 				await this.switchFrameTarget(frame.element).catch(() => {});
@@ -674,13 +762,21 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 		return -1;
 	}
 
-	private async fillFieldInAnyStripeFrame(selector: string, value: string, label: string, scope?: any): Promise<void> {
+	private async fillFieldInAnyStripeFrame(
+		selector: string,
+		value: string,
+		label: string,
+		scope?: any
+	): Promise<void> {
 		const driver = this.getDriver();
 		await this.switchToWebView();
 
-		const rootInput = (await this.findVisibleElement(selector, scope)) ?? (await this.findAnyElement(selector, scope));
+		const rootInput =
+			(await this.findVisibleElement(selector, scope)) ?? (await this.findAnyElement(selector, scope));
 		if (rootInput) {
-			console.log(`[PassengerWalletScreen] ${label} root selector ${selector} -> ${await this.describeElement(rootInput)}`);
+			console.log(
+				`[PassengerWalletScreen] ${label} root selector ${selector} -> ${await this.describeElement(rootInput)}`
+			);
 			if (await this.typeValueIntoElement(rootInput, value)) {
 				await this.blurActiveElement();
 				return;
@@ -710,7 +806,9 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 				throw new Error(`${selector} not found`);
 			}
 
-			console.log(`[PassengerWalletScreen] ${label} frame selector ${selector} -> ${await this.describeElement(input)}`);
+			console.log(
+				`[PassengerWalletScreen] ${label} frame selector ${selector} -> ${await this.describeElement(input)}`
+			);
 
 			if (!(await this.typeValueIntoElement(input, value))) {
 				throw new Error(`${selector} could not be filled`);
@@ -722,7 +820,12 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 		}
 	}
 
-	private async fillStripeFieldBySelectors(selectors: string[], value: string, label: string, scope?: any): Promise<boolean> {
+	private async fillStripeFieldBySelectors(
+		selectors: string[],
+		value: string,
+		label: string,
+		scope?: any
+	): Promise<boolean> {
 		for (const selector of selectors) {
 			try {
 				await this.fillFieldInAnyStripeFrame(selector, value, label, scope);
@@ -746,7 +849,14 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 		}
 	}
 
-	private async fillStripeFrameByHint(frameHint: RegExp, selectors: string[], value: string, label: string, allowGenericFallback = true, scope?: any): Promise<void> {
+	private async fillStripeFrameByHint(
+		frameHint: RegExp,
+		selectors: string[],
+		value: string,
+		label: string,
+		allowGenericFallback = true,
+		scope?: any
+	): Promise<void> {
 		const driver = this.getDriver();
 		const deadline = Date.now() + 20_000;
 		const completionMatcher = frameHint.source;
@@ -757,8 +867,12 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 			lastCandidateFrames = frames
 				.filter(frame => {
 					const signature = `${frame.name ?? ''} ${frame.src ?? ''}`;
-					const looksLikeCardFrame = /componentName=card(Number|Expiry|Cvc)/i.test(signature) || /elements-inner-card/i.test(signature);
-					const isNoiseFrame = /metrics|hcaptcha/i.test(signature) || (/__privateStripeController/i.test(signature) && !looksLikeCardFrame);
+					const looksLikeCardFrame =
+						/componentName=card(Number|Expiry|Cvc)/i.test(signature) ||
+						/elements-inner-card/i.test(signature);
+					const isNoiseFrame =
+						/metrics|hcaptcha/i.test(signature) ||
+						(/__privateStripeController/i.test(signature) && !looksLikeCardFrame);
 
 					return frameHint.test(signature) && !isNoiseFrame;
 				})
@@ -772,12 +886,15 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 
 				try {
 					for (const selector of selectors) {
-						const input = (await this.findVisibleElement(selector)) ?? (await this.findAnyElement(selector));
+						const input =
+							(await this.findVisibleElement(selector)) ?? (await this.findAnyElement(selector));
 						if (!input) {
 							continue;
 						}
 
-						console.log(`[PassengerWalletScreen] ${label} selector ${selector} -> ${await this.describeElement(input)}`);
+						console.log(
+							`[PassengerWalletScreen] ${label} selector ${selector} -> ${await this.describeElement(input)}`
+						);
 
 						if (await this.typeValueIntoElement(input, value)) {
 							if (await this.waitForStripeFrameCompletion(frame.element, 2_000, completionMatcher)) {
@@ -866,23 +983,53 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 				const snapshot = (await driver.execute(() => {
 					const describe = (element: Element): string => {
 						const html = element as HTMLElement;
-						const attributes = [`tag=${html.tagName.toLowerCase()}`, `id=${html.id || ''}`, `name=${html.getAttribute('name') || ''}`, `type=${html.getAttribute('type') || ''}`, `placeholder=${html.getAttribute('placeholder') || ''}`, `aria-label=${html.getAttribute('aria-label') || ''}`, `role=${html.getAttribute('role') || ''}`, `class=${html.className || ''}`, `text=${(html.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 120)}`];
+						const attributes = [
+							`tag=${html.tagName.toLowerCase()}`,
+							`id=${html.id || ''}`,
+							`name=${html.getAttribute('name') || ''}`,
+							`type=${html.getAttribute('type') || ''}`,
+							`placeholder=${html.getAttribute('placeholder') || ''}`,
+							`aria-label=${html.getAttribute('aria-label') || ''}`,
+							`role=${html.getAttribute('role') || ''}`,
+							`class=${html.className || ''}`,
+							`text=${(html.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 120)}`
+						];
 
 						return attributes.join(' ');
 					};
 
-					const inputs = Array.from(document.querySelectorAll('input, textarea, [role="textbox"], [contenteditable="true"]')).map(describe).slice(0, 20);
+					const inputs = Array.from(
+						document.querySelectorAll('input, textarea, [role="textbox"], [contenteditable="true"]')
+					)
+						.map(describe)
+						.slice(0, 20);
 					const frames = Array.from(document.querySelectorAll('iframe, frame')).map(describe).slice(0, 20);
 					const activeElement = document.activeElement ? describe(document.activeElement) : '<none>';
-					const bodyText = document.body ? (document.body.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 200) : '';
-					const bodyHtml = document.body ? document.body.innerHTML.replace(/\s+/g, ' ').trim().slice(0, 500) : '';
+					const bodyText = document.body
+						? (document.body.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 200)
+						: '';
+					const bodyHtml = document.body
+						? document.body.innerHTML.replace(/\s+/g, ' ').trim().slice(0, 500)
+						: '';
 
 					return { inputs, frames, activeElement, bodyText, bodyHtml };
-				})) as { inputs: string[]; frames: string[]; activeElement: string; bodyText: string; bodyHtml: string };
+				})) as {
+					inputs: string[];
+					frames: string[];
+					activeElement: string;
+					bodyText: string;
+					bodyHtml: string;
+				};
 
 				debugFields.push({
 					index: frame.index,
-					fields: [...snapshot.inputs, ...snapshot.frames, `active=${snapshot.activeElement}`, `bodyText=${snapshot.bodyText}`, `bodyHtml=${snapshot.bodyHtml}`]
+					fields: [
+						...snapshot.inputs,
+						...snapshot.frames,
+						`active=${snapshot.activeElement}`,
+						`bodyText=${snapshot.bodyText}`,
+						`bodyHtml=${snapshot.bodyHtml}`
+					]
 				});
 			} catch {
 				debugFields.push({ index: frame.index, fields: ['<unavailable>'] });
@@ -891,14 +1038,18 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 			}
 		}
 
-		throw new Error(`PassengerWalletScreen.fillCardForm() - ${label} not found in Stripe frames. Iframes: ${JSON.stringify(metadata)} Fields: ${JSON.stringify(debugFields)}`);
+		throw new Error(
+			`PassengerWalletScreen.fillCardForm() - ${label} not found in Stripe frames. Iframes: ${JSON.stringify(metadata)} Fields: ${JSON.stringify(debugFields)}`
+		);
 	}
 
 	private async fillWebInputField(selectors: string[], value: string, scope?: any): Promise<boolean> {
 		const modal = scope ?? (await this.getVisibleCreditCardPaymentModal().catch(() => null));
 
 		for (const selector of selectors) {
-			const element = modal ? ((await modal.$(selector).catch(() => null)) ?? (await this.findAnyElement(selector, scope))) : await this.findAnyElement(selector, scope);
+			const element = modal
+				? ((await modal.$(selector).catch(() => null)) ?? (await this.findAnyElement(selector, scope)))
+				: await this.findAnyElement(selector, scope);
 			if (!element) {
 				continue;
 			}
@@ -915,7 +1066,9 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 		return this.executeInWebView(
 			(candidateSelectors: string[], targetValue: string) => {
 				const setNativeValue = (input: HTMLInputElement | HTMLTextAreaElement, nextValue: string): boolean => {
-					const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set ?? Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set;
+					const setter =
+						Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set ??
+						Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set;
 
 					if (!setter) {
 						return false;
@@ -931,7 +1084,9 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 				for (const selector of candidateSelectors) {
 					const nodes = Array.from(document.querySelectorAll(selector)) as HTMLElement[];
 					for (const node of nodes) {
-						const input = node.matches('input, textarea') ? (node as HTMLInputElement | HTMLTextAreaElement) : (node.querySelector('input, textarea') as HTMLInputElement | HTMLTextAreaElement | null);
+						const input = node.matches('input, textarea')
+							? (node as HTMLInputElement | HTMLTextAreaElement)
+							: (node.querySelector('input, textarea') as HTMLInputElement | HTMLTextAreaElement | null);
 
 						if (!input) {
 							continue;
@@ -952,16 +1107,46 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 
 	private async fillStripeExpiryFrame(expiry: string, scope?: any): Promise<void> {
 		const { month, year, combined } = this.parseExpiryParts(expiry);
-		const combinedSelectors = ['input[name="exp-date"]', 'input[name="exp"]', 'input[autocomplete="cc-exp"]', 'input[placeholder="MM/AA"]', 'input[placeholder*="MM/AA"]', 'input[placeholder*="MM / AA"]', 'input[placeholder*="MM/YY"]', 'input.__PrivateStripeElement-input', '#root > form > span:nth-child(4) > div > span > input'];
-		const monthSelectors = ['input[name="cc-exp-month"]', 'input[name="exp-month"]', 'input[autocomplete="cc-exp-month"]', 'input[placeholder*="MM"]', 'input.__PrivateStripeElement-input'];
-		const yearSelectors = ['input[name="cc-exp-year"]', 'input[name="exp-year"]', 'input[autocomplete="cc-exp-year"]', 'input[placeholder*="AA"]', 'input[placeholder*="YY"]', 'input.__PrivateStripeElement-input'];
+		const combinedSelectors = [
+			'input[name="exp-date"]',
+			'input[name="exp"]',
+			'input[autocomplete="cc-exp"]',
+			'input[placeholder="MM/AA"]',
+			'input[placeholder*="MM/AA"]',
+			'input[placeholder*="MM / AA"]',
+			'input[placeholder*="MM/YY"]',
+			'input.__PrivateStripeElement-input',
+			'#root > form > span:nth-child(4) > div > span > input'
+		];
+		const monthSelectors = [
+			'input[name="cc-exp-month"]',
+			'input[name="exp-month"]',
+			'input[autocomplete="cc-exp-month"]',
+			'input[placeholder*="MM"]',
+			'input.__PrivateStripeElement-input'
+		];
+		const yearSelectors = [
+			'input[name="cc-exp-year"]',
+			'input[name="exp-year"]',
+			'input[autocomplete="cc-exp-year"]',
+			'input[placeholder*="AA"]',
+			'input[placeholder*="YY"]',
+			'input.__PrivateStripeElement-input'
+		];
 
 		if (await this.fillStripeFieldBySelectors(combinedSelectors, combined, 'expiry', scope)) {
 			return;
 		}
 
 		try {
-			await this.fillStripeFrameByHint(/componentName=cardExpiry/i, combinedSelectors, combined, 'expiry', true, scope);
+			await this.fillStripeFrameByHint(
+				/componentName=cardExpiry/i,
+				combinedSelectors,
+				combined,
+				'expiry',
+				true,
+				scope
+			);
 			return;
 		} catch {
 			// Fall back to separate month/year fields below.
@@ -976,7 +1161,9 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 		}
 
 		const metadata = await this.listIframeMetadata().catch(() => []);
-		throw new Error(`PassengerWalletScreen.fillCardForm() - expiry not found in Stripe frames. Iframes: ${JSON.stringify(metadata)}`);
+		throw new Error(
+			`PassengerWalletScreen.fillCardForm() - expiry not found in Stripe frames. Iframes: ${JSON.stringify(metadata)}`
+		);
 	}
 
 	private async findStripeCardFrameIndex(timeout = 10_000, scope?: any): Promise<number> {
@@ -997,14 +1184,19 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 
 	private cardCandidates(last4: string): string[] {
 		const digits = last4.replace(/\D/g, '').slice(-4);
-		return Array.from(new Set([`VISA ****${digits}`, `VISA ${digits}`, `**** ${digits}`, `...${digits}`, digits])).filter(Boolean);
+		return Array.from(
+			new Set([`VISA ****${digits}`, `VISA ${digits}`, `**** ${digits}`, `...${digits}`, digits])
+		).filter(Boolean);
 	}
 
 	/**
 	 * Opens the wallet page from the main menu.
 	 */
 	async openWallet(): Promise<void> {
-		if ((await this.waitForWebUrlContains('/cards', 2_000)) || (await this.waitForWebText('AGREGAR', 2_000, true))) {
+		if (
+			(await this.waitForWebUrlContains('/cards', 2_000)) ||
+			(await this.waitForWebText('AGREGAR', 2_000, true))
+		) {
 			return;
 		}
 
@@ -1022,7 +1214,9 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 		}
 
 		if (!openedAccount) {
-			throw new Error(`PassengerWalletScreen.openWallet() - none of the account entry labels were found (${accountEntryLabels.join(', ')})`);
+			throw new Error(
+				`PassengerWalletScreen.openWallet() - none of the account entry labels were found (${accountEntryLabels.join(', ')})`
+			);
 		}
 
 		await this.pause(300);
@@ -1048,7 +1242,8 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 			throw new Error('PassengerWalletScreen.openWallet() - "Billetera" not found');
 		}
 
-		const onWalletPage = (await this.waitForWebUrlContains('/cards', 10_000)) || (await this.waitForWebText('AGREGAR', 10_000));
+		const onWalletPage =
+			(await this.waitForWebUrlContains('/cards', 10_000)) || (await this.waitForWebText('AGREGAR', 10_000));
 
 		if (!onWalletPage) {
 			throw new Error('PassengerWalletScreen.openWallet() - wallet page did not load');
@@ -1059,14 +1254,44 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 	 * Taps the add card button.
 	 */
 	async tapAddCard(): Promise<void> {
-		const dismissedBlockingModal = await this.confirmDeleteDialogIfPresent();
-		if (dismissedBlockingModal) {
-			console.log('[PassengerWalletScreen] Blocking confirm modal dismissed before AGREGAR');
+		// El form nativo (app-credit-card-payment-data) a veces no monta a la 1ª pulsación de
+		// AGREGAR (queda solo el iframe de auth firebase) → flake. Reintentamos tap+espera.
+		const maxAttempts = 3;
+		let lastMetadata: unknown = [];
+
+		for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+			const dismissedBlockingModal = await this.confirmDeleteDialogIfPresent();
+			if (dismissedBlockingModal) {
+				console.log('[PassengerWalletScreen] Blocking confirm modal dismissed before AGREGAR');
+			}
+
+			console.log(`[PassengerWalletScreen] Tapping AGREGAR (intento ${attempt}/${maxAttempts})`);
+			const tapped = await this.tapAgregarButton();
+			if (!tapped) {
+				throw new Error('PassengerWalletScreen.tapAddCard() - "AGREGAR" not found');
+			}
+
+			console.log('[PassengerWalletScreen] AGREGAR tapped, waiting for card form');
+			const formReady = await this.waitForStripeCardNumber(20_000);
+			if (formReady) {
+				console.log('[PassengerWalletScreen] card form rendered after AGREGAR');
+				await this.pause(500);
+				return;
+			}
+
+			lastMetadata = await this.listIframeMetadata().catch(() => []);
+			console.warn(`[PassengerWalletScreen] form no montó en intento ${attempt}; reintentando…`);
+			await this.pause(1_500);
 		}
 
-		console.log('[PassengerWalletScreen] Tapping AGREGAR');
+		throw new Error(
+			`PassengerWalletScreen.tapAddCard() - Stripe card form did not render after "AGREGAR" (${maxAttempts} intentos). Iframes: ${JSON.stringify(lastMetadata)}`
+		);
+	}
+
+	/** Localiza y pulsa el botón AGREGAR (JS click para evitar intercepción de hit-testing). */
+	private async tapAgregarButton(): Promise<boolean> {
 		const driver = this.getDriver();
-		let tapped = false;
 		let candidates: any = [];
 
 		try {
@@ -1089,43 +1314,31 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 				continue;
 			}
 
-			// Use JS click to bypass coordinate-based hit-testing that causes
-			// "element click intercepted" when ion-item.card-number overlaps the button.
 			await candidate.scrollIntoView().catch(() => {});
 			await driver.pause(300);
 			const clicked = await driver
 				.execute((el: HTMLElement) => {
 					el.scrollIntoView({ block: 'center', inline: 'center' });
-					el.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, cancelable: true, composed: true, view: window }));
-					el.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, composed: true, view: window }));
-					el.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, composed: true, view: window }));
+					el.dispatchEvent(
+						new MouseEvent('pointerdown', { bubbles: true, cancelable: true, composed: true, view: window })
+					);
+					el.dispatchEvent(
+						new MouseEvent('mousedown', { bubbles: true, cancelable: true, composed: true, view: window })
+					);
+					el.dispatchEvent(
+						new MouseEvent('mouseup', { bubbles: true, cancelable: true, composed: true, view: window })
+					);
 					el.click();
 					return true;
 				}, candidate)
 				.catch(() => false);
 
 			if (clicked) {
-				tapped = true;
-				break;
+				return true;
 			}
 		}
 
-		if (!tapped) {
-			tapped = await this.tapWebText('AGREGAR', 10_000, true);
-		}
-		if (!tapped) {
-			throw new Error('PassengerWalletScreen.tapAddCard() - "AGREGAR" not found');
-		}
-
-		console.log('[PassengerWalletScreen] AGREGAR tapped, waiting for Stripe card form');
-		const formReady = await this.waitForStripeCardNumber(20_000);
-		if (!formReady) {
-			const metadata = await this.listIframeMetadata().catch(() => []);
-			throw new Error(`PassengerWalletScreen.tapAddCard() - Stripe card form did not render after "AGREGAR". Iframes: ${JSON.stringify(metadata)}`);
-		}
-
-		console.log('[PassengerWalletScreen] Stripe card form rendered after AGREGAR');
-		await this.pause(500);
+		return this.tapWebText('AGREGAR', 10_000, true);
 	}
 
 	/**
@@ -1133,10 +1346,27 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 	 */
 	async fillCardForm(card: CardInput): Promise<void> {
 		const sanitizedNumber = card.number.replace(/\s+/g, '');
+
+		// Rama NATIVA: el form del pasajero es `app-credit-card-payment-data` con inputs
+		// nativos (formcontrolname/data-checkout), NO un iframe Stripe. Detectar y llenar nativo.
+		// El guard por findAnyElement (frame-gated) es intencional: solo entra a la rama nativa cuando
+		// el frame activo está ALINEADO con el documento del form → así el fill posterior también lo ve.
+		// (No usar getPageSource aquí: detectaría el form aun con el frame desalineado y el fill fallaría.)
+		await this.switchFrameTarget(null).catch(() => {});
+		const nativeCardNumber = await this.findAnyElement(
+			'app-credit-card-payment-data input#cardNumber, input[formcontrolname="cardNumber"], input[data-checkout="cardNumber"]'
+		);
+		if (nativeCardNumber) {
+			await this.fillNativeCardForm(card, sanitizedNumber);
+			return;
+		}
+
 		const frameIndex = await this.findStripeCardFrameIndex(20_000);
 		if (frameIndex < 0) {
 			const metadata = await this.listIframeMetadata().catch(() => []);
-			throw new Error(`PassengerWalletScreen.fillCardForm() - Stripe card iframe not found. Iframes: ${JSON.stringify(metadata)}`);
+			throw new Error(
+				`PassengerWalletScreen.fillCardForm() - Stripe card iframe not found. Iframes: ${JSON.stringify(metadata)}`
+			);
 		}
 
 		// Stripe habilita el resto del formulario luego de un numero valido.
@@ -1146,27 +1376,59 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 			.catch(() => {});
 		await this.getDriver().pause(1_500);
 		await this.switchFrameTarget(null).catch(() => {});
-		console.log('[PassengerWalletScreen] after card number:', JSON.stringify(await this.listIframeMetadata().catch(() => [])));
+		console.log(
+			'[PassengerWalletScreen] after card number:',
+			JSON.stringify(await this.listIframeMetadata().catch(() => []))
+		);
 
 		const paymentModal = await this.getVisibleCreditCardPaymentModal().catch(() => null);
 		if (!paymentModal) {
 			const metadata = await this.listIframeMetadata().catch(() => []);
-			throw new Error(`PassengerWalletScreen.fillCardForm() - Stripe card modal not found. Iframes: ${JSON.stringify(metadata)}`);
+			throw new Error(
+				`PassengerWalletScreen.fillCardForm() - Stripe card modal not found. Iframes: ${JSON.stringify(metadata)}`
+			);
 		}
 
 		await this.fillStripeExpiryFrame(card.expiry, paymentModal);
 		await this.getDriver().pause(300);
 		await this.switchFrameTarget(null).catch(() => {});
-		console.log('[PassengerWalletScreen] after expiry:', JSON.stringify(await this.listIframeMetadata().catch(() => [])));
-		const cvcSelectors = ['#root > form > span:nth-child(4) > div > span > input', 'input[name="cc-csc"]', 'input[name="cvc"]', 'input[autocomplete="cc-csc"]', 'input[placeholder="CVC"]', 'input[placeholder*="CVC"]', 'input[placeholder*="CVV"]'];
+		console.log(
+			'[PassengerWalletScreen] after expiry:',
+			JSON.stringify(await this.listIframeMetadata().catch(() => []))
+		);
+		const cvcSelectors = [
+			'#root > form > span:nth-child(4) > div > span > input',
+			'input[name="cc-csc"]',
+			'input[name="cvc"]',
+			'input[autocomplete="cc-csc"]',
+			'input[placeholder="CVC"]',
+			'input[placeholder*="CVC"]',
+			'input[placeholder*="CVV"]'
+		];
 
 		if (!(await this.fillStripeFieldBySelectors(cvcSelectors, card.cvc.replace(/\s+/g, ''), 'cvc', paymentModal))) {
-			await this.fillStripeFrameByHint(/componentName=cardCvc/i, cvcSelectors, card.cvc.replace(/\s+/g, ''), 'cvc', true, paymentModal);
+			await this.fillStripeFrameByHint(
+				/componentName=cardCvc/i,
+				cvcSelectors,
+				card.cvc.replace(/\s+/g, ''),
+				'cvc',
+				true,
+				paymentModal
+			);
 		}
 
 		const holderName = card.holderName?.trim();
 		if (holderName) {
-			const filledHolder = await this.fillWebInputField(['ion-input[formcontrolname="cardholderName"] input', 'ion-input[formcontrolname="cardholderName"] .native-input', 'ion-input[formcontrolname="cardholderName"]', 'input[placeholder*="Nombre del T"]'], holderName, paymentModal);
+			const filledHolder = await this.fillWebInputField(
+				[
+					'ion-input[formcontrolname="cardholderName"] input',
+					'ion-input[formcontrolname="cardholderName"] .native-input',
+					'ion-input[formcontrolname="cardholderName"]',
+					'input[placeholder*="Nombre del T"]'
+				],
+				holderName,
+				paymentModal
+			);
 
 			if (!filledHolder) {
 				throw new Error('PassengerWalletScreen.fillCardForm() - holder name field not found');
@@ -1182,7 +1444,11 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 			await this.getDriver()
 				.execute(() => {
 					const scope = document.querySelector('app-credit-card-payment-data') as HTMLElement | null;
-					const targets = Array.from(scope?.querySelectorAll('.stripe-element, .stripe-element-wrapper, .stripe-element-small, .__PrivateStripeElement, iframe[name^="__privateStripeFrame"]') ?? []) as HTMLElement[];
+					const targets = Array.from(
+						scope?.querySelectorAll(
+							'.stripe-element, .stripe-element-wrapper, .stripe-element-small, .__PrivateStripeElement, iframe[name^="__privateStripeFrame"]'
+						) ?? []
+					) as HTMLElement[];
 
 					for (const element of targets) {
 						element.style.pointerEvents = 'none';
@@ -1191,6 +1457,80 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 				.catch(() => {});
 			await this.getDriver().pause(250);
 		}
+	}
+
+	/**
+	 * Llena el form NATIVO de alta de tarjeta (`app-credit-card-payment-data`, estilo MercadoPago:
+	 * inputs nativos por `formcontrolname`/`data-checkout`, NO iframe Stripe). El form es progresivo:
+	 * al tipear un número válido emergen expiry/cvv/cardholderName/zip. Mecánica: tap #cardNumber →
+	 * tipeo real (driver.keys) para disparar validación → completar el resto por selector nativo.
+	 */
+	private async fillNativeCardForm(card: CardInput, sanitizedNumber: string): Promise<void> {
+		const driver = this.getDriver();
+		await this.switchToWebView().catch(() => {});
+		await this.switchFrameTarget(null).catch(() => {});
+		const scope = await this.getVisibleCreditCardPaymentModal().catch(() => null);
+
+		// 1) cardNumber: `fillWebInputField` es context-robusto (setter nativo + dispatch de
+		// eventos input/change vía executeInWebView) → dispara la validación/reveal del form
+		// reactivo Angular sin depender de resolución de elementos WDIO (context-frágil).
+		const numberSelectors = [
+			'input#cardNumber',
+			'input[formcontrolname="cardNumber"]',
+			'input[data-checkout="cardNumber"]'
+		];
+		const filledNumber = await this.fillWebInputField(numberSelectors, sanitizedNumber, scope).catch(() => false);
+		if (!filledNumber) {
+			throw new Error('PassengerWalletScreen.fillNativeCardForm() - no se pudo llenar cardNumber nativo');
+		}
+		await driver.pause(2_500); // validación + reveal progresivo de los demás campos
+
+		// 2) Vencimiento (cardExpirationDate, combinado MM/AA).
+		const { combined } = this.parseExpiryParts(card.expiry);
+		await this.fillWebInputField(
+			[
+				'input[formcontrolname="cardExpirationDate"]',
+				'input[data-checkout="cardExpirationDate"]',
+				'input[formcontrolname="cardExpiration"]'
+			],
+			combined,
+			scope
+		).catch(() => false);
+
+		// 3) CVV (securityCode).
+		await this.fillWebInputField(
+			[
+				'input[formcontrolname="securityCode"]',
+				'input[data-checkout="securityCode"]',
+				'input[formcontrolname="cvv"]'
+			],
+			card.cvc.replace(/\s+/g, ''),
+			scope
+		).catch(() => false);
+
+		// 4) Titular.
+		const holderName = card.holderName?.trim();
+		if (holderName) {
+			await this.fillWebInputField(
+				[
+					'input[formcontrolname="cardholderName"]',
+					'input[data-checkout="cardholderName"]',
+					'ion-input[formcontrolname="cardholderName"] input'
+				],
+				holderName,
+				scope
+			).catch(() => false);
+		}
+
+		// 5) Código postal (zipCode) — requerido por el form; default si CardInput no lo trae.
+		await this.fillWebInputField(
+			['input[formcontrolname="zipCode"]', 'input[data-checkout="zipCode"]'],
+			card.zip ?? '76000',
+			scope
+		).catch(() => false);
+
+		await driver.pause(300);
+		console.log('[PassengerWalletScreen] form NATIVO app-credit-card-payment-data completado');
 	}
 
 	/**
@@ -1218,7 +1558,15 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 				while (current) {
 					const tag = current.tagName.toUpperCase();
 					const role = normalize(current.getAttribute('role'));
-					if (tag === 'BUTTON' || tag === 'ION-BUTTON' || tag === 'A' || tag === 'ION-ITEM' || tag === 'ION-COL' || role === 'button' || current.classList.contains('btn')) {
+					if (
+						tag === 'BUTTON' ||
+						tag === 'ION-BUTTON' ||
+						tag === 'A' ||
+						tag === 'ION-ITEM' ||
+						tag === 'ION-COL' ||
+						role === 'button' ||
+						current.classList.contains('btn')
+					) {
 						return current;
 					}
 
@@ -1238,7 +1586,12 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 					return false;
 				}
 
-				const values = [normalize(element.innerText || element.textContent), normalize(element.getAttribute('aria-label')), normalize(element.getAttribute('content-desc')), normalize(element.getAttribute('title'))];
+				const values = [
+					normalize(element.innerText || element.textContent),
+					normalize(element.getAttribute('aria-label')),
+					normalize(element.getAttribute('content-desc')),
+					normalize(element.getAttribute('title'))
+				];
 				return values.some(value => value === targetText || value.includes(targetText));
 			});
 
@@ -1258,7 +1611,12 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 			}
 
 			const rect = clickable.getBoundingClientRect();
-			const buttonRect = { x: Math.round(rect.left + rect.width / 2), y: Math.round(rect.top + rect.height / 2), w: Math.round(rect.width), h: Math.round(rect.height) };
+			const buttonRect = {
+				x: Math.round(rect.left + rect.width / 2),
+				y: Math.round(rect.top + rect.height / 2),
+				w: Math.round(rect.width),
+				h: Math.round(rect.height)
+			};
 
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			const ng = (window as any).ng;
@@ -1321,7 +1679,10 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 			// Secondary strategy: let the form fire its (ngSubmit) through its
 			// default submit button. This is the closest thing to a real user tap.
 			const form = (host?.querySelector('form') ?? clickable.closest('form')) as HTMLFormElement | null;
-			if (form && typeof (form as HTMLFormElement & { requestSubmit?: () => void }).requestSubmit === 'function') {
+			if (
+				form &&
+				typeof (form as HTMLFormElement & { requestSubmit?: () => void }).requestSubmit === 'function'
+			) {
 				try {
 					(form as HTMLFormElement & { requestSubmit: () => void }).requestSubmit();
 					return { status: 'submitted', strategy: 'form.requestSubmit', buttonRect, ngKeys };
@@ -1342,10 +1703,18 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 
 			// Tertiary: synthetic pointer/mouse sequence.
 			try {
-				clickable.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, cancelable: true, composed: true, view: window }));
-				clickable.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, composed: true, view: window }));
-				clickable.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, composed: true, view: window }));
-				clickable.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, composed: true, view: window }));
+				clickable.dispatchEvent(
+					new MouseEvent('pointerdown', { bubbles: true, cancelable: true, composed: true, view: window })
+				);
+				clickable.dispatchEvent(
+					new MouseEvent('mousedown', { bubbles: true, cancelable: true, composed: true, view: window })
+				);
+				clickable.dispatchEvent(
+					new MouseEvent('mouseup', { bubbles: true, cancelable: true, composed: true, view: window })
+				);
+				clickable.dispatchEvent(
+					new MouseEvent('click', { bubbles: true, cancelable: true, composed: true, view: window })
+				);
 				return { status: 'submitted', strategy: 'synthetic-mouse', buttonRect, ngKeys };
 			} catch {
 				return { status: 'submit-failed', strategy: 'none', buttonRect, ngKeys };
@@ -1357,10 +1726,14 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 		const buttonRect = (result as { buttonRect: { x: number; y: number; w: number; h: number } | null }).buttonRect;
 		const ngKeys = (result as { ngKeys: string[] }).ngKeys;
 
-		console.log(`[PassengerWalletScreen] saveCard() strategy=${strategy} status=${status} rect=${JSON.stringify(buttonRect)} ngKeys=${JSON.stringify(ngKeys)}`);
+		console.log(
+			`[PassengerWalletScreen] saveCard() strategy=${strategy} status=${status} rect=${JSON.stringify(buttonRect)} ngKeys=${JSON.stringify(ngKeys)}`
+		);
 
 		if (status === 'disabled') {
-			throw new Error('PassengerWalletScreen.saveCard() - "GUARDAR" is disabled; holder name or required fields are missing');
+			throw new Error(
+				'PassengerWalletScreen.saveCard() - "GUARDAR" is disabled; holder name or required fields are missing'
+			);
 		}
 
 		if (status !== 'submitted') {
@@ -1379,7 +1752,9 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 			if (trustedClicked) {
 				console.log('[PassengerWalletScreen] saveCard() - WebDriver trusted click dispatched on GUARDAR');
 			} else {
-				console.warn('[PassengerWalletScreen] saveCard() - WebDriver trusted click fallback could not target GUARDAR');
+				console.warn(
+					'[PassengerWalletScreen] saveCard() - WebDriver trusted click fallback could not target GUARDAR'
+				);
 			}
 		}
 
@@ -1426,7 +1801,9 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 					continue;
 				}
 
-				const text = String(await span.getText().catch(() => '')).trim().toUpperCase();
+				const text = String(await span.getText().catch(() => ''))
+					.trim()
+					.toUpperCase();
 				if (text && !text.includes('GUARDAR')) {
 					continue;
 				}
@@ -1463,7 +1840,9 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 	 * challenge. Returns when the modal closes, a 3DS frame appears, or a form
 	 * error becomes visible inside the modal.
 	 */
-	private async waitForPaymentModalSubmitOutcome(timeout = 20_000): Promise<'modal-closed' | '3ds-visible' | 'modal-error' | 'timeout'> {
+	private async waitForPaymentModalSubmitOutcome(
+		timeout = 20_000
+	): Promise<'modal-closed' | '3ds-visible' | 'modal-error' | 'timeout'> {
 		const driver = this.getDriver();
 		const deadline = Date.now() + timeout;
 
@@ -1477,7 +1856,14 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 			const outcome = await this.executeInWebView(() => {
 				const challengeFrames = Array.from(document.querySelectorAll('iframe')).filter(frame => {
 					const signature = `${(frame as HTMLIFrameElement).name ?? ''} ${(frame as HTMLIFrameElement).src ?? ''}`;
-					return /three-ds-2-challenge|stripe-challenge-frame|3d_secure_2|acs|authenticate|verify|challenge/i.test(signature) && !/elements-inner-card|cardnumber|cardexpiry|cardcvc|controller|metrics|hcaptcha/i.test(signature);
+					return (
+						/three-ds-2-challenge|stripe-challenge-frame|3d_secure_2|acs|authenticate|verify|challenge/i.test(
+							signature
+						) &&
+						!/elements-inner-card|cardnumber|cardexpiry|cardcvc|controller|metrics|hcaptcha/i.test(
+							signature
+						)
+					);
 				});
 
 				if (challengeFrames.length) {
@@ -1485,7 +1871,9 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 				}
 
 				const host = document.querySelector('app-credit-card-payment-data') as HTMLElement | null;
-				const errorBlock = host?.querySelector('.error, .form-error, [class*="error"]:not([class*="invalid"])') as HTMLElement | null;
+				const errorBlock = host?.querySelector(
+					'.error, .form-error, [class*="error"]:not([class*="invalid"])'
+				) as HTMLElement | null;
 				const errorText = errorBlock?.innerText?.trim() ?? '';
 				if (errorText && errorText.length > 0) {
 					return `modal-error:${errorText.slice(0, 160)}`;
@@ -1507,7 +1895,9 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 			await driver.pause(300);
 		}
 
-		console.warn('[PassengerWalletScreen] saveCard() - payment modal still visible after submit; caller will validate 3DS / wallet list');
+		console.warn(
+			'[PassengerWalletScreen] saveCard() - payment modal still visible after submit; caller will validate 3DS / wallet list'
+		);
 		return 'timeout';
 	}
 
@@ -1531,7 +1921,9 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 
 		const currentCount = await this.countVisibleCards().catch(() => -1);
 		const metadata = await this.listIframeMetadata().catch(() => []);
-		throw new Error(`PassengerWalletScreen.verifyCardAdded() - card ending ${digits} not found after ${timeout}ms; modalVisible=${modalVisible}; cardCount=${currentCount}; Iframes: ${JSON.stringify(metadata)}`);
+		throw new Error(
+			`PassengerWalletScreen.verifyCardAdded() - card ending ${digits} not found after ${timeout}ms; modalVisible=${modalVisible}; cardCount=${currentCount}; Iframes: ${JSON.stringify(metadata)}`
+		);
 	}
 
 	/**
@@ -1555,7 +1947,10 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 		}, 'ion-item-sliding, ion-item.card-item');
 	}
 
-	private async clickCardRowAction(targetDigits: string | null, actionIcon: 'star' | 'trash'): Promise<{ status: string; label: string }> {
+	private async clickCardRowAction(
+		targetDigits: string | null,
+		actionIcon: 'star' | 'trash'
+	): Promise<{ status: string; label: string }> {
 		const rowSelector = 'ion-item-sliding, ion-item.card-item';
 
 		return this.executeInWebView(
@@ -1572,7 +1967,9 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 					const html = element as HTMLElement;
 					const rect = html.getBoundingClientRect();
 					const style = window.getComputedStyle(html);
-					return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+					return (
+						style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0
+					);
 				};
 
 				const rows = Array.from(document.querySelectorAll(selector)) as HTMLElement[];
@@ -1592,19 +1989,30 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 					return { status: digits ? 'not-found' : 'empty', label: '' };
 				}
 
-				const label = normalize(match.querySelector('span.card-item-label')?.textContent || match.textContent || '');
-				const slidingItem = (match.tagName.toUpperCase() === 'ION-ITEM-SLIDING' ? match : match.closest('ion-item-sliding')) as
+				const label = normalize(
+					match.querySelector('span.card-item-label')?.textContent || match.textContent || ''
+				);
+				const slidingItem = (
+					match.tagName.toUpperCase() === 'ION-ITEM-SLIDING' ? match : match.closest('ion-item-sliding')
+				) as
 					| (HTMLElement & {
 							open?: (side?: string) => Promise<unknown> | unknown;
 					  })
 					| null;
-				const isPrincipalRow = (row: HTMLElement): boolean => Boolean(row.querySelector('.card-data .type > ion-icon[name="star"], .card-data .type > ion-icon[aria-label="star"], .card-data .type > ion-icon.icono_isFavorite, .card-data .type > ion-icon.ion-color-secondary'));
+				const isPrincipalRow = (row: HTMLElement): boolean =>
+					Boolean(
+						row.querySelector(
+							'.card-data .type > ion-icon[name="star"], .card-data .type > ion-icon[aria-label="star"], .card-data .type > ion-icon.icono_isFavorite, .card-data .type > ion-icon.ion-color-secondary'
+						)
+					);
 				const openSlidingRow = async (row: HTMLElement | null): Promise<void> => {
 					if (!row) {
 						return;
 					}
 
-					const sliding = (row.tagName.toUpperCase() === 'ION-ITEM-SLIDING' ? row : row.closest('ion-item-sliding')) as
+					const sliding = (
+						row.tagName.toUpperCase() === 'ION-ITEM-SLIDING' ? row : row.closest('ion-item-sliding')
+					) as
 						| (HTMLElement & {
 								open?: (side?: string) => Promise<unknown> | unknown;
 						  })
@@ -1620,11 +2028,19 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 					}
 				};
 				const findRowActionButton = (row: HTMLElement, iconName: string): HTMLElement | null => {
-					const actionButtons = Array.from(row.querySelectorAll('ion-item-options button, button')) as HTMLElement[];
+					const actionButtons = Array.from(
+						row.querySelectorAll('ion-item-options button, button')
+					) as HTMLElement[];
 					return (
 						actionButtons.find(button => {
-							const values = [normalize(button.getAttribute('aria-label')), normalize(button.getAttribute('title')), normalize(button.innerText || button.textContent)];
-							const icon = button.querySelector(`ion-icon[name="${iconName}"], ion-icon[aria-label="${iconName}"]`);
+							const values = [
+								normalize(button.getAttribute('aria-label')),
+								normalize(button.getAttribute('title')),
+								normalize(button.innerText || button.textContent)
+							];
+							const icon = button.querySelector(
+								`ion-icon[name="${iconName}"], ion-icon[aria-label="${iconName}"]`
+							);
 
 							return Boolean(icon) || values.some(value => value.includes(iconName));
 						}) ?? null
@@ -1632,7 +2048,10 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 				};
 
 				if (iconName === 'trash' && rows.length > 1 && isPrincipalRow(match)) {
-					const fallbackRow = rows.find(row => row !== match && !isPrincipalRow(row)) ?? rows.find(row => row !== match) ?? null;
+					const fallbackRow =
+						rows.find(row => row !== match && !isPrincipalRow(row)) ??
+						rows.find(row => row !== match) ??
+						null;
 					if (fallbackRow) {
 						await openSlidingRow(fallbackRow);
 						const fallbackStar = findRowActionButton(fallbackRow, 'star');
@@ -1687,7 +2106,9 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 					const html = element as HTMLElement;
 					const rect = html.getBoundingClientRect();
 					const style = window.getComputedStyle(html);
-					return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+					return (
+						style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0
+					);
 				};
 
 				const findClickableAncestor = (element: HTMLElement): HTMLElement => {
@@ -1695,7 +2116,16 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 					while (current) {
 						const tag = current.tagName.toUpperCase();
 						const role = normalize(current.getAttribute('role'));
-						if (tag === 'BUTTON' || tag === 'ION-BUTTON' || tag === 'ION-ITEM' || tag === 'ION-TAB-BUTTON' || tag === 'ION-MENU-TOGGLE' || tag === 'ION-COL' || tag === 'A' || role === 'button') {
+						if (
+							tag === 'BUTTON' ||
+							tag === 'ION-BUTTON' ||
+							tag === 'ION-ITEM' ||
+							tag === 'ION-TAB-BUTTON' ||
+							tag === 'ION-MENU-TOGGLE' ||
+							tag === 'ION-COL' ||
+							tag === 'A' ||
+							role === 'button'
+						) {
 							return current;
 						}
 						current = current.parentElement;
@@ -1705,12 +2135,17 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 				};
 
 				const targets = texts.map(normalize);
-				const candidateScopes = selectors.length > 0 ? (Array.from(document.querySelectorAll(selectors.join(','))) as HTMLElement[]) : [];
+				const candidateScopes =
+					selectors.length > 0
+						? (Array.from(document.querySelectorAll(selectors.join(','))) as HTMLElement[])
+						: [];
 				const visibleScopes = candidateScopes.filter(isVisible);
 				const searchScopes: (HTMLElement | Document)[] = visibleScopes.length > 0 ? visibleScopes : [document];
 
 				for (const scope of searchScopes) {
-					const candidates = Array.from(scope.querySelectorAll('button, ion-button, [role="button"], a, span, div')) as HTMLElement[];
+					const candidates = Array.from(
+						scope.querySelectorAll('button, ion-button, [role="button"], a, span, div')
+					) as HTMLElement[];
 
 					for (const target of targets) {
 						const match = candidates.find(element => {
@@ -1718,7 +2153,12 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 								return false;
 							}
 
-							const values = [normalize(element.innerText || element.textContent), normalize(element.getAttribute('aria-label')), normalize(element.getAttribute('content-desc')), normalize(element.getAttribute('title'))];
+							const values = [
+								normalize(element.innerText || element.textContent),
+								normalize(element.getAttribute('aria-label')),
+								normalize(element.getAttribute('content-desc')),
+								normalize(element.getAttribute('title'))
+							];
 
 							return values.some(value => value === target || value.includes(target));
 						});
@@ -1756,7 +2196,9 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 					const html = element as HTMLElement;
 					const rect = html.getBoundingClientRect();
 					const style = window.getComputedStyle(html);
-					return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+					return (
+						style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0
+					);
 				};
 
 				const findClickableAncestor = (element: HTMLElement): HTMLElement => {
@@ -1764,7 +2206,16 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 					while (current) {
 						const tag = current.tagName.toUpperCase();
 						const role = normalize(current.getAttribute('role'));
-						if (tag === 'BUTTON' || tag === 'ION-BUTTON' || tag === 'ION-ITEM' || tag === 'ION-TAB-BUTTON' || tag === 'ION-MENU-TOGGLE' || tag === 'ION-COL' || tag === 'A' || role === 'button') {
+						if (
+							tag === 'BUTTON' ||
+							tag === 'ION-BUTTON' ||
+							tag === 'ION-ITEM' ||
+							tag === 'ION-TAB-BUTTON' ||
+							tag === 'ION-MENU-TOGGLE' ||
+							tag === 'ION-COL' ||
+							tag === 'A' ||
+							role === 'button'
+						) {
 							return current;
 						}
 						current = current.parentElement;
@@ -1773,14 +2224,18 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 					return element;
 				};
 
-				const containers = Array.from(document.querySelectorAll('ion-modal, ion-alert, app-confirm-modal, .alert-wrapper, .modal-wrapper')) as HTMLElement[];
+				const containers = Array.from(
+					document.querySelectorAll('ion-modal, ion-alert, app-confirm-modal, .alert-wrapper, .modal-wrapper')
+				) as HTMLElement[];
 				const visibleContainers = containers.filter(isVisible);
 				if (!visibleContainers.length) {
 					return 'not-present';
 				}
 
 				for (const container of visibleContainers) {
-					const candidates = Array.from(container.querySelectorAll('button, ion-button, [role="button"], a')) as HTMLElement[];
+					const candidates = Array.from(
+						container.querySelectorAll('button, ion-button, [role="button"], a')
+					) as HTMLElement[];
 					for (const text of texts) {
 						const target = normalize(text);
 						const match = candidates.find(element => {
@@ -1788,7 +2243,12 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 								return false;
 							}
 
-							const values = [normalize(element.innerText || element.textContent), normalize(element.getAttribute('aria-label')), normalize(element.getAttribute('content-desc')), normalize(element.getAttribute('title'))];
+							const values = [
+								normalize(element.innerText || element.textContent),
+								normalize(element.getAttribute('aria-label')),
+								normalize(element.getAttribute('content-desc')),
+								normalize(element.getAttribute('title'))
+							];
 
 							return values.some(value => value === target || value.includes(target));
 						});
@@ -1852,18 +2312,27 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 					const html = element as HTMLElement;
 					const rect = html.getBoundingClientRect();
 					const style = window.getComputedStyle(html);
-					return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+					return (
+						style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0
+					);
 				};
 
 				const targetText = normalize(targetLabel);
-				const candidates = Array.from(document.querySelectorAll('span.card-item-label, ion-item-sliding, ion-item.card-item')) as HTMLElement[];
+				const candidates = Array.from(
+					document.querySelectorAll('span.card-item-label, ion-item-sliding, ion-item.card-item')
+				) as HTMLElement[];
 
 				return candidates.some(element => {
 					if (!isVisible(element)) {
 						return false;
 					}
 
-					const values = [normalize(element.innerText || element.textContent), normalize(element.getAttribute('aria-label')), normalize(element.getAttribute('content-desc')), normalize(element.getAttribute('title'))];
+					const values = [
+						normalize(element.innerText || element.textContent),
+						normalize(element.getAttribute('aria-label')),
+						normalize(element.getAttribute('content-desc')),
+						normalize(element.getAttribute('title'))
+					];
 
 					return values.some(value => value.includes(targetText));
 				});
@@ -1883,6 +2352,11 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 	 * Removes the first visible saved card from the wallet.
 	 * Returns the visible label that was targeted, or null when the list is empty.
 	 */
+	/** Conteo público de tarjetas visibles en el wallet (para limpieza parcial pre-alta). */
+	async countCards(): Promise<number> {
+		return this.countVisibleCards();
+	}
+
 	async deleteFirstVisibleCard(): Promise<string | null> {
 		const beforeCount = await this.countVisibleCards();
 		if (beforeCount <= 0) {
@@ -1900,11 +2374,16 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 		}
 
 		if (openedResult.status === 'missing-action') {
-			throw new Error(`PassengerWalletScreen.deleteFirstVisibleCard() - wallet row options could not be opened (${openedResult.status})`);
+			throw new Error(
+				`PassengerWalletScreen.deleteFirstVisibleCard() - wallet row options could not be opened (${openedResult.status})`
+			);
 		}
 
 		if (openedResult.status === 'opened-options') {
-			const clickedDelete = await this.clickWalletAction(['Eliminar', 'Eliminar tarjeta', 'Borrar', 'Delete', 'Remove'], ['ion-popover', 'app-credit-card-dialog', '.popover-content']);
+			const clickedDelete = await this.clickWalletAction(
+				['Eliminar', 'Eliminar tarjeta', 'Borrar', 'Delete', 'Remove'],
+				['ion-popover', 'app-credit-card-dialog', '.popover-content']
+			);
 			if (!clickedDelete) {
 				throw new Error('PassengerWalletScreen.deleteFirstVisibleCard() - delete action not found');
 			}
@@ -1917,7 +2396,9 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 		if (!removed) {
 			const currentCount = await this.countVisibleCards();
 			if (currentCount >= beforeCount) {
-				throw new Error(`PassengerWalletScreen.deleteFirstVisibleCard() - wallet count did not decrease after deleting "${openedResult.label}"`);
+				throw new Error(
+					`PassengerWalletScreen.deleteFirstVisibleCard() - wallet count did not decrease after deleting "${openedResult.label}"`
+				);
 			}
 		}
 
@@ -1938,7 +2419,9 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 		}
 
 		if (openedResult.status === 'error') {
-			throw new Error(`PassengerWalletScreen.deleteCard() - failed to inspect wallet rows for card ending ${digits}`);
+			throw new Error(
+				`PassengerWalletScreen.deleteCard() - failed to inspect wallet rows for card ending ${digits}`
+			);
 		}
 
 		if (openedResult.status === 'missing-action') {
@@ -1946,9 +2429,14 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 		}
 
 		if (openedResult.status === 'opened-options') {
-			const clickedDelete = await this.clickWalletAction(['Eliminar', 'Eliminar tarjeta', 'Borrar', 'Delete', 'Remove'], ['ion-popover', 'app-credit-card-dialog', '.popover-content']);
+			const clickedDelete = await this.clickWalletAction(
+				['Eliminar', 'Eliminar tarjeta', 'Borrar', 'Delete', 'Remove'],
+				['ion-popover', 'app-credit-card-dialog', '.popover-content']
+			);
 			if (!clickedDelete) {
-				throw new Error(`PassengerWalletScreen.deleteCard() - delete action not found for card ending ${digits}`);
+				throw new Error(
+					`PassengerWalletScreen.deleteCard() - delete action not found for card ending ${digits}`
+				);
 			}
 		}
 
@@ -1959,7 +2447,9 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 		if (!removed) {
 			const currentCount = await this.countVisibleCards();
 			if (currentCount >= beforeCount) {
-				throw new Error(`PassengerWalletScreen.deleteCard() - wallet count did not decrease after deleting "${openedResult.label}"`);
+				throw new Error(
+					`PassengerWalletScreen.deleteCard() - wallet count did not decrease after deleting "${openedResult.label}"`
+				);
 			}
 		}
 	}
@@ -2001,7 +2491,9 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 		}
 
 		if (selectionResult.status === 'error') {
-			throw new Error(`PassengerWalletScreen.selectCard() - failed to inspect wallet rows for card ending ${digits}`);
+			throw new Error(
+				`PassengerWalletScreen.selectCard() - failed to inspect wallet rows for card ending ${digits}`
+			);
 		}
 
 		if (selectionResult.status === 'already-default') {
@@ -2011,7 +2503,9 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 		if (selectionResult.status === 'opened-options') {
 			const clickedPrincipal = await this.tapWebText('Principal', 10_000, true);
 			if (!clickedPrincipal) {
-				throw new Error(`PassengerWalletScreen.selectCard() - principal action not found for card ending ${digits}`);
+				throw new Error(
+					`PassengerWalletScreen.selectCard() - principal action not found for card ending ${digits}`
+				);
 			}
 		} else if (selectionResult.status !== 'clicked-direct') {
 			throw new Error(`PassengerWalletScreen.selectCard() - card ending ${digits} not found`);

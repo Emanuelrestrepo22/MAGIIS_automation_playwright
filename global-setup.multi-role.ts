@@ -50,32 +50,38 @@ async function globalSetup(): Promise<void> {
 
       // Validamos el dashboard con el patrón declarado por el rol en runtime.ts
       // para soportar carrier/contractor/owner/futuros sin hardcodear nombres.
-      // waitUntil: 'commit' evita que el hash-routing de la SPA bloquee la espera
-      // aguardando un evento 'load' que nunca dispara en cambios de hash.
-      // Fallback con polling: en hash-routed SPAs, `waitForURL` a veces no dispara
-      // aunque la URL final ya haga match; el polling lee `page.url()` cada 500ms
-      // y resuelve el primero que cumpla el patrón.
+      //
+      // Detección por POLLING de `page.url()` únicamente (mismo enfoque que
+      // DashboardPage.ensureDashboardLoaded). NO usar `page.waitForURL`: en la SPA
+      // hash-routed post-login se aterriza primero en `/#/home` y el redirect al
+      // dashboard del rol puede tardar; `waitForURL` rechazaba por timeout antes de
+      // capturar la URL final. Timeout amplio (60s) para tolerar el redirect lento.
+      //
+      // `dashboardPattern` es un GLOB (ej. "**/dashboard"): hay que convertirlo a
+      // regex. El bug previo lo comparaba con String.includes() → "**/dashboard"
+      // NUNCA aparece como substring de una URL real → falso "Login failed" siempre.
+      const globToRegExp = (glob: string): RegExp =>
+        new RegExp(
+          glob
+            .replace(/[.+?^${}()|[\]\\]/g, "\\$&")
+            .replace(/\*\*/g, ".*")
+            .replace(/\*/g, "[^/]*"),
+        );
+      const dashboardRe = globToRegExp(roleConfig.dashboardPattern);
       const matchesDashboard = (href: string) =>
-        href.includes("/home") && href.includes(roleConfig.dashboardPattern);
+        href.includes("/home") && dashboardRe.test(href);
 
-      await Promise.race([
-        page.waitForURL((url) => matchesDashboard(url.href), {
-          timeout: 30_000,
-          waitUntil: "commit",
-        }),
-        (async () => {
-          const deadline = Date.now() + 30_000;
-          const sleep = (ms: number) =>
-            new Promise<void>((resolve) => setTimeout(resolve, ms));
-          while (Date.now() < deadline) {
-            if (matchesDashboard(page.url())) return;
-            await sleep(500);
-          }
-          throw new Error(
-            `[GlobalSetup][${role}] dashboard pattern "${roleConfig.dashboardPattern}" no alcanzado en 30s (url actual: ${page.url()})`,
-          );
-        })(),
-      ]);
+      const deadline = Date.now() + 60_000;
+      const sleep = (ms: number) =>
+        new Promise<void>((resolve) => setTimeout(resolve, ms));
+      while (Date.now() < deadline && !matchesDashboard(page.url())) {
+        await sleep(500);
+      }
+      if (!matchesDashboard(page.url())) {
+        throw new Error(
+          `[GlobalSetup][${role}] dashboard pattern "${roleConfig.dashboardPattern}" no alcanzado en 60s (url actual: ${page.url()})`,
+        );
+      }
       console.log(
         `[GlobalSetup][${role}] Dashboard pattern "${roleConfig.dashboardPattern}" confirmed at ${page.url()}`,
       );
@@ -88,7 +94,7 @@ async function globalSetup(): Promise<void> {
       );
     } catch (err) {
       console.warn(
-        `[GlobalSetup][${role}] ⚠️  Login failed — skipping storage state. Specs using this role will need storageState: { cookies: [], origins: [] }.\n  Reason: ${(err as Error).message}`,
+        `[GlobalSetup][${role}] ⚠️  Login failed — skipping storage state. Specs using this role will need storageState: { cookies: [], origins: [] }.\n  Reason: ${(err as Error).message}\n  url final: ${page.url()}`,
       );
     } finally {
       await page.close();

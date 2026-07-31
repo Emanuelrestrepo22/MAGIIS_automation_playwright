@@ -19,7 +19,6 @@
  */
 
 import { faker } from '@faker-js/faker';
-import { getCurrentEnv } from '../../../config/runtime';
 
 // ═══════════════════════════════════════════════════════════════════════
 // TYPES
@@ -50,7 +49,7 @@ function createStripeTestCard(number: string): StripeTestCard {
 		exp: TEST_STRIPE_CARD_EXPIRY,
 		cvc: TEST_STRIPE_CARD_CVC,
 		zip_code: TEST_STRIPE_CARD_ZIP_CODE,
-		holderName: TEST_STRIPE_CARD_HOLDER_NAME,
+		holderName: TEST_STRIPE_CARD_HOLDER_NAME
 	};
 }
 
@@ -66,8 +65,9 @@ export const STRIPE_TEST_CARDS_RAW = {
 	visa_success: createStripeTestCard('4242424242424242'),
 	/** 3DS requerido -> autenticacion exitosa (requires_action) */
 	visa_3ds_success: createStripeTestCard('4000002500003155'),
-	/** 3DS requerido -> autenticacion falla */
-	visa_3ds_fail: createStripeTestCard('4000000000009235'),
+	/** 3DS requerido -> el challenge aparece y el pago/autenticación FALLA (NO_AUTORIZADO).
+	 *  FIX 2026-07-21: era 4000000000009235 (decline genérico SIN 3DS → nunca mostraba challenge). */
+	visa_3ds_fail: createStripeTestCard('4000008400001629'),
 	/** Fondos insuficientes */
 	declined_funds: createStripeTestCard('4000000000009995'),
 	/** Declinada generica */
@@ -134,7 +134,7 @@ export const STRIPE_TEST_CARDS_RAW = {
 	 * el cargo es rechazado con card_declined después de la autenticación.
 	 * Fuente: Stripe docs — https://stripe.com/docs/testing#cards
 	 */
-	declined_after_3ds: createStripeTestCard('4000008400001629'),
+	declined_after_3ds: createStripeTestCard('4000008400001629')
 } as const satisfies Record<string, StripeTestCard>;
 
 export function getStripeCardLast4(cardNumber: string): string {
@@ -142,23 +142,13 @@ export function getStripeCardLast4(cardNumber: string): string {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// ENV RESOLUTION — TEST usa los valores RAW; UAT/PROD requiere env vars.
+// ENV RESOLUTION — el valor canónico del .ts es la fuente de verdad en TODOS
+// los entornos. Una env var STRIPE_CARD_* solo actúa como override opcional
+// si está presente (ya no es obligatoria en uat/prod).
 // ═══════════════════════════════════════════════════════════════════════
 
-const currentEnv = getCurrentEnv();
-const isTestEnv = currentEnv === 'test';
-
-function requireEnv(name: string): string {
-	const value = process.env[name];
-	if (!value) {
-		throw new Error(`Missing ${name} for ${currentEnv} environment`);
-	}
-
-	return value;
-}
-
-function resolveCardNumber(envName: string, testValue: string): string {
-	return isTestEnv ? testValue : requireEnv(envName);
+function resolveCardNumber(envName: string, canonical: string): string {
+	return process.env[envName] ?? canonical;
 }
 
 /**
@@ -174,7 +164,10 @@ export const STRIPE_TEST_CARDS = {
 	insufficientFunds: resolveCardNumber('STRIPE_CARD_INSUFFICIENT_FUNDS', STRIPE_TEST_CARDS_RAW.declined_funds.number),
 	declined: resolveCardNumber('STRIPE_CARD_DECLINED', STRIPE_TEST_CARDS_RAW.declined_generic.number),
 	threeDSRequired: resolveCardNumber('STRIPE_CARD_3DS_REQUIRED', STRIPE_TEST_CARDS_RAW.three_ds_required.number),
-	alwaysAuthenticate: resolveCardNumber('STRIPE_CARD_ALWAYS_AUTHENTICATE', STRIPE_TEST_CARDS_RAW.always_authenticate.number),
+	alwaysAuthenticate: resolveCardNumber(
+		'STRIPE_CARD_ALWAYS_AUTHENTICATE',
+		STRIPE_TEST_CARDS_RAW.always_authenticate.number
+	),
 	mastercardDebit: resolveCardNumber('STRIPE_CARD_MASTERCARD_DEBIT', STRIPE_TEST_CARDS_RAW.mastercard_debit.number),
 	lostCard: resolveCardNumber('STRIPE_CARD_LOST', STRIPE_TEST_CARDS_RAW.lost_card.number),
 	stolenCard: resolveCardNumber('STRIPE_CARD_STOLEN', STRIPE_TEST_CARDS_RAW.stolen_card.number),
@@ -185,21 +178,30 @@ export const STRIPE_TEST_CARDS = {
 	/** TC1087 — cvc_check falla post-auth (4000 0000 0000 0101) */
 	cvcCheckFail: resolveCardNumber('STRIPE_CARD_CVC_CHECK_FAIL', STRIPE_TEST_CARDS_RAW.cvc_check_fail.number),
 	/** TC1089 — cvc check fail elevated (4000 0000 0000 4954) */
-	cvcCheckFailElevated: resolveCardNumber('STRIPE_CARD_CVC_CHECK_FAIL_ELEVATED', STRIPE_TEST_CARDS_RAW.cvc_check_fail_elevated.number),
+	cvcCheckFailElevated: resolveCardNumber(
+		'STRIPE_CARD_CVC_CHECK_FAIL_ELEVATED',
+		STRIPE_TEST_CARDS_RAW.cvc_check_fail_elevated.number
+	),
 	/** TC1090 — zip fail elevated (4000 0000 0000 0036) */
 	zipFailElevated: resolveCardNumber('STRIPE_CARD_ZIP_FAIL_ELEVATED', STRIPE_TEST_CARDS_RAW.zip_fail_elevated.number),
 	/** TC1091 — address_line1 check falla (4000 0000 0000 0028) */
-	addressUnavailable: resolveCardNumber('STRIPE_CARD_ADDRESS_UNAVAILABLE', STRIPE_TEST_CARDS_RAW.address_unavailable.number),
+	addressUnavailable: resolveCardNumber(
+		'STRIPE_CARD_ADDRESS_UNAVAILABLE',
+		STRIPE_TEST_CARDS_RAW.address_unavailable.number
+	),
 	/** TC1094 — error autenticacion 3DS (4000 0084 2000 1629) */
 	error3DS: resolveCardNumber('STRIPE_CARD_ERROR_3DS', STRIPE_TEST_CARDS_RAW.error_3ds.number),
 	/** 3DS obligatorio → pago rechazado post-autenticación card_declined (4000 0084 0000 1629) */
-	declinedAfter3DS: resolveCardNumber('STRIPE_CARD_DECLINED_AFTER_3DS', STRIPE_TEST_CARDS_RAW.declined_after_3ds.number),
+	declinedAfter3DS: resolveCardNumber(
+		'STRIPE_CARD_DECLINED_AFTER_3DS',
+		STRIPE_TEST_CARDS_RAW.declined_after_3ds.number
+	)
 } as const;
 
-export const STRIPE_EXPIRY = isTestEnv ? TEST_STRIPE_CARD_EXPIRY : requireEnv('STRIPE_CARD_EXPIRY');
-export const STRIPE_CVC = isTestEnv ? TEST_STRIPE_CARD_CVC : requireEnv('STRIPE_CARD_CVC');
-export const STRIPE_BILLING_ZIP = isTestEnv ? TEST_STRIPE_CARD_ZIP_CODE : requireEnv('STRIPE_CARD_ZIP_CODE');
-export const STRIPE_CARD_HOLDER_NAME = isTestEnv ? TEST_STRIPE_CARD_HOLDER_NAME : requireEnv('STRIPE_CARD_HOLDER_NAME');
+export const STRIPE_EXPIRY = process.env.STRIPE_CARD_EXPIRY ?? TEST_STRIPE_CARD_EXPIRY;
+export const STRIPE_CVC = process.env.STRIPE_CARD_CVC ?? TEST_STRIPE_CARD_CVC;
+export const STRIPE_BILLING_ZIP = process.env.STRIPE_CARD_ZIP_CODE ?? TEST_STRIPE_CARD_ZIP_CODE;
+export const STRIPE_CARD_HOLDER_NAME = process.env.STRIPE_CARD_HOLDER_NAME ?? TEST_STRIPE_CARD_HOLDER_NAME;
 
 /**
  * Alias del registry RAW para código legacy que usa el nombre `STRIPE_TEST_CARD_FIXTURES`.
