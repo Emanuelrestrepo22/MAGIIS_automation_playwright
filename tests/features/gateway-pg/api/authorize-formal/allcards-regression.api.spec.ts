@@ -45,7 +45,15 @@ const CREDS_READY = Boolean(process.env.USER_CARRIER && process.env.PASS_CARRIER
 test.describe(
 	'[MG · COB-48][API] Authorize — allCards nunca 500 sin wallet @regression @gateway-pg @authorize',
 	{
-		annotation: [{ type: 'tms', description: 'MG-551' }]
+		// Dos keys, un solo comportamiento: el modelo 1→N del reporter emit-all. MG-551 es el Test del
+		// área COB (Authorize) y MG-149 es su equivalente entre las acciones estandarizadas — el
+		// docblock de este spec ya declaraba `MG-551 ≡ MG-149 (C-02)`, pero la key de C-02 nunca se
+		// emitía, así que MG-149 venía recibiendo evidencia de un test de tokenización ajeno. Ahora la
+		// corrida acredita los dos Tests que realmente valida.
+		annotation: [
+			{ type: 'tms', description: 'MG-551' },
+			{ type: 'tms', description: 'MG-149' }
+		]
 	},
 	() => {
 		test.skip(!CREDS_READY, 'Faltan USER_CARRIER / PASS_CARRIER / BASE_URL — configurar .env.test');
@@ -77,7 +85,10 @@ test.describe(
 		test(
 			'[COB-48] listAllCards (pax sin wallet, carrier Authorize) → 200 + lista vacía',
 			{
-				annotation: [{ type: 'tms', description: 'MG-551' }]
+				annotation: [
+					{ type: 'tms', description: 'MG-551' },
+					{ type: 'tms', description: 'MG-149' }
+				]
 			},
 			async ({ request }) => {
 				const res = await new CardApi({ request }).listAllCards({

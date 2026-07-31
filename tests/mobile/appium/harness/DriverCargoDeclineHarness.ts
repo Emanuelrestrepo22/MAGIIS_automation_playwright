@@ -30,6 +30,13 @@ import { DriverTripNavigationScreen } from '../driver/DriverTripNavigationScreen
 import { DriverTripSummaryScreen } from '../driver/DriverTripSummaryScreen';
 import { DriverTripPaymentScreen, type CardData, type PaymentOutcome } from '../driver/DriverTripPaymentScreen';
 import { dumpAppiumState } from '../helpers/appiumDebug';
+import {
+	DRIVER_BUSY_ROUTE_PATTERN,
+	describeStaleTripRecovery,
+	recoverDriverToHome,
+	shortRoute,
+	type StaleTripRecoveryResult
+} from '../helpers/driverStaleTripRecovery';
 
 export type DriverCargoDeclineResult = {
 	outcome: PaymentOutcome;
@@ -88,6 +95,12 @@ export class DriverCargoDeclineHarness {
 	 */
 	async prewarm(options: DriverCargoDeclineOptions = {}): Promise<void> {
 		await this.startSession();
+		// SIEMPRE salir del overlay /pre-home antes de cualquier otra cosa. Antes esto sólo pasaba
+		// DENTRO de goOnline(), así que un driver parado en /pre-home que ya se reportaba "online"
+		// se quedaba ahí: el overlay TAPA la oferta entrante y `waitForTripConfirmPage` expiraba a los
+		// 90s con el viaje ya asignado (medido 2026-07-30, viajes 67780 y 67783 — al bajar el overlay a
+		// mano apareció el TravelConfirmPage que el harness nunca había visto).
+		await this.home.dismissPreHomeOverlayIfPresent().catch(() => false);
 		await this.dismissStaleModals();
 		const ensureOnline = options.ensureDriverOnline ?? true;
 		if (ensureOnline && !(await this.home.isDriverOnline())) {
@@ -102,99 +115,41 @@ export class DriverCargoDeclineHarness {
 		const wv = contexts.find(c => c.startsWith('WEBVIEW'));
 		if (wv) await driver.switchContext(wv);
 		let url = await driver.execute<string, []>(() => window.location.href).catch(() => '');
-		if (/Travel(InProgress|ToStart|Resume|Confirm)Page/i.test(url)) {
+		if (DRIVER_BUSY_ROUTE_PATTERN.test(url)) {
 			// Self-heal: un viaje stale de una corrida previa deja al driver OCUPADO (no recibe
 			// offers). En lugar de abortar, lo liberamos in-situ para que cada test sea independiente.
-			console.warn(`[PRE-WARM] Driver ocupado en ${url} — liberando viaje stale para no bloquear el test...`);
-			await this.freeStaleTrip();
-			url = await driver.execute<string, []>(() => window.location.href).catch(() => '');
-			if (/Travel(InProgress|ToStart|Resume|Confirm)Page/i.test(url)) {
-				throw new Error(
-					`[PRE-WARM] No se pudo liberar al driver del viaje stale (sigue en ${url}). ` +
-						`Cancelar manualmente (app o API PUT travels/cancel) antes de reintentar.`
-				);
+			console.warn(
+				`[PRE-WARM] Driver ocupado en ${shortRoute(url)} — liberando viaje stale para no bloquear el test...`
+			);
+			const recovery = await this.freeStaleTrip();
+			url = recovery.finalUrl;
+			if (!recovery.freed) {
+				throw new Error(`[PRE-WARM] ${describeStaleTripRecovery(recovery, this.config.appPackage)}`);
 			}
-			console.log(`[PRE-WARM] Driver liberado → ${url}`);
+			console.log(`[PRE-WARM] Driver liberado → ${shortRoute(url)}`);
 		}
 		console.log(`[DriverCargoDeclineHarness] PRE-WARM listo (driver online en ${url}, esperando viaje).`);
 	}
 
 	/**
-	 * Libera al driver de un viaje stale atascado en TravelResumePage, sobre la sesión ya abierta:
-	 * cicla los payment buttons y cierra el viaje con el botón de cierre que se habilite
-	 * ("Cerrar Viaje"/"Firmar y Cerrar"). NO usa "Ingresar tarjeta" (queda disabled si total=0).
-	 * Deja al driver de vuelta en /navigator/home. Espeja tests/mobile/appium/scripts/driver-free-stale-trip.ts
-	 * pero sin abrir/cerrar sesión (reutiliza la del harness).
+	 * Libera al driver de un viaje stale sobre la sesión YA abierta del harness.
+	 *
+	 * La lógica NO vive acá: es la función compartida `recoverDriverToHome()`
+	 * (`../helpers/driverStaleTripRecovery`), la MISMA que consume
+	 * `scripts/driver-free-stale-trip.ts`. Antes estaba duplicada entre ese script y este
+	 * método, y ambas copias sólo sabían salir de `TravelResumePage`: un conductor varado en
+	 * `TravelConfirmPage` / `TravelToStartPage` / `TravelInProgressPage` hacía early-return
+	 * silencioso y el pre-warm abortaba igual. La función compartida cubre las cuatro rutas
+	 * del `DRIVER_BUSY_ROUTE_PATTERN` + los overlays (alerta, firma, pre-home) y verifica el
+	 * éxito por polling de URL hasta `/navigator/home`, con force-stop + relaunch como
+	 * último recurso documentado.
 	 */
-	private async freeStaleTrip(): Promise<void> {
-		const driver = this.home.getDriver();
+	private async freeStaleTrip(): Promise<StaleTripRecoveryResult> {
 		await this.switchToWebView();
-		const footer = async (): Promise<{ text: string; disabled: boolean }> =>
-			driver
-				.execute<{ text: string; disabled: boolean }, []>(() => {
-					const norm = (v: unknown) =>
-						String(v ?? '')
-							.replace(/\s+/g, ' ')
-							.trim();
-					const r =
-						document.querySelector('app-travel-resume:not(.ion-page-hidden)') ||
-						document.querySelector('app-travel-resume');
-					const b = r?.querySelector('ion-footer button.btn.finish') as HTMLButtonElement | null;
-					return {
-						text: b ? norm(b.innerText) : '',
-						disabled: b ? b.disabled || b.getAttribute('disabled') !== null : true
-					};
-				})
-				.catch(() => ({ text: '', disabled: true }));
-
-		const u = await driver.execute<string, []>(() => window.location.href).catch(() => '');
-		if (!/TravelResumePage/i.test(u)) return;
-
-		const payCount = await driver
-			.execute<number, []>(() => {
-				const r =
-					document.querySelector('app-travel-resume:not(.ion-page-hidden)') ||
-					document.querySelector('app-travel-resume');
-				return Array.from(r?.querySelectorAll('.travel-payment button.payment') || []).filter(
-					b => (b as HTMLElement).offsetParent !== null
-				).length;
-			})
-			.catch(() => 0);
-
-		for (let i = 0; i < Math.max(payCount, 2); i++) {
-			await driver
-				.execute<boolean, [number]>(idx => {
-					const r =
-						document.querySelector('app-travel-resume:not(.ion-page-hidden)') ||
-						document.querySelector('app-travel-resume');
-					const pays = Array.from(r?.querySelectorAll('.travel-payment button.payment') || []).filter(
-						b => (b as HTMLElement).offsetParent !== null
-					) as HTMLElement[];
-					if (!pays.length) return false;
-					pays[idx % pays.length].click();
-					return true;
-				}, i)
-				.catch(() => false);
-			await driver.pause(3_000);
-			const fs = await footer();
-			if (!/ingresar tarjeta/i.test(fs.text) && !fs.disabled && fs.text.length > 0) {
-				await driver
-					.execute<boolean, []>(() => {
-						const r =
-							document.querySelector('app-travel-resume:not(.ion-page-hidden)') ||
-							document.querySelector('app-travel-resume');
-						const b = r?.querySelector('ion-footer button.btn.finish') as HTMLElement | null;
-						if (b) {
-							b.click();
-							return true;
-						}
-						return false;
-					})
-					.catch(() => false);
-				await driver.pause(4_000);
-				break;
-			}
-		}
+		return recoverDriverToHome(this.home.getDriver(), {
+			appPackage: this.config.appPackage,
+			log: message => console.log(`[DriverCargoDeclineHarness][stale-trip] ${message}`)
+		});
 	}
 
 	/**

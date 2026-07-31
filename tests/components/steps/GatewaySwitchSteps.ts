@@ -63,10 +63,14 @@ export class GatewaySwitchSteps extends UiBase {
 		const merchantUser = process.env.EBIZ_MERCHANT_USER ?? '';
 		const merchantPassword = process.env.EBIZ_MERCHANT_PASSWORD ?? '';
 		const securityKey = process.env.EBIZ_SECURITY_KEY ?? '';
-		if (!merchantUser || !merchantPassword || !securityKey) {
-			throw new Error('Faltan EBIZ_MERCHANT_USER / EBIZ_MERCHANT_PASSWORD / EBIZ_SECURITY_KEY en .env.test (ver .env.example y el adapter ebizcharge.credsEnvKeys).');
+		// 4.º factor del modal real (EBizSubscription-Key) — verificado en vivo 2026-07-30.
+		const subscriptionKey = process.env.EBIZ_SUBSCRIPTION_KEY ?? '';
+		if (!merchantUser || !merchantPassword || !securityKey || !subscriptionKey) {
+			throw new Error(
+				'Faltan EBIZ_MERCHANT_USER / EBIZ_MERCHANT_PASSWORD / EBIZ_SECURITY_KEY / EBIZ_SUBSCRIPTION_KEY en .env.test (ver .env.example y el adapter ebizcharge.credsEnvKeys).'
+			);
 		}
-		return { merchantUser, merchantPassword, securityKey };
+		return { merchantUser, merchantPassword, securityKey, subscriptionKey };
 	}
 
 	/** Navega al App Store y devuelve la pasarela actualmente vinculada (o null). */

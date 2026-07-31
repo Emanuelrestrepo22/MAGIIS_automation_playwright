@@ -36,6 +36,7 @@ import { getGatewayPgAdapter } from '@features/gateway-pg/helpers/adapters';
 import { expectNoThreeDSModal, loginAsDispatcher } from '@features/gateway-pg/fixtures/gateway.fixtures';
 import { validateAndSelectMercadoPagoCard } from '@features/gateway-pg/helpers/mercadoPago.helpers';
 import { getCarrierParameters, readHoldRaw, setHoldViaApi } from '@features/gateway-pg/helpers/parameters-api';
+import { assertAuthorizeAccountMeasuresRealAuthorizations } from '@features/gateway-pg/helpers/authorize-account-guard';
 import {
 	cleanupGatewayCardByLast4,
 	extractAuthToken,
@@ -255,6 +256,13 @@ export class CarrierHoldSteps extends UiBase {
 				`runHoldScenario: threeDs=true con gateway '${gateway}' (requires3ds=false) — 3DS es EXCLUSIVO de Stripe; ` +
 					`no parametrizar threeDs para ${gateway} (doctrina: caso excluido, no convertido).`
 			);
+		}
+		// Gate de VALIDEZ DE MEDICIÓN (ronda 4 del RUN-LOG): con Authorize hay DOS cuentas en juego
+		// y la de `.env.test` está en Test Mode — devuelve respuestas enlatadas, así que el hold
+		// "aprueba" sin autorizar nada y el test daría un VERDE VACÍO. Falla ruidosa acá, antes de
+		// crear el viaje, en vez de reportar cobertura inexistente. Memoizado por worker (1 request).
+		if (gateway === 'authorize') {
+			await assertAuthorizeAccountMeasuresRealAuthorizations();
 		}
 		// 3DS: exclusivo de las pasarelas que lo soportan (hoy solo Stripe).
 		const wants3ds = options.threeDs && adapter.requires3ds;

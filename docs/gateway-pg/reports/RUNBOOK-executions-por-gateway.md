@@ -51,6 +51,7 @@ Todas las keys de §1 están en la denylist recomendada (§2.3) — jamás deben
 - Requieren `GATEWAY_ALLOW_DESTRUCTIVE_SWITCH=true` explícito (alias legacy: `AUTHORIZE_ALLOW_DESTRUCTIVE_SWITCH`). Sin el flag, la suite CFG skipea limpio.
 - Correr SOLO en **ventana exclusiva** del carrier 1521 (nadie más ejecutando contra apps-test con ese carrier). Al terminar, dejar la pasarela default (Stripe) re-vinculada — `GatewaySwitchSteps.restoreStripe()` requiere OAuth manual si el unlink la dejó desvinculada.
 - **Capturar network trace de un unlink REAL antes de correr MG-169 sobre el carrier ARG** — verificar que la ÚNICA mutación del unlink es `vendor/cleaningWallets` (supuesto del mock de `expectUnlinkFailureShowsRealError`; el guard anti-mutación del ATC falla si aparece otra, pero la verificación live va primero).
+- ⚠️ **La suite CFG re-vincula la pasarela con las credenciales de `.env`** (`GatewaySwitchSteps.linkAuthorize` → `AUTHORIZE_API_LOGIN_ID` / `AUTHORIZE_TRANSACTION_KEY`). Con Authorize eso **conmuta la cuenta que usa el backend**: si esas creds son de la cuenta en Test Mode, todo run de pago posterior mide respuestas enlatadas y da **verdes vacíos**. Correr CFG **antes** de cualquier bloque de pago obliga a re-verificar la cuenta después. El gate `authorize-account-guard.ts` corta los specs de pago si detecta la cuenta enlatada, pero el orden correcto es alinear las creds primero — ver `authorize/EXTERNAL-BLOCKERS.md` §0.
 
 ### 2.3 Denylist de keys (emit-all)
 

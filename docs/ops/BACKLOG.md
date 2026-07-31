@@ -1092,6 +1092,79 @@ Checklist (en orden):
 - **Próxima acción:** Ejecutar la discovery + completar los `TODO(codegen)` del blueprint UI (`tests/features/service-type-quota/`) en CI; quitar el `test.fixme` una vez validado.
 - **Referencias:** `tests/features/service-type-quota/specs/cupo.e2e.spec.ts`, BL-046
 
+### BL-049 — Cuenta Authorize.net del ambiente TEST: los magic triggers ZIP/CVV no se evalúan
+
+- **Estado:** 🔴 Pendiente — diagnóstico avanzado, causa raíz no confirmada
+- **Prioridad:** P2
+- **Tipo:** Configuración / Investigación
+- **Reportado:** 2026-07-27
+- **Contexto:** Re-diagnóstico de los 11 fallos de BL-036 a partir de la evidencia recuperada (`%TEMP%/pw-logs/authorize-sandbox-final.log`). **El registro previo de BL-036 era incorrecto**: no es "credenciales sandbox sin habilitar para magic-number triggers" — las credenciales conectan y las transacciones **aprueban** (`resultCode: 'Ok'`, `responseCode: 1`). El request tampoco es el problema: `AuthorizeSandboxApi.buildAuthOnlyPayload()` arma el payload canónico correcto (`transactionType` → `amount` → `payment.creditCard.cardCode` → `billTo.zip`).
+
+  Síntomas reales, que son **una sola causa** y no tres: (a) `cvvResultCode` vuelve **vacío incluso en el happy path con CVV 900**, donde debería ser `M`; (b) los ZIP `46205` y `46204`, que deben dar códigos AVS **distintos** (`N` y `G`), devuelven **el mismo valor**; (c) el ZIP `46282` aprueba (`RC 1`) en vez de declinar (`RC 2`). Dos ZIP distintos con idéntica respuesta ⇒ el ZIP no se evalúa; CVV válido sin result code ⇒ el card code no se evalúa; si el ZIP no se evalúa, el trigger de decline nunca aplica. El único test que pasó (*Discover + CVV 900 → RC 1*) es el único que asserta solo `responseCode` y ningún result code.
+
+  Datos verificados: los triggers que usa la matriz están **todos correctos** según la [testing guide oficial](https://developer.authorize.net/hello_world/testing_guide.html) (ZIP 46282→decline · 46205→N · 46204→G · 46211/46214/46217/46207/46203→W/X/Z/R/E · CVV 900/901/902/903/904→M/N/S/U/P). El endpoint de los specs es `https://apitest.authorize.net/xml/v1/request.api` (sandbox). El `AUTHORIZE_API_LOGIN_ID` de `.env.test` **coincide** con el API Login ID vinculado en el MAGIIS App Store ⇒ specs API y pasarela de MAGIIS comparten la misma cuenta, así que un solo fix desbloquea ambas capas. Test Mode **descartado**: el dev confirmó que la cuenta está en **Live** y que se configuró así a propósito para el ambiente TEST.
+
+  Hipótesis abierta principal: los magic triggers ZIP/CVV son una función del **sandbox** de Authorize, no del modo Live/Test. Si la cuenta se administra en `account.authorize.net` (producción) en vez de `sandbox.authorize.net`, el `46282` es un código postal cualquiera y ningún trigger aplica. Dato en contra que impide afirmarlo: las transacciones aprueban con Visa `4111111111111111`, que en procesamiento real se rechazaría. Hipótesis secundaria: filtros **AVS** y **Card Code Verification (CCV)** deshabilitados en la cuenta.
+- **Próxima acción:** Dos verificaciones cortas en el Merchant Interface: (1) **Account → Settings → API Credentials & Keys** → confirmar si el API Login ID empieza en `9jJ` (el de `.env.test`); si no coincide, hay dos cuentas y se está midiendo la equivocada. (2) **Account → Settings → sección de seguridad / Fraud Detection Suite** → estado de *Address Verification Service (AVS)* y *Card Code Verification (CCV)*. Si el usuario no tiene permisos sobre Security Settings, escalar a quien administre la cuenta.
+- **Impacto en la campaña Authorize:** mientras no se resuelva, los casos de outcome no-happy **no son provocables**: A3 (decline ZIP 46282) y A5 (CVV 901) de la Ola A, más los ~19 casos AVS/partial/CVV del bloque exploratorio. Los happy path (A1, A2, A4) **no se ven afectados**. La capa API (12 tests contract) queda como evidencia del gap, no como acreditación.
+- **Defecto colateral detectado:** el `refId` de los specs `authorize-sandbox` excede el límite documentado. El propio código anota *"max 20 chars"* pero `bl-036-cvv-mismatch-${Date.now()}` produce ~33. No causó estos fallos (`resultCode: 'Ok'`), pero es riesgo de errores intermitentes → truncar a 20.
+- **Referencias:** BL-036 (registro previo, diagnóstico a corregir), `tests/components/api/AuthorizeSandboxApi.ts`, `tests/features/gateway-pg/api/authorize-sandbox/*.api.spec.ts`, `docs/gateway-pg/authorize/EXTERNAL-BLOCKERS.md`, plan `~/.claude/plans/quiet-marinating-reddy.md` §1.5
+
+### BL-050 — Divergencia de negocio: duplicado de tarjetas en wallet (Authorize rechaza, Stripe permite)
+
+- **Estado:** 🔴 Pendiente — regla de negocio confirmada en vivo, spec por desarrollar
+- **Prioridad:** P2
+- **Tipo:** Automatización (cobertura nueva) / Regla de negocio
+- **Reportado:** 2026-07-27 (hallazgo del líder de QA, validado manualmente en TEST)
+- **Contexto:** Comportamiento **divergente entre pasarelas** al intentar vincular una tarjeta que **ya existe** en la billetera del pasajero:
+  - **Authorize.Net**: el sistema **no permite el duplicado** — el botón **`Valid`** (validar tarjeta) **no se habilita**. Comportamiento considerado **correcto** por negocio. Para poder volver a llenar el formulario hay que **eliminar** la tarjeta ya asociada; en el segundo intento el botón sí se habilita.
+  - **Stripe**: **no distingue** duplicados y permite agregar **hasta 20 tarjetas idénticas** en una misma wallet.
+
+  Flujo de borrado desde UI, capturado en la grabación `tests/test-3.spec.ts` (líneas 48-49): `.deselect-payment-method` (first) → botón **`Delete`**.
+- **Impacto en la automatización (ya observado):** explica el `timedOut` de **TS-AUTHORIZE-WAL-01** (240s) en la corrida del 2026-07-27. La factory `wallet-add-card` tiene precondición de borrado **por API** (`deletePassengerCard` + `paxSearchQueries`), pero cuando la API no resuelve el pax la tarjeta queda y el botón `Valid` nunca habilita ⇒ el test agota el timeout esperando un botón que por diseño no se va a habilitar. Afecta a **todo** caso Authorize con `cardFlow: 'new'` (A1/TC1011, C1/TC1061, C2/TC1051, C3/TC1201…).
+- **Próxima acción:**
+  1. **Fallback UI de borrado** en la precondición de `cardFlow: 'new'`: si la API no encuentra/borra la tarjeta, borrarla por UI (`.deselect-payment-method` → `Delete`) antes de llenar el form. Desbloquea los casos con tarjeta nueva.
+  2. **Fail-fast en vez de timeout**: si `Valid` no habilita en N segundos y la tarjeta ya estaba en la wallet, fallar con mensaje explícito ("duplicado no permitido — precondición no limpió la tarjeta") en lugar de agotar 240s. Patrón ya existente en `NewTravelPageBase` (*"Validar button never enabled"*, fail-fast 8s).
+  3. **Spec nuevo de la divergencia** (pedido del líder de QA): cubrir que **Stripe permite N tarjetas iguales** en la wallet y que **Authorize lo bloquea**. Es cobertura que la matriz Authorize **no tiene** (§2.2 sólo cubre alta de tarjeta nueva válida/CVV/AVS/expiry/Luhn — no el duplicado). Antes de desarrollarlo hay que **crear el TC en la matriz** y asignarle ID canónico (regla de trazabilidad de CLAUDE.md: prohibido inventar IDs) — marcar como `[SIN-ID-MATRIZ]` hasta entonces.
+- **Pregunta abierta para negocio/dev:** ¿el límite de 20 tarjetas de Stripe es una regla intencional de MAGIIS o el default del proveedor? ¿Debería MAGIIS unificar el comportamiento entre pasarelas (bloquear duplicados en todas)? Si la respuesta es sí, el comportamiento de Stripe pasa a ser un **defect**, no una divergencia aceptada.
+- **Referencias:** `tests/test-3.spec.ts` (grabación del flujo, untracked), `tests/features/gateway-pg/specs/_parametrized/factories/wallet-add-card.factory.ts`, `tests/features/gateway-pg/helpers/card-precondition.ts`, `docs/gateway-pg/authorize/matriz_cases2.md` §2.2, BL-049
+
+### BL-051 — El hold se aplica DOS veces (vinculación + viaje): ¿se libera el hold de vinculación?
+
+- **Estado:** 🟢 **RESUELTO (2026-07-28)** — el hold de vinculación **SÍ se libera automáticamente**. Sin riesgo de fondos retenidos.
+- **Prioridad:** ~~P1~~ cerrado
+- **Tipo:** Regla de negocio / Investigación
+
+- **RESOLUCIÓN — evidencia del dashboard del sandbox** (`demo.authorize.net` → Payments → Manage Transactions, acceso habilitado 2026-07-28). Las transacciones de la corrida automatizada muestran el patrón completo:
+
+  | Hora (PDT) | Transaction ID | Monto | Estado | Qué es |
+  |---|---|---|---|---|
+  | 05:21:26 | `80057687426` | *(vacío)* | **Voided** | hold de VINCULACIÓN — anulado |
+  | 05:21:35 | `80057687427` | **$180.31** | **Authorized** | hold del VIAJE |
+  | 05:26:25 | `80057687495` | *(vacío)* | **Voided** | hold de vinculación — anulado |
+  | 05:26:33 | `80057687497` | **$180.31** | **Authorized** | hold del viaje |
+
+  Conclusiones, con las 3 preguntas del ítem respondidas:
+  1. **¿Se emite void del hold de vinculación?** SÍ — queda en estado `Voided` automáticamente, 8-9 segundos antes del hold del viaje. **No hay holds huérfanos** sobre los fondos del cliente; el riesgo que motivó el P1 no existe.
+  2. **¿De qué monto es?** El hold de vinculación **no registra monto** (columna Amount vacía) → verificación de $0.00. El hold del viaje sí lleva la tarifa completa (`$180.31`).
+  3. **¿Difiere entre pasarelas?** Sin verificar para Stripe/MP — sólo se confirmó Authorize. No bloquea: el comportamiento observado es el correcto.
+
+  La regla de las DOS transacciones por alta de viaje queda **confirmada por evidencia del lado de la pasarela**, no sólo por observación de UI.
+- **Efecto en la automatización:** no hace falta cambiar las assertions. El oráculo sigue siendo la columna de la grilla; el dashboard queda como verificación de respaldo para triaje (ver la nota de BL-049 sobre cómo distinguir fallo de backend vs rechazo de gateway).
+- **Reportado:** 2026-07-27 (aporte del líder de QA, validado en vivo en TEST)
+- **Contexto:** El hold **no se aplica una sola vez**. En el flujo de alta de viaje con tarjeta nueva hay **dos** transacciones contra la pasarela:
+  1. **Hold de vinculación** — el botón "Validar" / "Valid" del formulario de tarjeta **no es una validación de formato**: dispara una transacción de hold real contra la pasarela. Esto explica que el paso de validación pueda fallar con *"Error al validar tarjeta. Por favor, revise los datos ingresados."* aun con los 5 campos correctamente completados (verificado en el snapshot de la corrida TC1011 del 2026-07-27: número `4111 1111 1111 1111`, `12/30`, CVV `900`, titular `MAGIIS QA Test`, ZIP `90210` — todos presentes en el DOM y el error igual apareció). El fallo es de la pasarela, no del fill.
+  2. **Hold del viaje** — al dar de alta el viaje, por el monto de la tarifa.
+
+  Confirmado en las 3 grabaciones validadas en PASS por QA (2026-07-27), que cubren los 3 actores de la Ola A: `tests/test-3.spec.ts` (**app pax / personal**, TC1011), `tests/test-4.spec.ts` (**colaborador de contractor** `fast car` / `smith, Emanuel`, TC1051) y `tests/test-6.spec.ts` (**empresa individuo** `Stripe, Marcelle`, TC1061).
+- **Pregunta abierta (el núcleo del ítem):** ¿el **hold de vinculación** se libera (void) después de validar la tarjeta, o queda retenido? Si queda retenido, **cada validación de tarjeta deja un hold huérfano** sobre los fondos del cliente. En una suite automatizada que revalida tarjetas en cada corrida el efecto se multiplica. Consultar con dev/backend:
+  - ¿Se emite `voidTransaction` sobre el hold de vinculación?
+  - ¿De qué monto es ese hold? (Authorize suele usar $0.00 o $0.01 para verificación; si usa el monto del viaje, el impacto es mayor.)
+  - ¿Difiere el comportamiento entre pasarelas (Stripe usa `setupIntent` sin hold vs Authorize `authOnlyTransaction`)?
+- **Próxima acción:** (1) preguntar a dev por el void del hold de vinculación y su monto; (2) verificarlo en el Merchant Interface de Authorize → Transaction Search, contando transacciones por alta de viaje (deberían aparecer 2 y, si hay void, una anulada); (3) si el hold de vinculación NO se libera, abrir defect en DEV/MX (nunca en MG — MG es sólo entidades Xray).
+- **Impacto en la automatización:** las assertions de los TC de hold deberían contemplar **dos** transacciones, no una. Documentado en el JSDoc de `tests/features/gateway-pg/helpers/stepwise-hold-journey.ts`.
+- **Referencias:** `tests/test-3.spec.ts`, `tests/test-4.spec.ts` (grabaciones, untracked), `tests/features/gateway-pg/helpers/stepwise-hold-journey.ts`, BL-049 (la pasarela no evalúa triggers), BL-050 (duplicado en wallet), `docs/gateway-pg/authorize/matriz_cases2.md` §5 (Voids)
+
 ---
 
 ## Archivo (cerrado, >30 días)

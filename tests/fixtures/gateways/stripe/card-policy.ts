@@ -154,7 +154,35 @@ export const CARDS = {
 	 * Resultado: cargo rechazado con código `incorrect_cvc`.
 	 * Usar en tests de validación de wallet que deben fallar al guardar.
 	 */
-	DECLINE_INVALID_CVC: STRIPE_TEST_CARDS.incorrectCvc
+	DECLINE_INVALID_CVC: STRIPE_TEST_CARDS.incorrectCvc,
+
+	// ═══════════════════════════════════════════════════════════════════
+	// EXPUESTAS POR INTENCIÓN (ya existían en STRIPE_TEST_CARDS sin entry acá)
+	// ═══════════════════════════════════════════════════════════════════
+
+	/** Mastercard (débito) que aprueba — variante de marca del happy path. */
+	SUCCESS_MASTERCARD: STRIPE_TEST_CARDS.mastercardDebit,
+
+	/** `lost_card` — decline con causa distinguible (tarjeta reportada como perdida). */
+	DECLINE_LOST_CARD: STRIPE_TEST_CARDS.lostCard,
+
+	/** `stolen_card` — decline con causa distinguible (tarjeta robada). */
+	DECLINE_STOLEN_CARD: STRIPE_TEST_CARDS.stolenCard,
+
+	/** `expired_card` — decline por expiración, verificada del lado del PSP. */
+	DECLINE_EXPIRED_CARD: STRIPE_TEST_CARDS.expiredCard,
+
+	/** Radar la bloquea siempre — el equivalente Stripe de un rechazo por antifraude. */
+	FRAUD_BLOCKED: STRIPE_TEST_CARDS.alwaysBlocked,
+
+	/**
+	 * `cvc_check` falla DESPUÉS de la autorización: el cargo pasa y la verificación no.
+	 * Es el caso de verificación blanda, distinto de `DECLINE_INVALID_CVC` (que rechaza).
+	 */
+	APPROVED_CVV_MISMATCH: STRIPE_TEST_CARDS.cvcCheckFail,
+
+	/** Igual que el anterior pero para el ZIP: aprueba con la verificación de AVS fallida. */
+	APPROVED_AVS_MISMATCH: STRIPE_TEST_CARDS.zipFailElevated
 } as const;
 
 export type CardPolicyKey = keyof typeof CARDS;

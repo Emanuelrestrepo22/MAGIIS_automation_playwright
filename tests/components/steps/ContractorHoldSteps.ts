@@ -12,8 +12,9 @@
  *   - Import por alias (@ui, @features, @TestFixture) — sin relativos nuevos.
  *   - `runColaboradorScenario` orquesta; los pasos atómicos (login, 3DS) se exponen.
  *
- * NOTA @atc — los ATC viven en las Page components (fillMinimum → MG-148,
- * selectSavedCard → MG-482, 3DS → MG-152); este Step orquesta, no mapea TCs directamente.
+ * NOTA @atc — los ATC viven en las Page components (fillMinimum → MG-148, 3DS → MG-152);
+ * este Step orquesta, no mapea TCs directamente. `selectSavedCard` ya no lleva key: la que
+ * tenía (MG-482) es el TC de validaciones de formulario de tarjeta, que no ejercita.
  */
 
 import type { TestContextOptions } from '@TestContext';

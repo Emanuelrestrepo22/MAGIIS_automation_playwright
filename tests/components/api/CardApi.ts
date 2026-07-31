@@ -91,9 +91,12 @@ export class CardApi extends ApiBase {
 	 * outcome (keyword de estado). Devuelve el contrato HTTP; `body.id` es el card token de un solo uso.
 	 * Fail-fast si falta el número o el nombre (trigger) de la tarjeta.
 	 *
-	 * @atc MG-149 — área C (tokenización de tarjeta). Ejecución real = UAT.
+	 * @atc MG-148 — área C. El Step 3 de MG-148 dice "dar de alta una tarjeta valida TOKENIZADA
+	 *   CLIENT-SIDE": tokenizar es la primera mitad de ese paso, no un Test aparte. Antes decía
+	 *   MG-149, que es el listado sin wallet (C-02) y no tiene nada que ver con tokenizar.
+	 *   Ejecución real = UAT.
 	 */
-	@atc('MG-149', { severity: 'critical', description: 'getCardToken — tokeniza tarjeta MercadoPago (holderName = trigger)' })
+	@atc('MG-148', { severity: 'critical', description: 'getCardToken — tokeniza tarjeta MercadoPago (holderName = trigger)' })
 	async getCardToken(input: GetCardTokenInput): Promise<MercadopagoHttpResult> {
 		if (!input.card?.cardNumber || !input.card?.cardholderName) {
 			throw new Error('[CardApi.getCardToken] card.cardNumber y card.cardholderName (trigger) son obligatorios.');
@@ -116,9 +119,12 @@ export class CardApi extends ApiBase {
 	 * Mini-flujo ATC: persiste una tarjeta tokenizada en el pax. El `token` proviene de `getCardToken`.
 	 * Devuelve el contrato HTTP. Fail-fast si falta el token o el user.
 	 *
-	 * @atc MG-150 — área C (alta de tarjeta). Ejecución real = UAT.
+	 * @atc MG-148 — área C (alta de tarjeta VÁLIDA, el happy de C-01). Antes decía MG-150, que es
+	 *   "el alta falla de forma CONTROLADA cuando el PSP está degradado" (C-03): un negativo. Un
+	 *   addCard que responde 200 no puede acreditar el Test del PSP caído — MG-150 queda libre
+	 *   hasta que exista el spec que degrade el PSP. Ejecución real = UAT.
 	 */
-	@atc('MG-150', { severity: 'critical', description: 'addCard — persiste la tarjeta MP tokenizada en el pasajero' })
+	@atc('MG-148', { severity: 'critical', description: 'addCard — persiste la tarjeta MP tokenizada en el pasajero' })
 	async addCard(input: AddCardInput): Promise<MercadopagoHttpResult> {
 		if (!input.token || input.user == null) {
 			throw new Error('[CardApi.addCard] token (de getCardToken) y user son obligatorios.');
@@ -143,9 +149,12 @@ export class CardApi extends ApiBase {
 	 * viven en la cuenta MP (no en UserWallet local) → este listado es el positivo de MG-195.
 	 * Devuelve el contrato HTTP con `body` = array de tarjetas (o null si el body no era JSON).
 	 *
-	 * @atc MG-172 — área H (listado/estado de tarjetas del pax). Ejecución real = UAT.
+	 * @atc MG-149 — área C. El único Step de MG-149 (C-02) es literalmente "Consultar GET
+	 *   passengers/{passengerId}/allCards" sobre un pax sin wallet, esperando 200 con lista vacía y
+	 *   nunca 500: es ESTE endpoint. Antes decía MG-172, que es "recrear un pax con el mismo mail sin
+	 *   colisión de wallet" (H-01) — un caso que ni siquiera crea pax en este repo. Ejecución real = UAT.
 	 */
-	@atc('MG-172', { severity: 'normal', description: 'listAllCards — GET passengers/{id}/allCards (tarjetas del pax en MP)' })
+	@atc('MG-149', { severity: 'normal', description: 'listAllCards — GET passengers/{id}/allCards (tarjetas del pax en MP)' })
 	async listAllCards(input: ListAllCardsInput): Promise<MercadopagoHttpResult<MercadopagoAllCardsResponse>> {
 		const url = `${this.resolveBase(input.baseUrl)}/magiis-v0.2/passengers/${input.passengerId}/allCards`;
 		try {

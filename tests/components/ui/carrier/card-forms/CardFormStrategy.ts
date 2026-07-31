@@ -29,7 +29,7 @@ import type { GenericTestCard } from '@fixtures/gateways/_shared';
  * Subconjunto estructural de `GenericTestCard` — cualquier tarjeta del resolver
  * cross-gateway (`resolveCard({ gateway, intent })`) es asignable tal cual.
  */
-export type CardFormFillInput = Pick<GenericTestCard, 'number' | 'expiry' | 'cvc' | 'holderName' | 'zip'> & {
+export type CardFormFillInput = Pick<GenericTestCard, 'number' | 'expiry' | 'cvc' | 'holderName' | 'zip' | 'address' | 'addressOption' | 'expectedZip'> & {
 	/** Solo form nativo con 5° campo 'document' (Mercado Pago). Default 'DNI'. */
 	docType?: string;
 	/** Solo form nativo con 5° campo 'document' (Mercado Pago). Default '12345678'. */
@@ -48,4 +48,19 @@ export type CardFormKind = 'stripe-elements' | 'native-angular';
 export interface CardFormStrategy {
 	readonly kind: CardFormKind;
 	fill(page: Page, card: CardFormFillInput): Promise<void>;
+	/**
+	 * Verifica que los campos quedaron efectivamente completados con los valores de `card`,
+	 * ANTES de disparar la validación contra la pasarela.
+	 *
+	 * Por qué existe: el form nativo Angular es reactivo y un re-render puede LIMPIAR un campo
+	 * ya tipeado. Observado en la corrida TS-AUTHORIZE-TC1061 del 2026-07-27: el número de
+	 * tarjeta quedó vacío mientras vencimiento/CVV/titular/ZIP conservaban su valor, y el fallo
+	 * emergió recién en la validación como "Error al validar tarjeta. Por favor, revise los datos
+	 * ingresados." — un mensaje genérico de la pasarela que apunta al lugar equivocado y manda a
+	 * investigar la cuenta del gateway en vez del fill.
+	 *
+	 * Opcional: `StripeElementsCardForm` no puede leer los valores (viven dentro de iframes de
+	 * Stripe, que no exponen `inputValue`), así que sólo lo implementa el form nativo.
+	 */
+	expectFilled?(page: Page, card: CardFormFillInput): Promise<void>;
 }

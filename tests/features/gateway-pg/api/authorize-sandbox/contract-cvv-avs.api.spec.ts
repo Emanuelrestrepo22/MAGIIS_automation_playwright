@@ -17,6 +17,15 @@
  * `TS-AUTHORIZE-TC1031` (ZIP 46205) — el Alta de Viaje que describen esos TC (política
  * MAGIIS de aceptar/rechazar el flag) sigue SIN automatizar (gap declarado en la matriz
  * §§2.3-2.4); por eso estos tests NO se cablean a esos TC, para no inflar la evidencia.
+ *
+ * GATE DE VALIDEZ DE MEDICIÓN (2026-07-29): los tres tests de este archivo asertan un
+ * trigger de CVV/ZIP, y una cuenta en Test Mode NO evalúa esos triggers — devuelve la
+ * respuesta enlatada (`cvvResultCode ''`, `avsResultCode 'P'`) para cualquier tarjeta. Sin
+ * el gate el fallo se lee como drift del sandbox (`Expected "N", Received ""`) cuando en
+ * realidad es la cuenta. `assertAuthorizeAccountMeasuresRealAuthorizations` corta primero
+ * con el mensaje accionable del bloqueante §0 de `docs/gateway-pg/authorize/EXTERNAL-BLOCKERS.md`.
+ * Los happy paths de `contract-happy` / `contract-edge` quedan deliberadamente SIN gate:
+ * su oráculo es la aprobación, no un trigger.
  */
 
 import { test, expect } from '@TestFixture';
@@ -24,6 +33,7 @@ import { AUTHORIZE_CARDS } from '@fixtures/gateways/authorize/card-policy';
 import { AuthorizeSandboxApi, hasAuthorizeCredentials } from '@api/AuthorizeSandboxApi';
 import type { AuthorizeApiResponse } from '@schemas/authorize.types';
 import { AUTHORIZE_CONTRACT_XRAY_KEYS } from '@features/gateway-pg/data/xray-keys';
+import { assertAuthorizeAccountMeasuresRealAuthorizations } from '@features/gateway-pg/helpers/authorize-account-guard';
 
 test.describe('[BL-036][API] Authorize.net sandbox — CVV + AVS triggers @gateway @authorize @regression', () => {
 	test.skip(!hasAuthorizeCredentials(), 'AUTHORIZE_API_LOGIN_ID/TRANSACTION_KEY no seteadas en env');
@@ -32,6 +42,7 @@ test.describe('[BL-036][API] Authorize.net sandbox — CVV + AVS triggers @gatew
 		'CVV 901 → cvvResultCode "N" (Does NOT Match)',
 		{ annotation: [{ type: 'tms', description: AUTHORIZE_CONTRACT_XRAY_KEYS.cvv901 }] },
 		async ({ request }) => {
+			await assertAuthorizeAccountMeasuresRealAuthorizations(request);
 			const api = new AuthorizeSandboxApi({ request });
 
 			const response: AuthorizeApiResponse = await api.authorizeOnly({
@@ -51,6 +62,7 @@ test.describe('[BL-036][API] Authorize.net sandbox — CVV + AVS triggers @gatew
 		'CVV 904 → cvvResultCode "P" (Is NOT Processed)',
 		{ annotation: [{ type: 'tms', description: AUTHORIZE_CONTRACT_XRAY_KEYS.cvv904 }] },
 		async ({ request }) => {
+			await assertAuthorizeAccountMeasuresRealAuthorizations(request);
 			const api = new AuthorizeSandboxApi({ request });
 
 			const response: AuthorizeApiResponse = await api.authorizeOnly({
@@ -68,6 +80,7 @@ test.describe('[BL-036][API] Authorize.net sandbox — CVV + AVS triggers @gatew
 		'ZIP 46205 → avsResultCode "N" (Address & ZIP no match)',
 		{ annotation: [{ type: 'tms', description: AUTHORIZE_CONTRACT_XRAY_KEYS.avs46205 }] },
 		async ({ request }) => {
+			await assertAuthorizeAccountMeasuresRealAuthorizations(request);
 			const api = new AuthorizeSandboxApi({ request });
 
 			const response: AuthorizeApiResponse = await api.authorizeOnly({

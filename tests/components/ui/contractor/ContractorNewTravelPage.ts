@@ -14,9 +14,11 @@
  * NOTA @atc — MAPEO POR ÁREA (aceptado): el idmap `atp-mg-gateway-idmap.md` es
  * API-level (TC-PAY-*); los TS-STRIPE-P2-TC00x (UI) no tienen 1:1. `fillMinimum`
  * (alta + validación tarjeta preautorizada) → MG-148 (área C, TC-PAY-C-01), mismo
- * mapeo que el carrier. `selectSavedCard` (selección de tarjeta guardada, UI) →
- * MG-482 (área C UI, TC-PAY-C-05). Reasignar cuando el ATP tenga TCs UI del alta
- * contractor.
+ * mapeo que el carrier. `selectSavedCard` quedó SIN `@atc`: llevaba MG-482
+ * (TC-PAY-C-05), que valida las validaciones de formulario de tarjeta —
+ * número/fecha/CVV/ZIP/titular — y seleccionar una tarjeta ya guardada no ejercita
+ * nada de eso. Sin Test propio en el ATP, un caso unmapped es visible y auditable;
+ * una key cruzada acredita evidencia falsa. Decorar si el ATP crea el TC UI.
  *
  * Convención KATA aplicada:
  *   - Extiende UiBase.
@@ -88,13 +90,16 @@ export class ContractorNewTravelPage extends UiBase {
 	}
 
 	/**
-	 * Mini-flujo ATC: selecciona la tarjeta guardada resaltada del colaborador.
-	 * @atc MG-482 (área C UI — pendiente reasignar).
+	 * Selecciona la tarjeta guardada resaltada del colaborador.
+	 *
+	 * SIN `@atc` a propósito. Antes llevaba `@atc('MG-482')` con la nota "pendiente reasignar", y era
+	 * una key CRUZADA: MG-482 (C-05) valida "validaciones de formulario de tarjeta —
+	 * número/fecha/CVV/ZIP/titular", es decir un NEGATIVO de campos inválidos que este método no
+	 * ejercita ni de lejos. Seleccionar una tarjeta ya guardada no tiene Test propio entre los 33 de
+	 * las acciones estandarizadas, así que se queda sin key: un caso unmapped es visible y auditable,
+	 * una key cruzada acredita evidencia falsa en un Test ajeno. Decorar sólo si el ATP crea el Test.
 	 */
-	@atc('MG-482', {
-		severity: 'critical',
-		description: 'Alta de viaje contractor: seleccionar tarjeta guardada del colaborador'
-	})
+	@step
 	async selectSavedCard(): Promise<void> {
 		await this.legacy.selectSavedCard();
 	}

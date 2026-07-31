@@ -221,6 +221,59 @@ export async function deletePassengerCard(page: Page, passengerId: number, cardI
 }
 
 /**
+ * Idempotencia de re-runs: borra por API la tarjeta con ese `last4` del pax, probando
+ * varias queries de búsqueda (la tarjeta se adjunta al pasajero del alta de viaje, y qué
+ * pasajero es depende de la pasarela → `journeyDefaults.paxSearchQueries`).
+ *
+ * Por qué hace falta: re-validar una tarjeta YA vinculada devuelve "Error al validar"
+ * (verificado en vivo en Authorize), así que sin este cleanup el segundo run de una suite
+ * de alta de tarjeta falla por un motivo que no es el que el test quiere medir.
+ *
+ * Silencia los errores por query a propósito: que un pasajero no aparezca con una de las
+ * queries es normal, no un fallo de la precondición.
+ *
+ * RECORRE TODAS LAS QUERIES — no corta en la primera productiva. La versión anterior hacía
+ * `if (toDelete.length > 0) return`, así que si la misma tarjeta quedaba adherida a MÁS DE UN
+ * pasajero (cada query resuelve a un pax distinto) sólo limpiaba el primero y dejaba copias
+ * atrás. Eso degrada la suite con el uso: re-validar una tarjeta ya vinculada devuelve
+ * "Error al validar" (verificado en vivo en Authorize, ver `travel-cleanup.ts`), así que un
+ * happy path verde hoy se pone rojo tras N corridas por acumulación — y el síntoma no se
+ * parece en nada a la causa. Mismo modo de fallo que ya documentó `cleanupExcessCards`
+ * (Marcelle/Stripe con 47 tarjetas, 36 del mismo last4).
+ *
+ * Extraído de `wallet-add-card.factory.ts` para compartirlo con la matriz de outcomes.
+ */
+export async function cleanupGatewayCardByLast4(page: Page, queries: readonly string[], last4: string): Promise<void> {
+	let totalDeleted = 0;
+	let paxTouched = 0;
+
+	for (const query of queries) {
+		try {
+			const paxId = await getPassengerId(page, query);
+			const resp = await getPassengerCards(page, paxId);
+			const cards = resp.cards ?? [];
+			const toDelete = cards.filter(card => card.lastFourDigits === last4);
+			for (const card of toDelete) await deletePassengerCard(page, paxId, card.id);
+			totalDeleted += toDelete.length;
+			if (toDelete.length > 0) paxTouched += 1;
+			debugLog(
+				'gateway-pg:wallet',
+				`[precond] query="${query}" pax=${paxId}: ${cards.length} tarjetas, borradas ${toDelete.length} con last4=${last4}`
+			);
+		} catch (error) {
+			debugLog('gateway-pg:wallet', `[precond] query="${query}" skip: ${(error as Error).message}`);
+		}
+	}
+
+	// Diagnóstico de acumulación: >1 pax con la misma tarjeta es exactamente el caso que el
+	// early-return anterior dejaba a medias.
+	debugLog(
+		'gateway-pg:wallet',
+		`[precond][total] last4=${last4}: ${totalDeleted} tarjetas borradas across ${paxTouched} pasajero(s) de ${queries.length} queries`
+	);
+}
+
+/**
  * Limpia tarjetas excedentes de un pasajero.
  *
  * Lógica:
@@ -455,27 +508,41 @@ export async function validateCardPrecondition(
 }
 
 /**
- * Idempotencia de alta de tarjeta nativa: borra por API la tarjeta (last4) del pax
- * antes del alta. Prueba varias queries de búsqueda (la tarjeta se adjunta al pasajero
- * del alta). Extraído de wallet-add-card.factory (S8/campaña: el piloto hold reproducía
- * un falso-negativo cuando la tarjeta ya estaba vinculada — confirmado live 2026-07-27:
- * con la card guardada, el form nativo diverge y "Tarjeta válida" nunca aparece).
- * Silent-fail por query (utility KATA): una query sin pax no aborta la precondición.
+ * Borra por API las tarjetas del pasajero cuyos últimos 4 dígitos coincidan con `last4`.
+ *
+ * Prueba varias queries de búsqueda porque la tarjeta se adjunta al pasajero del alta y el nombre
+ * con el que se lo encuentra varía por pasarela (`journeyDefaults.paxSearchQueries`). Corta en la
+ * primera query que efectivamente borre algo. Nunca lanza: si ninguna query resuelve, devuelve 0 y
+ * el caller decide (la limpieza por UI queda como respaldo).
+ *
+ * POR QUÉ POR API Y NO POR UI (workaround del 2026-07-28): borrar la tarjeta desde el desplegable
+ * del alta de viaje y volver a adicionarla hace que el backend responda
+ * **HTTP 500 en `POST /passengers/{id}/cards`** — reproducido en TS-AUTHORIZE-TC1011 (pax 8669) y
+ * TC1061 (pax 4951), mientras TC1051 pasó porque su pasajero NO tenía tarjeta previa. El borrado por
+ * API usa otro recurso (`DELETE /users/{id}/cards/{cardId}`) y deja el perfil consistente.
+ * El 500 en sí es un hallazgo de producto pendiente de reportar — esto sólo lo esquiva.
+ *
+ * @returns cantidad de tarjetas borradas.
  */
-export async function cleanupGatewayCardByLast4(page: Page, queries: readonly string[], last4: string): Promise<void> {
-	for (const query of queries) {
+export async function cleanupCardsByLast4(page: Page, searchQueries: readonly string[], last4: string): Promise<number> {
+	for (const query of searchQueries) {
 		try {
-			const paxId = await getPassengerId(page, query);
-			const resp = await getPassengerCards(page, paxId);
-			const cards = resp.cards ?? [];
+			const passengerId = await getPassengerId(page, query);
+			const response = await getPassengerCards(page, passengerId);
+			const cards = (response.cards ?? []) as Array<{ id: number; lastFourDigits: string }>;
 			const toDelete = cards.filter(card => card.lastFourDigits === last4);
-			for (const card of toDelete) await deletePassengerCard(page, paxId, card.id);
-			if (toDelete.length > 0) return;
+
+			for (const card of toDelete) {
+				await deletePassengerCard(page, passengerId, card.id);
+			}
+			debugLog('gateway-pg:card-precondition', `[cleanup] query="${query}" pax=${passengerId}: ${cards.length} tarjetas, borradas ${toDelete.length} con last4=${last4}`);
+			if (toDelete.length > 0) {
+				return toDelete.length;
+			}
 		} catch (error) {
-			// utility silent-fail: query sin match no es error de la precondición.
-			// debugLog (no console): observabilidad del E13 — un 401 por token frío o un DELETE
-			// rechazado se veían como "sin match" (root-cause del falso negativo del piloto 2026-07-28).
-			debugLog('card-precondition', `[card-cleanup] query "${query}" fallo: ${String(error).slice(0, 200)}`);
+			debugLog('gateway-pg:card-precondition', `[cleanup] query="${query}" skip: ${(error as Error).message}`);
 		}
 	}
+
+	return 0;
 }

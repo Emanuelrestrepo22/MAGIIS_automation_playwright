@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 import { getPortalUrl } from '../../config/gatewayPortalRuntime';
 
 function normalizeText(value: string | null | undefined): string {
@@ -60,25 +60,40 @@ export class TravelManagementPage {
 		await actionBtn.click();
 	}
 
-	private async tripRow(passenger: string, destination?: string) {
+	/**
+	 * UNA pasada por las filas visibles. Devuelve `null` si ninguna matchea — no espera ni lanza.
+	 * Extraído de `tripRow` para que el escaneo de pestañas de `findTripColumn` pueda usar el MISMO
+	 * criterio de match sin heredar su deadline de 30s (7 pestañas × 30s serían 3,5 minutos).
+	 */
+	private async matchRowOnce(passenger: string, destination?: string): Promise<Locator | null> {
 		const rows = this.page.locator('tr');
+		const count = await rows.count();
+
+		for (let index = 0; index < count; index += 1) {
+			const row = rows.nth(index);
+			const text = normalizeText(await row.textContent().catch(() => ''));
+
+			if (!matchesSearchText(text, passenger)) {
+				continue;
+			}
+
+			if (destination && !matchesSearchText(text, destination)) {
+				continue;
+			}
+
+			return row;
+		}
+
+		return null;
+	}
+
+	private async tripRow(passenger: string, destination?: string) {
 		const deadline = Date.now() + 30_000;
 
 		while (Date.now() < deadline) {
-			const count = await rows.count();
+			const row = await this.matchRowOnce(passenger, destination);
 
-			for (let index = 0; index < count; index += 1) {
-				const row = rows.nth(index);
-				const text = normalizeText(await row.textContent().catch(() => ''));
-
-				if (!matchesSearchText(text, passenger)) {
-					continue;
-				}
-
-				if (destination && !matchesSearchText(text, destination)) {
-					continue;
-				}
-
+			if (row) {
 				return row;
 			}
 
@@ -106,6 +121,46 @@ export class TravelManagementPage {
 	}
 
 	/**
+	 * DIAGNÓSTICO: recorre las pestañas de gestión y devuelve el nombre de aquella donde está la fila
+	 * del viaje, o `null` si no aparece en ninguna.
+	 *
+	 * Existe porque "no aparece en Por asignar" tapa dos situaciones OPUESTAS que mandan a investigar
+	 * lugares distintos: el viaje cayó en "En conflicto" (se creó y el hold NO se aprobó → hallazgo de
+	 * pago, escalar a dev) o no hay fila en ninguna columna (el alta no se completó → causa aguas
+	 * arriba, p. ej. tarifa/ruta). El mensaje crudo de `tripRow` no las distingue, y en la corrida de
+	 * TC1011 del 2026-07-28 esa ambigüedad dejó sin respuesta justamente la pregunta que había que
+	 * contestar.
+	 *
+	 * Es READ-ONLY sobre el estado del viaje (sólo cambia de pestaña) y no lanza: está pensado para
+	 * usarse dentro del manejo de error de una assertion que ya falló, sin enmascararla.
+	 */
+	async findTripColumn(passenger: string, destination?: string): Promise<string | null> {
+		const tabs = this.page.locator('tabset ul li a');
+		const tabCount = await tabs.count();
+
+		for (let index = 0; index < tabCount; index += 1) {
+			const tab = tabs.nth(index);
+			const label = ((await tab.textContent().catch(() => '')) ?? '').replace(/\s+/g, ' ').trim();
+
+			await tab.click({ timeout: 5_000 }).catch(() => undefined);
+			await this.page.waitForSelector('table tbody', { state: 'visible', timeout: 5_000 }).catch(() => {});
+
+			// Margen corto por pestaña: la grilla ya está cargada, sólo se re-renderiza el filtro.
+			const deadline = Date.now() + 2_000;
+
+			while (Date.now() < deadline) {
+				if (await this.matchRowOnce(passenger, destination)) {
+					return label;
+				}
+
+				await this.page.waitForTimeout(250);
+			}
+		}
+
+		return null;
+	}
+
+	/**
 	 * Tabla de viajes de la pestaña activa. Antes usaba `getByTestId('column-por-asignar')`, un
 	 * testid que NO existe en el FE → el locator nunca matcheaba. El tablero comparte una única
 	 * `<table>` cuyo contenido cambia según la pestaña seleccionada (no hay columnas Kanban).
@@ -114,7 +169,15 @@ export class TravelManagementPage {
 		return this.page.locator('table.table, table').first();
 	}
 
-	async expectPassengerInPorAsignar(passenger: string, destination?: string, status?: string): Promise<void> {
+	/**
+	 * `status` acepta RegExp: el estado de la fila NO es determinista después de un hold aprobado.
+	 * Si ningún driver tomó el viaje queda en "Buscando chofer"; si un driver YA lo aceptó pasa a
+	 * "En progreso" — ambos son resultados válidos del hold (confirmado por el líder de QA,
+	 * 2026-07-27, con pago exitoso desde la App Driver). Pasar un literal fijo introduce una
+	 * condición de carrera que hace fallar el test por una razón que no es un bug.
+	 */
+	async expectPassengerInPorAsignar(passenger: string, destination?: string, status?: string | RegExp): Promise<void> {
+		// La grilla arranca en otra pestaña: sin este click la fila no existe en el DOM.
 		await this.openPorAsignarTab();
 		const row = await this.tripRow(passenger, destination);
 		await expect(row).toBeVisible({ timeout: 10_000 });

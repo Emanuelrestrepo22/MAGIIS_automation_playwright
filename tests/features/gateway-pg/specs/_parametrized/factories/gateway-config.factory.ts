@@ -49,6 +49,7 @@ import {
 } from '@ui/carrier';
 import { GatewaySwitchSteps } from '@steps/index';
 import { getGatewayPgAdapter } from '@features/gateway-pg/helpers/adapters';
+import { gatewayTag } from '@features/gateway-pg/helpers/adapters/gateway-tag';
 import { loginAsDispatcher } from '@features/gateway-pg/fixtures/gateway.fixtures';
 
 /** Los 5 casos base de la suite CFG (los del spec Authorize F4 — cobertura de referencia). */
@@ -95,7 +96,8 @@ function ebizchargeCredsFromEnv(): EbizchargeCreds {
 	return {
 		merchantUser: process.env.EBIZ_MERCHANT_USER ?? '',
 		merchantPassword: process.env.EBIZ_MERCHANT_PASSWORD ?? '',
-		securityKey: process.env.EBIZ_SECURITY_KEY ?? ''
+		securityKey: process.env.EBIZ_SECURITY_KEY ?? '',
+		subscriptionKey: process.env.EBIZ_SUBSCRIPTION_KEY ?? ''
 	};
 }
 
@@ -103,7 +105,8 @@ const INVALID_AUTHORIZE_CREDS: AuthorizeCreds = { apiLoginId: 'INVALID_LOGIN_ID'
 const INVALID_EBIZCHARGE_CREDS: EbizchargeCreds = {
 	merchantUser: 'INVALID_MERCHANT_USER',
 	merchantPassword: 'INVALID_MERCHANT_PASSWORD',
-	securityKey: 'INVALID_SECURITY_KEY'
+	securityKey: 'INVALID_SECURITY_KEY',
+	subscriptionKey: 'INVALID_SUBSCRIPTION_KEY'
 };
 
 const LINK_DRIVERS: Partial<Record<GatewayName, GatewayLinkDriver>> = {
@@ -190,11 +193,9 @@ export function defineGatewayConfigSuite(gateway: GatewayName, options: GatewayC
 		);
 	}
 
-	// Tag de pasarela SIN guiones (S9): 'mercado-pago' → '@mercadopago' — los scripts npm
-	// por pasarela grepean el tag normalizado; el identifier de código NO cambia.
-	const gatewayTag = gateway.replace(/-/g, '');
-
-	test.describe(`Gateway PG · Carrier · Configuración Pasarela ${adapter.displayName} @gateway @${gatewayTag} @cfg @regression`, () => {
+	// Tag de pasarela SIN guiones (S9) — derivado por `gatewayTag()` (SoT única en
+	// helpers/adapters/gateway-tag.ts, verificada por assertGatewayTagContract).
+	test.describe(`Gateway PG · Carrier · Configuración Pasarela ${adapter.displayName} @gateway ${gatewayTag(gateway)} @cfg @regression`, () => {
 		test.describe.configure({ mode: 'serial', timeout: 180_000 });
 		// El fixture KATA no define la opción `role` — login explícito vía loginAsDispatcher.
 		test.use({ storageState: { cookies: [], origins: [] } });

@@ -61,11 +61,20 @@ export interface AuthorizeCreds {
 	gatewayId?: string;
 }
 
-/** Credenciales merchant eBizCharge leídas de env (EBIZ_MERCHANT_USER / _PASSWORD / EBIZ_SECURITY_KEY). */
+/**
+ * Credenciales merchant eBizCharge leídas de env.
+ *
+ * El modal real tiene **4 campos**, no 3 — verificado en vivo (exploratorio del líder de QA,
+ * 2026-07-30, grabación `test-1.spec.ts` del clone principal):
+ *   `EBizSubscription-Key` · `Security Id` · `User Id` · `Password` → botón **Save**.
+ * El 4.º factor (`EBizSubscription-Key`) es el header de la variante JSON/REST de la Connect
+ * API; env var `EBIZ_SUBSCRIPTION_KEY` (documentada en `.env.example`).
+ */
 export interface EbizchargeCreds {
 	merchantUser: string;
 	merchantPassword: string;
 	securityKey: string;
+	subscriptionKey: string;
 }
 
 /** Campo del modal de credenciales de link: locator (INLINE en este POM) + valor a llenar. */
@@ -147,32 +156,33 @@ export class AppStoreGatewaysPage extends UiBase {
 		this.page.locator('.modal, [role="dialog"]').filter({ hasText: /ebiz/i }).first();
 
 	/**
-	 * FRAGILE/TODO(live): campos del modal eBizCharge por `formcontrolname` CANDIDATOS (no
-	 * confirmados — espejo del patrón Angular Reactive Forms del modal Authorize). Scopeados al
-	 * modal eBiz para no matchear inputs de otros modales PSP ocultos. Fijar selectores reales
-	 * en la primera corrida viva con EBIZ_* configuradas.
+	 * Campos del modal eBizCharge por NOMBRE ACCESIBLE — verificados en vivo (exploratorio del
+	 * líder de QA, 2026-07-30): el modal real expone `EBizSubscription-Key`, `Security Id`,
+	 * `User Id` y `Password` como accessible names de sus textboxes. Reemplaza a los 11
+	 * `formcontrolname` candidatos que nunca se confirmaron. Scopeados al modal eBiz porque hay
+	 * ~6 modales PSP ocultos en el DOM, y `Password` existe también en el de Authorize.
 	 */
-	private readonly ebizMerchantUserInput = (): Locator =>
-		this.ebizModal()
-			.locator('input[formcontrolname="merchantUser"], input[formcontrolname="username"], input[formcontrolname="userName"], input[formcontrolname="user"]')
-			.first();
-	private readonly ebizMerchantPasswordInput = (): Locator =>
-		this.ebizModal().locator('input[formcontrolname="merchantPassword"], input[formcontrolname="password"], input[type="password"]').first();
+	private readonly ebizSubscriptionKeyInput = (): Locator =>
+		this.ebizModal().getByRole('textbox', { name: 'EBizSubscription-Key' }).first();
 	private readonly ebizSecurityKeyInput = (): Locator =>
-		this.ebizModal()
-			.locator('input[formcontrolname="securityKey"], input[formcontrolname="securityId"], input[formcontrolname="apiKey"], input[formcontrolname="token"]')
-			.first();
+		this.ebizModal().getByRole('textbox', { name: 'Security Id' }).first();
+	private readonly ebizMerchantUserInput = (): Locator =>
+		this.ebizModal().getByRole('textbox', { name: 'User Id' }).first();
+	private readonly ebizMerchantPasswordInput = (): Locator =>
+		this.ebizModal().getByRole('textbox', { name: 'Password' }).first();
 
 	/**
-	 * Botón submit de un modal de credenciales = "Continuar" (ESPAÑOL — el modal Authorize mezcla
-	 * idiomas: título/campos en inglés "Link your account"/"API Login ID:", botones en español
-	 * "Cancelar"/"Continuar"; corrige HANDOFF que asumía "Continue" en inglés). Empieza DISABLED
-	 * hasta que el form sea válido (Angular reactive form) — Playwright espera el estado enabled
-	 * automáticamente antes del click. Scopeado al modal recibido (hay ~6 modales ocultos, 1 por
-	 * PSP, cada uno con su propio submit).
+	 * Botón submit de un modal de credenciales. NO es uniforme entre pasarelas — cada dato está
+	 * verificado en vivo por separado:
+	 *   · Authorize → "Continuar" (el modal mezcla idiomas: campos en inglés, botones en español).
+	 *   · eBizCharge → **"Save"** (exploratorio 2026-07-30 — el matcher viejo `Continuar|Continue`
+	 *     no lo encontraba y el link de eBiz moría por timeout).
+	 * Empieza DISABLED hasta que el form sea válido (Angular reactive form) — Playwright espera el
+	 * estado enabled automáticamente antes del click. Scopeado al modal recibido (hay ~6 modales
+	 * ocultos, 1 por PSP, cada uno con su propio submit).
 	 */
 	private readonly linkSubmitIn = (modal: Locator): Locator =>
-		modal.getByRole('button', { name: /^(Continuar|Continue)$/i }).first();
+		modal.getByRole('button', { name: /^(Continuar|Continue|Save|Guardar)$/i }).first();
 
 	/** Modal de credenciales de link por pasarela (solo Authorize verificado live). */
 	private linkModalFor(company: GatewayCompany): Locator {
@@ -215,7 +225,9 @@ export class AppStoreGatewaysPage extends UiBase {
 	 */
 	private readonly unlinkConfirmButton = (): Locator =>
 		this.page
-			.getByRole('button', { name: /^\s*(confirmar|aceptar|s[ií]|yes|ok)\s*$/i })
+			// `confirm` agregado (verificado en vivo 2026-07-30): en locale inglés el popup de
+			// desvinculación usa el botón "Confirm", que el matcher anterior no cubría.
+			.getByRole('button', { name: /^\s*(confirmar|confirm|aceptar|s[ií]|yes|ok)\s*$/i })
 			.filter({ visible: true })
 			.first();
 
@@ -238,10 +250,12 @@ export class AppStoreGatewaysPage extends UiBase {
 
 	/** Campos del modal de link eBizCharge — FRAGILE/TODO(live): locators candidatos sin confirmar. */
 	private ebizchargeLinkFields(creds: EbizchargeCreds): LinkFieldEntry[] {
+		// Orden del modal real (verificado 2026-07-30): Subscription-Key → Security Id → User Id → Password.
 		return [
+			{ input: this.ebizSubscriptionKeyInput(), value: creds.subscriptionKey },
+			{ input: this.ebizSecurityKeyInput(), value: creds.securityKey },
 			{ input: this.ebizMerchantUserInput(), value: creds.merchantUser },
-			{ input: this.ebizMerchantPasswordInput(), value: creds.merchantPassword },
-			{ input: this.ebizSecurityKeyInput(), value: creds.securityKey }
+			{ input: this.ebizMerchantPasswordInput(), value: creds.merchantPassword }
 		];
 	}
 
@@ -476,12 +490,14 @@ export class AppStoreGatewaysPage extends UiBase {
 	}
 
 	/**
-	 * Vincula eBizCharge con credenciales merchant VÁLIDAS y verifica el estado vinculado.
-	 * Wrapper por pasarela (S4) — SIN `@atc`: eBizCharge aún no tiene key CFG en Jira
-	 * (`XRAY_KEYS_BY_GATEWAY.ebizcharge.cfg.linkValid = null`); decorar cuando exista.
-	 * FRAGILE/TODO(live): modal y campos eBiz NO confirmados en vivo (ver locators candidatos).
+	 * ATC — vincula eBizCharge con credenciales merchant VÁLIDAS y verifica el estado vinculado.
+	 * Wrapper por pasarela (key ESTRUCTURAL — TS-EBIZ-TC1051). Decorado el 2026-07-31: el Test SÍ
+	 * existe, es MG-141 (A-01) del ATR de acciones estandarizadas MG-559, no un Test "de eBizCharge"
+	 * — de ahí que antes se concluyera que no había key.
+	 * Modal y campos eBiz CONFIRMADOS en vivo el 2026-07-30 (4 campos: EBizSubscription-Key /
+	 * Security Id / User Id / Password, botón Save).
 	 */
-	@step
+	@atc('MG-141', { severity: 'critical', description: 'Vincular pasarela eBizCharge con cuenta PSP válida' })
 	async linkEbizcharge(creds: EbizchargeCreds): Promise<void> {
 		await this.linkGateway('ebizcharge', this.ebizchargeLinkFields(creds));
 	}
@@ -553,8 +569,12 @@ export class AppStoreGatewaysPage extends UiBase {
 		await this.unlinkGatewayImpl('stripe');
 	}
 
-	/** Desvincula eBizCharge. Wrapper por pasarela — SIN `@atc`: eBiz aún sin key CFG de unlink (nunca inventar). */
-	@step
+	/** ATC — desvincula eBizCharge (dispara cleaningWallets). Wrapper por pasarela (key ESTRUCTURAL —
+	 * TS-EBIZ-TC1054). MG-165 (G-01) Step 5: "reabrir el modal y presionar Confirmar → se invoca
+	 * cleaningWallets e inicia la desvinculación".
+	 * NO lleva MG-166: ese Test exige que las wallets locales queden vacías, y acá no se mira ni una
+	 * — lo acredita `api/vendor-cleaning-wallets/cleaning-wallets-db.api.spec.ts` contra Oracle. */
+	@atc('MG-165', { severity: 'critical', description: 'Confirmar el modal de desvinculación de eBizCharge dispara cleaningWallets' })
 	async unlinkEbizcharge(): Promise<void> {
 		await this.unlinkGatewayImpl('ebizcharge');
 	}
@@ -708,8 +728,9 @@ export class AppStoreGatewaysPage extends UiBase {
 		await this.expectExclusivityImpl('stripe');
 	}
 
-	/** Exclusividad con eBizCharge activa. Wrapper — SIN `@atc`: eBiz aún sin key CFG de exclusividad (nunca inventar). */
-	@step
+	/** ATC — exclusividad con eBizCharge activa. Wrapper por pasarela (key ESTRUCTURAL — TS-EBIZ-TC1055).
+	 * MG-143 (A-03) del ATR estandarizado MG-559: "se garantiza una sola PSP conectada por carrier". */
+	@atc('MG-143', { severity: 'critical', description: 'Exclusividad: con eBizCharge activa no se puede vincular otra pasarela' })
 	async expectExclusivityEbizcharge(): Promise<void> {
 		await this.expectExclusivityImpl('ebizcharge');
 	}

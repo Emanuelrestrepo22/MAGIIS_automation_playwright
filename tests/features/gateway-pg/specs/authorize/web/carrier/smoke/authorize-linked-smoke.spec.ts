@@ -14,13 +14,24 @@ import { loginAsDispatcher } from '@features/auth/helpers/login.helpers';
 // El fixture KATA no define la opción `role` (login explícito vía loginAsDispatcher).
 test.use({ storageState: undefined });
 
-// SIN key Xray (unmapped visible, post-review F4): el smoke solo verifica el estado YA-vinculado — acreditar MG-220 (link con creds válidas) sin ejecutar el flujo de link inflaría evidencia.
+// TRAZABILIDAD — este smoke queda deliberadamente SIN key Xray (unmapped visible, post-review F4).
+//   · NO puede ser MG-220 (TC10 · "vincular Authorize con credenciales válidas"): el smoke no ejecuta
+//     el link, solo LEE el estado ya vinculado. El dueño único de MG-220 es
+//     `authorize-link-unlink.spec.ts`, que sí ejecuta el link real.
+//   · NO puede ser MG-225 tampoco: MG-225 (TC1007 · "persistencia de estado Vinculado tras recargar")
+//     PERTENECE al caso `reloadPersistence` de la suite CFG — ver `data/xray-keys.ts` (authorize →
+//     `reloadPersistence: 'MG-225'`) + `authorize-link-unlink.spec.ts`, que pasa
+//     `GATEWAY_CFG_ALL_CASES` y por lo tanto YA genera ese caso. Anotar MG-225 acá crearía DOS
+//     dueños de la misma key: los dos tests se pisan el resultado en el mismo Test Execution —
+//     exactamente la colisión que este comentario existe para evitar.
+// Conclusión: acreditar cualquiera de las dos keys desde este smoke inflaría evidencia. Si en el
+// futuro hace falta una key propia, hay que crear el Test en Xray y registrarlo en `xray-keys.ts`.
 test.describe(
 	'Gateway PG · Carrier · Smoke Authorize vinculada @gateway @authorize @smoke @regression',
 	() => {
 		test.describe.configure({ timeout: 120_000 });
 
-		test('[TS-AUTHORIZE-SMOKE-01] Authorize.Net figura vinculada (Unlink) en el App Store', async ({ page }) => {
+		test('[TS-AUTHORIZE-SMOKE-01] Authorize.Net figura vinculada (Unlink) en el App Store — estado persiste en sesión nueva', async ({ page }) => {
 			const appStore = new AppStoreGatewaysPage({ page });
 
 			await test.step('Given: dispatcher logueado en carrier 1521 (creds chain Authorize)', async () => {

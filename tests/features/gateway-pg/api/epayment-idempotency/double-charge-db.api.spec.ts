@@ -55,8 +55,13 @@ const DOUBLE_CHARGE_OK = process.env.MG_RUN_DOUBLE_CHARGE === '1';
 const CHARGE_DATA_READY = Boolean(CARRIER_ID && PASSENGER_ID && AMOUNT && (CARD_ID || TOKEN) && APP_ID && TX_REF);
 
 test.describe('[MG · F][DB] ePayment — doble cobro / idempotencia @regression @gateway @idempotency', {
-	// Traza ATC: F-02 → MG-164 (el detector DB del doble cobro). start/finalize aportan MG-160/MG-161.
-	annotation: [{ type: 'tms', description: 'MG-164' }]
+	// Traza ATC: F-02 → MG-162, el Test que dice literalmente "un reintento de cobro sobre el mismo
+	// viaje no genera doble cargo (idempotencia)" — sus Steps son cobrar, reintentar sobre el MISMO
+	// viaje y observar la respuesta, que es exactamente lo que hace este detector DB.
+	// Antes decía MG-164, y era una key cruzada: MG-164 (F-04) valida "ePayment cobra pero finalize
+	// falla o el webhook no llega", un desenlace que este spec no induce ni observa. MG-164 queda
+	// libre hasta que exista el spec que suprima el webhook / haga fallar finalize.
+	annotation: [{ type: 'tms', description: 'MG-162' }]
 }, () => {
 	test.use({ role: 'carrier' });
 

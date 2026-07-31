@@ -103,6 +103,15 @@ export class AuthorizeSandboxApi extends ApiBase {
 						firstName: card.holderName.split(' ')[0] ?? 'MAGIIS',
 						lastName: card.holderName.split(' ').slice(1).join(' ') || 'Test',
 						zip: card.zip
+					},
+					// duplicateWindow=0: recomendación oficial de la guía de testing de Authorize.net
+					// para transacciones repetidas. Sin esto, misma tarjeta + mismo monto (10.00 fijo
+					// en el pack de contrato) dentro de la ventana de dedupe → responseCode 3
+					// (error 11, duplicate) — observado en vivo 2026-07-29 sobre la Visa 4111
+					// martillada por las corridas del día. Va DESPUÉS de billTo (API JSON de
+					// Authorize sensible al orden de campos).
+					transactionSettings: {
+						setting: [{ settingName: 'duplicateWindow', settingValue: '0' }]
 					}
 				}
 			}

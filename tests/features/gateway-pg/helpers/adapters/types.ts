@@ -25,7 +25,7 @@ export type GatewayOutcomeTrigger = 'number' | 'cvv-zip' | 'holder-name';
  *   - 'document': Mercado Pago (tipo + número de documento).
  * Ausente para 'stripe-elements' o cuando el form nativo no pide campo extra.
  */
-export type GatewayNativeExtraField = 'zip' | 'document';
+export type GatewayNativeExtraField = 'zip' | 'document' | 'address-zip';
 
 /**
  * Adapter declarativo por pasarela — metadata estática + config operacional

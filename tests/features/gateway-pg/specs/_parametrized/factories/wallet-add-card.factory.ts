@@ -27,17 +27,17 @@
  */
 
 import type { GatewayName } from '@fixtures/gateways/_shared';
-import type { Page } from '@playwright/test';
 
 import { test, expect } from '@TestFixture';
 import { CarrierDashboardPage, CarrierNewTravelPage } from '@ui/carrier';
 import { cardFormFor } from '@ui/carrier/card-forms';
 import { resolveCard } from '@fixtures/gateways/_shared';
-import { debugLog } from '@helpers/index';
 import { getGatewayPgAdapter } from '@features/gateway-pg/helpers/adapters';
+import { gatewayTag } from '@features/gateway-pg/helpers/adapters/gateway-tag';
 import { loginAsDispatcher } from '@features/gateway-pg/fixtures/gateway.fixtures';
 import { validateAndSelectMercadoPagoCard } from '@features/gateway-pg/helpers/mercadoPago.helpers';
 import { cleanupGatewayCardByLast4 } from '@features/gateway-pg/helpers/card-precondition';
+import { readAuthorizeAccountMode } from '@features/gateway-pg/helpers/authorize-account-guard';
 
 export type WalletAddCardSuiteOptions = {
 	/** TC ID de matriz para el título (ej. 'TS-AUTHORIZE-WAL-01'). Omitido → sin corchete. */
@@ -54,22 +54,12 @@ export type WalletAddCardSuiteOptions = {
 };
 
 /**
- * Idempotencia del alta: delega en el helper compartido `cleanupGatewayCardByLast4`
- * (movido a card-precondition en la campaña — el piloto hold necesita la MISMA
- * precondición; falso-negativo confirmado live 2026-07-27 con la tarjeta ya vinculada).
- */
-const cleanupGatewayCard = cleanupGatewayCardByLast4;
-
-/**
  * Genera la suite WAL (alta de tarjeta) de `gateway`. Ver doc del módulo.
  * Lanza en TIEMPO DE DEFINICIÓN para stripe (sin driver de validación Elements acá).
  */
 export function defineWalletAddCardSuite(gateway: GatewayName, options: WalletAddCardSuiteOptions = {}): void {
 	if (gateway === 'stripe') {
-		throw new Error(
-			"defineWalletAddCardSuite('stripe'): el alta de tarjeta Stripe Elements valida por el flujo fillMinimum/selectCardByLast4 " +
-				'(otro oráculo) — la factory WAL cubre hoy el form nativo (authorize/ebizcharge/mercado-pago).'
-		);
+		throw new Error("defineWalletAddCardSuite('stripe'): el alta de tarjeta Stripe Elements valida por el flujo fillMinimum/selectCardByLast4 " + '(otro oráculo) — la factory WAL cubre hoy el form nativo (authorize/ebizcharge/mercado-pago).');
 	}
 
 	const adapter = getGatewayPgAdapter(gateway);
@@ -84,16 +74,34 @@ export function defineWalletAddCardSuite(gateway: GatewayName, options: WalletAd
 	// Key null (eBiz/MP sin issue WAL aún) → SIN annotation (no inventar keys).
 	const describeDetails = addCardKey ? { annotation: [{ type: 'tms', description: addCardKey }] } : {};
 
-	// Tag de pasarela SIN guiones (S9): 'mercado-pago' → '@mercadopago' — los scripts npm
-	// por pasarela grepean el tag normalizado; el identifier de código NO cambia.
-	const gatewayTag = gateway.replace(/-/g, '');
-
-	test.describe(`Gateway PG · Carrier · ${adapter.displayName} — alta de tarjeta pre-autorizada @gateway @${gatewayTag} @wallet @regression`, describeDetails, () => {
+	// Tag de pasarela SIN guiones (S9) — derivado por `gatewayTag()` (SoT única en
+	// helpers/adapters/gateway-tag.ts, verificada por assertGatewayTagContract).
+	test.describe(`Gateway PG · Carrier · ${adapter.displayName} — alta de tarjeta pre-autorizada @gateway ${gatewayTag(gateway)} @wallet @regression`, describeDetails, () => {
 		test.describe.configure({ mode: 'serial', timeout: 180_000 });
 		// El fixture KATA no define la opción `role` — login explícito vía loginAsDispatcher.
 		test.use({ storageState: { cookies: [], origins: [] } });
 
+		// Gate de validez de medición — CALIBRADO (ronda 6 del RUN-LOG, 2026-07-29). El único
+		// oráculo de esta suite es una APROBACIÓN (alta de tarjeta validada), y la doctrina de
+		// EXTERNAL-BLOCKERS §0 es explícita: la aprobación es verificable contra cualquier
+		// cuenta — el guard corta solo cuando el oráculo ES un trigger ZIP/CVV (contract specs,
+		// hold). El blanket `beforeAll` original cortaba este happy path válido; se reemplaza
+		// por una annotation auditable dentro del test cuando la cuenta detectada es la enlatada.
+
 		test(`${titlePrefix}${extraTags}@wallet vincular tarjeta ${adapter.displayName} (•••• ${card.last4}) desde el alta de viaje (${env.toUpperCase()})`, async ({ page }) => {
+			if (gateway === 'authorize') {
+				const verdict = await readAuthorizeAccountMode();
+				if (verdict?.canned) {
+					test.info().annotations.push({
+						type: 'measurement-caveat',
+						description:
+							`[${gateway}/WAL] Cuenta Authorize en Test Mode (respuesta enlatada: transId "${verdict.transId}", ` +
+							`authCode "${verdict.authCode}"). Este verde acredita el ALTA aprobada — oráculo de aprobación, válido ` +
+							'contra cualquier cuenta — pero NO una evaluación real de triggers ZIP/CVV. ' +
+							'Bloqueante §0 de docs/gateway-pg/authorize/EXTERNAL-BLOCKERS.md sigue abierto.'
+					});
+				}
+			}
 			const dashboard = new CarrierDashboardPage({ page });
 			const travel = new CarrierNewTravelPage({ page });
 
@@ -106,7 +114,7 @@ export function defineWalletAddCardSuite(gateway: GatewayName, options: WalletAd
 
 			if (cleanupBeforeAdd) {
 				await test.step('And: precondición — limpiar tarjeta previa del pax (idempotencia)', async () => {
-					await cleanupGatewayCard(page, defaults.paxSearchQueries, card.last4);
+					await cleanupGatewayCardByLast4(page, defaults.paxSearchQueries, card.last4);
 				});
 			}
 
@@ -135,6 +143,8 @@ export function defineWalletAddCardSuite(gateway: GatewayName, options: WalletAd
 						'MP: validación de tarjeta no completa en TEST (sandbox MP no transacciona) — UAT-only. Form-fill + habilitación de "Validar" verificados.'
 					);
 				} else {
+					// `last4` habilita el oráculo persistente (tarjeta vinculada en Forma de Pago) además
+					// del toast "Tarjeta válida", que es transitorio y se pierde por carrera.
 					await travel.validateNativeCard(card.last4);
 				}
 			});

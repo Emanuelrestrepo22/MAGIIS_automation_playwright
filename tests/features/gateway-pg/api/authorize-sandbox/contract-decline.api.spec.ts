@@ -13,6 +13,11 @@
  * `TS-AUTHORIZE-TC1017` (Hold OFF) — el Alta de Viaje que describen esos TC (pop-up de
  * error + viaje NO creado) sigue SIN automatizar (gap declarado en la matriz §2.2); por
  * eso este test NO se cablea a esos TC, para no inflar la evidencia.
+ *
+ * GATE DE VALIDEZ DE MEDICIÓN (2026-07-29): el decline lo dispara el ZIP, y una cuenta en
+ * Test Mode no evalúa ese trigger — aprueba (`responseCode '1'`) para cualquier tarjeta.
+ * Sin el gate el fallo se lee como drift del sandbox cuando en realidad es la cuenta; ver
+ * bloqueante §0 de `docs/gateway-pg/authorize/EXTERNAL-BLOCKERS.md`.
  */
 
 import { test, expect } from '@TestFixture';
@@ -20,6 +25,7 @@ import { AUTHORIZE_CARDS } from '@fixtures/gateways/authorize/card-policy';
 import { AuthorizeSandboxApi, hasAuthorizeCredentials } from '@api/AuthorizeSandboxApi';
 import type { AuthorizeApiResponse } from '@schemas/authorize.types';
 import { AUTHORIZE_CONTRACT_XRAY_KEYS } from '@features/gateway-pg/data/xray-keys';
+import { assertAuthorizeAccountMeasuresRealAuthorizations } from '@features/gateway-pg/helpers/authorize-account-guard';
 
 test.describe('[BL-036][API] Authorize.net sandbox — Declines (Response Code 2) @gateway @authorize @regression', () => {
 	test.skip(!hasAuthorizeCredentials(), 'AUTHORIZE_API_LOGIN_ID/TRANSACTION_KEY no seteadas en env');
@@ -28,6 +34,7 @@ test.describe('[BL-036][API] Authorize.net sandbox — Declines (Response Code 2
 		'Visa + ZIP 46282 → Response Code 2 (declined genérico)',
 		{ annotation: [{ type: 'tms', description: AUTHORIZE_CONTRACT_XRAY_KEYS.declineZip46282 }] },
 		async ({ request }) => {
+			await assertAuthorizeAccountMeasuresRealAuthorizations(request);
 			const api = new AuthorizeSandboxApi({ request });
 
 			const response: AuthorizeApiResponse = await api.authorizeOnly({

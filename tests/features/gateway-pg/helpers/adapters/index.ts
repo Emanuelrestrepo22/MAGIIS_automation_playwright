@@ -118,8 +118,9 @@ export {
  *   6. `xrayKeys` apunta EXACTAMENTE a la entrada del registry de su gateway
  *      (identidad referencial — evita copias divergentes del registry).
  *
- * Si los datos divergen, lanza error en runtime — útil como check de
- * integridad en tests o smoke. NO se ejecuta automáticamente.
+ * Si los datos divergen, lanza error en runtime. SÍ se ejecuta automáticamente:
+ * `specs/_parametrized/adapters-consistency.unit.spec.ts` lo invoca en el project
+ * `unit` (`npm run test:test:gateway:unit`), así el drift falla en CI.
  *
  * Devuelve `true` si todo consistente, lanza si hay drift.
  */
