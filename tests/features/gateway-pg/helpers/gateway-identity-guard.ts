@@ -63,7 +63,27 @@ export async function assertActiveGatewayInDb(
 
 	const carrierAccountId = options.carrierAccountId ?? DEFAULT_CARRIER_ID;
 	const provider = MGW_PROVIDER_BY_GATEWAY[gateway];
-	const rows = await readMgwLinkStatus(cfg, { carrierAccountId, provider });
+
+	let rows;
+	try {
+		rows = await readMgwLinkStatus(cfg, { carrierAccountId, provider });
+	} catch (error) {
+		// DB configurada pero INALCANZABLE (NJS-5xx timeout/red, ORA- de conectividad): es el mismo
+		// "no puedo medir por entorno" que la política del módulo resuelve con avisar-y-seguir —
+		// hasta hoy solo estaba implementado para config AUSENTE y el timeout reventaba la suite
+		// entera (observado 2026-07-31: NJS-510 contra el RDS de test, alcanzable el día anterior).
+		// NO es el fail-open del hallazgo 6: esto no acredita nada — devuelve 'db-unavailable' y el
+		// run queda registrado con la identidad SIN acreditar (el probe UI del App Store es la
+		// evidencia compensatoria). Un veredicto SÍ obtenido y malo sigue fallando cerrado (abajo).
+		const msg = error instanceof Error ? error.message : String(error);
+		console.warn(
+			`[gateway-identity-guard] Oracle configurada pero INALCANZABLE (${msg.split('\n')[0]}): no se puede ` +
+				`verificar por DB que '${gateway}' sea la pasarela activa del carrier ${carrierAccountId}. La suite ` +
+				'sigue con la identidad SIN acreditar por DB — restaurar el acceso (allowlist/VPN/instancia) antes ' +
+				'de la corrida formal.'
+		);
+		return 'db-unavailable';
+	}
 	const activa = rows.find(row => Number(row.active) === 1 && !row.deleteDate);
 
 	if (!activa) {
