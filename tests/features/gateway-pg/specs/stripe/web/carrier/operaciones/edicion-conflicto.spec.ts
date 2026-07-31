@@ -14,29 +14,30 @@ import { test } from '@TestFixture';
 test.use({ storageState: undefined });
 
 test.describe('Gateway PG · Carrier · Empresa Individuo — Edición en Conflicto @gateway @stripe @hold @3ds @decline @regression', () => {
+	test.describe('Sin 3DS', () => {
+		test('[TS-STRIPE-P2-TC084] @regression @hold alta + edición conflicto hold+cobro', async () => {
+			test.fixme(
+				true,
+				'DEUDA TÉCNICA MG-178: edición en conflicto no desarrollada/estable para pasarela preautorizada en esta release; diferido a próxima iteración de cambios en pasarelas de pago.'
+			);
+		});
+		test('[TS-STRIPE-P2-TC085] @regression sin hold alta + edición conflicto', async () => {
+			test.fixme(true, 'PENDIENTE: depende de P2-TC084');
+		});
+		test('[TS-STRIPE-P2-TC086] @regression @hold alta + edición conflicto hold+cobro variante', async () => {
+			test.fixme(true, 'PENDIENTE: depende de P2-TC084');
+		});
+		test('[TS-STRIPE-P2-TC087] @regression sin hold alta + edición conflicto variante', async () => {
+			test.fixme(true, 'PENDIENTE: depende de P2-TC084');
+		});
+	});
 
-  test.describe('Sin 3DS', () => {
-    test('[TS-STRIPE-P2-TC084] @regression @hold alta + edición conflicto hold+cobro', async () => {
-      test.fixme(true, 'DEUDA TÉCNICA MG-178: edición en conflicto no desarrollada/estable para pasarela preautorizada en esta release; diferido a próxima iteración de cambios en pasarelas de pago.');
-    });
-    test('[TS-STRIPE-P2-TC085] @regression sin hold alta + edición conflicto', async () => {
-      test.fixme(true, 'PENDIENTE: depende de P2-TC084');
-    });
-    test('[TS-STRIPE-P2-TC086] @regression @hold alta + edición conflicto hold+cobro variante', async () => {
-      test.fixme(true, 'PENDIENTE: depende de P2-TC084');
-    });
-    test('[TS-STRIPE-P2-TC087] @regression sin hold alta + edición conflicto variante', async () => {
-      test.fixme(true, 'PENDIENTE: depende de P2-TC084');
-    });
-  });
-
-  test.describe('Con 3DS', () => {
-    test('[TS-STRIPE-P2-TC088] @regression @3ds @hold clonación conflicto hold+cobro 3DS', async () => {
-      test.fixme(true, 'PENDIENTE: depende de P2-TC084');
-    });
-    test('[TS-STRIPE-P2-TC089] @regression @3ds sin hold clonación conflicto 3DS', async () => {
-      test.fixme(true, 'PENDIENTE: depende de P2-TC084');
-    });
-  });
-
+	test.describe('Con 3DS', () => {
+		test('[TS-STRIPE-P2-TC088] @regression @3ds @hold clonación conflicto hold+cobro 3DS', async () => {
+			test.fixme(true, 'PENDIENTE: depende de P2-TC084');
+		});
+		test('[TS-STRIPE-P2-TC089] @regression @3ds sin hold clonación conflicto 3DS', async () => {
+			test.fixme(true, 'PENDIENTE: depende de P2-TC084');
+		});
+	});
 });

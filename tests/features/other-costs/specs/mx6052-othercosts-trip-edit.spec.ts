@@ -58,10 +58,18 @@ test.describe(`[OTHER-COSTS][${env.toUpperCase()}] Otros Costos en edición de v
 			await test.step('When: se abre "Editar Otros Costos" → "Agregar Otro Costo"', async () => {
 				// Lápiz de "Otros Costos" en Datos Presupuestados: icono clickeable junto al label+monto
 				// (NO el primer .fa-pencil de la página, que es de Datos Finales). Anclado al texto.
-				await page.getByText('Otros Costos', { exact: true }).first()
-					.locator('xpath=..').locator('i, [class*="fa"]').last().click();
+				await page
+					.getByText('Otros Costos', { exact: true })
+					.first()
+					.locator('xpath=..')
+					.locator('i, [class*="fa"]')
+					.last()
+					.click();
 				// Modal "Editar Otros Costos" → botón + (Agregar) junto al total → modal "Agregar Otro Costo".
-				await page.locator('.cost-total .plus-button, .cost-total > div > .plus-button, .plus-button').first().click();
+				await page
+					.locator('.cost-total .plus-button, .cost-total > div > .plus-button, .plus-button')
+					.first()
+					.click();
 			});
 
 			await test.step('Then: el select de conceptos NO está vacío (AC1 — fix race condition)', async () => {
@@ -74,7 +82,10 @@ test.describe(`[OTHER-COSTS][${env.toUpperCase()}] Otros Costos en edición de v
 					.click();
 				const options = page.getByRole('listitem');
 				await expect(options.first()).toBeVisible({ timeout: 10_000 });
-				expect(await options.count(), 'el select de Otros Costos debe listar conceptos (no vacío)').toBeGreaterThan(0);
+				expect(
+					await options.count(),
+					'el select de Otros Costos debe listar conceptos (no vacío)'
+				).toBeGreaterThan(0);
 			});
 
 			await test.step('And: al seleccionar un concepto, "Aceptar" habilita y se agrega (AC2)', async () => {
