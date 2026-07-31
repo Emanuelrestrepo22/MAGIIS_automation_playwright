@@ -1302,6 +1302,72 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 	}
 
 	/**
+	 * Introspecciona el FormGroup Angular del form nativo (`app-credit-card-payment-data`) vía
+	 * `ng.getComponent()`. Devuelve la validez global y los controls inválidos con sus errores.
+	 * Útil para los casos NEGATIVOS de alta de tarjeta (número incompleto, fecha vencida, CVV/ZIP
+	 * inválido): la app debe dejar el FormGroup inválido → GUARDAR deshabilitado.
+	 * `formValid = null` cuando no hay form nativo (p.ej. gateway Stripe con iframes).
+	 */
+	async readFormValidity(): Promise<{ formValid: boolean | null; invalidControls: Array<{ name: string; errors: unknown }> }> {
+		return this.executeInWebView(() => {
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			const ng = (window as any).ng;
+			const host = document.querySelector('app-credit-card-payment-data');
+			if (!ng || !host || typeof ng.getComponent !== 'function') {
+				return { formValid: null, invalidControls: [] };
+			}
+
+			const cmp = ng.getComponent(host);
+			if (!cmp || typeof cmp !== 'object') {
+				return { formValid: null, invalidControls: [] };
+			}
+
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			let group: any = null;
+			for (const k of Object.keys(cmp as Record<string, unknown>)) {
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				const v = (cmp as any)[k];
+				if (v && typeof v === 'object' && v.controls && typeof v.controls === 'object') {
+					group = v;
+					break;
+				}
+			}
+
+			if (!group) {
+				return { formValid: null, invalidControls: [] };
+			}
+
+			const invalidControls: Array<{ name: string; errors: unknown }> = [];
+			for (const name of Object.keys(group.controls)) {
+				const c = group.controls[name];
+				if (c && c.valid === false) {
+					invalidControls.push({ name, errors: c.errors });
+				}
+			}
+
+			return { formValid: Boolean(group.valid), invalidControls };
+		}).catch(() => ({ formValid: null as boolean | null, invalidControls: [] as Array<{ name: string; errors: unknown }> }));
+	}
+
+	/**
+	 * ¿El botón GUARDAR del form de alta de tarjeta está habilitado? (FormGroup válido).
+	 * Para los casos negativos se espera `false`.
+	 */
+	async isSaveEnabled(): Promise<boolean> {
+		return this.executeInWebView(() => {
+			const host = (document.querySelector('app-credit-card-payment-data') as ParentNode | null) ?? document;
+			const btns = Array.from(host.querySelectorAll('button, ion-button')) as HTMLElement[];
+			const save = btns.find(b => /guardar/i.test(b.textContent ?? ''));
+			if (!save) {
+				return false;
+			}
+
+			const disabled = save.getAttribute('disabled') !== null || save.getAttribute('aria-disabled') === 'true' || (save as HTMLButtonElement).disabled === true;
+			return !disabled;
+		}).catch(() => false);
+	}
+
+	/**
 	 * Llena el form NATIVO de alta de tarjeta (`app-credit-card-payment-data`), común a
 	 * eBizCharge y MercadoPago (Ionic reactive-forms, NO iframe Stripe). El form es progresivo:
 	 * al registrar un número válido emergen expiry/cvv/cardholderName y — sólo en eBizCharge —

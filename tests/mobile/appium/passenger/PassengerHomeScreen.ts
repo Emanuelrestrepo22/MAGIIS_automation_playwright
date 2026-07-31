@@ -134,7 +134,15 @@ export class PassengerHomeScreen extends AppiumSessionBase {
 	async ensureProfileMode(mode: PassengerProfileMode): Promise<void> {
 		await this.openHome();
 
-		const currentMode = await this.getProfileMode();
+		// La etiqueta de modo puede tardar en renderizar tras navegar (p.ej. al volver de /cards),
+		// devolviendo 'unknown' de forma transitoria. Poll antes de decidir togglear: si ya estamos
+		// en el modo pedido, retornamos; así evitamos un toggle innecesario que además queda
+		// deshabilitado momentáneamente y dispararía un error espurio "toggle disabled".
+		let currentMode = await this.getProfileMode();
+		for (let attempt = 0; currentMode !== mode && attempt < 6; attempt++) {
+			await this.pause(500);
+			currentMode = await this.getProfileMode();
+		}
 		if (currentMode === mode) {
 			return;
 		}

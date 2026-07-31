@@ -151,3 +151,36 @@ test.describe.serial(`Gateway PG · E2E Mobile · App Pax Wallet CRUD [${GATEWAY
 		}
 	});
 });
+
+test.describe.serial(`Gateway PG · E2E Mobile · App Pax Wallet Business [${GATEWAY}] @gateway ${GATEWAY_TAG[GATEWAY]} @e2e-hybrid @wallet @regression`, () => {
+	// Requiere servidor Appium + que el pax tenga perfil Business (colaborador/empresa vinculada) con
+	// dirección guardada (el backend eBiz exige placeId del colaborador para el alta — ver MG-151).
+	test.skip(() => !process.env.APPIUM_SERVER_URL, 'Requiere servidor Appium Android activo (APPIUM_SERVER_URL).');
+
+	const card = walletCardInput(GATEWAY);
+	const last4 = card.last4;
+
+	test('[wallet-add-business] alta de tarjeta válida en modo Business/Compañía', {
+		annotation: [
+			{ type: 'tms', description: 'MG-288' } // Vincular tarjeta desde App PAX modo Business (TC-PAY-WAL-05)
+		]
+	}, async () => {
+		const harness = new PassengerTripHappyPathHarness(getPassengerAppConfig(), undefined, { profileMode: 'business' });
+		const wallet = harness.getWalletScreen();
+
+		try {
+			await test.step('start passenger shell (modo Compañía)', async () => {
+				await harness.ensurePassengerShell(); // togglea a modo Business/Compañía
+			});
+
+			await test.step(`alta de tarjeta ${GATEWAY} (…${last4}) en modo Business`, async () => {
+				const state = await harness.ensureWalletCard(card);
+				expect(state, 'debe poder vincularse una tarjeta en el perfil Business').toMatch(/added|already-present/);
+				expect(await wallet.hasCard(last4), 'la tarjeta debe quedar vinculada en el wallet Business').toBe(true);
+				await snap(harness, `wallet-add-business-${GATEWAY}-${last4}`);
+			});
+		} finally {
+			await harness.endSession();
+		}
+	});
+});
