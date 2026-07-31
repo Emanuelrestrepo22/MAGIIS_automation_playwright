@@ -58,11 +58,12 @@ function toCardDetail(card: MercadoPagoTestCard): MercadopagoCardDetail {
 }
 
 test.describe(`[MG · C/H/MPX][API] ${mercadoPagoGatewayAdapter.displayName} — ciclo de tarjeta @regression @gateway @gateway-pg @mercadopago`, {
+	// MG-150 y MG-172 salieron: acá el alta es el HAPPY (no un PSP degradado, que es MG-150) y no se
+	// crea ni recrea ningún pax (que es MG-172). MG-489 entra por el caso de rechazo por código.
 	annotation: [
 		{ type: 'tms', description: 'MG-148' },
 		{ type: 'tms', description: 'MG-149' },
-		{ type: 'tms', description: 'MG-150' },
-		{ type: 'tms', description: 'MG-172' },
+		{ type: 'tms', description: 'MG-489' },
 		{ type: 'tms', description: 'MG-194' },
 		{ type: 'tms', description: 'MG-195' }
 	]
@@ -96,9 +97,12 @@ test.describe(`[MG · C/H/MPX][API] ${mercadoPagoGatewayAdapter.displayName} —
 		}
 	});
 
-	// C-01 / C-02 — happy: tokeniza APRO → addCard → tarjeta persistida.
+	// C-01 — happy: tokeniza APRO → addCard → tarjeta persistida. Cubre MG-148 completo (sus Steps 3
+	// y 4 son justamente tokenizar client-side y persistir).
+	// MG-150 removido: era una key cruzada. MG-150 (C-03) valida "el alta falla de forma CONTROLADA
+	// cuando el PSP está degradado" — un addCard con 200 acredita lo OPUESTO a ese Test.
 	test('[C-01] getCardToken (APRO) → token + addCard → 200', {
-		annotation: [{ type: 'tms', description: 'MG-148' }, { type: 'tms', description: 'MG-150' }]
+		annotation: [{ type: 'tms', description: 'MG-148' }]
 	}, async ({ request }) => {
 		test.skip(!MP_APP_ID || !PASSENGER_ID, 'Faltan MP_APP_ID / MP_PASSENGER_ID (datos de UAT) [confirmar].');
 		const api = new CardApi({ request });
@@ -121,9 +125,12 @@ test.describe(`[MG · C/H/MPX][API] ${mercadoPagoGatewayAdapter.displayName} —
 		expect(addRes.ok, `addCard esperado 2xx, status=${addRes.status} body=${addRes.raw}`).toBe(true);
 	});
 
-	// C-03 — negativo de contrato: keyword SECU (CVV inválido) → tokenización/alta rechazada.
+	// Negativo de contrato: keyword SECU (CVV inválido) → tokenización/alta rechazada.
+	// MG-489 (F-06, "catálogo de declines/antifraude por código"), no MG-149: un rechazo por security
+	// code es una entrada de ese catálogo. MG-149 (C-02) es "el listado sin wallet no rompe y muestra
+	// vacío" — no tiene relación con tokenizar, y su spec real es `[H-01]` de más abajo.
 	test('[C-03] getCardToken (SECU) → rechazo por security code inválido', {
-		annotation: [{ type: 'tms', description: 'MG-149' }]
+		annotation: [{ type: 'tms', description: 'MG-489' }]
 	}, async ({ request }) => {
 		test.skip(!MP_APP_ID, 'Falta MP_APP_ID (dato de UAT) [confirmar].');
 		const card = resolveCard('REJECTED_INVALID_CVV'); // holderName SECU
@@ -132,9 +139,13 @@ test.describe(`[MG · C/H/MPX][API] ${mercadoPagoGatewayAdapter.displayName} —
 		expect(res.ok, `SECU no debe producir un token aprobado (status=${res.status} body=${res.raw})`).toBe(false);
 	});
 
-	// H-01 — listado de tarjetas del pax (GET passengers/{id}/allCards).
+	// Listado de tarjetas del pax (GET passengers/{id}/allCards).
+	// MG-149 (C-02), no MG-172: el único Step de MG-149 es "Consultar GET
+	// passengers/{passengerId}/allCards" — este endpoint, literal. MG-172 (H-01) es "recrear un pax con
+	// el mismo mail y dar de alta tarjeta sin colisión de wallet", y este spec no crea ningún pax.
+	// El id local se deja en `[H-01]` para no romper greps ni el histórico de corridas.
 	test('[H-01] listAllCards → tarjetas del pax', {
-		annotation: [{ type: 'tms', description: 'MG-172' }]
+		annotation: [{ type: 'tms', description: 'MG-149' }]
 	}, async ({ request }) => {
 		test.skip(!PASSENGER_ID || !CARRIER_ACCOUNT_ID, 'Faltan MP_PASSENGER_ID / CARRIER_ID (datos de UAT) [confirmar].');
 		const res = await new CardApi({ request }).listAllCards({ passengerId: PASSENGER_ID, carrierId: CARRIER_ACCOUNT_ID, authToken });

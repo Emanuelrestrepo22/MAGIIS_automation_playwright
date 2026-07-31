@@ -302,19 +302,52 @@ export const XRAY_KEYS_BY_GATEWAY: Record<GatewayCompany, GatewayXrayRegistry> =
 		wallet: { addCard: 'MG-285' }
 	},
 	ebizcharge: {
-		// TODO(xray): eBizCharge aún sin NINGUNA issue MG creada — `id-map.json` →
-		// `summary.ebizcharge.with_mg_key = 0`. Todas las keys `null` en las 4 áreas
-		// (CFG/WAL/HOLD/CARGO), sin annotation, `unmapped` visible en el reporter. Las keys
-		// las crea QA; el código jamás las fabrica. Lista de las que hay que crear:
-		// docs/gateway-pg/ebizcharge/MG-KEYS-REQUEST.md
+		// REFUTADO el 2026-07-31 el "eBizCharge aún sin NINGUNA issue MG creada" que decía este
+		// bloque. Los Tests de eBizCharge SÍ existen: son las **acciones estandarizadas** del Test
+		// Execution MG-559 ("ATR · EBIZCHARGE — acciones estandarizadas, Ronda 1", 33 Tests, leídos
+		// en vivo con `bun xray exec get MG-559`). No están redactados por pasarela — un mismo Test
+		// se ejecuta una vez por PSP y el ATR fija cuál (MG-558 Authorize · MG-559 eBizCharge ·
+		// MG-560 Stripe · MG-561 MercadoPago). Por eso la búsqueda por summary/label "eBizCharge"
+		// devolvía casi nada y se concluyó que no existían.
+		//
+		// Lo que se cablea acá es SOLO donde el caso CFG cubre lo que el Test valida, verificado
+		// contra los Steps reales de cada issue. Las keys que siguen en `null` NO son olvidos:
+		// cada una tiene su motivo escrito. Sigue vigente que las keys las crea QA y el código
+		// jamás las fabrica.
 		cfg: {
+			// Sin Test entre los 33: ninguno valida "ver la pasarela NO vinculada" como caso propio
+			// (es precondición de MG-141, su Step 2).
 			viewUnlinked: null,
-			linkValid: null,
+			// MG-141 (A-01) "vincular la pasarela cuando el carrier tiene una cuenta PSP válida".
+			// Steps 3-4: vincular y volver a consultar el connectedAccount → MGWLinked activo. El caso
+			// `linkValid` hace exactamente eso y además lo acredita por DB (`MGW_LINKED`).
+			linkValid: 'MG-141',
+			// Sin Test: MG-145 es el negativo eBiz por `zipCode` FALTANTE, no por credenciales
+			// inválidas. Son cosas distintas y el modal eBiz no tiene campo zipCode (4 campos,
+			// verificado en vivo) → cablear MG-145 acá sería cruzar la key.
 			linkInvalid: null,
-			cancelUnlink: null,
-			unlink: null,
-			exclusivity: null,
+			// MG-165 (G-01) "se muestra el modal de aviso antes de desvincular". Su Step 4 es
+			// "Presionar Cancelar → el modal se cierra SIN invocar cleaningWallets; la pasarela sigue
+			// conectada", que es literal lo que asserta `cancelUnlink`.
+			cancelUnlink: 'MG-165',
+			// MG-165 Step 5: "Reabrir el modal y presionar Confirmar → se invoca cleaningWallets e
+			// inicia la desvinculación". `unlink` cubre ese paso.
+			// NO se cablea MG-166 acá a propósito: MG-166 (G-02) exige que las wallets/tarjetas
+			// locales queden VACÍAS y el link desactivado, y este caso UI sólo mira que el estado
+			// vuelva a `linkable` (tiene su propio TODO por la mitad del AC que no verifica). Ese
+			// Test ya lo acredita `api/vendor-cleaning-wallets/cleaning-wallets-db.api.spec.ts`, que
+			// sí cuenta filas en Oracle. Cablearlo también acá lo pondría PASSED sin haber mirado
+			// una sola wallet.
+			unlink: 'MG-165',
+			// MG-143 (A-03) "se garantiza una sola PSP conectada por carrier (exclusividad)".
+			exclusivity: 'MG-143',
+			// Sin Test: la persistencia tras recargar no es un caso del ATP estandarizado.
 			reloadPersistence: null,
+			// Queda `null` a propósito aunque MG-141 Step 3 diga "deberia responder 200": el
+			// `linkSuccessStatuses: [200]` del adapter eBiz está declarado como ASUMIDO, nunca
+			// verificado en vivo. Si el status real fuera 201, este caso daría rojo y arrastraría
+			// MG-141 a FAILED por una suposición nuestra, no por un fallo del producto. Cablear
+			// cuando se confirme el status contra el backend.
 			linkStatus: null
 		},
 		// Los TC IDs de matriz SÍ existen desde la derivación determinística Fase 4 (2026-07-26):
@@ -333,7 +366,14 @@ export const XRAY_KEYS_BY_GATEWAY: Record<GatewayCompany, GatewayXrayRegistry> =
 			reloadPersistence: 'TS-EBIZ-TC1056',
 			linkStatus: 'TS-EBIZ-TC1057'
 		},
-		hold: noHoldKeys(),
+		// MG-148 (C-01) "poder dar de alta una tarjeta válida cuando el pax va a pagar sus viajes".
+		// Se cablea SÓLO al caso seed (TC1058, `colaboradorHappyNewHoldOn`), que es el que existe para
+		// vincular la tarjeta — los otros cuatro casos de tarjeta nueva también la dan de alta, pero su
+		// propósito es la permutación de Hold ON/OFF, y si uno de ellos fallara por el hold arrastraría
+		// MG-148 a FAILED culpando al alta de tarjeta. El seed corrió verde en vivo el 2026-07-30
+		// (viaje 67831) con la tarjeta 4000100011112224 y su fila en `CARD_HOLDS` con
+		// PROVIDER_CODE='EBIZ'.
+		hold: { ...noHoldKeys(), colaboradorHappyNewHoldOn: 'MG-148' },
 		// Matriz ebizcharge/matriz_cases.md — colaborador TC1058..1062, personal TC1063..1066,
 		// empresa TC1067..1070. Asimetrías reales frente a Authorize/Stripe:
 		//   · personal: las 4 filas (TC1063..1066) son TODAS "Hold OFF" (variantes de

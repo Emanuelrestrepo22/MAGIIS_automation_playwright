@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-29T19:20:27.556Z",
+  "generated_at": "2026-07-31T19:22:55.779Z",
   "generator": "scripts/ai/build-id-map.mjs",
   "notes": [
     "SoT central de trazabilidad TS-ID ↔ MG-key ↔ spec (Fase 4, 2026-07-26).",
@@ -37,7 +37,7 @@
       "confirmed": 17,
       "needs-review": 0,
       "unmapped": 94,
-      "with_mg_key": 0,
+      "with_mg_key": 4,
       "with_specs": 17,
       "with_executable_specs": 10,
       "with_fixme_only_specs": 7
@@ -2317,14 +2317,16 @@
       "gateway": "ebizcharge",
       "stripe_ref": "TS-STRIPE-TC1002",
       "tcid": "TC1051",
-      "mg_key": null,
+      "mg_key": "MG-141",
       "spec_paths": [
         "tests/features/gateway-pg/specs/ebizcharge/web/carrier/config/ebizcharge-link-unlink.spec.ts"
       ],
       "fixme_spec_paths": [],
       "spec_coverage": "executable",
       "status": "confirmed",
-      "sources": []
+      "sources": [
+        "xray-keys.ts cfg.linkValid"
+      ]
     },
     {
       "ts_id": "TS-EBIZ-TC1052",
@@ -2345,42 +2347,48 @@
       "gateway": "ebizcharge",
       "stripe_ref": "TS-STRIPE-TC1004",
       "tcid": "TC1053",
-      "mg_key": null,
+      "mg_key": "MG-165",
       "spec_paths": [
         "tests/features/gateway-pg/specs/ebizcharge/web/carrier/config/ebizcharge-link-unlink.spec.ts"
       ],
       "fixme_spec_paths": [],
       "spec_coverage": "executable",
       "status": "confirmed",
-      "sources": []
+      "sources": [
+        "xray-keys.ts cfg.cancelUnlink"
+      ]
     },
     {
       "ts_id": "TS-EBIZ-TC1054",
       "gateway": "ebizcharge",
       "stripe_ref": "TS-STRIPE-TC1005",
       "tcid": "TC1054",
-      "mg_key": null,
+      "mg_key": "MG-165",
       "spec_paths": [
         "tests/features/gateway-pg/specs/ebizcharge/web/carrier/config/ebizcharge-link-unlink.spec.ts"
       ],
       "fixme_spec_paths": [],
       "spec_coverage": "executable",
       "status": "confirmed",
-      "sources": []
+      "sources": [
+        "xray-keys.ts cfg.unlink"
+      ]
     },
     {
       "ts_id": "TS-EBIZ-TC1055",
       "gateway": "ebizcharge",
       "stripe_ref": "TS-STRIPE-TC1006",
       "tcid": "TC1055",
-      "mg_key": null,
+      "mg_key": "MG-143",
       "spec_paths": [
         "tests/features/gateway-pg/specs/ebizcharge/web/carrier/config/ebizcharge-link-unlink.spec.ts"
       ],
       "fixme_spec_paths": [],
       "spec_coverage": "executable",
       "status": "confirmed",
-      "sources": []
+      "sources": [
+        "xray-keys.ts cfg.exclusivity"
+      ]
     },
     {
       "ts_id": "TS-EBIZ-TC1056",

@@ -490,12 +490,14 @@ export class AppStoreGatewaysPage extends UiBase {
 	}
 
 	/**
-	 * Vincula eBizCharge con credenciales merchant VÁLIDAS y verifica el estado vinculado.
-	 * Wrapper por pasarela (S4) — SIN `@atc`: eBizCharge aún no tiene key CFG en Jira
-	 * (`XRAY_KEYS_BY_GATEWAY.ebizcharge.cfg.linkValid = null`); decorar cuando exista.
-	 * FRAGILE/TODO(live): modal y campos eBiz NO confirmados en vivo (ver locators candidatos).
+	 * ATC — vincula eBizCharge con credenciales merchant VÁLIDAS y verifica el estado vinculado.
+	 * Wrapper por pasarela (key ESTRUCTURAL — TS-EBIZ-TC1051). Decorado el 2026-07-31: el Test SÍ
+	 * existe, es MG-141 (A-01) del ATR de acciones estandarizadas MG-559, no un Test "de eBizCharge"
+	 * — de ahí que antes se concluyera que no había key.
+	 * Modal y campos eBiz CONFIRMADOS en vivo el 2026-07-30 (4 campos: EBizSubscription-Key /
+	 * Security Id / User Id / Password, botón Save).
 	 */
-	@step
+	@atc('MG-141', { severity: 'critical', description: 'Vincular pasarela eBizCharge con cuenta PSP válida' })
 	async linkEbizcharge(creds: EbizchargeCreds): Promise<void> {
 		await this.linkGateway('ebizcharge', this.ebizchargeLinkFields(creds));
 	}
@@ -567,8 +569,12 @@ export class AppStoreGatewaysPage extends UiBase {
 		await this.unlinkGatewayImpl('stripe');
 	}
 
-	/** Desvincula eBizCharge. Wrapper por pasarela — SIN `@atc`: eBiz aún sin key CFG de unlink (nunca inventar). */
-	@step
+	/** ATC — desvincula eBizCharge (dispara cleaningWallets). Wrapper por pasarela (key ESTRUCTURAL —
+	 * TS-EBIZ-TC1054). MG-165 (G-01) Step 5: "reabrir el modal y presionar Confirmar → se invoca
+	 * cleaningWallets e inicia la desvinculación".
+	 * NO lleva MG-166: ese Test exige que las wallets locales queden vacías, y acá no se mira ni una
+	 * — lo acredita `api/vendor-cleaning-wallets/cleaning-wallets-db.api.spec.ts` contra Oracle. */
+	@atc('MG-165', { severity: 'critical', description: 'Confirmar el modal de desvinculación de eBizCharge dispara cleaningWallets' })
 	async unlinkEbizcharge(): Promise<void> {
 		await this.unlinkGatewayImpl('ebizcharge');
 	}
@@ -722,8 +728,9 @@ export class AppStoreGatewaysPage extends UiBase {
 		await this.expectExclusivityImpl('stripe');
 	}
 
-	/** Exclusividad con eBizCharge activa. Wrapper — SIN `@atc`: eBiz aún sin key CFG de exclusividad (nunca inventar). */
-	@step
+	/** ATC — exclusividad con eBizCharge activa. Wrapper por pasarela (key ESTRUCTURAL — TS-EBIZ-TC1055).
+	 * MG-143 (A-03) del ATR estandarizado MG-559: "se garantiza una sola PSP conectada por carrier". */
+	@atc('MG-143', { severity: 'critical', description: 'Exclusividad: con eBizCharge activa no se puede vincular otra pasarela' })
 	async expectExclusivityEbizcharge(): Promise<void> {
 		await this.expectExclusivityImpl('ebizcharge');
 	}
