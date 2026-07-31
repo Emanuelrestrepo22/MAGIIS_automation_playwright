@@ -86,7 +86,8 @@ Espeja `TS-STRIPE-TC1001..TC1008` pero adaptado a la UI Authorize.
 - Equivalente Stripe: `TS-STRIPE-TC1059` (insufficient funds Hold ON) y `TS-STRIPE-P2-TC090` (generic decline contractor).
 - **Punto de rechazo canónico con Hold ON:** el rechazo cae en la **vinculación de la tarjeta**, no en el alta del viaje. Con el hold activo el sistema dispara un hold de verificación de bajo monto para poder vincular la tarjeta; si la pasarela lo declina no queda tarjeta vinculada, "Seleccionar Vehículo" no se habilita y el flujo nunca llega al armado del viaje. Aplica a §2.2, §2.3 y §2.4. Ref: BL-051 (un alta con tarjeta nueva genera DOS transacciones: vinculación + viaje).
   Monto del hold de vinculación: **$10.00**, observado el 2026-07-28 en transacciones retenidas en *Fraud Review*. BL-051 documentó la contraparte **anulada** (`Voided`), donde la columna de monto del dashboard aparece vacía — no es un dato contradictorio sino el mismo hold en otro estado.
-- ⚠️ **Estado verificado en vivo (2026-07-28) — trigger inerte:** el ZIP `46282` **aprobó** (la tarjeta se vinculó) en lugar de declinar. Observado de forma independiente por UI y por API. TC1016 y TC1017 quedan **BLOQUEADOS por configuración de la cuenta sandbox**, no por defecto de producto ni de la automatización: el expected de arriba es el correcto y el spec lo asevera, pero la cuenta no está evaluando el ZIP. Ref: BL-049 · ver la nota de §2.4, donde el mismo síntoma aparece con un segundo trigger.
+- ✅ **Trigger VERIFICADO (2026-07-30):** el ZIP `46282` devuelve **Response Code 2** (decline genérico) contra la cuenta sandbox. Confirmado por el spec de contrato API `contract-decline.api.spec.ts`, verde.
+  Historial: el 2026-07-28 este mismo trigger **aprobaba** en lugar de declinar (observado por UI y por API) porque la cuenta no evaluaba el ZIP. Se resolvió al completar la configuración de los filtros antifraude — ver la nota de §2.4. El expected de arriba nunca cambió; lo que cambió fue que la cuenta empezó a evaluarlo.
 
 ### 2.3 CVV triggers (901 mismatch, 902 should-be, 903 issuer, 904 not-processed)
 
@@ -103,7 +104,18 @@ Espeja `TS-STRIPE-TC1001..TC1008` pero adaptado a la UI Authorize.
 >
 > **SUPERSEDED:** esta decisión anula la del **2026-07-27** ("CVV mismatch → aceptar con flag, el viaje se crea"). Razón: la premisa de parametrización del proyecto exige **un mismo comportamiento esperado para todas las pasarelas** — sólo cambian los datos de entrada; un expected divergente Authorize-vs-Stripe rompe los specs `_parametrized`. Alcance: TC1021, TC1022 y todo TC que herede el desenlace CVV por referencia (TC1057, TC1083, TC1098, TC1105).
 >
-> ⚠️ **Bloqueo de ejecución (2026-07-28):** el filtro **Card Code Verification** de la cuenta sandbox **sigue deshabilitado** — evidencia: un probe API con CVV válido devolvió `cvvResultCode` **vacío** (debería ser `M`). Mientras siga así, TC1021 y TC1022 **no son ejecutables**: bloqueo de configuración de cuenta, no defecto de producto ni de la automatización. Ref: BL-049.
+> ✅ **Bloqueo RESUELTO (2026-07-30):** el filtro **Enhanced Card Code Verification (CCV)** de la cuenta sandbox pasó a **Enabled** con la política `N (Does not match) → Decline` · `P` / `S` / `U` → Allow. El echo del CVV ya llega: `CVV 901 → cvvResultCode "N"` y `CVV 904 → "P"`, verificado por `contract-cvv-avs.api.spec.ts` (verde). TC1021 y TC1022 pasan de bloqueados a **ejecutables**.
+>
+> El mapa completo del filtro CCV, por si hace falta reproducir la cuenta:
+>
+> | Card code | Descripción | Filtro |
+> | --- | --- | --- |
+> | `N` | Does not match | **Decline** |
+> | `P` | Is not processed | Allow |
+> | `S` | Should be on card, but is not indicated | Allow |
+> | `U` | Issuer is not certified or has not provided encryption key | Allow |
+>
+> Sólo `N` rechaza — coherente con la regla "sin match = falla": los otros tres códigos significan *no se pudo verificar*, no *no coincide*.
 
 ### 2.4 AVS triggers (no match, non-US, otros)
 
@@ -129,15 +141,21 @@ Espeja `TS-STRIPE-TC1001..TC1008` pero adaptado a la UI Authorize.
 >
 > El expected verificable **no es el código AVS** — es artefacto del proveedor y se asserta sólo como evidencia de red — sino el efecto en MAGIIS. Punto de rechazo: la **vinculación de la tarjeta**, ver §2.2.
 >
-> ⚠️ **Estado verificado en vivo (2026-07-28) — LOS TRIGGERS DE ZIP ESTÁN INERTES.** La política de arriba es correcta pero **hoy no se alcanza a evaluar**, porque la cuenta no está resolviendo el ZIP a un código AVS discriminante:
+> ✅ **TRIGGERS VERIFICADOS (2026-07-30) — BL-036 RESUELTO.** La cuenta ya evalúa CVV y ZIP. Confirmado con los 4 specs de contrato API del sandbox (`api/authorize-sandbox/contract-*.api.spec.ts`), **11/11 verdes**:
 >
-> | ZIP | Código esperado | Observado |
-> | --- | --- | --- |
-> | `90210` (neutro, happy path) | — | `avsResultCode = "P"` (*AVS not applicable*), Response Code 1 |
-> | `46205` (TC1031) | `N` → Decline | **aprobó** — la tarjeta se vinculó (UI, 2026-07-28) |
-> | `46282` (TC1016, §2.2) | Response Code 2 | **aprobó** — la tarjeta se vinculó (UI + API) |
+> | Trigger | Esperado | Observado 2026-07-28 | Observado 2026-07-30 |
+> | --- | --- | --- | --- |
+> | ZIP `46205` (TC1031) | `avsResultCode = "N"` | `"P"` — no evaluaba | **`"N"`** ✅ |
+> | ZIP `46204` (TC1035) | `avsResultCode = "G"` | `"P"` | **`"G"`** ✅ |
+> | ZIP `46282` (§2.2) | Response Code 2 | aprobaba | **Response Code 2** ✅ |
+> | CVV `901` (§2.3) | `cvvResultCode = "N"` | `""` — CCV deshabilitado | **`"N"`** ✅ |
+> | CVV `904` (§2.3) | `cvvResultCode = "P"` | `""` | **`"P"`** ✅ |
 >
-> Dos triggers distintos con el mismo resultado, y un tercero devolviendo `P`, apuntan a **una** causa: el ZIP no se evalúa, así que ningún código de la tabla de filtros se produce y las filas `N`/`A` nunca se alcanzan — sin importar cómo estén configuradas. Consecuencia: **TC1031 (y TC1016/TC1017 en §2.2) quedan BLOQUEADOS por configuración de la cuenta**, no rojos por código. Los specs aseveran el expected correcto y fallan con el mensaje "la pasarela ACEPTÓ la tarjeta que debía rechazar", que es la señal buscada. Ref: BL-049, BL-036.
+> **Qué lo destrabó**: habilitar el filtro *Enhanced Card Code Verification (CCV)* en la cuenta (Status → Enabled, con `N = Decline`). Hasta entonces la cuenta no evaluaba ni el CVV ni el ZIP y devolvía `avsResultCode = "P"` (*AVS not applicable*) para cualquier ZIP, así que ninguna fila de la tabla de filtros de arriba se alcanzaba — por más bien configurada que estuviera.
+>
+> ⚠️ **Lección de atribución**: entre el 22/07 y el 29/07 este síntoma se investigó como credenciales sin habilitar, como Test Mode, y como política AVS mal configurada. Era **el filtro CCV deshabilitado**. Los expected de la matriz nunca estuvieron mal; lo que faltaba era que la cuenta los pudiera producir.
+>
+> **Pendiente de acreditación por UI**: los casos de este bloque quedaron sin re-correr por UI porque el carrier 1521 pasó a eBizCharge (exclusividad de pasarela activa, `ARCHITECTURE.md` §1.bis). Requiere re-vincular Authorize. La corrida de UI del 2026-07-28 falló con "la pasarela ACEPTÓ la tarjeta que debía rechazar", que era el síntoma del trigger inerte — **no es un rojo de código**.
 >
 > **Residual exploratorio:** los códigos `X`, `G`, `R` y `E` (TC1033, TC1035, TC1036, TC1037) **no están cubiertos** por el mapa de filtros; siguen sin expected verificable y no deben acreditarse como pass/fail hasta que se defina su política.
 

@@ -194,9 +194,217 @@ Crear entidades Xray en MG está permitido; los defects van a DEV/MX.
 
 ## Próxima acción
 
-1. Cargar las 4 credenciales `EBIZ_*` en `.env.test` (hoy **ausentes** ⇒ los 23 tests skipean).
+1. Cargar las 4 credenciales `EBIZ_*` en `.env.test` (hoy **ausentes** ⇒ los tests skipean).
 2. Implementar `nativeExtraField: 'address'` en el adapter + `NativeAngularCardForm`: seleccionar del
    autocomplete y **aseverar** que el ZIP se autocompletó, en lugar de tipearlo.
 3. Crear los Xray Tests del happy path para poder acreditar contra MG-559.
 4. Portar la grabación a consumidor thin de `hold.factory` / `cargo-a-bordo.factory`, reemplazando
    los locators frágiles marcados en el archivo (clases Angular generadas y `textbox().nth(N)`).
+
+---
+
+# Ronda 2 — E2E manual: 3 actores × Hold ON/OFF + ejes nuevos (2026-07-30)
+
+**Modo de trabajo**: igual que la Ronda 1 — ejecución MANUAL con codegen, renombrado descriptivo y
+mapeo a TC en el propio archivo. La diferencia es el volumen: **una sola sesión de grabación con 7
+tramos y ~6 viajes**, más una segunda grabación separada para el flujo Quote.
+
+Grabaciones:
+
+- `recorded/ebizcharge-e2e-3actores-hold-onoff-delete-recard-programado.recorded.ts` (7 tramos)
+- `recorded/ebizcharge-quote-hold-invitado-viaje-programado.recorded.ts` (flujo Quote)
+
+**Todos los viajes son con tarjeta preautorizada (hold)** — el eje que varía es si la pre-autorización
+del carrier está ON u OFF. Todos finalizados exitosamente desde la App Driver.
+
+## Precondición verificada
+
+Pasarela eBizCharge ya vinculada desde la Ronda 1 — esta ronda **no repite el switch de pasarela**.
+Carrier 1521, cuenta sandbox.
+
+## Límite de alcance declarado
+
+- La **fase driver no está en las grabaciones**: se ejecutó en el device, fuera del codegen. El cobro
+  se declara exitoso por reporte del líder de QA, con el oráculo de CloudWatch establecido en la
+  Ronda 1 — no hay traza Playwright de esa fase.
+- Sin acceso al dashboard de eBizCharge: la validación es por DB (`MGW.logs`) o API.
+- La grabación de los 7 tramos **apagó la pre-autorización en el tramo 5 y NO la volvió a encender**:
+  el carrier 1521 quedó con Hold OFF al terminar.
+
+## Resultado por caso
+
+| # | Actor | Hold | Tarjeta | Ejes nuevos | TC | Veredicto |
+|---|---|---|---|---|---|---|
+| 1 | empresa individuo | ON | Visa AVS `…2223` → **delete** → MC `…2226` | delete+re-add · **programado 12:10** · Send Manual+Assign · travelId **67817** | `TC1259` + `TC1261` | ✅ PASS |
+| 2 | personal / app pax | ON | Amex `…2225` | — | `TC1256` | ✅ PASS |
+| 3 | colaborador | ON | (sin form) | precio manual 33.33 → **cancelado** | — | ⬜ no acredita |
+| 4 | colaborador | ON | Amex `…2225` | — | `TC1060` | ✅ PASS |
+| 5 | ⚠️ ambiguo | OFF | Amex `…2225` | apagado del toggle | `TC1063` o `TC1059` | 🟡 **PENDIENTE-ACTOR** |
+| 6 | personal | OFF | **existente** | tarjeta ya vinculada | `TC1258` | ✅ PASS |
+| 7 | empresa individuo | OFF | **delete** → Visa `…2222` | delete+re-add · **Send Service** | `TC1260` | ✅ PASS |
+| Q | invitado (Quote) | ON | Visa `…2222` | widget Quote · **programado** · invitado `(inv)` | `TC1205` | 🟡 PARCIAL (2 deltas) |
+
+Las 5 tarjetas usadas son de test eBiz y **todas aprobadas** (`EBIZ_AVS_REFERENCE` /
+`EBIZ_CVV2_REFERENCE`) — ninguna de la serie de declines `4000300…`. Coherente con happy path.
+
+### El tramo 5 no se acredita: el actor está sin resolver
+
+El titular de la tarjeta dice `sinhold happycolaborador` pero el cliente seleccionado es
+`Restrepo, Emanuel`, que en el tramo 6 es usuario **personal**. Los dos caminos acreditan TC distintos:
+
+- si el cliente es empresa con colaborador asociado → `TS-EBIZ-TC1059`
+- si es personal → `TS-EBIZ-TC1063`, y **"colaborador sin hold" queda pendiente de ejecutar**
+
+Se resuelve en la DB, no por inspección de la grabación:
+
+```sql
+SELECT t.id, t.created_at, t.status, c.name AS client_name, c.client_type, p.name AS passenger
+FROM   MGW.travels t
+JOIN   MGW.clients c ON c.id = t.client_id
+LEFT   JOIN MGW.passengers p ON p.id = t.passenger_id
+WHERE  t.id BETWEEN 67810 AND 67840 ORDER BY t.id DESC;
+```
+
+### El flujo Quote cierra el último eje pendiente, con dos deltas
+
+La Ronda 1 y el E2E de los 7 tramos declararon el Quote como **no ejecutado**. Ya está: PASS en verde
+según el líder de QA. Se acredita contra `TS-EBIZ-TC1205` (Quote + hold) con dos deltas declarados:
+
+1. **¿invitado NUEVO o vinculado a un pax existente?** TC1205 pide "vinculado a pasajero existente",
+   pero se tipearon datos nuevos y la grilla mostró `trepo, ema (inv)` — el marcador `(inv)` es
+   invitado. Si el backend creó un pax nuevo, esto es una variante **sin fila en la matriz**.
+2. **el viaje quedó PROGRAMADO**, no inmediato. TC1205 no fija el eje de horario.
+
+## Los 5 ejes que la matriz no modelaba → 7 TC creados
+
+Esta ronda ejercitó ejes que **no tenían dónde acreditarse**. Se crearon las filas en la matriz ANTES
+de referenciarlas en código (regla de trazabilidad de IDs):
+
+| Eje ejercitado | Por qué faltaba | TC creado |
+|---|---|---|
+| carrier + personal + **Hold ON** | §116 tenía 4 filas y **las 4 son Hold OFF** | `TC1256` |
+| carrier + personal + **tarjeta existente** | §116 son 4 variantes de "vincular nueva" | `TC1257` (ON) · `TC1258` (OFF) |
+| **eliminar tarjeta de la wallet** + vincular otra | la matriz sólo tenía desvinculación de **PASARELA** (`TC1054`) | `TC1259` (ON) · `TC1260` (OFF) |
+| **alta** de viaje programado + asignación manual | §310 cubre **edición** de programados, no el alta | `TC1261` |
+| asignación **manual** del conductor (inmediato) | el despacho no era eje | `TC1262` |
+
+**Send Service NO tiene caso propio a propósito**: es el default del motor, así que ya lo recorren
+todas las filas existentes — un caso más sería duplicado de `TC1067`/`TC1068`.
+
+Con `TC1256` se cierra además un gap que el registry declaraba explícitamente: `ebizcharge.holdTcIds`
+tenía `personalHappyHoldOn: null` con la nota de que la matriz eBiz no modelaba ese eje.
+
+## Acreditado vs declarado
+
+**Acreditado con evidencia propia**: los 6 tramos ✅ de la tabla, en la fase WEB. Cada uno tiene la
+grabación corregida como traza y su TC de matriz.
+
+**Declarado, no acreditado por esta ronda**:
+
+- el **cobro desde la App Driver** de los 6 tramos — se hizo en el device, sin traza Playwright;
+- el tramo 5 (actor sin resolver) y el tramo 3 (viaje cancelado);
+- el flujo Quote, parcial por los dos deltas;
+- **la automatización de los 7 casos nuevos**: están cableados en el catálogo y colectan
+  (`--list` da 32 tests `@ebizcharge`, antes 25), pero **se ejecutaron A MANO**. Que el código exista
+  no es lo mismo que verificado en vivo.
+
+## Acreditación en Xray — MG-559 (2026-07-30)
+
+**Vía**: el CLI de Xray vive en el repo orquestador `agentic-qa-boilerplate` (`bun xray`, skill
+`xray-cli`), autenticado con `~/.xray-cli/token.json`. **Todos los comandos se corren desde ese
+directorio**, no desde este repo (acá `bun xray` no existe).
+
+### El área E del hold NO estaba en la execution — y es correcto
+
+MG-559 tiene 34 runs: MG-141..151, MG-161..174, MG-293/295 y MG-482..496. **Faltan MG-152..160**, que
+es exactamente el área D (3DS) y el área E, cuyo Test Set se llama literalmente
+**`ATP · E — Hold con 3DS`**. Quien armó la execution ya reflejó que eBiz no tiene 3DS, así que el
+"gap" no es un olvido a corregir con un Test nuevo: es alcance decidido.
+
+⇒ **El hold se acredita indirectamente vía MG-161**: el capture cobra *sobre* el hold, así que un
+`capture` con `resultCode: 'A'` sobre el mismo `refNum` prueba que el hold estaba confirmado. Ese
+argumento está escrito en el comentario del run, no inventado como resultado propio.
+
+### 5 runs acreditados PASSED, con comentario estructurado y evidencia adjunta
+
+| Test | Run ID | Caso | Evidencia adjunta |
+|---|---|---|---|
+| **MG-141** | `6a657cf2afb496cf4f64f78e` | A/TC1 vincular pasarela con cuenta PSP válida | grabación E2E #1 |
+| **MG-148** | `6a657cf2afb496cf4f64f795` | C/TC1 alta de tarjeta válida | 2 grabaciones + `wallet-add-ebizcharge-2224.png` |
+| **MG-161** | `6a657cf2afb496cf4f64f799` | F/TC1 cobro procesado y viaje cerrado | grabación E2E #1 |
+| **MG-293** | `6a6b97ebafb496cf4f813498` | eliminar tarjeta desde App PAX | `wallet-before-delete` + `wallet-after-delete` |
+| **MG-295** | `6a6b97ebafb496cf4f813499` | eliminar última tarjeta → estado vacío | `wallet-after-delete` |
+
+MG-293 y MG-295 **no estaban en la execution**: se agregaron con `exec add-tests`. Su resultado ya
+existía en `evidence/test/xray-results.ebizcharge.json` (corrida de device 17:43-17:48 UTC) pero ese
+JSON **nunca se importó**; se acreditaron directamente por CLI. **No importar ese JSON después** — un
+import posterior pisaría los comentarios y la evidencia con un resultado pelado.
+
+### 6 runs con comentario y SIN resultado — el motivo en cada uno
+
+| Test | Por qué no se acredita |
+|---|---|
+| **MG-165** modal de aviso antes de desvincular | El modal SÍ se observó, pero el paso 4 exige probar la rama **Cancelar** y no se ejecutó |
+| **MG-166** la desvinculación limpia las wallets | Sus pasos 4 y 5 piden listar wallets y verificar `user_wallet` **en DB**. Sólo se vio que el proceso arrancó — la limpieza no se verificó |
+| **MG-143** exclusividad [negativo clave] | Se observó el *efecto* (otras PSP en "No Disponible") pero no se **intentó** vincular una segunda |
+| **MG-482** validaciones de formulario | La evidencia va **en contra**: máscara Amex + CVV sin largo por marca (BL-057). Candidato a FAIL, sin confirmar si es artefacto del codegen |
+| **MG-484** aislamiento Personal↔Business | Los 3 actores corrieron, pero el aislamiento por `passengerId` no se aseveró |
+| **MG-488** reconciliación monto vs hold | Tenemos los montos (180.31 → 18.26) pero no la regla de negocio contra la cual compararlos |
+
+⚠️ **MG-165 y MG-166 se degradaron respecto del plan inicial.** Se habían estimado acreditables; al
+leer sus pasos manuales quedó claro que exigen más de lo verificado. Marcarlos PASS habría afirmado
+una rama de cancelación y una limpieza de wallets que nadie observó.
+
+### ⚠️ Los pasos manuales de todos estos Tests están derivados de Stripe
+
+Cada Test nombra Stripe en su precondición ("carrier con STRIPE conectada") y varios pasos describen
+llamadas API directas (`POST vendor/stripe`, `GET passengers/{id}/allCards`) que acá se ejercitaron
+**por UI**. Es el reuso deliberado de los Tests para las 4 PSP en MG-559. Como `run status PASSED`
+marca **todos los pasos** en verde de una vez, cada comentario declara explícitamente el desvío para
+que un auditor no lea "Vincular STRIPE ✔" como que se vinculó Stripe.
+
+### ⚠️ Otro proceso está editando MG-559 y transicionando los issues Test
+
+Durante esta sesión, **sin intervención de esta sesión**:
+
+- MG-141, MG-143, MG-148, MG-161, MG-165, MG-166, MG-293, MG-295 pasaron a **`LISTO PARA RELEASE`**.
+  El changelog de MG-165 muestra 3 transiciones en 7 segundos (`To Do → In Progress → TEST → LISTO
+  PARA RELEASE`, 16:26:38/42/45 -0300) — es un script, y ocurrió ~50 min *después* de marcar los runs.
+- **MG-172 fue REMOVIDO** de la execution (estaba en la primera lectura, ya no).
+
+**Contradicción a resolver**: MG-143, MG-165 y MG-166 figuran `LISTO PARA RELEASE` en el tablero
+mientras sus runs están en `TO DO` con un comentario que dice explícitamente que no se acreditan. El
+estado del issue y el resultado del run se contradicen.
+
+Vale recordar por qué: en MG el workflow de los Test es el **pipeline de desarrollo**
+(`Tareas por hacer → En curso → TEST → LISTO PARA RELEASE`), no un ciclo pass/fail. El resultado real
+de una prueba es el **run** dentro del Execution; el status del issue no lo representa.
+
+## Hallazgos de esta ronda
+
+| # | Hallazgo | Estado |
+|---|---|---|
+| 1 | 🔴 **Typo de producto en la confirmación del widget Quote**: "Your Trip was **confimed**!" (falta la R). Es texto de cara al cliente final — el widget es el embebible público | reportar a **DEV/MX** |
+| 2 | 🟡 **Máscara del campo "Card number" vs Amex de 15 dígitos**: los dos tramos con Amex necesitaron ~25 acciones de forcejeo para completar el número (agrupamiento 4-6-5, no 4-4-4-4). **Puede ser artefacto del codegen** — reproducir a mano antes de filear | sin confirmar |
+| 3 | 🟡 **El CVV no indica el largo esperado por marca**: Amex pide 4 dígitos y el resto 3; el tramo 2 muestra el ida y vuelta `123` → `1234` → `123` → `1235` → `3214` hasta acertar | candidato UX |
+| 4 | ⚪ El método de pago sigue rotulado **"Credit Card - Pre-Authorized"** con el toggle del carrier en OFF — el label no refleja el estado de la pre-autorización | observación |
+| 5 | ⚪ El **precio manual convive con la tarjeta preautorizada** sin romper el alta (tramo 3) | observación |
+
+## Próxima acción
+
+1. **Resolver el actor del tramo 5** con la query de arriba — es lo único que bloquea acreditar ese
+   tramo, y define si "colaborador sin hold" quedó cubierto.
+2. **Restaurar la pre-autorización del carrier 1521 a ON**: el tramo 5 la apagó y la grabación no la
+   volvió a encender. Cualquier spec de hold que corra antes de eso da un falso resultado.
+3. Verificar el delta del Quote en DB (invitado nuevo vs vinculado a pax existente) — decide si
+   `TC1205` se acredita entero o hace falta una fila más.
+4. **Implementar `nativeExtraField: 'address'`** — pasó de incógnita a **bloqueante confirmado**. El
+   form nativo de eBiz pide dirección de facturación + ZIP, con doble evidencia: el autocomplete
+   "Enter an address" de las dos grabaciones, y el hallazgo en device de la sesión de app-pax
+   (`EBIZ_BILLING` en la fixture: `address` tiene **maxlength=30**, pasarse invalida el FormGroup).
+   `ebizchargeGatewayAdapter` no lo declara, así que `NativeAngularCardForm` deja esos campos vacíos y
+   "Validar" no habilita. **Ningún caso web de eBiz que abra el form puede pasar en vivo hasta que
+   esto exista** — incluidos los 7 nuevos. Es previo al piloto.
+5. Cargar las credenciales `EBIZ_*` y correr el **piloto del eje programado** (`TC1261`), que necesita
+   además `GATEWAY_SCHEDULED_PICKUP_TIME` (ej. `"12:10 PM"`).
+6. Reportar el typo "confimed" a DEV/MX (**BL-056**).

@@ -124,6 +124,17 @@
 | TS-EBIZ-TC1064 | Validar alta de viaje desde carrier para usuario personal con tarjeta preautorizada exitosa (Visa 4000100011112224) con Hold OFF — variante origen/destino alternativo | `EBIZ_CARDS.SUCCESS` | `TS-STRIPE-TC1052` |
 | TS-EBIZ-TC1065 | Validar alta de viaje desde carrier para usuario personal con tarjeta preautorizada exitosa (Visa 4000100011112224) con Hold OFF — variante set 2 | `EBIZ_CARDS.SUCCESS` | `TS-STRIPE-TC1058` |
 | TS-EBIZ-TC1066 | Validar alta de viaje desde carrier para usuario personal con tarjeta preautorizada exitosa (Visa 4000100011112224) con Hold OFF — variante set 2 alternativo | `EBIZ_CARDS.SUCCESS` | `TS-STRIPE-TC1060` |
+| TS-EBIZ-TC1256 | Validar Alta de Viaje desde carrier para usuario personal con Tarjeta Preautorizada **Hold ON** desde Alta de Viaje y Cobro desde App Driver — Vincular tarjeta nueva | `EBIZ_CARDS.SUCCESS` | — |
+| TS-EBIZ-TC1257 | Validar Alta de Viaje desde carrier para usuario personal con Tarjeta Preautorizada **Hold ON** desde Alta de Viaje y Cobro desde App Driver — Usar tarjeta vinculada existente | `EBIZ_CARDS.SUCCESS` (stored) | — |
+| TS-EBIZ-TC1258 | Validar Alta de Viaje desde carrier para usuario personal con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Usar tarjeta vinculada existente | `EBIZ_CARDS.SUCCESS` (stored) | — |
+
+> **TC1256..TC1258 NO son derivados del L1** — se crearon el 2026-07-30 a partir del E2E exploratorio
+> [`ebizcharge-e2e-3actores-hold-onoff-delete-recard-programado.recorded.ts`](../../../tests/features/gateway-pg/recorded/ebizcharge-e2e-3actores-hold-onoff-delete-recard-programado.recorded.ts).
+> Motivo: las 4 filas derivadas (TC1063..1066) son **todas Hold OFF con tarjeta nueva**, así que el
+> actor `personal` no tenía caso para Hold ON ni para tarjeta ya vinculada — dos ejes que el E2E sí
+> ejercitó (tramos 2 y 6). El registry lo declaraba en
+> [`xray-keys.ts`](../../../tests/features/gateway-pg/data/xray-keys.ts): `ebizcharge.hold` no tenía
+> entrada `personalHappyHoldOn`. Sin `Ref Stripe` porque no hay fila L1 equivalente.
 
 ---
 
@@ -330,6 +341,64 @@
 | TS-EBIZ-TC1253 | Validar Alta de viaje y edición en conflicto desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Vincular tarjeta nueva | `EBIZ_CARDS.SUCCESS` | `TS-STRIPE-P2-TC085` |
 | TS-EBIZ-TC1254 | Validar Alta de viaje y edición en conflicto desde carrier para usuario empresa individuo con Tarjeta Preautorizada Hold desde Alta de Viaje y Cobro desde App Driver — Usar tarjeta vinculada existente | `EBIZ_CARDS.SUCCESS` (stored) | `TS-STRIPE-P2-TC086` |
 | TS-EBIZ-TC1255 | Validar Alta de viaje y edición en conflicto desde carrier para usuario empresa individuo con Tarjeta Preautorizada sin Hold desde Alta de Viaje, Cobro desde App Driver — Usar tarjeta vinculada existente | `EBIZ_CARDS.SUCCESS` (stored) | `TS-STRIPE-P2-TC087` |
+
+---
+
+## Eliminación de Tarjeta de la Wallet (desde Carrier – Alta de Viaje)
+
+> **Sección NO derivada del L1** — creada el 2026-07-30 desde el E2E exploratorio
+> [`ebizcharge-e2e-3actores-hold-onoff-delete-recard-programado.recorded.ts`](../../../tests/features/gateway-pg/recorded/ebizcharge-e2e-3actores-hold-onoff-delete-recard-programado.recorded.ts)
+> (tramos 1 y 7). La matriz sólo tenía desvinculación de **PASARELA** (`TS-EBIZ-TC1054`); eliminar una
+> tarjeta **de la wallet del pasajero** desde el propio Alta de Viaje no estaba cubierto en ninguna
+> pasarela. El flujo real es: método de pago → ícono de borrado de la tarjeta resaltada → confirmar
+> "Delete" → la fila desaparece → vincular otra tarjeta distinta y continuar el alta.
+>
+> POM existente: `CarrierNewTravelPage.deleteHighlightedSavedCard()`.
+
+| ID | Descripción | Card | Ref Stripe |
+| --- | --- | --- | --- |
+| TS-EBIZ-TC1259 | Validar eliminación de tarjeta vinculada desde Alta de Viaje y vinculación de una tarjeta distinta, para usuario empresa individuo con Tarjeta Preautorizada **Hold ON** — el alta se completa con la tarjeta nueva y el hold se aplica sobre ella | `EBIZ_CARDS.SUCCESS` → Mastercard `5555444433332226` | — |
+| TS-EBIZ-TC1260 | Validar eliminación de tarjeta vinculada desde Alta de Viaje y vinculación de una tarjeta distinta, para usuario empresa individuo con Tarjeta Preautorizada **sin Hold** — el alta se completa con la tarjeta nueva sin retención previa | `EBIZ_CARDS.SUCCESS` → Visa `4000200011112222` | — |
+
+---
+
+## Alta de Viaje Programado (desde Carrier – con asignación manual del conductor)
+
+> **Sección NO derivada del L1** — creada el 2026-07-30 desde el E2E exploratorio (tramo 1, travelId
+> real **67817**). La matriz tenía **Edición** de viajes programados (`TC1248..TC1251`) pero no el
+> **alta** de un viaje con hora futura.
+>
+> ⚠️ **El oráculo cambia**: un viaje programado NO cae en la columna "Por asignar" sino en
+> **Programados**. Al automatizar, `expectPassengerInPorAsignar` no aplica — usar
+> `TravelManagementPage.openScheduledTrips()`. POMs existentes: `setPickupTime()` +
+> `clickSendManualAndAssign()`.
+
+| ID | Descripción | Card | Ref Stripe |
+| --- | --- | --- | --- |
+| TS-EBIZ-TC1261 | Validar Alta de Viaje **programado** (hora futura) con **asignación manual del conductor** desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold ON** y Cobro desde App Driver — el viaje queda en la columna Programados con conductor asignado | `EBIZ_CARDS.SUCCESS` | — |
+
+---
+
+## Despacho del Viaje — Asignación Manual del Conductor
+
+> **Sección NO derivada del L1** — creada el 2026-07-30 desde el E2E exploratorio (tramos 2 y 4). El
+> despacho no existía como eje explícito.
+>
+> ⚠️ **Sólo hay UNA fila porque sólo una mitad del eje es nueva.** El E2E ejercitó los dos caminos:
+> **Send Service** (despacho automático al pool de conductores, tramo 7) y **Send Manual + Assign**
+> (el dispatcher elige el conductor y le asigna el viaje directo, tramos 1-6). Pero Send Service es el
+> camino que **ya recorren todas las filas existentes** de la matriz — es el default del motor
+> (`clickSendService`), así que un caso "con Send Service" duplicaría `TC1067`/`TC1068` sin agregar
+> cobertura. Lo genuinamente nuevo es la asignación manual.
+>
+> Se aísla de `TC1261`, que combina programado + asignación manual: con los dos ejes en un solo caso,
+> un fallo no diría cuál de los dos rompió.
+>
+> POM existente: `clickSendManualAndAssign()` (Send Manual → Assign fila → Assign confirmar).
+
+| ID | Descripción | Card | Ref Stripe |
+| --- | --- | --- | --- |
+| TS-EBIZ-TC1262 | Validar Alta de Viaje **inmediato** con **asignación manual del conductor** (Send Manual + Assign, sin timer de oferta) desde carrier para usuario empresa individuo con Tarjeta Preautorizada **Hold ON** y Cobro desde App Driver | `EBIZ_CARDS.SUCCESS` | — |
 
 ---
 
