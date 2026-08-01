@@ -10,8 +10,14 @@ export interface CardInput {
 	expiry: string;
 	cvc: string;
 	holderName?: string;
-	/** Código postal para el form nativo (app-credit-card-payment-data zipCode). Default '76000'. */
+	/** Código postal para el form nativo (app-credit-card-payment-data zipCode). Default '75201' (alineado con EBIZ_BILLING.zip). */
 	zip?: string;
+	/**
+	 * Dirección de Facturación — REQUERIDA por el form nativo eBizCharge
+	 * (control `address`, maxlength=30). Se trunca a 30 chars al llenar.
+	 * Inexistente en Stripe/otros; se ignora si el control no está presente.
+	 */
+	address?: string;
 }
 
 export class PassengerWalletScreen extends AppiumSessionBase {
@@ -558,14 +564,15 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 				return true;
 			}
 
-			// Form NATIVO Angular/Ionic (app-credit-card-payment-data): el campo de número es un
-			// input nativo `#cardNumber` / data-checkout. Se chequea vía JS en el webview
+			// Form NATIVO Angular/Ionic (app-credit-card-payment-data): el campo de número.
+			// eBizCharge/MercadoPago montan `ion-input[formcontrolname="cardNumber"]` (el id y el
+			// formcontrolname viven en el HOST ion-input, no en el <input> interno `.native-input`)
+			// → hay que detectar el host, no `input#cardNumber`. Se chequea vía JS en el webview
 			// (document.querySelector, robusto a frame-focus) — no por WDIO $$ (context-frágil).
-			const nativePresent = await this.executeInWebView(
-				() =>
-					!!document.querySelector(
-						'app-credit-card-payment-data input#cardNumber, input[formcontrolname="cardNumber"], input[data-checkout="cardNumber"]'
-					)
+			const nativePresent = await this.executeInWebView(() =>
+				!!document.querySelector(
+					'app-credit-card-payment-data ion-input[formcontrolname="cardNumber"], ion-input#cardNumber, app-credit-card-payment-data input#cardNumber, input[formcontrolname="cardNumber"], input[data-checkout="cardNumber"]'
+				)
 			).catch(() => false);
 			if (nativePresent) {
 				return true;
@@ -1184,9 +1191,7 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 		// el frame activo está ALINEADO con el documento del form → así el fill posterior también lo ve.
 		// (No usar getPageSource aquí: detectaría el form aun con el frame desalineado y el fill fallaría.)
 		await this.switchFrameTarget(null).catch(() => {});
-		const nativeCardNumber = await this.findAnyElement(
-			'app-credit-card-payment-data input#cardNumber, input[formcontrolname="cardNumber"], input[data-checkout="cardNumber"]'
-		);
+		const nativeCardNumber = await this.findAnyElement('app-credit-card-payment-data ion-input[formcontrolname="cardNumber"], ion-input#cardNumber, app-credit-card-payment-data input#cardNumber, input[formcontrolname="cardNumber"], input[data-checkout="cardNumber"]');
 		if (nativeCardNumber) {
 			await this.fillNativeCardForm(card, sanitizedNumber);
 			return;
@@ -1291,77 +1296,180 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 	}
 
 	/**
-	 * Llena el form NATIVO de alta de tarjeta (`app-credit-card-payment-data`, estilo MercadoPago:
-	 * inputs nativos por `formcontrolname`/`data-checkout`, NO iframe Stripe). El form es progresivo:
-	 * al tipear un número válido emergen expiry/cvv/cardholderName/zip. Mecánica: tap #cardNumber →
-	 * tipeo real (driver.keys) para disparar validación → completar el resto por selector nativo.
+	 * Llena un control del form nativo Ionic por `formcontrolname`.
+	 *
+	 * eBizCharge/MercadoPago montan `ion-input[formcontrolname="..."]` (Ionic web components):
+	 * el `<input>` real es `.native-input` DENTRO del host `ion-input`. Setear `input.value` +
+	 * eventos DOM `input/change` NO alcanza — el `FormControl` de Angular reactive-forms se
+	 * actualiza por los eventos `ionInput`/`ionChange` que emite el CUSTOM element. Sin ellos,
+	 * el control queda vacío/untouched → el FormGroup es inválido → GUARDAR no habilita.
+	 * (Verificado en device 2026-07-30 introspeccionando el `formGroup` del componente.)
+	 */
+	private async fillIonInputControl(controlName: string, value: string): Promise<boolean> {
+		return this.executeInWebView(
+			(fcn: string, val: string) => {
+				const host = document.querySelector(`ion-input[formcontrolname="${fcn}"], #${fcn}, input[formcontrolname="${fcn}"]`) as HTMLElement | null;
+				if (!host) {
+					return false;
+				}
+
+				const input = (host.matches('input') ? host : (host.querySelector('input.native-input') ?? host.querySelector('input'))) as HTMLInputElement | null;
+				if (!input) {
+					return false;
+				}
+
+				const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+				input.focus();
+				setter?.call(input, val);
+				input.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+				input.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
+
+				// Actualizar el FormControl Angular vía los eventos del ion-input host.
+				try {
+					(host as HTMLElement & { value?: string }).value = val;
+				} catch {
+					// La prop `value` del ion-input puede ser de sólo lectura en algunos builds; los eventos igual disparan.
+				}
+				host.dispatchEvent(new CustomEvent('ionInput', { bubbles: true, composed: true, detail: { value: val } }));
+				host.dispatchEvent(new CustomEvent('ionChange', { bubbles: true, composed: true, detail: { value: val } }));
+
+				input.dispatchEvent(new Event('blur', { bubbles: true, composed: true }));
+				host.dispatchEvent(new CustomEvent('ionBlur', { bubbles: true, composed: true }));
+				return true;
+			},
+			controlName,
+			value
+		).catch(() => false) as Promise<boolean>;
+	}
+
+	/**
+	 * Lee el valor actual de un control del form nativo (por `formcontrolname`).
+	 */
+	private async readIonInputControl(controlName: string): Promise<string> {
+		return this.executeInWebView((fcn: string) => {
+			const host = document.querySelector(`ion-input[formcontrolname="${fcn}"], #${fcn}`) as HTMLElement | null;
+			const input = host?.querySelector('input.native-input, input') as HTMLInputElement | null;
+			return input?.value ?? '';
+		}, controlName).catch(() => '') as Promise<string>;
+	}
+
+	/**
+	 * Introspecciona el FormGroup Angular del form nativo (`app-credit-card-payment-data`) vía
+	 * `ng.getComponent()`. Devuelve la validez global y los controls inválidos con sus errores.
+	 * Útil para los casos NEGATIVOS de alta de tarjeta (número incompleto, fecha vencida, CVV/ZIP
+	 * inválido): la app debe dejar el FormGroup inválido → GUARDAR deshabilitado.
+	 * `formValid = null` cuando no hay form nativo (p.ej. gateway Stripe con iframes).
+	 */
+	async readFormValidity(): Promise<{ formValid: boolean | null; invalidControls: Array<{ name: string; errors: unknown }> }> {
+		return this.executeInWebView(() => {
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			const ng = (window as any).ng;
+			const host = document.querySelector('app-credit-card-payment-data');
+			if (!ng || !host || typeof ng.getComponent !== 'function') {
+				return { formValid: null, invalidControls: [] };
+			}
+
+			const cmp = ng.getComponent(host);
+			if (!cmp || typeof cmp !== 'object') {
+				return { formValid: null, invalidControls: [] };
+			}
+
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			let group: any = null;
+			for (const k of Object.keys(cmp as Record<string, unknown>)) {
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				const v = (cmp as any)[k];
+				if (v && typeof v === 'object' && v.controls && typeof v.controls === 'object') {
+					group = v;
+					break;
+				}
+			}
+
+			if (!group) {
+				return { formValid: null, invalidControls: [] };
+			}
+
+			const invalidControls: Array<{ name: string; errors: unknown }> = [];
+			for (const name of Object.keys(group.controls)) {
+				const c = group.controls[name];
+				if (c && c.valid === false) {
+					invalidControls.push({ name, errors: c.errors });
+				}
+			}
+
+			return { formValid: Boolean(group.valid), invalidControls };
+		}).catch(() => ({ formValid: null as boolean | null, invalidControls: [] as Array<{ name: string; errors: unknown }> }));
+	}
+
+	/**
+	 * ¿El botón GUARDAR del form de alta de tarjeta está habilitado? (FormGroup válido).
+	 * Para los casos negativos se espera `false`.
+	 */
+	async isSaveEnabled(): Promise<boolean> {
+		return this.executeInWebView(() => {
+			const host = (document.querySelector('app-credit-card-payment-data') as ParentNode | null) ?? document;
+			const btns = Array.from(host.querySelectorAll('button, ion-button')) as HTMLElement[];
+			const save = btns.find(b => /guardar/i.test(b.textContent ?? ''));
+			if (!save) {
+				return false;
+			}
+
+			const disabled = save.getAttribute('disabled') !== null || save.getAttribute('aria-disabled') === 'true' || (save as HTMLButtonElement).disabled === true;
+			return !disabled;
+		}).catch(() => false);
+	}
+
+	/**
+	 * Llena el form NATIVO de alta de tarjeta (`app-credit-card-payment-data`), común a
+	 * eBizCharge y MercadoPago (Ionic reactive-forms, NO iframe Stripe). El form es progresivo:
+	 * al registrar un número válido emergen expiry/cvv/cardholderName y — sólo en eBizCharge —
+	 * los campos `address` (Dirección de Facturación, maxlength=30) y `zipCode`.
+	 *
+	 * Estandarización multi-gateway: mismos pasos, sólo cambian los datos de entrada. Los controls
+	 * ausentes en una pasarela (p.ej. `address` no existe en MercadoPago) se saltan sin romper.
 	 */
 	private async fillNativeCardForm(card: CardInput, sanitizedNumber: string): Promise<void> {
 		const driver = this.getDriver();
 		await this.switchToWebView().catch(() => {});
 		await this.switchFrameTarget(null).catch(() => {});
-		const scope = await this.getVisibleCreditCardPaymentModal().catch(() => null);
 
-		// 1) cardNumber: `fillWebInputField` es context-robusto (setter nativo + dispatch de
-		// eventos input/change vía executeInWebView) → dispara la validación/reveal del form
-		// reactivo Angular sin depender de resolución de elementos WDIO (context-frágil).
-		const numberSelectors = [
-			'input#cardNumber',
-			'input[formcontrolname="cardNumber"]',
-			'input[data-checkout="cardNumber"]'
-		];
-		const filledNumber = await this.fillWebInputField(numberSelectors, sanitizedNumber, scope).catch(() => false);
-		if (!filledNumber) {
-			throw new Error('PassengerWalletScreen.fillNativeCardForm() - no se pudo llenar cardNumber nativo');
+		// 1) cardNumber → dispara la validación/reveal progresivo del form reactivo.
+		if (!(await this.fillIonInputControl('cardNumber', sanitizedNumber))) {
+			throw new Error('PassengerWalletScreen.fillNativeCardForm() - no se pudo llenar cardNumber nativo (control ion-input no encontrado)');
 		}
-		await driver.pause(2_500); // validación + reveal progresivo de los demás campos
+		await driver.pause(2_500);
 
-		// 2) Vencimiento (cardExpirationDate, combinado MM/AA).
+		// 2-4) Campos que EXISTEN en ambos gateways nativos (eBiz + MercadoPago). Se capturan los
+		// booleans para diagnosticar temprano si un control no se pudo llenar (p.ej. el reveal
+		// progresivo tardó más que el pause fijo) en vez de fallar tarde en saveCard() con un
+		// mensaje genérico de "GUARDAR disabled".
 		const { combined } = this.parseExpiryParts(card.expiry);
-		await this.fillWebInputField(
-			[
-				'input[formcontrolname="cardExpirationDate"]',
-				'input[data-checkout="cardExpirationDate"]',
-				'input[formcontrolname="cardExpiration"]'
-			],
-			combined,
-			scope
-		).catch(() => false);
+		const expiryOk = await this.fillIonInputControl('cardExpirationDate', combined);
+		const cvcOk = await this.fillIonInputControl('securityCode', card.cvc.replace(/\s+/g, ''));
 
-		// 3) CVV (securityCode).
-		await this.fillWebInputField(
-			[
-				'input[formcontrolname="securityCode"]',
-				'input[data-checkout="securityCode"]',
-				'input[formcontrolname="cvv"]'
-			],
-			card.cvc.replace(/\s+/g, ''),
-			scope
-		).catch(() => false);
-
-		// 4) Titular.
 		const holderName = card.holderName?.trim();
-		if (holderName) {
-			await this.fillWebInputField(
-				[
-					'input[formcontrolname="cardholderName"]',
-					'input[data-checkout="cardholderName"]',
-					'ion-input[formcontrolname="cardholderName"] input'
-				],
-				holderName,
-				scope
-			).catch(() => false);
+		const holderOk = holderName ? await this.fillIonInputControl('cardholderName', holderName) : true;
+
+		if (!expiryOk || !cvcOk || !holderOk) {
+			console.warn(`[PassengerWalletScreen] fillNativeCardForm: control(es) sin llenar → expiry=${expiryOk} cvc=${cvcOk} holder=${holderOk} (¿reveal progresivo tardó más que el pause?)`);
 		}
 
-		// 5) Código postal (zipCode) — requerido por el form; default si CardInput no lo trae.
-		await this.fillWebInputField(
-			['input[formcontrolname="zipCode"]', 'input[data-checkout="zipCode"]'],
-			card.zip ?? '76000',
-			scope
-		).catch(() => false);
+		// 5) Dirección de Facturación (sólo eBizCharge). maxlength=30 → truncar para no invalidar
+		//    el control (44>30 dejaba el FormGroup inválido y GUARDAR deshabilitado).
+		const address = (card.address ?? '123 Main St').slice(0, 30);
+		const addressFilled = await this.fillIonInputControl('address', address);
+		if (addressFilled) {
+			await driver.pause(800); // el address puede autocompletar el zip en algunos builds
+		}
+
+		// 6) Código Postal — sólo si el form lo expone y no quedó autocompletado por la dirección.
+		const zipNow = await this.readIonInputControl('zipCode');
+		if (!zipNow) {
+			await this.fillIonInputControl('zipCode', card.zip ?? '75201');
+		}
 
 		await driver.pause(300);
-		console.log('[PassengerWalletScreen] form NATIVO app-credit-card-payment-data completado');
+		console.log('[PassengerWalletScreen] form NATIVO app-credit-card-payment-data completado (ion-input + ionInput/ionChange)');
 	}
 
 	/**

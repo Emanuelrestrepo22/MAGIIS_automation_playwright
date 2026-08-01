@@ -21,8 +21,11 @@
  *     del hold según el oráculo definido por el líder de QA.
  *
  * Secuencia (evidencia: `tests/test-8.spec.ts`):
- *   goto → origen → destino → [pax] → Select Vehicle → Trip Note → Select → contacto →
+ *   goto → origen → destino → pax → Select Vehicle → Trip Note → Select → contacto →
  *   Quote → Payment → (fill de tarjeta por el caller) → Confirm your Quote
+ *
+ * El paso `pax` NO es opcional (medido en vivo 2026-07-29): el widget arranca en 0 pasajeros y
+ * con 0 no avanza. Ver `setPassengerCount`.
  */
 
 import type { TestContextOptions } from '@TestContext';
@@ -103,8 +106,17 @@ export class QuoteWidgetPage extends UiBase {
 		await this.fillAddress(address, shortAddress(address));
 	}
 
+	/** Campo "Trip Note" / "Nota del Viaje" — sólo existe una vez montado el paso de vehículo. */
+	private tripNoteField() {
+		return this.page.getByRole('textbox', { name: /Trip Note|Nota del Viaje|Nota/i }).first();
+	}
+
 	/**
 	 * Avanza a la selección de vehículo. Botón "Select Vehicle" / "Seleccionar Vehículo".
+	 *
+	 * Asevera la TRANSICIÓN, no sólo el click: sin esto el click "pasa" aunque el widget se quede
+	 * en el paso 1 (p. ej. 0 pasajeros) y el fallo emerge recién en `setTripNote`, apuntando a un
+	 * locator que nunca iba a montar — diagnóstico equivocado, observado en vivo el 2026-07-29.
 	 */
 	@step
 	async selectVehicle(): Promise<void> {
@@ -116,12 +128,13 @@ export class QuoteWidgetPage extends UiBase {
 		// Se espera el estado observable del form, no un sleep fijo.
 		await expect(this.page.locator('app-input-search-place-quote.ng-invalid')).toHaveCount(0, { timeout: 30_000 });
 		await this.page.getByRole('button', { name: /^Select Vehicle$|^Seleccionar Veh[íi]culo$/i }).click();
+		await expect(this.tripNoteField(), 'el widget debe avanzar al paso de selección de vehículo').toBeVisible({ timeout: 20_000 });
 	}
 
 	/** Completa la nota del viaje (campo "Trip Note" / "Nota del Viaje"). */
 	@step
 	async setTripNote(note: string): Promise<void> {
-		const field = this.page.getByRole('textbox', { name: /Trip Note|Nota del Viaje|Nota/i }).first();
+		const field = this.tripNoteField();
 		await field.click();
 		await field.fill(note);
 	}
@@ -193,7 +206,10 @@ export class QuoteWidgetPage extends UiBase {
 	 * "Select Vehicle" NO avanza y **no emite ninguna validación visible** — el paso siguiente
 	 * (Trip Note) nunca se monta. Ver el hallazgo QUOTE-PAX-0 del RUN-LOG.
 	 *
-	 * Se setea por el rol `spinbutton` (semántico) en vez del `dblclick` posicional de la grabación.
+	 * Se setea por el rol `spinbutton` (semántico) en vez del `dblclick` posicional de la grabación
+	 * y del `i:nth-child(3)` de `increasePassengerCount()`. Se ASEVERA el valor efectivo: si el
+	 * input reactivo descarta el fill, el test falla acá con el motivo real en vez de arrastrar el
+	 * síntoma dos pasos más adelante (a un locator de Trip Note que nunca iba a montar).
 	 */
 	@step
 	async setPassengerCount(count: number): Promise<void> {

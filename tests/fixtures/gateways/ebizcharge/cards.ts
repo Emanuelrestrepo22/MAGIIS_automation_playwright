@@ -87,6 +87,18 @@ export const EBIZ_ANY_CVV_AMEX = '1234' as const;
 export const EBIZ_DEFAULT_HOLDER = 'MAGIIS QA Test';
 
 /**
+ * Datos de facturación para el form nativo eBizCharge (`app-credit-card-payment-data`).
+ * eBiz agrega dos campos que las otras PSP no piden: `address` (Dirección de Facturación) y
+ * `zipCode`. El control `address` tiene **maxlength=30**: pasarse invalida el FormGroup y
+ * deja GUARDAR deshabilitado (verificado en device 2026-07-30). Mantener ≤30 chars.
+ * El outcome eBiz lo define el NÚMERO de tarjeta, así que address/zip son inertes al resultado.
+ */
+export const EBIZ_BILLING = {
+	address: '123 Main St, Dallas TX', // 22 chars (≤30)
+	zip: '75201'
+} as const;
+
+/**
  * Dirección de facturación por defecto para el 5° campo del form nativo (eBiz la exige y el
  * ZIP se DERIVA de la sugerencia elegida). Es un dato INERTE al outcome: en eBizCharge el
  * trigger es el NÚMERO de tarjeta y la respuesta AVS está fijada por fila de la tabla del

@@ -28,16 +28,12 @@ import {
 } from '../../../../../../../pages/carrier';
 import { ThreeDsChallengePage } from '@ui/ThreeDsChallengePage';
 import { loginAsDispatcher, STRIPE_TEST_CARDS, TEST_DATA } from '../../../../../fixtures/gateway.fixtures';
-import { waitForTravelCreation } from '../../../../../helpers/stripe.helpers';
+import { shortDestination, waitForTravelCreation } from '../../../../../helpers/journey-url.helpers';
 import { validateCardPrecondition, type CardPreconditionResult } from '../../../../../helpers/card-precondition';
 import { getCarrierParameters, readHoldRaw, setHoldViaApi } from '../../../../../helpers/parameters-api';
 import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../../../../helpers/travel-cleanup';
 import { PASSENGERS } from '../../../../../data/passengers';
 import { debugLog } from '../../../../../../../helpers';
-
-function shortDestination(destination: string): string {
-	return destination.split(',')[0].trim();
-}
 
 // BL-i18n/v1.72.8: en v1.72.8 el toggle de pre-autorización en la UI no habilita
 // "Guardar" ni persiste (exploratory 2026-07-20). El setup fija el hold vía API.

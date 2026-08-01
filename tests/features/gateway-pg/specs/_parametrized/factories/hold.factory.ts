@@ -86,9 +86,11 @@ import type { CardIntent, GatewayName } from '@fixtures/gateways/_shared';
 import type { GatewayHoldCase, XrayIssueKey } from '@features/gateway-pg/data/xray-keys';
 import type { GatewayPgAdapter } from '@features/gateway-pg/helpers/adapters/types';
 import type { GatewayJourneyDefaults } from '@features/gateway-pg/data/journey-defaults';
+import type { StepwiseDispatch, StepwisePickupSchedule, StepwisePreludeCard } from '@features/gateway-pg/helpers/stepwise-hold-journey';
 
 import { test } from '@TestFixture';
 import { SUPPORTED_INTENTS_BY_GATEWAY } from '@fixtures/gateways/_shared';
+import { EBIZ_ANY_CVV, EBIZ_DEFAULT_EXPIRY, EBIZ_DEFAULT_HOLDER } from '@fixtures/gateways/ebizcharge/cards';
 import { debugLog } from '@helpers/index';
 import { journeyDefaultsFor } from '@features/gateway-pg/data/journey-defaults';
 import { getGatewayPgAdapter } from '@features/gateway-pg/helpers/adapters';
@@ -116,6 +118,22 @@ type HoldCaseSpec = {
 	cardFlow: HoldCardFlow;
 	/** Fragmento humano del título (sin TC ID ni tags — se componen en `defineHoldSuite`). */
 	label: string;
+	/**
+	 * Momento del pickup. Omitido = inmediato (histórico). `'scheduled'` mueve el oráculo a la
+	 * pestaña "Programados" y exige `GATEWAY_SCHEDULED_PICKUP_TIME` (ver `scheduledTimeFor`).
+	 */
+	schedule?: StepwisePickupSchedule;
+	/**
+	 * Despacho del viaje. Omitido = `'service'` (histórico, despacho automático al pool).
+	 * `'manual'` asigna el viaje directo a un conductor.
+	 */
+	dispatch?: StepwiseDispatch;
+	/**
+	 * `true` = el caso vincula OTRA tarjeta, la valida y la ELIMINA antes de la del caso (modela
+	 * reemplazo de medio de pago). Requiere que la pasarela declare una segunda tarjeta aprobada
+	 * en `preludeCardFor`; si no la tiene, el caso skipea con el motivo.
+	 */
+	replaceCard?: true;
 };
 
 /**
@@ -138,7 +156,18 @@ const HOLD_CASE_SPECS: Record<GatewayHoldCase, HoldCaseSpec> = {
 	empresaHappyNewHoldOff: { actor: 'empresa', intent: 'HAPPY_NO_AUTH', holdAxis: 'off', cardFlow: 'new', label: 'empresa individuo · tarjeta nueva aprobada · Hold OFF' },
 	empresaHappyExistingHoldOff: { actor: 'empresa', intent: 'HAPPY_NO_AUTH', holdAxis: 'off', cardFlow: 'existing', label: 'empresa individuo · tarjeta vinculada existente · Hold OFF' },
 	// La matriz Authorize §4.2 (TC1065) no fija el eje Hold para el decline de empresa.
-	empresaDecline: { actor: 'empresa', intent: 'DECLINE_AUTHORIZE', holdAxis: null, cardFlow: 'new', label: 'empresa individuo · tarjeta declinada' }
+	empresaDecline: { actor: 'empresa', intent: 'DECLINE_AUTHORIZE', holdAxis: null, cardFlow: 'new', label: 'empresa individuo · tarjeta declinada' },
+
+	// ── Ejes agregados el 2026-07-30 desde el E2E exploratorio eBizCharge #2 ──────────────────────
+	// `recorded/ebizcharge-e2e-3actores-hold-onoff-delete-recard-programado.recorded.ts`.
+	// Cada caso aísla UN eje nuevo a propósito: el E2E los combinó (tramo 1 = reemplazo + programado +
+	// asignación manual), pero con varios ejes en un mismo caso un fallo no diría cuál rompió.
+	personalHappyExistingHoldOn: { actor: 'personal', intent: 'HAPPY_NO_AUTH', holdAxis: 'on', cardFlow: 'existing', label: 'usuario personal · tarjeta vinculada existente · Hold ON' },
+	personalHappyExistingHoldOff: { actor: 'personal', intent: 'HAPPY_NO_AUTH', holdAxis: 'off', cardFlow: 'existing', label: 'usuario personal · tarjeta vinculada existente · Hold OFF' },
+	empresaReplaceCardHoldOn: { actor: 'empresa', intent: 'HAPPY_NO_AUTH', holdAxis: 'on', cardFlow: 'new', replaceCard: true, label: 'empresa individuo · eliminar tarjeta vinculada y vincular otra · Hold ON' },
+	empresaReplaceCardHoldOff: { actor: 'empresa', intent: 'HAPPY_NO_AUTH', holdAxis: 'off', cardFlow: 'new', replaceCard: true, label: 'empresa individuo · eliminar tarjeta vinculada y vincular otra · Hold OFF' },
+	empresaScheduledManualHoldOn: { actor: 'empresa', intent: 'HAPPY_NO_AUTH', holdAxis: 'on', cardFlow: 'new', schedule: 'scheduled', dispatch: 'manual', label: 'empresa individuo · viaje PROGRAMADO con asignación manual · Hold ON' },
+	empresaManualAssignHoldOn: { actor: 'empresa', intent: 'HAPPY_NO_AUTH', holdAxis: 'on', cardFlow: 'new', dispatch: 'manual', label: 'empresa individuo · viaje inmediato con asignación MANUAL del conductor · Hold ON' }
 };
 
 /** Los 14 casos HOLD en orden canónico de taxonomía. */
@@ -166,6 +195,41 @@ function unsupportedReason(spec: HoldCaseSpec): { tag: string; detail: string } 
 	}
 
 	return null;
+}
+
+/**
+ * Segunda tarjeta APROBADA por pasarela — la que el caso de reemplazo vincula, valida y elimina
+ * antes de la del caso. `null` = la pasarela no declara una y los casos `replaceCard` skipean.
+ *
+ * No sale del resolver por intent: `resolveCard` expone UN solo intent happy por pasarela
+ * (`HAPPY_NO_AUTH`), así que una segunda tarjeta aprobada no tiene intent propio. Sale de las tablas
+ * de referencia de la fixture, que es donde vive el dato canónico.
+ */
+function preludeCardFor(gateway: GatewayName): StepwisePreludeCard | null {
+	if (gateway === 'ebizcharge') {
+		// Mastercard con CVV2 M (match) de `EBIZ_CVV2_REFERENCE` → aprobada. Es la que usó el E2E
+		// exploratorio como tarjeta de reemplazo en el tramo 1.
+		return {
+			number: '5555444433332226',
+			last4: '2226',
+			expiry: EBIZ_DEFAULT_EXPIRY,
+			cvc: EBIZ_ANY_CVV,
+			holderName: EBIZ_DEFAULT_HOLDER
+		};
+	}
+
+	// Stripe/Authorize/MP: sus fixtures no declaran una segunda tarjeta aprobada para este eje y no se
+	// inventa un número — los casos de reemplazo skipean con el motivo hasta que la fixture la tenga.
+	return null;
+}
+
+/**
+ * Hora del pickup para los casos programados. Viene por ENV y NO tiene default a propósito: las
+ * opciones del selector dependen del día y de la grilla horaria del carrier, así que un valor fijo en
+ * código fallaría el click por una razón que no es un bug. Sin la variable, el caso skipea.
+ */
+function scheduledTimeFor(_gateway: GatewayName): string {
+	return process.env.GATEWAY_SCHEDULED_PICKUP_TIME ?? '';
 }
 
 /** Datos del alta por tipo de actor — SIEMPRE desde `journeyDefaultsFor`, nunca hardcodeados. */
@@ -291,6 +355,22 @@ export function defineHoldSuite(gateway: GatewayName, options: HoldSuiteOptions 
 			const { client, passenger } = actorData(spec.actor, defaults);
 
 			test(title, details, async ({ page }) => {
+				// Precondiciones de DATOS de los ejes nuevos. Van acá (no en `unsupportedReason`) porque
+				// dependen de la PASARELA y del ambiente, no del spec: el mismo caso es ejecutable para
+				// eBiz e inejecutable para Stripe. Skip explícito con el motivo, en vez de fallar con un
+				// error de click que mandaría a investigar el POM.
+				const preludeCard = spec.replaceCard ? preludeCardFor(gateway) : null;
+				test.skip(
+					spec.replaceCard === true && preludeCard === null,
+					`El caso de REEMPLAZO de tarjeta necesita una segunda tarjeta aprobada declarada para ${gateway}, y la fixture no la tiene (ver \`preludeCardFor\`). Agregarla ahí — nunca inventar un número de tarjeta.`
+				);
+
+				const scheduledTime = spec.schedule === 'scheduled' ? scheduledTimeFor(gateway) : '';
+				test.skip(
+					spec.schedule === 'scheduled' && scheduledTime === '',
+					'El caso PROGRAMADO necesita GATEWAY_SCHEDULED_PICKUP_TIME con una hora del selector del alta (ej. "12:10 PM"). No tiene default: las opciones disponibles dependen del día y de la grilla horaria del carrier, así que un valor fijo en código fallaría el click por una razón que no es un bug.'
+				);
+
 				await runStepwiseHoldJourney(page, {
 					gateway,
 					intent: spec.intent,
@@ -301,7 +381,12 @@ export function defineHoldSuite(gateway: GatewayName, options: HoldSuiteOptions 
 					// `holdAxis: null` (la matriz no fija el eje) → se omite `holdMode` y el motor no
 					// toca ni asevera el toggle, que es exactamente lo que declara la matriz.
 					...(spec.holdAxis ? { holdMode: spec.holdAxis } : {}),
-					cardFlow: spec.cardFlow
+					cardFlow: spec.cardFlow,
+					// Ejes opcionales (2026-07-30): sólo se pasan si el caso los declara, así los 14 casos
+					// históricos siguen produciendo exactamente la misma invocación que antes.
+					...(spec.schedule ? { schedule: spec.schedule, scheduledTime } : {}),
+					...(spec.dispatch ? { dispatch: spec.dispatch } : {}),
+					...(preludeCard ? { preludeCard } : {})
 				});
 			});
 		}

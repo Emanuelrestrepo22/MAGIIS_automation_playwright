@@ -193,6 +193,18 @@ export class CarrierNewTravelPage extends UiBase {
 		await this.legacy.clickSendManualAndAssign();
 	}
 
+	/**
+	 * Fija el momento del pickup: `'Ahora'` (inmediato) o una hora del selector (`'12:10 PM'`).
+	 *
+	 * Con una hora futura el viaje se convierte en PROGRAMADO, y eso **cambia el oráculo**: no cae en
+	 * "Por asignar" sino en la pestaña "Programados" de gestión de viajes. Verificado en los dos
+	 * recordings de eBizCharge del 2026-07-30 (alta programada desde carrier y desde el widget Quote).
+	 */
+	@step
+	async setPickupTime(option: 'Ahora' | string): Promise<void> {
+		await this.legacy.setPickupTime(option);
+	}
+
 	/** Envía el alta de viaje (validar + seleccionar vehículo + enviar servicio). */
 	@step
 	async submit(): Promise<void> {

@@ -53,6 +53,12 @@ export interface AuthorizeBillTo {
 	zip: string;
 }
 
+/** Un setting individual dentro de `transactionSettings.setting[]` (ej. duplicateWindow). */
+export interface AuthorizeTransactionSetting {
+	settingName: string;
+	settingValue: string;
+}
+
 /** Cuerpo `transactionRequest` del payload createTransactionRequest. */
 export interface AuthorizeTransactionRequestBody {
 	transactionType: AuthorizeTransactionType;
@@ -69,7 +75,7 @@ export interface AuthorizeTransactionRequestBody {
 	 * OJO: la API JSON de Authorize es sensible al ORDEN de campos — este bloque va DESPUÉS de billTo.
 	 */
 	transactionSettings?: {
-		setting: Array<{ settingName: string; settingValue: string }>;
+		setting: AuthorizeTransactionSetting[];
 	};
 }
 

@@ -120,6 +120,16 @@ export class PassengerTripHappyPathHarness {
 			await this.walletScreen.tapAddCard();
 			await this.walletScreen.fillCardForm(card);
 			await this.walletScreen.saveCard();
+
+			// v2.5.17: el nuevo flujo de guardado (Stripe SetupIntent — initStripeElements /
+			// fetchStripeSetupIntent / doConfirmCardSetup / saveCardToBackend) monta elementos/contextos
+			// que hacen COLGAR a handleThreeDsPopup (switch a WEBVIEW externo + stale elements). eBiz y
+			// MercadoPago NO tienen 3DS: si la tarjeta ya aparece tras el save, retornamos ANTES de tocar
+			// el wait de 3DS. El 3DS sigue cubierto abajo para las tarjetas Stripe que sí lo disparan.
+			if (await this.walletScreen.hasCard(last4, 8_000)) {
+				return 'added';
+			}
+
 			const threeDsResult = await handleThreeDsPopup(
 				this.getDriver(),
 				label => dumpAppiumState(this.getDriver(), label),

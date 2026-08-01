@@ -651,7 +651,8 @@
 
 ### BL-036 — Pruebas API smoke: MAGIIS backend + Authorize.net sandbox
 
-- **Estado:** 🟡 Frente B (Authorize sandbox) plantilla técnica completa (commit `8eda8b7`, 2026-05-13). Frente A (MAGIIS backend) pendiente. Ambos esperan ejecución contra ambiente real.
+- **Estado:** 🟢 **Frente B ACREDITADO (2026-07-30)** — los 4 specs de contrato del sandbox Authorize corren verdes contra la cuenta real: **11/11**, incluidos todos los magic triggers (CVV 901/904, ZIP 46205/46204/46282, partial 46225, prepaid 46228, happy Visa/MC/Amex/Discover). Se desbloqueó al habilitar el filtro CCV de la cuenta — ver **BL-049**, que documenta la causa raíz y las hipótesis descartadas. Esta capa es además la **única cobertura Authorize que sobrevive al switch de pasarela**: pega directo al sandbox con credenciales de API, sin pasar por MAGIIS, así que sigue siendo válida con otra pasarela vinculada al carrier 1521.
+  🟡 Frente A (MAGIIS backend) sigue pendiente. Plantilla técnica original: commit `8eda8b7`, 2026-05-13.
 - **Prioridad:** P2
 - **Tipo:** Automatización (testing nuevo de tipo API)
 - **Reportado:** 2026-05-13
@@ -1143,7 +1144,25 @@ Valores reales — `STATUS`: `APPROVED` 171 · `CONFIRM` 131 · `REJECTED` 86 ·
 
 ### BL-049 — Cuenta Authorize.net del ambiente TEST: los magic triggers ZIP/CVV no se evalúan
 
-- **Estado:** 🔴 Pendiente — diagnóstico avanzado, causa raíz no confirmada
+- **Estado:** 🟢 **RESUELTO (2026-07-30)** — era la **hipótesis secundaria**: los filtros antifraude de la cuenta estaban deshabilitados. La causa concreta fue el filtro **Enhanced Card Code Verification (CCV)** en `Status: Disabled`. Al habilitarlo (con `N → Decline`, `P`/`S`/`U` → Allow) la cuenta empezó a evaluar **tanto el CVV como el ZIP**.
+
+  Evidencia: los 4 specs de contrato del sandbox (`tests/features/gateway-pg/api/authorize-sandbox/contract-*.api.spec.ts`) pasaron de 1/12 a **11/11 verdes**, sin cambiar una línea de código de los specs. Antes → después de cada trigger:
+
+  | Trigger | Esperado | 2026-07-28 | 2026-07-30 |
+  | --- | --- | --- | --- |
+  | CVV `901` | `cvvResultCode = "N"` | `""` | **`"N"`** ✅ |
+  | CVV `904` | `cvvResultCode = "P"` | `""` | **`"P"`** ✅ |
+  | ZIP `46205` | `avsResultCode = "N"` | `"P"` | **`"N"`** ✅ |
+  | ZIP `46204` | `avsResultCode = "G"` | `"P"` | **`"G"`** ✅ |
+  | ZIP `46282` | Response Code 2 | RC 1 (aprobaba) | **RC 2** ✅ |
+  | Visa/MC/Amex/Discover + CVV `900` | Response Code 1 | RC 1 | **RC 1** ✅ |
+
+  **Hipótesis descartadas**, para que no se vuelvan a investigar: (a) *cuenta de producción en vez de sandbox* — el API Login ID siempre fue el correcto; (b) *Test Mode* — la cuenta estaba en Live, confirmado por el dev y por screenshot; (c) *política AVS mal configurada* — la política estaba bien, pero era inalcanzable porque sin CCV habilitado la cuenta devolvía `avsResultCode = "P"` (*AVS not applicable*) para cualquier ZIP, así que ninguna fila del filtro se evaluaba.
+
+  **Lección de atribución**: el síntoma se investigó durante 8 días como credenciales, como modo de cuenta y como política de filtros. Los expected de la matriz nunca estuvieron mal — faltaba que la cuenta pudiera producirlos. Cuando dos triggers distintos devuelven el mismo valor, el sospechoso es la evaluación, no el dato.
+
+  **Queda pendiente**: re-correr por UI los casos que dependían de estos triggers (TC1016/TC1017 §2.2, TC1021/TC1022 §2.3, TC1031 §2.4). Requiere re-vincular Authorize en el carrier 1521, que pasó a eBizCharge por la exclusividad de pasarela activa. Los rojos de la corrida UI del 2026-07-28 ("la pasarela ACEPTÓ la tarjeta que debía rechazar") eran el síntoma de este BL, **no** defectos de código.
+- **Estado anterior:** 🔴 Pendiente — diagnóstico avanzado, causa raíz no confirmada
 - **Prioridad:** P2
 - **Tipo:** Configuración / Investigación
 - **Reportado:** 2026-07-27
@@ -1274,6 +1293,169 @@ La tarjeta `1111` pertenece **solo** al pasajero `12055`. **TC1061 es el caso de
 - **Próxima acción:** (1) preguntar a dev por el void del hold de vinculación y su monto; (2) verificarlo en el Merchant Interface de Authorize → Transaction Search, contando transacciones por alta de viaje (deberían aparecer 2 y, si hay void, una anulada); (3) si el hold de vinculación NO se libera, abrir defect en DEV/MX (nunca en MG — MG es sólo entidades Xray).
 - **Impacto en la automatización:** las assertions de los TC de hold deberían contemplar **dos** transacciones, no una. Documentado en el JSDoc de `tests/features/gateway-pg/helpers/stepwise-hold-journey.ts`.
 - **Referencias:** `tests/test-3.spec.ts`, `tests/test-4.spec.ts` (grabaciones, untracked), `tests/features/gateway-pg/helpers/stepwise-hold-journey.ts`, BL-049 (la pasarela no evalúa triggers), BL-050 (duplicado en wallet), `docs/gateway-pg/authorize/matriz_cases2.md` §5 (Voids)
+
+### BL-052 — `AppStoreGatewaysPage.readState()` da FALSO NEGATIVO por race condition de la card
+
+- **Estado:** 🔴 Pendiente — causa raíz confirmada en vivo, fix no aplicado
+- **Prioridad:** P2
+- **Tipo:** Bug de automatización (POM)
+- **Reportado:** 2026-07-29
+- **Contexto:** `TS-AUTHORIZE-SMOKE-01` falla intermitentemente con `Expected: "linked" · Received: "linkable"` **aunque la pasarela SÍ está vinculada**. Bloqueó la campaña Authorize dos veces como si fuera una precondición incumplida, cuando era un defecto de lectura.
+
+  **Diagnóstico en vivo (spec temporal, no commiteado):**
+
+  ```
+  .card que matchean /authorize/i => 1              ← NO hay colisión de scope
+  card[0] a.green=0 a.red=1                         ← el selector a.red-text SÍ funciona
+  card[0] textContent: "Authorize.Net … Vincular"   ← el TEXTO dice "Vincular"
+  readState('authorize') => linked                  ← al leer más tarde, correcto
+  elemento "Desvincular" => A.red-text pointer ng-star-inserted
+  ```
+
+  **Causa raíz**: es el estado optimista/cacheado ya documentado en `docs/gateway-pg/authorize/HANDOFF-live-reconciliation-2026-07-24.md` §3.3 punto 5 — *la card renderiza un estado inicial (ej. "Vincular") que ~750 ms después el fetch real corrige (ej. "Desvincular")*. El `waitForLoadState('networkidle')` del `goto()` **no siempre alcanza**: el `a.red-text` correcto ya está en el DOM mientras el `textContent` de la card todavía dice "Vincular", así que el resultado depende de en qué instante se lea.
+
+  Dos hipótesis se descartaron por evidencia: (a) que `cardFor()` capturara un contenedor amplio y viera el "Vincular" de otra card — hay **una sola** card que matchea; (b) que el needle `/authorize/i` colisionara con el `oauth2/authorize` del href de Mailchimp — `hasText` compara `textContent`, no atributos.
+- **Próxima acción:** hacer determinista la lectura en lugar de depender del instante: `expect.poll` sobre `readState` hasta que el estado se estabilice, o esperar explícitamente la response del endpoint que corrige la card antes de leer (en vez de `networkidle`). Mientras no se arregle, **un fallo de `SMOKE-01` con `linkable` NO es evidencia de que la pasarela esté desvinculada** — verificar visualmente antes de concluir.
+- **Nota de alcance:** no se aplicó el fix por decisión del líder de QA (*"no nos metemos con vinculación o desvinculación de pasarela de pago en esta sesión"*).
+- **Referencias:** `tests/components/ui/carrier/AppStoreGatewaysPage.ts` (`cardFor` L103, `readState` L352), `tests/features/gateway-pg/specs/authorize/web/carrier/smoke/authorize-linked-smoke.spec.ts:43`, HANDOFF-live-reconciliation-2026-07-24 §3.3
+
+### BL-053 — Capa API Authorize: `resultCode "Error"` intermitente por transacciones duplicadas
+
+- **Estado:** 🔴 Pendiente
+- **Prioridad:** P3
+- **Tipo:** Bug de automatización (datos de test)
+- **Reportado:** 2026-07-29
+- **Contexto:** Tras vincular la cuenta **sandbox** correcta, los contract tests pasaron de **1 passed / 11 failed** a **7 passed / 4 failed** — lo que **cierra BL-049**: la causa era la cuenta equivocada, no Test Mode ni los filtros AVS/CCV (ambas hipótesis descartadas). Los AVS ahora discriminan por ZIP (`46205`→`N`, `46204`→`G`; antes devolvían el mismo código) y el CVV mismatch se evalúa.
+
+  De los 4 que siguen rojos, dos fallan con `messages.resultCode: "Error"` (el request se rechaza, no la transacción). **El `refId` >20 chars NO es la causa** — las longitudes no correlacionan: `cvv-mismatch` (33 chars) pasa y `happy-visa` (31) falla; `happy-mc` (29) pasa y `cvv-notproc` (32) falla.
+
+  Hipótesis vigente: **detección de transacciones duplicadas de Authorize**. Todos los specs usan `amount: '10.00'` con la misma Visa `4111 1111 1111 1111`; el proveedor rechaza duplicados (misma tarjeta + mismo monto en ventana corta). Explica que el primero pase y el siguiente falle, y que el patrón se mueva entre corridas.
+- **Próxima acción:** dar un **monto único por spec** (recomendación del propio proveedor para evitar la detección de duplicados) y re-correr los 12. Los otros 2 rojos son comportamiento del sandbox con Amex (`cvvResultCode` `P` en vez de `M`) — verificar si es esperado para esa marca antes de tratarlo como defecto.
+- **Dato validado por el líder de QA:** el happy path es `4111 1111 1111 1111` + CVV **900** + ZIP **90210**, y "siempre funciona" — coincide con `AUTHORIZE_TEST_CARDS.visaSuccess`. Así que los fallos no son del dato.
+- **Referencias:** `tests/features/gateway-pg/api/authorize-sandbox/*.api.spec.ts`, `tests/components/api/AuthorizeSandboxApi.ts`, `tests/fixtures/gateways/authorize/cards.ts`, BL-049 (cerrado por esta evidencia), BL-036
+
+### BL-054 — 🔴 SEGURIDAD: CloudWatch loguea las credenciales del merchant eBizCharge en texto plano
+
+- **Estado:** 🔴 Pendiente — **reportar a DEV/MX** (nunca en MG: MG es sólo entidades Xray)
+- **Prioridad:** **P1** (exposición de credenciales de pasarela de pago)
+- **Tipo:** Bug de producto / Seguridad
+- **Reportado:** 2026-07-30 (hallazgo del líder de QA durante el E2E exploratorio de eBizCharge)
+- **Contexto:** El log group **`Test-Logs`** → stream **`Test-PaymentGateway`** (región `us-east-2`, backend NestJS) registra las credenciales del merchant **sin enmascarar**, en la traza del `captureCard`:
+
+  ```
+  { password: '<securityId>', userId: '<userId>', securityId: '<securityId>' }
+  ```
+
+  Cualquiera con acceso de lectura al log group obtiene las credenciales de la pasarela. Aplica a **cualquier ambiente**, no sólo TEST — el patrón de logueo es del código, no de la config.
+- **Segundo problema en la misma línea:** `password` y `securityId` llevan **el mismo valor** — el del campo *Security Id* del modal de vinculación, **no** el del campo *Password* que se cargó. O el backend envía el `securityId` como `password`, o el password real viaja por otra vía. La transacción salió `Approved` igual, así que hay que determinar cuál de las dos cosas ocurre: si el `Password` del modal no se usa, es un campo muerto en la UI; si se usa, el log está mal armado.
+- **Próxima acción:** (1) abrir defect en DEV/MX pidiendo enmascarar credenciales antes de loguear (patrón `***` o elisión del objeto completo); (2) preguntar a dev por el mapeo real de los 4 campos del modal (`EBizSubscription-Key`, `Security Id`, `User Id`, `Password`) hacia el payload de eBiz; (3) evaluar si corresponde rotar las credenciales sandbox expuestas.
+- **Nota:** los valores concretos **no se transcriben** en este backlog ni en el repo. Están en el log group para quien tenga acceso.
+- **Referencias:** `tests/test-1.spec.ts` (grabación exploratoria, gitignored — documenta el hallazgo), BL-055
+
+### BL-055 — Hallazgos del E2E eBizCharge: origen==destino, comisión 5% y el 4.º campo del modal
+
+- **Estado:** 🔴 Pendiente
+- **Prioridad:** P2
+- **Tipo:** Bug / Investigación / Cobertura
+- **Reportado:** 2026-07-30
+- **Contexto:** Tres hallazgos del mismo E2E exploratorio de eBizCharge (evidencia en CloudWatch `Test-PaymentGateway` + `MGW.logs`).
+
+  **(a) El viaje quedó con ORIGEN == DESTINO.** El `description` del `captureCard` muestra `'Reconquista 661, Buenos Aires, Argentina => Reconquista 661, Buenos Aires, Argentina (smith Emanuel)'`, cuando en el flujo se eligió **Cazadores 1987** como destino. Encaja con el defecto de `searchPlace` corregido el 2026-07-29 para el ORIGEN (commit `9310c87`: el shortcut `keepExistingOnNoResults` cortaba antes del retry path y conservaba el valor previo). El destino usa el mismo helper pero con `keepExistingOnNoResults: false`, así que hay que determinar si el problema es del fill o de cómo el backend arma la descripción.
+
+  **(b) Comisión del 5% no documentada.** `commission: 0.91` sobre `amount: 18.26`. No figura en `docs/gateway-pg/ebizcharge/matriz_cases.md`. Si es parte del contrato comercial merece su propio caso de prueba; si no, es un dato a confirmar con negocio.
+
+  **(c) El modal de vinculación tiene 4 campos y el adapter declara 3 env keys.** Campos reales verificados: `EBizSubscription-Key` · `Security Id` · `User Id` · `Password`. `ebizchargeGatewayAdapter.credsEnvKeys` sólo declara `EBIZ_MERCHANT_USER`, `EBIZ_MERCHANT_PASSWORD`, `EBIZ_SECURITY_KEY` — **falta una para el Subscription-Key**. Mapeo propuesto: `User Id`→`EBIZ_MERCHANT_USER`, `Password`→`EBIZ_MERCHANT_PASSWORD`, `Security Id`→`EBIZ_SECURITY_KEY`, `EBizSubscription-Key`→`EBIZ_SUBSCRIPTION_KEY` (nueva).
+
+  **(d) eBizCharge pide DIRECCIÓN y autocompleta el ZIP** — campo que no existe en las otras pasarelas. `ebizchargeGatewayAdapter` no declara `nativeExtraField`, así que `NativeAngularCardForm` no llena ningún 5.º campo para eBiz, pero este flujo necesita dos (dirección + ZIP derivado). Modelar `nativeExtraField: 'address'`: seleccionar del autocomplete y **aseverar** que el ZIP se autocompletó, en lugar de tipearlo.
+- **Próxima acción:** (a) reproducir con el destino verificado y, si se confirma, abrir defect; (b) confirmar la comisión con negocio y agregar el TC a la matriz; (c)+(d) implementar en el adapter y en `NativeAngularCardForm` antes de correr los 23 tests `@ebizcharge`.
+- **Bloqueante previo a cualquier corrida eBiz:** las credenciales `EBIZ_*` **no están en `.env.test`** ⇒ `isConfigured()` es false ⇒ los 23 tests skipean.
+- **Referencias:** `tests/test-1.spec.ts`, `tests/features/gateway-pg/helpers/adapters/ebizchargeGatewayAdapter.ts`, `tests/components/ui/carrier/card-forms/NativeAngularCardForm.ts`, `tests/pages/carrier/NewTravelPageBase.ts` (`searchPlace`), BL-054
+
+### BL-056 — Typo de producto en la confirmación del widget Quote: "Your Trip was confimed!"
+
+- **Estado:** 🔴 Pendiente
+- **Prioridad:** P3
+- **Tipo:** Bug
+- **Reportado:** 2026-07-30
+- **Contexto:** El heading de confirmación del widget Quote dice **"Your Trip was confimed!"** — falta
+  la R de "confirmed". No es texto interno: el widget Quote es el **embebible público** que ven los
+  clientes finales del carrier (`#/quote?...&pluginKey=<carrier>`), así que el typo llega al usuario.
+  Observado en la grabación `recorded/ebizcharge-quote-hold-invitado-viaje-programado.recorded.ts`.
+  Efecto colateral en la automatización: el assert del heading tiene que matchear el texto REAL con el
+  typo, o el spec falla contra el ambiente. Está marcado con un comentario en la grabación para que
+  nadie lo "corrija" al portarlo.
+- **Próxima acción:** Reportar a **DEV/MX** (no a MG — en MG sólo se crean entidades Xray). Cuando se
+  corrija, actualizar el literal del assert en la grabación y en el spec portado.
+- **Referencias:** `docs/gateway-pg/ebizcharge/RUN-LOG.md` §Ronda 2 · hallazgo 1
+
+### BL-057 — Máscara del campo "Card number" vs Amex de 15 dígitos (sin confirmar)
+
+- **Estado:** 🟡 Sin confirmar
+- **Prioridad:** P3
+- **Tipo:** Bug / Validación
+- **Reportado:** 2026-07-30
+- **Contexto:** En el E2E eBizCharge #2, los dos tramos que usaron Amex necesitaron ~25 acciones de
+  forcejeo (`ArrowRight` repetido + refill) para dejar el número completo. Amex agrupa **4-6-5**
+  (`3711 222233 32225`), no 4-4-4-4, y la máscara parece pelearse con eso.
+  **Puede ser artefacto del codegen**: el `fill` de Playwright reescribe el valor entero y la máscara
+  reacciona en cada keystroke, así que el forcejeo podría no reproducirse con un humano tipeando.
+  Hallazgo relacionado: el CVV tampoco indica el largo esperado por marca (Amex 4 dígitos, resto 3) —
+  la grabación muestra el ida y vuelta `123` → `1234` → `123` → `1235` → `3214` hasta acertar.
+- **Próxima acción:** Reproducir a mano con la Amex `371122223332225` y observar si un humano también
+  pierde dígitos. Si se reproduce → filear a DEV/MX. Si no → cerrar como artefacto del codegen y
+  dejar la nota en el `NativeAngularCardForm` para el fill de Amex.
+- **Referencias:** `docs/gateway-pg/ebizcharge/RUN-LOG.md` §Ronda 2 · hallazgos 2 y 3 ·
+  `recorded/ebizcharge-e2e-3actores-hold-onoff-delete-recard-programado.recorded.ts`
+
+### BL-058 — Carrier 1521 quedó con la pre-autorización en OFF tras el E2E eBizCharge #2
+
+- **Estado:** 🔴 Pendiente
+- **Prioridad:** **P1**
+- **Tipo:** Configuración
+- **Reportado:** 2026-07-30
+- **Contexto:** El tramo 5 del E2E #2 apagó la pre-autorización del carrier compartido 1521 desde
+  Operational Preferences → Card Payments, y la grabación **no la volvió a encender**. Cualquier spec
+  de hold que corra antes de restaurarla da un falso resultado: el hold no se aplica y el caso reporta
+  un desenlace que no corresponde a su intent. El motor `runStepwiseHoldJourney` restaura el toggle
+  cuando el caso declara `holdMode: 'off'`, pero acá el apagado fue **manual**, fuera del motor.
+- **Próxima acción:** Encender la pre-autorización a mano en Operational Preferences del carrier 1521,
+  y verificarlo con un caso Hold ON (`TS-EBIZ-TC1067`) antes de correr cualquier otra cosa.
+- **Referencias:** `docs/gateway-pg/ebizcharge/RUN-LOG.md` §Ronda 2 · Límite de alcance declarado
+
+### BL-059 — Actor sin resolver del tramo 5 (E2E eBizCharge #2): bloquea acreditar TC1059 o TC1063
+
+- **Estado:** 🔴 Pendiente
+- **Prioridad:** P2
+- **Tipo:** Validación
+- **Reportado:** 2026-07-30
+- **Contexto:** En el tramo 5 el titular de la tarjeta dice `sinhold happycolaborador` pero el cliente
+  seleccionado es `Restrepo, Emanuel`, que en el tramo 6 es usuario **personal**. Los dos caminos
+  acreditan TC distintos: si el cliente es empresa con colaborador asociado → `TS-EBIZ-TC1059`; si es
+  personal → `TS-EBIZ-TC1063` y **"colaborador sin hold" queda pendiente de ejecutar**. No se puede
+  resolver por inspección de la grabación. El único `travelId` conocido es 67817 (tramo 1).
+- **Próxima acción:** Correr en DBeaver (o vía el MCP "Magiis BD de test" cuando esté disponible) la
+  query del RUN-LOG §Ronda 2 sobre `MGW.travels` + `MGW.clients` en el rango 67810-67840, y leer el
+  `client_type` del viaje del tramo 5.
+- **Referencias:** `docs/gateway-pg/ebizcharge/RUN-LOG.md` §Ronda 2 · "El tramo 5 no se acredita"
+
+### BL-060 — Grabación cruda rota en el repo HUB: `agentic-qa-boilerplate/tests/setup/test-14.spec.ts`
+
+- **Estado:** 🔴 Pendiente
+- **Prioridad:** P2
+- **Tipo:** Deuda técnica
+- **Reportado:** 2026-07-30
+- **Contexto:** El codegen del flujo Quote quedó guardado en el repo **orquestador**
+  (`agentic-qa-boilerplate`), no en este. Dos problemas ahí: (a) **no compila** — el widget Quote abre
+  una pestaña nueva y el codegen usó `page1` sin declararla nunca (perdió el
+  `waitForEvent('page')`); (b) tiene la **contraseña del carrier en texto plano**. Y está dentro del
+  `testDir` de ese repo (`./tests` global + un project con `./tests/setup`), así que se **colecta** y
+  crearía viajes reales si alguien corre la suite.
+  La versión corregida ya vive en este repo como
+  `recorded/ebizcharge-quote-hold-invitado-viaje-programado.recorded.ts`, con la pestaña reconstruida
+  y las credenciales por env var — el crudo del HUB es redundante.
+- **Próxima acción:** Eliminar `tests/setup/test-14.spec.ts` del repo `agentic-qa-boilerplate`.
+  **Requiere decisión del dev**: es otro repositorio y no se toca desde acá sin autorización.
+- **Referencias:** `recorded/ebizcharge-quote-hold-invitado-viaje-programado.recorded.ts` §Imperfecciones
 
 ---
 
