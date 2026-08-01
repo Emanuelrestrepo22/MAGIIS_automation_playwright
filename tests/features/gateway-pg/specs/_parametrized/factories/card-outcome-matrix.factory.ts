@@ -51,7 +51,8 @@ import { getGatewayPgAdapter } from '@features/gateway-pg/helpers/adapters';
 import { gatewayTag } from '@features/gateway-pg/helpers/adapters/gateway-tag';
 import { loginAsDispatcher } from '@features/gateway-pg/fixtures/gateway.fixtures';
 import { addCardExpectation, areaFRelocationFor, hasObservedOutcome, outcomeFor } from '@features/gateway-pg/helpers/card-outcome-oracle';
-import { cleanupGatewayCardByLast4 } from '@features/gateway-pg/helpers/card-precondition';
+import { cleanupGatewayCardByLast4, getPassengerCards, getPassengerId, hasActiveCardWithLast4 } from '@features/gateway-pg/helpers/card-precondition';
+import { describeEbizAttemptsForCard, ebizPspCredsFromEnv } from '@features/gateway-pg/helpers/ebiz-psp';
 import { assertAuthorizeAccountMeasuresRealAuthorizations, readAuthorizeAccountMode } from '@features/gateway-pg/helpers/authorize-account-guard';
 
 export type CardOutcomeMatrixSuiteOptions = {
@@ -248,8 +249,45 @@ export function defineCardOutcomeMatrixSuite(gateway: GatewayName, options: Card
 							await travel.validateNativeCard(card.last4, support.slowMs ? 20_000 + support.slowMs : undefined);
 						});
 					} else {
+						// Trifuerza forense de los declines (Hallazgo 1 del RUN-LOG eBiz): el oráculo del
+						// caso sigue siendo el UI —una tarjeta que el procesador declina NO debe quedar
+						// vinculada— pero cuando ese oráculo falla, el mensaje crudo ("el error nunca
+						// apareció") no dice QUIÉN mintió. Se le suman las otras dos capas al diagnóstico:
+						//   · PSP (SOAP SearchTransactions por last4): ¿el procesador declinó este intento?
+						//   · Persistencia (paymentMethodsByPax): ¿la tarjeta quedó como método de pago?
+						// Ambas son FORENSES: si no se pueden leer, lo dicen y el veredicto UI queda igual
+						// (utilities silenciosas — jamás convertir "no pude mirar" en rojo propio).
+						const inicioIntento = new Date();
 						await test.step(`Then: el sistema NO da la tarjeta por válida (${expected.label}, base: ${expected.basis})`, async () => {
-							await travel.expectNativeCardRejected();
+							try {
+								await travel.expectNativeCardRejected();
+							} catch (error) {
+								const forense: string[] = [];
+								if (gateway === 'ebizcharge') {
+									const creds = ebizPspCredsFromEnv();
+									forense.push(
+										creds
+											? await describeEbizAttemptsForCard(creds, inicioIntento, card.last4)
+											: '[PSP] Sin credenciales EBIZ_* en el env: veredicto del procesador no consultado.'
+									);
+								}
+								try {
+									const paxId = await getPassengerId(page, defaults.walletClient);
+									if (paxId) {
+										const { cards } = await getPassengerCards(page, paxId);
+										forense.push(
+											hasActiveCardWithLast4(cards, card.last4)
+												? `[persistencia] La tarjeta •••• ${card.last4} SÍ quedó como método de pago del pax ${paxId} — el alta la aceptó de punta a punta.`
+												: `[persistencia] La tarjeta •••• ${card.last4} NO figura entre los métodos de pago del pax ${paxId}.`
+										);
+									}
+								} catch {
+									forense.push('[persistencia] paymentMethodsByPax no consultable en este contexto.');
+								}
+								const detalle = forense.join('\n');
+								await test.info().attach(`trifuerza-decline-${intent}.txt`, { body: detalle, contentType: 'text/plain' });
+								throw new Error(`${(error as Error).message}\n\n[trifuerza ${gateway}/${intent}]\n${detalle}`);
+							}
 						});
 					}
 				});
