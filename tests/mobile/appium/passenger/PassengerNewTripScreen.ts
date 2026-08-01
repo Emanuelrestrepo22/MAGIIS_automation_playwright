@@ -11,6 +11,10 @@ export interface TripRequest {
 	cardLast4: string;
 }
 
+// v2.5.17: los CTAs del alta de viaje ("Seleccionar Vehículo", "Confirmar") son `ion-col.travel-btn-confirm`
+// (NO <button>); se incluyen los fallbacks button/ion-button/.btn por si otra build los expone distinto.
+const TRAVEL_CTA_SELECTOR = 'ion-col.travel-btn-confirm, button, ion-button, .btn, [role="button"]';
+
 export class PassengerNewTripScreen extends AppiumSessionBase {
 	private async clickVisibleMatchingElement(
 		selector: string,
@@ -375,18 +379,31 @@ export class PassengerNewTripScreen extends AppiumSessionBase {
 	 * Opens or validates the passenger home screen.
 	 */
 	async openNewTrip(): Promise<void> {
-		await this.tapWebText('Inicio', 3_000).catch(() => false);
-
 		// v2.5.17: la home es `app-home` en `/navigator/HomePage`; el ancla visual es la tab de tipo
-		// de viaje "Solo Ida" (el viejo "Seleccionar Vehiculo" ya no está en la home, aparece recién
-		// tras seleccionar origen+destino).
-		const ready =
-			await this.waitForWebUrlContains('HomePage', 10_000) ||
-			await this.waitForWebText('Solo Ida', 10_000, true);
+		// de viaje "Solo Ida". Navegación robusta a home desde CUALQUIER pantalla (p.ej. tras el flujo
+		// de wallet la app queda en la sub-página "Billetera", sin bottom-nav → hay que hacer back):
+		// en cada intento, si ya estamos en home salimos; si no, tapeamos la tab "Inicio" (nativa) y,
+		// si no está visible (sub-página), usamos el back nativo de Android.
+		const driver = this.getDriver();
+		const atHome = async (waitMs: number): Promise<boolean> =>
+			(await this.waitForWebUrlContains('HomePage', waitMs)) && (await this.waitForWebText('Solo Ida', waitMs, true));
 
-		if (!ready) {
-			throw new Error('PassengerNewTripScreen.openNewTrip() - home screen not visible');
+		for (let attempt = 0; attempt < 6; attempt++) {
+			if (await atHome(3_000)) {
+				return;
+			}
+			const tappedInicio = await this.tapNativeByText('ion-tab-button, a, button, [role="button"], ion-item', 'inicio', 2_500);
+			if (!tappedInicio) {
+				await driver.back().catch(() => undefined);
+			}
+			await driver.pause(1_000);
 		}
+
+		if (await atHome(5_000)) {
+			return;
+		}
+
+		throw new Error('PassengerNewTripScreen.openNewTrip() - home screen not visible');
 	}
 
 	/**
@@ -462,22 +479,45 @@ export class PassengerNewTripScreen extends AppiumSessionBase {
 		const codesBefore = this.collectTripCodes(await this.readWebHaystack());
 
 		// v2.5.17: el tiempo por defecto ya es "Ahora" (viaje inmediato) → NO se tapea el selector de
-		// tiempo (tapearlo ABRE un date-picker para viaje programado). El CTA "Seleccionar Vehículo"
-		// requiere click NATIVO (el DOM .click() no dispara el handler de Ionic).
-		const vehicleSelected = await this.tapNativeByText('button, ion-button, .btn, [role="button"]', 'seleccionar veh');
+		// tiempo (tapearlo ABRE un date-picker para viaje programado).
+		//
+		// El CTA "Seleccionar Vehículo" es un `ion-col.travel-btn-confirm` (NO un <button>; por eso un
+		// selector button/ion-button no lo encontraba) y requiere click NATIVO de WebdriverIO. Al
+		// tapearlo la app navega a `/navigator/travel-info` (estimación distancia/duración + "Confirmar").
+		const vehicleSelected = await this.tapNativeByText(TRAVEL_CTA_SELECTOR, 'seleccionar veh');
 		if (!vehicleSelected) {
 			throw new Error('PassengerNewTripScreen.confirmTrip() - CTA "Seleccionar Vehículo" no encontrado');
 		}
 
+		// Esperar la pantalla de confirmación del viaje.
+		await this.waitForWebUrlContains('travel-info', 10_000);
 		await this.pause(1_500);
-
 		await this.throwIfCreditLimitExceeded(4_000);
 
-		// TODO(v2.5.17): tras "Seleccionar Vehículo" el flujo abre la selección de vehículo / medio de
-		// pago (pantalla aún sin mapear en vivo; PRECONDICIÓN: tarjeta en el wallet del pax — sin ella
-		// el CTA no avanza). Al mapearla, agregar aquí: elegir vehículo → confirmar → esperar creación.
-		// Por ahora se intenta extraer el código del viaje (sirve si la selección se auto-resuelve).
-		return this.extractTripCode(codesBefore);
+		// travel-info muestra: estimación (distancia/duración), lista de vehículos (Standard pre-
+		// seleccionado por defecto), Método de Pago (la tarjeta del wallet ya viene auto-seleccionada,
+		// p.ej. "VISA - 2224") y el CTA final `ion-col.travel-btn-confirm` con texto DINÁMICO
+		// "Viajo Ahora <vehículo> - $<precio>" → crea el viaje. Se matchea por "viajo".
+		const confirmed = await this.tapNativeByText(TRAVEL_CTA_SELECTOR, 'viajo');
+		if (!confirmed) {
+			throw new Error('PassengerNewTripScreen.confirmTrip() - CTA "Viajo Ahora" no encontrado en travel-info');
+		}
+
+		await this.pause(2_000);
+		await this.throwIfCreditLimitExceeded(4_000);
+
+		// ORÁCULO DE ÉXITO del alta (v2.5.17): la app navega a la pantalla de estado del viaje
+		// (SEARCHING_DRIVER) = mapa + "Buscando servicio..." + botón "Cancelar Viaje". Es más fiable
+		// que el código del viaje (que en v2.5.17 ya no se muestra en esta pantalla).
+		const created =
+			(await this.waitForWebText('Cancelar Viaje', 15_000, true)) ||
+			(await this.waitForWebText('Buscando servicio', 3_000, true));
+		if (!created) {
+			throw new Error('PassengerNewTripScreen.confirmTrip() - viaje no creado (sin "Buscando servicio"/"Cancelar Viaje" tras "Viajo Ahora")');
+		}
+
+		// Código del viaje best-effort (puede volver undefined si no está visible en esta pantalla).
+		return this.extractTripCode(codesBefore, 8_000);
 	}
 
 	/**
