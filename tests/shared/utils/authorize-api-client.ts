@@ -113,7 +113,7 @@ export class AuthorizeApiClient {
 			apiLoginId?: string;
 			transactionKey?: string;
 			endpoint?: string;
-		} = {},
+		} = {}
 	) {
 		this.apiLoginId = opts.apiLoginId ?? process.env.AUTHORIZE_API_LOGIN_ID ?? '';
 		this.transactionKey = opts.transactionKey ?? process.env.AUTHORIZE_TRANSACTION_KEY ?? '';
@@ -123,7 +123,7 @@ export class AuthorizeApiClient {
 			throw new Error(
 				'[AuthorizeApiClient] Credenciales sandbox faltantes. Setear ' +
 					'AUTHORIZE_API_LOGIN_ID y AUTHORIZE_TRANSACTION_KEY en .env.test. ' +
-					'Usar hasAuthorizeCredentials() para skipear el test si no están.',
+					'Usar hasAuthorizeCredentials() para skipear el test si no están.'
 			);
 		}
 	}
@@ -135,11 +135,7 @@ export class AuthorizeApiClient {
 	 * @param amount — monto a autorizar (decimal string, ej. "10.00")
 	 * @param refId — ID merchant-side para tracking (opcional, max 20 chars)
 	 */
-	async authOnlyTransaction(
-		card: AuthorizeTestCard,
-		amount: string,
-		refId?: string,
-	): Promise<AuthorizeApiResponse> {
+	async authOnlyTransaction(card: AuthorizeTestCard, amount: string, refId?: string): Promise<AuthorizeApiResponse> {
 		const payload = this.buildTransactionPayload('authOnlyTransaction', card, amount, refId);
 		return this.post(payload);
 	}
@@ -150,7 +146,7 @@ export class AuthorizeApiClient {
 	async authCaptureTransaction(
 		card: AuthorizeTestCard,
 		amount: string,
-		refId?: string,
+		refId?: string
 	): Promise<AuthorizeApiResponse> {
 		const payload = this.buildTransactionPayload('authCaptureTransaction', card, amount, refId);
 		return this.post(payload);
@@ -167,9 +163,9 @@ export class AuthorizeApiClient {
 				transactionRequest: {
 					transactionType: 'priorAuthCaptureTransaction' as const,
 					amount,
-					refTransId,
-				},
-			},
+					refTransId
+				}
+			}
 		};
 		return this.post(payload);
 	}
@@ -184,9 +180,9 @@ export class AuthorizeApiClient {
 				refId,
 				transactionRequest: {
 					transactionType: 'voidTransaction' as const,
-					refTransId,
-				},
-			},
+					refTransId
+				}
+			}
 		};
 		return this.post(payload);
 	}
@@ -196,7 +192,7 @@ export class AuthorizeApiClient {
 	private getAuthBlock(): { name: string; transactionKey: string } {
 		return {
 			name: this.apiLoginId,
-			transactionKey: this.transactionKey,
+			transactionKey: this.transactionKey
 		};
 	}
 
@@ -204,7 +200,7 @@ export class AuthorizeApiClient {
 		transactionType: AuthorizeTransactionType,
 		card: AuthorizeTestCard,
 		amount: string,
-		refId?: string,
+		refId?: string
 	): unknown {
 		// Format expirationDate como MMYY (ej "1230" para 12/2030).
 		const expirationDate = `${card.exp.month}${card.exp.year.slice(-2)}`;
@@ -219,16 +215,16 @@ export class AuthorizeApiClient {
 						creditCard: {
 							cardNumber: card.number,
 							expirationDate,
-							cardCode: card.cvc,
-						},
+							cardCode: card.cvc
+						}
 					},
 					billTo: {
 						firstName: card.holderName.split(' ')[0] ?? 'MAGIIS',
 						lastName: card.holderName.split(' ').slice(1).join(' ') || 'Test',
-						zip: card.zip,
-					},
-				},
-			},
+						zip: card.zip
+					}
+				}
+			}
 		};
 	}
 
@@ -237,9 +233,9 @@ export class AuthorizeApiClient {
 			data: payload,
 			headers: {
 				'Content-Type': 'application/json',
-				Accept: 'application/json',
+				Accept: 'application/json'
 			},
-			failOnStatusCode: false,
+			failOnStatusCode: false
 		});
 
 		// El sandbox a veces devuelve el JSON con BOM al inicio — limpiarlo.
@@ -250,7 +246,7 @@ export class AuthorizeApiClient {
 			throw new AuthorizeApiError(
 				`Authorize sandbox respondió body vacío (status ${response.status()})`,
 				response,
-				cleaned,
+				cleaned
 			);
 		}
 
@@ -260,7 +256,7 @@ export class AuthorizeApiClient {
 			throw new AuthorizeApiError(
 				`Authorize sandbox devolvió JSON inválido: ${(err as Error).message}`,
 				response,
-				cleaned,
+				cleaned
 			);
 		}
 	}
@@ -278,7 +274,7 @@ export class AuthorizeApiError extends Error {
 	constructor(
 		message: string,
 		public readonly response: APIResponse,
-		public readonly body: string,
+		public readonly body: string
 	) {
 		super(message);
 		this.name = 'AuthorizeApiError';

@@ -32,6 +32,7 @@
 import { expect, test } from '@TestFixture';
 import { resolveCard } from '@fixtures/gateways/_shared';
 import { journeyDefaultsFor } from '@features/gateway-pg/data/journey-defaults';
+import { clearQuoteRequesterCard } from '@features/gateway-pg/helpers/quote-card-precondition';
 import { confirmQuoteByMail } from '@features/gateway-pg/helpers/quote-mail-confirmation';
 import { expectQuoteTripInPortal } from '@features/gateway-pg/helpers/quote-trip-verification';
 import { cardFormFor } from '@ui/carrier/card-forms';
@@ -39,6 +40,14 @@ import { QuoteWidgetPage } from '@ui/QuoteWidgetPage';
 
 const env = process.env.ENV ?? 'test';
 const AUTH = journeyDefaultsFor('authorize');
+
+/**
+ * Origen dentro de la GEOCERCA del teléfono driver físico (radio ~500 m). El viaje que crea este
+ * caso queda ABIERTO a propósito: QA lo finaliza a mano desde la App Driver, y eso sólo es posible
+ * si el alta cae en rango. Con el origen default de `journey-defaults` el viaje no le llega al
+ * driver y el tramo de finalización queda sin verificar.
+ */
+const DRIVER_E2E_PICKUP = 'Ciudad de la Paz 2238, Buenos Aires, Argentina';
 
 /**
  * Solicitante de la cotización: usuario personal YA REGISTRADO en la plataforma — es el eje del
@@ -65,28 +74,37 @@ test.describe(`Gateway PG · Quote · Authorize — usuario personal SIN hold [$
 		// (registry `xray-keys.ts` sin sección quote). Key null = sin annotation, para que el gap
 		// quede visible en el summary del reporter — no inventar keys.
 		{},
-		// `browser` se usa en el paso 12: la verificación en el portal abre una SESIÓN NUEVA, aislada
+		// `browser` se usa en el paso 11: la verificación en el portal abre una SESIÓN NUEVA, aislada
 		// de la sesión anónima del widget (ver `expectQuoteTripInPortal`).
 		async ({ page, browser }) => {
 			const quote = new QuoteWidgetPage({ page });
 			// Visa 4111…1111 · CVV 900 · ZIP 90210 · exp 12/30.
 			const card = resolveCard({ gateway: 'authorize', intent: 'HAPPY_NO_AUTH' });
 
+			await test.step('0. Precondición: el solicitante no debe tener ya esta tarjeta', async () => {
+				// El widget registra la tarjeta contra el pasajero resuelto por el mail. Si ya la
+				// tiene de una corrida anterior, el backend responde 500 y el caso se cae en el pago
+				// midiendo estado acumulado en vez del alta del viaje (hallazgo QUOTE-CARD-500).
+				await clearQuoteRequesterCard(browser, {
+					paxSearchQueries: AUTH.paxSearchQueries,
+					last4: card.last4,
+					gateway: 'authorize'
+				});
+			});
+
 			await test.step('1. Abrir el widget público de cotización del carrier', async () => {
 				await quote.goto({ language: 'EN' });
 			});
 
-			await test.step(`2. Fijar origen "${AUTH.origin}"`, async () => {
-				await quote.setOrigin(AUTH.origin);
+			await test.step(`2. Fijar origen "${DRIVER_E2E_PICKUP}"`, async () => {
+				await quote.setOrigin(DRIVER_E2E_PICKUP);
 			});
 
 			await test.step(`3. Fijar destino "${AUTH.destination}"`, async () => {
 				await quote.setDestination(AUTH.destination);
 			});
 
-			await test.step('4. Fijar la cantidad de pasajeros (1)', async () => {
-				// El widget arranca en 0 pasajeros y con 0 NO avanza al paso de vehículo (medido en
-				// vivo 2026-07-29). No es un detalle cosmético: es precondición del paso 5.
+			await test.step('4. Fijar 1 pasajero (el widget nace en 0 y bloquea el avance)', async () => {
 				await quote.setPassengerCount(1);
 			});
 

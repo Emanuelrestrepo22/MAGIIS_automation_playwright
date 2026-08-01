@@ -32,13 +32,21 @@
  *     Fixture → Page → Fixture (mismo patrón que CarrierNewTravelPage).
  */
 
-import type { Locator, Route } from '@playwright/test';
+import type { Locator, Request, Route } from '@playwright/test';
 import type { TestContextOptions } from '@TestContext';
 import type { GatewayName } from '@fixtures/gateways/_shared';
 
 import { expect } from '@playwright/test';
 import { atc, step } from '@utils/decorators';
 import { UiBase } from '@ui/UiBase';
+// Fuente única de statuses/urlPattern del link (anti-drift POM↔adapter — auditoría R2 T11).
+// Import components→features con precedente (card-forms → @features/.../adapters).
+import {
+	AUTHORIZE_LINK_MUTATION_URL_PATTERN,
+	AUTHORIZE_LINK_SUCCESS_STATUSES,
+	EBIZCHARGE_LINK_MUTATION_URL_PATTERN,
+	EBIZCHARGE_LINK_SUCCESS_STATUSES
+} from '@features/gateway-pg/data/link-status-defaults';
 
 /**
  * Pasarelas de pago censables en el App Store (match case-insensitive por texto de card).
@@ -63,11 +71,20 @@ export interface AuthorizeCreds {
 	gatewayId?: string;
 }
 
-/** Credenciales merchant eBizCharge leídas de env (EBIZ_MERCHANT_USER / _PASSWORD / EBIZ_SECURITY_KEY). */
+/**
+ * Credenciales merchant eBizCharge leídas de env.
+ *
+ * El modal real tiene **4 campos**, no 3 — verificado en vivo (exploratorio del líder de QA,
+ * 2026-07-30, grabación `test-1.spec.ts` del clone principal):
+ *   `EBizSubscription-Key` · `Security Id` · `User Id` · `Password` → botón **Save**.
+ * El 4.º factor (`EBizSubscription-Key`) es el header de la variante JSON/REST de la Connect
+ * API; env var `EBIZ_SUBSCRIPTION_KEY` (documentada en `.env.example`).
+ */
 export interface EbizchargeCreds {
 	merchantUser: string;
 	merchantPassword: string;
 	securityKey: string;
+	subscriptionKey: string;
 }
 
 /** Campo del modal de credenciales de link: locator (INLINE en este POM) + valor a llenar. */
@@ -149,32 +166,33 @@ export class AppStoreGatewaysPage extends UiBase {
 		this.page.locator('.modal, [role="dialog"]').filter({ hasText: /ebiz/i }).first();
 
 	/**
-	 * FRAGILE/TODO(live): campos del modal eBizCharge por `formcontrolname` CANDIDATOS (no
-	 * confirmados — espejo del patrón Angular Reactive Forms del modal Authorize). Scopeados al
-	 * modal eBiz para no matchear inputs de otros modales PSP ocultos. Fijar selectores reales
-	 * en la primera corrida viva con EBIZ_* configuradas.
+	 * Campos del modal eBizCharge por NOMBRE ACCESIBLE — verificados en vivo (exploratorio del
+	 * líder de QA, 2026-07-30): el modal real expone `EBizSubscription-Key`, `Security Id`,
+	 * `User Id` y `Password` como accessible names de sus textboxes. Reemplaza a los 11
+	 * `formcontrolname` candidatos que nunca se confirmaron. Scopeados al modal eBiz porque hay
+	 * ~6 modales PSP ocultos en el DOM, y `Password` existe también en el de Authorize.
 	 */
-	private readonly ebizMerchantUserInput = (): Locator =>
-		this.ebizModal()
-			.locator('input[formcontrolname="merchantUser"], input[formcontrolname="username"], input[formcontrolname="userName"], input[formcontrolname="user"]')
-			.first();
-	private readonly ebizMerchantPasswordInput = (): Locator =>
-		this.ebizModal().locator('input[formcontrolname="merchantPassword"], input[formcontrolname="password"], input[type="password"]').first();
+	private readonly ebizSubscriptionKeyInput = (): Locator =>
+		this.ebizModal().getByRole('textbox', { name: 'EBizSubscription-Key' }).first();
 	private readonly ebizSecurityKeyInput = (): Locator =>
-		this.ebizModal()
-			.locator('input[formcontrolname="securityKey"], input[formcontrolname="securityId"], input[formcontrolname="apiKey"], input[formcontrolname="token"]')
-			.first();
+		this.ebizModal().getByRole('textbox', { name: 'Security Id' }).first();
+	private readonly ebizMerchantUserInput = (): Locator =>
+		this.ebizModal().getByRole('textbox', { name: 'User Id' }).first();
+	private readonly ebizMerchantPasswordInput = (): Locator =>
+		this.ebizModal().getByRole('textbox', { name: 'Password' }).first();
 
 	/**
-	 * Botón submit de un modal de credenciales = "Continuar" (ESPAÑOL — el modal Authorize mezcla
-	 * idiomas: título/campos en inglés "Link your account"/"API Login ID:", botones en español
-	 * "Cancelar"/"Continuar"; corrige HANDOFF que asumía "Continue" en inglés). Empieza DISABLED
-	 * hasta que el form sea válido (Angular reactive form) — Playwright espera el estado enabled
-	 * automáticamente antes del click. Scopeado al modal recibido (hay ~6 modales ocultos, 1 por
-	 * PSP, cada uno con su propio submit).
+	 * Botón submit de un modal de credenciales. NO es uniforme entre pasarelas — cada dato está
+	 * verificado en vivo por separado:
+	 *   · Authorize → "Continuar" (el modal mezcla idiomas: campos en inglés, botones en español).
+	 *   · eBizCharge → **"Save"** (exploratorio 2026-07-30 — el matcher viejo `Continuar|Continue`
+	 *     no lo encontraba y el link de eBiz moría por timeout).
+	 * Empieza DISABLED hasta que el form sea válido (Angular reactive form) — Playwright espera el
+	 * estado enabled automáticamente antes del click. Scopeado al modal recibido (hay ~6 modales
+	 * ocultos, 1 por PSP, cada uno con su propio submit).
 	 */
 	private readonly linkSubmitIn = (modal: Locator): Locator =>
-		modal.getByRole('button', { name: /^(Continuar|Continue)$/i }).first();
+		modal.getByRole('button', { name: /^(Continuar|Continue|Save|Guardar)$/i }).first();
 
 	/** Modal de credenciales de link por pasarela (solo Authorize verificado live). */
 	private linkModalFor(company: GatewayCompany): Locator {
@@ -190,7 +208,45 @@ export class AppStoreGatewaysPage extends UiBase {
 	}
 
 	/** FRAGILE: popup de confirmación de desvinculación (SweetAlert / modal). */
-	private readonly confirmPopup = (): Locator => this.page.locator('.swal2-popup, [role="dialog"], .modal').first();
+	/**
+	 * Popup de confirmación de desvinculación — filtrado por VISIBILIDAD, no `.first()` del DOM.
+	 *
+	 * POR QUÉ (fix live 2026-07-28): el selector matchea **7 diálogos** en esta página (la app
+	 * pre-renderiza modales ocultos, p. ej. el login de GNET) y el primero en orden de DOM está
+	 * OCULTO. Con `.first()` el `expect(...).toBeVisible()` evaluaba ese modal ajeno y fallaba
+	 * aunque el popup real estuviera abierto — diagnóstico live: tras el click el popup SÍ estaba
+	 * en pantalla (botones visibles "Cancelar"/"Confirmar") y el assert daba rojo igual.
+	 * `filter({ visible: true })` selecciona el diálogo realmente presentado.
+	 */
+	private readonly confirmPopup = (): Locator =>
+		this.page.locator('.swal2-popup, [role="dialog"], .modal').filter({ visible: true }).first();
+
+	/**
+	 * Botones del popup de confirmación de desvinculación, anclados AL BOTÓN y no al contenedor.
+	 *
+	 * POR QUÉ (fix live 2026-07-28): el popup real de MAGIIS NO usa ninguno de los contenedores
+	 * que `confirmPopup()` busca — un probe con el popup ABIERTO mostró `.swal2-popup`,
+	 * `[role=dialog]` y `.modal` con 7 matches TODOS invisibles (son el modal oculto de login de
+	 * GNET del App Store), mientras los botones "Cancelar" y "Confirmar" del popup sí estaban
+	 * visibles. Por eso `expect(confirmPopup()).toBeVisible()` fallaba aunque el popup estuviera
+	 * en pantalla, y la suite CFG nunca podía desvincular.
+	 * El filtro `{ visible: true }` es OBLIGATORIO: el modal oculto de GNET también tiene un
+	 * botón "Cancelar" y sin filtrar `.first()` devolvía ese.
+	 */
+	private readonly unlinkConfirmButton = (): Locator =>
+		this.page
+			// `confirm` agregado (verificado en vivo 2026-07-30): en locale inglés el popup de
+			// desvinculación usa el botón "Confirm", que el matcher anterior no cubría.
+			.getByRole('button', { name: /^\s*(confirmar|confirm|aceptar|s[ií]|yes|ok)\s*$/i })
+			.filter({ visible: true })
+			.first();
+
+	/** Botón de cancelación del mismo popup (ver `unlinkConfirmButton` para el por qué del anclaje). */
+	private readonly unlinkCancelButton = (): Locator =>
+		this.page
+			.getByRole('button', { name: /^\s*(cancelar|cancel|cerrar|close|no)\s*$/i })
+			.filter({ visible: true })
+			.first();
 
 	// ── Helpers privados de interacción (usados por varios ATC; NO son ATC) ──────────
 
@@ -204,10 +260,12 @@ export class AppStoreGatewaysPage extends UiBase {
 
 	/** Campos del modal de link eBizCharge — FRAGILE/TODO(live): locators candidatos sin confirmar. */
 	private ebizchargeLinkFields(creds: EbizchargeCreds): LinkFieldEntry[] {
+		// Orden del modal real (verificado 2026-07-30): Subscription-Key → Security Id → User Id → Password.
 		return [
+			{ input: this.ebizSubscriptionKeyInput(), value: creds.subscriptionKey },
+			{ input: this.ebizSecurityKeyInput(), value: creds.securityKey },
 			{ input: this.ebizMerchantUserInput(), value: creds.merchantUser },
-			{ input: this.ebizMerchantPasswordInput(), value: creds.merchantPassword },
-			{ input: this.ebizSecurityKeyInput(), value: creds.securityKey }
+			{ input: this.ebizMerchantPasswordInput(), value: creds.merchantPassword }
 		];
 	}
 
@@ -300,20 +358,33 @@ export class AppStoreGatewaysPage extends UiBase {
 		).toContain(response.status());
 	}
 
-	/** Abre el popup de desvinculación — mismo patrón (ver openAuthorizeLinkModal). */
+	/**
+	 * Abre el popup de desvinculación — mismo patrón (ver openAuthorizeLinkModal), con
+	 * `force: true` por el refresh periódico del FE.
+	 *
+	 * POR QUÉ `force` (fix live 2026-07-28): la lista del App Store se re-renderiza cada
+	 * ~700 ms (ver `goto()`), así que el link de acción rara vez cumple el check de
+	 * ESTABILIDAD de Playwright (mismo bounding box en 2 frames consecutivos) → el click
+	 * expiraba a los 4 s en cada intento y el `toPass` agotaba sus 120 s sin llegar a
+	 * clickear nunca. `force` saltea el check de actionability pero SIGUE siendo un evento
+	 * de mouse por CDP (trusted) en la posición del elemento — requisito del handler Angular
+	 * (un `el.click()` por `evaluate()` NO abre el popup, verificado en diagnóstico previo).
+	 * El oráculo real del intento es el popup visible: si el click cayó al vacío, el `toPass`
+	 * reintenta; no se pierde robustez, se elimina la espera imposible.
+	 */
 	private async openUnlinkPopup(company: GatewayCompany): Promise<void> {
 		await expect(async () => {
-			await this.desvincularLink(company).click({ timeout: 4_000 });
-			await expect(this.confirmPopup()).toBeVisible({ timeout: 8_000 });
+			const link = this.desvincularLink(company);
+			await link.scrollIntoViewIfNeeded({ timeout: 4_000 });
+			await link.click({ timeout: 4_000, force: true });
+			// Oráculo del popup abierto = su botón afirmativo VISIBLE (ver `unlinkConfirmButton`).
+			await expect(this.unlinkConfirmButton()).toBeVisible({ timeout: 8_000 });
 		}).toPass({ timeout: 120_000, intervals: [300, 600, 1_000] });
 	}
 
-	/** FRAGILE: confirma el popup de desvinculación (botón afirmativo). */
+	/** Confirma el popup de desvinculación (botón afirmativo visible — ver `unlinkConfirmButton`). */
 	private async confirmUnlink(): Promise<void> {
-		await this.confirmPopup()
-			.getByRole('button', { name: /s[ií]|confirmar|aceptar|desvincular|yes|ok/i })
-			.first()
-			.click();
+		await this.unlinkConfirmButton().click();
 	}
 
 	// ── API pública KATA ─────────────────────────────────────────────────────────────
@@ -355,20 +426,64 @@ export class AppStoreGatewaysPage extends UiBase {
 
 	/**
 	 * Clasifica el estado de la card de `company`. Query read-only (`unknown` es un resultado
-	 * válido de la clasificación, NO un error tragado). i18n-proof: prioriza la clase de color
-	 * del link de acción; cae al texto del footer para "No Disponible".
+	 * válido de la clasificación, NO un error tragado).
+	 *
+	 * CLASIFICA POR EL **TEXTO** DEL LINK DE ACCIÓN, no por su clase de color (fix live
+	 * 2026-07-28): la clase es AMBIGUA — "No Disponible" (pasarela bloqueada por la regla de
+	 * exclusividad) también se renderiza como `a.red-text`, igual que "Desvincular". El check
+	 * por clase devolvía `linked` para una pasarela NO vinculada → `currentActiveGateway()`
+	 * elegía la pasarela equivocada y la suite CFG intentaba desvincular una card cuyo link no
+	 * abre popup (click al vacío → timeout del toPass). Evidencia: dump del DOM con
+	 * `a.red-text` presente y visible en una card cuya acción era "No Disponible".
+	 * El locator SIGUE siendo por clase (discriminador estable, ver `vincularLink`); lo que
+	 * cambia es que se decide por el texto DE ESE elemento — mismo criterio que el probe
+	 * read-only del App Store, cuya clasificación coincidió con la realidad en todos los dumps.
 	 */
 	@step
 	async readState(company: GatewayCompany): Promise<GatewayCardState> {
 		const card = this.cardFor(company);
 		await card.waitFor({ state: 'visible', timeout: 20_000 });
-		const redText = card.locator('a.red-text').first();
-		if (await redText.isVisible().catch(() => false)) return 'linked';
-		const greenText = card.locator('a.green-text').first();
-		if (await greenText.isVisible().catch(() => false)) return 'linkable';
+		// ESTADO ESTABILIZADO (fix live 2026-07-28): el FE pinta un render OPTIMISTA con el
+		// estado ANTERIOR/cacheado del carrier y lo corrige ~750 ms después con el fetch real
+		// (más un refresh periódico ~700 ms — ver `goto()`). Leer el primer frame devolvía el
+		// estado histórico del carrier: con Authorize REALMENTE vinculada, el frame optimista
+		// mostraba "Stripe: Desvincular / Authorize: Vincular" (verificado contra el probe
+		// read-only, que espera más y sí veía el estado real). Consecuencias que esto causaba:
+		// `currentActiveGateway()` elegía la pasarela equivocada y la suite CFG clickeaba un
+		// link que desaparecía al corregirse el DOM → timeout de 120 s del toPass; y el smoke
+		// era intermitente (1er intento rojo, 2º verde).
+		// Se devuelve el valor sólo cuando DOS lecturas consecutivas coinciden.
+		let previous: GatewayCardState | null = null;
+		for (let attempt = 0; attempt < 6; attempt++) {
+			const current = await this.classifyCardState(card);
+			if (previous === current) return current;
+			previous = current;
+			// Ventana de settle deliberada (> el ciclo de refresh del FE), no un sleep arbitrario.
+			await this.page.waitForTimeout(900);
+		}
+		return previous ?? 'unknown';
+	}
+
+	/**
+	 * Clasificación pura de una card ya visible (sin esperas de settle — eso lo hace `readState`).
+	 * Decide por el **TEXTO** del link de acción, no por su clase de color: la clase es AMBIGUA —
+	 * "No Disponible" (pasarela bloqueada por exclusividad) también se renderiza como `a.red-text`,
+	 * igual que "Desvincular". El locator sigue siendo por clase (discriminador estable, ver
+	 * `vincularLink`); lo que decide es el texto de ESE elemento — mismo criterio que el probe
+	 * read-only del App Store, cuya clasificación coincidió con la realidad en todos los dumps.
+	 */
+	private async classifyCardState(card: Locator): Promise<GatewayCardState> {
+		const actionLink = card.locator('a.red-text, a.green-text').first();
+		if (await actionLink.isVisible().catch(() => false)) {
+			const action = ((await actionLink.textContent().catch(() => '')) ?? '').trim().toLowerCase();
+			if (action.includes('no disponible') || action.includes('not available')) return 'unavailable';
+			if (action.includes('desvincular') || action.includes('unlink')) return 'linked';
+			if (action.includes('vincular') || action.includes('link') || action.includes('habilitar')) return 'linkable';
+		}
+		// Fallback al texto completo de la card (sin link de acción visible, p.ej. MP fuera de región).
 		const raw = ((await card.textContent().catch(() => '')) ?? '').trim().toLowerCase();
-		if (raw.includes('desvincular') || raw.includes('unlink')) return 'linked';
 		if (raw.includes('no disponible') || raw.includes('not available')) return 'unavailable';
+		if (raw.includes('desvincular') || raw.includes('unlink')) return 'linked';
 		if (raw.includes('vincular') || raw.includes('link') || raw.includes('habilitar')) return 'linkable';
 		return 'unknown';
 	}
@@ -385,12 +500,14 @@ export class AppStoreGatewaysPage extends UiBase {
 	}
 
 	/**
-	 * Vincula eBizCharge con credenciales merchant VÁLIDAS y verifica el estado vinculado.
-	 * Wrapper por pasarela (S4) — SIN `@atc`: eBizCharge aún no tiene key CFG en Jira
-	 * (`XRAY_KEYS_BY_GATEWAY.ebizcharge.cfg.linkValid = null`); decorar cuando exista.
-	 * FRAGILE/TODO(live): modal y campos eBiz NO confirmados en vivo (ver locators candidatos).
+	 * ATC — vincula eBizCharge con credenciales merchant VÁLIDAS y verifica el estado vinculado.
+	 * Wrapper por pasarela (key ESTRUCTURAL — TS-EBIZ-TC1051). Decorado el 2026-07-31: el Test SÍ
+	 * existe, es MG-141 (A-01) del ATR de acciones estandarizadas MG-559, no un Test "de eBizCharge"
+	 * — de ahí que antes se concluyera que no había key.
+	 * Modal y campos eBiz CONFIRMADOS en vivo el 2026-07-30 (4 campos: EBizSubscription-Key /
+	 * Security Id / User Id / Password, botón Save).
 	 */
-	@step
+	@atc('MG-141', { severity: 'critical', description: 'Vincular pasarela eBizCharge con cuenta PSP válida' })
 	async linkEbizcharge(creds: EbizchargeCreds): Promise<void> {
 		await this.linkGateway('ebizcharge', this.ebizchargeLinkFields(creds));
 	}
@@ -423,12 +540,13 @@ export class AppStoreGatewaysPage extends UiBase {
 	}
 
 	/**
-	 * ATC — desvincula una pasarela (click "Desvincular" → confirmar popup) y verifica el
-	 * estado vinculable resultante.
+	 * Impl privada COMPARTIDA del unlink (post-review F1). SIN decorar — las keys de ATC son
+	 * ESTRUCTURALES y viven en los wrappers por pasarela (`unlinkAuthorize` @atc MG-223;
+	 * `unlinkStripe` @atc MG-215; eBiz/MP sin key aún). Desvincula (click "Desvincular" →
+	 * confirmar popup) y verifica el estado vinculable resultante.
 	 * ⚠️ DESTRUCTIVO en runtime: desvincular dispara cleaningWallets en cascada sobre el carrier.
 	 */
-	@atc('MG-223', { severity: 'critical', description: 'Desvincular pasarela (dispara cleaningWallets)' })
-	async unlinkGateway(company: GatewayCompany): Promise<void> {
+	private async unlinkGatewayImpl(company: GatewayCompany): Promise<void> {
 		if (!isGatewayDestructiveSwitchAllowed()) {
 			throw new Error(
 				'unlinkGateway() es DESTRUCTIVO: dispara cleaningWallets en cascada sobre el carrier 1521 (compartido por toda la suite gateway), borrando la tarjeta real del pasajero. ' +
@@ -437,8 +555,63 @@ export class AppStoreGatewaysPage extends UiBase {
 		}
 		await this.openUnlinkPopup(company);
 		await this.confirmUnlink();
-		await expect(this.vincularLink(company), `la card ${company} debe quedar desvinculada (green-text / "Vincular")`).toBeVisible({ timeout: 20_000 });
-		expect(await this.readState(company), 'estado esperado tras desvincular = linkable').toBe('linkable');
+		// El detach del backend es `@Async` + cascade `cleaningWallets`, y la lista del App Store
+		// sirve un render cacheado: el estado real puede tardar MÁS que la ventana del assert
+		// (verificado live 2026-07-28: la desvinculación SÍ se aplicó en backend — el probe
+		// read-only la confirmó — pero la card seguía mostrando "Desvincular" al expirar los 20 s).
+		// `reload()` + `readState` estabilizado dentro de `toPass` espera el efecto REAL sin
+		// depender del refresh optimista del FE.
+		await expect(async () => {
+			await this.reload();
+			expect(await this.readState(company), 'estado esperado tras desvincular = linkable').toBe('linkable');
+		}).toPass({ timeout: 60_000, intervals: [2_000, 4_000, 6_000] });
+	}
+
+	/** ATC — desvincula Authorize. Wrapper por pasarela (key ESTRUCTURAL — TS-AUTHORIZE-TC1005). */
+	@atc('MG-223', { severity: 'critical', description: 'Desvincular pasarela (dispara cleaningWallets)' })
+	async unlinkAuthorize(): Promise<void> {
+		await this.unlinkGatewayImpl('authorize');
+	}
+
+	/** ATC — desvincula Stripe. Wrapper por pasarela (key ESTRUCTURAL — TS-STRIPE-TC1005). */
+	@atc('MG-215', { severity: 'critical', description: 'Desvincular pasarela Stripe (dispara cleaningWallets)' })
+	async unlinkStripe(): Promise<void> {
+		await this.unlinkGatewayImpl('stripe');
+	}
+
+	/** ATC — desvincula eBizCharge (dispara cleaningWallets). Wrapper por pasarela (key ESTRUCTURAL —
+	 * TS-EBIZ-TC1054). MG-165 (G-01) Step 5: "reabrir el modal y presionar Confirmar → se invoca
+	 * cleaningWallets e inicia la desvinculación".
+	 * NO lleva MG-166: ese Test exige que las wallets locales queden vacías, y acá no se mira ni una
+	 * — lo acredita `api/vendor-cleaning-wallets/cleaning-wallets-db.api.spec.ts` contra Oracle. */
+	@atc('MG-165', { severity: 'critical', description: 'Confirmar el modal de desvinculación de eBizCharge dispara cleaningWallets' })
+	async unlinkEbizcharge(): Promise<void> {
+		await this.unlinkGatewayImpl('ebizcharge');
+	}
+
+	/** Desvincula Mercado Pago. Wrapper por pasarela — SIN `@atc`: MP aún sin key CFG de unlink (nunca inventar). */
+	@step
+	async unlinkMercadoPago(): Promise<void> {
+		await this.unlinkGatewayImpl('mercado-pago');
+	}
+
+	/**
+	 * Desvincula la pasarela `company` despachando al wrapper por pasarela (SIN decorator acá:
+	 * cada invocación acredita la key @atc del gateway CORRECTO — fix post-review F1: la key
+	 * fija MG-223 acreditaba unlinks de Stripe/eBiz/MP a Authorize).
+	 * ⚠️ DESTRUCTIVO en runtime (ver `unlinkGatewayImpl`).
+	 */
+	async unlinkGateway(company: GatewayCompany): Promise<void> {
+		switch (company) {
+			case 'authorize':
+				return this.unlinkAuthorize();
+			case 'stripe':
+				return this.unlinkStripe();
+			case 'ebizcharge':
+				return this.unlinkEbizcharge();
+			case 'mercado-pago':
+				return this.unlinkMercadoPago();
+		}
 	}
 
 	/**
@@ -449,11 +622,9 @@ export class AppStoreGatewaysPage extends UiBase {
 	@step
 	async cancelUnlink(company: GatewayCompany): Promise<void> {
 		await this.openUnlinkPopup(company);
-		await this.confirmPopup()
-			.getByRole('button', { name: /cancelar|no|cerrar|cancel|close/i })
-			.first()
-			.click();
-		await expect(this.confirmPopup(), 'el popup debe cerrarse sin desvincular').toBeHidden({ timeout: 10_000 });
+		await this.unlinkCancelButton().click();
+		// El cierre se verifica por la desaparición del botón afirmativo (mismo anclaje que la apertura).
+		await expect(this.unlinkConfirmButton(), 'el popup debe cerrarse sin desvincular').toBeHidden({ timeout: 10_000 });
 		expect(await this.readState(company), `${company} sigue vinculada tras cancelar`).toBe('linked');
 	}
 
@@ -488,41 +659,64 @@ export class AppStoreGatewaysPage extends UiBase {
 			})
 		);
 
-		await this.desvincularLink(company).click();
+		// Guard anti-mutación (post-review A2): el supuesto "unlink = SOLO cleaningWallets" NO
+		// está verificado live — el mock intercepta ese patrón, pero cualquier OTRA mutación
+		// disparada por el flujo llegaría REAL al backend. Registrar toda request no-GET fuera
+		// del patrón mockeado y fallar al final del ATC si hubo alguna.
+		const unexpectedMutations: string[] = [];
+		const onRequest = (request: Request): void => {
+			if (request.method() !== 'GET' && !/\/vendor\/cleaningWallets\//i.test(request.url())) {
+				unexpectedMutations.push(`${request.method()} ${request.url()}`);
+			}
+		};
+		this.page.on('request', onRequest);
 
-		// Popup scopeado por el texto real ("Desvincular <PSP>") — más preciso que el selector
-		// genérico `confirmPopup()`, que puede matchear un modal oculto de otra pasarela.
-		const popup = this.page
-			.locator('ngb-modal-window[role="dialog"], .modal, [role="dialog"], .swal2-popup')
-			.filter({ hasText: /desvincular/i })
-			.first();
-		await expect(popup, 'debe abrirse el popup de confirmación de desvinculación').toBeVisible({ timeout: 15_000 });
-		await popup
-			.getByRole('button', { name: /^confirmar$/i })
-			.first()
-			.click();
+		try {
+			await this.desvincularLink(company).click();
 
-		// El bug documentado (TC-PAY-G-05) es un toast/ícono de ÉXITO INCONDICIONAL — NO debe
-		// aparecer cuando el backend respondió 500 a la desvinculación.
-		const successIcon = this.page.locator('.swal2-icon.swal2-success, .swal2-success');
-		await expect(successIcon, 'BUG MG-169: el FE mostró un ícono/toast de ÉXITO pese al 500 mockeado de cleaningWallets').toBeHidden({
-			timeout: 8_000
-		});
+			// Popup scopeado por el texto real ("Desvincular <PSP>") — más preciso que el selector
+			// genérico `confirmPopup()`, que puede matchear un modal oculto de otra pasarela.
+			const popup = this.page
+				.locator('ngb-modal-window[role="dialog"], .modal, [role="dialog"], .swal2-popup')
+				.filter({ hasText: /desvincular/i })
+				.first();
+			await expect(popup, 'debe abrirse el popup de confirmación de desvinculación').toBeVisible({ timeout: 15_000 });
+			await popup
+				.getByRole('button', { name: /^confirmar$/i })
+				.first()
+				.click();
 
-		// Prueba funcional robusta (no depende del copy del toast): un fallo de backend NO puede
-		// dejar el FE "creyendo" que se desvinculó — la card debe seguir "linked" (y por lo tanto
-		// reintentable: el link "Desvincular" sigue visible).
-		expect(await this.readState(company), 'BUG MG-169: la pasarela quedó "no vinculada" en el FE pese al 500 mockeado — éxito falso').toBe(
-			'linked'
-		);
+			// El bug documentado (TC-PAY-G-05) es un toast/ícono de ÉXITO INCONDICIONAL — NO debe
+			// aparecer cuando el backend respondió 500 a la desvinculación.
+			const successIcon = this.page.locator('.swal2-icon.swal2-success, .swal2-success');
+			await expect(successIcon, 'BUG MG-169: el FE mostró un ícono/toast de ÉXITO pese al 500 mockeado de cleaningWallets').toBeHidden({
+				timeout: 8_000
+			});
+
+			// Prueba funcional robusta (no depende del copy del toast): un fallo de backend NO puede
+			// dejar el FE "creyendo" que se desvinculó — la card debe seguir "linked" (y por lo tanto
+			// reintentable: el link "Desvincular" sigue visible).
+			expect(await this.readState(company), 'BUG MG-169: la pasarela quedó "no vinculada" en el FE pese al 500 mockeado — éxito falso').toBe(
+				'linked'
+			);
+		} finally {
+			this.page.off('request', onRequest);
+		}
+
+		expect(
+			unexpectedMutations,
+			'GUARD MG-169: el flujo de unlink disparó mutaciones NO mockeadas (fuera de **/vendor/cleaningWallets/**) que llegaron REALES al backend — el supuesto "unlink = solo cleaningWallets" no se sostiene; verificar en vivo antes de confiar en este mock.'
+		).toEqual([]);
 	}
 
 	/**
-	 * ATC — verifica la exclusividad de pasarela: con `activeCompany` vinculada, ninguna otra
-	 * pasarela de pago debe ser vinculable ("No Disponible"). Salta cards ausentes en el carrier.
+	 * Impl privada COMPARTIDA de la exclusividad (post-review F1). SIN decorar — las keys de ATC
+	 * son ESTRUCTURALES y viven en los wrappers por pasarela (`expectExclusivityAuthorize` @atc
+	 * MG-224; `expectExclusivityStripe` @atc MG-216; eBiz/MP sin key aún). Con `activeCompany`
+	 * vinculada, ninguna otra pasarela de pago debe ser vinculable ("No Disponible"). Salta
+	 * cards ausentes en el carrier.
 	 */
-	@atc('MG-224', { severity: 'critical', description: 'Exclusividad: una sola pasarela activa por carrier' })
-	async expectExclusivity(activeCompany: GatewayCompany): Promise<void> {
+	private async expectExclusivityImpl(activeCompany: GatewayCompany): Promise<void> {
 		expect(await this.readState(activeCompany), `${activeCompany} debe estar vinculada`).toBe('linked');
 		const others = (Object.keys(COMPANY_NEEDLE) as GatewayCompany[]).filter(c => c !== activeCompany);
 		for (const other of others) {
@@ -532,25 +726,71 @@ export class AppStoreGatewaysPage extends UiBase {
 		}
 	}
 
+	/** ATC — exclusividad con Authorize activa. Wrapper por pasarela (key ESTRUCTURAL — TS-AUTHORIZE-TC1006). */
+	@atc('MG-224', { severity: 'critical', description: 'Exclusividad: una sola pasarela activa por carrier' })
+	async expectExclusivityAuthorize(): Promise<void> {
+		await this.expectExclusivityImpl('authorize');
+	}
+
+	/** ATC — exclusividad con Stripe activa. Wrapper por pasarela (key ESTRUCTURAL — TS-STRIPE-TC1006). */
+	@atc('MG-216', { severity: 'critical', description: 'Exclusividad: con Stripe activa no se puede vincular otra pasarela' })
+	async expectExclusivityStripe(): Promise<void> {
+		await this.expectExclusivityImpl('stripe');
+	}
+
+	/** ATC — exclusividad con eBizCharge activa. Wrapper por pasarela (key ESTRUCTURAL — TS-EBIZ-TC1055).
+	 * MG-143 (A-03) del ATR estandarizado MG-559: "se garantiza una sola PSP conectada por carrier". */
+	@atc('MG-143', { severity: 'critical', description: 'Exclusividad: con eBizCharge activa no se puede vincular otra pasarela' })
+	async expectExclusivityEbizcharge(): Promise<void> {
+		await this.expectExclusivityImpl('ebizcharge');
+	}
+
+	/** Exclusividad con Mercado Pago activa. Wrapper — SIN `@atc`: MP aún sin key CFG de exclusividad (nunca inventar). */
+	@step
+	async expectExclusivityMercadoPago(): Promise<void> {
+		await this.expectExclusivityImpl('mercado-pago');
+	}
+
 	/**
-	 * ATC — observa la request de vinculación de Authorize y verifica un status de éxito conocido (500|409).
-	 * Precondición: Authorize "Vincular" (liberar slot antes). Deja Authorize vinculada.
-	 * Wrapper por pasarela (S4); lógica compartida en `expectLinkStatusOkImpl`. Defaults espejo del
-	 * adapter authorize (`linkSuccessStatuses: [500, 409]`); `options` permite pasar los del adapter.
-	 *
-	 * Quirk backend VERIFICADO (HANDOFF §2, actualizado 2026-07-25): 500 = pasarela CONECTADA desde
-	 * estado limpio; 409 = CONECTADA cuando el carrier 1521 (compartido por la suite gateway) ya
-	 * estaba vinculado por otra sesión — ambos son éxito funcional, ninguno es bug de test.
-	 * 400 = NO conectada. El 500/409-en-éxito es smell de API (debería ser 2xx) → Improvement/Defect a DEV/MX (no MG).
-	 * FRAGILE: el endpoint real del link NO está verificado — ajustar el matcher de URL en vivo.
-	 * Endpoint del link Authorize = odnService (MG-476), NO /vendor/. El matcher incluye odnService.
+	 * Verifica la exclusividad despachando al wrapper por pasarela (SIN decorator acá: cada
+	 * invocación acredita la key @atc del gateway CORRECTO — fix post-review F1: la key fija
+	 * MG-224 acreditaba la exclusividad de Stripe/eBiz/MP a Authorize).
 	 */
-	@atc('MG-226', { severity: 'normal', description: 'La request de link de Authorize retorna un status de éxito conocido (500|409)' })
+	async expectExclusivity(activeCompany: GatewayCompany): Promise<void> {
+		switch (activeCompany) {
+			case 'authorize':
+				return this.expectExclusivityAuthorize();
+			case 'stripe':
+				return this.expectExclusivityStripe();
+			case 'ebizcharge':
+				return this.expectExclusivityEbizcharge();
+			case 'mercado-pago':
+				return this.expectExclusivityMercadoPago();
+		}
+	}
+
+	/**
+	 * ATC — observa la request de vinculación de Authorize y verifica el status de éxito del AC (200).
+	 * Precondición: Authorize "Vincular" (liberar slot antes). Deja Authorize vinculada.
+	 * Wrapper por pasarela (S4); lógica compartida en `expectLinkStatusOkImpl`. Defaults desde la
+	 * fuente única `data/link-status-defaults.ts`; `options` permite pasar los del adapter.
+	 *
+	 * EVIDENCIA LIVE 2026-07-28 (campaña exploratoria, dos probes de red independientes): el submit
+	 * dispara UNA sola mutación, `POST vendor/authorize`, y responde **200** dejando la card en
+	 * `linked`. Corrige DOS afirmaciones del HANDOFF §2 que ya no reproducen: el quirk `500|409` y
+	 * el endpoint `odnService`. Se vuelve al AC original de la matriz (status 200): el assert ya NO
+	 * tolera códigos de error, así que un 500/409 futuro FALLA (era lo que el quirk tapaba).
+	 * ⚠️ 200 ≠ credenciales validadas: el endpoint responde 200 y vincula incluso con credenciales
+	 * INVÁLIDAS (defecto de backend, ver DRAFT-improvement en docs/gateway-pg/authorize/) — por eso
+	 * el caso asserta además la persistencia del estado.
+	 */
+	@atc('MG-226', { severity: 'normal', description: 'La request de link de Authorize retorna status 200 (AC de matriz) y la pasarela queda vinculada' })
 	async expectLinkStatusOk(creds: AuthorizeCreds, options: LinkStatusOptions = {}): Promise<void> {
 		await this.expectLinkStatusOkImpl('authorize', {
 			fields: this.authorizeLinkFields(creds),
-			successStatuses: options.successStatuses ?? [500, 409],
-			urlPattern: options.urlPattern ?? /odnservice|payment.?gateway|paymentgateway|vendor|integration|authorize/i
+			// Defaults desde la FUENTE ÚNICA compartida con el adapter (link-status-defaults.ts).
+			successStatuses: options.successStatuses ?? [...AUTHORIZE_LINK_SUCCESS_STATUSES],
+			urlPattern: options.urlPattern ?? AUTHORIZE_LINK_MUTATION_URL_PATTERN
 		});
 	}
 
@@ -564,8 +804,9 @@ export class AppStoreGatewaysPage extends UiBase {
 	async expectEbizchargeLinkStatusOk(creds: EbizchargeCreds, options: LinkStatusOptions = {}): Promise<void> {
 		await this.expectLinkStatusOkImpl('ebizcharge', {
 			fields: this.ebizchargeLinkFields(creds),
-			successStatuses: options.successStatuses ?? [200],
-			urlPattern: options.urlPattern ?? /odnservice|payment.?gateway|paymentgateway|vendor|integration|ebiz/i
+			// Defaults desde la FUENTE ÚNICA compartida con el adapter (link-status-defaults.ts).
+			successStatuses: options.successStatuses ?? [...EBIZCHARGE_LINK_SUCCESS_STATUSES],
+			urlPattern: options.urlPattern ?? EBIZCHARGE_LINK_MUTATION_URL_PATTERN
 		});
 	}
 }

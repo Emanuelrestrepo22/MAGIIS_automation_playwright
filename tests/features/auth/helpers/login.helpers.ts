@@ -15,15 +15,15 @@ import {
 	PAX_WEB,
 	getContractorCollaborator,
 	getCurrentUserEnvironment,
-	getDispatcher,
+	getDispatcher
 } from '../../../fixtures/users';
 import type { GatewayName } from '../../../fixtures/gateways/_shared';
-
-/** Opciones de login por portal. `gateway` selecciona credenciales por pasarela. */
-type LoginOptions = { gateway?: GatewayName };
 import { DashboardPage } from '../../../pages/carrier';
 import { LoginPage } from '../../../pages/shared';
 import { ensureSpanishLanguage } from '../../../pages/shared/i18n';
+
+/** Opciones de login por portal. `gateway` selecciona credenciales por pasarela. */
+type LoginOptions = { gateway?: GatewayName };
 
 type LoginPhase = 'goto' | 'submit' | 'dashboard';
 
@@ -45,6 +45,26 @@ async function runLoginPhase<T>(role: string, phase: LoginPhase, fn: () => Promi
 	}
 }
 
+// MG-178: el login en TEST es intermitentemente flaky (la fase `dashboard` queda en la página de
+// login sin redirigir → cascada de fallos en familias enteras). Reintentamos la secuencia completa
+// (goto+submit+dashboard) hasta 3 veces antes de fallar. Cada reintento re-navega al login.
+const LOGIN_ATTEMPTS = 3;
+
+async function loginWithRetry(role: string, page: Page, run: () => Promise<void>): Promise<void> {
+	let lastErr: unknown;
+	for (let attempt = 1; attempt <= LOGIN_ATTEMPTS; attempt++) {
+		try {
+			await run();
+			return;
+		} catch (err) {
+			lastErr = err;
+			debugLog('auth', `[${role}] login intento ${attempt}/${LOGIN_ATTEMPTS} falló — ${err instanceof Error ? err.message : String(err)}`);
+			if (attempt < LOGIN_ATTEMPTS) await page.waitForTimeout(2_000);
+		}
+	}
+	throw lastErr instanceof Error ? lastErr : new Error(String(lastErr));
+}
+
 /**
  * Login rápido del portal carrier para journeys disparados por dispatcher.
  *
@@ -56,14 +76,14 @@ async function runLoginPhase<T>(role: string, phase: LoginPhase, fn: () => Promi
  * omitido = comportamiento default idéntico (carrier base vía `DISPATCHER[env]`).
  */
 export async function loginAsDispatcher(page: Page, opts?: LoginOptions): Promise<void> {
-	const dispatcher = opts?.gateway
-		? getDispatcher(opts.gateway)
-		: DISPATCHER[getCurrentUserEnvironment()];
+	const dispatcher = opts?.gateway ? getDispatcher(opts.gateway) : DISPATCHER[getCurrentUserEnvironment()];
 	const loginPage = new LoginPage(page, 'carrier', getPortalUrl('carrier'));
 	const dashboardPage = new DashboardPage(page);
-	await runLoginPhase('carrier', 'goto', () => loginPage.goto());
-	await runLoginPhase('carrier', 'submit', () => loginPage.login(dispatcher.email, dispatcher.password));
-	await runLoginPhase('carrier', 'dashboard', () => dashboardPage.ensureDashboardLoaded());
+	await loginWithRetry('carrier', page, async () => {
+		await runLoginPhase('carrier', 'goto', () => loginPage.goto());
+		await runLoginPhase('carrier', 'submit', () => loginPage.login(dispatcher.email, dispatcher.password));
+		await runLoginPhase('carrier', 'dashboard', () => dashboardPage.ensureDashboardLoaded());
+	});
 	// BL-i18n: forzar ES (cuentas US arrancan en inglés y rompen selectores por texto).
 	await ensureSpanishLanguage(page);
 }
@@ -86,9 +106,11 @@ export async function loginAsContractor(page: Page, opts?: LoginOptions): Promis
 	const loginPath = resolveLoginPath('contractor');
 	const loginPage = new LoginPage(page, 'contractor', `${baseUrl}${loginPath}`);
 	const dashboardPage = new DashboardPage(page);
-	await runLoginPhase('contractor', 'goto', () => loginPage.goto());
-	await runLoginPhase('contractor', 'submit', () => loginPage.login(collaborator.email, collaborator.password));
-	await runLoginPhase('contractor', 'dashboard', () => dashboardPage.ensureDashboardLoaded());
+	await loginWithRetry('contractor', page, async () => {
+		await runLoginPhase('contractor', 'goto', () => loginPage.goto());
+		await runLoginPhase('contractor', 'submit', () => loginPage.login(collaborator.email, collaborator.password));
+		await runLoginPhase('contractor', 'dashboard', () => dashboardPage.ensureDashboardLoaded());
+	});
 	// BL-i18n: forzar ES (cuentas US arrancan en inglés y rompen selectores por texto).
 	await ensureSpanishLanguage(page);
 }

@@ -20,7 +20,8 @@ import { HybridCarrierDriverHappyPathHarness } from '@features/gateway-pg/helper
 
 const RUN_MOBILE_HAPPY_PATH = process.env.RUN_MOBILE_HAPPY_PATH === 'true';
 
-test.describe.serial('Gateway PG · E2E Mobile · Carrier -> Driver happy path template @gateway @stripe @e2e-hybrid @hold @critical', () => {
+test.describe
+	.serial('Gateway PG · E2E Mobile · Carrier -> Driver happy path template @gateway @stripe @e2e-hybrid @hold @critical', () => {
 	test.use({ role: 'carrier', storageState: undefined });
 
 	for (const scenario of CARRIER_DRIVER_HAPPY_PATH_SCENARIOS) {
@@ -29,27 +30,23 @@ test.describe.serial('Gateway PG · E2E Mobile · Carrier -> Driver happy path t
 				!scenario.rules.active,
 				'Escenario mapeado en la plantilla. Activar rules.active=true cuando el caso quede listo para ejecución.'
 			);
-			test.skip(
-				!RUN_MOBILE_HAPPY_PATH,
-				'Set RUN_MOBILE_HAPPY_PATH=true para ejecutar Appium + Driver app.'
-			);
+			test.skip(!RUN_MOBILE_HAPPY_PATH, 'Set RUN_MOBILE_HAPPY_PATH=true para ejecutar Appium + Driver app.');
 
 			const harness = new HybridCarrierDriverHappyPathHarness(page);
 			const result = await harness.runScenario(scenario, {
 				loginFirst: true,
-				runMobile: true,
+				runMobile: true
 			});
 
 			expect(result.web.tripId).toBeTruthy();
 			expect(result.mobile).not.toBeNull();
-			expect(result.mobile?.checkpoints.map((checkpoint) => checkpoint.stage)).toEqual([
+			expect(result.mobile?.checkpoints.map(checkpoint => checkpoint.stage)).toEqual([
 				'confirm',
 				'in-progress',
 				'resume',
-				'closed',
+				'closed'
 			]);
 			expect(result.mobile?.totalAmount).toBeTruthy();
 		});
 	}
 });
-

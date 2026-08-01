@@ -21,7 +21,11 @@
 
 import { test, expect } from '@TestBase';
 import { VendorApi, type VendorProvider } from '@api/VendorApi';
-import { oracleConfigFromEnv, countWalletsByCarrierAndApp, countCardsByCarrierAndApp } from '@features/gateway-pg/helpers/oracle-wallet';
+import {
+	oracleConfigFromEnv,
+	countWalletsByCarrierAndApp,
+	countCardsByCarrierAndApp
+} from '@features/gateway-pg/helpers/oracle-wallet';
 import { LoginPage } from '@pages/shared/LoginPage';
 import { extractAuthToken } from '@features/gateway-pg/helpers/card-precondition';
 
@@ -66,75 +70,96 @@ test.describe('[MG · G][API] vendor/cleaningWallets @regression @gateway-unlink
 		}
 	});
 
-	test('[G-NEG-USER] carrierId (userId) inexistente → 404 USER_NOT_FOUND / CARRIER_NOT_FOUND', {
-		annotation: [{ type: 'tms', description: 'MG-166' }]
-	}, async ({ request }) => {
-		// No destructivo: un userId inexistente no borra nada.
-		const res = await new VendorApi({ request }).cleaningWallets({
-			provider: PROVIDER,
-			carrierUserId: USER_NONEXISTENT,
-			appId: APP_ID || 1,
-			authToken
-		});
-		expect(res.status, `esperado 404, body=${res.body}`).toBe(404);
-	});
-
-	test('[G-NEG-PROVIDER] provider inválido → 400 VENDOR_INVALID_CODE (sin mutar el carrier)', {
-		annotation: [{ type: 'tms', description: 'MG-166' }]
-	}, async ({ request }) => {
-		// ⚠ El backend valida el provider DESPUÉS de la fase-1 (mutación): resuelve carrier →
-		// mgwLinkedService.cleaningWallets(carrier, provider) → recién el switch lanza 400. Un provider
-		// fuera del enum ("FOO") es no-op SOLO porque no existe MercadopagoApp.appCode="FOO" (seguridad
-		// data-driven, no un guard de input). Para no depender de esa suerte con un carrier real,
-		// asertamos INVARIANCIA de wallets/cards (pre == post) cuando hay Oracle.
-		const filter = { carrierAccountId: CARRIER_ACCOUNT_ID, appId: APP_ID || 1 };
-		const before = ORACLE
-			? { wallets: await countWalletsByCarrierAndApp(ORACLE, filter), cards: await countCardsByCarrierAndApp(ORACLE, filter) }
-			: null;
-
-		const res = await new VendorApi({ request }).cleaningWallets({
-			provider: 'FOO' as VendorProvider,
-			carrierUserId: CARRIER_USER_ID || USER_NONEXISTENT,
-			appId: APP_ID || 1,
-			authToken
-		});
-		expect(res.status, `esperado 400, body=${res.body}`).toBe(400);
-
-		if (ORACLE && before) {
-			const after = {
-				wallets: await countWalletsByCarrierAndApp(ORACLE, filter),
-				cards: await countCardsByCarrierAndApp(ORACLE, filter)
-			};
-			expect(after.wallets, 'provider inválido NO debe borrar wallets del carrier').toBe(before.wallets);
-			expect(after.cards, 'provider inválido NO debe borrar cards del carrier').toBe(before.cards);
+	test(
+		'[G-NEG-USER] carrierId (userId) inexistente → 404 USER_NOT_FOUND / CARRIER_NOT_FOUND',
+		{
+			annotation: [{ type: 'tms', description: 'MG-166' }]
+		},
+		async ({ request }) => {
+			// No destructivo: un userId inexistente no borra nada.
+			const res = await new VendorApi({ request }).cleaningWallets({
+				provider: PROVIDER,
+				carrierUserId: USER_NONEXISTENT,
+				appId: APP_ID || 1,
+				authToken
+			});
+			expect(res.status, `esperado 404, body=${res.body}`).toBe(404);
 		}
-	});
+	);
 
-	test('[G-HAPPY] desvinculación de pasarela → 200 (DESTRUCTIVO — triple gate)', {
-		annotation: [
-			{ type: 'tms', description: 'MG-166' },
-			{ type: 'issue', description: 'destructivo: desvincula 1521' }
-		]
-	}, async ({ request }) => {
-		test.skip(
-			!DESTRUCTIVE_OK,
-			'destructivo: desvincula la pasarela del carrier 1521 (compartido). Setear MG25_RUN_DESTRUCTIVE=1 + entorno dedicado + teardown de re-vinculación.'
-		);
-		test.skip(!ORACLE, 'destructivo requiere Oracle (ORACLE_*_TEST) para verificar el efecto y planear el teardown.');
-		test.skip(!CARRIER_USER_ID || !APP_ID, 'Faltan MG25_CARRIER_USER_ID / MG25_APP_ID (datos de 1521 en TEST) [confirmar].');
+	test(
+		'[G-NEG-PROVIDER] provider inválido → 400 VENDOR_INVALID_CODE (sin mutar el carrier)',
+		{
+			annotation: [{ type: 'tms', description: 'MG-166' }]
+		},
+		async ({ request }) => {
+			// ⚠ El backend valida el provider DESPUÉS de la fase-1 (mutación): resuelve carrier →
+			// mgwLinkedService.cleaningWallets(carrier, provider) → recién el switch lanza 400. Un provider
+			// fuera del enum ("FOO") es no-op SOLO porque no existe MercadopagoApp.appCode="FOO" (seguridad
+			// data-driven, no un guard de input). Para no depender de esa suerte con un carrier real,
+			// asertamos INVARIANCIA de wallets/cards (pre == post) cuando hay Oracle.
+			const filter = { carrierAccountId: CARRIER_ACCOUNT_ID, appId: APP_ID || 1 };
+			const before = ORACLE
+				? {
+						wallets: await countWalletsByCarrierAndApp(ORACLE, filter),
+						cards: await countCardsByCarrierAndApp(ORACLE, filter)
+					}
+				: null;
 
-		const res = await new VendorApi({ request }).cleaningWallets({
-			provider: PROVIDER,
-			carrierUserId: CARRIER_USER_ID,
-			appId: APP_ID,
-			authToken
-		});
-		expect(res.status, `esperado 200, body=${res.body}`).toBe(200);
+			const res = await new VendorApi({ request }).cleaningWallets({
+				provider: 'FOO' as VendorProvider,
+				carrierUserId: CARRIER_USER_ID || USER_NONEXISTENT,
+				appId: APP_ID || 1,
+				authToken
+			});
+			expect(res.status, `esperado 400, body=${res.body}`).toBe(400);
 
-		// eslint-disable-next-line no-console -- recordatorio operativo del teardown manual.
-		console.warn(
-			`[cleaning-wallets] ⚠ Carrier 1521 DESVINCULADO (provider=${PROVIDER}). Re-vincular MANUALMENTE: ` +
-				'Stripe requiere `code` OAuth (no automatizable). El re-link rechaza 409 si el status sigue CLEANING_WALLETS.'
-		);
-	});
+			if (ORACLE && before) {
+				const after = {
+					wallets: await countWalletsByCarrierAndApp(ORACLE, filter),
+					cards: await countCardsByCarrierAndApp(ORACLE, filter)
+				};
+				expect(after.wallets, 'provider inválido NO debe borrar wallets del carrier').toBe(before.wallets);
+				expect(after.cards, 'provider inválido NO debe borrar cards del carrier').toBe(before.cards);
+			}
+		}
+	);
+
+	test(
+		'[G-HAPPY] desvinculación de pasarela → 200 (DESTRUCTIVO — triple gate)',
+		{
+			annotation: [
+				{ type: 'tms', description: 'MG-166' },
+				{ type: 'issue', description: 'destructivo: desvincula 1521' }
+			]
+		},
+		async ({ request }) => {
+			test.skip(
+				!DESTRUCTIVE_OK,
+				'destructivo: desvincula la pasarela del carrier 1521 (compartido). Setear MG25_RUN_DESTRUCTIVE=1 + entorno dedicado + teardown de re-vinculación.'
+			);
+			test.skip(
+				!ORACLE,
+				'destructivo requiere Oracle (ORACLE_*_TEST) para verificar el efecto y planear el teardown.'
+			);
+			test.skip(
+				!CARRIER_USER_ID || !APP_ID,
+				'Faltan MG25_CARRIER_USER_ID / MG25_APP_ID (datos de 1521 en TEST) [confirmar].'
+			);
+
+			const res = await new VendorApi({ request }).cleaningWallets({
+				provider: PROVIDER,
+				carrierUserId: CARRIER_USER_ID,
+				appId: APP_ID,
+				authToken
+			});
+			expect(res.status, `esperado 200, body=${res.body}`).toBe(200);
+
+			// eslint-disable-next-line no-console -- recordatorio operativo del teardown manual.
+			console.warn(
+				`[cleaning-wallets] ⚠ Carrier 1521 DESVINCULADO (provider=${PROVIDER}). Re-vincular MANUALMENTE: ` +
+					'Stripe requiere `code` OAuth (no automatizable). El re-link rechaza 409 si el status sigue CLEANING_WALLETS.'
+			);
+		}
+	);
 });

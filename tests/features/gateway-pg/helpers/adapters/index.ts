@@ -7,6 +7,7 @@ import { ebizchargeGatewayAdapter } from './ebizchargeGatewayAdapter';
 import { mercadoPagoGatewayAdapter } from './mercadoPagoGatewayAdapter';
 import { stripeGatewayAdapter } from './stripeGatewayAdapter';
 import type { GatewayPgAdapter } from './types';
+import { missingEnvKeys } from './types';
 
 const gatewayAdapterMap: Record<PaymentGateway, GatewayPgAdapter> = {
 	'mercado-pago': mercadoPagoGatewayAdapter,
@@ -44,7 +45,24 @@ export function resolveActiveGateways(): PaymentGateway[] {
 	if (pinned.length > 0) {
 		const invalid = pinned.filter(name => !validNames.includes(name as PaymentGateway));
 		if (invalid.length > 0) {
-			throw new Error(`GATEWAYS contiene pasarelas desconocidas: [${invalid.join(', ')}] — válidas: ${validNames.join(', ')}.`);
+			throw new Error(
+				`GATEWAYS contiene pasarelas desconocidas: [${invalid.join(', ')}] — válidas: ${validNames.join(', ')}.`
+			);
+		}
+		// Post-review A4: pin explícito de una pasarela con creds propias NO configuradas →
+		// aviso accionable (el pin manda, NO throw). Riesgo cross-tenant: sin sus creds la
+		// cadena de login (USER_CARRIER_<GW>_<ENV> → … → USER_CARRIER) cae al carrier
+		// DEFAULT equivocado y el run "de esa pasarela" opera sobre otro tenant.
+		for (const name of pinned as PaymentGateway[]) {
+			const adapter = gatewayAdapterMap[name];
+			if (adapter.credsEnvKeys.length > 0 && !adapter.isConfigured()) {
+				const missing = missingEnvKeys(adapter.credsEnvKeys);
+				console.warn(
+					`⚠️  GATEWAYS pinnea '${name}' pero faltan sus creds propias: [${missing.join(', ')}] ` +
+						`(o su variante _<ENV>). Riesgo: el login caerá al carrier DEFAULT equivocado ` +
+						`(cross-tenant). Configurarlas en el .env del ambiente activo antes de correr.`
+				);
+			}
 		}
 		return pinned as PaymentGateway[];
 	}
@@ -80,7 +98,7 @@ export {
 	type CardIntent,
 	type GatewayName,
 	type GenericTestCard,
-	type ResolveCardArgs,
+	type ResolveCardArgs
 } from '../../../../fixtures/gateways/_shared';
 
 /**
@@ -100,8 +118,9 @@ export {
  *   6. `xrayKeys` apunta EXACTAMENTE a la entrada del registry de su gateway
  *      (identidad referencial — evita copias divergentes del registry).
  *
- * Si los datos divergen, lanza error en runtime — útil como check de
- * integridad en tests o smoke. NO se ejecuta automáticamente.
+ * Si los datos divergen, lanza error en runtime. SÍ se ejecuta automáticamente:
+ * `specs/_parametrized/adapters-consistency.unit.spec.ts` lo invoca en el project
+ * `unit` (`npm run test:test:gateway:unit`), así el drift falla en CI.
  *
  * Devuelve `true` si todo consistente, lanza si hay drift.
  */
@@ -114,26 +133,28 @@ export function assertAdapterFixtureConsistency(): true {
 		const resolverSupports3ds = intents.includes('HAPPY_AUTH');
 		if (adapter.requires3ds !== resolverSupports3ds) {
 			throw new Error(
-				`[adapter-fixture-drift] ${gateway}.requires3ds = ${adapter.requires3ds} pero el resolver ${resolverSupports3ds ? 'soporta' : 'NO soporta'} HAPPY_AUTH.`,
+				`[adapter-fixture-drift] ${gateway}.requires3ds = ${adapter.requires3ds} pero el resolver ${resolverSupports3ds ? 'soporta' : 'NO soporta'} HAPPY_AUTH.`
 			);
 		}
 
 		// 2. Intent mínimo HAPPY_NO_AUTH.
 		if (!intents.includes('HAPPY_NO_AUTH')) {
-			throw new Error(`[adapter-fixture-drift] el resolver de ${gateway} no soporta HAPPY_NO_AUTH (intent mínimo).`);
+			throw new Error(
+				`[adapter-fixture-drift] el resolver de ${gateway} no soporta HAPPY_NO_AUTH (intent mínimo).`
+			);
 		}
 
 		// 3. nativeExtraField solo aplica al form nativo Angular.
 		if (adapter.nativeExtraField && adapter.cardForm !== 'native-angular') {
 			throw new Error(
-				`[adapter-fixture-drift] ${gateway}.nativeExtraField='${adapter.nativeExtraField}' pero cardForm='${adapter.cardForm}' (solo aplica a 'native-angular').`,
+				`[adapter-fixture-drift] ${gateway}.nativeExtraField='${adapter.nativeExtraField}' pero cardForm='${adapter.cardForm}' (solo aplica a 'native-angular').`
 			);
 		}
 
 		// 4. Stripe Elements dispara outcome por número.
 		if (adapter.cardForm === 'stripe-elements' && adapter.outcomeTrigger !== 'number') {
 			throw new Error(
-				`[adapter-fixture-drift] ${gateway}: cardForm 'stripe-elements' exige outcomeTrigger 'number' (actual: '${adapter.outcomeTrigger}').`,
+				`[adapter-fixture-drift] ${gateway}: cardForm 'stripe-elements' exige outcomeTrigger 'number' (actual: '${adapter.outcomeTrigger}').`
 			);
 		}
 
@@ -145,14 +166,14 @@ export function assertAdapterFixtureConsistency(): true {
 		// 6. Registry Xray por identidad referencial (sin copias divergentes).
 		if (adapter.xrayKeys !== XRAY_KEYS_BY_GATEWAY[gateway]) {
 			throw new Error(
-				`[adapter-fixture-drift] ${gateway}.xrayKeys NO referencia XRAY_KEYS_BY_GATEWAY['${gateway}'] (data/xray-keys.ts es la única fuente).`,
+				`[adapter-fixture-drift] ${gateway}.xrayKeys NO referencia XRAY_KEYS_BY_GATEWAY['${gateway}'] (data/xray-keys.ts es la única fuente).`
 			);
 		}
 
 		// 7. Journey defaults por identidad referencial (S8 — sin copias divergentes).
 		if (adapter.journeyDefaults !== journeyDefaultsFor(gateway)) {
 			throw new Error(
-				`[adapter-fixture-drift] ${gateway}.journeyDefaults NO referencia JOURNEY_DEFAULTS_BY_GATEWAY['${gateway}'] (data/journey-defaults.ts es la única fuente).`,
+				`[adapter-fixture-drift] ${gateway}.journeyDefaults NO referencia JOURNEY_DEFAULTS_BY_GATEWAY['${gateway}'] (data/journey-defaults.ts es la única fuente).`
 			);
 		}
 	}

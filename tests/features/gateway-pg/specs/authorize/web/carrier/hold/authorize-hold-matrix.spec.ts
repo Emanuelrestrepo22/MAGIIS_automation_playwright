@@ -58,8 +58,14 @@
 //      (la deja el caso seed TC1051 / TC1061); sin ella el caso skipea con el motivo.
 import { defineHoldSuite } from '@features/gateway-pg/specs/_parametrized/factories/hold.factory';
 
+// Pickup dentro de la geocerca (~500 m) del telefono driver fisico: sin esto el viaje se crea
+// pero NO le llega al conductor y no puede finalizarse desde la App Driver. Mismo valor y misma
+// razon que el DRIVER_E2E_PICKUP de la factory de cargo a bordo. No toca el default global.
+const DRIVER_E2E_PICKUP = 'Ciudad de la Paz 2238, Buenos Aires, Argentina';
+
 defineHoldSuite('authorize', {
 	suiteSuffix: 'resto de la taxonomía',
+	origin: DRIVER_E2E_PICKUP,
 	cases: [
 		// Ejecutable con el motor actual.
 		'empresaDecline',

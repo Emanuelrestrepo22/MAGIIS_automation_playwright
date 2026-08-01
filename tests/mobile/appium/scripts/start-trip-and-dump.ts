@@ -12,13 +12,13 @@ import { remote } from 'webdriverio';
 import { writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 
-const UDID    = process.env.ANDROID_UDID        ?? 'R92XB0B8F3J';
+const UDID = process.env.ANDROID_UDID ?? 'R92XB0B8F3J';
 const PACKAGE = process.env.ANDROID_APP_PACKAGE ?? 'com.magiis.app.test.driver';
 
 const log = (msg: string) => console.log(`[start-trip] ${msg}`);
 
 async function switchToWebView(driver: WebdriverIO.Browser): Promise<boolean> {
-	const contexts = await driver.getContexts() as string[];
+	const contexts = (await driver.getContexts()) as string[];
 	log(`Contextos: ${contexts.join(', ')}`);
 	const wv = contexts.find((c: string) => c.startsWith('WEBVIEW'));
 	if (!wv) return false;
@@ -34,8 +34,8 @@ async function tapButtonByText(driver: WebdriverIO.Browser, text: string): Promi
 		allBtns = [];
 	}
 	for (const btn of allBtns) {
-		const btnText  = (await btn.getText().catch(() => '')).trim();
-		const visible  = await btn.isDisplayed().catch(() => false);
+		const btnText = (await btn.getText().catch(() => '')).trim();
+		const visible = await btn.isDisplayed().catch(() => false);
 		log(`  btn: "${btnText}" visible=${visible}`);
 		if (btnText === text && visible) {
 			await btn.click();
@@ -47,57 +47,69 @@ async function tapButtonByText(driver: WebdriverIO.Browser, text: string): Promi
 }
 
 async function dumpWebView(driver: WebdriverIO.Browser, label: string): Promise<void> {
-	const dump = await driver.execute<string, []>(() => {
-		const out: string[] = [`URL: ${window.location.href}`];
-		document.querySelectorAll('[id]').forEach(el => {
-			const text = (el as HTMLElement).innerText?.trim().replace(/\n/g, ' ').slice(0, 120) ?? '';
-			out.push(`[id="${el.id}"] tag=${el.tagName.toLowerCase()} text="${text}"`);
-		});
-		document.querySelectorAll('button, ion-button, [role="button"]').forEach(el => {
-			const text = (el as HTMLElement).innerText?.trim().replace(/\n/g, ' ').slice(0, 120) ?? '';
-			const cls  = el.className?.toString().slice(0, 80) ?? '';
-			if (text) out.push(`[BTN] id="${el.id}" class="${cls}" text="${text}"`);
-		});
-		document.querySelectorAll('span, h1, h2, h3, ion-label, ion-title').forEach(el => {
-			const text = (el as HTMLElement).innerText?.trim().replace(/\n/g, ' ').slice(0, 100) ?? '';
-			if (text.length > 1 && text.length < 100)
-				out.push(`[TEXT] ${el.tagName.toLowerCase()} text="${text}"`);
-		});
-		document.querySelectorAll('[class*="page"], [class*="travel"], [class*="trip"], [class*="navigation"]').forEach(el => {
-			out.push(`[CONTAINER] ${el.tagName.toLowerCase()} class="${el.className?.toString().slice(0, 100)}"`);
-		});
-		return out.join('\n');
-	}).catch(e => `JS error: ${e}`);
+	const dump = await driver
+		.execute<string, []>(() => {
+			const out: string[] = [`URL: ${window.location.href}`];
+			document.querySelectorAll('[id]').forEach(el => {
+				const text = (el as HTMLElement).innerText?.trim().replace(/\n/g, ' ').slice(0, 120) ?? '';
+				out.push(`[id="${el.id}"] tag=${el.tagName.toLowerCase()} text="${text}"`);
+			});
+			document.querySelectorAll('button, ion-button, [role="button"]').forEach(el => {
+				const text = (el as HTMLElement).innerText?.trim().replace(/\n/g, ' ').slice(0, 120) ?? '';
+				const cls = el.className?.toString().slice(0, 80) ?? '';
+				if (text) out.push(`[BTN] id="${el.id}" class="${cls}" text="${text}"`);
+			});
+			document.querySelectorAll('span, h1, h2, h3, ion-label, ion-title').forEach(el => {
+				const text = (el as HTMLElement).innerText?.trim().replace(/\n/g, ' ').slice(0, 100) ?? '';
+				if (text.length > 1 && text.length < 100) out.push(`[TEXT] ${el.tagName.toLowerCase()} text="${text}"`);
+			});
+			document
+				.querySelectorAll('[class*="page"], [class*="travel"], [class*="trip"], [class*="navigation"]')
+				.forEach(el => {
+					out.push(
+						`[CONTAINER] ${el.tagName.toLowerCase()} class="${el.className?.toString().slice(0, 100)}"`
+					);
+				});
+			return out.join('\n');
+		})
+		.catch(e => `JS error: ${e}`);
 
 	console.log(`\n=== DUMP: ${label} ===\n${dump}\n=== FIN ===`);
 	mkdirSync('evidence/dom-dump', { recursive: true });
-	const ts  = new Date().toISOString().replace(/[:.]/g, '-');
+	const ts = new Date().toISOString().replace(/[:.]/g, '-');
 	writeFileSync(join('evidence/dom-dump', `${label}-${ts}.txt`), dump, 'utf-8');
 	log(`✓ Guardado: evidence/dom-dump/${label}-${ts}.txt`);
 }
 
 async function run(): Promise<void> {
 	const driver = await remote({
-		protocol: 'http', hostname: 'localhost', port: 4723, path: '/',
+		protocol: 'http',
+		hostname: 'localhost',
+		port: 4723,
+		path: '/',
 		logLevel: 'warn',
 		capabilities: {
-			platformName:               'Android',
-			'appium:automationName':    'UiAutomator2',
-			'appium:deviceName':        'SM-A055M',
-			'appium:udid':              UDID,
-			'appium:appPackage':        PACKAGE,
-			'appium:appActivity':       '.MainActivity',
-			'appium:noReset':           true,
-			'appium:forceAppLaunch':    false,
+			platformName: 'Android',
+			'appium:automationName': 'UiAutomator2',
+			'appium:deviceName': 'SM-A055M',
+			'appium:udid': UDID,
+			'appium:appPackage': PACKAGE,
+			'appium:appActivity': '.MainActivity',
+			'appium:noReset': true,
+			'appium:forceAppLaunch': false,
 			'appium:newCommandTimeout': 120,
-			'appium:chromedriverAutodownload': true,
-		} as Record<string, unknown>,
+			'appium:chromedriverAutodownload': true
+		} as Record<string, unknown>
 	});
 	log('✓ Sesión adjuntada');
 	await driver.pause(2000);
 
 	const ok = await switchToWebView(driver);
-	if (!ok) { log('⚠  Sin WebView'); await driver.deleteSession(); return; }
+	if (!ok) {
+		log('⚠  Sin WebView');
+		await driver.deleteSession();
+		return;
+	}
 	await driver.pause(1000);
 
 	const url0 = await driver.execute<string, []>(() => window.location.href).catch(() => '');
@@ -107,7 +119,11 @@ async function run(): Promise<void> {
 	if (url0.includes('TravelConfirmPage')) {
 		log('Paso 1: Aceptar viaje...');
 		const accepted = await tapButtonByText(driver, 'Aceptar');
-		if (!accepted) { log('⚠  Botón Aceptar no encontrado'); await driver.deleteSession(); return; }
+		if (!accepted) {
+			log('⚠  Botón Aceptar no encontrado');
+			await driver.deleteSession();
+			return;
+		}
 		await driver.pause(4000);
 		await switchToWebView(driver);
 		await driver.pause(1000);
@@ -127,7 +143,11 @@ async function run(): Promise<void> {
 	// ── PASO 3: Empezar Viaje ─────────────────────────────────────────────────
 	log('Paso 2: Empezar Viaje...');
 	const started = await tapButtonByText(driver, 'Empezar Viaje');
-	if (!started) { log('⚠  Botón "Empezar Viaje" no encontrado'); await driver.deleteSession(); return; }
+	if (!started) {
+		log('⚠  Botón "Empezar Viaje" no encontrado');
+		await driver.deleteSession();
+		return;
+	}
 	await driver.pause(4000);
 	await switchToWebView(driver);
 	await driver.pause(1000);

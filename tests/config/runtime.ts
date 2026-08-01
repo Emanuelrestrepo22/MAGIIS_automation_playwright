@@ -112,7 +112,11 @@ export function resolveLoginPath(role: LoginRole): string {
 	if (role === 'carrier') {
 		// Carrier sí acepta el fallback global porque este proyecto usa LOGIN_PATH
 		// como atajo para el portal carrier.
-		return normalizeEnvValue(process.env.LOGIN_PATH_CARRIER) ?? normalizeEnvValue(process.env.LOGIN_PATH) ?? DEFAULT_LOGIN_PATHS.carrier;
+		return (
+			normalizeEnvValue(process.env.LOGIN_PATH_CARRIER) ??
+			normalizeEnvValue(process.env.LOGIN_PATH) ??
+			DEFAULT_LOGIN_PATHS.carrier
+		);
 	}
 
 	if (role === 'contractor') {

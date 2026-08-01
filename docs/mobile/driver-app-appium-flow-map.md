@@ -22,7 +22,8 @@ Ejecución (PowerShell): `node --loader ts-node/esm tests/mobile/appium/scripts/
 con `APPIUM_SERVER_URL`, `ANDROID_UDID`, `DRIVER_EMAIL`, `DRIVER_PASSWORD`, `NODE_OPTIONS=--experimental-specifier-resolution=node`.
 
 **Convención de evidencia:** `[LIVE]` = observado directamente en device esta corrida ·
-`[SCREEN/HARNESS]` = selector ya en un screen/harness, confirmado consistente · `[NO-VALIDADO]` = requiere acción destructiva/trip real/GPS mock.
+`[SCREEN/HARNESS]` = selector ya en un screen/harness, confirmado consistente · `[NO-VALIDADO]` = requiere acción destructiva/trip real/GPS mock ·
+`[SOURCE]` = derivado del código fuente de la app (`repo.magiis/magiis-mobile-driver-v2@develop`), **todavía NO ejercitado en device** — el mecanismo está probado por lectura del template/controlador Angular, no por observación. Pasa a `[LIVE]` cuando se corra contra el teléfono.
 
 ---
 
@@ -230,6 +231,45 @@ device): travelId 66762/66771 (→ Senna), 66776/66782/66787 (→ argento sin en
 
 ---
 
+### 6.2 Cómo SALIR de las pantallas de viaje (cancelar / finalizar) `[SOURCE 2026-07-30]`
+
+> §6 documenta cómo AVANZAR por el ciclo de viaje. Esta sección documenta lo contrario: cómo **abandonar** una
+> pantalla de viaje y volver a `/navigator/home`. Es lo que necesita la recuperación de un conductor varado, y
+> faltaba: por eso una sesión anterior concluyó —incorrectamente— que el icono de cerrar "no popea la página".
+> Mecanismo derivado de `travel-confirm.html`/`.ts`, `travel-to-start.html`/`.ts` y `travel-in-progress.html`
+> (`repo.magiis/magiis-mobile-driver-v2@develop`). **Todavía NO ejercitado en device.**
+
+| Pantalla | Disparador de salida | Qué pasa al tocarlo | Cómo se completa |
+|---|---|---|---|
+| TravelConfirmPage · `app-page-travel-confirm` | **SPAN** `.actions .cancel .action-icon` — el handler Angular vive en el span, **NO** en el `ion-icon[name="close"]` interno `[SOURCE]` | `cancelTravel()` sólo **PRESENTA** el modal `app-travel-cancel`. **La URL no cambia** hasta elegir un motivo `[SOURCE]` | Primer `button.btn-black` (CANNOT_COVER) → `onDidDismiss` → `cancel()` → `travelService.refuseTravel()` → `router.navigate(['navigator/home', { mustReset: true }])` `[SOURCE]` |
+| TravelToStartPage · `app-page-travel-to-start` | Mismo span `.actions .cancel .action-icon` → `openCancelTravelModal()` `[SOURCE]` | Ídem: abre el modal, no navega `[SOURCE]` | Primer `button.btn-black` (CANNOT_COVER). Acá `incomingTrip: false` **sí** muestra "No encontré al pasajero", pero ese motivo pasa por `statusService.canPickUp()` (geocerca) y fuera de rango hace `dismiss(null)` = NO-OP → **preferir siempre CANNOT_COVER** `[SOURCE]` |
+| TravelInProgressPage · `app-page-travel-in-progress` | **NO tiene acción de cancelar** — los únicos bloques `.cancel .action-container` de la app están en travel-confirm y travel-to-start `[SOURCE]` | — | Única salida = FINALIZAR: `.btn-finish-container button` → `finishTravelDialog()` → `app-confirm-modal` "Si" → cae en TravelResumePage (§6) `[SOURCE]` |
+
+**Trampas confirmadas por lectura de fuente — cada una produce un falso diagnóstico:**
+
+- **El `ion-icon` no es el control.** Clickear `ion-icon[name="close"]` (por JS o por tap) no dispara nada: el `(click)` está en el span padre. Un intento MEDIDO en device el 2026-07-29 hizo exactamente eso y la URL siguió en `TravelConfirmPage` — se leyó como "el icono no funciona" cuando en realidad el modal quedaba abierto sin contestar.
+- **El "Cerrar" del modal es un NO-OP.** El footer `button.btn-outlined-primary` llama `dismiss(null)`: cierra el modal sin cancelar el viaje y deja al conductor donde estaba. **Nunca clickearlo** al recuperar.
+- **En travel-confirm sólo hay UN motivo.** `componentProps: { incomingTrip: true }` oculta "No encontré al pasajero" vía `*ngIf="!isIncomingTrip"`, así que el primer `button.btn-black` es el único camino.
+- **El botón de finalizar cambia de clase pero no de handler.** Alterna `btn finish` ↔ `btn-outlined-red` según `timerOn` → targetear por **contenedor** (`.btn-finish-container button`), nunca por clase.
+
+**Por qué esto libera incluso un viaje ya cancelado del lado del servidor:** `refuseTravel()` navega a
+`navigator/home` tanto en el `.then` como en el `.catch`. Es justo el caso vivo del 2026-07-29 — el viaje 67758
+estaba cancelado server-side y la app seguía en `TravelConfirmPage`; el rechazo falla en el backend y el
+conductor se libera igual.
+
+**Implementación:** `tests/mobile/appium/helpers/driverStaleTripRecovery.ts` (`recoverDriverToHome()`, commit
+`a6b4dec`) — única implementación, consumida por `DriverCargoDeclineHarness.freeStaleTrip()` y por
+`scripts/driver-free-stale-trip.ts`. Es una **state machine**, no una secuencia: las rutas encadenan
+(in-progress → resume → firma → home) y encima pueden apilarse overlays, así que cada vuelta lee lo presente.
+El éxito **siempre** se verifica por polling de la URL hasta `/navigator/home`, nunca por ausencia de un elemento.
+
+**Para promover estas filas a `[LIVE]`:** varar al conductor a propósito en cada pantalla (aceptar y no
+arrancar → TravelToStart; arrancar y no finalizar → TravelInProgress; dejar la oferta sin contestar →
+TravelConfirm) y correr `driver-free-stale-trip.ts` esperando la traza
+`tap X … abre modal de cancelacion` → `motivo "no puedo cubrir"` → `liberado -> /navigator/home`.
+
+---
+
 ## 7. Transiciones validadas (device, esta corrida)
 
 ```
@@ -302,5 +342,6 @@ stale payment modal + app-alert-modal ──[force-stop + relaunch]──▶ /pr
 ## Archivos de referencia
 - Screens: `tests/mobile/appium/driver/{DriverHomeScreen,DriverTripRequestScreen,DriverTripNavigationScreen,DriverTripSummaryScreen,DriverTripPaymentScreen,DriverFlowSelectors}.ts`
 - Harness: `tests/mobile/appium/harness/{DriverCargoDeclineHarness,DriverTripHappyPathHarness}.ts`
+- Recuperación de conductor varado: `tests/mobile/appium/helpers/driverStaleTripRecovery.ts` (mecanismo de salida de las pantallas de viaje — §6.2)
 - Scripts draft de esta corrida: `tests/mobile/appium/scripts/{driver-explore-flow-map,driver-explore-menu,driver-relogin-and-home}.ts`
 - Mapa estático (source): `docs/mobile/driver-app-flow-map.md`

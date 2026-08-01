@@ -23,19 +23,23 @@ export class PassengerHomeScreen extends AppiumSessionBase {
 	}
 
 	private async readModeLabel(): Promise<string> {
-		return this.executeInWebView((primarySelector: string, fallbackSelector: string) => {
-			const selectors = [primarySelector, fallbackSelector];
+		return this.executeInWebView(
+			(primarySelector: string, fallbackSelector: string) => {
+				const selectors = [primarySelector, fallbackSelector];
 
-			for (const selector of selectors) {
-				const label = document.querySelector(selector);
-				const text = (label?.textContent ?? '').replace(/\s+/g, ' ').trim();
-				if (text) {
-					return text;
+				for (const selector of selectors) {
+					const label = document.querySelector(selector);
+					const text = (label?.textContent ?? '').replace(/\s+/g, ' ').trim();
+					if (text) {
+						return text;
+					}
 				}
-			}
 
-			return '';
-		}, this.homeModeLabelSelector, '.toggle_label');
+				return '';
+			},
+			this.homeModeLabelSelector,
+			'.toggle_label'
+		);
 	}
 
 	private async isToggleDisabled(): Promise<boolean> {
@@ -64,24 +68,32 @@ export class PassengerHomeScreen extends AppiumSessionBase {
 
 		const currentUrl = await this.executeInWebView(() => window.location.href).catch(() => '');
 		if (currentUrl.includes('/cards')) {
-			const clickedBack = await this.executeInWebView((selectors: string[]) => {
-				const isVisible = (element: Element): boolean => {
-					const html = element as HTMLElement;
-					const rect = html.getBoundingClientRect();
-					const style = window.getComputedStyle(html);
-					return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
-				};
+			const clickedBack = await this.executeInWebView(
+				(selectors: string[]) => {
+					const isVisible = (element: Element): boolean => {
+						const html = element as HTMLElement;
+						const rect = html.getBoundingClientRect();
+						const style = window.getComputedStyle(html);
+						return (
+							style.display !== 'none' &&
+							style.visibility !== 'hidden' &&
+							rect.width > 0 &&
+							rect.height > 0
+						);
+					};
 
-				for (const selector of selectors) {
-					const element = document.querySelector(selector) as HTMLElement | null;
-					if (element && isVisible(element)) {
-						element.click();
-						return true;
+					for (const selector of selectors) {
+						const element = document.querySelector(selector) as HTMLElement | null;
+						if (element && isVisible(element)) {
+							element.click();
+							return true;
+						}
 					}
-				}
 
-				return false;
-			}, ['app-cards .arrow-back', 'app-cards ion-icon[aria-label="arrow back outline"]']);
+					return false;
+				},
+				['app-cards .arrow-back', 'app-cards ion-icon[aria-label="arrow back outline"]']
+			);
 
 			if (clickedBack) {
 				const onHomeAfterBack =
@@ -148,7 +160,9 @@ export class PassengerHomeScreen extends AppiumSessionBase {
 		}
 
 		if (await this.isToggleDisabled()) {
-			throw new Error(`PassengerHomeScreen.ensureProfileMode() - profile toggle is disabled, cannot switch to ${mode}`);
+			throw new Error(
+				`PassengerHomeScreen.ensureProfileMode() - profile toggle is disabled, cannot switch to ${mode}`
+			);
 		}
 
 		const clicked = await this.executeInWebView((selector: string) => {

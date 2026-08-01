@@ -81,7 +81,7 @@ export abstract class BasePage {
 	 */
 	protected async waitForAutocompleteOptionsReady(
 		component: Locator,
-		options: { timeoutMs?: number } = {},
+		options: { timeoutMs?: number } = {}
 	): Promise<void> {
 		const timeoutMs = options.timeoutMs ?? 4_000;
 		await expect
@@ -95,8 +95,9 @@ export abstract class BasePage {
 				},
 				{
 					timeout: timeoutMs,
-					message: 'BL-012: esperando opciones de autocomplete Angular (dropdown nativo, inline o CDK overlay)',
-				},
+					message:
+						'BL-012: esperando opciones de autocomplete Angular (dropdown nativo, inline o CDK overlay)'
+				}
 			)
 			.toBeGreaterThan(0);
 	}

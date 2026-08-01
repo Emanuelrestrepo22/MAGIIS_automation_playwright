@@ -8,7 +8,11 @@ test.describe('[TS-AUTH-TC01] Login exitoso portal carrier — redirección al d
 	// y no depender del storageState generado por el global setup.
 	test.use({ role: 'carrier', storageState: { cookies: [], origins: [] } });
 
-	test('[TS-AUTH-TC01] validar login exitoso portal carrier con credenciales válidas', async ({ page, loginPage, credentials }) => {
+	test('[TS-AUTH-TC01] validar login exitoso portal carrier con credenciales válidas', async ({
+		page,
+		loginPage,
+		credentials
+	}) => {
 		// Tomamos las credenciales resueltas por el fixture para mantener
 		// el test desacoplado de nombres concretos de variables de entorno.
 		const { username, password } = credentials;
@@ -43,28 +47,42 @@ test.describe('[TS-AUTH-TC01] Login exitoso portal carrier — redirección al d
 
 			// Buscar cualquier clave que contenga "token" o "auth" (case-insensitive)
 			// para ser resiliente al nombre exacto que use la app.
-			const tokenEntry = Object.entries(storageSnapshot).find(
-				([key]) => /token|auth|jwt|session/i.test(key)
-			);
+			const tokenEntry = Object.entries(storageSnapshot).find(([key]) => /token|auth|jwt|session/i.test(key));
 
 			if (tokenEntry) {
 				const [tokenKey, tokenValue] = tokenEntry;
-				debugLog('auth', `[TS-AUTH-TC01][STORAGE] Token encontrado → key: "${tokenKey}", length: ${tokenValue.length}`);
+				debugLog(
+					'auth',
+					`[TS-AUTH-TC01][STORAGE] Token encontrado → key: "${tokenKey}", length: ${tokenValue.length}`
+				);
 				// Debería existir un token con valor no vacío tras el login exitoso
 				expect(tokenValue, `Token en "${tokenKey}" no debe estar vacío`).toBeTruthy();
 			} else {
 				// Si no hay clave con "token", puede estar en una cookie — registramos y seguimos
-				console.warn('[TS-AUTH-TC01][STORAGE] No se encontró clave de token en localStorage — puede estar en cookie de sesión');
+				console.warn(
+					'[TS-AUTH-TC01][STORAGE] No se encontró clave de token en localStorage — puede estar en cookie de sesión'
+				);
 
 				const cookies = await page.context().cookies();
 				const sessionCookie = cookies.find(c => /token|session|auth/i.test(c.name));
 				if (sessionCookie) {
-					debugLog('auth', `[TS-AUTH-TC01][COOKIE] Sesión en cookie → name: "${sessionCookie.name}", domain: ${sessionCookie.domain}`);
+					debugLog(
+						'auth',
+						`[TS-AUTH-TC01][COOKIE] Sesión en cookie → name: "${sessionCookie.name}", domain: ${sessionCookie.domain}`
+					);
 					expect(sessionCookie.value, 'Cookie de sesión no debe estar vacía').toBeTruthy();
 				} else {
 					// Falla informativa: adjunta el snapshot completo para diagnóstico
-					console.error('[TS-AUTH-TC01][STORAGE] Snapshot completo:', JSON.stringify(storageSnapshot, null, 2));
-					expect.soft(false, 'No se encontró token en localStorage ni en cookies — revisar cómo persiste la sesión').toBeTruthy();
+					console.error(
+						'[TS-AUTH-TC01][STORAGE] Snapshot completo:',
+						JSON.stringify(storageSnapshot, null, 2)
+					);
+					expect
+						.soft(
+							false,
+							'No se encontró token en localStorage ni en cookies — revisar cómo persiste la sesión'
+						)
+						.toBeTruthy();
 				}
 			}
 		});

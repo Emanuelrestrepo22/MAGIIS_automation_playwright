@@ -11,7 +11,7 @@ import { ErrorPopup as SharedErrorPopup } from '../../../pages/carrier/ErrorPopu
  * `ErrorPopup` permanece como primitiva compartida en `pages/carrier/`.
  */
 export class ThreeDSErrorPopup extends SharedErrorPopup {
-  constructor(page: Page) {
-    super(page);
-  }
+	constructor(page: Page) {
+		super(page);
+	}
 }

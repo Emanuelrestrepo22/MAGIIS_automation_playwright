@@ -43,7 +43,7 @@ import { getGatewayPgAdapter } from '@features/gateway-pg/helpers/adapters';
 import {
 	expectNoThreeDSModal,
 	loginAsDispatcher,
-	STRIPE_TEST_CARDS,
+	STRIPE_TEST_CARDS
 } from '@features/gateway-pg/fixtures/gateway.fixtures';
 
 const SCHEDULED_TRIP_DETAIL_URL = /\/home\/carrier\/travel\/detail\?travelId=\d+&mode=3/;

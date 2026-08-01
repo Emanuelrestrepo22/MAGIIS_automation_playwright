@@ -14,9 +14,11 @@
  * NOTA @atc — MAPEO POR ÁREA (aceptado): el idmap `atp-mg-gateway-idmap.md` es
  * API-level (TC-PAY-*); los TS-STRIPE-P2-TC00x (UI) no tienen 1:1. `fillMinimum`
  * (alta + validación tarjeta preautorizada) → MG-148 (área C, TC-PAY-C-01), mismo
- * mapeo que el carrier. `selectSavedCard` (selección de tarjeta guardada, UI) →
- * MG-482 (área C UI, TC-PAY-C-05). Reasignar cuando el ATP tenga TCs UI del alta
- * contractor.
+ * mapeo que el carrier. `selectSavedCard` quedó SIN `@atc`: llevaba MG-482
+ * (TC-PAY-C-05), que valida las validaciones de formulario de tarjeta —
+ * número/fecha/CVV/ZIP/titular — y seleccionar una tarjeta ya guardada no ejercita
+ * nada de eso. Sin Test propio en el ATP, un caso unmapped es visible y auditable;
+ * una key cruzada acredita evidencia falsa. Decorar si el ATP crea el TC UI.
  *
  * Convención KATA aplicada:
  *   - Extiende UiBase.
@@ -51,7 +53,10 @@ export class ContractorNewTravelPage extends UiBase {
 	 * Mini-flujo ATC: completa el formulario mínimo (usuario/origen/destino) y
 	 * vincula/valida la tarjeta preautorizada. @atc MG-148 (área C — pendiente reasignar).
 	 */
-	@atc('MG-148', { severity: 'critical', description: 'Alta de viaje contractor: completar formulario + validar tarjeta preautorizada' })
+	@atc('MG-148', {
+		severity: 'critical',
+		description: 'Alta de viaje contractor: completar formulario + validar tarjeta preautorizada'
+	})
 	async fillMinimum(opts: NewTravelFormInput): Promise<void> {
 		await this.legacy.fillMinimum(opts);
 	}
@@ -80,17 +85,21 @@ export class ContractorNewTravelPage extends UiBase {
 	 * usa como precondición para `test.skip`.
 	 */
 	async hasHighlightedSavedCard(timeout = 5_000): Promise<boolean> {
-		const highlighted = this.page
-			.locator('.ng-star-inserted.highlighted > .data-with-icon-col')
-			.first();
+		const highlighted = this.page.locator('.ng-star-inserted.highlighted > .data-with-icon-col').first();
 		return highlighted.isVisible({ timeout }).catch(() => false);
 	}
 
 	/**
-	 * Mini-flujo ATC: selecciona la tarjeta guardada resaltada del colaborador.
-	 * @atc MG-482 (área C UI — pendiente reasignar).
+	 * Selecciona la tarjeta guardada resaltada del colaborador.
+	 *
+	 * SIN `@atc` a propósito. Antes llevaba `@atc('MG-482')` con la nota "pendiente reasignar", y era
+	 * una key CRUZADA: MG-482 (C-05) valida "validaciones de formulario de tarjeta —
+	 * número/fecha/CVV/ZIP/titular", es decir un NEGATIVO de campos inválidos que este método no
+	 * ejercita ni de lejos. Seleccionar una tarjeta ya guardada no tiene Test propio entre los 33 de
+	 * las acciones estandarizadas, así que se queda sin key: un caso unmapped es visible y auditable,
+	 * una key cruzada acredita evidencia falsa en un Test ajeno. Decorar sólo si el ATP crea el Test.
 	 */
-	@atc('MG-482', { severity: 'critical', description: 'Alta de viaje contractor: seleccionar tarjeta guardada del colaborador' })
+	@step
 	async selectSavedCard(): Promise<void> {
 		await this.legacy.selectSavedCard();
 	}
@@ -113,14 +122,23 @@ export class ContractorNewTravelPage extends UiBase {
 	}
 
 	/**
-	 * Click en "Validar" del form NATIVO Angular y espera el oráculo de tarjeta válida
-	 * ("Tarjeta válida" / "Valid card") — mismo contrato que el delegate carrier
-	 * (`CarrierNewTravelPage.validateNativeCard`; verificado live en Authorize, eBiz asumido).
+	 * Click en "Validar" del form NATIVO Angular y espera el oráculo de tarjeta validada.
+	 * Mismo contrato que el delegate carrier (`CarrierNewTravelPage.validateNativeCard`):
+	 * acepta CUALQUIERA de las dos manifestaciones verificadas live del éxito — toast
+	 * "Tarjeta válida" (alta de tarjeta nueva) o Forma de Pago resuelta a "*** <last4>"
+	 * (tarjeta ya vinculada). Ver la historia del oráculo en el docblock del carrier: el
+	 * toast desaparecía por la política AVS de la cuenta sandbox, no por cambio del FE.
 	 */
 	@step
-	async validateNativeCard(): Promise<void> {
+	async validateNativeCard(last4: string): Promise<void> {
 		await this.page.getByRole('button', { name: /^(Valid|Validar)$/i }).click();
-		await expect(this.page.getByText(/Tarjeta v[áa]lida|Valid card|Card valid/i).first()).toBeVisible({ timeout: 20_000 });
+		const validated = this.page
+			.getByText(/Tarjeta v[áa]lida|Valid card|Card valid/i)
+			.or(this.page.getByText(new RegExp(`\\*+\\s*${last4}`)));
+		await expect(
+			validated.first(),
+			`validación OK: toast "Tarjeta válida" o Forma de Pago resuelta a *** ${last4}`
+		).toBeVisible({ timeout: 45_000 });
 	}
 
 	/** Espera a que el botón "Seleccionar Vehículo" esté habilitado. */

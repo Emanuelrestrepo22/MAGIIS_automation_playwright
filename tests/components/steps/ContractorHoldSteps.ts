@@ -12,8 +12,9 @@
  *   - Import por alias (@ui, @features, @TestFixture) — sin relativos nuevos.
  *   - `runColaboradorScenario` orquesta; los pasos atómicos (login, 3DS) se exponen.
  *
- * NOTA @atc — los ATC viven en las Page components (fillMinimum → MG-148,
- * selectSavedCard → MG-482, 3DS → MG-152); este Step orquesta, no mapea TCs directamente.
+ * NOTA @atc — los ATC viven en las Page components (fillMinimum → MG-148, 3DS → MG-152);
+ * este Step orquesta, no mapea TCs directamente. `selectSavedCard` ya no lleva key: la que
+ * tenía (MG-482) es el TC de validaciones de formulario de tarjeta, que no ejercita.
  */
 
 import type { TestContextOptions } from '@TestContext';
@@ -27,17 +28,20 @@ import { cardFormFor } from '@ui/carrier/card-forms';
 import { ContractorNewTravelPage } from '@ui/contractor';
 import { resolveCard } from '@fixtures/gateways/_shared';
 import { expectNoThreeDSModal, loginAsContractor } from '@features/gateway-pg/fixtures/gateway.fixtures';
+import { getGatewayPgAdapter } from '@features/gateway-pg/helpers/adapters';
 import { validateAndSelectMercadoPagoCard } from '@features/gateway-pg/helpers/mercadoPago.helpers';
-import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '@features/gateway-pg/helpers/travel-cleanup';
+import {
+	captureCreatedTravelId,
+	cancelTravelIfCreated,
+	type TravelIdRef
+} from '@features/gateway-pg/helpers/travel-cleanup';
 
 /**
  * Flujo de tarjeta: nueva vinculación (last4 requerido SOLO en stripe — las demás
  * pasarelas resuelven la tarjeta vía `resolveCard({gateway,intent:'HAPPY_NO_AUTH'})`),
  * o tarjeta guardada del colaborador.
  */
-export type ContractorCardFlow =
-	| { kind: 'new'; last4?: string }
-	| { kind: 'saved' };
+export type ContractorCardFlow = { kind: 'new'; last4?: string } | { kind: 'saved' };
 
 /**
  * Modo de 3DS del escenario:
@@ -104,6 +108,15 @@ export class ContractorHoldSteps extends UiBase {
 	 */
 	async runColaboradorScenario(scenario: ContractorHoldScenario): Promise<void> {
 		const gateway: GatewayName = scenario.gateway ?? 'stripe';
+		// Fail-fast doctrina 3DS (post-review A5): 3DS es EXCLUSIVO de Stripe. Un
+		// threeDs-mode con un adapter sin 3DS colgaba el flujo esperando un modal que
+		// nunca aparece (waitForVisible) — error de invocación, lanzar claro y temprano.
+		if (scenario.threeDs !== 'none' && !getGatewayPgAdapter(gateway).requires3ds) {
+			throw new Error(
+				`runColaboradorScenario: threeDs='${scenario.threeDs}' con gateway '${gateway}' (requires3ds=false) — ` +
+					`3DS es EXCLUSIVO de Stripe; usar threeDs: 'none' para ${gateway} (doctrina: caso excluido, no convertido).`
+			);
+		}
 		let travelIdRef: TravelIdRef | null = null;
 
 		await test.step('Login contractor', async () => {
@@ -125,25 +138,31 @@ export class ContractorHoldSteps extends UiBase {
 					await this.travel.fillJourneyUntilPayment({
 						client: scenario.user,
 						origin: scenario.origin,
-						destination: scenario.destination,
+						destination: scenario.destination
 					});
 					await this.travel.selectPaymentMethod('Preautorizada');
 					const card = resolveCard({ gateway, intent: 'HAPPY_NO_AUTH' });
 					await cardFormFor(gateway).fill(this.page, card);
 					if (gateway === 'mercado-pago') {
 						const mpLink = await validateAndSelectMercadoPagoCard(this.page);
+						// Guard future-proof (hoy INERTE): 'validation-failed' está RESERVADO a evidencia
+						// live (UAT) de un fallo distinguible de la limitación sandbox — hoy ningún camino
+						// lo retorna en TEST (el error explícito es la manifestación documentada → skip).
+						expect(mpLink, 'MP: señal de fallo real de validación distinguible de la limitación sandbox (evidencia live)').not.toBe('validation-failed');
 						test.skip(
 							mpLink !== 'linked',
-							'MP: validación de tarjeta no completa en TEST (sandbox MP no transacciona) — UAT-only. Form-fill + habilitación de "Validar" verificados.',
+							'MP: validación de tarjeta no completa en TEST (sandbox MP no transacciona) — UAT-only. Form-fill + habilitación de "Validar" verificados.'
 						);
 					} else {
-						await this.travel.validateNativeCard();
+						await this.travel.validateNativeCard(card.last4);
 					}
 				});
 			} else if (scenario.card.kind === 'new') {
 				const cardLast4 = scenario.card.last4;
 				if (!cardLast4) {
-					throw new Error("runColaboradorScenario: card.last4 es requerido en el flujo stripe (card kind 'new').");
+					throw new Error(
+						"runColaboradorScenario: card.last4 es requerido en el flujo stripe (card kind 'new')."
+					);
 				}
 				await test.step(`Completar formulario — colaborador + tarjeta ${scenario.threeDs === 'none' ? 'sin 3DS' : 'con 3DS'}`, async () => {
 					await this.travel.fillMinimum({
@@ -151,7 +170,7 @@ export class ContractorHoldSteps extends UiBase {
 						passenger: scenario.user,
 						origin: scenario.origin,
 						destination: scenario.destination,
-						cardLast4,
+						cardLast4
 					});
 				});
 			} else {
@@ -163,7 +182,10 @@ export class ContractorHoldSteps extends UiBase {
 
 				await test.step('Seleccionar tarjeta VISA guardada del colaborador', async () => {
 					const hasCard = await this.travel.hasHighlightedSavedCard();
-					test.skip(!hasCard, 'Precondición: colaborador no tiene tarjeta guardada en TEST. Vincular tarjeta primero.');
+					test.skip(
+						!hasCard,
+						'Precondición: colaborador no tiene tarjeta guardada en TEST. Vincular tarjeta primero.'
+					);
 					await this.travel.selectSavedCard();
 				});
 			}
@@ -199,10 +221,14 @@ export class ContractorHoldSteps extends UiBase {
 
 			await test.step('Esperar redirección fuera del formulario de alta', async () => {
 				// El portal contractor redirige a /dashboard tras crear el viaje (no a /travels/xxx).
-				await this.page.waitForURL(
-					url => !url.href.includes('/travel/create'),
-					{ timeout: 30_000, waitUntil: 'commit' },
-				);
+				await this.page.waitForURL(url => !url.href.includes('/travel/create'), {
+					timeout: 30_000,
+					waitUntil: 'commit'
+				});
+				// Oráculo explícito de destino (restaurado del original c3c99e8 — auditoría R2):
+				// "salió de /travel/create" NO asserta que llegó al dashboard; el redirect de
+				// éxito del contractor es /contractor/dashboard (MP-NOHOLD-04, smoke-cases-no3ds).
+				await expect(this.page).toHaveURL(/contractor\/dashboard/, { timeout: 10_000 });
 			});
 
 			// Validación API: el POST /travels devolvió un travelId — viaje creado en backend.

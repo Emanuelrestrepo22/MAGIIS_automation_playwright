@@ -31,7 +31,10 @@ test('recorded — edición de vuelo desde detalle (referencia)', async ({ page 
 	await page.getByRole('banner').getByRole('link', { name: 'Gestión de Viajes' }).click();
 	await page.locator('a').filter({ hasText: 'Configuración' }).click();
 	await page.getByRole('link', { name: 'Programados (8)' }).click();
-	await page.locator('button[title="Editar"], button[aria-label="Editar"], button[aria-description="Editar"]').first().click();
+	await page
+		.locator('button[title="Editar"], button[aria-label="Editar"], button[aria-description="Editar"]')
+		.first()
+		.click();
 	await page.getByText('Aerolíneas Argentinas AR7340').click();
 	await page.getByText('Aerolíneas Argentinas AR7340').click();
 	await page.getByText('Aerolíneas Argentinas AR7340').click();
@@ -50,11 +53,24 @@ test('recorded — edición de vuelo desde detalle (referencia)', async ({ page 
 	await page.getByRole('button', { name: 'Recalcular' }).click();
 	await page.getByRole('button', { name: 'Aceptar' }).click();
 	await page.getByRole('button', { name: 'Guardar' }).click();
-	await page.locator('button[title="Editar"], button[aria-label="Editar"], button[aria-description="Editar"]').first().click();
-	await page.locator('button[title="Eliminar vuelo"], button[aria-label="Eliminar vuelo"], button[aria-description="Eliminar vuelo"]').first().click();
+	await page
+		.locator('button[title="Editar"], button[aria-label="Editar"], button[aria-description="Editar"]')
+		.first()
+		.click();
+	await page
+		.locator(
+			'button[title="Eliminar vuelo"], button[aria-label="Eliminar vuelo"], button[aria-description="Eliminar vuelo"]'
+		)
+		.first()
+		.click();
 	await page.getByRole('button', { name: 'Recalcular' }).click();
 	await page.getByRole('button', { name: 'Aceptar' }).click();
-	await page.locator('button[title="Modificar Nota"], button[aria-label="Modificar Nota"], button[aria-description="Modificar Nota"]').first().click();
+	await page
+		.locator(
+			'button[title="Modificar Nota"], button[aria-label="Modificar Nota"], button[aria-description="Modificar Nota"]'
+		)
+		.first()
+		.click();
 	await page.getByRole('button', { name: 'Close' }).click();
 	await page.locator('button').nth(5).click();
 	await page.getByText('Seleccione Aerolínea').click();

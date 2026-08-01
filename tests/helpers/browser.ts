@@ -13,7 +13,12 @@ import { type BrowserContext, type Page } from '@playwright/test';
  * Espera hasta que la URL coincida con el patrón y no cambie por `stableMs` ms.
  * Útil para shells SPA que hacen múltiples redirects antes de asentarse.
  */
-export async function waitForStableURL(page: Page, urlPattern: string | RegExp, stableMs = 1_000, timeout = 15_000): Promise<void> {
+export async function waitForStableURL(
+	page: Page,
+	urlPattern: string | RegExp,
+	stableMs = 1_000,
+	timeout = 15_000
+): Promise<void> {
 	const deadline = Date.now() + timeout;
 
 	while (Date.now() < deadline) {
@@ -30,7 +35,9 @@ export async function waitForStableURL(page: Page, urlPattern: string | RegExp, 
 		await page.waitForTimeout(200);
 	}
 
-	throw new Error(`waitForStableURL: URL no se estabilizó en "${urlPattern}" dentro de ${timeout}ms. URL actual: ${page.url()}`);
+	throw new Error(
+		`waitForStableURL: URL no se estabilizó en "${urlPattern}" dentro de ${timeout}ms. URL actual: ${page.url()}`
+	);
 }
 
 /**

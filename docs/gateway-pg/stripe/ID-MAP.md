@@ -4,11 +4,11 @@
 > Fuente de verdad: [`docs/gateway-pg/id-map.json`](../id-map.json). Keys MG desde `tests/features/gateway-pg/data/xray-keys.ts` + annotations `tms` en specs — nunca fabricadas.
 > Un spec marcado **(fixme)** DECLARA el caso pero lo emite como `test.fixme`: cobertura trazable, NO ejecutada — no cuenta como cobertura real.
 
-Total: 224 · confirmed: 12 · needs-review: 157 · unmapped: 55 · con MG-key: 169 · con spec: 169 (ejecutable: 169 · sólo fixme: 0)
+Total: 224 · confirmed: 12 · needs-review: 149 · unmapped: 63 · con MG-key: 161 · con spec: 161 (ejecutable: 161 · sólo fixme: 0)
 
 | TS-ID | Ref Stripe | MG key | Specs | Status |
 | --- | --- | --- | --- | --- |
-| TS-STRIPE-P2-TC001 | — | MG-158 | `tests/features/gateway-pg/specs/stripe/web/contractor/colaborador-hold-no3ds.spec.ts`<br>`tests/features/gateway-pg/specs/stripe/web/contractor/vinculacion-tarjeta.spec.ts` | needs-review |
+| TS-STRIPE-P2-TC001 | — | MG-158 | `tests/features/gateway-pg/specs/stripe/web/contractor/colaborador-hold-no3ds.spec.ts` | needs-review |
 | TS-STRIPE-P2-TC002 | — | MG-158 | `tests/features/gateway-pg/specs/stripe/web/contractor/colaborador-hold-no3ds.spec.ts` | needs-review |
 | TS-STRIPE-P2-TC003 | — | MG-158 | `tests/features/gateway-pg/specs/stripe/web/contractor/colaborador-hold-no3ds.spec.ts` | needs-review |
 | TS-STRIPE-P2-TC004 | — | MG-158 | `tests/features/gateway-pg/specs/stripe/web/contractor/colaborador-hold-no3ds.spec.ts` | needs-review |
@@ -122,14 +122,14 @@ Total: 224 · confirmed: 12 · needs-review: 157 · unmapped: 55 · con MG-key: 
 | TS-STRIPE-TC1014 | — | — | — | unmapped |
 | TS-STRIPE-TC1015 | — | — | — | unmapped |
 | TS-STRIPE-TC1016 | — | — | — | unmapped |
-| TS-STRIPE-TC1017 | — | MG-158 | `tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-no3ds.e2e.spec.ts` | needs-review |
-| TS-STRIPE-TC1018 | — | MG-158 | `tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-no3ds.e2e.spec.ts` | needs-review |
-| TS-STRIPE-TC1019 | — | MG-158 | `tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-no3ds.e2e.spec.ts` | needs-review |
-| TS-STRIPE-TC1020 | — | MG-158 | `tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-no3ds.e2e.spec.ts` | needs-review |
-| TS-STRIPE-TC1021 | — | MG-158 | `tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-3ds.e2e.spec.ts` | needs-review |
-| TS-STRIPE-TC1022 | — | MG-158 | `tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-3ds.e2e.spec.ts` | needs-review |
-| TS-STRIPE-TC1023 | — | MG-158 | `tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-3ds.e2e.spec.ts` | needs-review |
-| TS-STRIPE-TC1024 | — | MG-158 | `tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-hold-3ds.e2e.spec.ts` | needs-review |
+| TS-STRIPE-TC1017 | — | — | — | unmapped |
+| TS-STRIPE-TC1018 | — | — | — | unmapped |
+| TS-STRIPE-TC1019 | — | — | — | unmapped |
+| TS-STRIPE-TC1020 | — | — | — | unmapped |
+| TS-STRIPE-TC1021 | — | — | — | unmapped |
+| TS-STRIPE-TC1022 | — | — | — | unmapped |
+| TS-STRIPE-TC1023 | — | — | — | unmapped |
+| TS-STRIPE-TC1024 | — | — | — | unmapped |
 | TS-STRIPE-TC1025 | — | — | — | unmapped |
 | TS-STRIPE-TC1026 | — | — | — | unmapped |
 | TS-STRIPE-TC1027 | — | — | — | unmapped |
@@ -154,7 +154,7 @@ Total: 224 · confirmed: 12 · needs-review: 157 · unmapped: 55 · con MG-key: 
 | TS-STRIPE-TC1046 | — | MG-158 | `tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-3ds.spec.ts` | needs-review |
 | TS-STRIPE-TC1047 | — | MG-158 | `tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-3ds.spec.ts` | needs-review |
 | TS-STRIPE-TC1048 | — | MG-158 | `tests/features/gateway-pg/specs/stripe/web/carrier/hold/colaborador-hold-3ds.spec.ts` | needs-review |
-| TS-STRIPE-TC1049 | — | MG-158 | `tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-no3ds.spec.ts`<br>`tests/features/gateway-pg/specs/stripe/web/carrier/hold/hold-capture.spec.ts`<br>`tests/features/gateway-pg/specs/_parametrized/hold-happy-no3ds.parametrized.spec.ts` | needs-review |
+| TS-STRIPE-TC1049 | — | MG-158 | `tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-no3ds.spec.ts`<br>`tests/features/gateway-pg/specs/stripe/web/carrier/hold/hold-capture.spec.ts` | needs-review |
 | TS-STRIPE-TC1050 | — | MG-158 | `tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-no3ds.spec.ts` | needs-review |
 | TS-STRIPE-TC1051 | — | MG-158 | `tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-no3ds.spec.ts`<br>`tests/features/gateway-pg/specs/stripe/web/carrier/recovery/3ds-failure.spec.ts` | needs-review |
 | TS-STRIPE-TC1052 | — | MG-158 | `tests/features/gateway-pg/specs/stripe/web/carrier/hold/apppax-hold-no3ds.spec.ts` | needs-review |

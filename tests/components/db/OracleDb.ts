@@ -47,7 +47,8 @@ export function oracleConfigFromEnv(): OracleReadConfig | null {
 	const port = process.env[`ORACLE_PORT${suffix}`];
 	const service = process.env[`ORACLE_SERVICE${suffix}`];
 	const connectString =
-		process.env[`ORACLE_CONNECT_STRING${suffix}`] ?? (host && port && service ? `${host}:${port}/${service}` : undefined);
+		process.env[`ORACLE_CONNECT_STRING${suffix}`] ??
+		(host && port && service ? `${host}:${port}/${service}` : undefined);
 	if (!connectString) return null;
 
 	return { user, password, connectString };
@@ -124,11 +125,18 @@ export class OracleDb {
 	 * @param label Etiqueta legible para el mensaje de error.
 	 * @throws Si los totales difieren.
 	 */
-	async expectConsistentTotals(leftSql: string, rightSql: string, binds: QueryBinds = {}, label = 'totales'): Promise<void> {
+	async expectConsistentTotals(
+		leftSql: string,
+		rightSql: string,
+		binds: QueryBinds = {},
+		label = 'totales'
+	): Promise<void> {
 		const left = this.firstScalar(await this.query(leftSql, binds));
 		const right = this.firstScalar(await this.query(rightSql, binds));
 		if (left !== right) {
-			throw new Error(`OracleDb.expectConsistentTotals: ${label} inconsistentes. Esperado=${left} · Real=${right}.`);
+			throw new Error(
+				`OracleDb.expectConsistentTotals: ${label} inconsistentes. Esperado=${left} · Real=${right}.`
+			);
 		}
 	}
 
@@ -156,7 +164,9 @@ export class OracleDb {
 	/** Guard SELECT-only: rechaza cualquier sentencia que no empiece con SELECT (tras trim, case-insensitive). */
 	private assertSelectOnly(sql: string): void {
 		if (!/^select\b/i.test(sql.trim())) {
-			throw new Error(`OracleDb es READ-ONLY: solo se permiten sentencias SELECT. Recibido: ${sql.trim().slice(0, 60)}…`);
+			throw new Error(
+				`OracleDb es READ-ONLY: solo se permiten sentencias SELECT. Recibido: ${sql.trim().slice(0, 60)}…`
+			);
 		}
 	}
 

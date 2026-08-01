@@ -104,7 +104,10 @@ export class CarrierTravelDetailPage extends UiBase {
 	 * Mini-flujo ATC: confirma la edición seleccionando una tarjeta ya vinculada,
 	 * recalcula el viaje y guarda los cambios. @atc MG-416 (área EDIT — pendiente reasignar).
 	 */
-	@atc('MG-416', { severity: 'critical', description: 'Edición de viaje: seleccionar tarjeta vinculada + recalcular + guardar' })
+	@atc('MG-416', {
+		severity: 'critical',
+		description: 'Edición de viaje: seleccionar tarjeta vinculada + recalcular + guardar'
+	})
 	async confirmLinkedCardAndSave(cardLabel: string | RegExp): Promise<void> {
 		await this.legacy.selectLinkedCard(cardLabel);
 		await this.legacy.clickRecalculate();

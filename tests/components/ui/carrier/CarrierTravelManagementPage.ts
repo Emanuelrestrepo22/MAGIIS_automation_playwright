@@ -74,6 +74,15 @@ export class CarrierTravelManagementPage extends UiBase {
 	}
 
 	/**
+	 * Mini-flujo ATC: reactiva un viaje cancelado (pestaña Cancelados → botón reactivar). @atc MG-440
+	 * (área REACT — pendiente reasignar; idmap API-level sin 1:1 con TS-STRIPE-P2-TC060).
+	 */
+	@atc('MG-440', { severity: 'normal', description: 'Reactivar viaje cancelado desde Gestión de Viajes' })
+	async reactivate(passenger: string, destination?: string): Promise<void> {
+		await this.legacy.reactivate(passenger, destination);
+	}
+
+	/**
 	 * Contraparte UNHAPPY: confirma que el viaje quedó en "En conflicto" con estado "No autorizado"
 	 * — el hold del viaje falló DESPUÉS de vincular la tarjeta, así que el viaje existe y queda
 	 * marcado (desenlace `trip-unauthorized` de `journey-outcome.ts`).

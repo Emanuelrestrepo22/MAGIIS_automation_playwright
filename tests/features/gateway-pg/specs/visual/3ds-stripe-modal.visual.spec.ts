@@ -19,7 +19,10 @@ test.describe('[BL-044] Visual regression — Modal 3DS Stripe @gateway @visual 
 	test.use({ storageState: undefined });
 
 	test('modal 3DS challenge — layout visual', async ({ page }) => {
-		test.fixme(true, 'BL-044 piloto: requiere baseline generado en ambiente live. Ver tests/features/gateway-pg/specs/visual/README.md §"Política de baselines".');
+		test.fixme(
+			true,
+			'BL-044 piloto: requiere baseline generado en ambiente live. Ver tests/features/gateway-pg/specs/visual/README.md §"Política de baselines".'
+		);
 
 		// TODO(BL-044): completar flujo de disparo del modal 3DS con tarjeta 4000 0025 0000 3155.
 		//   Reutilizar helpers de specs/stripe/web/carrier/recovery cuando se genere el baseline.

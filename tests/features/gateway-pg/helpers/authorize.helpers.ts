@@ -31,6 +31,9 @@ export type AuthorizeNativeCardInput = {
  * Completa el form nativo de tarjeta pre-autorizada (Authorize) dentro del alta de viaje.
  * Requiere que el método de pago ya esté en "Preautorizada"
  * (`NewTravelPage.selectPaymentMethod('Preautorizada')`). NO hace click en "Validar".
+ *
+ * @deprecated SUPERSEDED por `NativeAngularCardForm` (`@ui/carrier/card-forms`) — sin
+ * consumidores; retirar en la próxima limpieza.
  */
 export async function fillAuthorizeNativeCard(page: Page, input: AuthorizeNativeCardInput): Promise<void> {
 	const exp = input.exp ?? '12/34';
