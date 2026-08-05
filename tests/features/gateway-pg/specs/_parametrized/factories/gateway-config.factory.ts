@@ -6,9 +6,9 @@
  * los tests CFG (matriz TC1001..TC1008) para cualquier pasarela, gobernada por su adapter
  * declarativo (`helpers/adapters`) y el registry Xray local (`data/xray-keys.ts`).
  * Los consumidores por pasarela quedan THIN (1 llamada):
- *   - `specs/authorize/web/carrier/config/authorize-link-unlink.spec.ts` (5 casos base).
- *   - `specs/stripe/config/gateway-config.spec.ts` (casos genéricos + fixme OAuth en el consumidor).
- *   - `specs/ebizcharge/web/carrier/config/ebizcharge-link-unlink.spec.ts` (5 casos base).
+ *   - `specs/authorize/web/carrier/config/authorize-link-unlink.spec.ts` (8 casos).
+ *   - `specs/stripe/config/gateway-config.spec.ts` (8 casos — driver OAuth Connect, F5).
+ *   - `specs/ebizcharge/web/carrier/config/ebizcharge-link-unlink.spec.ts` (8 casos).
  *
  * REGLAS load-bearing (trazabilidad emit-all del xray-reporter):
  *   1. Annotation `{type:'tms',description:<MG-key>}` POR TEST, resuelta del registry
@@ -24,13 +24,13 @@
  *      `AppStoreGatewaysPage` + el Step `GatewaySwitchSteps`.
  *
  * Capacidades por pasarela:
- *   - Casos que requieren LINK PROGRAMÁTICO (linkValid/linkInvalid/linkStatus) solo se
- *     generan para pasarelas con modal de credenciales modelado (authorize, ebizcharge).
- *     Pedirlos para stripe/mercado-pago lanza en tiempo de definición (error de consumo,
- *     no de runtime) — el consumidor stripe los mantiene `fixme` con nota (OAuth Connect).
+ *   - Casos que requieren LINK PROGRAMÁTICO (linkValid/linkInvalid/linkStatus) se generan
+ *     para pasarelas con driver de link: modal de credenciales modelado (authorize,
+ *     ebizcharge) u OAuth Connect test-mode (stripe, F5). Pedirlos para mercado-pago lanza
+ *     en tiempo de definición (error de consumo, no de runtime).
  *   - Casos que requieren la pasarela ACTIVA (cancelUnlink/unlink/exclusivity/
  *     reloadPersistence): con driver de link usan `ensureActiveGateway` (idempotente);
- *     sin driver (stripe) skipean limpio si la pasarela no está vinculada ya.
+ *     sin driver (mercado-pago) skipean limpio si la pasarela no está vinculada ya.
  *
  * Login: `loginAsDispatcher(page)` default — la suite CFG opera sobre el carrier 1521
  * compartido (App Store único para las 4 pasarelas), igual que el spec Authorize F4.
@@ -127,8 +127,20 @@ const LINK_DRIVERS: Partial<Record<GatewayName, GatewayLinkDriver>> = {
 				successStatuses: adapter.linkSuccessStatuses,
 				urlPattern: adapter.linkMutationUrlPattern
 			})
+	},
+	stripe: {
+		// OAuth Connect test-mode (F5) — SIN credenciales de env: el consent se completa con
+		// el auto-fill test-mode de Stripe. `linkInvalid` = ABANDONO del consent (Stripe no
+		// tiene credenciales que rechazar) — MVP honesto del AC, ver docstring MG-213 del POM.
+		linkValid: appStore => appStore.linkStripeViaConnect(),
+		linkInvalid: appStore => appStore.expectStripeLinkRejected(),
+		linkStatusOk: (appStore, adapter) =>
+			appStore.expectStripeLinkStatusOk({
+				successStatuses: adapter.linkSuccessStatuses,
+				urlPattern: adapter.linkMutationUrlPattern
+			})
 	}
-	// stripe: OAuth Connect (sin modal de creds) — TODO F5. mercado-pago: modal sin modelar.
+	// mercado-pago: modal sin modelar — sin driver de link aún.
 };
 
 /** Título humano por caso (sin TC ID ni tags — se componen en `defineGatewayConfigSuite`). */
@@ -159,7 +171,7 @@ function caseTitle(cfgCase: GatewayCfgCase, adapter: GatewayPgAdapter): string {
 
 /**
  * Precondición "pasarela activa": con driver de link delega en el switch idempotente;
- * sin driver (stripe/mp) NO puede vincular programáticamente → skip limpio si la
+ * sin driver (mercado-pago) NO puede vincular programáticamente → skip limpio si la
  * pasarela no está ya vinculada (en vez del throw de `ensureActiveGateway`).
  */
 async function ensureActiveGatewayOrSkip(switcher: GatewaySwitchSteps, gateway: GatewayName, hasDriver: boolean): Promise<void> {
@@ -188,8 +200,8 @@ export function defineGatewayConfigSuite(gateway: GatewayName, options: GatewayC
 	if (unsupported.length > 0) {
 		throw new Error(
 			`defineGatewayConfigSuite('${gateway}'): los casos [${unsupported.join(', ')}] requieren link programático ` +
-				`y '${gateway}' no tiene modal de credenciales modelado (drivers: ${Object.keys(LINK_DRIVERS).join(', ')}). ` +
-				'Mantenerlos fixme en el consumidor con nota (ver consumidor stripe).'
+				`y '${gateway}' no tiene driver de link (drivers: ${Object.keys(LINK_DRIVERS).join(', ')}). ` +
+				'Mantenerlos fixme en el consumidor con nota hasta modelar el driver.'
 		);
 	}
 

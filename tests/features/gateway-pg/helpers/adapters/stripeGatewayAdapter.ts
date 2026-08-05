@@ -1,4 +1,5 @@
 import { JOURNEY_DEFAULTS_BY_GATEWAY } from '../../data/journey-defaults';
+import { STRIPE_LINK_MUTATION_URL_PATTERN, STRIPE_LINK_SUCCESS_STATUSES } from '../../data/link-status-defaults';
 import { XRAY_KEYS_BY_GATEWAY } from '../../data/xray-keys';
 import type { GatewayPgAdapter } from './types';
 import { areEnvKeysConfigured } from './types';
@@ -45,11 +46,14 @@ export const stripeGatewayAdapter: GatewayPgAdapter = {
 	// ── Config operacional (S2) ──────────────────────────────────────────────
 	cardForm: 'stripe-elements',
 	outcomeTrigger: 'number',
-	// TODO(live): [200] asumido — status real de la request de link Stripe (OAuth
-	// Connect) NO verificado en vivo todavía (link Stripe = flujo live F5).
-	linkSuccessStatuses: [200],
-	// TODO(live): matcher NO verificado — base del matcher Authorize + needle propio.
-	linkMutationUrlPattern: /odnservice|payment.?gateway|paymentgateway|vendor|integration|stripe/i,
+	// FUENTE ÚNICA compartida con el POM (data/link-status-defaults.ts — anti-drift T11).
+	// TODO(live): [200] asumido — status real de la mutación de link Stripe (la dispara el
+	// FE al volver del OAuth Connect con ?code=) NO verificado en vivo todavía (F5).
+	linkSuccessStatuses: [...STRIPE_LINK_SUCCESS_STATUSES],
+	// TODO(live): matcher ASUMIDO de la ruta backend VendorController (vendor/stripe/*) —
+	// deliberadamente estrecho para NO matchear los POSTs propios de connect.stripe.com
+	// durante el onboarding (ver rationale en link-status-defaults.ts).
+	linkMutationUrlPattern: STRIPE_LINK_MUTATION_URL_PATTERN,
 	credsEnvKeys: STRIPE_CREDS_ENV_KEYS,
 	isConfigured: () => areEnvKeysConfigured(STRIPE_CREDS_ENV_KEYS),
 	xrayKeys: XRAY_KEYS_BY_GATEWAY.stripe,

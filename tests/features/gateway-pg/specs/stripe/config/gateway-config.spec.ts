@@ -1,67 +1,38 @@
 /**
- * TCs: TS-STRIPE-TC1001 – TC1008 (docs/gateway-pg/stripe/matriz_cases.md)
+ * TCs: TS-STRIPE-TC1001 – TC1008 (docs/gateway-pg/stripe/matriz_cases.md) — los 8 casos.
  * Feature: Configuración de Pasarela Stripe en Magiis App Store
  * Tags: @gateway @stripe @cfg @regression
  *
- * CONSUMIDOR de la factory CFG (S6, carrier/gateway-standardization) — des-fixme de los
- * casos con implementación UI GENÉRICA (POM AppStoreGatewaysPage, agnóstico de pasarela):
- *   TC1001 viewUnlinked → MG-211 · TC1004 cancelUnlink → MG-214 · TC1005 unlink → MG-215 ·
- *   TC1006 exclusivity → MG-216 · TC1007 reloadPersistence → MG-217.
- * Los casos de precondición "Stripe vinculada" skipean limpio si Stripe no es la pasarela
- * activa (Stripe se vincula vía OAuth Connect, sin modal de credenciales — no hay link
- * programático; TODO F5 `ensureActiveGateway('stripe')`).
+ * CONSUMIDOR THIN de la factory CFG (S6, carrier/gateway-standardization). Mapeo TC ID →
+ * key Xray (registry `data/xray-keys.ts`):
+ *   TC1001 viewUnlinked       → MG-211
+ *   TC1002 linkValid          → MG-212
+ *   TC1003 linkInvalid        → MG-213
+ *   TC1004 cancelUnlink       → MG-214
+ *   TC1005 unlink             → MG-215
+ *   TC1006 exclusivity        → MG-216
+ *   TC1007 reloadPersistence  → MG-217
+ *   TC1008 linkStatus         → MG-218
  *
- * Los 3 casos restantes requieren el LINK OAuth de Stripe (sin implementación UI genérica)
- * y quedan `fixme` ACÁ (no en la factory), con su mapeo del registry documentado:
- *   TC1002 linkValid → MG-212 · TC1003 linkInvalid → MG-213 · TC1008 linkStatus → MG-218.
+ * DES-FIXME F5 (carrier/stripe-full-iteration): los 3 casos OAuth (TC1002/TC1003/TC1008)
+ * que vivían `fixme` en este consumidor ahora los genera la factory con el driver de link
+ * Stripe (OAuth Connect test-mode — `linkStripeViaConnect` / `expectStripeLinkRejected` /
+ * `expectStripeLinkStatusOk` del POM AppStoreGatewaysPage, keys @atc MG-212/213/218).
+ * Semántica TC1003 en Stripe: NO hay credenciales que rechazar (es OAuth) — el caso
+ * ejercita el ABANDONO del consent sin autorización (MVP honesto del AC; el affordance
+ * "deny" explícito de Connect queda TODO(live), ver docstring MG-213 del POM).
  *
- * ⚠️ DESTRUCTIVO EN RUNTIME (los casos generados): unlink de la pasarela activa del carrier
- * 1521 dispara cleaningWallets. La factory skipea limpio sin GATEWAY_ALLOW_DESTRUCTIVE_SWITCH.
+ * ⚠️ FRAGILE/TODO(live): selectores del onboarding Connect hosteado portados del record
+ * legacy verificado (agentic-qa-boilerplate/tests/gateway-legacy/link-stripe-gateway.test.ts);
+ * statuses de éxito `[200]` y urlPattern `vendor/stripe` ASUMIDOS (data/link-status-defaults.ts).
+ * Confirmar y fijar en la primera corrida viva.
+ * ⚠️ DESTRUCTIVO EN RUNTIME: vincular/desvincular pasarelas del carrier 1521 dispara
+ * cleaningWallets en cascada. La factory skipea limpio sin GATEWAY_ALLOW_DESTRUCTIVE_SWITCH.
  */
-import { test } from '@TestFixture';
-import { defineGatewayConfigSuite } from '@features/gateway-pg/specs/_parametrized/factories/gateway-config.factory';
+import {
+	defineGatewayConfigSuite,
+	GATEWAY_CFG_ALL_CASES
+} from '@features/gateway-pg/specs/_parametrized/factories/gateway-config.factory';
 
-// Casos genéricos soportados por la factory para Stripe (sin link programático).
-defineGatewayConfigSuite('stripe', {
-	cases: ['viewUnlinked', 'cancelUnlink', 'unlink', 'exclusivity', 'reloadPersistence']
-});
-
-// ── Casos OAuth pendientes (fixme en el CONSUMIDOR, no en la factory) ────────────────────
-// Stripe se vincula vía OAuth Connect test-mode (portar el loop de
-// agentic-qa-boilerplate/tests/gateway-legacy/link-stripe-gateway.test.ts — TODO F5).
-// Sin modal de credenciales no hay driver de link genérico para linkValid/linkInvalid/linkStatus.
-
-test.use({ storageState: undefined });
-
-test.describe('Gateway PG · Carrier · Configuración Pasarela Stripe — casos OAuth pendientes @gateway @stripe @cfg @regression', () => {
-	test(
-		'[TS-STRIPE-TC1002] @smoke @critical @cfg Validar vincular Stripe con credenciales válidas',
-		{ annotation: [{ type: 'tms', description: 'MG-212' }] },
-		async () => {
-			test.fixme(
-				true,
-				'PENDIENTE: link Stripe = OAuth Connect (sin modal de credenciales) — sin driver genérico en la factory CFG (TODO F5).'
-			);
-		}
-	);
-	test(
-		'[TS-STRIPE-TC1003] @regression @cfg Validar impedir vincular Stripe con credenciales inválidas',
-		{ annotation: [{ type: 'tms', description: 'MG-213' }] },
-		async () => {
-			test.fixme(
-				true,
-				'PENDIENTE: rechazo de link Stripe ocurre dentro del flujo OAuth Connect — sin driver genérico en la factory CFG (TODO F5).'
-			);
-		}
-	);
-	test(
-		'[TS-STRIPE-TC1008] @regression @cfg Validar la request de link de Stripe retorna un status de éxito conocido',
-		{ annotation: [{ type: 'tms', description: 'MG-218' }] },
-		async () => {
-			test.fixme(
-				true,
-				'PENDIENTE: la mutación de link Stripe viaja por el redirect OAuth (no por el modal) — sin driver genérico en la factory CFG (TODO F5).'
-			);
-		}
-	);
-});
+// Los 8 casos de matriz (TC1001..TC1008) — driver OAuth Connect incluido (F5).
+defineGatewayConfigSuite('stripe', { cases: GATEWAY_CFG_ALL_CASES });

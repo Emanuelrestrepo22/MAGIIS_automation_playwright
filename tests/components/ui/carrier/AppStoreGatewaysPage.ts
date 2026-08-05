@@ -44,7 +44,9 @@ import {
 	AUTHORIZE_LINK_MUTATION_URL_PATTERN,
 	AUTHORIZE_LINK_SUCCESS_STATUSES,
 	EBIZCHARGE_LINK_MUTATION_URL_PATTERN,
-	EBIZCHARGE_LINK_SUCCESS_STATUSES
+	EBIZCHARGE_LINK_SUCCESS_STATUSES,
+	STRIPE_LINK_MUTATION_URL_PATTERN,
+	STRIPE_LINK_SUCCESS_STATUSES
 } from '@features/gateway-pg/data/link-status-defaults';
 
 /** Pasarelas de pago censables en el App Store (match case-insensitive por texto de card). */
@@ -97,6 +99,14 @@ const COMPANY_NEEDLE: Record<GatewayCompany, RegExp> = {
 };
 
 const INTEGRATIONS_PATH = '/#/home/carrier/integrations/list';
+
+/**
+ * Cota dura de pasos del onboarding Stripe Connect test-mode. El record legacy verificado
+ * necesitó hasta ~6 pasos; acá cada paso real puede consumir hasta 2 iteraciones (una para
+ * el auto-fill, otra para el submit) → 12. La cota REAL del loop es doble: iteraciones + un
+ * deadline total en ms (ver `completeStripeConnectTestMode`).
+ */
+const MAX_STRIPE_CONNECT_STEPS = 12;
 
 /**
  * Guard de operaciones DESTRUCTIVAS de pasarela (S5): renombrado cross-gateway a
@@ -798,5 +808,223 @@ export class AppStoreGatewaysPage extends UiBase {
 			successStatuses: options.successStatuses ?? [...EBIZCHARGE_LINK_SUCCESS_STATUSES],
 			urlPattern: options.urlPattern ?? EBIZCHARGE_LINK_MUTATION_URL_PATTERN
 		});
+	}
+
+	// ── Stripe · link vía OAuth Connect (SIN modal de credenciales) ─────────────────
+	//
+	// Stripe NO comparte la impl `linkGateway` (modal de creds): su link es un redirect
+	// OAuth a `connect.stripe.com`, un onboarding test-mode de N pasos, y un redirect de
+	// vuelta a `/integrations/list?code=ac_...&scope=read_write` donde el FE completa la
+	// vinculación (setStripeCode). Cierra el TODO F5: flujo portado del record legacy
+	// VERIFICADO (agentic-qa-boilerplate/tests/gateway-legacy/link-stripe-gateway.test.ts),
+	// reemplazando sus `waitForTimeout(1500)` por esperas por estado observable (regla
+	// dura del repo: sin sleeps fijos fuera del settle documentado de `readState`).
+	// FRAGILE/TODO(live): los selectores del onboarding hosteado ([data-test=...]) vienen
+	// del record y del test-mode público de Stripe — confirmar en la primera corrida viva.
+
+	/**
+	 * Origin de la app (BASE_URL) — clasifica el retorno del OAuth cross-dominio: durante
+	 * el onboarding la URL vive en `connect.stripe.com`; volver a este origin = la app
+	 * recibió el redirect (con o sin `code=`).
+	 */
+	private appOrigin(): string {
+		if (!this.baseUrl) {
+			throw new Error('BASE_URL vacío — no se puede clasificar el retorno del OAuth de Stripe (UiBase.baseUrl).');
+		}
+		return new URL(this.baseUrl).origin;
+	}
+
+	/** ¿La URL actual ya volvió al dominio de la app (salió de connect.stripe.com)? */
+	private isBackAtApp(): boolean {
+		return this.page.url().startsWith(this.appOrigin());
+	}
+
+	/**
+	 * Arranca el flujo OAuth de Stripe: precondición `linkable` + click "Vincular" hasta
+	 * quedar en `stripe.com`. Mismo patrón toPass/timeouts-cortos que `openLinkModalFor`
+	 * (la lista sufre el refresh periódico documentado ahí): si el click cae en una ventana
+	 * muerta, falla rápido y se reintenta el ciclo entero. Idempotente por intento: si una
+	 * iteración previa YA navegó a Stripe, el intento corriente lo detecta y corta
+	 * (reintentar el click reventaría — el link "Vincular" no existe en connect.stripe.com).
+	 */
+	private async startStripeOAuthFlow(): Promise<void> {
+		const state = await this.readState('stripe');
+		if (state !== 'linkable') {
+			throw new Error(
+				`Link OAuth de Stripe: la card debe estar 'linkable' (acción "Vincular") y está '${state}' — ` +
+					'la exclusividad la maneja el CALLER (GatewaySwitchSteps.ensureGatewayLinkable / unlinkActiveGateway), no este ATC.'
+			);
+		}
+		await expect(async () => {
+			if (/(^|\.)stripe\.com$/i.test(new URL(this.page.url()).hostname)) return;
+			await this.vincularLink('stripe').click({ timeout: 4_000 });
+			await this.page.waitForURL(/stripe\.com/i, { timeout: 15_000 });
+		}).toPass({ timeout: 120_000, intervals: [300, 600, 1_000] });
+	}
+
+	/**
+	 * Completa el onboarding Connect test-mode hasta que Stripe redirija de vuelta a la app.
+	 *
+	 * Sincronización POR ESTADO OBSERVABLE (reemplaza el `waitForTimeout(1500)` del record
+	 * legacy): cada iteración espera un `Promise.race` de (URL de vuelta en la app) vs
+	 * (control accionable del paso corriente visible), con timeouts cortos por intento,
+	 * iteraciones acotadas (`MAX_STRIPE_CONNECT_STEPS`) y un deadline total.
+	 *
+	 * Los pasos del onboarding varían (Stripe test-mode puede insertar/quitar pantallas):
+	 * el loop no asume una secuencia fija — en cada paso auto-completa si hay
+	 * `[data-test="test-mode-fill-button"]` y avanza con el submit disponible.
+	 */
+	private async completeStripeConnectTestMode(totalTimeoutMs = 120_000): Promise<void> {
+		const appOrigin = this.appOrigin();
+		const deadline = Date.now() + totalTimeoutMs;
+		// Selectores del onboarding hosteado (record legacy + data-test público del test-mode
+		// de Stripe). INLINE acá: solo los usa este loop. FRAGILE/TODO(live).
+		const fillButton = this.page.locator('[data-test="test-mode-fill-button"]').first();
+		const submitButton = this.page.locator('[data-test="continue-button"], [data-testid="continue-button"], button[type="submit"]').first();
+
+		for (let connectStep = 0; connectStep < MAX_STRIPE_CONNECT_STEPS && Date.now() < deadline; connectStep++) {
+			if (this.isBackAtApp()) return;
+
+			// Esperar lo primero que ocurra: la app nos recibió de vuelta, o el paso corriente
+			// del onboarding expone un control accionable. Los brazos perdedores del race solo
+			// expiran su timeout corto (catch noop) — sin sleeps fijos.
+			const perStepTimeout = Math.max(1, Math.min(15_000, deadline - Date.now()));
+			await Promise.race([
+				this.page.waitForURL(url => url.origin === appOrigin, { timeout: perStepTimeout }).catch(() => {}),
+				fillButton.waitFor({ state: 'visible', timeout: perStepTimeout }).catch(() => {}),
+				submitButton.waitFor({ state: 'visible', timeout: perStepTimeout }).catch(() => {})
+			]);
+			if (this.isBackAtApp()) return;
+
+			// Auto-completar el paso en test-mode si Stripe lo ofrece (no todos los pasos lo traen).
+			if (await fillButton.isVisible().catch(() => false)) {
+				await fillButton.click({ timeout: 4_000 }).catch(() => {});
+			}
+			// Avanzar/enviar el paso. El click puede desembocar en (a) el próximo paso del
+			// onboarding o (b) el redirect final a la app — se espera el cambio de URL con
+			// timeout acotado; si el paso transiciona sin cambiar la URL, el race de la
+			// PRÓXIMA iteración re-sincroniza por controles visibles. El catch absorbe el
+			// caso "la navegación destruyó el contexto a mitad del click" (esperable acá).
+			if (await submitButton.isVisible().catch(() => false)) {
+				const urlBeforeSubmit = this.page.url();
+				await submitButton.click({ timeout: 4_000 }).catch(() => {});
+				await this.page
+					.waitForURL(url => url.origin === appOrigin || url.toString() !== urlBeforeSubmit, {
+						timeout: Math.max(1, Math.min(20_000, deadline - Date.now()))
+					})
+					.catch(() => {});
+			}
+		}
+
+		if (!this.isBackAtApp()) {
+			throw new Error(
+				`Stripe Connect test-mode no redirigió de vuelta a la app (${appOrigin}) tras ` +
+					`${MAX_STRIPE_CONNECT_STEPS} iteraciones / ${totalTimeoutMs}ms — URL final: ${this.page.url()}. ` +
+					'El onboarding pudo agregar un paso sin fill/submit reconocible (revisar en vivo y ajustar selectores).'
+			);
+		}
+	}
+
+	/**
+	 * Postcondición compartida del link OAuth (MG-212 / MG-218). Espejo del ESPÍRITU de la
+	 * postcondición de `linkGateway` (estado `linked` con `readState` estabilizado), adaptado
+	 * al completado ASÍNCRONO del flujo OAuth:
+	 *   1. `code=` presente en la URL de retorno (Stripe SÍ otorgó el authorization code).
+	 *   2. Ventana `networkidle` ANTES de navegar: el FE dispara su mutación de link recién
+	 *      al aterrizar con `?code=` — un `goto()` inmediato podría abortar esa request en
+	 *      vuelo y CONSUMIR el code sin vincular (irrecuperable: el code es one-shot).
+	 *   3. `goto()` + `readState` dentro de `toPass` (mismo criterio anti-render-cacheado que
+	 *      la postcondición de `unlinkGatewayImpl`): el intercambio code→link del backend es
+	 *      asíncrono y la lista del App Store sirve un render cacheado.
+	 */
+	private async expectStripeLinkedAfterOAuthReturn(): Promise<void> {
+		expect(this.page.url(), 'el retorno de Stripe Connect debe traer el authorization code (?code=ac_...)').toContain('code=');
+		await this.page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {
+			/* polling en background — el goto+readState de abajo re-verifica contra el estado real */
+		});
+		await expect(async () => {
+			await this.goto();
+			expect(await this.readState('stripe'), 'estado esperado tras el OAuth Connect = linked').toBe('linked');
+		}).toPass({ timeout: 60_000, intervals: [2_000, 4_000, 6_000] });
+	}
+
+	/**
+	 * ATC — vincula Stripe vía OAuth Connect test-mode y verifica el estado vinculado.
+	 * Precondición: la card Stripe debe estar "Vincular" (linkable) — liberar el slot de
+	 * exclusividad antes (GatewaySwitchSteps.ensureGatewayLinkable); si no, lanza claro.
+	 * Wrapper por pasarela: la key de ATC es ESTRUCTURAL acá (TS-STRIPE-TC1002); a
+	 * diferencia de authorize/ebiz NO delega en `linkGateway` (no hay modal de creds).
+	 */
+	@atc('MG-212', { severity: 'critical', description: 'Vincular Stripe vía OAuth Connect test-mode' })
+	async linkStripeViaConnect(): Promise<void> {
+		await this.startStripeOAuthFlow();
+		await this.completeStripeConnectTestMode();
+		await this.expectStripeLinkedAfterOAuthReturn();
+	}
+
+	/**
+	 * ATC — verifica que NO se vincula Stripe sin completar la autorización OAuth.
+	 *
+	 * MVP HONESTO del AC (TS-STRIPE-TC1003 "impedir vincular con credenciales inválidas"):
+	 * Stripe NO tiene credenciales que rechazar (es OAuth) — el equivalente semántico es
+	 * "no vincular sin autorización". Se inicia el flujo Connect y se ABANDONA (navegación
+	 * de vuelta a la app SIN completar el consent): Stripe nunca otorga `code=` y la card
+	 * debe seguir NO vinculada.
+	 *
+	 * FRAGILE/TODO(live): el affordance de "deny/cancel" DENTRO del consent de Stripe
+	 * Connect test-mode NO está confirmado en vivo — si existe (botón "Cancelar"/"Volver a
+	 * MAGIIS"), endurecer este ATC para ejercitar el rechazo explícito (redirect con
+	 * `?error=access_denied`) en lugar del abandono.
+	 */
+	@atc('MG-213', { severity: 'critical', description: 'Impedir vincular Stripe sin autorización OAuth completada (abandono del consent)' })
+	async expectStripeLinkRejected(): Promise<void> {
+		await this.startStripeOAuthFlow();
+		// Abandono: volver a la app por navegación propia (goto estabiliza cards + networkidle).
+		await this.goto();
+		// Documenta el contrato del abandono: sin consent completado NO existe authorization code.
+		expect(this.page.url(), 'sin completar el consent NO debe haber authorization code (code=)').not.toContain('code=');
+		expect(await this.readState('stripe'), 'Stripe NO debe quedar vinculada tras abandonar el OAuth sin autorizar').not.toBe('linked');
+	}
+
+	/**
+	 * ATC — observa la mutación de link que el FE dispara tras el retorno OAuth (`?code=`)
+	 * y verifica un status de éxito conocido + persistencia del estado vinculado.
+	 * Wrapper por pasarela (key ESTRUCTURAL — TS-STRIPE-TC1008). Deja Stripe vinculada.
+	 *
+	 * NO reutiliza `expectLinkStatusOkImpl` (asume modal de creds y arma el waitForResponse
+	 * junto al submit): acá la mutación viaja DESPUÉS del redirect OAuth, así que la escucha
+	 * se arma ANTES de completar el onboarding (armarla tras el retorno es carrera perdida —
+	 * la request puede salir durante el boot de Angular, antes de retomar el control).
+	 *
+	 * TODO(live): statuses `[200]` ASUMIDOS y urlPattern basado en la ruta backend del
+	 * VendorController (`vendor/stripe/*`) — ver `data/link-status-defaults.ts`; fijar ambos
+	 * en la primera corrida viva (mismo criterio de documentación que eBizCharge).
+	 */
+	@atc('MG-218', { severity: 'normal', description: 'La mutación de link de Stripe tras el OAuth retorna un status de éxito conocido y la pasarela queda vinculada' })
+	async expectStripeLinkStatusOk(options: LinkStatusOptions = {}): Promise<void> {
+		const successStatuses = options.successStatuses ?? [...STRIPE_LINK_SUCCESS_STATUSES];
+		const urlPattern = options.urlPattern ?? STRIPE_LINK_MUTATION_URL_PATTERN;
+		await this.startStripeOAuthFlow();
+		// `.catch(e => e)`: si el loop OAuth revienta primero, la rejection del waitForResponse
+		// quedaría huérfana (unhandledRejection tumba el worker) — se difiere y se re-lanza abajo.
+		const linkResponsePromise = this.page
+			.waitForResponse(r => urlPattern.test(r.url()) && r.request().method() !== 'GET', { timeout: 150_000 })
+			.catch((error: unknown) => (error instanceof Error ? error : new Error(String(error))));
+		await this.completeStripeConnectTestMode();
+		expect(this.page.url(), 'el retorno de Stripe Connect debe traer el authorization code (?code=ac_...)').toContain('code=');
+		const linkResponse = await linkResponsePromise;
+		if (linkResponse instanceof Error) {
+			throw new Error(
+				`No se observó la mutación de link de Stripe (patrón ${urlPattern}) tras el retorno OAuth — ` +
+					`TODO(live): el patrón está ASUMIDO de la ruta VendorController vendor/stripe/*; confirmarlo en vivo. Causa: ${linkResponse.message}`
+			);
+		}
+		expect(
+			successStatuses,
+			`status observado (${linkResponse.status()}) fuera de los códigos de éxito conocidos (${successStatuses.join('|')}) — posible comportamiento nuevo, revisar`
+		).toContain(linkResponse.status());
+		// Endurecimiento de oráculo (mismo criterio que el caso linkStatus de la factory): el
+		// status solo no prueba el efecto — assert de persistencia del estado vinculado.
+		await this.expectStripeLinkedAfterOAuthReturn();
 	}
 }
