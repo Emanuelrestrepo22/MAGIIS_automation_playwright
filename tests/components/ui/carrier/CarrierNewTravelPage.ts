@@ -1157,4 +1157,47 @@ export class CarrierNewTravelPage extends UiBase {
 			timeout: 10_000
 		});
 	}
+
+	/**
+	 * PROGRAMA el viaje eligiendo el ÚLTIMO horario disponible del día en el selector de hora
+	 * (sección "Fecha programada" del alta). Convierte el alta en un viaje PROGRAMADO
+	 * (estado SCHEDULED, pestaña "Programados"), precondición de los specs de edición.
+	 *
+	 * Ingeniería inversa del FE (`add-travel.component` + `app-custom-selector`): el selector de
+	 * hora es un `app-custom-selector` dentro de `.time-selected`; sus opciones son 'Ahora' + los
+	 * slots FUTUROS del día (el generador arranca en `minimunDate`, así que cualquier opción
+	 * distinta de 'Ahora' es válida para programar). Se elige la ÚLTIMA (máximo margen contra
+	 * `programmedBefore()`, que deshabilita el submit si el horario quedó en el pasado).
+	 *
+	 * FRAGILE: locators derivados del código FE (`.custom-selector .selected-option` /
+	 * `.options-container .option`), sin codegen live — TODO(live): validar contra TEST v1.72.x.
+	 * Edge conocido: cerca de medianoche el día puede quedarse sin slots futuros → el expect de
+	 * abajo falla con diagnóstico claro (precondición no armable, no un bug del sistema).
+	 *
+	 * @returns la etiqueta del horario elegido (evidencia para el log del test).
+	 */
+	@step
+	async schedulePickupAtLastSlot(): Promise<string> {
+		const selector = this.page.locator('.time-selected .custom-selector').first();
+		await expect(selector, 'El selector de hora del viaje programado debe estar visible en el alta').toBeVisible({
+			timeout: 10_000
+		});
+		await selector.locator('.selected-option').first().click();
+
+		const options = selector.locator('.options-container .option');
+		await options.first().waitFor({ state: 'visible', timeout: 10_000 });
+		const count = await options.count();
+		expect(
+			count,
+			'El selector de hora debe publicar al menos un horario futuro además de "Ahora" (¿alta demasiado cerca de medianoche?)'
+		).toBeGreaterThan(1);
+
+		const target = options.last();
+		const label = ((await target.textContent()) ?? '').trim();
+		await target.click();
+
+		// El trigger del selector refleja el horario elegido (estado observable del commit).
+		await expect(selector.locator('.selected-option').first()).toContainText(label, { timeout: 10_000 });
+		return label;
+	}
 }

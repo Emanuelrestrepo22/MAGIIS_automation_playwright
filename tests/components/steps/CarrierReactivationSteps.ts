@@ -20,8 +20,9 @@ import {
 	CarrierNewTravelPage,
 	CarrierTravelManagementPage,
 } from '@ui/carrier';
+import { CarrierHoldSteps, type CardFlow } from './CarrierHoldSteps';
 import { loginAsDispatcher, STRIPE_TEST_CARDS } from '@features/gateway-pg/fixtures/gateway.fixtures';
-import { setHoldViaApi } from '@features/gateway-pg/helpers/parameters-api';
+import { setHoldViaApi, getCarrierParameters } from '@features/gateway-pg/helpers/parameters-api';
 import { captureCreatedTravelId, cancelTravel, type TravelIdRef } from '@features/gateway-pg/helpers/travel-cleanup';
 import { waitForTravelCreation } from '@features/gateway-pg/helpers/stripe.helpers';
 
@@ -32,6 +33,27 @@ export type ReactivationScenario = {
 	destination: string;
 	/** Override del last4; por defecto tarjeta preautorizada sin 3DS (successDirect). */
 	cardLast4?: string;
+};
+
+/**
+ * Escenario de las VARIANTES de reactivación (TS-STRIPE-P2-TC061..065). El caso ancla TC060
+ * conserva su flujo original en `runReactivateCancelledPreauth` (sin cambios, multi-session
+ * safety); las variantes arman la precondición componiendo `CarrierHoldSteps.runHoldScenario`
+ * (hereda idempotencia de tarjeta, oráculo de outcome real y cancelación en cleanup — el viaje
+ * queda CANCELADO al retornar, exactamente la precondición que la reactivación necesita).
+ */
+export type ReactivationVariantScenario = ReactivationScenario & {
+	/** Query API para la precondición/limpieza de tarjeta del pasajero. */
+	apiSearchQuery?: string;
+};
+
+export type ReactivationRunOptions = {
+	/** Estado del hold del carrier durante el alta fuente Y la reactivación. */
+	hold: 'on' | 'off';
+	/** true = alta fuente con tarjeta 3DS (challenge aprobado). */
+	threeDs: boolean;
+	/** 'new' vincula tarjeta nueva en el alta fuente; 'existing' exige tarjeta ya vinculada (o skip). */
+	cardFlow: CardFlow;
 };
 
 export class CarrierReactivationSteps extends UiBase {
@@ -111,6 +133,87 @@ export class CarrierReactivationSteps extends UiBase {
 			if (reactivatedId !== null) {
 				await test.step('Cleanup: cancelar viaje reactivado', async () => {
 					await cancelTravel(this.page, reactivatedId as number).catch(() => undefined);
+				});
+			}
+		}
+	}
+
+	/**
+	 * Reactiva un viaje CANCELADO ya existente (precondición armada por el caller) y cancela el
+	 * reactivado en cleanup. Asume sesión carrier logueada. Mismos pasos/oráculo que el tramo de
+	 * reactivación del caso ancla TC060 (URL real observada en TEST v1.72.8).
+	 *
+	 * FRAGILE conocido (heredado del ancla): tras filtrar se reactiva la PRIMERA coincidencia con
+	 * botón Reactivar visible — el FE oculta el botón en filas ya reactivadas (`!item.isReactivated`)
+	 * y el viaje recién cancelado suele ser el más reciente.
+	 */
+	async reactivateSeededCancelledTrip(scenario: Pick<ReactivationScenario, 'passenger' | 'destination'>): Promise<void> {
+		const shortDest = scenario.destination.split(',')[0].trim();
+		let reactivatedId: number | null = null;
+
+		try {
+			await test.step('Reactivar el viaje cancelado desde Gestión de Viajes', async () => {
+				await this.management.goto();
+				await this.management.reactivate(scenario.passenger, shortDest);
+			});
+
+			await test.step('Verificar reactivación — navega al despacho/asignación de conductores', async () => {
+				// URL real observada en TEST v1.72.8 (ver runReactivateCancelledPreauth).
+				await expect(this.page).toHaveURL(/driver\/list\/Assign|listDriverOnline/i, { timeout: 15_000 });
+				const match = this.page.url().match(/[?&]id=(\d+)/);
+				if (match) reactivatedId = Number(match[1]);
+			});
+		} finally {
+			if (reactivatedId !== null) {
+				await test.step('Cleanup: cancelar viaje reactivado', async () => {
+					await cancelTravel(this.page, reactivatedId as number).catch(() => undefined);
+				});
+			}
+		}
+	}
+
+	/**
+	 * Orquestador de las VARIANTES de reactivación (TC061..065): seed vía
+	 * `CarrierHoldSteps.runHoldScenario` (el viaje queda CANCELADO por su cleanup interno,
+	 * con hold ON/OFF y tarjeta nueva/existente/3DS según la variante) + reactivación con el
+	 * mismo oráculo del ancla TC060. Con hold OFF, el hold se mantiene apagado TAMBIÉN durante
+	 * la reactivación ("sin Hold desde Alta de Viaje" aplica al journey completo) y se restaura
+	 * al final del test.
+	 *
+	 * FRAGILE / TODO(live) — variantes 3DS: la reactivación re-ejecuta el hold server-side
+	 * (`cloneTravel` del FE). Con la tarjeta ya autenticada en el alta, el hold off-session no
+	 * debería re-desafiar 3DS; si el PSP exigiera re-autenticación, el viaje reactivado caería
+	 * en NO_AUTORIZADO y este oráculo (URL de despacho) lo reportaría. Validar en corrida viva.
+	 */
+	async runReactivationScenario(scenario: ReactivationVariantScenario, options: ReactivationRunOptions): Promise<void> {
+		const holdSteps = new CarrierHoldSteps({ page: this.page });
+
+		try {
+			await test.step(`Seed: viaje cancelado (alta hold=${options.hold}, ${options.threeDs ? '3DS' : 'sin 3DS'}, tarjeta ${options.cardFlow})`, async () => {
+				// restoreHold=false: la variante sin hold reactiva con el hold aún apagado; se
+				// restaura en el finally de este orquestador.
+				await holdSteps.runHoldScenario(
+					{
+						client: scenario.client,
+						passenger: scenario.passenger,
+						origin: scenario.origin,
+						destination: scenario.destination,
+						cardLast4: scenario.cardLast4,
+						apiSearchQuery: scenario.apiSearchQuery,
+						cardFlow: options.cardFlow
+					},
+					{ hold: options.hold, threeDs: options.threeDs, restoreHold: false }
+				);
+			});
+
+			await this.reactivateSeededCancelledTrip(scenario);
+		} finally {
+			if (options.hold === 'off') {
+				await test.step('Restaurar hold al final del test', async () => {
+					await setHoldViaApi(this.page, true);
+					// Read-back CRUDO (misma disciplina que CarrierHoldSteps.enableHoldViaApi).
+					const persisted = await getCarrierParameters(this.page);
+					expect(persisted.enableCreditCardHold, 'read-back API: enableCreditCardHold debe quedar true tras restaurar').toBe(true);
 				});
 			}
 		}
