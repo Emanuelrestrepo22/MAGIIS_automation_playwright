@@ -702,7 +702,10 @@ export abstract class NewTravelPageBase extends BasePage {
 				break;
 			}
 		}
-		await this.assertPaymentMethodPreauthorizedSelected();
+		// Oráculo tolerante a la race de auto-guardado (ver assertPaymentMethodAccepted): completar
+		// los iframes ya puede attachear la tarjeta y re-etiquetar el selector a "*** last4" ANTES
+		// del click en Validar — asertar el label fijo "Preautorizada" acá era intermitente.
+		await this.assertPaymentMethodAccepted(last4);
 	}
 
 	/** Poll hasta que el botón "Validar" habilite (Stripe considera la tarjeta completa). */
@@ -728,7 +731,37 @@ export abstract class NewTravelPageBase extends BasePage {
 			if (allowDecline) {
 				await this.clickValidateCardAllowingReject();
 			} else {
-				await this.clickValidateCard();
+				// Validación con desenlace real + recuperación por re-fill (SetupIntent stale);
+				// la señal de éxito (successProbe) es "Seleccionar Vehículo" habilitado — el alta
+				// tiene el form completo en este punto, así el happy path no paga settle extra.
+				await this.validateNewCardWithRefillRecovery(last4);
+			}
+		}
+	}
+
+	/**
+	 * Valida la tarjeta recién ingresada con recuperación por RE-FILL ante SetupIntent stale.
+	 *
+	 * EVIDENCIA (corrida 5 del baseline Stripe 2026-08-05, TS-STRIPE-TC1059): tras un primer
+	 * Validar fallido transitorio, el FE queda referenciando el SetupIntent viejo y TODO re-click
+	 * repite "No such setupintent: 'seti_...'" — re-clickear no sana ese estado (posible defecto
+	 * FE: debería recrear el intent; observación documentada en RUN-LOG/BACKLOG). La recuperación
+	 * TIPO-USUARIO es re-ingresar la tarjeta (re-seleccionar método + re-llenar iframes → intent
+	 * fresco) y validar de nuevo. Bounded: 2 ciclos de fill × 2 re-clicks internos; si persiste,
+	 * propaga el error REAL de la pasarela (sin absorber un posible defecto).
+	 */
+	private async validateNewCardWithRefillRecovery(last4: string, refillCycles = 2): Promise<void> {
+		const STALE_INTENT = /no such setupintent/i;
+		for (let cycle = 1; cycle <= refillCycles; cycle++) {
+			try {
+				await this.clickValidateCard({ retries: 2, successProbe: () => this.isVehicleSelectionReady(), expectedLast4: last4 });
+				return;
+			} catch (error) {
+				const message = error instanceof Error ? error.message : String(error);
+				if (cycle === refillCycles || !STALE_INTENT.test(message)) throw error;
+				// eslint-disable-next-line no-console -- evidencia deliberada del ciclo de re-fill
+				console.warn(`[validateNewCard] ciclo ${cycle}/${refillCycles}: SetupIntent stale ("${message.slice(0, 120)}...") — re-ingresando la tarjeta para regenerar el intent`);
+				await this.fillPreauthorizedCard(last4);
 			}
 		}
 	}
@@ -883,17 +916,84 @@ export abstract class NewTravelPageBase extends BasePage {
 
 		await this.waitForLoadingOverlayToDisappear();
 		await this.validateCardButton.click({ force: true });
-		// Migrado tier3: waitForTimeout(1_000) eliminado — assertPaymentMethodPreauthorizedSelected con timeout:10s cubre la espera
-		await this.assertPaymentMethodPreauthorizedSelected();
+		// Migrado tier3: waitForTimeout(1_000) eliminado — el oráculo tolerante a la race de
+		// auto-guardado (assertPaymentMethodAccepted) cubre la espera con timeout:10s.
+		await this.assertPaymentMethodAccepted();
 		return true;
 	}
 
-	async clickValidateCard(): Promise<void> {
-		await this.waitForEnabledButton(this.validateCardButton);
-		await this.waitForLoadingOverlayToDisappear();
-		await this.validateCardButton.click({ force: true });
-		// Migrado tier3: waitForTimeout(1_000) eliminado — assertPaymentMethodPreauthorizedSelected con timeout:10s cubre la espera
-		await this.assertPaymentMethodPreauthorizedSelected();
+	/**
+	 * Valida la tarjeta preautorizada observando el DESENLACE REAL de la validación.
+	 *
+	 * ROOT CAUSE del rediseño (corrida 2026-08-05, TS-STRIPE-TC1050/TC1051): "Validar" NO es un
+	 * chequeo de formato — dispara una transacción de hold real contra la pasarela
+	 * (docs/ops/BACKLOG.md §BL "Hold de vinculación", línea ~1266) y puede fallar de forma
+	 * TRANSITORIA con "Error al validar tarjeta. Por favor, revise los datos ingresados." aun con
+	 * los 5 campos correctos. La versión anterior asertaba solo el label del método de pago
+	 * ("Preautorizada"), que NO cambia cuando la validación falla → el test moría 45s después en
+	 * `waitForVehicleSelectionReady()` con el mensaje engañoso "Button did not become enabled".
+	 *
+	 * Contrato nuevo (endurece el oráculo, no lo relaja):
+	 *   1. Click Validar → esperar el desenlace: error de validación visible (fallo) o
+	 *      `successProbe` true (éxito confirmado por la señal del caller, p.ej. botón
+	 *      "Seleccionar Vehículo" habilitado en el alta) o ventana agotada sin error (éxito benigno).
+	 *   2. Error transitorio → reintento acotado TIPO-USUARIO (re-click Validar; los datos ya
+	 *      están en el form — BACKLOG confirma que el fill no es la causa).
+	 *   3. Error persistente tras los reintentos → throw con el MENSAJE REAL de la pasarela
+	 *      (diagnóstico veraz en vez del timeout downstream).
+	 *
+	 * Oráculo de estado post-validación (corrida 4 del baseline 2026-08-05, wallet LIMPIA): al
+	 * validar OK, el FE GUARDA la tarjeta y re-etiqueta el selector con la entrada concreta
+	 * ("Tarjeta de crédito VISA *** 4242") — el label "Preautorizada" es un estado TRANSITORIO
+	 * pre-guardado. El assert viejo pasaba solo por muestrear instantáneo (pre-switch); asertar
+	 * "Preautorizada" post-desenlace es una race. Se aceptan AMBOS estados legítimos, anclando
+	 * la last4 esperada cuando el caller la provee (más fuerte que el assert original).
+	 */
+	async clickValidateCard(opts: { retries?: number; successProbe?: () => Promise<boolean>; expectedLast4?: string } = {}): Promise<void> {
+		const maxAttempts = Math.max(1, opts.retries ?? 3);
+		let lastError: string | null = null;
+
+		for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+			await this.waitForEnabledButton(this.validateCardButton);
+			await this.waitForLoadingOverlayToDisappear();
+			await this.validateCardButton.click({ force: true });
+			// Esperar el roundtrip del click ANTES de leer el desenlace (review 2026-08-05, hallazgo
+			// race): sin esto, en un retry el poll puede leer el error TODAVÍA renderizado del
+			// intento anterior y agotar los reintentos en <1s con el mensaje viejo.
+			await this.waitForLoadingOverlayToDisappear();
+
+			lastError = await this.waitForCardValidationOutcome(opts.successProbe);
+			if (lastError === null) {
+				await this.assertPaymentMethodAccepted(opts.expectedLast4);
+				return;
+			}
+			if (attempt < maxAttempts) {
+				// eslint-disable-next-line no-console -- evidencia deliberada del retry transitorio (BL hold de vinculación)
+				console.warn(`[clickValidateCard] intento ${attempt}/${maxAttempts} rechazado por la pasarela ("${lastError}") — reintentando (transitorio documentado, BACKLOG §hold de vinculación)`);
+			}
+		}
+
+		throw new Error(`Validación de tarjeta rechazada por la pasarela tras ${maxAttempts} intentos: "${lastError}" — si reproduce en manual, es defecto/incidencia de ambiente, no del test.`);
+	}
+
+	/**
+	 * Espera el desenlace de un click en Validar: `null` = éxito (successProbe true, o ventana
+	 * agotada sin error visible), string = mensaje del error de validación mostrado por la UI.
+	 * NOTE(tier3-kept): polling con condición compuesta (error XOR probe) — no hay evento DOM
+	 * único que modele el fin del roundtrip de la pasarela.
+	 */
+	private async waitForCardValidationOutcome(successProbe?: () => Promise<boolean>, windowMs = 15_000): Promise<string | null> {
+		const deadline = Date.now() + windowMs;
+		while (Date.now() < deadline) {
+			if (await this.cardValidationErrorText.isVisible().catch(() => false)) {
+				return ((await this.cardValidationErrorText.textContent().catch(() => null)) ?? 'Error de validación de tarjeta (texto ilegible)').trim();
+			}
+			if (successProbe && (await successProbe().catch(() => false))) {
+				return null;
+			}
+			await this.page.waitForTimeout(400);
+		}
+		return null;
 	}
 
 	/**
@@ -1091,6 +1191,26 @@ export abstract class NewTravelPageBase extends BasePage {
 
 	async assertPaymentMethodPreauthorizedSelected(): Promise<void> {
 		await expect(this.paymentMethodValue).toContainText('Tarjeta de Crédito - Preautorizada', { timeout: 10_000 });
+	}
+
+	/**
+	 * Oráculo del método de pago tolerante a la race de AUTO-GUARDADO (corridas 3-4 del baseline
+	 * Stripe 2026-08-05, wallet limpia verificada por el cleanup de idempotencia): completar los
+	 * iframes de Stripe attachea la tarjeta al pax y el FE re-etiqueta el selector con la entrada
+	 * concreta ("Tarjeta de crédito VISA *** 4242") — puede ocurrir ANTES del click en Validar y
+	 * siempre ocurre tras validar OK. "Tarjeta de Crédito - Preautorizada" es el estado PREVIO
+	 * (aún sin attach). Ambos son legítimos; el label fijo era una race intermitente (la
+	 * intermitencia del bucket card-new que documenta fillPreauthorizedCard). Cuando hay `last4`
+	 * el estado attacheado se ancla a ESA tarjeta (más fuerte que el assert de label fijo).
+	 */
+	async assertPaymentMethodAccepted(last4?: string): Promise<void> {
+		const acceptedStates = last4
+			? new RegExp(`Tarjeta de Cr[eé]dito - Preautorizada|\\*{3}\\s*${last4}`, 'i')
+			: /Tarjeta de Cr[eé]dito(\s*-\s*Preautorizada|\s+\w+\s+\*{3})/i;
+		await expect(
+			this.paymentMethodValue,
+			'método de pago debe quedar en Preautorizada (pre-attach) o en la tarjeta recién ingresada (*** last4)'
+		).toContainText(acceptedStates, { timeout: 10_000 });
 	}
 
 	/**
