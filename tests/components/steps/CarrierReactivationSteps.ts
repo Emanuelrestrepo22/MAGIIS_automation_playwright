@@ -23,7 +23,7 @@ import {
 import { CarrierHoldSteps, type CardFlow } from './CarrierHoldSteps';
 import { loginAsDispatcher, STRIPE_TEST_CARDS } from '@features/gateway-pg/fixtures/gateway.fixtures';
 import { setHoldViaApi, getCarrierParameters } from '@features/gateway-pg/helpers/parameters-api';
-import { captureCreatedTravelId, cancelTravel, type TravelIdRef } from '@features/gateway-pg/helpers/travel-cleanup';
+import { captureCreatedTravelId, cancelTravel, cancelTravelDetailed, type TravelIdRef } from '@features/gateway-pg/helpers/travel-cleanup';
 import { waitForTravelCreation } from '@features/gateway-pg/helpers/stripe.helpers';
 
 export type ReactivationScenario = {
@@ -109,13 +109,20 @@ export class CarrierReactivationSteps extends UiBase {
 			expect(createdId, 'POST /travels debe haber capturado travelId').not.toBeNull();
 
 			await test.step('Precondición: cancelar el viaje (queda CANCELADO)', async () => {
-				const ok = await cancelTravel(this.page, createdId as number);
-				expect(ok, 'La cancelación del viaje debe ser exitosa').toBe(true);
+				const cancel = await cancelTravelDetailed(this.page, createdId as number);
+				// GATE de blocker externo (2026-08-06): 5xx = endpoint de cancelacion roto server-side
+				// (SQLGrammarException) — la PRECONDICION es imposible, no el sujeto del TC. Skip con
+				// motivo (misma semantica que los gates de Appium); un rojo aca mis-señalaria
+				// "reactivacion rota". 4xx/otros = fallo real de la precondicion -> assert.
+				test.skip(cancel.status >= 500, `BLOQUEADO backend TEST: cancel ${createdId} -> ${cancel.status} ${cancel.body.slice(0, 120)}`);
+				expect(cancel.ok, `La cancelación del viaje debe ser exitosa (status ${cancel.status}: ${cancel.body.slice(0, 160)})`).toBe(true);
 			});
 
 			await test.step('Reactivar el viaje cancelado desde Gestión de Viajes', async () => {
 				await this.management.goto();
-				await this.management.reactivate(scenario.passenger, shortDest);
+				// Anclaje por travelId del seed (fix 2026-08-05): sin id, la primera coincidencia por
+				// texto en el carrier compartido podia ser una fila ya-reactivada/ajena (review MEDIUM-4).
+				await this.management.reactivate(scenario.passenger, shortDest, createdId as number);
 			});
 
 			await test.step('Verificar reactivación — navega al despacho/asignación de conductores', async () => {
@@ -147,14 +154,18 @@ export class CarrierReactivationSteps extends UiBase {
 	 * botón Reactivar visible — el FE oculta el botón en filas ya reactivadas (`!item.isReactivated`)
 	 * y el viaje recién cancelado suele ser el más reciente.
 	 */
-	async reactivateSeededCancelledTrip(scenario: Pick<ReactivationScenario, 'passenger' | 'destination'>): Promise<void> {
+	async reactivateSeededCancelledTrip(
+		scenario: Pick<ReactivationScenario, 'passenger' | 'destination'>,
+		seededTravelId?: number
+	): Promise<void> {
 		const shortDest = scenario.destination.split(',')[0].trim();
 		let reactivatedId: number | null = null;
 
 		try {
 			await test.step('Reactivar el viaje cancelado desde Gestión de Viajes', async () => {
 				await this.management.goto();
-				await this.management.reactivate(scenario.passenger, shortDest);
+				// Anclaje por travelId del seed cuando esta disponible (fix 2026-08-05, MEDIUM-4).
+				await this.management.reactivate(scenario.passenger, shortDest, seededTravelId);
 			});
 
 			await test.step('Verificar reactivación — navega al despacho/asignación de conductores', async () => {
@@ -187,6 +198,10 @@ export class CarrierReactivationSteps extends UiBase {
 	 */
 	async runReactivationScenario(scenario: ReactivationVariantScenario, options: ReactivationRunOptions): Promise<void> {
 		const holdSteps = new CarrierHoldSteps({ page: this.page });
+		// Listener propio para conocer el travelId del seed (runHoldScenario no lo retorna) —
+		// disciplina snapshot+dispose ANTES de la fase de reactivacion (review CRITICAL-1: la
+		// reactivacion dispara su propio POST /travels y un listener vivo lo sobreescribiria).
+		const seedRef = await captureCreatedTravelId(this.page);
 
 		try {
 			await test.step(`Seed: viaje cancelado (alta hold=${options.hold}, ${options.threeDs ? '3DS' : 'sin 3DS'}, tarjeta ${options.cardFlow})`, async () => {
@@ -206,7 +221,17 @@ export class CarrierReactivationSteps extends UiBase {
 				);
 			});
 
-			await this.reactivateSeededCancelledTrip(scenario);
+			const seededTravelId = seedRef.travelId;
+			await seedRef.dispose();
+			// Verificacion explicita de la PRECONDICION cancelado (2026-08-06): el cleanup interno de
+			// runHoldScenario cancela en silencio (catch) — si el endpoint esta roto (5xx blocker) el
+			// viaje NO queda cancelado y la fase de reactivacion fallaria con señal equivocada.
+			// ok=true (cancelo aca) o 4xx (ya cancelado por el cleanup interno) -> precondicion lista.
+			if (seededTravelId) {
+				const cancel = await cancelTravelDetailed(this.page, seededTravelId);
+				test.skip(cancel.status >= 500, `BLOQUEADO backend TEST: cancel ${seededTravelId} -> ${cancel.status} ${cancel.body.slice(0, 120)}`);
+			}
+			await this.reactivateSeededCancelledTrip(scenario, seededTravelId ?? undefined);
 		} finally {
 			if (options.hold === 'off') {
 				await test.step('Restaurar hold al final del test', async () => {

@@ -4,9 +4,9 @@
 export { CarrierHoldSteps, type CardFlow, type HoldScenario, type HoldRunOptions } from './CarrierHoldSteps';
 export { CargoABordoSteps, type CargoScenario, type CargoRunOptions, type DriverChargeSpec } from './CargoABordoSteps';
 export { CarrierTravelEditSteps } from './CarrierTravelEditSteps';
-// Scaffolding MG-178 (áreas quote/recurrentes).
-export { QuoteSteps } from './QuoteSteps';
-export { RecurrentesSteps } from './RecurrentesSteps';
+// Áreas QUOTE (TS-STRIPE-P2-TC011..018) y REC (TC041..059) — orquestadores reales (ex scaffolding MG-178).
+export { QuoteSteps, type QuoteRequester, type QuoteScenario, type QuoteRunOptions } from './QuoteSteps';
+export { RecurrentesSteps, type RecurrentScenario, type RecurrentRunOptions } from './RecurrentesSteps';
 // MG-178 Fase 2 — reactivación de viaje cancelado con tarjeta preautorizada.
 export {
 	CarrierReactivationSteps,

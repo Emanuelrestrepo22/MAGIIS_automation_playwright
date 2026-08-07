@@ -16,6 +16,15 @@ function matchesSearchText(candidate: string, searchText: string): boolean {
 	return searchTokens.every(token => candidateText.includes(token));
 }
 
+/**
+ * Selector BOUNDARY-SAFE del link de detalle de un viaje (review LOW-1): un substring plano
+ * `a[href*="/travels/12345"]` también matchea los ids 123450..123459 — se exige que después
+ * del id venga fin de string, `/` o `?`, así el anclaje nunca toma una fila ajena.
+ */
+export function travelDetailHrefSelector(travelId: number): string {
+	return `a[href$="/travels/${travelId}"], a[href*="/travels/${travelId}/"], a[href*="/travels/${travelId}?"]`;
+}
+
 export class TravelManagementPage {
 	constructor(private readonly page: Page) {}
 
@@ -179,8 +188,41 @@ export class TravelManagementPage {
 	async expectPassengerInPorAsignar(passenger: string, destination?: string, status?: string | RegExp): Promise<void> {
 		// La grilla arranca en otra pestaña: sin este click la fila no existe en el DOM.
 		await this.openPorAsignarTab();
-		const row = await this.tripRow(passenger, destination);
-		await expect(row).toBeVisible({ timeout: 10_000 });
+		await this.expectTripRowInCurrentTab({ passenger, destination, status });
+	}
+
+	/**
+	 * Verifica la fila del viaje en la PESTAÑA ACTUAL, sin cambiar de pestaña — para callers que
+	 * ya navegaron (p.ej. `openScheduledTrips()`). Existe porque `expectPassengerInPorAsignar`
+	 * re-clickea "Asignar" por dentro y los oráculos de Programados dependían de que ese locator
+	 * silenciosamente NO matchee (review MEDIUM-1) — un rename del FE los mandaba a mirar la
+	 * pestaña equivocada sin ningún fallo que lo delate.
+	 *
+	 * `travelId` (opcional) ANCLA la fila por su link de detalle con el selector boundary-safe
+	 * (review LOW-1): en el carrier compartido el match por texto puede tomar una fila AJENA con
+	 * el mismo pasajero/destino de otra corrida. Con el id, la fila es determinística y sobre
+	 * ELLA se siguen verificando pasajero/destino/estado.
+	 */
+	async expectTripRowInCurrentTab(opts: {
+		passenger: string;
+		destination?: string;
+		status?: string | RegExp;
+		travelId?: number;
+	}): Promise<void> {
+		const { passenger, destination, status, travelId } = opts;
+		const row =
+			travelId != null
+				? this.page
+						.locator('tbody tr')
+						.filter({ has: this.page.locator(travelDetailHrefSelector(travelId)) })
+						.first()
+				: await this.tripRow(passenger, destination);
+		await expect(
+			row,
+			travelId != null
+				? `La fila del viaje ${travelId} debe estar visible en la pestaña actual (anclaje por travelId)`
+				: `La fila de "${passenger}" debe estar visible en la pestaña actual`
+		).toBeVisible({ timeout: travelId != null ? 30_000 : 10_000 });
 		await expect
 			.poll(
 				async () => {
@@ -214,7 +256,7 @@ export class TravelManagementPage {
 	 * `cloneTravel(travelId)` = API + navegación a `listDriverOnline`.
 	 * Nota: tras filtrar se reactiva la primera coincidencia (el viaje recién cancelado suele ser el más reciente).
 	 */
-	async reactivate(passenger: string, destination?: string): Promise<void> {
+	async reactivate(passenger: string, destination?: string, travelId?: number): Promise<void> {
 		await this.openCanceladosTab();
 
 		const search = this.page.getByRole('textbox', { name: 'Buscar...' });
@@ -223,10 +265,30 @@ export class TravelManagementPage {
 			await this.page.waitForTimeout(500); // debounce del filtro de la grilla
 		}
 
+		// ANCLAJE POR travelId (fix 2026-08-05, corrida live TC060..065 — review MEDIUM-4
+		// materializado): la primera coincidencia por texto en el carrier compartido puede ser una
+		// fila YA reactivada (el FE oculta su boton Reactivar, `!item.isReactivated`) o un viaje
+		// ajeno con el mismo destino canonico -> click no-op y la URL nunca navega al despacho.
+		// Cada fila publica el link de detalle del viaje -> con el id del seed la fila objetivo es
+		// deterministica (selector boundary-safe, review LOW-1); sin id (callers legacy) se
+		// conserva el first-match.
+		const anchoredRow = travelId
+			? this.page
+					.locator('tbody tr')
+					.filter({ has: this.page.locator(travelDetailHrefSelector(travelId)) })
+					.first()
+			: null;
+		if (anchoredRow) {
+			await expect(
+				anchoredRow,
+				`La fila del viaje ${travelId} debe estar visible en Cancelados (anclaje por travelId)`
+			).toBeVisible({ timeout: 15_000 });
+		}
+
 		// El codegen (PW nuevo) lo grabó como `getByRole('button', { description: 'Reactivar Viaje' })`,
 		// opción no soportada en PW 1.56 → equivalente por atributo (tooltip title/aria-description) con
 		// fallback al ícono `fa-refresh` confirmado en el FE (robusto a versión y locale).
-		const reactivateBtn = this.page
+		const reactivateBtn = (anchoredRow ?? this.page)
 			.locator('button[title="Reactivar Viaje"], button[aria-description="Reactivar Viaje"], button.action-btn-primary:has(i.fa-refresh)')
 			.first();
 		await expect(reactivateBtn).toBeVisible({ timeout: 10_000 });

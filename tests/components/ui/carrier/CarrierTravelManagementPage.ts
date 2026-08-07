@@ -20,7 +20,7 @@ import type { Locator } from '@playwright/test';
 import type { TestContextOptions } from '@TestContext';
 
 import { expect } from '@playwright/test';
-import { TravelManagementPage as LegacyTravelManagementPage } from '@pages/carrier';
+import { TravelManagementPage as LegacyTravelManagementPage, travelDetailHrefSelector } from '@pages/carrier';
 import { atc, step } from '@utils/decorators';
 import { UiBase } from '@ui/UiBase';
 
@@ -64,12 +64,30 @@ export class CarrierTravelManagementPage extends UiBase {
 	}
 
 	/**
+	 * Verifica la fila del viaje en la PESTAÑA ACTUAL (sin re-clickear "Asignar" por dentro) —
+	 * para oráculos que ya navegaron con `openScheduledTrips()` u otra pestaña (review MEDIUM-1).
+	 * `travelId` ancla la fila por su link de detalle (boundary-safe, review LOW-1).
+	 *
+	 * Sin decorar con @atc: no hay key del ATP para esta verificación genérica de pestaña y las
+	 * keys jamás se inventan (mismo criterio que `expectPassengerInEnConflicto`).
+	 */
+	@step
+	async expectTripRowInCurrentTab(opts: {
+		passenger: string;
+		destination?: string;
+		status?: string | RegExp;
+		travelId?: number;
+	}): Promise<void> {
+		await this.legacy.expectTripRowInCurrentTab(opts);
+	}
+
+	/**
 	 * Mini-flujo ATC: reactiva un viaje cancelado (pestaña Cancelados → botón reactivar). @atc MG-440
 	 * (área REACT — pendiente reasignar; idmap API-level sin 1:1 con TS-STRIPE-P2-TC060).
 	 */
 	@atc('MG-440', { severity: 'normal', description: 'Reactivar viaje cancelado desde Gestión de Viajes' })
-	async reactivate(passenger: string, destination?: string): Promise<void> {
-		await this.legacy.reactivate(passenger, destination);
+	async reactivate(passenger: string, destination?: string, travelId?: number): Promise<void> {
+		await this.legacy.reactivate(passenger, destination, travelId);
 	}
 
 	/**
@@ -136,7 +154,7 @@ export class CarrierTravelManagementPage extends UiBase {
 	 * @param from pestaña origen del clonado.
 	 */
 	@atc('MG-428', { severity: 'normal', description: 'Clonar viaje desde Gestión de Viajes (form de alta precargado)' })
-	async cloneTravel(searchText: string, from: CloneSourceTab): Promise<void> {
+	async cloneTravel(searchText: string, from: CloneSourceTab, travelId?: number): Promise<void> {
 		if (from === 'cancelados') {
 			await this.legacy.openCanceladosTab();
 		} else if (from === 'finalizados') {
@@ -154,10 +172,22 @@ export class CarrierTravelManagementPage extends UiBase {
 
 		// La fila objetivo debe quedar visible tras el filtro (reemplaza el sleep de debounce del
 		// POM legacy por una espera observable — lint `playwright/no-wait-for-timeout`).
-		const row = this.page.locator('tbody tr').filter({ hasText: searchText }).first();
-		await expect(row, `La grilla debe publicar una fila que matchee "${searchText}" tras filtrar`).toBeVisible({
-			timeout: 15_000
-		});
+		// ANCLAJE POR travelId cuando el caller lo provee (fix 2026-08-05 — review MEDIUM-4
+		// materializado en reactivacion): el first-match por texto puede tomar una fila ajena en el
+		// carrier compartido; cada fila publica el link de detalle del viaje -> fila deterministica
+		// (selector boundary-safe, review LOW-1).
+		const row = travelId
+			? this.page
+					.locator('tbody tr')
+					.filter({ has: this.page.locator(travelDetailHrefSelector(travelId)) })
+					.first()
+			: this.page.locator('tbody tr').filter({ hasText: searchText }).first();
+		await expect(
+			row,
+			travelId
+				? `La fila del viaje ${travelId} debe estar visible en la pestania tras filtrar (anclaje por travelId)`
+				: `La grilla debe publicar una fila que matchee "${searchText}" tras filtrar`
+		).toBeVisible({ timeout: 15_000 });
 
 		// Botón Clonar de la fila: ícono fa-files-o (FE) con fallback por tooltip title/aria.
 		const cloneBtn = row

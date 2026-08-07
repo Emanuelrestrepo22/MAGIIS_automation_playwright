@@ -18,5 +18,5 @@ export { CarrierTravelDetailPage } from './CarrierTravelDetailPage';
 export { CarrierTravelManagementPage, type CloneSourceTab } from './CarrierTravelManagementPage';
 // Scaffolding MG-178 (áreas quote/recurrentes/config sin POM previo).
 export { CarrierQuotePage, type QuoteContact } from './CarrierQuotePage';
-export { CarrierRecurrentTravelPage } from './CarrierRecurrentTravelPage';
+export { CarrierRecurrentTravelPage, type RecurrenceConfig } from './CarrierRecurrentTravelPage';
 export { CarrierGlobalIntegrationsPage } from './CarrierGlobalIntegrationsPage';

@@ -41,7 +41,7 @@ import { setHoldViaApi, getCarrierParameters } from '@features/gateway-pg/helper
 import { extractAuthToken, cleanupGatewayCardByLast4 } from '@features/gateway-pg/helpers/card-precondition';
 import { finalizeTravelAdmin } from '@features/gateway-pg/helpers/travel-finalize';
 import {
-	captureCreatedTravelId,
+	captureCreatedTravelId, cancelTravelDetailed,
 	cancelTravelIfCreated,
 	type TravelIdRef
 } from '@features/gateway-pg/helpers/travel-cleanup';
@@ -128,6 +128,15 @@ export class CarrierCloneSteps extends UiBase {
 			const sourceTravelId = seedRef.travelId as number;
 			await seedRef.dispose();
 
+			// Verificacion explicita de la PRECONDICION cancelado + GATE de blocker (2026-08-06): el
+			// cleanup interno de runHoldScenario cancela en silencio; con el endpoint de cancel roto
+			// (5xx SQLGrammarException) el fuente NO esta CANCELADO -> ni la pestania Cancelados ni
+			// finalizeAdmin (CANCELLED->DONE) son alcanzables. ok o 4xx (ya cancelado) -> seguir.
+			await test.step('Precondición: verificar cancelación del fuente (gate blocker 5xx)', async () => {
+				const cancel = await cancelTravelDetailed(this.page, sourceTravelId);
+				test.skip(cancel.status >= 500, `BLOQUEADO backend TEST: cancel ${sourceTravelId} -> ${cancel.status} ${cancel.body.slice(0, 120)}`);
+			});
+
 			if (options.source === 'finalizados') {
 				await test.step('Seed: finalización administrativa (CANCELLED → DONE) vía API', async () => {
 					const finalized = await finalizeTravelAdmin(this.page, sourceTravelId);
@@ -157,7 +166,7 @@ export class CarrierCloneSteps extends UiBase {
 
 			await test.step(`Clonar viaje desde Gestión de Viajes (pestaña ${options.source})`, async () => {
 				await this.management.goto();
-				await this.management.cloneTravel(shortDest, options.source);
+				await this.management.cloneTravel(shortDest, options.source, sourceTravelId);
 			});
 
 			await test.step('Verificar formulario de alta precargado con los datos del viaje fuente', async () => {

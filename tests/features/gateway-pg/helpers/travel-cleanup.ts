@@ -124,7 +124,14 @@ export async function captureCreatedTravelId(page: Page, carrierId = DEFAULT_CAR
  *
  * @returns true si la cancelación fue exitosa, false si falló
  */
-export async function cancelTravel(
+/** Resultado granular de la cancelacion — permite distinguir blocker 5xx de estado 4xx. */
+export interface CancelTravelResult {
+	ok: boolean;
+	status: number;
+	body: string;
+}
+
+export async function cancelTravelDetailed(
 	page: Page,
 	travelId: number,
 	opts: {
@@ -133,11 +140,13 @@ export async function cancelTravel(
 		carrierName?: string;
 		reason?: string;
 	} = {}
-): Promise<boolean> {
+): Promise<CancelTravelResult> {
 	const carrierId = opts.carrierId ?? DEFAULT_CARRIER_ID;
 	const carrierUserId = opts.carrierUserId ?? DEFAULT_CARRIER_USER_ID;
 	const carrierName = opts.carrierName ?? DEFAULT_CARRIER_NAME;
-	const reason = opts.reason ?? '';
+	// reason NO vacio (probe 2026-08-06): el cancel con reasonForCancellation '' devuelve 500
+	// SQLGrammarException en TEST — descartar que el backend arme mal el SQL con reason vacio.
+	const reason = opts.reason ?? 'QA automation cleanup';
 
 	const apiBase = resolveApiBase(page);
 	const url = `${apiBase}/carriers/${carrierId}/travels/${travelId}/cancel`;
@@ -157,11 +166,23 @@ export async function cancelTravel(
 	});
 
 	if (!response.ok()) {
-		console.warn(`[travel-cleanup] cancelTravel ${travelId} failed: ${response.status()} ${response.statusText()}`);
-		return false;
+		// Body incluido en el diagnostico (fix 2026-08-05): un `false` sin causa obligaba a
+		// re-reproducir para saber si fue 401 (token), 404 (id ajeno) o 4xx de estado del viaje.
+		const body = await response.text().catch(() => '(body ilegible)');
+		console.warn(`[travel-cleanup] cancelTravel ${travelId} failed: ${response.status()} ${response.statusText()} — ${body.slice(0, 300)}`);
+		return { ok: false, status: response.status(), body: body.slice(0, 300) };
 	}
 	console.log(`[travel-cleanup] ✓ Viaje ${travelId} cancelado`);
-	return true;
+	return { ok: true, status: response.status(), body: '' };
+}
+
+/** Wrapper boolean retro-compatible (callers legacy/cleanups best-effort). */
+export async function cancelTravel(
+	page: Page,
+	travelId: number,
+	opts: Parameters<typeof cancelTravelDetailed>[2] = {}
+): Promise<boolean> {
+	return (await cancelTravelDetailed(page, travelId, opts)).ok;
 }
 
 /**

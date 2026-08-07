@@ -97,24 +97,29 @@ export class ThreeDsChallengePage extends UiBase {
 		return false;
 	}
 
+	/**
+	 * Espera a que el challenge 3DS quede REALMENTE cerrado (botón COMPLETE del iframe ausente y
+	 * overlay oculto). SEMÁNTICA CORREGIDA (fix 2026-08-06, corrida recovery/conflicto): la
+	 * versión anterior exigía además "Seleccionar Vehículo" HABILITADO — un oráculo de ÉXITO
+	 * contrabandeado en un método genérico. Tras un challenge FALLIDO (completeFail, camino
+	 * NO_AUTORIZADO) el botón queda visible-y-deshabilitado POR DISEÑO → el método nunca
+	 * retornaba y tiraba "still visible" con el modal ya cerrado (evidencia: snapshot sin rastro
+	 * del challenge). Los flujos de éxito NO pierden cobertura: todos los callers re-verifican
+	 * el botón vehículo por su cuenta (clickSelectVehicle → waitForEnabledButton).
+	 */
 	@step
 	async waitForHidden(timeout = 45_000): Promise<void> {
 		const deadline = Date.now() + timeout;
 		const challengeFrame = await this.waitForChallengeFrame(timeout);
 		const completeButton = challengeFrame.getByRole('button', { name: /^COMPLETE$/i });
-		const vehicleButton = this.page
-			.locator('button:visible')
-			.filter({ hasText: /Seleccionar Veh[íi]culo/i })
-			.first();
 
 		while (Date.now() < deadline) {
 			const completeVisible = await completeButton.isVisible().catch(() => false);
-			const vehicleVisible = await vehicleButton.isVisible().catch(() => false);
-			const vehicleEnabled = vehicleVisible ? await vehicleButton.isEnabled().catch(() => false) : false;
+			const overlayVisible = await this.overlay.isVisible().catch(() => false);
 
-			if (!completeVisible && (!vehicleVisible || vehicleEnabled)) return;
+			if (!completeVisible && !overlayVisible) return;
 
-			// NOTE(tier3-kept): condición compuesta (completeVisible + vehicleEnabled) — no reemplazable con retryAsync.
+			// NOTE(tier3-kept): polling propio con deadline — overlay 3DS es iframe Stripe sin evento DOM.
 			await this.page.waitForTimeout(500);
 		}
 
