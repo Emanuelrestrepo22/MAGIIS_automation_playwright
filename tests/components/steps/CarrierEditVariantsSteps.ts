@@ -303,16 +303,14 @@ export class CarrierEditVariantsSteps extends UiBase {
 					client: scenario.client,
 					passenger: scenario.passenger,
 					origin: scenario.origin,
-					destination: scenario.destination
+					destination: scenario.destination,
+					apiSearchQuery: scenario.apiSearchQuery
 				};
 				travelId = await recovery.setupFailedThreeDs(recoveryScenario);
-				// El retorno puede ser '' si la carrera de URLs resolvió primero en `limitExceeded=false`
-				// (ver waitForTravelCreation). El estado post-fallo SIEMPRE termina en /travels/{id}
-				// (patrón de los specs de recovery) — se re-extrae el id desde la URL final.
-				await this.page.waitForURL(/\/travels\/[\w-]+/, { timeout: 15_000 });
-				const match = this.page.url().match(/\/travels\/(\d+)/);
-				if (match) travelId = match[1];
-				expect(travelId, 'El seed debe resolver el travelId del viaje en conflicto (URL /travels/{id})').toBeTruthy();
+				// FE v1.72.8: el detalle /travels/{id} fue ELIMINADO — el seed ya verifica la fila
+				// "En Conflicto" (oráculo vigente) y retorna el id capturado del POST /travels.
+				// La edición continúa por deep-link mode=3 (superficie viva, probe 2026-08-07).
+				expect(travelId, 'El seed debe resolver el travelId del viaje en conflicto (POST /travels)').toBeTruthy();
 			});
 
 			await test.step('Abrir la edición del viaje en conflicto (deep-link mode=3)', async () => {

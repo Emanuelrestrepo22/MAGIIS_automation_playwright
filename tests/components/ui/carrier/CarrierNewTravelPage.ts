@@ -232,10 +232,23 @@ export class CarrierNewTravelPage extends UiBase {
 		await this.legacy.selectPassenger(name);
 	}
 
-	/** Selecciona el pasajero app pax invitado y completa su nombre. */
+	/**
+	 * Selecciona el pasajero app pax invitado y completa su nombre.
+	 *
+	 * FE v1.72.8: el control "PAX Invitado" dejó de exponer `role=radio` (input oculto bajo
+	 * label custom — snapshot corrida TC1039 2026-08-07: nodo `generic`, cero radios en el
+	 * árbol de accesibilidad). El POM legacy apunta al role viejo (`getByRole('radio')`) y
+	 * es base compartida read-only (multi-session safety), así que la versión KATA activa el
+	 * control por su TEXTO visible y completa el mismo textbox "Nombre*" que usaba el POM.
+	 */
 	@step
 	async selectGuestPassenger(name: string): Promise<void> {
-		await this.legacy.selectGuestPassenger(name);
+		const guestToggle = this.page.getByText(/PAX invitado/i).first();
+		await expect(guestToggle).toBeVisible({ timeout: 10_000 });
+		await guestToggle.click();
+		const nameInput = this.page.getByRole('textbox', { name: 'Nombre*' });
+		await expect(nameInput).toBeVisible({ timeout: 10_000 });
+		await nameInput.fill(name);
 	}
 
 	/** Fija la dirección de origen del viaje. */

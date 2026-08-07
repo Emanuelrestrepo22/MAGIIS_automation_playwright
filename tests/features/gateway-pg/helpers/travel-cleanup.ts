@@ -50,6 +50,12 @@ function resolveApiBase(page: Page): string {
 /** Ref mutable para compartir travelId entre el interceptor y el afterEach */
 export interface TravelIdRef {
 	travelId: number | null;
+	/**
+	 * Código WEB del viaje (`travelIdForCarrier` del DTO) — la grilla de Gestión de Viajes
+	 * lo muestra como "NNNN-W". Permite anclar la FILA del viaje recién creado en el
+	 * dashboard (v1.72.8 eliminó las anclas `a[href*="/travels/"]` de la grilla).
+	 */
+	travelIdForCarrier: number | null;
 	dispose: () => Promise<void>;
 }
 
@@ -65,6 +71,7 @@ export interface TravelIdRef {
 export async function captureCreatedTravelId(page: Page, carrierId = DEFAULT_CARRIER_ID): Promise<TravelIdRef> {
 	const ref: TravelIdRef = {
 		travelId: null,
+		travelIdForCarrier: null,
 		dispose: async () => {
 			page.off('response', handler);
 		}
@@ -104,7 +111,15 @@ export async function captureCreatedTravelId(page: Page, carrierId = DEFAULT_CAR
 						: null;
 			if (id !== null) {
 				ref.travelId = id;
-				console.log(`[travel-cleanup] Capturado travelId=${id}`);
+				// Código web (grilla "NNNN-W") — additive: solo si el DTO lo trae explícito.
+				const rawCode = body?.travelIdForCarrier;
+				ref.travelIdForCarrier =
+					typeof rawCode === 'number'
+						? rawCode
+						: typeof rawCode === 'string' && /^\d+$/.test(rawCode)
+							? Number(rawCode)
+							: null;
+				console.log(`[travel-cleanup] Capturado travelId=${id}${ref.travelIdForCarrier ? ` (web ${ref.travelIdForCarrier}-W)` : ''}`);
 			} else if (body) {
 				console.warn(
 					`[travel-cleanup] POST ${response.url()} 2xx sin travelId/id numérico (keys: ${Object.keys(body).join(', ')})`,

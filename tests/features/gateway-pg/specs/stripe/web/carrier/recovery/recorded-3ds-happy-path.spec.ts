@@ -6,6 +6,8 @@
  * Observaciones del flujo real (entorno TEST):
  *   - El portal puede tener sesión activa → login explícito + ensureDashboardLoaded validan el shell
  *   - El formulario pre-carga dirección "home" del pasajero como origen → setOrigin() la limpia con X
+ *   - DOS ventanas de challenge posibles (2026-08-07): la validación ("Validar" = hold real) dispara
+ *     la primera; el envío puede disparar una segunda (post-envío) — ambas se aprueban en el happy path
  *
  * KATA conformance (feature/kata-conformance):
  *   - test/expect vienen del fixture unificado KATA (@TestFixture); login vía loginAsDispatcher(page)
@@ -18,7 +20,9 @@ import { test, expect } from '@TestFixture';
 import { CarrierDashboardPage, CarrierNewTravelPage, CarrierOperationalPreferencesPage, CarrierTravelManagementPage } from '@ui/carrier';
 import { ThreeDsChallengePage } from '@ui/ThreeDsChallengePage';
 import { loginAsDispatcher, STRIPE_TEST_CARDS, TEST_DATA } from '@features/gateway-pg/fixtures/gateway.fixtures';
+import { PASSENGERS } from '@features/gateway-pg/data/passengers';
 import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '@features/gateway-pg/helpers/travel-cleanup';
+import { ensureRecoverableCardIdempotence } from '@features/gateway-pg/helpers/stripe/recovery.helpers';
 
 test.use({ storageState: undefined });
 
@@ -35,6 +39,16 @@ test.describe('[TS-STRIPE-TC1053] Hold ON + success3DS (4000 0025 0000 3155) —
 		await test.step('Login carrier', async () => {
 			await loginAsDispatcher(page);
 			await dashboardPage.ensureDashboardLoaded();
+		});
+
+		await test.step('Precondición: limpiar 3184 previa del pax (idempotencia BL-050)', async () => {
+			// La 3184 queda vinculada al wallet en cada corrida (attach al completar los iframes);
+			// BL-050 bloquea "Validar" si el mismo número ya está vinculado — limpieza silent-fail.
+			await ensureRecoverableCardIdempotence(page, {
+				passenger: TEST_DATA.passenger,
+				apiSearchQuery: PASSENGERS.appPax.apiSearchQuery,
+				cardLast4: STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4)
+			});
 		});
 
 		await test.step('Validar hold activo en preferencias operativas', async () => {
@@ -74,6 +88,19 @@ test.describe('[TS-STRIPE-TC1053] Hold ON + success3DS (4000 0025 0000 3155) —
 			await test.step('Seleccionar vehículo y enviar el servicio', async () => {
 				await travelPage.clickSelectVehicle();
 				await travelPage.clickSendService();
+			});
+
+			// DOS VENTANAS de challenge (adaptación 2026-08-07, alineada al helper de recovery):
+			// con el hold ejecutándose en la VALIDACIÓN, el envío puede disparar un SEGUNDO
+			// challenge (post-envío). En el happy path también se aprueba; si no aparece, la
+			// espera opcional (acotada, sin ventana ciega) deja seguir el flujo original.
+			await test.step('Aprobar challenge 3DS post-envío (ventana 2, si aparece)', async () => {
+				const threeDS = new ThreeDsChallengePage({ page });
+				const postSubmitChallenge = await threeDS.waitForOptionalVisible(8_000);
+				if (postSubmitChallenge) {
+					await threeDS.completeSuccess();
+					await threeDS.waitForHidden();
+				}
 			});
 
 			await test.step('Validar redirección al formulario de nuevo viaje — flujo completado', async () => {
