@@ -18,21 +18,28 @@ import { TEST_DATA } from '../../../features/gateway-pg/data/stripeTestData';
 
 const log = (m: string): void => console.log(`[fullflow] ${m}`);
 
-function ebizCard(): CardInput & { last4: string } {
-	const card = resolveCard({ gateway: 'ebizcharge', intent: 'HAPPY_NO_AUTH' });
-	return {
+function walletCard(): CardInput & { last4: string } {
+	// v2.5.19: el wallet del pax tokeniza vía STRIPE (rechaza tarjetas no-test-Stripe como la eBiz).
+	// WALLET_GATEWAY resuelve la tarjeta; default 'stripe' (4242…). Solo eBiz agrega address/zip.
+	const gateway = (process.env.WALLET_GATEWAY ?? 'stripe') as 'stripe' | 'ebizcharge' | 'authorize' | 'mercado-pago';
+	const card = resolveCard({ gateway, intent: 'HAPPY_NO_AUTH' });
+	const input: CardInput & { last4: string } = {
 		number: card.number,
 		expiry: card.expiry,
 		cvc: card.cvc,
 		holderName: card.holderName,
-		zip: EBIZ_BILLING.zip,
-		address: EBIZ_BILLING.address,
+		zip: card.zip,
 		last4: card.last4
 	};
+	if (gateway === 'ebizcharge') {
+		input.address = EBIZ_BILLING.address;
+		input.zip = EBIZ_BILLING.zip;
+	}
+	return input;
 }
 
 async function run(): Promise<void> {
-	const card = ebizCard();
+	const card = walletCard();
 	const harness = new PassengerTripHappyPathHarness(getPassengerAppConfig(), undefined, { profileMode: 'personal' });
 	try {
 		await harness.ensurePassengerShell();
@@ -44,7 +51,13 @@ async function run(): Promise<void> {
 		const driver = harness.getDriver();
 		const trip = new PassengerNewTripScreen(getPassengerAppConfig(), driver);
 		await trip.openNewTrip();
-		await trip.setOrigin(process.env.E2E_ORIGIN ?? TEST_DATA.origin);
+		// E2E_SKIP_ORIGIN=1 → dejar el origen pre-cargado por GPS (ubicación actual del device), para
+		// que el driver físico en esa misma ubicación matchee el viaje difundido.
+		if (process.env.E2E_SKIP_ORIGIN !== '1') {
+			await trip.setOrigin(process.env.E2E_ORIGIN ?? TEST_DATA.origin);
+		} else {
+			log('E2E_SKIP_ORIGIN=1 → origen = ubicación GPS actual (pre-cargada)');
+		}
 		await trip.setDestination(process.env.E2E_DESTINATION ?? TEST_DATA.destination);
 		log('O+D seleccionados, confirmTrip() (Seleccionar Vehículo → travel-info → Confirmar)…');
 
