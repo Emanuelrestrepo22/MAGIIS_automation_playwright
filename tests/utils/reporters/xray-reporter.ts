@@ -30,8 +30,8 @@
  *   XRAY_OUTPUT_FILE    → override del path de salida (gana sobre el outputFile de la
  *                         config — habilita un JSON por pasarela: xray-results.<gw>.json)
  */
-import { mkdirSync, writeFileSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { mkdirSync, writeFileSync, readFileSync } from 'node:fs';
+import { dirname, basename } from 'node:path';
 import type {
 	FullResult,
 	Reporter,
@@ -42,12 +42,20 @@ import type {
 // Estados Xray Cloud válidos para import.
 type XrayStatus = 'PASSED' | 'FAILED' | 'ABORTED' | 'TODO';
 
+// Evidencia embebida en el import de Xray Cloud (`evidence[]` por test): screenshot base64.
+interface XrayEvidence {
+	data: string
+	filename: string
+	contentType: string
+}
+
 interface XrayTestResult {
 	testKey: string
 	status: XrayStatus
 	start?: string
 	finish?: string
 	comment?: string
+	evidence?: XrayEvidence[]
 }
 
 interface ReporterOptions {
@@ -144,11 +152,30 @@ class XrayReporter implements Reporter {
 			? undefined
 			: clean(result.error?.message ?? `status=${result.status}`).slice(0, 2000);
 
+		// Evidencia: screenshots (image/png) que Playwright adjunta al test. Con `--screenshot=on`
+		// los PASSED capturan un screenshot final → se embebe base64 en el import y queda anclado
+		// al run en Xray como evidencia del test-case. Cap defensivo para no inflar el JSON.
+		const evidence: XrayEvidence[] = [];
+		for (const att of result.attachments) {
+			if (att.contentType !== 'image/png' || !att.path) continue;
+			try {
+				evidence.push({
+					data: readFileSync(att.path).toString('base64'),
+					filename: basename(att.path),
+					contentType: att.contentType,
+				});
+			} catch { /* artefacto ausente (ENOENT en OneDrive) → seguir sin él */ }
+			if (evidence.length >= 3) break;
+		}
+
 		// Una fila por cada Test cubierto (dedup por testKey, gana el peor estado).
 		for (const testKey of testKeys) {
 			const prev = this.results.get(testKey);
 			if (!prev || SEVERITY[status] > SEVERITY[prev.status]) {
-				this.results.set(testKey, { testKey, status, start, finish, comment });
+				this.results.set(testKey, {
+					testKey, status, start, finish, comment,
+					...(evidence.length > 0 ? { evidence } : {}),
+				});
 			}
 		}
 	}
