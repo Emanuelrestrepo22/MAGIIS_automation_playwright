@@ -56,16 +56,34 @@ export class TravelManagementPage {
 		const firstRow = this.page.locator('tbody tr').first();
 		await expect(firstRow).toBeVisible({ timeout: 10_000 });
 
-		// Buscar link de detalle primero (href con travelId).
+		// Buscar link de detalle primero (href con travelId) — legacy, puede no existir.
 		const detailLink = firstRow.locator('a[href*="travelId"], a[href*="/travels/"]').first();
 		if (await detailLink.count()) {
 			await detailLink.click();
 			return;
 		}
 
-		// Último recurso: último botón de la primera fila (patrón de openDetailForPassenger).
-		const actionBtn = firstRow.getByRole('button').last();
-		await expect(actionBtn).toBeVisible({ timeout: 10_000 });
+		// FIX 2026-08-07 (corrida live TC078, 2 iteraciones): el FE reemplazó los anchors de
+		// detalle por botones de ícono (fa-pencil/fa-list/fa-times — mismo cambio que ya documenta
+		// esta clase para Clonar/Reactivar). El fallback `.last()` anterior tomaba el botón
+		// EQUIVOCADO — hoy el último ícono es Cancelar (fa-times), no Edición — y disparaba el
+		// popup de cancelación (evidencia: screenshot con el modal "¿Quiere cancelar...?" abierto).
+		// `fa-list` navega a `mode=1` (READ-ONLY) — confirmado en vivo (2.º intento): el consumidor
+		// (`runScheduledTripCardEdit`) necesita el ABM de EDICIÓN (`mode=3`), que es el ícono
+		// fa-pencil ("lápiz de edición", mismo botón que `toggleEditButton` publica para NO_AUTH).
+		const editBtn = firstRow
+			.locator('button.action-btn:has(i.fa-pencil), button[title="Editar"], button[aria-description="Editar"], button[title="Edit"]')
+			.first();
+		if (await editBtn.count()) {
+			await expect(editBtn, 'La fila debe exponer el botón Editar (fa-pencil)').toBeVisible({ timeout: 10_000 });
+			await editBtn.click();
+			return;
+		}
+
+		// Último recurso histórico — EXCLUYE explícitamente el botón destructivo (fa-times/Cancelar),
+		// nunca clickear una cancelación como "mejor esfuerzo" de navegación.
+		const actionBtn = firstRow.getByRole('button').filter({ hasNot: this.page.locator('i.fa-times') }).last();
+		await expect(actionBtn, 'La fila debe exponer al menos un botón de acción no-destructivo').toBeVisible({ timeout: 10_000 });
 		await actionBtn.click();
 	}
 

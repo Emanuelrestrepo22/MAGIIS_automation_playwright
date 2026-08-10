@@ -123,6 +123,16 @@ export class CarrierEditVariantsSteps extends UiBase {
 	 * edición y el cleanup del caller). NO verifica "Por Asignar": un viaje programado vive en
 	 * la pestaña Programados — el oráculo del alta es el travelId + la URL post-submit.
 	 */
+	/**
+	 * Seed PUBLICO para el ancla TC078 (fix 2026-08-07): la grilla de Programados del carrier
+	 * compartido quedo VACIA (datos historicos agotados) y el ancla operaba sobre la primera
+	 * fila existente — precondicion self-contained tambien para ella, preservando su sujeto
+	 * (edicion VIA GRILLA, no deep-link). Devuelve el ref para cleanup del caller.
+	 */
+	async seedScheduledTripForAnchor(scenario: EditSeedScenario): Promise<TravelIdRef> {
+		return this.seedScheduledTrip(scenario);
+	}
+
 	private async seedScheduledTrip(scenario: EditSeedScenario): Promise<TravelIdRef> {
 		const cardLast4 = STRIPE_TEST_CARDS.successDirect.slice(-4);
 
