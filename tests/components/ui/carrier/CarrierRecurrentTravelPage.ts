@@ -174,9 +174,15 @@ export class CarrierRecurrentTravelPage extends UiBase {
 			await this.endRecurringOverlay.locator('.ui-datepicker-next').first().click();
 		}
 
+		// El `<a>` del día real trae whitespace de indentación del template alrededor del número
+		// (textContent sin trim, p.ej. "\n    13\n    ") — Playwright's `hasText` con RegExp matchea
+		// contra el texto CRUDO, no contra una versión trimeada; un `^N$` sin tolerancia de espacios
+		// no matchea NUNCA ningún día real (confirmado en vivo: 21 `<a>` habilitados sin filtro,
+		// 0 tras el filter con el regex anclado estricto) — de ahí el "element(s) not found" pese a
+		// que el día target siempre estuvo presente, habilitado y visible.
 		const dayCell = this.endRecurringOverlay
 			.locator('td:not(.ui-datepicker-other-month) a.ui-state-default:not(.ui-state-disabled)')
-			.filter({ hasText: new RegExp(`^${target.getDate()}$`) })
+			.filter({ hasText: new RegExp(`^\\s*${target.getDate()}\\s*$`) })
 			.first();
 		await expect(
 			dayCell,
