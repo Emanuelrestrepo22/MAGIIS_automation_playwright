@@ -77,6 +77,7 @@ export class CarrierTravelManagementPage extends UiBase {
 		destination?: string;
 		status?: string | RegExp;
 		travelId?: number;
+		travelIdForCarrier?: number;
 	}): Promise<void> {
 		await this.legacy.expectTripRowInCurrentTab(opts);
 	}

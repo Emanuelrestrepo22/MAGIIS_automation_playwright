@@ -216,31 +216,85 @@ export class TravelManagementPage {
 	 * silenciosamente NO matchee (review MEDIUM-1) — un rename del FE los mandaba a mirar la
 	 * pestaña equivocada sin ningún fallo que lo delate.
 	 *
-	 * `travelId` (opcional) ANCLA la fila por su link de detalle con el selector boundary-safe
-	 * (review LOW-1): en el carrier compartido el match por texto puede tomar una fila AJENA con
-	 * el mismo pasajero/destino de otra corrida. Con el id, la fila es determinística y sobre
-	 * ELLA se siguen verificando pasajero/destino/estado.
+	 * `travelIdForCarrier` (opcional, PREFERIDO) ANCLA la fila por su código WEB visible en la
+	 * columna "Código" (grilla, texto "NNNN-W") — mismo idioma que `expectTravelInEnConflicto`
+	 * (recovery.helpers.ts). `travelId` (legacy) ancla por `a[href*="/travels/{id}"]`: confirmado
+	 * en vivo (recurrentes/, 2026-08-11) que v1.72.8 ELIMINÓ esos anchors de esta grilla — el id
+	 * interno del POST tampoco es el código que se muestra, así que este camino nunca matchea.
+	 * Se mantiene por compatibilidad con callers que aún no migraron (p.ej. quote-trip-verification);
+	 * preferir `travelIdForCarrier` en código nuevo. Sin ninguno de los dos, el match por texto
+	 * puede tomar una fila AJENA con el mismo pasajero/destino de otra corrida (review LOW-1).
 	 */
 	async expectTripRowInCurrentTab(opts: {
 		passenger: string;
 		destination?: string;
 		status?: string | RegExp;
 		travelId?: number;
+		travelIdForCarrier?: number;
 	}): Promise<void> {
-		const { passenger, destination, status, travelId } = opts;
+		const { passenger, destination, status, travelId, travelIdForCarrier } = opts;
+		// Filtrar por el buscador de la grilla ANTES de evaluar la fila (fix 2026-08-11, corrida
+		// live TC052): la pestaña "Programados" del carrier compartido acumula decenas de filas
+		// entre corridas (paginada, "1 de 2" confirmado en vivo con 33 filas) — un `tbody tr` sin
+		// filtrar puede no traer la fila recién creada si cae en otra página, aunque exista
+		// (confirmado: 0 matches de "4180" en el snapshot completo del DOM). El buscador
+		// (`input.search-header`, mismo control que `CarrierRecurrentTravelPage.searchInList`)
+		// NO filtra con solo `fill()` — exige el evento Enter (confirmado en vivo: `fill()` sin
+		// Enter deja la grilla intacta; con Enter, filtra a la fila exacta y saca la paginación de
+		// la ecuación). `reactivate()` más abajo tiene el mismo `fill()` sin Enter — no tocado acá,
+		// pertenece al bloqueador ya documentado de Cancelados (500 backend).
+		//
+		// RE-EJECUTAR el filtro en cada intento del poll (no solo una vez, fix 2026-08-11, corrida
+		// live TC052 variante hold+3DS): cada Enter dispara un fetch nuevo al backend ("Última
+		// actualización" visible en la UI) — un solo filtro contra el snapshot inicial no ve una
+		// fila cuya escritura backend post-3DS todavía no comitió. Confirmado en vivo: la fila
+		// existía en "Asignar" mientras "Programados" reportaba 0 — no es ausencia, es una
+		// migración de estado async más lenta que el resto (mismo patrón de latencia extra ya
+		// confirmado en el challenge 3DS post-envío).
+		const search = this.page.getByRole('textbox', { name: 'Buscar...' });
+		const hasSearch = travelIdForCarrier != null && (await search.count()) > 0;
+		// Boundary-safe (review LOW-1, mismo criterio que travelDetailHrefSelector): matchear SOLO
+		// la celda "Código" (primer <td>), no toda la fila — un `hasText` sin acotar corre contra
+		// pasajero/teléfono/fecha/presupuesto también, y una coincidencia de dígitos ajena (p.ej.
+		// un teléfono) anclaría a la fila equivocada sin que el test lo note.
 		const row =
-			travelId != null
+			travelIdForCarrier != null
 				? this.page
 						.locator('tbody tr')
-						.filter({ has: this.page.locator(travelDetailHrefSelector(travelId)) })
+						.filter({ has: this.page.locator('td:first-child').filter({ hasText: `${travelIdForCarrier}-W` }) })
 						.first()
-				: await this.tripRow(passenger, destination);
-		await expect(
-			row,
-			travelId != null
-				? `La fila del viaje ${travelId} debe estar visible en la pestaña actual (anclaje por travelId)`
-				: `La fila de "${passenger}" debe estar visible en la pestaña actual`
-		).toBeVisible({ timeout: travelId != null ? 30_000 : 10_000 });
+				: travelId != null
+					? this.page
+							.locator('tbody tr')
+							.filter({ has: this.page.locator(travelDetailHrefSelector(travelId)) })
+							.first()
+					: await this.tripRow(passenger, destination);
+		const anchorLabel =
+			travelIdForCarrier != null
+				? `del viaje ${travelIdForCarrier}-W (anclaje por código WEB)`
+				: travelId != null
+					? `del viaje ${travelId} (anclaje por travelId)`
+					: `de "${passenger}"`;
+		if (hasSearch) {
+			await expect
+				.poll(
+					async () => {
+						await search.fill(String(travelIdForCarrier));
+						await search.press('Enter');
+						await this.page.waitForTimeout(500); // debounce del filtro de la grilla
+						return row.count();
+					},
+					{
+						message: `La fila ${anchorLabel} debe estar visible en la pestaña actual (re-fetch por búsqueda — puede tardar en migrar de estado tras 3DS)`,
+						timeout: 30_000
+					}
+				)
+				.toBeGreaterThan(0);
+		} else {
+			await expect(row, `La fila ${anchorLabel} debe estar visible en la pestaña actual`).toBeVisible({
+				timeout: travelId != null ? 30_000 : 10_000
+			});
+		}
 		await expect
 			.poll(
 				async () => {

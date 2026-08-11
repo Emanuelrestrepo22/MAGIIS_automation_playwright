@@ -275,7 +275,13 @@ export class RecurrentesSteps extends UiBase {
 
 			if (options.threeDs) {
 				await test.step('Aprobar 3DS adicional si aparece post-envío', async () => {
-					if (await this.threeDs.waitForOptionalVisible(5_000)) {
+					// 15s (no 5s): confirmado en vivo (TC052) que el challenge post-envío del alta
+					// RECURRENTE tarda más en aparecer que en un alta normal — el POST extra crea el
+					// RecurringTrip además del travel. Con 5s el check no lo detectaba, el challenge
+					// quedaba sin aprobar y waitForTravelCreation agotaba sus 30s contra un modal
+					// bloqueante nunca clickeado (evidencia: screenshot con "3D Secure 2 Test Page"
+					// abierto en el momento del timeout).
+					if (await this.threeDs.waitForOptionalVisible(15_000)) {
 						challengeSeen = true;
 						await this.threeDs.completeSuccess();
 						await this.threeDs.waitForHidden();
@@ -308,15 +314,17 @@ export class RecurrentesSteps extends UiBase {
 				// vive en Programados, no en "Por Asignar". Un hold NO_AUTH lo manda a
 				// "En conflicto" y esta fila desaparece: este oráculo protege las variantes hold ON.
 				// Verificación SOBRE la pestaña recién abierta (review MEDIUM-1 — el método
-				// PorAsignar re-clickeaba "Asignar" por dentro) y ANCLADA al travelId del POST
-				// (fila determinística en el carrier compartido).
+				// PorAsignar re-clickeaba "Asignar" por dentro) y ANCLADA al código WEB del POST
+				// (travelIdForCarrier, "NNNN-W" — fila determinística en el carrier compartido).
+				// NO se ancla por travelId/href: confirmado en vivo que v1.72.8 eliminó esos
+				// anchors de esta grilla (mismo idioma que expectTravelInEnConflicto).
 				await this.management.goto();
 				await this.management.openScheduledTrips();
 				await this.management.expectTripRowInCurrentTab({
 					passenger: scenario.passenger,
 					destination: shortDestination(scenario.destination),
 					status: RECURRENT_TRIP_ROW_STATUS,
-					travelId: travelIdRef?.travelId ?? undefined
+					travelIdForCarrier: travelIdRef?.travelIdForCarrier ?? undefined
 				});
 			});
 

@@ -191,11 +191,13 @@ export class CarrierRecurrentTravelPage extends UiBase {
 		await dayCell.click();
 
 		// El overlay del p-calendar trae su propio "Aceptar" en el p-footer (cierra el overlay);
-		// PrimeNG puede cerrar solo al elegir el día — por eso el click es condicional.
+		// PrimeNG puede cerrar solo al elegir el día — por eso el click es condicional. Un
+		// isVisible() previo deja una ventana de carrera (confirmado en vivo: PrimeNG puede
+		// desmontar el overlay ENTRE el check y el click, dejando el click colgado 15s contra un
+		// elemento que ya no está estable) — un intento de click con timeout corto y sin lanzar
+		// preserva el mismo "mejor esfuerzo" sin la carrera.
 		const overlayAccept = this.endRecurringOverlay.getByRole('button', { name: /^(Aceptar|Accept)$/i }).first();
-		if (await overlayAccept.isVisible().catch(() => false)) {
-			await overlayAccept.click();
-		}
+		await overlayAccept.click({ timeout: 3_000 }).catch(() => {});
 
 		// Commit observable: el input readonly del p-calendar refleja una fecha no vacía.
 		await expect
