@@ -354,6 +354,9 @@ export class RecurrentesSteps extends UiBase {
 				//    "la más nueva que matchee el find" a secas, que podía ser una recurrencia AJENA
 				//    ('smith' matchea 'Nayla Smith'). Silent-fail: un cleanup roto no debe tapar el
 				//    desenlace; ante duda se prefiere el leak (diagnosticable por warn) al borrado ajeno.
+				//    NOTA infra (2026-08-11): el carrier TEST tiene un cron diario que limpia
+				//    Programados/Recurrentes/Históricos (mismo proceso que apaga el server 00-07 por
+				//    ahorro de costos) — un leak acá NO es permanente, se autolimpia dentro del día.
 				if (travelIdRef?.travelId != null) {
 					if (createdRecurringId !== null) {
 						await deleteRecurringTripViaApi(this.page, createdRecurringId);
@@ -361,7 +364,7 @@ export class RecurrentesSteps extends UiBase {
 						await deleteRecurringTripNewerThan(this.page, recurringFind, maxRecurringIdBefore);
 					} else {
 						console.warn(
-							'[recurrentes] snapshot de recurrencias no disponible — no se borra ninguna recurrencia por seguridad (posible leak: revisar el listado de recurrentes del carrier TEST)'
+							'[recurrentes] snapshot de recurrencias no disponible — no se borra ninguna recurrencia por seguridad (leak transitorio, se autolimpia con el cron diario del carrier TEST)'
 						);
 					}
 				}
