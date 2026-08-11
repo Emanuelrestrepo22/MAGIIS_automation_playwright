@@ -86,7 +86,16 @@ export class ThreeDsChallengePage extends UiBase {
 		const deadline = Date.now() + timeout;
 
 		while (Date.now() < deadline) {
-			if (await this.overlay.isVisible().catch(() => false)) return true;
+			// Doble lectura estabilizada (fix 2026-08-07, diagnóstico live TC006 — mismo patrón que
+			// AppStoreGatewaysPage.readState): un `isVisible()` true aislado puede ser una transición
+			// (overlay cerrándose) — confirmado en vivo: `completeSuccess()` posterior no encontró el
+			// botón COMPLETE (60s timeout, "element(s) not found"), el challenge ya no estaba. Una
+			// lectura real de challenge PERSISTE muchos segundos y sobrevive fácil este segundo check;
+			// no debilita la detección — solo filtra el parpadeo puntual.
+			if (await this.overlay.isVisible().catch(() => false)) {
+				await this.page.waitForTimeout(300);
+				if (await this.overlay.isVisible().catch(() => false)) return true;
+			}
 			// El challenge tiene prioridad: solo damos por "asentado sin challenge" si NO hay overlay.
 			if (settled && (await settled().catch(() => false))) return false;
 

@@ -16,6 +16,7 @@
  */
 import type { Page, Response } from '@playwright/test';
 import { cacheAuthToken, getApiHeaders } from './card-precondition';
+import { debugLog } from '@helpers/index';
 
 /**
  * IDs por defecto del carrier dispatcher utilizado en TEST (remises.eeuu).
@@ -94,10 +95,19 @@ export async function captureCreatedTravelId(page: Page, carrierId = DEFAULT_CAR
 			}
 
 			if (request.method() !== 'POST') return;
-			if (!endpointPattern.test(response.url())) return;
-			if (!response.ok()) return;
+			if (!endpointPattern.test(response.url())) {
+				if (request.method() === 'POST' && /\/travels/i.test(response.url())) {
+					debugLog('gateway-pg:travel-capture', `[skip] POST ${response.url()} no matchea endpointPattern`);
+				}
+				return;
+			}
+			if (!response.ok()) {
+				debugLog('gateway-pg:travel-capture', `[skip] POST ${response.url()} status=${response.status()} (no-ok)`);
+				return;
+			}
 
 			const body = await response.json().catch(() => null);
+			debugLog('gateway-pg:travel-capture', `[match] POST ${response.url()} status=${response.status()} body=${JSON.stringify(body).slice(0, 200)}`);
 			// El service FE consume `response.travelId` (travel.service.ts:410), pero la interfaz
 			// del command declara `id?` (addTravelcommand.ts:33) y el DTO trae también
 			// `travelIdForCarrier`. Aceptamos cualquiera de los tres, number o string-numérico,

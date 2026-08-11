@@ -35,6 +35,8 @@ import {
 	cancelTravelIfCreated,
 	type TravelIdRef
 } from '@features/gateway-pg/helpers/travel-cleanup';
+import { cleanupGatewayCardByLast4, extractAuthToken } from '@features/gateway-pg/helpers/card-precondition';
+import { debugLog } from '@helpers/index';
 
 /**
  * Flujo de tarjeta: nueva vinculación (last4 requerido SOLO en stripe — las demás
@@ -88,9 +90,20 @@ export class ContractorHoldSteps extends UiBase {
 		await loginAsContractor(this.page, gateway ? { gateway } : undefined);
 	}
 
-	/** Aprueba el challenge 3DS si aparece (wait corto no-bloqueante). */
-	async approve3dsIfPresent(timeout = 5_000): Promise<void> {
-		if (await this.threeDs.waitForOptionalVisible(timeout)) {
+	/**
+	 * Aprueba el challenge 3DS si aparece (wait corto no-bloqueante).
+	 *
+	 * `settled` (fix 2026-08-07, diagnóstico live TC006 en serial tras TC005): forwarding directo
+	 * a `waitForOptionalVisible` — sin esto, un check "post-envío" que corre mientras el portal YA
+	 * está redirigiendo (tarjetas que solo desafían una vez, en la vinculación) puede leer el
+	 * overlay como "visible" en una ventana intermedia y comprometerse a `completeSuccess()`, que
+	 * falla 60s después con "elemento no encontrado" porque la página ya navegó (evidencia:
+	 * error-context.md del fallo sin NINGÚN rastro de iframe/challenge — la página ya no era
+	 * travel/create). Con `settled`, el wait corta apenas el flujo avanzó, en vez de agotar el
+	 * timeout a ciegas contra un challenge que nunca iba a aparecer.
+	 */
+	async approve3dsIfPresent(timeout = 5_000, settled?: () => Promise<boolean>): Promise<void> {
+		if (await this.threeDs.waitForOptionalVisible(timeout, settled)) {
 			await this.threeDs.completeSuccess();
 			await this.threeDs.waitForHidden();
 		}
@@ -164,6 +177,29 @@ export class ContractorHoldSteps extends UiBase {
 						"runColaboradorScenario: card.last4 es requerido en el flujo stripe (card kind 'new')."
 					);
 				}
+				// Precondición de idempotencia (fix 2026-08-07, mismo root cause que CarrierHoldSteps
+				// 18058c7): confirmado en vivo — TC002/TC006 (2.º test de su archivo serial) fallan
+				// porque TC001/TC005 (1.º) ya vinculó la MISMA tarjeta al colaborador; el alta
+				// diverge a tarjeta-guardada ("Button did not become enabled" / rechazo de
+				// validación). Se ubica DESPUÉS de abrir el formulario (no antes): un intento previo
+				// con el cleanup antes de openNewTravel() disparó timeouts de navegación intermitentes
+				// en el SPA de contractor (root cause distinto al de carrier, no reproducido acá).
+				await test.step('Precondición: limpiar tarjeta previa del colaborador (idempotencia)', async () => {
+					let token: string | null = null;
+					for (let attempt = 0; attempt < 3 && !token; attempt++) {
+						token = await extractAuthToken(this.page);
+					}
+					if (!token) {
+						debugLog('gateway-pg:contractor', '[card-cleanup] JWT no capturado tras 3 intentos — cleanup correrá sin auth y no-op');
+					}
+					// `scenario.user` viene en formato "apellido, nombre" (convención del dropdown,
+					// ver tests/fixtures/users/passengers.ts) — el endpoint de búsqueda resuelve por
+					// lastName; se agrega el fragmento apellido como fallback (mismo patrón que
+					// CarrierHoldSteps con paxSearchQueries) por si el string completo no matchea.
+					const lastNameFragment = scenario.user.split(',')[0].trim();
+					const queries = lastNameFragment === scenario.user ? [scenario.user] : [scenario.user, lastNameFragment];
+					await cleanupGatewayCardByLast4(this.page, queries, cardLast4);
+				});
 				await test.step(`Completar formulario — colaborador + tarjeta ${scenario.threeDs === 'none' ? 'sin 3DS' : 'con 3DS'}`, async () => {
 					await this.travel.fillMinimum({
 						client: scenario.user,
@@ -196,6 +232,17 @@ export class ContractorHoldSteps extends UiBase {
 					await this.threeDs.completeSuccess();
 					await this.threeDs.waitForHidden();
 				});
+			} else if (scenario.threeDs === 'post-service-double') {
+				// Fix 2026-08-07 (diagnóstico live TC006): tarjetas `alwaysAuthenticate` desafían
+				// SIEMPRE en la validación de vinculación, sin importar Hold ON/OFF — el modo
+				// 'post-service-double' asumía (incorrecto) que con Hold OFF ese challenge de
+				// vinculación no ocurre. `fillMinimum` (NewTravelPageBase, hardened esta sesión)
+				// trata "challenge visible" como éxito DE LA VALIDACIÓN y retorna sin resolverlo —
+				// el caller SIEMPRE debe estar preparado a resolverlo. Evidencia: screenshot con
+				// el modal "3D Secure 2 Test Page" abierto y bloqueando "Seleccionar Vehículo".
+				await test.step('Completar challenge 3DS de vinculación si aparece (post-service-double)', async () => {
+					await this.approve3dsIfPresent(10_000);
+				});
 			}
 
 			await test.step('Seleccionar vehículo y enviar el viaje', async () => {
@@ -210,8 +257,12 @@ export class ContractorHoldSteps extends UiBase {
 				});
 			} else if (scenario.threeDs === 'post-service-double') {
 				await test.step('Completar hasta 2 challenges 3DS opcionales', async () => {
-					await this.approve3dsIfPresent(10_000);
-					await this.approve3dsIfPresent(5_000);
+					// `settled`: el portal contractor puede redirigir a /dashboard sin más challenge
+					// (tarjetas que ya autenticaron en la vinculación) — cortar el wait en cuanto eso
+					// ocurra evita comprometerse a `completeSuccess()` contra un overlay que ya no está.
+					const alreadyRedirected = async () => !this.page.url().includes('/travel/create');
+					await this.approve3dsIfPresent(10_000, alreadyRedirected);
+					await this.approve3dsIfPresent(5_000, alreadyRedirected);
 				});
 			} else {
 				await test.step('Verificar que no aparece modal 3DS', async () => {
@@ -232,7 +283,21 @@ export class ContractorHoldSteps extends UiBase {
 			});
 
 			// Validación API: el POST /travels devolvió un travelId — viaje creado en backend.
-			expect(travelIdRef?.travelId, 'POST /travels debe haber capturado un travelId').not.toBeNull();
+			//
+			// ROOT CAUSE (diagnóstico live 2026-08-07, TC001/TC002/TC006): el redirect a
+			// /contractor/dashboard es MÁS RÁPIDO que el parseo async de `captureCreatedTravelId`
+			// (page.on('response') + response.json()) — race confirmada con logs con timestamp:
+			// el assert síncrono corría y fallaba ANTES de que el handler completara su propio
+			// `[travel-cleanup] Capturado travelId=...`. El portal carrier no lo sufre (navega a
+			// /travels/{id}, con más pasos/settle antes del assert); contractor redirige a
+			// /dashboard de inmediato. `expect.poll` espera la señal async real (sin timeout
+			// ciego — mismo patrón ya establecido en tests/helpers/assertions.ts).
+			await expect
+				.poll(() => travelIdRef?.travelId ?? null, {
+					message: 'POST /travels debe haber capturado un travelId',
+					timeout: 10_000
+				})
+				.not.toBeNull();
 		} finally {
 			if (travelIdRef) {
 				await test.step('Cleanup: cancelar viaje creado', async () => {
