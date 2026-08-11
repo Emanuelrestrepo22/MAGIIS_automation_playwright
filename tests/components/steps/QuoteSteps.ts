@@ -45,7 +45,6 @@ import { test, expect } from '@TestFixture';
 import { UiBase } from '@ui/UiBase';
 import { ThreeDsChallengePage } from '@ui/ThreeDsChallengePage';
 import { QuoteWidgetPage } from '@ui/QuoteWidgetPage';
-import { NativeAngularCardForm } from '@ui/carrier/card-forms';
 import { resolveCard } from '@fixtures/gateways/_shared';
 import { journeyDefaultsFor } from '@features/gateway-pg/data/journey-defaults';
 import { expectNoThreeDSModal } from '@features/gateway-pg/fixtures/gateway.fixtures';
@@ -245,11 +244,14 @@ export class QuoteSteps extends UiBase {
 
 			await test.step(`7. Abrir el paso de pago y llenar la tarjeta (•••• ${card.last4})`, async () => {
 				await this.quote.goToPayment();
-				// Form NATIVO Angular para TODAS las pasarelas en el widget (ver header) — sin
-				// 5º campo: gatewayConfig del carrier Stripe no exige ZIP/documento (TODO(live)).
-				const form = new NativeAngularCardForm();
-				await form.fill(this.page, card);
-				await form.expectFilled(this.page, card);
+				// FIX 2026-08-07 (diagnóstico live TC011 — corrige la premisa del header): el widget
+				// SÍ monta Stripe Elements (3 iframes) para la pasarela Stripe — no el form nativo
+				// Angular que se asumía por el precedente de Authorize. NO reusa
+				// `StripeElementsCardForm` del portal: esa clase ancla frames por `componentName=`
+				// en la URL, y esta variante del widget usa un esquema de URL distinto
+				// (`elements-inner-card-<hash>.html`) — 0 matches con ese patrón. `QuoteWidgetPage`
+				// tiene su propio `fillCardIframes()`, anclado por `title` del iframe (ver su JSDoc).
+				await this.quote.fillCardIframes(card);
 			});
 
 			await test.step(`Snapshot de frescura: mails de cotización ya presentes en ${contactEmail}`, async () => {
