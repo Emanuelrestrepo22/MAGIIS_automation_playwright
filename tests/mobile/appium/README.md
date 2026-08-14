@@ -36,6 +36,33 @@ winget install Genymobile.scrcpy
 
 - Driver App and Passenger App already installed on the device.
 
+### Environment resolution
+
+`ENV` selects both the env file and the app package. There is no hardcoded fallback:
+
+| `ENV`  | env file loaded | driver package               |
+| ------ | --------------- | ---------------------------- |
+| `test` (default) | `.env.test` | `com.magiis.app.test.driver` |
+| `uat`  | `.env.uat`      | `com.magiis.app.uat.driver`  |
+| `prod` | `.env.prod`     | `com.magiis.app.driver`      |
+
+- The env file is loaded by `config/mobileEnvFile.ts`, mirroring the web layer's
+  `tests/config/runtime.ts` convention (`ENV_FILE` wins, else `.env.<ENV>`). Variables already
+  exported in the shell take precedence over the file.
+- **Do not declare `ANDROID_*_APP_PACKAGE` in an env file.** The package is derived from `ENV`;
+  declaring it lets the two drift apart, which is how a run ends up labelled `uat` while driving
+  the `test` app.
+- An unknown `ENV` **fails** — it does not fall back to `test`. A run that cannot name its
+  environment is not auditable evidence.
+- Device and server come from `ANDROID_<ACTOR>_UDID` (falling back to `ANDROID_UDID`) and
+  `APPIUM_SERVER_URL`. Both are required; there is no default device.
+
+Every run prints one header line naming its target, emitted by the resolver itself:
+
+```
+[target] OBJETIVO -> env=uat  package=com.magiis.app.uat.driver  udid=R92XB0B8F3J
+```
+
 ### Terminal roles
 
 - Global terminal: any PowerShell window, even outside the repo.

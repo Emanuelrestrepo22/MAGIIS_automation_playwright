@@ -16,6 +16,12 @@
  *     declara contra qué ambiente corrió no es evidencia auditable.
  */
 
+import { getMobileEnvFile, loadMobileEnvFile } from '../../config/mobileEnvFile';
+
+// El archivo del ambiente se aplica al importar. Sin esto, `.env.uat` era decorativo: la capa
+// móvil nunca cargaba dotenv y todo dependía de lo exportado a mano en la terminal.
+loadMobileEnvFile();
+
 /** Paquetes por ambiente y actor. Espejo del mapa de `config/appiumRuntime.ts`. */
 const APP_PACKAGES = {
 	test: { driver: 'com.magiis.app.test.driver', passenger: 'com.magiis.app.test.passenger' },
@@ -46,6 +52,22 @@ function resolveEnv(): MobileEnv {
 	);
 }
 
+/**
+ * Lee la primera variable presente de la lista y falla nombrando el archivo del ambiente activo.
+ * El error dice QUÉ falta y DÓNDE ponerlo — un `undefined` silencioso acá se manifiesta después
+ * como un timeout de Appium sin causa aparente.
+ */
+function readRequiredEnv(names: string[], what: string): string {
+	for (const name of names) {
+		const value = process.env[name]?.trim();
+		if (value) return value;
+	}
+	throw new Error(
+		`Falta ${names.join(' o ')} — ${what}. ` +
+			`Definilo en ${getMobileEnvFile()} (o exportalo en la terminal).`
+	);
+}
+
 /** Se declara una sola vez por proceso, aunque varios módulos pidan el objetivo. */
 let announced = false;
 
@@ -68,9 +90,21 @@ export function resolveDriverTarget(actor: MobileActor = 'driver'): DriverTarget
 		env,
 		actor,
 		appPackage: override || fromMap,
-		udid: process.env.ANDROID_UDID?.trim() || 'R92XB0B8F3J',
-		appiumUrl: process.env.APPIUM_SERVER_URL?.trim() || 'http://localhost:4723',
-		overridden: Boolean(override)
+		// Rol primero, genérica después. Sin default hardcodeado: un UDID literal en el código hacía
+		// que una corrida apuntara siempre al mismo teléfono aunque el operador creyera estar
+		// corriendo en otro, y sobrevivía a cualquier cambio de `.env.*` sin dejar rastro.
+		udid: readRequiredEnv(
+			[`ANDROID_${actor.toUpperCase()}_UDID`, 'ANDROID_UDID'],
+			'el dispositivo Android contra el que corre la sesión (adb devices)'
+		),
+		appiumUrl: readRequiredEnv(
+			['APPIUM_SERVER_URL'],
+			'la URL del servidor Appium (ej: http://localhost:4723)'
+		),
+		// Sólo es "override" si CONTRADICE al mapa. Declarar el mismo paquete que ya resuelve `ENV`
+		// no es un override, y marcarlo como tal diluye la señal: la etiqueta dejaría de distinguir
+		// la corrida sospechosa (marca blanca, build ad hoc) de la corrida normal.
+		overridden: Boolean(override) && override !== fromMap
 	};
 
 	// La declaración se emite DESDE ACÁ, no desde cada script: si dependiera de que cada uno se

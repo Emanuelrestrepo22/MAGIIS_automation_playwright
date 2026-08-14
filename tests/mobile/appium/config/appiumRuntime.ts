@@ -30,6 +30,12 @@
  *   APPIUM_FULL_RESET             — Resetear completamente la app (default: false)
  */
 
+import { loadMobileEnvFile } from './mobileEnvFile';
+
+// Se carga al importar el módulo: todas las lecturas de `process.env` de acá abajo ocurren dentro
+// de funciones, así que para cuando alguna corra el archivo del ambiente ya está aplicado.
+loadMobileEnvFile();
+
 export type MobileActor = 'driver' | 'passenger';
 export type MobileEnvironment = 'test' | 'uat' | 'prod' | 'savio';
 
@@ -134,8 +140,13 @@ function resolveEnvironment(): MobileEnvironment {
 	if (raw === 'test' || raw === 'uat' || raw === 'prod' || raw === 'savio') {
 		return raw;
 	}
-	console.warn(`[appiumRuntime] ENV="${raw}" desconocido — usando "test"`);
-	return 'test';
+	// Fallar es deliberado. Antes esto avisaba y caía a "test": un typo (`uta`, `UAT2`) producía una
+	// corrida verde contra el ambiente equivocado, indistinguible de evidencia buena salvo que
+	// alguien mirara el paquete a mano. Mismo criterio que `scripts/_shared/resolveDriverTarget.ts`,
+	// que ya fallaba; tener dos políticas distintas para la misma decisión era la fuga.
+	throw new Error(
+		`ENV="${readOptionalEnv('ENV')}" no es un ambiente válido. Usá uno de: test | uat | prod | savio.`,
+	);
 }
 
 // ─── Config builder ───────────────────────────────────────────────────────────
@@ -170,7 +181,10 @@ function buildActorConfig(
 		appActivity:       MAGIIS_MAIN_ACTIVITY,
 		deviceName:        readOptionalEnv('ANDROID_DEVICE_NAME')      ?? 'Pixel_7',
 		platformVersion:   readOptionalEnv('ANDROID_PLATFORM_VERSION') ?? '15.0',
-		udid:              readOptionalEnv('ANDROID_UDID'),
+		// Rol primero, genérica como fallback — misma convención que `tests/config/runtime.ts`
+		// (`USER_CARRIER` → `USER`). `.env.test` ya declaraba `ANDROID_DRIVER_UDID`, que hasta
+		// ahora no leía nadie: el código sólo miraba `ANDROID_UDID`.
+		udid:              readOptionalEnv(`ANDROID_${actor.toUpperCase()}_UDID`) ?? readOptionalEnv('ANDROID_UDID'),
 		newCommandTimeout: readOptionalNumberEnv('APPIUM_NEW_COMMAND_TIMEOUT', 120),
 		noReset:           readOptionalBooleanEnv('APPIUM_NO_RESET', usingInstalledApp),
 		fullReset:         readOptionalBooleanEnv('APPIUM_FULL_RESET', false),
