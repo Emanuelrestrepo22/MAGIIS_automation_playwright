@@ -2,6 +2,13 @@
 
 This folder contains the Android mobile execution layer used by MAGIIS hybrid E2E journeys.
 
+> **Appium MCP connection (discovery layer)**: for wiring the `appium-mcp-driver` /
+> `appium-mcp-passenger` servers in the `agentic-qa-boilerplate` repo — env vars,
+> the `${VAR}` vs `.env` gotcha, and how to verify the connection to this same
+> device — see `docs/testing/mobile-appium-mcp.md` in that repo. This README stays
+> the canonical source for stable WebdriverIO execution (runners, harnesses,
+> confirmed selectors); that doc only covers the MCP discovery layer.
+
 ## Quick start: Windows onboarding
 
 Use this flow when you need to bring up Appium, mirror the phone, and inspect Driver or Passenger from PowerShell.
@@ -32,7 +39,7 @@ winget install Genymobile.scrcpy
 ### Terminal roles
 
 - Global terminal: any PowerShell window, even outside the repo.
-- Project terminal: PowerShell opened at the root of `qa-gateway-magiis`.
+- Project terminal: PowerShell opened at the root of `magiis-playwright`.
 
 ### Sanity checks
 
@@ -93,7 +100,7 @@ Passenger:
 From the repo root:
 
 ```powershell
-cd "C:\Users\Erika\OneDrive - MAGIIS USA LLC (1)\Escritorio\qa-gateway-magiis"
+cd "C:\Users\Erika\OneDrive - MAGIIS USA LLC (1)\Escritorio\automation-projects\magiis-playwright"
 $env:ANDROID_UDID="R92XB0B8F3J"
 pnpm mobile:driver:home-dump
 ```
@@ -112,7 +119,7 @@ pnpm mobile:driver:login-smoke
 From the repo root:
 
 ```powershell
-cd "C:\Users\Erika\OneDrive - MAGIIS USA LLC (1)\Escritorio\qa-gateway-magiis"
+cd "C:\Users\Erika\OneDrive - MAGIIS USA LLC (1)\Escritorio\automation-projects\magiis-playwright"
 $env:ANDROID_UDID="R92XB0B8F3J"
 pnpm mobile:passenger:home-dump
 ```

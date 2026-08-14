@@ -147,7 +147,18 @@ const serverEnv = {
   ANDROID_HOME: requiredEnv('ANDROID_HOME'),
   CAPABILITIES_CONFIG: capabilitiesPath,
   SCREENSHOTS_DIR: screenshotsDir,
-  NO_UI: process.env.APPIUM_MCP_NO_UI || 'false',
+  // `true` por defecto, a proposito, y OJO con la inversion del nombre: `NO_UI: 'false'`
+  // HABILITA los componentes de UI HTML del server (`dist/ui/mcp-apps.js` evalua
+  // `NO_UI !== 'true' && NO_UI !== '1'`). El README del paquete recomienda `true`
+  // ("faster responses, fewer tokens") y su propio script de auditoria lo fija asi.
+  // El default anterior era `false` — el valor NO recomendado — y quedo como sospechoso
+  // principal de que los servers no completaran el arranque bajo un cliente MCP stdio
+  // (investigado 2026-08-14). Volver a la UI: APPIUM_MCP_NO_UI=false.
+  NO_UI: process.env.APPIUM_MCP_NO_UI || 'true',
+  // Documentado por el paquete para clientes que "disconnect briefly (reconnect, reload,
+  // proxy)": con `skip` la sesion del device sobrevive una desconexion breve del cliente
+  // en vez de que se caigan los drivers.
+  APPIUM_MCP_ON_CLIENT_DISCONNECT: process.env.APPIUM_MCP_ON_CLIENT_DISCONNECT || 'skip',
 };
 
 for (const key of [
