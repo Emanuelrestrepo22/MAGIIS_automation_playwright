@@ -90,7 +90,13 @@
     "sync:trello": "node --no-warnings --loader ts-node/esm scripts/trello/sync-backlog-to-trello.ts",
     "sync:trello:dry": "node --no-warnings --loader ts-node/esm scripts/trello/sync-backlog-to-trello.ts --dry",
     "scaffold:feature": "node --no-warnings --loader ts-node/esm scripts/scaffold-feature.ts",
-    "scaffold:feature:dry": "node --no-warnings --loader ts-node/esm scripts/scaffold-feature.ts --dry-run"
+    "scaffold:feature:dry": "node --no-warnings --loader ts-node/esm scripts/scaffold-feature.ts --dry-run",
+    "mobile:passenger:surface-census:uat": "cross-env APPIUM_SERVER_URL=http://localhost:4723 ENV=uat NODE_OPTIONS=--experimental-specifier-resolution=node node --loader ts-node/esm tests/mobile/appium/scripts/passenger-surface-census.ts",
+    "mobile:passenger:token-scope:uat": "cross-env APPIUM_SERVER_URL=http://localhost:4723 ENV=uat NODE_OPTIONS=--experimental-specifier-resolution=node node --loader ts-node/esm tests/mobile/appium/scripts/passenger-mg116-token-scope.ts",
+    "mobile:passenger:cancel-trip:uat": "cross-env APPIUM_SERVER_URL=http://localhost:4723 ENV=uat NODE_OPTIONS=--experimental-specifier-resolution=node node --loader ts-node/esm tests/mobile/appium/scripts/passenger-cancel-active-trip.ts",
+    "mobile:passenger:address-battery:uat": "cross-env APPIUM_SERVER_URL=http://localhost:4723 ENV=uat NODE_OPTIONS=--experimental-specifier-resolution=node node --loader ts-node/esm tests/mobile/appium/scripts/passenger-mg116-uat-battery.ts",
+    "mobile:passenger:address-cases:uat": "cross-env APPIUM_SERVER_URL=http://localhost:4723 ENV=uat NODE_OPTIONS=--experimental-specifier-resolution=node node --loader ts-node/esm tests/mobile/appium/scripts/passenger-mg116-uat-cases.ts",
+    "test:uat:mg116:address-guards": "cross-env ENV=uat APPIUM_SERVER_URL=http://localhost:4723 npx playwright test tests/mobile/appium/passenger/specs/pax-address-surfaces.spec.ts --project=chromium --workers=1"
   },
   "keywords": [
     "playwright",
