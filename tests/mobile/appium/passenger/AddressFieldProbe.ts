@@ -100,6 +100,8 @@ const GOOGLE_HOST_RE = /maps\.googleapis\.com|places\.googleapis\.com/i;
 
 /** El AC dice ~300 ms. Se acepta hasta 900 ms como "hay debounce"; por encima se reporta el valor. */
 const DEBOUNCE_TARGET_MS = 300;
+/** Piso de caracteres que fija el AC. Son 3 porque un codigo IATA mide exactamente 3. */
+const MIN_CHARS = 3;
 const DEBOUNCE_TOLERANCE_MS = 900;
 
 const log = (m: string): void => console.log(`[probe] ${m}`);
@@ -140,18 +142,33 @@ export class AddressFieldProbe {
 	 * asi que medir el debounce con el reloj de Node compararia dos relojes distintos y el numero
 	 * seria ruido. Con los dos sellos en el mismo reloj, la resta es la latencia real del debounce.
 	 */
+	/**
+	 * Escribe en el campo y CONFIRMA que el valor quedo, leyendolo de vuelta.
+	 *
+	 * POR QUE LEE DE VUELTA: la version anterior devolvia `true` con solo encontrar el elemento y
+	 * llamar al setter. Eso hacia que un campo MUERTO — readonly, deshabilitado, o con Angular
+	 * revirtiendo el binding — pasara por campo sano. Las conductas que se miden por AUSENCIA de
+	 * requests (B4 "no repite", B6 "un solo token") entonces daban PASS sobre un campo que no
+	 * aceptaba nada: cero requests nuevos es exactamente lo que produce un campo inerte, y el
+	 * veredicto no podia distinguir "el producto agrupa bien" de "aca no pasa nada".
+	 *
+	 * Ocurrio de verdad, en Perfil > Mis Direcciones el 2026-08-19: el campo dejaba de aceptar
+	 * texto despues del primer chequeo y B4/B6 se publicaron en verde sin sostenerlos.
+	 */
 	private async typeAndStamp(selector: string, value: string): Promise<boolean> {
 		const ok = (await this.driver.execute(
 			(sel: string, v: string) => {
 				const vis = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
 				const t = Array.from(document.querySelectorAll(sel)).filter(vis)[0] as HTMLInputElement | undefined;
 				if (!t) return false;
+				if (t.readOnly || t.disabled) return false;
 				const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
 				setter?.call(t, v);
 				t.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
 				t.dispatchEvent(new Event('ionInput', { bubbles: true, composed: true } as EventInit));
 				(window as unknown as { __mgLastKeystrokeAt?: number }).__mgLastKeystrokeAt = Date.now();
-				return true;
+				// La confirmacion: si el valor no quedo, el campo no acepto la escritura.
+				return t.value === v;
 			},
 			selector,
 			value
@@ -336,43 +353,70 @@ export class AddressFieldProbe {
 
 	// ------------------------------------------------------------------ B3 minLength 3
 
-	async checkMinLength(selector: string, shortTerm = 'li', validTerm = 'lib'): Promise<BehaviorVerdict> {
-		await this.reset(selector);
-		await this.typeAndStamp(selector, shortTerm);
-		await this.driver.pause(this.settleMs);
-		const withTwo = (await this.autocompleteCalls()).length;
+	/**
+	 * BARRIDO del minimo de caracteres: escribe 1, 2, 3, ... del mismo termino y anota en cual
+	 * aparece la primera consulta.
+	 *
+	 * POR QUE UN BARRIDO Y NO "2 vs 3": comparar solo dos longitudes deja un agujero. Cuando ambas
+	 * dan cero requests no se puede distinguir "el campo no consulta nunca" de "el piso esta por
+	 * encima de 3", y la rama de sin-datos se adelanta justo al hallazgo interesante. Paso en Perfil
+	 * > Mis Direcciones el 2026-08-19: "lib" no consultaba pero "libertad 479" si, y el veredicto
+	 * salio SIN_DATOS tapando que el minimo de esa pantalla no es 3.
+	 *
+	 * El piso importa porque el AC lo fija en 3 para soportar codigos IATA, que miden exactamente 3.
+	 */
+	async checkMinLength(selector: string, term = 'libertad', maxLen = 6): Promise<BehaviorVerdict> {
+		const perLength: { length: number; text: string; calls: number }[] = [];
 
-		await clearWebViewNetworkCapture(this.driver);
-		await this.typeAndStamp(selector, validTerm);
-		await this.driver.pause(this.settleMs);
-		const withThree = (await this.autocompleteCalls()).length;
+		for (let len = 1; len <= Math.min(maxLen, term.length); len++) {
+			await this.reset(selector);
+			const text = term.slice(0, len);
+			const typed = await this.typeAndStamp(selector, text);
+			if (!typed) {
+				perLength.push({ length: len, text, calls: -1 });
+				continue;
+			}
+			await this.driver.pause(this.settleMs);
+			perLength.push({ length: len, text, calls: (await this.autocompleteCalls()).length });
+		}
 
-		const measured = { shortTerm, validTerm, callsWithTwoChars: withTwo, callsWithThreeChars: withThree };
+		const rejected = perLength.filter(p => p.calls < 0).map(p => p.length);
+		const firstQuery = perLength.find(p => p.calls > 0)?.length ?? null;
+		const measured = { term, perLength, firstQueryAtLength: firstQuery, lengthsRejectedByField: rejected };
 
-		if (withTwo === 0 && withThree === 0) {
+		if (rejected.length === perLength.length) {
 			return {
 				behavior: 'B3',
 				title: 'minLength 3',
 				status: 'SIN_DATOS',
-				verdict: `Ni "${shortTerm}" ni "${validTerm}" generaron requests. Sin el caso positivo no se puede distinguir "respeta minLength" de "el campo no consulta nunca".`,
+				verdict: 'El campo no acepto texto en ninguna longitud: no hay piso que medir. Revisar el estado de la pantalla antes de concluir algo del producto.',
 				measured
 			};
 		}
-		if (withTwo > 0) {
+		if (firstQuery === null) {
+			return {
+				behavior: 'B3',
+				title: 'minLength 3',
+				status: 'SIN_DATOS',
+				verdict: `Ninguna longitud de 1 a ${perLength.length} genero consulta. Sin un caso positivo no se distingue "respeta el piso" de "el campo no consulta nunca".`,
+				measured
+			};
+		}
+		if (firstQuery < MIN_CHARS) {
 			return {
 				behavior: 'B3',
 				title: 'minLength 3',
 				status: 'FAIL',
-				verdict: `"${shortTerm}" (2 caracteres) genero ${withTwo} request(s). El piso de 3 caracteres no se respeta en esta superficie.`,
+				verdict: `La primera consulta sale con ${firstQuery} caracter(es), por debajo del piso de ${MIN_CHARS}. Se pagan consultas que el AC pide no hacer.`,
 				measured
 			};
 		}
-		if (withThree === 0) {
+		if (firstQuery > MIN_CHARS) {
 			return {
 				behavior: 'B3',
 				title: 'minLength 3',
 				status: 'FAIL',
-				verdict: `"${validTerm}" (3 caracteres) no genero ningun request. El piso quedo por encima de 3, que es el minimo que el AC pide para soportar codigos IATA.`,
+				verdict: `La primera consulta recien sale con ${firstQuery} caracteres: el piso de esta superficie esta POR ENCIMA de los ${MIN_CHARS} que pide el AC, asi que un codigo IATA de 3 letras no dispara busqueda aca.`,
 				measured
 			};
 		}
@@ -380,7 +424,7 @@ export class AddressFieldProbe {
 			behavior: 'B3',
 			title: 'minLength 3',
 			status: 'PASS',
-			verdict: `Con 2 caracteres no consulta; con 3 consulta (${withThree} request).`,
+			verdict: `El piso medido es ${firstQuery}: con ${MIN_CHARS - 1} caracteres no consulta y con ${MIN_CHARS} si.`,
 			measured
 		};
 	}
@@ -583,13 +627,39 @@ export class AddressFieldProbe {
 	// ------------------------------------------------------------------ la bateria completa
 
 	async runBattery(surface: AddressSurface): Promise<SurfaceReport> {
-		const selector = surface.fieldSelector();
 		log('='.repeat(72));
 		log(`${surface.id} — ${surface.label}`);
 		log('='.repeat(72));
 
+		// `reach()` PRIMERO y recien despues `fieldSelector()`.
+		//
+		// El orden inverso era un defecto silencioso: casi todas las superficies resuelven su campo
+		// DENTRO de `reach()` (la fila editable del home varia, el placeholder de la parada sale del
+		// DOM, el formulario del perfil exige elegir un Tipo antes de que el input exista), asi que
+		// leer el selector antes devolvia el valor previo — vacio o de la corrida anterior. Las
+		// superficies que traian un valor por defecto lo tapaban por accidente; una superficie nueva
+		// que arranca vacia media contra el selector vacio y reportaba "alcanzada: SI" sin campo.
 		const reached = await surface.reach(this.driver);
-		log(`alcanzada: ${reached ? 'SI' : 'NO'}   selector: ${selector}`);
+		const selector = surface.fieldSelector();
+		log(`alcanzada: ${reached ? 'SI' : 'NO'}   selector: ${selector || '(vacio)'}`);
+
+		// Un selector vacio no puede medir nada, y `querySelectorAll('')` tira. Se trata como
+		// superficie no alcanzada para que ninguna conducta salga verde por ausencia de campo.
+		if (reached && !selector.trim()) {
+			log('  el navegador de la superficie no resolvio ningun selector: se reporta como NO alcanzada.');
+			return {
+				surfaceId: surface.id,
+				surfaceLabel: surface.label,
+				reached: false,
+				fieldSelector: '',
+				verdicts: (['B1', 'B2', 'B3', 'B4', 'B5', 'B6'] as const).map(b => ({
+					behavior: b,
+					title: 'no evaluada',
+					status: 'SIN_DATOS' as VerdictStatus,
+					verdict: 'El navegador de la superficie devolvio exito pero sin selector de campo. Es un fallo del harness, NO del producto.'
+				}))
+			};
+		}
 
 		if (!reached) {
 			return {
@@ -628,12 +698,23 @@ export class AddressFieldProbe {
 		const verdicts: BehaviorVerdict[] = [];
 		// El orden importa: B1 primero deja la superficie caracterizada, y B4 tiene que correr
 		// despues de una consulta valida para que "no repite" signifique algo.
-		verdicts.push(await this.checkOwnEndpoint(selector));
-		verdicts.push(await this.checkDebounce(selector));
-		verdicts.push(await this.checkMinLength(selector));
-		verdicts.push(await this.checkDistinctUntilChanged(selector));
-		verdicts.push(await this.checkDtoMapping(selector));
-		verdicts.push(await this.checkSessionToken(selector));
+		//
+		// `MG116_BEHAVIORS=B3` corre SOLO esa conducta. Hace falta para aislar: en una superficie
+		// donde el campo cambia de estado entre chequeos, un SIN_DATOS no distingue "la conducta no
+		// existe" de "el chequeo anterior dejo la pantalla en otro estado". Una conducta por sesion,
+		// con la app relanzada en medio, hace que el veredicto solo dependa de la conducta.
+		const only = (process.env.MG116_BEHAVIORS ?? '')
+			.split(',')
+			.map(s => s.trim().toUpperCase())
+			.filter(Boolean);
+		const wanted = (b: string): boolean => only.length === 0 || only.includes(b);
+
+		if (wanted('B1')) verdicts.push(await this.checkOwnEndpoint(selector));
+		if (wanted('B2')) verdicts.push(await this.checkDebounce(selector));
+		if (wanted('B3')) verdicts.push(await this.checkMinLength(selector));
+		if (wanted('B4')) verdicts.push(await this.checkDistinctUntilChanged(selector));
+		if (wanted('B5')) verdicts.push(await this.checkDtoMapping(selector));
+		if (wanted('B6')) verdicts.push(await this.checkSessionToken(selector));
 
 		for (const v of verdicts) {
 			log(`  ${v.behavior} ${v.status.padEnd(11)} ${v.verdict}`);

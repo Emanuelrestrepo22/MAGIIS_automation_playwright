@@ -322,6 +322,87 @@ export class AnyEditableAddressSurface implements AddressSurface {
 	}
 }
 
+/**
+ * Campo de direccion del home con un TIPO DE VIAJE distinto seleccionado.
+ *
+ * POR QUE PARAMETRIZADA Y NO UNA CLASE POR TIPO: el tipo de viaje no cambia el componente del
+ * campo — cambia el estado del formulario que lo rodea. Medir cada tipo cuesta una instancia con
+ * su rotulo, no seis casos nuevos. Los tipos que ofrece el home se censan en vivo
+ * (`button.travelHistory-btn`), asi que un tipo que este carrier no habilita se reporta como
+ * superficie inalcanzable y NUNCA como defecto.
+ *
+ * Resuelve la fila editable con la misma logica adaptativa que `AnyEditableAddressSurface`: el home
+ * mantiene UNA sola fila activa y cual es depende del estado en que quedo la app.
+ */
+export class TripTypeAddressSurface implements AddressSurface {
+	readonly id: string;
+	label: string;
+	private resolved = '';
+
+	/**
+	 * @param id       Identificador de la superficie para la matriz (por ejemplo `S4`).
+	 * @param typeText Texto del boton de tipo de viaje, tal como lo muestra el home.
+	 */
+	constructor(id: string, private readonly typeText: string) {
+		this.id = id;
+		this.label = `Home · ${typeText}`;
+	}
+
+	async reach(driver: WebdriverIO.Browser): Promise<boolean> {
+		if (!(await goHome(driver))) return false;
+
+		// El boton del tipo de viaje. Si este carrier no lo ofrece, la superficie no existe aca.
+		if (!(await tapNative(driver, 'button.travelHistory-btn, button, ion-segment-button, ion-label', this.typeText, 7000))) {
+			return false;
+		}
+		await driver.pause(2200);
+
+		// Confirmar que el tipo quedo activo: el home marca el elegido con la clase `active`.
+		const active = (await driver
+			.execute((needle: string) => {
+				const vis = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
+				const hit = Array.from(document.querySelectorAll('button.travelHistory-btn'))
+					.filter(vis)
+					.find(e => (e.textContent ?? '').toLowerCase().includes(needle.toLowerCase()));
+				return hit ? (hit.className ?? '').toString().includes('active') : false;
+			}, this.typeText)
+			.catch(() => false)) as boolean;
+		if (!active) return false;
+		this.label = `Home · ${this.typeText} (tipo confirmado activo)`;
+
+		const editable = (await driver.execute(() => {
+			const vis = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
+			const hit = Array.from(document.querySelectorAll('input'))
+				.filter(vis)
+				.map(el => el as HTMLInputElement)
+				.filter(i => /origen|destino/i.test(i.placeholder ?? ''))
+				.find(i => !i.readOnly && !i.disabled);
+			return hit ? { placeholder: hit.placeholder } : null;
+		})) as { placeholder: string } | null;
+
+		if (editable) {
+			this.resolved = `input[placeholder=${JSON.stringify(editable.placeholder)}]`;
+			this.label = `Home · ${this.typeText} · campo "${editable.placeholder.trim()}"`;
+			return true;
+		}
+		for (const sel of [DESTINATION_SELECTOR, ORIGIN_SELECTOR]) {
+			if (await ensureEditable(driver, sel)) {
+				this.resolved = sel;
+				return true;
+			}
+		}
+		return false;
+	}
+
+	fieldSelector(): string {
+		return this.resolved;
+	}
+
+	async cleanup(driver: WebdriverIO.Browser): Promise<void> {
+		if (this.resolved) await clearField(driver, this.resolved);
+	}
+}
+
 /** S2 — el campo de destino del home. En el censo siempre llego editable. */
 export class HomeDestinationSurface implements AddressSurface {
 	readonly id = 'S2';

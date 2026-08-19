@@ -26,7 +26,8 @@ import {
 	HomeDestinationSurface,
 	HomeStopSurface,
 	ProfileAddressSurface,
-	ScheduledTripEditSurface
+	ScheduledTripEditSurface,
+	TripTypeAddressSurface
 } from '../passenger/surfaces/homeSurfaces';
 
 const TARGET = resolveDriverTarget('passenger');
@@ -121,6 +122,10 @@ async function run(): Promise<void> {
 			new HomeOriginSurface(),
 			new HomeDestinationSurface(),
 			new HomeStopSurface(SEED_DESTINATION),
+			// Los tipos de viaje que el home ofrece hoy. Uno que este carrier no habilite se reporta
+			// como superficie inalcanzable, con su camino de salida, y nunca como defecto.
+			new TripTypeAddressSurface('S4', 'Ida y Vuelta'),
+			new TripTypeAddressSurface('S5', 'Solo Ida'),
 			new ScheduledTripEditSurface(),
 			new ProfileAddressSurface()
 		];
