@@ -207,6 +207,29 @@ test.describe(`[MG-116] Consistencia de los campos de dirección — App PAX (${
 	// usa el spec de guards, que ya estaba calibrado contra este dispositivo.
 	test.describe.configure({ timeout: 240_000 });
 
+	// UNA sola sesion Appium para toda la suite, no una por superficie.
+	//
+	// Con una sesion por superficie mas las de los guards, una corrida abria nueve sesiones y el
+	// servidor UiAutomator2 del dispositivo terminaba cayendose a mitad de camino
+	// ("instrumentation process is not running (probably crashed)"), llevandose puestos los tests que
+	// faltaban. Es un telefono de 3,7 GB: la presion la genera la corrida, no el producto.
+	//
+	// Compartir la sesion es seguro porque cada conducta ya re-establece su superficie antes de medir,
+	// que es lo que evita la contaminacion entre chequeos.
+	let shared: Driver | null = null;
+	let sharedWebview = '';
+
+	test.beforeAll(async () => {
+		const session = await newSession();
+		shared = session.driver;
+		sharedWebview = session.webview;
+	});
+
+	test.afterAll(async () => {
+		await shared?.deleteSession().catch(() => undefined);
+		shared = null;
+	});
+
 	for (const def of SURFACES) {
 		const rows = [...commonRows(def.tripFlow), ...(def.carriesSingleSurfaceRows ? SINGLE_SURFACE_ROWS : [])];
 
@@ -222,9 +245,8 @@ test.describe(`[MG-116] Consistencia de los campos de dirección — App PAX (${
 			let unreachableReason = '';
 
 			test.beforeAll(async () => {
-				const session = await newSession();
-				driver = session.driver;
-				if (!session.webview) {
+				driver = shared;
+				if (!driver || !sharedWebview) {
 					unreachableReason = 'La app no montó su vista web (sin contexto WEBVIEW).';
 					return;
 				}
@@ -237,9 +259,10 @@ test.describe(`[MG-116] Consistencia de los campos de dirección — App PAX (${
 				}
 			});
 
+			// La sesion NO se cierra acá: es compartida y la cierra el describe externo. Solo se deja la
+			// superficie limpia para que la siguiente pueda arrancar.
 			test.afterAll(async () => {
 				await surface?.cleanup(driver as Driver).catch(() => undefined);
-				await driver?.deleteSession().catch(() => undefined);
 			});
 
 			for (const row of rows) {
