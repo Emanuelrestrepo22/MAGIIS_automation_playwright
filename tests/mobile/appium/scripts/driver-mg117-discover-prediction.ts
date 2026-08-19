@@ -1,11 +1,11 @@
 ﻿/**
- * MG-117 â€” Descubre el selector real de una fila de predicciÃ³n en la App Driver.
+ * MG-117 — Descubre el selector real de una fila de predicción en la App Driver.
  *
  * El tap nativo de `driver-mg117-remaining.ts` falla porque `ion-item.prediction-item` viene de
- * la App PAX. Este script no asume ninguna clase: tipea un tÃ©rmino, espera las predicciones y
- * vuelca el DOM real de la pÃ¡gina visible para que el selector se escriba con evidencia.
+ * la App PAX. Este script no asume ninguna clase: tipea un término, espera las predicciones y
+ * vuelca el DOM real de la página visible para que el selector se escriba con evidencia.
  *
- * PRECONDICIÃ“N: viaje en curso. El script navega solo hasta el buscador desde ahÃ­.
+ * PRECONDICIÓN: viaje en curso. El script navega solo hasta el buscador desde ahí.
  */
 
 import { remote } from 'webdriverio';
@@ -90,7 +90,7 @@ async function navigateToSearch(driver: WebdriverIO.Browser, webview: string): P
 	for (let i = 1; i <= 10; i++) {
 		if (await hasSearchField(driver)) return true;
 		const url = await currentUrl(driver);
-		log(`  intento ${i} Â· url=${url.slice(-60)}`);
+		log(`  intento ${i} · url=${url.slice(-60)}`);
 
 		if (url.includes('TravelInProgress')) {
 			const rows = (await driver.execute(() => {
@@ -281,9 +281,9 @@ async function run(): Promise<void> {
 
 		await installWebViewNetworkCapture(driver);
 
-		log('navegando al buscadorâ€¦');
+		log('navegando al buscador…');
 		if (!(await navigateToSearch(driver, webview))) {
-			log('NO se alcanzÃ³ el buscador â€” vuelco la pantalla actual para encontrar el control\n');
+			log('NO se alcanzó el buscador — vuelco la pantalla actual para encontrar el control\n');
 
 			const stuck = (await driver.execute(STUCK_SCRIPT)) as {
 				url: string;
@@ -293,7 +293,7 @@ async function run(): Promise<void> {
 			};
 
 			log(`url: ${stuck.url}`);
-			log(`pÃ¡gina visible: ${stuck.page}`);
+			log(`página visible: ${stuck.page}`);
 
 			log(`\n=== INPUTS EN PANTALLA (${stuck.inputs.length}) ===`);
 			for (const i of stuck.inputs) {
@@ -331,8 +331,8 @@ async function run(): Promise<void> {
 		} catch {
 			predictions = [];
 		}
-		log(`tÃ©rmino "${TERM}" â†’ ${predictions.length} predicciones en la respuesta`);
-		for (const p of predictions.slice(0, 5)) log(`    Â· ${p.mainText}`);
+		log(`término "${TERM}" → ${predictions.length} predicciones en la respuesta`);
+		for (const p of predictions.slice(0, 5)) log(`    · ${p.mainText}`);
 
 		const dump = (await driver.execute(DUMP_SCRIPT)) as {
 			page: string;
@@ -341,12 +341,12 @@ async function run(): Promise<void> {
 			allClasses: string[];
 		};
 
-		log(`\npÃ¡gina visible: ${dump.page}`);
+		log(`\npágina visible: ${dump.page}`);
 
 		const texts = predictions.map(p => p.mainText.toLowerCase());
 		const hits = dump.matches.filter(m => texts.some(t => m.text.toLowerCase().includes(t.slice(0, 12))));
 
-		log(`\n=== ELEMENTOS QUE CONTIENEN TEXTO DE PREDICCIÃ“N (${hits.length}) ===`);
+		log(`\n=== ELEMENTOS QUE CONTIENEN TEXTO DE PREDICCIÓN (${hits.length}) ===`);
 		for (const h of hits.slice(0, 10)) {
 			log(`  "${h.text.slice(0, 45)}"  top=${h.top} h=${h.h}`);
 			log(`     ${h.chain}`);
@@ -355,7 +355,7 @@ async function run(): Promise<void> {
 		log(`\n=== CONTENEDORES CON FILAS REPETIDAS ===`);
 		for (const c of dump.listContainers.slice(0, 12)) {
 			log(`  ${c.container}`);
-			log(`     ${c.rowCount} Ã— ${c.rowSample}   "${c.text}"`);
+			log(`     ${c.rowCount} × ${c.rowSample}   "${c.text}"`);
 		}
 
 		log(`\n=== CLASES EN PANTALLA CON "pred" / "list" / "item" / "auto" ===`);

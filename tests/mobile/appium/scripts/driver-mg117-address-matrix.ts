@@ -1,29 +1,29 @@
 ﻿/**
- * MG-117 â€” Matriz de tipos de direcciÃ³n: Â¿cuÃ¡ndo la pata de aeropuertos contamina una bÃºsqueda
+ * MG-117 — Matriz de tipos de dirección: ¿cuándo la pata de aeropuertos contamina una búsqueda
  * que no es de aeropuerto?
  *
  * CONTEXTO DE NEGOCIO (definido por el QA lead):
- *   - La bÃºsqueda de aeropuertos ES global por diseÃ±o: un viaje puede ir de Argentina a una
+ *   - La búsqueda de aeropuertos ES global por diseño: un viaje puede ir de Argentina a una
  *     terminal de Estados Unidos. Que aparezcan aeropuertos lejanos NO es un defecto.
- *   - Un aeropuerto deberÃ­a alcanzarse por su CÃ“DIGO IATA (`MDZ`), no porque el usuario escribiÃ³
- *     un topÃ³nimo que en su ciudad es el nombre de una calle ("mendoza").
- *   - Caso testigo: "mendoza" devuelve primero El Plumerillo (MDZ) y Rodriguez De Mendoza (PerÃº),
- *     y reciÃ©n despuÃ©s Mendoza 2525 y 2549 de CABA, que es lo que el conductor busca.
+ *   - Un aeropuerto debería alcanzarse por su CÓDIGO IATA (`MDZ`), no porque el usuario escribió
+ *     un topónimo que en su ciudad es el nombre de una calle ("mendoza").
+ *   - Caso testigo: "mendoza" devuelve primero El Plumerillo (MDZ) y Rodriguez De Mendoza (Perú),
+ *     y recién después Mendoza 2525 y 2549 de CABA, que es lo que el conductor busca.
  *
- * QUÃ‰ MIDE, por tÃ©rmino:
- *   - cuÃ¡ntas filas AIRPORT y cuÃ¡ntas CACHE
- *   - en quÃ© POSICIÃ“N aparece la primera direcciÃ³n utilizable (rank del primer no-aeropuerto)
- *   - cuÃ¡ntos aeropuertos hay que saltear antes de llegar a ella
- *   - si el resultado tiene relaciÃ³n con la zona del conductor
+ * QUÉ MIDE, por término:
+ *   - cuántas filas AIRPORT y cuántas CACHE
+ *   - en qué POSICIÓN aparece la primera dirección utilizable (rank del primer no-aeropuerto)
+ *   - cuántos aeropuertos hay que saltear antes de llegar a ella
+ *   - si el resultado tiene relación con la zona del conductor
  *
- * Corre TODOS los tÃ©rminos en UNA sola sesiÃ³n: el dispositivo es un recurso exclusivo y dos
- * sesiones simultÃ¡neas se pisarÃ­an.
+ * Corre TODOS los términos en UNA sola sesión: el dispositivo es un recurso exclusivo y dos
+ * sesiones simultáneas se pisarían.
  *
- * PRECONDICIÃ“N: modal "Buscar direcciÃ³n" abierto, un solo campo editable.
+ * PRECONDICIÓN: modal "Buscar dirección" abierto, un solo campo editable.
  *
  * Uso:
  *   node --loader ts-node/esm tests/mobile/appium/scripts/driver-mg117-address-matrix.ts
- *   $env:MATRIX_ONLY="iata,calle"   # opcional: limitar categorÃ­as
+ *   $env:MATRIX_ONLY="iata,calle"   # opcional: limitar categorías
  */
 
 import { remote } from 'webdriverio';
@@ -60,8 +60,8 @@ type Prediction = {
 type Probe = { category: string; term: string; expectation: string };
 
 /**
- * TÃ©rminos elegidos para separar dos cosas que hoy se mezclan: buscar un aeropuerto a propÃ³sito
- * (por IATA) y buscar una direcciÃ³n cuyo nombre coincide con un topÃ³nimo.
+ * Términos elegidos para separar dos cosas que hoy se mezclan: buscar un aeropuerto a propósito
+ * (por IATA) y buscar una dirección cuyo nombre coincide con un topónimo.
  */
 const PROBES: Probe[] = [
 	// El camino previsto para llegar a un aeropuerto.
@@ -69,35 +69,35 @@ const PROBES: Probe[] = [
 	{ category: 'iata', term: 'aep', expectation: 'Aeroparque' },
 	{ category: 'iata', term: 'eze', expectation: 'Ministro Pistarini' },
 
-	// TopÃ³nimos que en CABA son calles: acÃ¡ el aeropuerto NO deberÃ­a encabezar.
+	// Topónimos que en CABA son calles: acá el aeropuerto NO debería encabezar.
 	{ category: 'calle-toponimo', term: 'mendoza', expectation: 'calle Mendoza de CABA primero' },
-	{ category: 'calle-toponimo', term: 'cordoba', expectation: 'Av. CÃ³rdoba de CABA primero' },
+	{ category: 'calle-toponimo', term: 'cordoba', expectation: 'Av. Córdoba de CABA primero' },
 	{ category: 'calle-toponimo', term: 'salta', expectation: 'calle Salta de CABA primero' },
-	{ category: 'calle-toponimo', term: 'tucuman', expectation: 'calle TucumÃ¡n de CABA primero' },
+	{ category: 'calle-toponimo', term: 'tucuman', expectation: 'calle Tucumán de CABA primero' },
 	{ category: 'calle-toponimo', term: 'brasil', expectation: 'Av. Brasil de CABA primero' },
 	{ category: 'calle-toponimo', term: 'bolivia', expectation: 'calle Bolivia de CABA primero' },
 
-	// Calles sin homÃ³nimo aeroportuario: lÃ­nea base de comportamiento sano.
-	{ category: 'calle-comun', term: 'san martin', expectation: 'calles San MartÃ­n cercanas' },
+	// Calles sin homónimo aeroportuario: línea base de comportamiento sano.
+	{ category: 'calle-comun', term: 'san martin', expectation: 'calles San Martín cercanas' },
 	{ category: 'calle-comun', term: 'corrientes', expectation: 'Av. Corrientes' },
 	{ category: 'calle-comun', term: 'callao', expectation: 'Av. Callao' },
 
-	// Puntos de interÃ©s: Â¿los resuelve, y con quÃ© relevancia?
+	// Puntos de interés: ¿los resuelve, y con qué relevancia?
 	{ category: 'sitio-interes', term: 'obelisco', expectation: 'el Obelisco' },
 	{ category: 'sitio-interes', term: 'casa rosada', expectation: 'Casa Rosada' },
 	{ category: 'sitio-interes', term: 'luna park', expectation: 'Luna Park' },
-	{ category: 'sitio-interes', term: 'teatro colon', expectation: 'Teatro ColÃ³n' },
+	{ category: 'sitio-interes', term: 'teatro colon', expectation: 'Teatro Colón' },
 
 	{ category: 'museo', term: 'malba', expectation: 'MALBA' },
 	{ category: 'museo', term: 'museo', expectation: 'museos cercanos' },
 
-	{ category: 'comercio', term: 'ateneo', expectation: 'librerÃ­a El Ateneo' },
+	{ category: 'comercio', term: 'ateneo', expectation: 'librería El Ateneo' },
 	{ category: 'comercio', term: 'alto palermo', expectation: 'shopping Alto Palermo' },
 
 	{ category: 'salud', term: 'hospital italiano', expectation: 'Hospital Italiano' },
 
-	{ category: 'transporte', term: 'retiro', expectation: 'estaciÃ³n/barrio Retiro' },
-	{ category: 'transporte', term: 'constitucion', expectation: 'estaciÃ³n ConstituciÃ³n' },
+	{ category: 'transporte', term: 'retiro', expectation: 'estación/barrio Retiro' },
+	{ category: 'transporte', term: 'constitucion', expectation: 'estación Constitución' },
 
 	{ category: 'estadio', term: 'monumental', expectation: 'Estadio Monumental' }
 ];
@@ -130,10 +130,10 @@ async function typeAndRead(driver: WebdriverIO.Browser, term: string): Promise<P
 			return true;
 		}, value) as Promise<boolean>;
 
-	// Vaciar y escribir en la MISMA instrucciÃ³n hace que ambos valores caigan en la ventana de
-	// debounce: el pipe conserva solo el Ãºltimo y `distinctUntilChanged` lo descarta si coincide
-	// con el tÃ©rmino anterior. Hay que dejar que Angular procese el vaciado antes de seguir.
-	if (!(await setValue(''))) throw new Error('Sin campo de bÃºsqueda editable visible');
+	// Vaciar y escribir en la MISMA instrucción hace que ambos valores caigan en la ventana de
+	// debounce: el pipe conserva solo el último y `distinctUntilChanged` lo descarta si coincide
+	// con el término anterior. Hay que dejar que Angular procese el vaciado antes de seguir.
+	if (!(await setValue(''))) throw new Error('Sin campo de búsqueda editable visible');
 	await driver.pause(800);
 
 	await setValue(term);
@@ -166,7 +166,7 @@ function analyse(probe: Probe, predictions: Prediction[]): Result {
 			firstAddressIndex === -1
 				? predictions.length
 				: predictions.slice(0, firstAddressIndex).filter(isAirportRow).length,
-		topThree: predictions.slice(0, 3).map(p => `${isAirportRow(p) ? 'âœˆ' : 'ðŸ“'} ${p.mainText}`),
+		topThree: predictions.slice(0, 3).map(p => `${isAirportRow(p) ? '✈' : '📍'} ${p.mainText}`),
 		nullPlaceIds: predictions.filter(p => !p.placeId).length
 	};
 }
@@ -206,7 +206,7 @@ async function run(): Promise<void> {
 		await installWebViewNetworkCapture(driver);
 
 		const probes = ONLY.length ? PROBES.filter(p => ONLY.includes(p.category)) : PROBES;
-		log(`Ejecutando ${probes.length} tÃ©rminosâ€¦\n`);
+		log(`Ejecutando ${probes.length} términos…\n`);
 
 		for (const probe of probes) {
 			try {
@@ -214,16 +214,31 @@ async function run(): Promise<void> {
 				const result = analyse(probe, predictions);
 				results.push(result);
 
-				const flag = result.firstIsAirport && probe.category !== 'iata' ? '  âš  AEROPUERTO PRIMERO' : '';
-				log(`"${probe.term}" [${probe.category}] -> ${result.total} filas (âœˆ${result.airports} ðŸ“${result.cache})${flag}`);
+				const flag = result.firstIsAirport && probe.category !== 'iata' ? '  ⚠ AEROPUERTO PRIMERO' : '';
+				log(`"${probe.term}" [${probe.category}] -> ${result.total} filas (✈${result.airports} 📍${result.cache})${flag}`);
 				for (const row of result.topThree) log(`      ${row}`);
 			} catch (error) {
 				log(`"${probe.term}" -> ERROR: ${(error as Error).message}`);
 			}
 		}
 
-		log('\nâ•â•â•â•â•â•â•â•â•â•â•â• CONTAMINACIÃ“N POR AEROPUERTO â•â•â•â•â•â•â•â•â•â•â•â•');
-		log('(bÃºsquedas que NO son por cÃ³digo IATA y aun asÃ­ encabeza un aeropuerto)\n');
+		// GUARD DE FALSO VERDE (medido el 2026-08-19). Con el buscador CERRADO los 24 terminos
+		// fallaron uno por uno y el resumen igual concluyo "Ninguna. La pata de aeropuertos no
+		// desplaza a las direcciones": un veredicto tranquilizador construido sobre CERO datos.
+		// Un resumen sobre un conjunto vacio no es un resultado, es ruido con forma de conclusion.
+		const perdidos = probes.length - results.length;
+		if (results.length === 0) {
+			log(`\nABORTA: fallaron los ${probes.length} terminos. Causa tipica: el buscador no esta abierto.`);
+			log("No se emite resumen: sobre cero datos se leeria como un verde, y no lo es.");
+			throw new Error(`Fallaron los ${probes.length} terminos: no hay datos que resumir.`);
+		}
+		if (perdidos > 0) {
+			// Truncamiento declarado: sin esta linea el resumen se lee como cobertura completa.
+			log(`\nAVISO: fallaron ${perdidos} de ${probes.length} terminos; el resumen cubre ${results.length}.`);
+		}
+
+		log('\n════════════ CONTAMINACIÓN POR AEROPUERTO ════════════');
+		log('(búsquedas que NO son por código IATA y aun así encabeza un aeropuerto)\n');
 
 		const contaminated = results.filter(r => r.category !== 'iata' && r.firstIsAirport);
 		if (contaminated.length === 0) {
@@ -232,18 +247,18 @@ async function run(): Promise<void> {
 		for (const r of contaminated) {
 			log(
 				`  "${r.term}" -> hay que saltear ${r.airportsBeforeFirstAddress} aeropuerto(s) ` +
-					`para llegar a la primera direcciÃ³n (posiciÃ³n ${r.rankOfFirstAddress ?? 'ninguna'})`
+					`para llegar a la primera dirección (posición ${r.rankOfFirstAddress ?? 'ninguna'})`
 			);
 			log(`      esperado: ${r.expectation}`);
-			log(`      obtenido: ${r.topThree[0] ?? '(vacÃ­o)'}`);
+			log(`      obtenido: ${r.topThree[0] ?? '(vacío)'}`);
 		}
 
-		log('\nâ•â•â•â•â•â•â•â•â•â•â•â• TÃ‰RMINOS SIN NINGUNA DIRECCIÃ“N â•â•â•â•â•â•â•â•â•â•â•â•');
+		log('\n════════════ TÉRMINOS SIN NINGUNA DIRECCIÓN ════════════');
 		const noAddress = results.filter(r => r.rankOfFirstAddress === null && r.total > 0);
 		for (const r of noAddress) log(`  "${r.term}" -> ${r.total} filas, todas de aeropuerto`);
 		if (noAddress.length === 0) log('  Ninguno.');
 
-		log('\nâ•â•â•â•â•â•â•â•â•â•â•â• TÃ‰RMINOS SIN RESULTADOS â•â•â•â•â•â•â•â•â•â•â•â•');
+		log('\n════════════ TÉRMINOS SIN RESULTADOS ════════════');
 		const empty = results.filter(r => r.total === 0);
 		for (const r of empty) log(`  "${r.term}" [${r.category}] -> 0 predicciones (esperado: ${r.expectation})`);
 		if (empty.length === 0) log('  Ninguno.');

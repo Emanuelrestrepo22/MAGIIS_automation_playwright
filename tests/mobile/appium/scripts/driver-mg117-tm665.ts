@@ -1,20 +1,20 @@
 ﻿/**
- * TM-665 â€” DegradaciÃ³n ante 5xx, en condiciones CONTROLADAS.
+ * TM-665 — Degradación ante 5xx, en condiciones CONTROLADAS.
  *
- * La observaciÃ³n anterior saliÃ³ de una caÃ­da espontÃ¡nea del entorno, mezclada con tecleo manual y
- * automatizado a la vez: sirviÃ³ para ver el fenÃ³meno, no para emitir un veredicto. AcÃ¡ el fallo se
- * provoca sobre un Ãºnico tÃ©rmino y con el resto del sistema sano, para poder atribuir cada request.
+ * La observación anterior salió de una caída espontánea del entorno, mezclada con tecleo manual y
+ * automatizado a la vez: sirvió para ver el fenómeno, no para emitir un veredicto. Acá el fallo se
+ * provoca sobre un único término y con el resto del sistema sano, para poder atribuir cada request.
  *
- * Responde tres preguntas, cada una con su mediciÃ³n:
- *   1. Â¿La app cae a Google cuando el endpoint propio falla?   (el criterio real de TM-665)
- *   2. Â¿UN tecleo genera UNA request o la app reintenta sola?   (lo que antes inferÃ­ sin verificar)
- *   3. Â¿QuÃ© ve el conductor: un error, una lista vacÃ­a, o un spinner colgado?
+ * Responde tres preguntas, cada una con su medición:
+ *   1. ¿La app cae a Google cuando el endpoint propio falla?   (el criterio real de TM-665)
+ *   2. ¿UN tecleo genera UNA request o la app reintenta sola?   (lo que antes inferí sin verificar)
+ *   3. ¿Qué ve el conductor: un error, una lista vacía, o un spinner colgado?
  *
- * Secuencia: baseline sano -> inyectar 503 -> medir -> limpiar -> verificar recuperaciÃ³n.
- * La verificaciÃ³n final importa: si la app no se recupera sola tras un fallo transitorio, eso es
- * mÃ¡s grave que la falta de mensaje.
+ * Secuencia: baseline sano -> inyectar 503 -> medir -> limpiar -> verificar recuperación.
+ * La verificación final importa: si la app no se recupera sola tras un fallo transitorio, eso es
+ * más grave que la falta de mensaje.
  *
- * PRECONDICIÃ“N: modal "Buscar direcciÃ³n" abierto, un solo campo editable, backend operativo.
+ * PRECONDICIÓN: modal "Buscar dirección" abierto, un solo campo editable, backend operativo.
  */
 
 import { remote } from 'webdriverio';
@@ -38,7 +38,7 @@ const APPIUM_URL = TARGET.appiumUrl;
 const UDID = TARGET.udid;
 const APP_PACKAGE = TARGET.appPackage;
 const TERM = process.env.TM665_TERM ?? 'corr';
-/** Ventana de observaciÃ³n tras el tecleo: suficiente para que asomen reintentos con backoff. */
+/** Ventana de observación tras el tecleo: suficiente para que asomen reintentos con backoff. */
 const OBSERVE_MS = Number(process.env.TM665_OBSERVE_MS ?? 15000);
 
 const log = (msg: string): void => console.log(`[TM-665] ${msg}`);
@@ -70,7 +70,7 @@ async function readUi(driver: WebdriverIO.Browser): Promise<UiState> {
 			.filter(visible)
 			.find(el => !(el as HTMLInputElement).readOnly) as HTMLInputElement | undefined;
 
-		// Cualquier cartel que el usuario podrÃ­a leer como aviso de fallo.
+		// Cualquier cartel que el usuario podría leer como aviso de fallo.
 		const errorPattern = /error|falla|fallo|intenta|reintent|no se pudo|sin conexi|problema|disponible/i;
 		const errorTexts = Array.from(document.querySelectorAll('p, span, div, ion-label, ion-text'))
 			.filter(visible)
@@ -101,7 +101,7 @@ async function currentUrl(driver: WebdriverIO.Browser): Promise<string> {
  * DOM click restricted to the ACTIVE Ionic page.
  *
  * Ionic keeps previous pages mounted in a stack, so a selector like `div.edit.action-container`
- * matches several nodes â€” one per visited screen. `offsetParent` does not tell them apart, and the
+ * matches several nodes — one per visited screen. `offsetParent` does not tell them apart, and the
  * click ends up on a stale page that ignores it. `.ion-page:not(.ion-page-hidden)` is the page the
  * user is actually looking at; the rect check discards anything off-viewport.
  */
@@ -123,7 +123,7 @@ async function clickWeb(driver: WebdriverIO.Browser, selector: string): Promise<
 			const active = Array.from(document.querySelectorAll(`.ion-page:not(.ion-page-hidden) ${sel}`)).filter(onScreen);
 			const candidates = active.length ? active : Array.from(document.querySelectorAll(sel)).filter(onScreen);
 
-			// La pÃ¡gina viva es la Ãºltima del stack cuando no hay marca de Ionic.
+			// La página viva es la última del stack cuando no hay marca de Ionic.
 			const el = candidates[candidates.length - 1] as HTMLElement | undefined;
 			if (!el) return false;
 			el.click();
@@ -136,7 +136,7 @@ async function clickWeb(driver: WebdriverIO.Browser, selector: string): Promise<
  * Real finger tap on a WebView element.
  *
  * Ionic controls bind `(click)` through Angular's event plugin and a synthetic `el.click()` does not
- * always reach the handler â€” the PAX screens hit this same wall and solved it with a native tap.
+ * always reach the handler — the PAX screens hit this same wall and solved it with a native tap.
  * The element's CSS rect is scaled to device pixels, the tap happens in NATIVE_APP, and the context
  * is restored afterwards.
  */
@@ -168,7 +168,7 @@ async function tapNative(driver: WebdriverIO.Browser, selector: string, webviewN
 		const size = await driver.getWindowSize();
 		const tapX = Math.round(rect.x * (size.width / rect.vw));
 		const tapY = Math.round(rect.y * (size.height / rect.vh));
-		log(`       tap nativo en (${tapX}, ${tapY}) â€” css (${Math.round(rect.x)}, ${Math.round(rect.y)}) de ${rect.vw}x${rect.vh}`);
+		log(`       tap nativo en (${tapX}, ${tapY}) — css (${Math.round(rect.x)}, ${Math.round(rect.y)}) de ${rect.vw}x${rect.vh}`);
 
 		await driver.performActions([
 			{
@@ -207,7 +207,7 @@ async function clickByText(driver: WebdriverIO.Browser, text: string): Promise<b
 		.catch(() => false)) as boolean;
 }
 
-/** Opens the LAST readonly row of the edit modal â€” the Destination stop. */
+/** Opens the LAST readonly row of the edit modal — the Destination stop. */
 async function openDestinationRow(driver: WebdriverIO.Browser): Promise<boolean> {
 	return (await driver
 		.execute(() => {
@@ -240,7 +240,7 @@ async function navigateToSearch(driver: WebdriverIO.Browser, webviewName: string
 		log(`   [${attempt}] ${url.replace('https://localhost/navigator/', '') || '(sin url)'}`);
 
 		if (url.includes('TravelInProgress')) {
-			// El modal de ediciÃ³n ya abierto muestra las paradas como campos readonly.
+			// El modal de edición ya abierto muestra las paradas como campos readonly.
 			const readonlyRows = (await driver.execute(() => {
 				const visible = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
 				return Array.from(document.querySelectorAll('input'))
@@ -257,7 +257,7 @@ async function navigateToSearch(driver: WebdriverIO.Browser, webviewName: string
 				await tapNative(driver, 'div.edit.action-container', webviewName);
 			}
 		} else if (url.includes('TravelToStart')) {
-			log('       "Empezar Viaje" + confirmaciÃ³n');
+			log('       "Empezar Viaje" + confirmación');
 			await clickByText(driver, 'Empezar Viaje');
 			await driver.pause(1200);
 			await clickWeb(driver, 'app-confirm-modal button.btn.primary');
@@ -302,7 +302,7 @@ async function anchorInput(driver: WebdriverIO.Browser): Promise<boolean> {
 
 /**
  * Writes a value and READS IT BACK. A test script must fail loudly when its precondition does not
- * hold â€” silently measuring a scenario that never happened is how false verdicts are produced.
+ * hold — silently measuring a scenario that never happened is how false verdicts are produced.
  */
 async function setValueVerified(
 	driver: WebdriverIO.Browser,
@@ -343,7 +343,7 @@ async function typeTerm(driver: WebdriverIO.Browser, term: string): Promise<bool
 	await driver.pause(800);
 	const written = await setValueVerified(driver, term);
 	if (!written.ok) {
-		log(`   !! el tÃ©rmino no quedÃ³ escrito: se esperaba "${term}" y el campo dice "${written.actual ?? '(sin campo)'}"`);
+		log(`   !! el término no quedó escrito: se esperaba "${term}" y el campo dice "${written.actual ?? '(sin campo)'}"`);
 	}
 	return written.ok;
 }
@@ -382,18 +382,18 @@ async function run(): Promise<void> {
 		await driver.switchContext(webview);
 		await installWebViewNetworkCapture(driver);
 
-		// â”€â”€ PASO 0 Â· Llegar al buscador â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-		log('PASO 0 â€” navegando hasta el buscador de direcciÃ³n');
+		// ── PASO 0 · Llegar al buscador ──────────────────────────────────────────
+		log('PASO 0 — navegando hasta el buscador de dirección');
 		if (!(await navigateToSearch(driver, webview))) {
-			log('ABORTA: no se pudo llegar al buscador de direcciÃ³n tras 10 intentos.');
+			log('ABORTA: no se pudo llegar al buscador de dirección tras 10 intentos.');
 			return;
 		}
 
-		// â”€â”€ PASO 1 Â· Baseline sano â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-		log('PASO 1 â€” baseline con el backend operativo');
+		// ── PASO 1 · Baseline sano ───────────────────────────────────────────────
+		log('PASO 1 — baseline con el backend operativo');
 		await clearWebViewNetworkCapture(driver);
 		if (!(await typeTerm(driver, TERM))) {
-			log('ABORTA: el tÃ©rmino no se pudo escribir en el baseline.');
+			log('ABORTA: el término no se pudo escribir en el baseline.');
 			return;
 		}
 		await driver.pause(3000);
@@ -402,18 +402,18 @@ async function run(): Promise<void> {
 		const baseCalls = baseCapture.entries.filter(e => String(e.url).includes('places/autocomplete'));
 		const baseUi = await readUi(driver);
 
-		log(`   requests: ${baseCalls.length} Â· status: ${baseCalls.map(c => c.status).join(', ') || 'â€”'}`);
+		log(`   requests: ${baseCalls.length} · status: ${baseCalls.map(c => c.status).join(', ') || '—'}`);
 		log(`   predicciones en pantalla: ${baseUi.predictionItems}`);
 		report.baseline = { calls: baseCalls.length, statuses: baseCalls.map(c => c.status), ui: baseUi };
 
 		if (baseCalls.length === 0 || baseUi.predictionItems === 0) {
 			log('\n   ABORTA: el baseline no produjo resultados. Sin un punto de partida sano no se puede');
-			log('   atribuir lo que ocurra despuÃ©s al fallo inyectado.');
+			log('   atribuir lo que ocurra después al fallo inyectado.');
 			return;
 		}
 
-		// â”€â”€ PASO 2 Â· Inyectar 503 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-		log('\nPASO 2 â€” inyectando 503 sobre places/autocomplete');
+		// ── PASO 2 · Inyectar 503 ────────────────────────────────────────────────
+		log('\nPASO 2 — inyectando 503 sobre places/autocomplete');
 		await installWebViewFaultInjection(driver, [
 			{
 				id: 'TM-665-503',
@@ -421,7 +421,7 @@ async function run(): Promise<void> {
 				mode: 'status',
 				status: 503,
 				body: '{"error":"Service Unavailable"}'
-				// Sin delayMs a propÃ³sito: la entrega inmediata evita la ventana del timer aparcado.
+				// Sin delayMs a propósito: la entrega inmediata evita la ventana del timer aparcado.
 			}
 		]);
 
@@ -429,17 +429,17 @@ async function run(): Promise<void> {
 		const googleBefore = await readWebViewGoogleActivity(driver);
 		log(`   Google antes: available=${googleBefore.available} recursos=${googleBefore.resourceEntries.length}`);
 
-		// â”€â”€ PASO 3 Â· Un solo tecleo, ventana de observaciÃ³n â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-		// Cada fase usa un tÃ©rmino PROPIO. `onLocationTextChange` no emite el valor vacÃ­o al
-		// observable (llama a resetPlacesCollection), asÃ­ que vaciar el campo no reinicia el
-		// `distinctUntilChanged`: repetir el tÃ©rmino del baseline serÃ­a descartado por idÃ©ntico y
-		// la app no consultarÃ­a, dejando el fallo sin ejercer.
+		// ── PASO 3 · Un solo tecleo, ventana de observación ──────────────────────
+		// Cada fase usa un término PROPIO. `onLocationTextChange` no emite el valor vacío al
+		// observable (llama a resetPlacesCollection), así que vaciar el campo no reinicia el
+		// `distinctUntilChanged`: repetir el término del baseline sería descartado por idéntico y
+		// la app no consultaría, dejando el fallo sin ejercer.
 		const faultTerm = `${TERM}i`;
-		log(`\nPASO 3 â€” un tecleo de "${faultTerm}", observando ${OBSERVE_MS / 1000}s`);
+		log(`\nPASO 3 — un tecleo de "${faultTerm}", observando ${OBSERVE_MS / 1000}s`);
 		const typedUnderFault = await typeTerm(driver, faultTerm);
 		if (!typedUnderFault) {
-			log('\n   ABORTA: el tÃ©rmino no quedÃ³ escrito con el fallo activo.');
-			log('   Sin tecleo efectivo no hay consulta, y sin consulta no hay degradaciÃ³n que evaluar.');
+			log('\n   ABORTA: el término no quedó escrito con el fallo activo.');
+			log('   Sin tecleo efectivo no hay consulta, y sin consulta no hay degradación que evaluar.');
 			await clearWebViewFaultInjection(driver);
 			return;
 		}
@@ -452,7 +452,7 @@ async function run(): Promise<void> {
 			const calls = capture.entries.filter(e => String(e.url).includes('places/autocomplete'));
 			const ui = await readUi(driver);
 			snapshots.push({ atMs: elapsed, requests: calls.length, ui });
-			log(`   t+${elapsed / 1000}s -> requests: ${calls.length} Â· predicciones: ${ui.predictionItems} Â· spinner: ${ui.spinnerVisible}`);
+			log(`   t+${elapsed / 1000}s -> requests: ${calls.length} · predicciones: ${ui.predictionItems} · spinner: ${ui.spinnerVisible}`);
 		}
 
 		const faultCapture = await readWebViewNetworkCapture(driver);
@@ -474,8 +474,8 @@ async function run(): Promise<void> {
 			snapshots
 		};
 
-		// â”€â”€ PASO 4 Â· Quitar el fallo y verificar recuperaciÃ³n â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-		log('\nPASO 4 â€” quitando el fallo y verificando que se recupera');
+		// ── PASO 4 · Quitar el fallo y verificar recuperación ────────────────────
+		log('\nPASO 4 — quitando el fallo y verificando que se recupera');
 		await clearWebViewFaultInjection(driver);
 		await clearWebViewNetworkCapture(driver);
 		await typeTerm(driver, `${TERM}ie`);
@@ -484,55 +484,55 @@ async function run(): Promise<void> {
 		const recoveryCapture = await readWebViewNetworkCapture(driver);
 		const recoveryCalls = recoveryCapture.entries.filter(e => String(e.url).includes('places/autocomplete'));
 		const recoveryUi = await readUi(driver);
-		log(`   requests: ${recoveryCalls.length} Â· predicciones: ${recoveryUi.predictionItems}`);
+		log(`   requests: ${recoveryCalls.length} · predicciones: ${recoveryUi.predictionItems}`);
 		report.recovery = { calls: recoveryCalls.length, ui: recoveryUi };
 
-		// â”€â”€ VEREDICTOS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-		log('\nâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• VEREDICTOS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•');
+		// ── VEREDICTOS ───────────────────────────────────────────────────────────
+		log('\n════════════════ VEREDICTOS ════════════════');
 
-		// Sin un disparo de la regla, el 503 nunca llegÃ³ a la app: no hay escenario que juzgar.
+		// Sin un disparo de la regla, el 503 nunca llegó a la app: no hay escenario que juzgar.
 		if (faultState.totalHits === 0 && faultCalls.length === 0) {
-			log('\nESCENARIO NO EJERCIDO â€” la regla de fallo no se disparÃ³ ni una vez.');
-			log('La app no emitiÃ³ ninguna consulta con el fallo activo, asÃ­ que no se puede afirmar');
-			log('nada sobre su degradaciÃ³n. No se emite veredicto para TM-665.');
+			log('\nESCENARIO NO EJERCIDO — la regla de fallo no se disparó ni una vez.');
+			log('La app no emitió ninguna consulta con el fallo activo, así que no se puede afirmar');
+			log('nada sobre su degradación. No se emite veredicto para TM-665.');
 			log(`\n(estado de la regla: ${JSON.stringify(faultState)})`);
 			report.verdict = 'NO_EJERCIDO';
 			return;
 		}
 
-		log(`\n1) Â¿CayÃ³ a Google al fallar el endpoint propio?`);
+		log(`\n1) ¿Cayó a Google al fallar el endpoint propio?`);
 		if (!googleAfter.available) {
-			log(`   INDETERMINADO â€” la sonda de actividad Google no pudo correr (${googleAfter.unavailableReason ?? '?'})`);
+			log(`   INDETERMINADO — la sonda de actividad Google no pudo correr (${googleAfter.unavailableReason ?? '?'})`);
 		} else if (newGoogle === 0) {
 			log(`   NO. Cero recursos nuevos de Google durante todo el fallo. -> CRITERIO CENTRAL CUMPLIDO`);
 		} else {
-			log(`   SÃ â€” ${newGoogle} recursos nuevos de Google. -> CRITERIO CENTRAL INCUMPLIDO`);
+			log(`   SÍ — ${newGoogle} recursos nuevos de Google. -> CRITERIO CENTRAL INCUMPLIDO`);
 		}
 
-		log(`\n2) Â¿UN tecleo produce UNA request o la app reintenta sola?`);
+		log(`\n2) ¿UN tecleo produce UNA request o la app reintenta sola?`);
 		log(`   requests con el fallo activo: ${faultCalls.length} (inyectadas: ${injected.length}, hits de la regla: ${faultState.totalHits})`);
 		if (faultCalls.length <= 1) {
-			log(`   NO reintenta. Los 654 requests de la observaciÃ³n anterior eran acumulaciÃ³n de`);
-			log(`   tÃ©rminos distintos (automatizados + manuales), no reintentos de la app.`);
+			log(`   NO reintenta. Los 654 requests de la observación anterior eran acumulación de`);
+			log(`   términos distintos (automatizados + manuales), no reintentos de la app.`);
 		} else {
-			log(`   SÃ reintenta: ${faultCalls.length} requests para un solo tecleo.`);
-			const times = snapshots.map(s => `t+${s.atMs / 1000}s=${s.requests}`).join(' Â· ');
-			log(`   progresiÃ³n: ${times}`);
+			log(`   SÍ reintenta: ${faultCalls.length} requests para un solo tecleo.`);
+			const times = snapshots.map(s => `t+${s.atMs / 1000}s=${s.requests}`).join(' · ');
+			log(`   progresión: ${times}`);
 		}
 
-		log(`\n3) Â¿QuÃ© ve el conductor?`);
+		log(`\n3) ¿Qué ve el conductor?`);
 		log(`   predicciones en pantalla: ${faultUi.predictionItems}`);
 		log(`   spinner visible: ${faultUi.spinnerVisible}`);
 		log(`   texto del campo: "${faultUi.inputValue}"`);
 		log(`   avisos de error detectados: ${faultUi.errorTexts.length ? faultUi.errorTexts.join(' | ') : 'NINGUNO'}`);
 		if (faultUi.spinnerVisible) {
-			log(`   -> el spinner quedÃ³ colgado: el usuario percibe la app trabajando indefinidamente`);
+			log(`   -> el spinner quedó colgado: el usuario percibe la app trabajando indefinidamente`);
 		} else if (faultUi.predictionItems === 0 && faultUi.errorTexts.length === 0) {
-			log(`   -> lista vacÃ­a sin aviso: indistinguible de "no hay resultados"`);
+			log(`   -> lista vacía sin aviso: indistinguible de "no hay resultados"`);
 		}
 
-		log(`\n4) Â¿Se recupera al normalizarse el servicio?`);
-		log(`   ${recoveryUi.predictionItems > 0 ? 'SÃ â€” vuelve a mostrar predicciones sin reiniciar nada.' : 'NO â€” sigue sin resultados tras quitar el fallo.'}`);
+		log(`\n4) ¿Se recupera al normalizarse el servicio?`);
+		log(`   ${recoveryUi.predictionItems > 0 ? 'SÍ — vuelve a mostrar predicciones sin reiniciar nada.' : 'NO — sigue sin resultados tras quitar el fallo.'}`);
 
 		const outDir = path.resolve('evidence', 'network-capture');
 		await mkdir(outDir, { recursive: true });
@@ -541,7 +541,7 @@ async function run(): Promise<void> {
 		await writeFile(file, JSON.stringify(report, null, 2), 'utf8');
 		log(`\nEvidencia -> ${file}`);
 	} finally {
-		// La regla no puede quedar viva: envenenarÃ­a cualquier corrida posterior.
+		// La regla no puede quedar viva: envenenaría cualquier corrida posterior.
 		await clearWebViewFaultInjection(driver).catch(() => undefined);
 		await driver.deleteSession();
 	}

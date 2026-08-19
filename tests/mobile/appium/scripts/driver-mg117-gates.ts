@@ -1,20 +1,20 @@
 ﻿/**
- * MG-117 â€” MediciÃ³n de los gates que el ojo no puede resolver en el panel de red.
+ * MG-117 — Medición de los gates que el ojo no puede resolver en el panel de red.
  *
- *   TM-654 â€” debounce ~300 ms: tecleo continuo debe producir UNA sola llamada
- *   TM-655 â€” distinctUntilChanged: repetir el mismo tÃ©rmino no vuelve a consultar
- *   TM-656 â€” con 2 caracteres NO se consulta
- *   TM-657 â€” con 3 caracteres SÃ se consulta (soporte IATA)
- *   TM-662 â€” todas las llamadas de la sesiÃ³n comparten sessionToken
+ *   TM-654 — debounce ~300 ms: tecleo continuo debe producir UNA sola llamada
+ *   TM-655 — distinctUntilChanged: repetir el mismo término no vuelve a consultar
+ *   TM-656 — con 2 caracteres NO se consulta
+ *   TM-657 — con 3 caracteres SÍ se consulta (soporte IATA)
+ *   TM-662 — todas las llamadas de la sesión comparten sessionToken
  *
- * Por quÃ© un script y no el panel: el debounce se mide por la separaciÃ³n entre el ÃšLTIMO
+ * Por qué un script y no el panel: el debounce se mide por la separación entre el ÚLTIMO
  * evento de tecla y el inicio de la request. A ojo, en una lista de requests, eso no se ve.
- * El marcador de la Ãºltima tecla se escribe DENTRO del WebView (`__mg117LastKeystrokeAt`)
- * para que el delta se calcule con un Ãºnico reloj y no arrastre el desfase con el host.
+ * El marcador de la última tecla se escribe DENTRO del WebView (`__mg117LastKeystrokeAt`)
+ * para que el delta se calcule con un único reloj y no arrastre el desfase con el host.
  *
- * PRECONDICIÃ“N: viaje en curso, modal "Editar viaje" abierto y el campo Destino vacÃ­o.
- * Si hay mÃ¡s de un buscador apilado el script aborta: cada modal tiene su propia suscripciÃ³n
- * al tecleo y multiplicarÃ­a las llamadas, que fue justo lo que contaminÃ³ la corrida anterior.
+ * PRECONDICIÓN: viaje en curso, modal "Editar viaje" abierto y el campo Destino vacío.
+ * Si hay más de un buscador apilado el script aborta: cada modal tiene su propia suscripción
+ * al tecleo y multiplicaría las llamadas, que fue justo lo que contaminó la corrida anterior.
  *
  * Uso:
  *   $env:ANDROID_UDID="R92XB0B8F3J"; npx ... driver-mg117-gates.ts
@@ -37,7 +37,7 @@ const TARGET = resolveDriverTarget('driver');
 const APPIUM_URL = TARGET.appiumUrl;
 const UDID = TARGET.udid;
 const APP_PACKAGE = TARGET.appPackage;
-/** Muy por debajo de los 300 ms declarados, para que un debounce sano colapse todo el tÃ©rmino. */
+/** Muy por debajo de los 300 ms declarados, para que un debounce sano colapse todo el término. */
 const KEY_GAP_MS = Number(process.env.KEY_GAP_MS ?? 80);
 
 const log = (msg: string): void => console.log(`[gates] ${msg}`);
@@ -151,12 +151,12 @@ async function measure(
 }
 
 function report(m: Measurement): void {
-	log(`\nâ”€â”€ ${m.label} â€” tÃ©rmino "${m.term}"`);
+	log(`\n── ${m.label} — término "${m.term}"`);
 	log(`   llamadas: ${m.calls}`);
 	if (m.addresses.length) log(`   address enviados: ${m.addresses.join(' | ')}`);
 	if (m.sessionTokens.length) log(`   sessionToken(s): ${m.sessionTokens.join(' | ')}`);
-	if (m.msFromLastKeystroke !== null) log(`   ms desde la Ãºltima tecla: ${m.msFromLastKeystroke}`);
-	if (m.gapsMs.length) log(`   separaciÃ³n entre llamadas: ${m.gapsMs.join(', ')} ms`);
+	if (m.msFromLastKeystroke !== null) log(`   ms desde la última tecla: ${m.msFromLastKeystroke}`);
+	if (m.gapsMs.length) log(`   separación entre llamadas: ${m.gapsMs.join(', ')} ms`);
 }
 
 async function run(): Promise<void> {
@@ -199,38 +199,38 @@ async function run(): Promise<void> {
 		await installWebViewNetworkCapture(driver);
 
 		let searchInputs = await countSearchInputs(driver);
-		log(`Campos de bÃºsqueda activos: ${searchInputs}`);
+		log(`Campos de búsqueda activos: ${searchInputs}`);
 
 		if (searchInputs === 0) {
-			log('Abriendo el buscador desde la fila Destinoâ€¦');
+			log('Abriendo el buscador desde la fila Destino…');
 			if (!(await openSearchFromDestination(driver))) {
 				log('No se pudo abrir el buscador.');
 				return;
 			}
 			searchInputs = await countSearchInputs(driver);
-			log(`Campos de bÃºsqueda activos tras abrir: ${searchInputs}`);
+			log(`Campos de búsqueda activos tras abrir: ${searchInputs}`);
 		}
 
 		if (searchInputs !== 1) {
 			log(`ABORTA: se esperaba exactamente 1 buscador y hay ${searchInputs}.`);
-			log('Con buscadores apilados cada uno dispara su propia consulta y la mediciÃ³n no sirve.');
+			log('Con buscadores apilados cada uno dispara su propia consulta y la medición no sirve.');
 			return;
 		}
 
 		const googleBefore = await readWebViewGoogleActivity(driver);
 
-		// TM-656 / TM-657: el umbral. "ez" no debe consultar; "eze" sÃ­ (cÃ³digo IATA).
-		results.push(await measure(driver, 'TM-656 Â· 2 caracteres', 'ez'));
+		// TM-656 / TM-657: el umbral. "ez" no debe consultar; "eze" sí (código IATA).
+		results.push(await measure(driver, 'TM-656 · 2 caracteres', 'ez'));
 		report(results[results.length - 1]);
 
-		results.push(await measure(driver, 'TM-657 Â· 3 caracteres (IATA)', 'eze'));
+		results.push(await measure(driver, 'TM-657 · 3 caracteres (IATA)', 'eze'));
 		report(results[results.length - 1]);
 
 		// TM-654: tecleo continuo por debajo de la ventana de debounce.
-		results.push(await measure(driver, 'TM-654 Â· debounce', 'corrientes'));
+		results.push(await measure(driver, 'TM-654 · debounce', 'corrientes'));
 		report(results[results.length - 1]);
 
-		// TM-655: repetir el mismo tÃ©rmino no debe volver a consultar.
+		// TM-655: repetir el mismo término no debe volver a consultar.
 		await clearWebViewNetworkCapture(driver);
 		await typeTerm(driver, 'corrientes', KEY_GAP_MS);
 		await driver.pause(2500);
@@ -238,33 +238,33 @@ async function run(): Promise<void> {
 		const repeatCalls = (repeatCapture.entries as Entry[]).filter(e =>
 			String(e.url).includes('places/autocomplete')
 		);
-		log(`\nâ”€â”€ TM-655 Â· mismo tÃ©rmino repetido\n   llamadas: ${repeatCalls.length}`);
+		log(`\n── TM-655 · mismo término repetido\n   llamadas: ${repeatCalls.length}`);
 
 		const googleAfter = await readWebViewGoogleActivity(driver);
 		const newGoogle = googleAfter.resourceEntries.length - googleBefore.resourceEntries.length;
 
-		log('\nâ•â•â•â•â•â•â•â•â•â•â•â• VEREDICTOS â•â•â•â•â•â•â•â•â•â•â•â•');
+		log('\n════════════ VEREDICTOS ════════════');
 		const twoChars = results.find(r => r.label.startsWith('TM-656'));
 		const threeChars = results.find(r => r.label.startsWith('TM-657'));
 		const debounce = results.find(r => r.label.startsWith('TM-654'));
 
-		log(`TM-656 (2 chars no consulta): ${twoChars && twoChars.calls === 0 ? 'PASA' : 'FALLA'} â€” ${twoChars?.calls} llamadas`);
-		log(`TM-657 (3 chars sÃ­ consulta): ${threeChars && threeChars.calls > 0 ? 'PASA' : 'FALLA'} â€” ${threeChars?.calls} llamadas`);
+		log(`TM-656 (2 chars no consulta): ${twoChars && twoChars.calls === 0 ? 'PASA' : 'FALLA'} — ${twoChars?.calls} llamadas`);
+		log(`TM-657 (3 chars sí consulta): ${threeChars && threeChars.calls > 0 ? 'PASA' : 'FALLA'} — ${threeChars?.calls} llamadas`);
 		if (debounce) {
 			const single = debounce.calls === 1;
 			const timing = debounce.msFromLastKeystroke;
 			const inWindow = timing !== null && timing >= 150 && timing <= 900;
 			log(
-				`TM-654 (debounce ~300 ms): ${single && inWindow ? 'PASA' : 'REVISAR'} â€” ` +
-					`${debounce.calls} llamada(s), ${timing ?? '?'} ms tras la Ãºltima tecla`
+				`TM-654 (debounce ~300 ms): ${single && inWindow ? 'PASA' : 'REVISAR'} — ` +
+					`${debounce.calls} llamada(s), ${timing ?? '?'} ms tras la última tecla`
 			);
 		}
-		log(`TM-655 (tÃ©rmino repetido): ${repeatCalls.length === 0 ? 'PASA' : 'FALLA'} â€” ${repeatCalls.length} llamadas`);
-		log(`TM-650 (sin trÃ¡fico a Google): ${googleAfter.available ? (newGoogle === 0 ? 'PASA' : 'FALLA') : 'INDETERMINADO'} â€” ${newGoogle} recursos nuevos`);
+		log(`TM-655 (término repetido): ${repeatCalls.length === 0 ? 'PASA' : 'FALLA'} — ${repeatCalls.length} llamadas`);
+		log(`TM-650 (sin tráfico a Google): ${googleAfter.available ? (newGoogle === 0 ? 'PASA' : 'FALLA') : 'INDETERMINADO'} — ${newGoogle} recursos nuevos`);
 
 		const allTokens = Array.from(new Set(results.flatMap(r => r.sessionTokens).filter(Boolean)));
-		log(`TM-662 (sessionToken): ${allTokens.length} token(s) distintos en toda la sesiÃ³n`);
-		for (const token of allTokens) log(`   Â· ${token}`);
+		log(`TM-662 (sessionToken): ${allTokens.length} token(s) distintos en toda la sesión`);
+		for (const token of allTokens) log(`   · ${token}`);
 
 		const outDir = path.resolve('evidence', 'network-capture');
 		await mkdir(outDir, { recursive: true });

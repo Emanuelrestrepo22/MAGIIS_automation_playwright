@@ -1,12 +1,12 @@
 ﻿/**
- * MG-117 â€” Sonda de un tÃ©rmino contra el buscador ya abierto en el dispositivo.
+ * MG-117 — Sonda de un término contra el buscador ya abierto en el dispositivo.
  *
- * Teclea un tÃ©rmino y analiza el CUERPO de la respuesta que devolviÃ³ el endpoint, sin
- * credenciales propias: reutiliza la sesiÃ³n autenticada de la app. Sirve para elegir el dato de
- * prueba correcto de cada caso â€” por ejemplo, quÃ© aeropuertos llegan con `placeId` nulo, que es
- * la precondiciÃ³n de TM-660 y depende del entorno y del registro concreto.
+ * Teclea un término y analiza el CUERPO de la respuesta que devolvió el endpoint, sin
+ * credenciales propias: reutiliza la sesión autenticada de la app. Sirve para elegir el dato de
+ * prueba correcto de cada caso — por ejemplo, qué aeropuertos llegan con `placeId` nulo, que es
+ * la precondición de TM-660 y depende del entorno y del registro concreto.
  *
- * PRECONDICIÃ“N: el modal "Buscar direcciÃ³n" abierto, con un Ãºnico campo editable.
+ * PRECONDICIÓN: el modal "Buscar dirección" abierto, con un único campo editable.
  *
  * Uso:
  *   $env:PROBE_TERM="corr"; node --loader ts-node/esm tests/mobile/appium/scripts/driver-mg117-probe-term.ts
@@ -91,7 +91,7 @@ async function run(): Promise<void> {
 		}, TERM)) as boolean;
 
 		if (!typed) {
-			log('No hay campo de bÃºsqueda editable visible. Â¿EstÃ¡ abierto "Buscar direcciÃ³n"?');
+			log('No hay campo de búsqueda editable visible. ¿Está abierto "Buscar dirección"?');
 			return;
 		}
 
@@ -103,7 +103,7 @@ async function run(): Promise<void> {
 
 		const last = calls[calls.length - 1];
 		if (!last) {
-			log('Ninguna llamada capturada para ese tÃ©rmino.');
+			log('Ninguna llamada capturada para ese término.');
 			return;
 		}
 
@@ -117,12 +117,12 @@ async function run(): Promise<void> {
 		}
 
 		log(`\nPredicciones: ${predictions.length}`);
-		log('â”€'.repeat(100));
+		log('─'.repeat(100));
 		for (const p of predictions) {
 			log(
 				`${(p.source ?? '?').padEnd(8)} | placeId=${(p.placeId ? 'presente' : '*** NULL ***').padEnd(13)} | ` +
 					`airport=${String(p.airport).padEnd(5)} | iata=${(p.iataCode ?? '-').padEnd(5)} | ` +
-					`coords=${p.latitude ? 'sÃ­' : 'NULL'} | ${p.mainText}`
+					`coords=${p.latitude ? 'sí' : 'NULL'} | ${p.mainText}`
 			);
 		}
 
@@ -132,11 +132,11 @@ async function run(): Promise<void> {
 			return acc;
 		}, {});
 
-		log('â”€'.repeat(100));
+		log('─'.repeat(100));
 		log(`Por fuente: ${JSON.stringify(bySource)}`);
 		log(`Con placeId NULO: ${nulls.length}${nulls.length ? ' -> ' + nulls.map(p => `${p.iataCode ?? '?'}:${p.mainText}`).join(' | ') : ''}`);
 		if (nulls.length > 0) {
-			log(`\nTM-660 es ejecutable con "${TERM}": seleccionar una de esas filas ejercita la resoluciÃ³n por nombre.`);
+			log(`\nTM-660 es ejecutable con "${TERM}": seleccionar una de esas filas ejercita la resolución por nombre.`);
 		} else {
 			log(`\nTM-660 NO es ejecutable con "${TERM}": todas las predicciones traen placeId.`);
 		}

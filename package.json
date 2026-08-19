@@ -96,7 +96,10 @@
     "mobile:passenger:cancel-trip:uat": "cross-env APPIUM_SERVER_URL=http://localhost:4723 ENV=uat NODE_OPTIONS=--experimental-specifier-resolution=node node --loader ts-node/esm tests/mobile/appium/scripts/passenger-cancel-active-trip.ts",
     "mobile:passenger:address-battery:uat": "cross-env APPIUM_SERVER_URL=http://localhost:4723 ENV=uat NODE_OPTIONS=--experimental-specifier-resolution=node node --loader ts-node/esm tests/mobile/appium/scripts/passenger-mg116-uat-battery.ts",
     "mobile:passenger:address-cases:uat": "cross-env APPIUM_SERVER_URL=http://localhost:4723 ENV=uat NODE_OPTIONS=--experimental-specifier-resolution=node node --loader ts-node/esm tests/mobile/appium/scripts/passenger-mg116-uat-cases.ts",
-    "test:uat:mg116:address-guards": "cross-env ENV=uat APPIUM_SERVER_URL=http://localhost:4723 npx playwright test tests/mobile/appium/passenger/specs/pax-address-surfaces.spec.ts --project=chromium --workers=1"
+    "test:uat:mg116:address-guards": "cross-env ENV=uat APPIUM_SERVER_URL=http://localhost:4723 npx playwright test tests/mobile/appium/passenger/specs/pax-address-surfaces.spec.ts --project=chromium --workers=1",
+    "test:uat:mg116:behaviors": "cross-env ENV=uat APPIUM_SERVER_URL=http://localhost:4723 npx playwright test tests/mobile/appium/passenger/specs/pax-address-behaviors.spec.ts --project=chromium --workers=1",
+    "test:uat:mg116:all": "cross-env ENV=uat APPIUM_SERVER_URL=http://localhost:4723 ALLURE=1 npx playwright test tests/mobile/appium/passenger/specs/pax-address-behaviors.spec.ts tests/mobile/appium/passenger/specs/pax-address-surfaces.spec.ts --project=chromium --workers=1",
+    "test:uat:mg117:address-guards": "cross-env ENV=uat APPIUM_SERVER_URL=http://localhost:4723 npx playwright test tests/mobile/appium/driver/specs/driver-address-surfaces.spec.ts --project=chromium --workers=1"
   },
   "keywords": [
     "playwright",

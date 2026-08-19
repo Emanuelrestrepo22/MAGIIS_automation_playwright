@@ -1,20 +1,20 @@
 ﻿/**
- * MG-117 â€” Paradas mÃºltiples: Â¿el sesgo y el sessionToken cambian segÃºn la parada que se edita?
+ * MG-117 — Paradas múltiples: ¿el sesgo y el sessionToken cambian según la parada que se edita?
  *
- * HIPÃ“TESIS (del cÃ³digo, `GooglePlacesService.runGoogleAutocomplete`):
- *   el sesgo se toma SIEMPRE de `travelService.currentOrigin` â€” el origen del viaje â€” y no de la
- *   parada que se estÃ¡ editando ni de la anterior. En un viaje largo (CABA -> Mar del Plata) eso
+ * HIPÓTESIS (del código, `GooglePlacesService.runGoogleAutocomplete`):
+ *   el sesgo se toma SIEMPRE de `travelService.currentOrigin` — el origen del viaje — y no de la
+ *   parada que se está editando ni de la anterior. En un viaje largo (CABA -> Mar del Plata) eso
  *   significa que al cargar una parada cercana al destino las sugerencias siguen sesgadas al
- *   origen, a cientos de kilÃ³metros de donde el conductor va a estar.
+ *   origen, a cientos de kilómetros de donde el conductor va a estar.
  *
- * Y el `sessionToken` vive en el servicio (singleton) y solo se descarta al seleccionar, asÃ­ que
- * deberÃ­a compartirse entre paradas mientras no se elija ninguna predicciÃ³n.
+ * Y el `sessionToken` vive en el servicio (singleton) y solo se descarta al seleccionar, así que
+ * debería compartirse entre paradas mientras no se elija ninguna predicción.
  *
- * QUÃ‰ HACE: enumera las filas de direcciÃ³n del modal "Editar viaje", edita una por una con el
- * mismo tÃ©rmino y compara las coordenadas y el token de cada consulta. No selecciona nada â€” la
- * selecciÃ³n cerrarÃ­a la sesiÃ³n y cambiarÃ­a lo que se quiere observar.
+ * QUÉ HACE: enumera las filas de dirección del modal "Editar viaje", edita una por una con el
+ * mismo término y compara las coordenadas y el token de cada consulta. No selecciona nada — la
+ * selección cerraría la sesión y cambiaría lo que se quiere observar.
  *
- * PRECONDICIÃ“N: viaje en curso (propio o despachado por el carrier) y modal "Editar viaje" abierto.
+ * PRECONDICIÓN: viaje en curso (propio o despachado por el carrier) y modal "Editar viaje" abierto.
  *
  * Uso:
  *   $env:WAYPOINT_TERM="san martin"; node --loader ts-node/esm tests/mobile/appium/scripts/driver-mg117-waypoints.ts
@@ -178,13 +178,13 @@ async function run(): Promise<void> {
 		const rows = await listRows(driver);
 		const stops = rows.filter(r => r.readOnly);
 
-		log(`\nFilas de direcciÃ³n detectadas: ${stops.length}`);
+		log(`\nFilas de dirección detectadas: ${stops.length}`);
 		for (const row of stops) {
-			log(`  [${row.index}] placeholder="${row.placeholder}" valor="${row.value || '(vacÃ­o)'}"`);
+			log(`  [${row.index}] placeholder="${row.placeholder}" valor="${row.value || '(vacío)'}"`);
 		}
 
 		if (stops.length === 0) {
-			log('\nNo hay filas de parada. Â¿EstÃ¡ abierto el modal "Editar viaje"?');
+			log('\nNo hay filas de parada. ¿Está abierto el modal "Editar viaje"?');
 			return;
 		}
 		if (stops.length < 2) {
@@ -193,7 +193,7 @@ async function run(): Promise<void> {
 
 		for (let i = 0; i < stops.length; i++) {
 			const stop = stops[i];
-			log(`\nâ”€â”€ Editando parada ${i + 1}/${stops.length} â€” "${stop.placeholder}" (valor actual: ${stop.value || 'vacÃ­o'})`);
+			log(`\n── Editando parada ${i + 1}/${stops.length} — "${stop.placeholder}" (valor actual: ${stop.value || 'vacío'})`);
 
 			if (!(await openRow(driver, i))) {
 				log('   no se pudo abrir el buscador para esta fila');
@@ -232,33 +232,33 @@ async function run(): Promise<void> {
 			};
 			samples.push(sample);
 
-			log(`   coords enviadas: ${sample.latitude ?? 'â€”'}, ${sample.longitude ?? 'â€”'}`);
-			log(`   sessionToken:    ${sample.sessionToken ?? 'â€”'}`);
-			log(`   predicciones:    ${sample.predictionCount}${sample.firstPrediction ? ` (1Âª: ${sample.firstPrediction})` : ''}`);
+			log(`   coords enviadas: ${sample.latitude ?? '—'}, ${sample.longitude ?? '—'}`);
+			log(`   sessionToken:    ${sample.sessionToken ?? '—'}`);
+			log(`   predicciones:    ${sample.predictionCount}${sample.firstPrediction ? ` (1ª: ${sample.firstPrediction})` : ''}`);
 
 			await closeSearch(driver);
 		}
 
-		log('\nâ•â•â•â•â•â•â•â•â•â•â•â• ANÃLISIS â•â•â•â•â•â•â•â•â•â•â•â•');
+		log('\n════════════ ANÁLISIS ════════════');
 
 		const coordSet = new Set(samples.filter(s => s.latitude).map(s => `${s.latitude},${s.longitude}`));
 		log(`\nCoordenadas de sesgo distintas entre paradas: ${coordSet.size}`);
-		for (const coords of coordSet) log(`   Â· ${coords}`);
+		for (const coords of coordSet) log(`   · ${coords}`);
 		if (coordSet.size === 1 && samples.length > 1) {
 			log('   -> TODAS las paradas se sesgan con el MISMO punto (el origen del viaje).');
 			log('      En un viaje largo, una parada cercana al destino recibe sugerencias del origen.');
 		} else if (coordSet.size > 1) {
-			log('   -> El sesgo cambia segÃºn la parada.');
+			log('   -> El sesgo cambia según la parada.');
 		}
 
 		const tokenSet = new Set(samples.filter(s => s.sessionToken).map(s => s.sessionToken as string));
 		log(`\nsessionToken distintos entre paradas: ${tokenSet.size}`);
-		for (const token of tokenSet) log(`   Â· ${token}`);
+		for (const token of tokenSet) log(`   · ${token}`);
 		if (tokenSet.size === 1 && samples.length > 1) {
-			log('   -> Se comparte un Ãºnico token entre paradas (sin selecciÃ³n de por medio).');
-			log('      Para la facturaciÃ³n de Google eso cuenta como UNA sesiÃ³n: es lo buscado.');
+			log('   -> Se comparte un único token entre paradas (sin selección de por medio).');
+			log('      Para la facturación de Google eso cuenta como UNA sesión: es lo buscado.');
 		} else if (tokenSet.size > 1) {
-			log('   -> Cada parada abre una sesiÃ³n nueva: Google factura por separado.');
+			log('   -> Cada parada abre una sesión nueva: Google factura por separado.');
 		}
 
 		const outDir = path.resolve('evidence', 'network-capture');

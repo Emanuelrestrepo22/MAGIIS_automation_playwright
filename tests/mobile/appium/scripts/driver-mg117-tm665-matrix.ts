@@ -1,22 +1,22 @@
 ﻿/**
- * TM-665 â€” ValidaciÃ³n de consistencia y alcance del fallo.
+ * TM-665 — Validación de consistencia y alcance del fallo.
  *
- * Responde tres preguntas que la corrida puntual dejÃ³ abiertas:
+ * Responde tres preguntas que la corrida puntual dejó abiertas:
  *
- *   A. Â¿Es REPRODUCIBLE? â€” el mismo 503 repetido varias veces, Â¿da siempre el mismo resultado?
- *   B. Â¿Es EXCLUSIVO del 503? â€” Â¿quÃ© pasa con 500, 502, 504 y un error de red?
- *   C. Â¿El conductor puede SALIR? â€” con el spinner activo, Â¿el botÃ³n de volver responde?
+ *   A. ¿Es REPRODUCIBLE? — el mismo 503 repetido varias veces, ¿da siempre el mismo resultado?
+ *   B. ¿Es EXCLUSIVO del 503? — ¿qué pasa con 500, 502, 504 y un error de red?
+ *   C. ¿El conductor puede SALIR? — con el spinner activo, ¿el botón de volver responde?
  *
- * IMPORTANTE sobre el escenario: el backend estÃ¡ OPERATIVO durante toda la prueba. Cada iteraciÃ³n
- * verifica un baseline sano antes de inyectar, asÃ­ que lo que se mide es la reacciÃ³n de la app a
- * una respuesta de error PUNTUAL â€” no a una caÃ­da del servicio. Un 5xx aislado ocurre en
- * producciÃ³n aunque el uptime sea alto (rolling updates, timeouts del balanceador, picos).
+ * IMPORTANTE sobre el escenario: el backend está OPERATIVO durante toda la prueba. Cada iteración
+ * verifica un baseline sano antes de inyectar, así que lo que se mide es la reacción de la app a
+ * una respuesta de error PUNTUAL — no a una caída del servicio. Un 5xx aislado ocurre en
+ * producción aunque el uptime sea alto (rolling updates, timeouts del balanceador, picos).
  *
- * Cada iteraciÃ³n usa un tÃ©rmino PROPIO: `onLocationTextChange` no emite el valor vacÃ­o al
- * observable, asÃ­ que repetir un tÃ©rmino anterior lo descarta `distinctUntilChanged` y el fallo
- * quedarÃ­a sin ejercer.
+ * Cada iteración usa un término PROPIO: `onLocationTextChange` no emite el valor vacío al
+ * observable, así que repetir un término anterior lo descarta `distinctUntilChanged` y el fallo
+ * quedaría sin ejercer.
  *
- * PRECONDICIÃ“N: modal "Buscar direcciÃ³n" abierto, backend operativo.
+ * PRECONDICIÓN: modal "Buscar dirección" abierto, backend operativo.
  */
 
 import { remote } from 'webdriverio';
@@ -42,7 +42,7 @@ const APP_PACKAGE = TARGET.appPackage;
 
 const log = (msg: string): void => console.log(`[matrix665] ${msg}`);
 
-/** TÃ©rminos distintos entre sÃ­, todos con 4+ caracteres y con resultados conocidos en test. */
+/** Términos distintos entre sí, todos con 4+ caracteres y con resultados conocidos en test. */
 const TERMS = [
 	'corrie', 'corrien', 'corrient',
 	'flori', 'florid', 'florida',
@@ -52,12 +52,12 @@ const TERMS = [
 type Scenario = { label: string; mode: 'status' | 'networkError'; status?: number };
 
 const SCENARIOS: Scenario[] = [
-	{ label: '503 Â· Service Unavailable', mode: 'status', status: 503 },
-	{ label: '503 Â· repeticiÃ³n 2', mode: 'status', status: 503 },
-	{ label: '503 Â· repeticiÃ³n 3', mode: 'status', status: 503 },
-	{ label: '500 Â· Internal Server Error', mode: 'status', status: 500 },
-	{ label: '502 Â· Bad Gateway', mode: 'status', status: 502 },
-	{ label: '504 Â· Gateway Timeout', mode: 'status', status: 504 },
+	{ label: '503 · Service Unavailable', mode: 'status', status: 503 },
+	{ label: '503 · repetición 2', mode: 'status', status: 503 },
+	{ label: '503 · repetición 3', mode: 'status', status: 503 },
+	{ label: '500 · Internal Server Error', mode: 'status', status: 500 },
+	{ label: '502 · Bad Gateway', mode: 'status', status: 502 },
+	{ label: '504 · Gateway Timeout', mode: 'status', status: 504 },
 	{ label: 'error de red (sin respuesta)', mode: 'networkError' }
 ];
 
@@ -85,7 +85,7 @@ async function readState(driver: WebdriverIO.Browser): Promise<{ spinner: boolea
 			);
 		};
 
-		// Solo el spinner real de la bÃºsqueda: `[class*=loading]` a secas matchea nodos de 0x0.
+		// Solo el spinner real de la búsqueda: `[class*=loading]` a secas matchea nodos de 0x0.
 		const spinner = Array.from(document.querySelectorAll('ion-spinner')).some(seen);
 		const predictions = Array.from(document.querySelectorAll('ion-item.prediction-item, [class*="prediction-item"]')).filter(seen).length;
 
@@ -161,16 +161,16 @@ async function run(): Promise<void> {
 		})) as boolean;
 
 		if (!hasInput) {
-			log('ABORTA: no hay campo de bÃºsqueda editable. AbrÃ­ "Buscar direcciÃ³n" primero.');
+			log('ABORTA: no hay campo de búsqueda editable. Abrí "Buscar dirección" primero.');
 			return;
 		}
 
 		let termIndex = 0;
 
 		for (const scenario of SCENARIOS) {
-			log(`\nâ”€â”€â”€â”€â”€â”€â”€â”€ ${scenario.label}`);
+			log(`\n──────── ${scenario.label}`);
 
-			// Baseline: sin baseline sano no se puede atribuir lo que pase despuÃ©s al fallo.
+			// Baseline: sin baseline sano no se puede atribuir lo que pase después al fallo.
 			await clearWebViewFaultInjection(driver).catch(() => undefined);
 			await clearWebViewNetworkCapture(driver);
 			const baselineTerm = TERMS[termIndex++ % TERMS.length];
@@ -178,10 +178,10 @@ async function run(): Promise<void> {
 			await driver.pause(2800);
 			const baseState = await readState(driver);
 			const baselineOk = baseState.predictions > 0;
-			log(`   baseline "${baselineTerm}": ${baseState.predictions} predicciones Â· ${baselineOk ? 'OK' : 'SIN RESULTADOS'}`);
+			log(`   baseline "${baselineTerm}": ${baseState.predictions} predicciones · ${baselineOk ? 'OK' : 'SIN RESULTADOS'}`);
 
 			if (!baselineOk) {
-				log('   se omite: sin baseline sano la observaciÃ³n no serÃ­a atribuible al fallo');
+				log('   se omite: sin baseline sano la observación no sería atribuible al fallo');
 				observations.push({
 					scenario: scenario.label, baselineOk: false, faultHits: 0, requests: 0,
 					spinnerAt3s: false, spinnerAt10s: false, predictions: 0, errorTexts: [], googleNewResources: 0
@@ -227,16 +227,16 @@ async function run(): Promise<void> {
 			};
 			observations.push(obs);
 
-			log(`   tÃ©rmino "${faultTerm}" Â· hits: ${obs.faultHits} Â· requests: ${obs.requests}`);
-			log(`   spinner t+3s: ${obs.spinnerAt3s} Â· t+10s: ${obs.spinnerAt10s} Â· predicciones: ${obs.predictions}`);
+			log(`   término "${faultTerm}" · hits: ${obs.faultHits} · requests: ${obs.requests}`);
+			log(`   spinner t+3s: ${obs.spinnerAt3s} · t+10s: ${obs.spinnerAt10s} · predicciones: ${obs.predictions}`);
 			log(`   avisos de error: ${obs.errorTexts.length ? obs.errorTexts.join(' | ') : 'ninguno'}`);
 			log(`   recursos nuevos de Google: ${obs.googleNewResources}`);
 
-			if (obs.faultHits === 0) log('   OJO: la regla no disparÃ³; esta fila no es concluyente');
+			if (obs.faultHits === 0) log('   OJO: la regla no disparó; esta fila no es concluyente');
 		}
 
-		// â”€â”€ Â¿Puede el conductor salir con el spinner activo? â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-		log('\nâ”€â”€â”€â”€â”€â”€â”€â”€ Â¿Se puede salir del buscador con el spinner activo?');
+		// ── ¿Puede el conductor salir con el spinner activo? ─────────────────────
+		log('\n──────── ¿Se puede salir del buscador con el spinner activo?');
 		const backPressed = (await driver
 			.execute(() => {
 				const seen = (el: Element): boolean => {
@@ -261,33 +261,33 @@ async function run(): Promise<void> {
 			};
 		})) as { searchStillOpen: boolean; spinner: boolean };
 
-		log(`   botÃ³n volver encontrado: ${backPressed}`);
-		log(`   buscador sigue abierto: ${afterBack.searchStillOpen} Â· spinner: ${afterBack.spinner}`);
-		log(`   -> ${backPressed && !afterBack.searchStillOpen ? 'SÃ puede salir: el fallo no lo deja atrapado' : 'REVISAR: no se cerrÃ³ el buscador'}`);
+		log(`   botón volver encontrado: ${backPressed}`);
+		log(`   buscador sigue abierto: ${afterBack.searchStillOpen} · spinner: ${afterBack.spinner}`);
+		log(`   -> ${backPressed && !afterBack.searchStillOpen ? 'SÍ puede salir: el fallo no lo deja atrapado' : 'REVISAR: no se cerró el buscador'}`);
 
-		// â”€â”€ SÃNTESIS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-		log('\nâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• SÃNTESIS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•');
+		// ── SÍNTESIS ─────────────────────────────────────────────────────────────
+		log('\n════════════════ SÍNTESIS ════════════════');
 		const valid = observations.filter(o => o.baselineOk && o.faultHits > 0);
 		const stuck = valid.filter(o => o.spinnerAt10s);
 
-		log(`\nEscenarios vÃ¡lidos: ${valid.length} de ${observations.length}`);
+		log(`\nEscenarios válidos: ${valid.length} de ${observations.length}`);
 		log(`Con spinner colgado a los 10 s: ${stuck.length}`);
 		for (const o of valid) {
-			log(`   ${o.spinnerAt10s ? 'COLGADO ' : 'liberado'} Â· ${o.scenario} (hits ${o.faultHits})`);
+			log(`   ${o.spinnerAt10s ? 'COLGADO ' : 'liberado'} · ${o.scenario} (hits ${o.faultHits})`);
 		}
 
 		const anyGoogle = valid.some(o => o.googleNewResources > 0);
-		log(`\nÂ¿Alguno cayÃ³ a Google?: ${anyGoogle ? 'SÃ' : 'NO en ningÃºn escenario'}`);
+		log(`\n¿Alguno cayó a Google?: ${anyGoogle ? 'SÍ' : 'NO en ningún escenario'}`);
 		const anyMessage = valid.some(o => o.errorTexts.length > 0);
-		log(`Â¿Alguno mostrÃ³ aviso de error?: ${anyMessage ? 'SÃ' : 'NO en ningÃºn escenario'}`);
+		log(`¿Alguno mostró aviso de error?: ${anyMessage ? 'SÍ' : 'NO en ningún escenario'}`);
 
 		if (valid.length > 0) {
 			log(
 				stuck.length === valid.length
 					? '\nCONSISTENTE: el spinner queda colgado en TODOS los escenarios de error probados.'
 					: stuck.length === 0
-						? '\nEl spinner se libera en todos los escenarios: la observaciÃ³n puntual no se reproduce.'
-						: `\nPARCIAL: se cuelga en ${stuck.length} de ${valid.length}. El detalle por escenario estÃ¡ arriba.`
+						? '\nEl spinner se libera en todos los escenarios: la observación puntual no se reproduce.'
+						: `\nPARCIAL: se cuelga en ${stuck.length} de ${valid.length}. El detalle por escenario está arriba.`
 			);
 		}
 

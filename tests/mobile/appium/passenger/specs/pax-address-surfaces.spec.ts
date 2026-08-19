@@ -106,16 +106,12 @@ async function typeInto(driver: Driver, selector: string, value: string): Promis
 }
 
 async function ownCalls(driver: Driver): Promise<number> {
-	return (await driver.execute(
-		() => ((window as unknown as { __mgOwn?: unknown[] }).__mgOwn ?? []).length
-	)) as number;
+	return (await driver.execute(() => ((window as unknown as { __mgOwn?: unknown[] }).__mgOwn ?? []).length)) as number;
 }
 
 async function googleResources(driver: Driver): Promise<number> {
 	return (await driver.execute(() => {
-		return performance
-			.getEntriesByType('resource')
-			.filter(e => /maps\.googleapis\.com|places\.googleapis\.com/i.test(e.name)).length;
+		return performance.getEntriesByType('resource').filter(e => /maps\.googleapis\.com|places\.googleapis\.com/i.test(e.name)).length;
 	})) as number;
 }
 
@@ -180,15 +176,13 @@ test.describe('[MG-116] Guards de los campos de dirección — App PAX', () => {
 	test.describe.configure({ timeout: 240_000 });
 	test.fixme(!process.env.APPIUM_SERVER_URL, 'Requiere un servidor Appium y el dispositivo conectado.');
 
-	test('[TM-730][CONTROL] Editar viaje programado consulta el endpoint propio y no a Google', async () => {
+	test('[TM-730][CONTROL] Editar viaje programado consulta el endpoint propio y no a Google', { annotation: [{ type: 'tms', description: 'TM-730' }], tag: ['@regression', '@mg116'] }, async () => {
 		const { driver, webview } = await newSession();
 		try {
 			// Llegar: Actividad -> primer viaje programado -> Editar. Si el entorno no tiene un
 			// viaje programado, el guard se declara no ejercido en vez de dar un falso verde.
 			await tapNativeByCss(driver, webview, 'ion-tab-button, ion-label', 'actividad');
-			const opened =
-				(await tapNativeByCss(driver, webview, 'ion-item, ion-col, div', 'programad')) &&
-				(await tapNativeByCss(driver, webview, 'button, ion-button, ion-item', 'editar'));
+			const opened = (await tapNativeByCss(driver, webview, 'ion-item, ion-col, div', 'programad')) && (await tapNativeByCss(driver, webview, 'button, ion-button, ion-item', 'editar'));
 			const url = (await driver.execute(() => window.location.href)) as string;
 			test.skip(!opened || !/travel-edit/i.test(url), 'Sin viaje programado alcanzable en este entorno: guard no ejercido.');
 
@@ -207,7 +201,7 @@ test.describe('[MG-116] Guards de los campos de dirección — App PAX', () => {
 		}
 	});
 
-	test('[TM-729] Perfil › Mis Direcciones consulta el endpoint propio y no a Google', async () => {
+	test('[TM-729] Perfil › Mis Direcciones consulta el endpoint propio y no a Google', { annotation: [{ type: 'tms', description: 'TM-729' }], tag: ['@regression', '@mg116'] }, async () => {
 		const { driver, webview } = await newSession();
 		try {
 			// Mi cuenta -> Mis Direcciones. En test el campo llega habilitado; en UAT exige Tipo.
@@ -221,9 +215,7 @@ test.describe('[MG-116] Guards de los campos de dirección — App PAX', () => {
 			await driver
 				.execute(() => {
 					const vis = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
-					const opt = Array.from(
-						document.querySelectorAll('ion-select-popover ion-item, ion-popover ion-item, ion-radio')
-					).filter(vis)[0] as HTMLElement | undefined;
+					const opt = Array.from(document.querySelectorAll('ion-select-popover ion-item, ion-popover ion-item, ion-radio')).filter(vis)[0] as HTMLElement | undefined;
 					opt?.click();
 				})
 				.catch(() => undefined);
@@ -246,7 +238,7 @@ test.describe('[MG-116] Guards de los campos de dirección — App PAX', () => {
 		}
 	});
 
-	test('[TM-727] Las direcciones locales de cache se rankean por encima de aeropuertos lejanos', async () => {
+	test('[TM-727] Las direcciones locales de cache se rankean por encima de aeropuertos lejanos', { annotation: [{ type: 'tms', description: 'TM-727' }], tag: ['@regression', '@mg116'] }, async () => {
 		const { driver } = await newSession();
 		try {
 			const url = (await driver.execute(() => window.location.href)) as string;
@@ -301,16 +293,13 @@ test.describe('[MG-116] Guards de los campos de dirección — App PAX', () => {
 			const firstAirport = rows.findIndex(r => r.source === 'AIRPORT');
 			const firstCache = rows.findIndex(r => r.source === 'CACHE');
 			if (firstAirport === -1) return; // sin aeropuertos no hay precedencia que evaluar
-			expect(
-				firstCache !== -1 && firstCache < firstAirport,
-				`FALLA CONOCIDA (TM-727): fila 0 = ${rows[0]?.source} "${rows[0]?.mainText}" — un aeropuerto lejano por delante de las direcciones locales`
-			).toBe(true);
+			expect(firstCache !== -1 && firstCache < firstAirport, `FALLA CONOCIDA (TM-727): fila 0 = ${rows[0]?.source} "${rows[0]?.mainText}" — un aeropuerto lejano por delante de las direcciones locales`).toBe(true);
 		} finally {
 			await driver.deleteSession().catch(() => undefined);
 		}
 	});
 
-	test('[TM-731] travel-info sobrevive a una recarga de la WebView', async () => {
+	test('[TM-731] travel-info sobrevive a una recarga de la WebView', { annotation: [{ type: 'tms', description: 'TM-731' }], tag: ['@regression', '@mg116'] }, async () => {
 		const { driver, webview } = await newSession(true);
 		try {
 			// Llegar a travel-info por el atajo. Si este entorno no navega (pasa en test), el caso
@@ -326,15 +315,10 @@ test.describe('[MG-116] Guards de los campos de dirección — App PAX', () => {
 			await driver.execute(() => window.location.reload()).catch(() => undefined);
 			await driver.pause(8000);
 
-			const after = (await driver
-				.execute(() => ({ title: document.title, text: (document.body.innerText ?? '').slice(0, 200) }))
-				.catch(() => null)) as { title: string; text: string } | null;
+			const after = (await driver.execute(() => ({ title: document.title, text: (document.body.innerText ?? '').slice(0, 200) })).catch(() => null)) as { title: string; text: string } | null;
 
 			const dead = !after || /no disponible|ERR_HTTP_RESPONSE_CODE_FAILURE/i.test(`${after.title} ${after.text}`);
-			expect(
-				dead,
-				'FALLA CONOCIDA (TM-731): recargar en travel-info deja la app en la pagina de error de Chrome'
-			).toBe(false);
+			expect(dead, 'FALLA CONOCIDA (TM-731): recargar en travel-info deja la app en la pagina de error de Chrome').toBe(false);
 		} finally {
 			// La app pudo quedar en la pagina de error: se relanza para dejar el dispositivo usable.
 			await driver.switchContext('NATIVE_APP').catch(() => undefined);

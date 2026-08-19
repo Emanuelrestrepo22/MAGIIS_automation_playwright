@@ -1,21 +1,21 @@
 ﻿/**
- * MG-117 â€” Cierra los casos pendientes del Test Set TM-670 en una sola corrida.
+ * MG-117 — Cierra los casos pendientes del Test Set TM-670 en una sola corrida.
  *
- *   TM-664 Â· tÃ©rmino sin resultados muestra estado vacÃ­o controlado
- *   TM-660 Â· predicciÃ³n de aeropuerto con placeId nulo se resuelve sin romper
- *   TM-653 Â· al elegir una predicciÃ³n se resuelve la direcciÃ³n y el viaje continÃºa
- *   TM-663 Â· tras seleccionar, la siguiente bÃºsqueda usa un sessionToken nuevo
- *   TM-661 Â· la bÃºsqueda por IATA no aplica sesgo por ubicaciÃ³n
+ *   TM-664 · término sin resultados muestra estado vacío controlado
+ *   TM-660 · predicción de aeropuerto con placeId nulo se resuelve sin romper
+ *   TM-653 · al elegir una predicción se resuelve la dirección y el viaje continúa
+ *   TM-663 · tras seleccionar, la siguiente búsqueda usa un sessionToken nuevo
+ *   TM-661 · la búsqueda por IATA no aplica sesgo por ubicación
  *
- * Tres de ellos (660, 653, 663) se cierran con UNA sola selecciÃ³n: "La Macaza" llega con
- * placeId nulo, asÃ­ que elegirla fuerza la resoluciÃ³n por nombre, carga la direcciÃ³n y rota el
- * token de sesiÃ³n. TM-661 mueve el GPS y compara la respuesta del mismo cÃ³digo IATA.
+ * Tres de ellos (660, 653, 663) se cierran con UNA sola selección: "La Macaza" llega con
+ * placeId nulo, así que elegirla fuerza la resolución por nombre, carga la dirección y rota el
+ * token de sesión. TM-661 mueve el GPS y compara la respuesta del mismo código IATA.
  *
  * Las predicciones se tocan con TAP NATIVO: un `el.click()` de DOM no dispara el handler de
- * Ionic â€” la App PAX ya documentÃ³ esa trampa y el botÃ³n "Editar" de esta misma pantalla la
- * confirmÃ³.
+ * Ionic — la App PAX ya documentó esa trampa y el botón "Editar" de esta misma pantalla la
+ * confirmó.
  *
- * PRECONDICIÃ“N: viaje en curso. El script navega solo hasta el buscador desde ahÃ­.
+ * PRECONDICIÓN: viaje en curso. El script navega solo hasta el buscador desde ahí.
  */
 
 import { remote } from 'webdriverio';
@@ -55,7 +55,7 @@ const record = (key: string, verdict: string, detail: string[]): void => {
 	for (const s of results[key].shots) log(`    captura: ${s}`);
 };
 
-/** Screenshots per case â€” the network dump proves the contract, the capture proves what the user saw. */
+/** Screenshots per case — the network dump proves the contract, the capture proves what the user saw. */
 const SHOT_DIR = path.resolve('evidence', 'screenshots');
 const shots: Record<string, string[]> = {};
 async function shot(driver: WebdriverIO.Browser, key: string, label: string): Promise<void> {
@@ -149,7 +149,7 @@ async function tapNative(driver: WebdriverIO.Browser, webview: string, locate: (
 	return true;
 }
 
-// NOTA: `driver.execute(<string>)` usa el string como CUERPO de funciÃ³n â€” un IIFE suelto evalÃºa
+// NOTA: `driver.execute(<string>)` usa el string como CUERPO de función — un IIFE suelto evalúa
 // pero NO devuelve nada (verificado en device: devuelve null). El `return` es obligatorio.
 const rectOfSelector = (sel: string): string => `
 	return (function () {
@@ -290,17 +290,17 @@ async function run(): Promise<void> {
 		await driver.switchContext(webview);
 		await installWebViewNetworkCapture(driver);
 
-		log('Navegando al buscadorâ€¦');
+		log('Navegando al buscador…');
 		if (!(await navigateToSearch(driver, webview))) {
 			log('ABORTA: no se pudo llegar al buscador.');
 			return;
 		}
 
-		// â”€â”€ TM-664 Â· estado vacÃ­o controlado â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-		log('\nâ”€â”€â”€â”€ TM-664 Â· tÃ©rmino sin resultados');
+		// ── TM-664 · estado vacío controlado ─────────────────────────────────────
+		log('\n──── TM-664 · término sin resultados');
 		const empty = await search(driver, 'zzzqqqxxx');
 		if (!empty) {
-			record('TM-664', 'NO EJERCIDO', ['no se capturÃ³ ninguna llamada']);
+			record('TM-664', 'NO EJERCIDO', ['no se capturó ninguna llamada']);
 		} else {
 			const ui = (await driver.execute(() => {
 				const visible = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
@@ -314,24 +314,24 @@ async function run(): Promise<void> {
 			const ok = empty.predictions.length === 0 && ui.items === 0 && !ui.spinner;
 			record('TM-664', ok ? 'PASSED' : 'REVISAR', [
 				`respuesta: ${empty.predictions.length} predicciones`,
-				`en pantalla: ${ui.items} items Â· spinner: ${ui.spinner}`,
-				ok ? 'estado vacÃ­o controlado: sin items, sin spinner, sin error' : 'no coincide con lo esperado'
+				`en pantalla: ${ui.items} items · spinner: ${ui.spinner}`,
+				ok ? 'estado vacío controlado: sin items, sin spinner, sin error' : 'no coincide con lo esperado'
 			]);
 		}
 
-		// â”€â”€ TM-660 + TM-653 + TM-663 Â· selecciÃ³n de aeropuerto sin placeId â”€â”€â”€â”€â”€â”€â”€
-		log('\nâ”€â”€â”€â”€ TM-660 / TM-653 / TM-663 Â· selecciÃ³n de "La Macaza" (placeId nulo)');
+		// ── TM-660 + TM-653 + TM-663 · selección de aeropuerto sin placeId ───────
+		log('\n──── TM-660 / TM-653 / TM-663 · selección de "La Macaza" (placeId nulo)');
 		const caza = await search(driver, 'caza');
 		if (!caza) {
 			record('TM-660', 'NO EJERCIDO', ['sin respuesta para "caza"']);
 		} else {
 			const tokenBefore = param(caza.url, 'sessionToken');
 			const target = caza.predictions.find(p => !p.placeId && p.airport);
-			log(`    predicciones: ${caza.predictions.length} Â· sin placeId: ${caza.predictions.filter(p => !p.placeId).length}`);
+			log(`    predicciones: ${caza.predictions.length} · sin placeId: ${caza.predictions.filter(p => !p.placeId).length}`);
 			log(`    token antes de seleccionar: ${tokenBefore}`);
 
 			if (!target) {
-				record('TM-660', 'NO EJERCIDO', ['ninguna predicciÃ³n de aeropuerto llegÃ³ con placeId nulo']);
+				record('TM-660', 'NO EJERCIDO', ['ninguna predicción de aeropuerto llegó con placeId nulo']);
 			} else {
 				log(`    objetivo: "${target.mainText}" (${target.iataCode}) placeId=null`);
 				await shot(driver, 'TM-660', 'lista-predicciones');
@@ -349,20 +349,20 @@ async function run(): Promise<void> {
 				const resolvedById = lastGet ? param(String(lastGet.url), 'placeId') !== null : false;
 
 				// La respuesta de getPlace decide si un rechazo posterior es regla de negocio o un
-				// fallo de la resoluciÃ³n por nombre. Sin este cuerpo el veredicto serÃ­a una conjetura.
+				// fallo de la resolución por nombre. Sin este cuerpo el veredicto sería una conjetura.
 				const getPlaceBody = lastGet ? String(lastGet.responseBody ?? '').slice(0, 600) : '(sin llamada)';
 				log(`    getPlace status: ${lastGet ? String(lastGet.status) : '-'}`);
 				log(`    getPlace respuesta: ${getPlaceBody}`);
 
 				record('TM-660', lastGet && resolvedByName ? 'PASSED' : lastGet ? 'REVISAR' : 'NO EJERCIDO', [
 					`tap nativo: ${tapped}`,
-					lastGet ? `getPlace llamado: ${String(lastGet.url).split('?')[1]?.slice(0, 90)}` : 'no se llamÃ³ a getPlace',
-					`resuelto por nombre: ${resolvedByName} Â· por placeId: ${resolvedById}`,
-					'una predicciÃ³n sin placeId debe resolverse por nombre (address=)'
+					lastGet ? `getPlace llamado: ${String(lastGet.url).split('?')[1]?.slice(0, 90)}` : 'no se llamó a getPlace',
+					`resuelto por nombre: ${resolvedByName} · por placeId: ${resolvedById}`,
+					'una predicción sin placeId debe resolverse por nombre (address=)'
 				]);
 
-				// TM-653 â€” Â¿la direcciÃ³n quedÃ³ cargada y el flujo sigue?
-				// Se consulta por sondeo: la resoluciÃ³n del destino es asÃ­ncrona (getPlace -> geocode ->
+				// TM-653 — ¿la dirección quedó cargada y el flujo sigue?
+				// Se consulta por sondeo: la resolución del destino es asíncrona (getPlace -> geocode ->
 				// commit en la parada) y leer una sola vez mide la pantalla anterior, no el resultado.
 				const needle = target.mainText.slice(0, 8).toLowerCase();
 				let rowState = { rows: 0, values: [] as string[] };
@@ -379,17 +379,17 @@ async function run(): Promise<void> {
 				}
 
 				// La captura tiene que mostrar lo que VE el usuario. Si se dispara con el modal de
-				// bÃºsqueda todavÃ­a encima, retrata el buscador y no la parada cargada â€” evidencia que
-				// no prueba el criterio. Se cierra el modal y reciÃ©n ahÃ­ se captura el viaje.
+				// búsqueda todavía encima, retrata el buscador y no la parada cargada — evidencia que
+				// no prueba el criterio. Se cierra el modal y recién ahí se captura el viaje.
 				if (loaded) {
 					await driver.back().catch(() => undefined);
 					await driver.pause(1800);
 				}
 				await shot(driver, 'TM-653', loaded ? 'parada-cargada-en-viaje' : 'direccion-cargada');
 
-				// Â¿La app rechazÃ³ el destino? "La Macaza" es un aerÃ³dromo de Quebec: sirve para probar la
-				// resoluciÃ³n sin placeId (TM-660) pero no es un destino plausible de un viaje calle en
-				// Buenos Aires. Si lo rechaza, TM-653 se ejerce con una direcciÃ³n de calle real.
+				// ¿La app rechazó el destino? "La Macaza" es un aeródromo de Quebec: sirve para probar la
+				// resolución sin placeId (TM-660) pero no es un destino plausible de un viaje calle en
+				// Buenos Aires. Si lo rechaza, TM-653 se ejerce con una dirección de calle real.
 				const reject = (await driver.execute(`
 					return (function () {
 						var vis = function (el) { return el.offsetParent !== null; };
@@ -398,22 +398,22 @@ async function run(): Promise<void> {
 						).filter(vis);
 						for (var i = 0; i < mods.length; i++) {
 							var t = (mods[i].textContent || '').trim();
-							if (/inv[aÃ¡]lid|no v[aÃ¡]lid|error/i.test(t)) return { present: true, text: t.replace(/\\s+/g, ' ').slice(0, 120) };
+							if (/inv[aá]lid|no v[aá]lid|error/i.test(t)) return { present: true, text: t.replace(/\\s+/g, ' ').slice(0, 120) };
 						}
 						return { present: false, text: '' };
 					})();`)) as { present: boolean; text: string };
 
 				if (loaded) {
 					record('TM-653', 'PASSED', [
-						`filas de direcciÃ³n visibles: ${rowState.rows}`,
-						`valores: ${rowState.values.map(v => v.slice(0, 40) || '(vacÃ­o)').join(' | ')}`,
-						'la direcciÃ³n elegida quedÃ³ cargada en la parada'
+						`filas de dirección visibles: ${rowState.rows}`,
+						`valores: ${rowState.values.map(v => v.slice(0, 40) || '(vacío)').join(' | ')}`,
+						'la dirección elegida quedó cargada en la parada'
 					]);
 				} else if (reject.present) {
-					log(`    la app rechazÃ³ el destino: "${reject.text}"`);
-					log('    reintentando TM-653 con una direcciÃ³n de calle vÃ¡lidaâ€¦');
+					log(`    la app rechazó el destino: "${reject.text}"`);
+					log('    reintentando TM-653 con una dirección de calle válida…');
 
-					// Descartar el modal (botÃ³n Aceptar) y volver al buscador.
+					// Descartar el modal (botón Aceptar) y volver al buscador.
 					await tapNative(driver, webview, () => rectOfSelector('button, ion-button'));
 					await driver.pause(1500);
 					if (!(await hasSearchField(driver))) await navigateToSearch(driver, webview);
@@ -423,7 +423,7 @@ async function run(): Promise<void> {
 					if (!pick) {
 						record('TM-653', 'NO EJERCIDO', [
 							`el destino lejano fue rechazado ("${reject.text}")`,
-							'y no se obtuvo una predicciÃ³n de calle para reintentar'
+							'y no se obtuvo una predicción de calle para reintentar'
 						]);
 					} else {
 						await clearWebViewNetworkCapture(driver);
@@ -445,27 +445,27 @@ async function run(): Promise<void> {
 						await shot(driver, 'TM-653', 'direccion-calle-cargada');
 						record('TM-653', ok2 ? 'PASSED' : 'REVISAR', [
 							`destino elegido: "${pick.mainText.slice(0, 45)}" (placeId presente)`,
-							`filas: ${rows2.values.map(v => v.slice(0, 40) || '(vacÃ­o)').join(' | ')}`,
+							`filas: ${rows2.values.map(v => v.slice(0, 40) || '(vacío)').join(' | ')}`,
 							ok2
-								? 'la direcciÃ³n elegida quedÃ³ cargada en la parada y el viaje continÃºa'
-								: 'la direcciÃ³n no se cargÃ³ en ninguna fila',
-							`observaciÃ³n: el destino de aeropuerto lejano se rechaza con "${reject.text}"`
+								? 'la dirección elegida quedó cargada en la parada y el viaje continúa'
+								: 'la dirección no se cargó en ninguna fila',
+							`observación: el destino de aeropuerto lejano se rechaza con "${reject.text}"`
 						]);
 					}
 				} else {
 					record('TM-653', 'REVISAR', [
-						`filas de direcciÃ³n visibles: ${rowState.rows}`,
-						`valores: ${rowState.values.map(v => v.slice(0, 40) || '(vacÃ­o)').join(' | ')}`,
-						'no se cargÃ³ la direcciÃ³n y tampoco apareciÃ³ un modal de rechazo'
+						`filas de dirección visibles: ${rowState.rows}`,
+						`valores: ${rowState.values.map(v => v.slice(0, 40) || '(vacío)').join(' | ')}`,
+						'no se cargó la dirección y tampoco apareció un modal de rechazo'
 					]);
 				}
 
-				// TM-663 â€” Â¿la bÃºsqueda siguiente abre sesiÃ³n nueva?
-				// Elegir una predicciÃ³n cierra el modal de bÃºsqueda, asÃ­ que hay que reabrirlo antes de
+				// TM-663 — ¿la búsqueda siguiente abre sesión nueva?
+				// Elegir una predicción cierra el modal de búsqueda, así que hay que reabrirlo antes de
 				// medir el token siguiente. Reabrirlo es parte del caso: el token nuevo se emite en la
-				// sesiÃ³n que arranca al volver a entrar.
+				// sesión que arranca al volver a entrar.
 				if (!(await hasSearchField(driver))) {
-					log('    el modal se cerrÃ³ tras seleccionar; reabriendo el buscadorâ€¦');
+					log('    el modal se cerró tras seleccionar; reabriendo el buscador…');
 					await navigateToSearch(driver, webview);
 				}
 				if (await hasSearchField(driver)) {
@@ -475,17 +475,17 @@ async function run(): Promise<void> {
 					const rotated = Boolean(tokenBefore && tokenAfter && tokenBefore !== tokenAfter);
 					record('TM-663', rotated ? 'PASSED' : 'REVISAR', [
 						`token antes:  ${tokenBefore}`,
-						`token despuÃ©s: ${tokenAfter}`,
-						rotated ? 'el token rotÃ³ tras la selecciÃ³n' : 'el token no cambiÃ³'
+						`token después: ${tokenAfter}`,
+						rotated ? 'el token rotó tras la selección' : 'el token no cambió'
 					]);
 				} else {
-					record('TM-663', 'PENDIENTE', ['el buscador se cerrÃ³ tras seleccionar; reabrir para medir el token siguiente']);
+					record('TM-663', 'PENDIENTE', ['el buscador se cerró tras seleccionar; reabrir para medir el token siguiente']);
 				}
 			}
 		}
 
-		// â”€â”€ TM-661 Â· IATA sin sesgo por ubicaciÃ³n â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-		log('\nâ”€â”€â”€â”€ TM-661 Â· misma bÃºsqueda IATA desde dos ubicaciones');
+		// ── TM-661 · IATA sin sesgo por ubicación ───────────────────────────────
+		log('\n──── TM-661 · misma búsqueda IATA desde dos ubicaciones');
 		if (!(await hasSearchField(driver))) {
 			await navigateToSearch(driver, webview);
 		}
@@ -506,13 +506,13 @@ async function run(): Promise<void> {
 		}
 
 		if (!moved) {
-			record('TM-661', 'NO EJERCIDO', ['no se pudo mover la ubicaciÃ³n del dispositivo']);
+			record('TM-661', 'NO EJERCIDO', ['no se pudo mover la ubicación del dispositivo']);
 		} else {
-			log('    GPS movido a Mendoza (-32.8895, -68.8458); esperando propagaciÃ³nâ€¦');
+			log('    GPS movido a Mendoza (-32.8895, -68.8458); esperando propagación…');
 			await driver.pause(9000);
-			// MISMO tÃ©rmino en ambas mediciones. El largo del tÃ©rmino cambia el MODO de bÃºsqueda
-			// (3 caracteres = cÃ³digo IATA; 4 o mÃ¡s = direcciÃ³n/nombre), asÃ­ que comparar 'eze' contra
-			// 'ezei' mide el cambio de modo, no el sesgo por ubicaciÃ³n.
+			// MISMO término en ambas mediciones. El largo del término cambia el MODO de búsqueda
+			// (3 caracteres = código IATA; 4 o más = dirección/nombre), así que comparar 'eze' contra
+			// 'ezei' mide el cambio de modo, no el sesgo por ubicación.
 			const fromMendoza = await search(driver, 'eze');
 
 			const sigA = fromHere ? signature(fromHere.predictions.filter(p => p.source === 'AIRPORT')) : '';
@@ -525,7 +525,7 @@ async function run(): Promise<void> {
 				`coords enviadas #2: ${coordsB}`,
 				`aeropuertos #1: ${sigA || '(ninguno)'}`,
 				`aeropuertos #2: ${sigB || '(ninguno)'}`,
-				sigA === sigB ? 'la pata de aeropuertos no varÃ­a con la ubicaciÃ³n' : 'la respuesta difiere entre ubicaciones'
+				sigA === sigB ? 'la pata de aeropuertos no varía con la ubicación' : 'la respuesta difiere entre ubicaciones'
 			]);
 
 			// Devolver el GPS a Buenos Aires para no dejar el dispositivo desplazado.
@@ -540,7 +540,7 @@ async function run(): Promise<void> {
 			}
 		}
 
-		log('\nâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• RESUMEN â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•');
+		log('\n════════════════ RESUMEN ════════════════');
 		for (const [key, r] of Object.entries(results)) log(`${key.padEnd(8)} ${r.verdict}`);
 
 		const outDir = path.resolve('evidence', 'network-capture');

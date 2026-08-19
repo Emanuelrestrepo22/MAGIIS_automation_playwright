@@ -166,10 +166,7 @@ async function ensureEditable(driver: WebdriverIO.Browser, selector: string): Pr
  * input choca con el elemento que lo tapa. Mapear CSS -> pantalla y tocar ahi es lo unico que
  * reproduce lo que hace un dedo.
  */
-async function tapAtCssPoint(
-	driver: WebdriverIO.Browser,
-	rect: { x: number; y: number; vw: number; vh: number }
-): Promise<void> {
+async function tapAtCssPoint(driver: WebdriverIO.Browser, rect: { x: number; y: number; vw: number; vh: number }): Promise<void> {
 	const ctx = (await driver.getContext()) as string;
 	await driver.switchContext('NATIVE_APP');
 	try {
@@ -343,7 +340,10 @@ export class TripTypeAddressSurface implements AddressSurface {
 	 * @param id       Identificador de la superficie para la matriz (por ejemplo `S4`).
 	 * @param typeText Texto del boton de tipo de viaje, tal como lo muestra el home.
 	 */
-	constructor(id: string, private readonly typeText: string) {
+	constructor(
+		id: string,
+		private readonly typeText: string
+	) {
 		this.id = id;
 		this.label = `Home · ${typeText}`;
 	}
@@ -531,9 +531,7 @@ export class ScheduledTripEditSurface implements AddressSurface {
 			const rect = (await driver
 				.execute(() => {
 					const vis = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
-					const el = Array.from(document.querySelectorAll('div.edit, .col-edit div, .col-edit')).filter(vis)[0] as
-						| HTMLElement
-						| undefined;
+					const el = Array.from(document.querySelectorAll('div.edit, .col-edit div, .col-edit')).filter(vis)[0] as HTMLElement | undefined;
 					if (!el) return null;
 					el.scrollIntoView({ block: 'center' });
 					const b = el.getBoundingClientRect();
@@ -548,12 +546,7 @@ export class ScheduledTripEditSurface implements AddressSurface {
 		}
 
 		// En `travel-edit` valen las mismas tres filas del home: se toma la que este editable.
-		for (const sel of [
-			'input[placeholder="Agregar otro destino "]',
-			DESTINATION_SELECTOR,
-			ORIGIN_SELECTOR,
-			'input[name="input-from"]'
-		]) {
+		for (const sel of ['input[placeholder="Agregar otro destino "]', DESTINATION_SELECTOR, ORIGIN_SELECTOR, 'input[name="input-from"]']) {
 			if (await ensureEditable(driver, sel)) {
 				this.resolved = sel;
 				return true;
@@ -615,9 +608,7 @@ export class ProfileAddressSurface implements AddressSurface {
 	private async pickAddressType(driver: WebdriverIO.Browser): Promise<boolean> {
 		const already = (await driver
 			.execute(() => {
-				const el = document.querySelector('#inputAddressType ion-select, ion-select') as
-					| (HTMLElement & { value?: unknown })
-					| null;
+				const el = document.querySelector('#inputAddressType ion-select, ion-select') as (HTMLElement & { value?: unknown }) | null;
 				return el && el.value ? String(el.value) : '';
 			})
 			.catch(() => '')) as string;
@@ -632,9 +623,7 @@ export class ProfileAddressSurface implements AddressSurface {
 		const picked = (await driver
 			.execute(() => {
 				const vis = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
-				const opt = Array.from(
-					document.querySelectorAll('ion-select-popover ion-item, ion-popover ion-item, ion-radio, ion-select-option')
-				).filter(vis)[0] as HTMLElement | undefined;
+				const opt = Array.from(document.querySelectorAll('ion-select-popover ion-item, ion-popover ion-item, ion-radio, ion-select-option')).filter(vis)[0] as HTMLElement | undefined;
 				if (!opt) return '';
 				const label = (opt.textContent ?? '').trim();
 				opt.click();
@@ -674,9 +663,7 @@ export class ProfileAddressSurface implements AddressSurface {
 				const vis = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
 				const el = Array.from(document.querySelectorAll('ion-icon, ion-back-button, .arrow-back'))
 					.filter(vis)
-					.find(e => /arrow-back|arrow_back/i.test(`${e.getAttribute('name') ?? ''}${e.className}`)) as
-					| HTMLElement
-					| undefined;
+					.find(e => /arrow-back|arrow_back/i.test(`${e.getAttribute('name') ?? ''}${e.className}`)) as HTMLElement | undefined;
 				el?.click();
 			})
 			.catch(() => undefined);

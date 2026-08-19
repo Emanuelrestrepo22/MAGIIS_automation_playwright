@@ -1,5 +1,5 @@
 ﻿/**
- * MG-117 â€” Descarta el modal bloqueante y mapea el HOME del driver.
+ * MG-117 — Descarta el modal bloqueante y mapea el HOME del driver.
  *
  * Con el driver del carrier argentino (Unity) el boton "Pasajero" devuelve "Funcion no disponible"
  * y el driver figura como "No Disponible". Este script no asume ningun selector: descarta la
@@ -42,7 +42,7 @@ const ALERT_TEXT = `
 		return { present: true, text: (mods[0].textContent || '').replace(/\\s+/g, ' ').trim().slice(0, 200) };
 	})();`;
 
-/** Rect del botÃ³n de la alerta, para tap NATIVO: en Ionic un `el.click()` no dispara el handler. */
+/** Rect del botón de la alerta, para tap NATIVO: en Ionic un `el.click()` no dispara el handler. */
 const ALERT_BTN_RECT = `
 	return (function () {
 		var vis = function (el) { return el.offsetParent !== null; };
@@ -55,7 +55,7 @@ const ALERT_BTN_RECT = `
 		return { x: r.left + r.width / 2, y: r.top + r.height / 2, vw: window.innerWidth, vh: window.innerHeight };
 	})();`;
 
-/** Mapea un punto del WebView sobre las coordenadas NATIVAS del propio WebView y tapea ahÃ­. */
+/** Mapea un punto del WebView sobre las coordenadas NATIVAS del propio WebView y tapea ahí. */
 async function tapNative(driver: WebdriverIO.Browser, webview: string, script: string): Promise<boolean> {
 	const rect = (await driver.execute(script).catch(() => null)) as
 		| { x: number; y: number; vw: number; vh: number }
@@ -184,13 +184,13 @@ async function run(): Promise<void> {
 		for (let i = 0; i < 4; i++) {
 			const st = (await driver.execute(ALERT_TEXT)) as { present: boolean };
 			if (!st.present) break;
-			// Primero el camino barato (DOM); si el modal sigue ahÃ­, tap NATIVO.
+			// Primero el camino barato (DOM); si el modal sigue ahí, tap NATIVO.
 			const d = (await driver.execute(DISMISS)) as { clicked: boolean; text: string };
 			await driver.pause(900);
 			const still = (await driver.execute(ALERT_TEXT)) as { present: boolean };
 			if (still.present) {
 				const tapped = await tapNative(driver, webview, ALERT_BTN_RECT);
-				log(`  descarte ${i + 1}: DOM=${d.clicked} ("${d.text}") Â· tap nativo=${tapped}`);
+				log(`  descarte ${i + 1}: DOM=${d.clicked} ("${d.text}") · tap nativo=${tapped}`);
 				await driver.pause(1200);
 			} else {
 				log(`  descarte ${i + 1}: cerrado por DOM ("${d.text}")`);
@@ -208,7 +208,7 @@ async function run(): Promise<void> {
 		};
 
 		log(`\nurl: ${dump.url}`);
-		log(`pÃ¡gina: ${dump.page}`);
+		log(`página: ${dump.page}`);
 
 		log(`\n=== TEXTOS EN PANTALLA ===`);
 		for (const t of dump.texts.slice(0, 25)) log(`  top=${String(t.top).padStart(4)}  "${t.text}"   ${t.desc.slice(0, 60)}`);

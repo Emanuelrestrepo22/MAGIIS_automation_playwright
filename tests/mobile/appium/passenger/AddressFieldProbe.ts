@@ -19,12 +19,7 @@
  * veredicto lleva el valor MEDIDO, no solo el binario, para que sea auditable.
  */
 
-import {
-	installWebViewNetworkCapture,
-	clearWebViewNetworkCapture,
-	readWebViewNetworkCapture,
-	readWebViewGoogleActivity
-} from '../helpers/webViewNetworkCapture';
+import { installWebViewNetworkCapture, clearWebViewNetworkCapture, readWebViewNetworkCapture, readWebViewGoogleActivity, installWebViewFaultInjection, clearWebViewFaultInjection } from '../helpers/webViewNetworkCapture';
 
 /** Una superficie es cualquier pantalla de PAX que monte un campo de direccion. */
 export interface AddressSurface {
@@ -42,7 +37,7 @@ export interface AddressSurface {
 export type VerdictStatus = 'PASS' | 'FAIL' | 'SIN_DATOS' | 'NO_EJERCIDO';
 
 export type BehaviorVerdict = {
-	behavior: 'B1' | 'B2' | 'B3' | 'B4' | 'B5' | 'B6';
+	behavior: 'B1' | 'B2' | 'B3' | 'B4' | 'B5' | 'B6' | 'B7' | 'B8' | 'B9';
 	title: string;
 	status: VerdictStatus;
 	/** La explicacion en una linea: que se midio y por que da ese estado. */
@@ -83,17 +78,7 @@ function toEpochMs(iso: string | undefined): number | null {
 }
 
 /** Los 9 campos que el contrato del endpoint devuelve, medidos en vivo el 2026-08-12. */
-const CONTRACT_FIELDS = [
-	'placeId',
-	'mainText',
-	'secondaryText',
-	'shortName',
-	'latitude',
-	'longitude',
-	'airport',
-	'iataCode',
-	'source'
-] as const;
+const CONTRACT_FIELDS = ['placeId', 'mainText', 'secondaryText', 'shortName', 'latitude', 'longitude', 'airport', 'iataCode', 'source'] as const;
 
 const AUTOCOMPLETE_PATH = 'places/autocomplete';
 const GOOGLE_HOST_RE = /maps\.googleapis\.com|places\.googleapis\.com/i;
@@ -115,7 +100,10 @@ export class AddressFieldProbe {
 	/** Cuanto se espera despues de tipear antes de leer la captura. */
 	private readonly settleMs: number;
 
-	constructor(private readonly driver: WebdriverIO.Browser, settleMs = 4200) {
+	constructor(
+		private readonly driver: WebdriverIO.Browser,
+		settleMs = 4200
+	) {
 		this.settleMs = settleMs;
 	}
 
@@ -557,9 +545,7 @@ export class AddressFieldProbe {
 			behavior: 'B5',
 			title: 'Mapeo del DTO (contrato 7.3)',
 			status: 'PASS',
-			verdict:
-				`Los 9 campos del contrato estan presentes en ${rows.length} fila(s). ` +
-				`El AC nombra "isAirport" y el endpoint devuelve "airport"${hasIsAirport ? ' — aca vinieron los dos' : ' (isAirport no viene, como estaba medido)'}.`,
+			verdict: `Los 9 campos del contrato estan presentes en ${rows.length} fila(s). ` + `El AC nombra "isAirport" y el endpoint devuelve "airport"${hasIsAirport ? ' — aca vinieron los dos' : ' (isAirport no viene, como estaba medido)'}.`,
 			measured
 		};
 	}
@@ -622,6 +608,253 @@ export class AddressFieldProbe {
 			verdict: `${seen.length} request(s) del mismo campo comparten un unico token (${tokens[0]}).`,
 			measured
 		};
+	}
+
+	// ------------------------------------------------------------------ B7 rotacion del sessionToken
+
+	/**
+	 * TM-687 — el `sessionToken` ROTA al seleccionar una prediccion.
+	 *
+	 * Es el complemento de B6: B6 asierta que un mismo campo agrupa sus consultas bajo un token, y
+	 * esto asierta que ese token se CIERRA cuando el usuario elige. Sin la rotacion el ahorro no se
+	 * materializa: Google factura por sesion, y una sesion que nunca cierra es una sesion eterna.
+	 *
+	 * Alcance ya medido y publicado (TM-693): el token es de PANTALLA, no de campo. Este chequeo no
+	 * lo contradice — mira el token ANTES y DESPUES de una seleccion, en el mismo campo.
+	 */
+	async checkTokenRotation(selector: string, term = 'libertad 479'): Promise<BehaviorVerdict> {
+		const title = 'El sessionToken rota al seleccionar una prediccion';
+
+		await this.reset(selector);
+		if (!(await this.typeAndStamp(selector, term))) {
+			return {
+				behavior: 'B7',
+				title,
+				status: 'SIN_DATOS',
+				verdict: 'El campo no acepto texto: no hay token que observar.',
+				measured: { term }
+			};
+		}
+		await this.driver.pause(this.settleMs);
+		const before = (await this.autocompleteCalls()).map(c => param(String(c.url), 'sessionToken')).filter(Boolean);
+
+		// Elegir la PRIMERA prediccion de la lista. Es la accion que deberia cerrar la sesion.
+		const picked = (await this.driver
+			.execute(() => {
+				const vis = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
+				const row = Array.from(document.querySelectorAll('ion-item, ion-list ion-label, li'))
+					.filter(vis)
+					.find(e => (e.textContent ?? '').trim().length > 8) as HTMLElement | undefined;
+				if (!row) return '';
+				row.click();
+				return (row.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 70);
+			})
+			.catch(() => '')) as string;
+
+		if (!picked) {
+			return {
+				behavior: 'B7',
+				title,
+				status: 'NO_EJERCIDO',
+				verdict: 'No aparecio ninguna prediccion para seleccionar, asi que la transicion no se ejercio. NO es un defecto: sin seleccion no hay rotacion que medir.',
+				measured: { term, tokensBefore: [...new Set(before)] }
+			};
+		}
+		await this.driver.pause(2600);
+
+		await clearWebViewNetworkCapture(this.driver);
+		await this.reset(selector);
+		await this.typeAndStamp(selector, term);
+		await this.driver.pause(this.settleMs);
+		const after = (await this.autocompleteCalls()).map(c => param(String(c.url), 'sessionToken')).filter(Boolean);
+
+		const uniqBefore = [...new Set(before)];
+		const uniqAfter = [...new Set(after)];
+		const measured = { term, picked, tokensBefore: uniqBefore, tokensAfter: uniqAfter };
+
+		if (!uniqBefore.length || !uniqAfter.length) {
+			return {
+				behavior: 'B7',
+				title,
+				status: 'SIN_DATOS',
+				verdict: `Falta al menos un lado de la comparacion (antes: ${uniqBefore.length}, despues: ${uniqAfter.length}). Sin los dos tokens no se puede afirmar ni negar la rotacion.`,
+				measured
+			};
+		}
+		const rotated = uniqAfter.every(t => !uniqBefore.includes(t));
+		if (!rotated) {
+			return {
+				behavior: 'B7',
+				title,
+				status: 'FAIL',
+				verdict: `El token NO rota: ${uniqAfter[0]} sigue vigente despues de seleccionar "${picked}". La sesion de autocompletado no se cierra al elegir, asi que el ahorro por sesion no se materializa.`,
+				measured
+			};
+		}
+		return {
+			behavior: 'B7',
+			title,
+			status: 'PASS',
+			verdict: `El token rota al seleccionar: ${uniqBefore[0]} -> ${uniqAfter[0]} (seleccionado: "${picked}").`,
+			measured
+		};
+	}
+
+	// ------------------------------------------------------------------ B8 degradacion del endpoint
+
+	/**
+	 * TM-689 — que pasa cuando el endpoint responde mal o no responde.
+	 *
+	 * Se ejercen las DOS ramas porque fallan distinto: un 5xx llega rapido y con cuerpo, y un timeout
+	 * deja la promesa colgada. La rama de timeout es justamente la que quedo sin ejercer en la
+	 * campana manual, y es la que rompe una suscripcion RxJS mal cerrada.
+	 *
+	 * Lo que se asierta NO es que el usuario vea un cartel — eso es un hueco de definicion abierto —
+	 * sino que el CAMPO SIGUE VIVO: que se pueda seguir escribiendo y que una consulta posterior
+	 * vuelva a salir. Un campo que muere ante el primer 5xx obliga al usuario a reiniciar el alta.
+	 */
+	async checkDegradedResponse(selector: string, mode: 'status' | 'timeout' = 'status', term = 'libertad 479'): Promise<BehaviorVerdict> {
+		const title = `Degradacion ante ${mode === 'status' ? 'un 5xx' : 'un timeout'}`;
+
+		await installWebViewFaultInjection(this.driver, [
+			{
+				id: `mg116-${mode}`,
+				urlPattern: AUTOCOMPLETE_PATH,
+				mode,
+				...(mode === 'status' ? { status: 503 } : { delayMs: 8000 })
+			}
+		]);
+
+		try {
+			await this.reset(selector);
+			const typedUnderFault = await this.typeAndStamp(selector, term);
+			await this.driver.pause(mode === 'timeout' ? this.settleMs + 4000 : this.settleMs);
+
+			// La falla se levanta ANTES de la sonda de recuperacion: si no, la segunda consulta
+			// tambien caeria en la regla y no se podria distinguir "el campo murio" de "sigue fallando".
+			await clearWebViewFaultInjection(this.driver);
+			await clearWebViewNetworkCapture(this.driver);
+
+			await this.reset(selector);
+			const typedAfter = await this.typeAndStamp(selector, `${term} 2`);
+			await this.driver.pause(this.settleMs);
+			const recoveryCalls = (await this.autocompleteCalls()).length;
+
+			const measured = { mode, term, typedUnderFault, typedAfter, recoveryCalls };
+
+			if (!typedUnderFault) {
+				return {
+					behavior: 'B8',
+					title,
+					status: 'SIN_DATOS',
+					verdict: 'El campo no acepto texto ni siquiera antes de la falla: la degradacion no se ejercio.',
+					measured
+				};
+			}
+			if (!typedAfter) {
+				return {
+					behavior: 'B8',
+					title,
+					status: 'FAIL',
+					verdict: `Tras ${mode === 'status' ? 'un 503' : 'un timeout'} el campo DEJO de aceptar texto. El usuario queda sin poder completar la direccion y tiene que reiniciar el alta.`,
+					measured
+				};
+			}
+			if (recoveryCalls === 0) {
+				return {
+					behavior: 'B8',
+					title,
+					status: 'FAIL',
+					verdict: `El campo acepta texto pero YA NO CONSULTA despues de ${mode === 'status' ? 'el 503' : 'el timeout'}: la suscripcion quedo rota. Se puede escribir, pero no aparece ninguna prediccion nunca mas.`,
+					measured
+				};
+			}
+			return {
+				behavior: 'B8',
+				title,
+				status: 'PASS',
+				verdict: `El campo sobrevive: tras ${mode === 'status' ? 'el 503' : 'el timeout'} sigue aceptando texto y vuelve a consultar (${recoveryCalls} request).`,
+				measured
+			};
+		} finally {
+			// Que la regla no sobreviva al chequeo, pase lo que pase: una falla colgada envenena
+			// todas las superficies siguientes de la corrida.
+			await clearWebViewFaultInjection(this.driver).catch(() => undefined);
+		}
+	}
+
+	// ------------------------------------------------------------------ B9 sin conexion
+
+	/**
+	 * TM-697 — el campo sigue usable con la red caida.
+	 *
+	 * `networkError` rechaza con un TypeError, igual que una caida real de fetch. Es distinto del 5xx:
+	 * ahi hay respuesta, aca no hay ninguna. Lo que se asierta es que el usuario pueda seguir
+	 * escribiendo y que, al volver la red, las predicciones vuelvan solas — sin reiniciar el alta.
+	 */
+	async checkOfflineUsable(selector: string, term = 'libertad 479'): Promise<BehaviorVerdict> {
+		const title = 'El campo sigue usable sin conexion';
+
+		await installWebViewFaultInjection(this.driver, [{ id: 'mg116-offline', urlPattern: AUTOCOMPLETE_PATH, mode: 'networkError' }]);
+
+		try {
+			await this.reset(selector);
+			const typedOffline = await this.typeAndStamp(selector, term);
+			await this.driver.pause(this.settleMs);
+
+			const stillEditable = (await this.driver.execute((sel: string) => {
+				const vis = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
+				const t = Array.from(document.querySelectorAll(sel)).filter(vis)[0] as HTMLInputElement | undefined;
+				return !!t && !t.readOnly && !t.disabled;
+			}, selector)) as boolean;
+
+			await clearWebViewFaultInjection(this.driver);
+			await clearWebViewNetworkCapture(this.driver);
+
+			await this.reset(selector);
+			await this.typeAndStamp(selector, `${term} 2`);
+			await this.driver.pause(this.settleMs);
+			const afterRecovery = (await this.autocompleteCalls()).length;
+
+			const measured = { term, typedOffline, stillEditable, callsAfterRecovery: afterRecovery };
+
+			if (!typedOffline) {
+				return {
+					behavior: 'B9',
+					title,
+					status: 'FAIL',
+					verdict: 'Con la red caida el campo NO acepto texto. El usuario no puede ni siquiera escribir su direccion mientras espera que vuelva la conexion.',
+					measured
+				};
+			}
+			if (!stillEditable) {
+				return {
+					behavior: 'B9',
+					title,
+					status: 'FAIL',
+					verdict: 'El campo quedo bloqueado (readonly o deshabilitado) tras la caida de red.',
+					measured
+				};
+			}
+			if (afterRecovery === 0) {
+				return {
+					behavior: 'B9',
+					title,
+					status: 'FAIL',
+					verdict: 'El campo sigue editable pero no volvio a consultar cuando la red se restablecio: hay que reiniciar el alta para recuperar las predicciones.',
+					measured
+				};
+			}
+			return {
+				behavior: 'B9',
+				title,
+				status: 'PASS',
+				verdict: `El campo acepta texto con la red caida y vuelve a consultar al restablecerse (${afterRecovery} request).`,
+				measured
+			};
+		} finally {
+			await clearWebViewFaultInjection(this.driver).catch(() => undefined);
+		}
 	}
 
 	// ------------------------------------------------------------------ la bateria completa

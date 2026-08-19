@@ -1,12 +1,12 @@
 ﻿/**
- * TM-665 â€” Verifica QUÃ‰ elemento estaba detectando como "spinner".
+ * TM-665 — Verifica QUÉ elemento estaba detectando como "spinner".
  *
- * La corrida anterior reportÃ³ `spinnerVisible: true` con un selector amplio
+ * La corrida anterior reportó `spinnerVisible: true` con un selector amplio
  * (`[class*="loading"]`), que puede matchear cualquier nodo con esa subcadena en la clase sin ser
  * un indicador de carga visible. Antes de afirmar en un ticket que el spinner queda colgado hay
- * que identificar el nodo concreto: etiqueta, clase, tamaÃ±o y si el usuario realmente lo ve.
+ * que identificar el nodo concreto: etiqueta, clase, tamaño y si el usuario realmente lo ve.
  *
- * Inyecta el 503, teclea, y describe cada candidato con su geometrÃ­a.
+ * Inyecta el 503, teclea, y describe cada candidato con su geometría.
  */
 
 import { remote } from 'webdriverio';
@@ -85,7 +85,7 @@ async function setValue(driver: WebdriverIO.Browser, value: string): Promise<voi
 }
 
 function report(label: string, candidates: Candidate[]): void {
-	log(`\n${label} â€” ${candidates.length} nodo(s) que matchean el selector de carga`);
+	log(`\n${label} — ${candidates.length} nodo(s) que matchean el selector de carga`);
 	for (const c of candidates) {
 		const realmenteVisible =
 			c.inViewport && c.display !== 'none' && c.visibility !== 'hidden' && Number(c.opacity) > 0;
@@ -93,7 +93,7 @@ function report(label: string, candidates: Candidate[]): void {
 			`   <${c.tag}> class="${c.className.slice(0, 60)}" ${c.width}x${c.height} top=${c.top} ` +
 				`display=${c.display} visibility=${c.visibility} opacity=${c.opacity}`
 		);
-		log(`      -> Â¿lo ve el usuario?: ${realmenteVisible ? 'SÃ' : 'NO'}${c.text ? ` Â· texto="${c.text}"` : ''}`);
+		log(`      -> ¿lo ve el usuario?: ${realmenteVisible ? 'SÍ' : 'NO'}${c.text ? ` · texto="${c.text}"` : ''}`);
 	}
 }
 
@@ -137,13 +137,13 @@ async function run(): Promise<void> {
 		})) as boolean;
 
 		if (!hasInput) {
-			log('ABORTA: no hay campo de bÃºsqueda editable. AbrÃ­ "Buscar direcciÃ³n" primero.');
+			log('ABORTA: no hay campo de búsqueda editable. Abrí "Buscar dirección" primero.');
 			return;
 		}
 
 		report('ANTES de tocar nada', await describeLoadingCandidates(driver));
 
-		log('\nInyectando 503 y tecleandoâ€¦');
+		log('\nInyectando 503 y tecleando…');
 		await installWebViewFaultInjection(driver, [
 			{ id: 'spinner-check', urlPattern: 'places/autocomplete', mode: 'status', status: 503, body: '{"error":"Service Unavailable"}' }
 		]);
@@ -162,10 +162,10 @@ async function run(): Promise<void> {
 		const capture = await readWebViewNetworkCapture(driver);
 		const calls = capture.entries.filter(e => String(e.url).includes('places/autocomplete'));
 		const state = await readWebViewFaultInjectionState(driver);
-		log(`\nrequests interceptadas: ${calls.length} Â· hits de la regla: ${state.totalHits}`);
+		log(`\nrequests interceptadas: ${calls.length} · hits de la regla: ${state.totalHits}`);
 
 		if (state.totalHits === 0) {
-			log('OJO: la regla no disparÃ³, asÃ­ que el 503 no llegÃ³ a la app y la observaciÃ³n no vale.');
+			log('OJO: la regla no disparó, así que el 503 no llegó a la app y la observación no vale.');
 		}
 	} finally {
 		await clearWebViewFaultInjection(driver).catch(() => undefined);
