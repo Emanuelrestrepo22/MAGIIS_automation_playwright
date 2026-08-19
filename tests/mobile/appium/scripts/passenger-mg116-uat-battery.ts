@@ -25,7 +25,8 @@ import {
 	HomeOriginSurface,
 	HomeDestinationSurface,
 	HomeStopSurface,
-	ProfileAddressSurface
+	ProfileAddressSurface,
+	ScheduledTripEditSurface
 } from '../passenger/surfaces/homeSurfaces';
 
 const TARGET = resolveDriverTarget('passenger');
@@ -116,12 +117,28 @@ async function run(): Promise<void> {
 
 		// -------------------------------------------------------------- la matriz
 		const probe = new AddressFieldProbe(driver);
-		const surfaces: AddressSurface[] = [
+		const all: AddressSurface[] = [
 			new HomeOriginSurface(),
 			new HomeDestinationSurface(),
 			new HomeStopSurface(SEED_DESTINATION),
+			new ScheduledTripEditSurface(),
 			new ProfileAddressSurface()
 		];
+		/**
+		 * `MG116_ONLY=S2,S3` corre solo esas superficies.
+		 *
+		 * POR QUE HACE FALTA: el home mantiene UNA fila de direccion activa y, al escribir en ella, se
+		 * abre el panel de "Mis Direcciones / Ultimos Destinos" — que reemplaza al formulario. La
+		 * superficie siguiente ya no encuentra su campo y se reporta SIN_DATOS aunque el producto este
+		 * bien. Medir de a una superficie por sesion, con la app relanzada en medio, es lo que hace que
+		 * el SIN_DATOS signifique "no se alcanzo" y no "la corrida se contamino a si misma".
+		 */
+		const only = (process.env.MG116_ONLY ?? '')
+			.split(',')
+			.map(s => s.trim().toUpperCase())
+			.filter(Boolean);
+		const surfaces = only.length ? all.filter(s => only.includes(s.id.toUpperCase())) : all;
+		if (only.length) log(`filtro MG116_ONLY=${only.join(',')} -> ${surfaces.map(s => s.id).join(',') || '(ninguna)'}`);
 
 		for (const surface of surfaces) {
 			await evidence.capture(`${surface.id}-antes`);

@@ -103,9 +103,13 @@ async function run(): Promise<void> {
 
 		// ---------------------------------------------------------------- llegar a la pantalla
 		if (!SKIP_NAV && !/AddressesPage/i.test(String(out.startUrl))) {
-			log('navegando a Mis Direcciones...');
-			await tapByText(driver, webview, 'mis direcciones');
-			await driver.pause(2500);
+			// Mi cuenta -> Direcciones. NO el boton "Mis Direcciones" del home: ese es un atajo para
+			// elegir un destino guardado, no la seccion del perfil con el formulario de alta/edicion.
+			log('navegando a Mi cuenta > Direcciones...');
+			await tapByText(driver, webview, 'mi cuenta');
+			await driver.pause(2200);
+			await tapByText(driver, webview, 'direccion');
+			await driver.pause(2800);
 		}
 		const url = (await driver.execute(() => window.location.href)) as string;
 		out.addressesUrl = url;

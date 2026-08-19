@@ -420,6 +420,78 @@ export class HomeStopSurface implements AddressSurface {
  * Las opciones del selector dependen de lo ya guardado: `Casa` desaparece si ya existe una direccion
  * de casa, asi que se elige la primera opcion disponible en vez de un literal.
  */
+/**
+ * S6 — el campo de direccion de la EDICION de un viaje programado.
+ *
+ * COMO SE LLEGA (censado en vivo, no supuesto): tab `Actividad` -> segmento `Programados` -> el
+ * control de edicion de la tarjeta del viaje. Ese control es un `<div class="edit">` de 60x60 px
+ * **sin ningun texto** (el rotulo es un SVG), vecino de `cancel-row`. Cualquier navegacion que
+ * busque la palabra "Editar" no lo encuentra nunca y la superficie se reporta inalcanzable con el
+ * producto perfectamente sano — fue exactamente lo que le pasaba al guard TM-730.
+ *
+ * PRECONDICION DE DATO: tiene que existir al menos un viaje programado. Si `Programados` esta vacia
+ * la superficie devuelve `false`, que el probe traduce a NO_EJERCIDO y nunca a defecto. Para crear
+ * uno esta `scripts/passenger-schedule-trip.ts` + `scripts/passenger-confirm-scheduled-trip.ts`
+ * (cuenta corriente o efectivo, nunca tarjeta).
+ */
+export class ScheduledTripEditSurface implements AddressSurface {
+	readonly id = 'S6';
+	readonly label = 'Editar viaje programado';
+	private resolved = '';
+
+	async reach(driver: WebdriverIO.Browser): Promise<boolean> {
+		if (!/travel-edit/i.test(await url(driver))) {
+			if (!(await tapNative(driver, 'ion-tab-button, ion-label', 'actividad', 8000))) return false;
+			await driver.pause(2500);
+			if (!(await tapNative(driver, 'ion-segment-button, ion-label', 'programados', 6000))) return false;
+			await driver.pause(2500);
+
+			// El icono de edicion, por CSS: no tiene texto que buscar.
+			const rect = (await driver
+				.execute(() => {
+					const vis = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
+					const el = Array.from(document.querySelectorAll('div.edit, .col-edit div, .col-edit')).filter(vis)[0] as
+						| HTMLElement
+						| undefined;
+					if (!el) return null;
+					el.scrollIntoView({ block: 'center' });
+					const b = el.getBoundingClientRect();
+					if (!b.width || !b.height) return null;
+					return { x: b.left + b.width / 2, y: b.top + b.height / 2, vw: window.innerWidth, vh: window.innerHeight };
+				})
+				.catch(() => null)) as { x: number; y: number; vw: number; vh: number } | null;
+			if (!rect) return false;
+			await tapAtCssPoint(driver, rect);
+			await driver.pause(3500);
+			if (!/travel-edit/i.test(await url(driver))) return false;
+		}
+
+		// En `travel-edit` valen las mismas tres filas del home: se toma la que este editable.
+		for (const sel of [
+			'input[placeholder="Agregar otro destino "]',
+			DESTINATION_SELECTOR,
+			ORIGIN_SELECTOR,
+			'input[name="input-from"]'
+		]) {
+			if (await ensureEditable(driver, sel)) {
+				this.resolved = sel;
+				return true;
+			}
+		}
+		return false;
+	}
+
+	fieldSelector(): string {
+		return this.resolved || 'input[name="input-from"]';
+	}
+
+	async cleanup(driver: WebdriverIO.Browser): Promise<void> {
+		// Se sale SIN guardar: la edicion no debe alterar el viaje programado que sirve de fixture.
+		if (this.resolved) await clearField(driver, this.resolved);
+		await tapBackArrow(driver).catch(() => undefined);
+	}
+}
+
 export class ProfileAddressSurface implements AddressSurface {
 	readonly id = 'S7';
 	readonly label = 'Perfil · Direcciones (alta/edicion)';
@@ -429,16 +501,19 @@ export class ProfileAddressSurface implements AddressSurface {
 
 	async reach(driver: WebdriverIO.Browser): Promise<boolean> {
 		// 1. Llegar a /AddressesPage. Puede que ya estemos ahi.
+		//
+		// OJO CON EL HOMONIMO: el home tiene un boton "Mis Direcciones"
+		// (`button.travelHistory-btn.additional-btns-btn`) que NO es esta seccion — es un ATAJO que
+		// lista las direcciones guardadas para elegir una como destino. La seccion del perfil, la que
+		// tiene el formulario de alta/edicion, se alcanza por el tab "Mi cuenta". Apuntarle al atajo
+		// dejaba la superficie inalcanzable con el producto perfectamente sano.
 		if (!/AddressesPage/i.test(await url(driver))) {
 			if (!(await goHome(driver))) return false;
-			const opened = await tapNative(
-				driver,
-				'button.travelHistory-btn.additional-btns-btn, button, ion-item, ion-label',
-				'mis direcciones',
-				6000
-			);
-			if (!opened) return false;
+			if (!(await tapNative(driver, 'ion-tab-button, ion-label', 'mi cuenta', 6000))) return false;
 			await driver.pause(2000);
+			if (!(await tapNative(driver, 'ion-item, ion-label, button', 'direccion', 6000))) return false;
+			await driver.pause(2500);
+			if (!/AddressesPage/i.test(await url(driver))) return false;
 		}
 
 		// 2. Habilitar el formulario eligiendo un Tipo. Es la precondicion real del campo.
