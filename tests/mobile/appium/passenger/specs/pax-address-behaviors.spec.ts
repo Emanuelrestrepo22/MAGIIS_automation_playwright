@@ -52,6 +52,7 @@ import { remote } from 'webdriverio';
 import { resolveDriverTarget } from '../../scripts/_shared/resolveDriverTarget';
 import { AddressFieldProbe, type AddressSurface, type BehaviorVerdict } from '../AddressFieldProbe';
 import { installWebViewNetworkCapture } from '../../helpers/webViewNetworkCapture';
+import { ensurePassengerSession } from '../ensurePassengerSession';
 import { HomeOriginSurface, HomeStopSurface, ProfileAddressSurface, ScheduledTripEditSurface, TripTypeAddressSurface } from '../surfaces/homeSurfaces';
 
 const TARGET = resolveDriverTarget('passenger');
@@ -267,6 +268,20 @@ async function relaunchApp(driver: Driver): Promise<string> {
 	if (!webview) return '';
 
 	await driver.switchContext(webview);
+
+	// El arranque en frio vuelve a correr el bootstrap de autenticacion. Con la sesion compartida eso
+	// pasaba CERO veces; ahora pasa una por superficie, asi que un token vencido dejaria las CINCO
+	// superficies inalcanzables de golpe — y se leeria como "el harness no llega a las pantallas".
+	// Recuperarlo aca cuesta segundos; descubrirlo al final cuesta la corrida entera.
+	const sesion = await ensurePassengerSession(driver);
+	if (sesion.status === 'recuperada') {
+		console.log(`[mg116] sesion recuperada tras el relanzamiento: ${sesion.detalle}`);
+	} else if (sesion.status !== 'con-sesion') {
+		// No se lanza: el llamador convierte la cadena vacia en superficie inalcanzable con motivo.
+		// Un problema de sesion no es un defecto del producto y no debe pintar un test de rojo.
+		console.log(`[mg116] SIN SESION (${sesion.status}): ${sesion.detalle}`);
+		return '';
+	}
 	// Mismo settle que usa `newSession()`: el DOM de Ionic todavía se está hidratando.
 	await driver.pause(4500);
 	await installWebViewNetworkCapture(driver).catch(() => undefined);
