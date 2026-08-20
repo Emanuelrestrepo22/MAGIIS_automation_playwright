@@ -11,7 +11,14 @@
  * El `xray-reporter` deduplica por `testKey` y **gana el peor estado**. Si TM-678 (debounce) se
  * trazara a las cinco superficies, la fila roja de Mis Direcciones lo marcaría FAILED — cuando en el
  * flujo de viaje el debounce sí opera. Cada caso recibe el estado de las superficies que realmente
- * cubre, y por eso los dos defectos de Mis Direcciones necesitaron ID propio (TM-733, TM-734).
+ * cubre, y por eso las dos conductas propias de Mis Direcciones necesitaron ID propio (TM-733,
+ * TM-734).
+ *
+ * TM-734 YA NO ES UN DEFECTO, y la fila lo refleja. Se creó el 2026-08-19 esperando el piso de 3 del
+ * AC en Perfil › Direcciones, pero ese piso existe PARA soportar códigos IATA y ahí no hay caso de
+ * uso de aeropuerto: nadie guarda uno como Casa o Trabajo. El 2026-08-20 se acordó que en esa
+ * pantalla el piso es 4, y la fila ahora asierta 4 ahí y 3 en el resto. El producto nunca estuvo
+ * roto; la expectativa del test estaba mal escrita.
  *
  * POR QUÉ SE RE-ESTABLECE LA SUPERFICIE ANTES DE CADA CONDUCTA
  * Medido el 2026-08-19: correr las seis conductas seguidas en una sesión dejaba el campo de Perfil ›
@@ -92,9 +99,14 @@ function commonRows(tripFlow: boolean): BehaviorRow[] {
 			run: (probe, sel) => probe.checkDebounce(sel)
 		},
 		{
-			title: tripFlow ? 'respeta el piso de 3 caracteres' : 'permite buscar por código IATA de 3 letras',
+			// El piso es POR SUPERFICIE, no global. Reclasificado el 2026-08-20: el AC de MG-116 fija 3
+			// para los campos del alta de viaje, donde un código IATA de 3 letras es caso de uso real.
+			// Perfil › Direcciones acordó 4 — es un formulario de guardado y nadie guarda un aeropuerto
+			// como Casa o Trabajo. Antes esta fila esperaba 3 en las dos y marcaba rojo un
+			// comportamiento correcto: el defecto estaba en el test, no en el producto.
+			title: tripFlow ? 'respeta el piso de 3 caracteres del AC' : 'respeta el piso de 4 caracteres acordado para esta pantalla',
 			tms: tripFlow ? ['TM-680', 'TM-681'] : ['TM-734'],
-			run: (probe, sel) => probe.checkMinLength(sel)
+			run: (probe, sel) => probe.checkMinLength(sel, { expectedFloor: tripFlow ? 3 : 4 })
 		},
 		{
 			title: 'no reconsulta un texto idéntico',

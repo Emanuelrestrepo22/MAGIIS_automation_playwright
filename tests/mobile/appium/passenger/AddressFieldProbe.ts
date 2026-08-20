@@ -86,6 +86,7 @@ const GOOGLE_HOST_RE = /maps\.googleapis\.com|places\.googleapis\.com/i;
 /** El AC dice ~300 ms. Se acepta hasta 900 ms como "hay debounce"; por encima se reporta el valor. */
 const DEBOUNCE_TARGET_MS = 300;
 /** Piso de caracteres que fija el AC. Son 3 porque un codigo IATA mide exactamente 3. */
+/** Piso por defecto del AC de MG-116: 3 caracteres, porque un codigo IATA mide 3. Perfil > Direcciones lo sobreescribe con 4 — ver checkMinLength. */
 const MIN_CHARS = 3;
 const DEBOUNCE_TOLERANCE_MS = 900;
 
@@ -353,7 +354,19 @@ export class AddressFieldProbe {
 	 *
 	 * El piso importa porque el AC lo fija en 3 para soportar codigos IATA, que miden exactamente 3.
 	 */
-	async checkMinLength(selector: string, term = 'libertad', maxLen = 6): Promise<BehaviorVerdict> {
+	/**
+	 * B3 — el piso de caracteres desde el que la superficie consulta.
+	 *
+	 * `expectedFloor` es por SUPERFICIE y no global: el AC de MG-116 fija 3 para los campos del alta
+	 * de viaje (un codigo IATA mide 3 letras y ahi el pasajero necesita ver el aeropuerto), pero
+	 * Perfil > Direcciones acordo 4 el 2026-08-20 — es un formulario de guardado donde el pasajero
+	 * escribe una calle que ya conoce, y no existe el caso de uso de guardar un aeropuerto como
+	 * direccion favorita. Clavar un unico piso marcaria rojo un comportamiento correcto.
+	 */
+	async checkMinLength(selector: string, opts: { term?: string; maxLen?: number; expectedFloor?: number } = {}): Promise<BehaviorVerdict> {
+		const term = opts.term ?? 'libertad';
+		const maxLen = opts.maxLen ?? 6;
+		const expectedFloor = opts.expectedFloor ?? MIN_CHARS;
 		const perLength: { length: number; text: string; calls: number }[] = [];
 
 		for (let len = 1; len <= Math.min(maxLen, term.length); len++) {
@@ -370,12 +383,12 @@ export class AddressFieldProbe {
 
 		const rejected = perLength.filter(p => p.calls < 0).map(p => p.length);
 		const firstQuery = perLength.find(p => p.calls > 0)?.length ?? null;
-		const measured = { term, perLength, firstQueryAtLength: firstQuery, lengthsRejectedByField: rejected };
+		const measured = { term, perLength, firstQueryAtLength: firstQuery, lengthsRejectedByField: rejected, expectedFloor };
 
 		if (rejected.length === perLength.length) {
 			return {
 				behavior: 'B3',
-				title: 'minLength 3',
+				title: `minLength ${expectedFloor}`,
 				status: 'SIN_DATOS',
 				verdict: 'El campo no acepto texto en ninguna longitud: no hay piso que medir. Revisar el estado de la pantalla antes de concluir algo del producto.',
 				measured
@@ -384,35 +397,35 @@ export class AddressFieldProbe {
 		if (firstQuery === null) {
 			return {
 				behavior: 'B3',
-				title: 'minLength 3',
+				title: `minLength ${expectedFloor}`,
 				status: 'SIN_DATOS',
 				verdict: `Ninguna longitud de 1 a ${perLength.length} genero consulta. Sin un caso positivo no se distingue "respeta el piso" de "el campo no consulta nunca".`,
 				measured
 			};
 		}
-		if (firstQuery < MIN_CHARS) {
+		if (firstQuery < expectedFloor) {
 			return {
 				behavior: 'B3',
-				title: 'minLength 3',
+				title: `minLength ${expectedFloor}`,
 				status: 'FAIL',
-				verdict: `La primera consulta sale con ${firstQuery} caracter(es), por debajo del piso de ${MIN_CHARS}. Se pagan consultas que el AC pide no hacer.`,
+				verdict: `La primera consulta sale con ${firstQuery} caracter(es), por debajo del piso de ${expectedFloor} acordado para esta superficie. Se pagan consultas que el contrato de la pantalla pide no hacer.`,
 				measured
 			};
 		}
-		if (firstQuery > MIN_CHARS) {
+		if (firstQuery > expectedFloor) {
 			return {
 				behavior: 'B3',
-				title: 'minLength 3',
+				title: `minLength ${expectedFloor}`,
 				status: 'FAIL',
-				verdict: `La primera consulta recien sale con ${firstQuery} caracteres: el piso de esta superficie esta POR ENCIMA de los ${MIN_CHARS} que pide el AC, asi que un codigo IATA de 3 letras no dispara busqueda aca.`,
+				verdict: `La primera consulta recien sale con ${firstQuery} caracteres, por encima del piso de ${expectedFloor} acordado para esta superficie. Un termino de ${expectedFloor} caracteres no dispara busqueda aca.`,
 				measured
 			};
 		}
 		return {
 			behavior: 'B3',
-			title: 'minLength 3',
+			title: `minLength ${expectedFloor}`,
 			status: 'PASS',
-			verdict: `El piso medido es ${firstQuery}: con ${MIN_CHARS - 1} caracteres no consulta y con ${MIN_CHARS} si.`,
+			verdict: `El piso medido es ${firstQuery}, el acordado para esta superficie: con ${expectedFloor - 1} caracteres no consulta y con ${expectedFloor} si.`,
 			measured
 		};
 	}
