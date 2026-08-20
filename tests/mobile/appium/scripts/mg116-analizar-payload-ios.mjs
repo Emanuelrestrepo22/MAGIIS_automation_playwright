@@ -62,6 +62,23 @@ function coordsDe(p) {
 	return null;
 }
 
+/**
+ * Un plus code (Open Location Code) NO es una direccion utilizable por un pasajero.
+ *
+ * POR QUE SE MIDE. MG-931 registro el bloqueante en produccion: 39.605 filas cuyo `formatted_address`
+ * ES un plus code. Cuando esas filas salen como predicciones, al usuario se le ofrece "6F8F+RH Ezeiza"
+ * como direccion para guardar como Casa o Trabajo — algo que no puede reconocer ni verificar. Contarlas
+ * convierte una impresion ("los resultados se ven raros") en un numero reportable.
+ *
+ * Formato: 4+ caracteres del alfabeto OLC, un '+', y 2+ mas. El alfabeto excluye vocales a proposito
+ * para no formar palabras, asi que el falso positivo sobre nombres de calle reales es improbable.
+ */
+const RE_PLUS_CODE = /\b[23456789CFGHJMPQRVWX]{4,}\+[23456789CFGHJMPQRVWX]{2,}\b/;
+
+function esPlusCode(texto) {
+	return RE_PLUS_CODE.test(String(texto ?? ''));
+}
+
 function etiquetaDe(p) {
 	// `mainText` va PRIMERO porque es lo que trae el payload de MAGIIS y es lo que el usuario ve en la
 	// lista. Se omitio en la primera version y el analizador cayo al JSON.stringify: en la pantalla del
@@ -180,8 +197,11 @@ lista.forEach((p, i) => {
 		return;
 	}
 	const km = haversineKm(c, USUARIO);
-	filas.push({ i: i + 1, et, km, iata });
-	console.log(`  ${String(i + 1).padStart(2)}. ${fmtDist(km).padStart(9)} del usuario   ${et}${iata ? `  [IATA ${iata}]` : ''}`);
+	const plus = esPlusCode(et);
+	filas.push({ i: i + 1, et, km, iata, plus });
+	console.log(
+		`  ${String(i + 1).padStart(2)}. ${fmtDist(km).padStart(9)} del usuario   ${et}${iata ? `  [IATA ${iata}]` : ''}${plus ? '   <-- PLUS CODE, no es una direccion usable' : ''}`
+	);
 });
 
 // --- 3) Lo que el criterio de aceptacion pide, y si se cumple.
@@ -192,10 +212,33 @@ const aeropuertosArriba = filas.slice(0, 3).filter(f => f.iata).length;
 
 console.log('');
 console.log('CRITERIO DE ACEPTACION');
-console.log(`  AC del sesgo: al menos 1 de las 3 primeras a <= 10 km del usuario  ->  ${cercanasEnTop3 >= 1 ? 'CUMPLE' : 'NO CUMPLE'} (${cercanasEnTop3} de 3)`);
+// El chequeo de proximidad SOLO discrimina cuando el termino tiene coincidencias cercanas. Si el
+// usuario escribio una localidad lejana ('ezei' -> Ezeiza, a 28 km), ninguna prediccion PUEDE estar a
+// 10 km, y marcarlo NO CUMPLE seria un rojo falso: el sesgo puede estar perfecto igual. Por eso se
+// reporta como informativo cuando el resultado mas cercano ya esta fuera del radio.
+const masCercana = conKm.length ? Math.min(...conKm.map(f => f.km)) : null;
+const aplicaProximidad = masCercana != null && masCercana <= 10;
+if (aplicaProximidad) {
+	console.log(`  AC del sesgo: al menos 1 de las 3 primeras a <= 10 km del usuario  ->  ${cercanasEnTop3 >= 1 ? 'CUMPLE' : 'NO CUMPLE'} (${cercanasEnTop3} de 3)`);
+} else {
+	console.log('  AC del sesgo: NO APLICA a este termino — ninguna coincidencia del set esta a menos de 10 km');
+	console.log(`    (la mas cercana esta a ${fmtDist(masCercana ?? 0)}). El termino apunta a un lugar lejano, asi que`);
+	console.log('    la proximidad no distingue un sesgo bueno de uno malo. El veredicto lo da el sesgo del request.');
+}
 if (aeropuertosArriba > 0) {
 	console.log(`  OJO: ${aeropuertosArriba} de las 3 primeras son aeropuertos con IATA. Eso es TM-727 (backend, lo cierra MG-931),`);
 	console.log('       NO el sesgo. Se registra aparte para no atribuirle al fix un defecto que no es suyo.');
+}
+
+const plusCodes = filas.filter(f => f.plus);
+if (plusCodes.length) {
+	console.log('');
+	console.log(`CALIDAD DE LOS RESULTADOS: ${plusCodes.length} de ${filas.length} predicciones son PLUS CODES.`);
+	console.log('  Un plus code no es una direccion que un pasajero pueda reconocer, y menos guardar como');
+	console.log('  Casa o Trabajo. Es la manifestacion del bloqueante que MG-931 registro en produccion');
+	console.log('  (39.605 filas cuyo formatted_address es un plus code). Se reporta aparte del sesgo:');
+	console.log('  el sesgo puede estar perfecto y los resultados seguir siendo inutilizables.');
+	for (const f of plusCodes) console.log(`    #${f.i}  ${f.et}`);
 }
 
 console.log('');
