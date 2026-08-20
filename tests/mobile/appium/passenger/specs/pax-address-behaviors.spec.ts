@@ -20,6 +20,13 @@
  * pantalla el piso es 4, y la fila ahora asierta 4 ahí y 3 en el resto. El producto nunca estuvo
  * roto; la expectativa del test estaba mal escrita.
  *
+ * POR QUÉ SE RELANZA LA APP ANTES DE CADA SUPERFICIE
+ * `reach()` navega DESDE el home. La superficie anterior puede dejar la app metida en una página sin
+ * barra de tabs (Perfil › Direcciones es el caso), y entonces la navegación de la siguiente no
+ * encuentra su punto de partida: `reach()` da `false` y las conductas se saltan con motivo, sobre un
+ * producto sano. Relanzar la app devuelve el punto de partida sin abrir una sesión Appium nueva —
+ * nueve sesiones tiraban abajo el UiAutomator2 de este teléfono. Ver `relaunchApp`.
+ *
  * POR QUÉ SE RE-ESTABLECE LA SUPERFICIE ANTES DE CADA CONDUCTA
  * Medido el 2026-08-19: correr las seis conductas seguidas en una sesión dejaba el campo de Perfil ›
  * Mis Direcciones sin aceptar texto tras el primer chequeo, y tres conductas salían SIN_DATOS que en
@@ -44,6 +51,7 @@ import { test, expect } from '@playwright/test';
 import { remote } from 'webdriverio';
 import { resolveDriverTarget } from '../../scripts/_shared/resolveDriverTarget';
 import { AddressFieldProbe, type AddressSurface, type BehaviorVerdict } from '../AddressFieldProbe';
+import { installWebViewNetworkCapture } from '../../helpers/webViewNetworkCapture';
 import { HomeOriginSurface, HomeStopSurface, ProfileAddressSurface, ScheduledTripEditSurface, TripTypeAddressSurface } from '../surfaces/homeSurfaces';
 
 const TARGET = resolveDriverTarget('passenger');
@@ -209,6 +217,62 @@ async function newSession(): Promise<{ driver: Driver; webview: string }> {
 	return { driver, webview };
 }
 
+/**
+ * Relanza la APP dentro de la sesión Appium ya abierta y devuelve el contexto WEBVIEW nuevo.
+ *
+ * POR QUÉ EXISTE. `reach()` navega DESDE un punto de partida conocido (home / barra de tabs). Cuando
+ * la superficie anterior dejó la app metida en otra pantalla — el caso típico es Perfil ›
+ * Direcciones, que es una página propia sin tabs abajo —, la navegación de la superficie siguiente
+ * no encuentra su punto de partida, `reach()` devuelve `false` y TODAS sus conductas se saltan con
+ * motivo. Así se perdieron 28 de 33 mediciones.
+ *
+ * POR QUÉ RELANZAR LA APP Y NO ABRIR OTRA SESIÓN. Son dos cosas distintas que se habían confundido:
+ * una sesión Appium nueva por superficie también daría un punto de partida limpio, pero nueve
+ * sesiones tiraban abajo el servidor UiAutomator2 de este teléfono de 3,7 GB y se llevaban puestos
+ * los tests restantes. Relanzar la app da el mismo punto de partida limpio y no rompe nada: son
+ * `force-stop` + `am start` sobre el mismo paquete.
+ *
+ * NO BORRA LA SESIÓN DEL USUARIO. `terminateApp`/`activateApp` no tocan los datos de la app, así que
+ * el login que la suite necesita (`noReset: true`) sobrevive. Lo que SÍ la borraría es limpiar datos
+ * o reinstalar — por eso nada de eso pasa por acá.
+ *
+ * DEVUELVE EL HANDLE, no lo asume: al reiniciarse el proceso web, el contexto WEBVIEW capturado
+ * antes queda MUERTO. Y por el mismo motivo se re-instala la captura de red: vive en el `window` de
+ * la página, así que el relanzamiento se la lleva. Sin re-instalarla, toda conducta que se mide
+ * leyendo requests saldría `SIN_DATOS` — se cambiaría un motivo de skip por otro.
+ *
+ * Cadena vacía = la app no volvió a montar su vista web. El llamador lo traduce a superficie
+ * inalcanzable, nunca a un rojo.
+ */
+async function relaunchApp(driver: Driver): Promise<string> {
+	// Salir del WEBVIEW ANTES de matar la app: los comandos de app son nativos, y quedarse en un
+	// contexto web que está por morir es la receta de un error de contexto inválido.
+	await driver.switchContext('NATIVE_APP').catch(() => undefined);
+	await driver.terminateApp(TARGET.appPackage).catch(() => undefined);
+	await driver.pause(1500);
+	await driver.activateApp(TARGET.appPackage).catch(() => undefined);
+	// El arranque en frío de la app híbrida tarda: primero el proceso, después la WebView.
+	await driver.pause(5000);
+
+	// El contexto se busca con plazo, no con una sola lectura: en el arranque en frío la WebView
+	// aparece unos segundos después del proceso, y una única consulta la pierde.
+	const deadline = Date.now() + 45_000;
+	let webview = '';
+	while (Date.now() < deadline) {
+		const contexts = (await driver.getContexts().catch(() => [])) as unknown as string[];
+		webview = contexts.map(String).find(c => c.startsWith('WEBVIEW')) ?? '';
+		if (webview) break;
+		await driver.pause(750);
+	}
+	if (!webview) return '';
+
+	await driver.switchContext(webview);
+	// Mismo settle que usa `newSession()`: el DOM de Ionic todavía se está hidratando.
+	await driver.pause(4500);
+	await installWebViewNetworkCapture(driver).catch(() => undefined);
+	return webview;
+}
+
 test.describe(`[MG-116] Consistencia de los campos de dirección — App PAX (${TARGET.env})`, () => {
 	test.skip(!process.env.APPIUM_SERVER_URL, 'Sin APPIUM_SERVER_URL: la suite necesita un dispositivo físico con Appium.');
 
@@ -228,13 +292,15 @@ test.describe(`[MG-116] Consistencia de los campos de dirección — App PAX (${
 	//
 	// Compartir la sesion es seguro porque cada conducta ya re-establece su superficie antes de medir,
 	// que es lo que evita la contaminacion entre chequeos.
+	//
+	// El handle del WEBVIEW NO se guarda a nivel de suite: cada superficie relanza la app y se queda
+	// con el handle que ese relanzamiento devuelve. Un handle capturado una sola vez acá quedaria
+	// muerto en el primer relanzamiento, y usarlo despues es indistinguible de "la app no monto su
+	// vista web" — el falso inalcanzable que este spec justamente tiene que evitar.
 	let shared: Driver | null = null;
-	let sharedWebview = '';
 
 	test.beforeAll(async () => {
-		const session = await newSession();
-		shared = session.driver;
-		sharedWebview = session.webview;
+		shared = (await newSession()).driver;
 	});
 
 	test.afterAll(async () => {
@@ -258,10 +324,20 @@ test.describe(`[MG-116] Consistencia de los campos de dirección — App PAX (${
 
 			test.beforeAll(async () => {
 				driver = shared;
-				if (!driver || !sharedWebview) {
+				if (!driver) {
 					unreachableReason = 'La app no montó su vista web (sin contexto WEBVIEW).';
 					return;
 				}
+
+				// Relanzar la app ANTES de navegar: `reach()` parte del home, y la superficie anterior
+				// pudo dejar la app tres pantallas adentro. Sin esto la navegacion no encuentra su punto
+				// de partida y la superficie se reporta inalcanzable con el producto sano.
+				const webview = await relaunchApp(driver);
+				if (!webview) {
+					unreachableReason = 'La app no montó su vista web (sin contexto WEBVIEW).';
+					return;
+				}
+
 				probe = new AddressFieldProbe(driver);
 				surface = def.make();
 				const reached = await surface.reach(driver);
