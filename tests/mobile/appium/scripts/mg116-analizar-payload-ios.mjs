@@ -63,8 +63,20 @@ function coordsDe(p) {
 }
 
 function etiquetaDe(p) {
+	// `mainText` va PRIMERO porque es lo que trae el payload de MAGIIS y es lo que el usuario ve en la
+	// lista. Se omitio en la primera version y el analizador cayo al JSON.stringify: en la pantalla del
+	// home no se noto porque ese payload trae ademas `shortName`, pero el de viaje programado no.
 	return (
-		p.shortName ?? p.short_name ?? p.name ?? p.description ?? p.formattedAddress ?? p.formatted_address ?? p.address ?? JSON.stringify(p).slice(0, 60)
+		p.mainText ??
+		p.main_text ??
+		p.shortName ??
+		p.short_name ??
+		p.name ??
+		p.description ??
+		p.formattedAddress ??
+		p.formatted_address ??
+		p.address ??
+		JSON.stringify(p).slice(0, 60)
 	);
 }
 
