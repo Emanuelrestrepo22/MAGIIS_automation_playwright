@@ -27,6 +27,29 @@ const CARRIER_AR = { lat: '-34.5614108', lon: '-58.4590128', label: 'Ciudad de l
 /** El del carrier 1481 UNITY US, para reconocerlo si el cambio no tomo efecto. */
 const CARRIER_US = { lat: '25.9300485', lon: '-80.1262026', label: 'Sunny Isles Beach (carrier 1481 UNITY US)' };
 const SETTLE_MS = 5600;
+/**
+ * Posicion REAL del usuario, para reconocer el caso de EXITO.
+ *
+ * El fix del sesgo se valida asi: vinculado al carrier de EE.UU. y parado en CABA, el sesgo enviado
+ * tiene que ser la ubicacion del DISPOSITIVO y no la del carrier. Sin este dato el script solo sabe
+ * decir "no es ninguno de los carriers conocidos", que no distingue un fix de un valor roto.
+ */
+const USER_POS = {
+	lat: Number(process.env.MG116_USER_LAT ?? '-34.6009'),
+	lon: Number(process.env.MG116_USER_LON ?? '-58.3731'),
+	label: process.env.MG116_USER_LABEL ?? 'Reconquista 661, CABA'
+};
+/** Tolerancia para considerar que el sesgo ES la posicion del usuario. */
+const USER_TOLERANCE_KM = Number(process.env.MG116_USER_TOLERANCE_KM ?? '3');
+
+function distKm(aLat: number, aLon: number, bLat: number, bLon: number): number {
+	const R = 6371;
+	const r = Math.PI / 180;
+	const dLat = (bLat - aLat) * r;
+	const dLon = (bLon - aLon) * r;
+	const x = Math.sin(dLat / 2) ** 2 + Math.cos(aLat * r) * Math.cos(bLat * r) * Math.sin(dLon / 2) ** 2;
+	return 2 * R * Math.asin(Math.sqrt(x));
+}
 
 const log = (m: string): void => console.log(`[ab] ${m}`);
 const line = (): void => log('='.repeat(76));
@@ -168,7 +191,8 @@ async function run(): Promise<void> {
 
 		line();
 		log(`ambiente=${TARGET.env} · package=${TARGET.appPackage}`);
-		log(`se espera el sesgo del carrier ARGENTINO: ${CARRIER_AR.lat} / ${CARRIER_AR.lon}`);
+		log(`criterio del fix: el sesgo debe ser la POSICION DEL DISPOSITIVO (${USER_POS.label}),`);
+		log('               NO la direccion registrada del carrier, incluso vinculado al carrier de EE.UU.');
 		line();
 
 		// ------------------------------------------------------------ 1. el sesgo, desde el home
@@ -242,17 +266,28 @@ async function run(): Promise<void> {
 		const lon = /[?&]longitude=([^&]*)/.exec(todas[0] ?? '')?.[1] ?? '';
 		out.sesgoMedido = { lat, lon };
 		log(`   sesgo medido: latitude=${lat || '(sin dato)'}  longitude=${lon || '(sin dato)'}`);
-		if (lat === CARRIER_AR.lat && lon === CARRIER_AR.lon) {
-			log(`   >>> COINCIDE DIGITO POR DIGITO con ${CARRIER_AR.label}.`);
-			log('       El mecanismo es IDENTICO al de iOS: un solo defecto de diseño, no dos de plataforma.');
-			out.veredicto = 'coincide con el carrier argentino';
-		} else if (lat === CARRIER_US.lat) {
-			log(`   >>> Sigue enviando ${CARRIER_US.label}: el cambio de carrier NO tomo efecto en la app.`);
-			log('       Cerrar sesion y volver a entrar antes de concluir nada.');
-			out.veredicto = 'el cambio de carrier no tomo efecto';
+		const dUser = lat && lon ? distKm(USER_POS.lat, USER_POS.lon, Number(lat), Number(lon)) : null;
+		if (dUser !== null) log(`   distancia del sesgo al usuario (${USER_POS.label}): ${dUser < 1 ? Math.round(dUser * 1000) + ' m' : dUser.toFixed(1) + ' km'}`);
+
+		if (lat === CARRIER_US.lat && lon === CARRIER_US.lon) {
+			log(`   >>> SIGUE ENVIANDO ${CARRIER_US.label}.`);
+			log('       El sesgo continua saliendo de la direccion registrada del carrier: el fix NO esta.');
+			out.veredicto = 'FAIL — sigue usando la direccion del carrier de EE.UU.';
+		} else if (lat === CARRIER_AR.lat && lon === CARRIER_AR.lon) {
+			log(`   >>> Envia ${CARRIER_AR.label}.`);
+			log('       Sigue siendo la direccion de UN carrier, no la del dispositivo. Y si se esperaba');
+			log('       el carrier de EE.UU., ademas el cambio de vinculacion no tomo efecto.');
+			out.veredicto = 'FAIL — usa la direccion del carrier argentino';
+		} else if (dUser !== null && dUser <= USER_TOLERANCE_KM) {
+			log(`   >>> ES LA POSICION DEL DISPOSITIVO (a ${dUser < 1 ? Math.round(dUser * 1000) + ' m' : dUser.toFixed(1) + ' km'} del usuario).`);
+			log('       No coincide con ningun CARRIERPLACE conocido. EL FIX ESTA: el sesgo ya sale del');
+			log('       dispositivo y no del carrier, incluso estando vinculado al carrier de EE.UU.');
+			out.veredicto = 'PASS — el sesgo es la posicion del dispositivo';
 		} else if (lat) {
-			log('   >>> Sesgo DISTINTO de los dos carriers conocidos. Hay que resolver de donde sale.');
-			out.veredicto = 'sesgo inesperado';
+			log(`   >>> Sesgo INESPERADO: no es ninguno de los carriers conocidos ni la posicion del usuario`);
+			log(`       (esta a ${dUser?.toFixed(1)} km de el, y la tolerancia es ${USER_TOLERANCE_KM} km).`);
+			log('       Hay que resolver de donde sale antes de dar un veredicto.');
+			out.veredicto = 'sesgo inesperado — requiere analisis';
 		} else {
 			log('   >>> SIN DATOS: no se capturo ninguna URL con sesgo.');
 			out.veredicto = 'sin datos';
