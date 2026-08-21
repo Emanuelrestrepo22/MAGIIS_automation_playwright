@@ -39,7 +39,11 @@ type Driver = Awaited<ReturnType<typeof remote>>;
 type AppElement = Awaited<ReturnType<Driver['$']>>;
 
 const TARGET = resolveDriverTarget('passenger');
-const OUT_DIR = path.join('evidence', 'prod', 'mg116-smoke');
+// Carpeta POR CORRIDA: el A/B de carrier hace dos mediciones que hay que comparar, y un unico
+// directorio hacia que la segunda sobreescribiera la primera — perdiendo justo la mitad que da
+// sentido a la comparacion. La etiqueta se pasa por MG116_CARRIER_LABEL.
+const SLUG = (process.env.MG116_CARRIER_LABEL ?? 'sin-etiqueta').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const OUT_DIR = path.join('evidence', 'prod', `mg116-smoke-${SLUG}`);
 const SETTLE_MS = 3200;
 
 const log = (m: string): void => console.log(`[smoke] ${m}`);
@@ -80,7 +84,10 @@ function extractPredictions(source: string, excluir: string[] = []): string[] {
 		'Modo Business',
 		'Prueba Fer',
 		'Doctor Dr.',
-		'Dest Fijo'
+		'Dest Fijo',
+		'Airport',
+		'Desti Abierto',
+		'Pru.Fer.Prod'
 	]);
 
 	// El valor del campo ORIGEN vive en su propio EditText y aparece en el arbol como texto: no es
@@ -305,17 +312,21 @@ async function main(): Promise<void> {
 			return;
 		}
 
-		// Barrido del piso de caracteres: cuando aparecen las primeras predicciones. Aserto INDIRECTO
-		// (se ve la lista, no el request) — declarado asi en el reporte.
-		for (const t of ['co', 'cor', 'corr']) {
-			resultados.push(await medirTermino(driver, campo, t, '01-piso'));
+		// Los terminos son configurables para poder repetir la MISMA medicion cambiando una variable
+		// del entorno — que es lo que hace posible el A/B de carrier sin editar codigo.
+		//
+		// ELECCION DE TERMINOS, y por que importa. Los defaults anteriores (`cor`, `corr`, `eze`)
+		// caen todos en la rama de AEROPUERTOS y match por nombre del backend: `cor` devuelve
+		// Cordoba por su codigo IATA, `corr` devuelve aeropuertos en Italia y Australia por nombre.
+		// Ninguno prueba PROXIMIDAD. Para discriminar si el sesgo es el dispositivo hacen falta
+		// terminos que devuelvan CALLES CERCANAS: en UAT, `corri` con 5 caracteres hacia desaparecer
+		// los aeropuertos y devolvia Av. Corrientes a 350 m del usuario.
+		const terminos = (process.env.MG116_TERMS ?? 'corri,reconqu,arenal,corr,eze').split(',').map(t => t.trim()).filter(Boolean);
+		log(`terminos a medir: ${terminos.join(' · ')}`);
+
+		for (const [i, t] of terminos.entries()) {
+			resultados.push(await medirTermino(driver, campo, t, `${String(i + 1).padStart(2, '0')}-termino`));
 		}
-
-		// El caso de orden (TM-727): aserto DIRECTO, el ranking se ve en la lista.
-		resultados.push(await medirTermino(driver, campo, 'corrientes', '02-orden'));
-
-		// Prefijo de aeropuerto con 3 caracteres: la rama IATA del backend.
-		resultados.push(await medirTermino(driver, campo, 'eze', '03-iata'));
 
 		// Dejar el campo como estaba: este smoke no persiste nada.
 		await campo.clearValue().catch(() => undefined);
@@ -331,6 +342,7 @@ async function main(): Promise<void> {
 		ambiente: TARGET.env,
 		paquete: TARGET.appPackage,
 		versionApp,
+		carrier: process.env.MG116_CARRIER_LABEL ?? '(no declarado)',
 		udid: TARGET.udid,
 		limitacion: 'Build de produccion sin WebView depurable: getContexts() = ["NATIVE_APP"]. Sin captura de red, los asertos de request son INMEDIBLES aca. Lo de abajo es lo observable en pantalla.',
 		resultados
