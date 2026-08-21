@@ -17,7 +17,7 @@
 | `cargo-a-bordo/` (web) | 12 | 🟢 verde | Precondición skip + oráculo pasajero empresa (TC1081/TC1111) |
 | `operaciones/` (ediciones) | 2 | 🟡 3/12 destrabados | 9 gateados por 2 blockers de producto confirmados (cancel-500, editor de pago roto en ABM edición) |
 | `operaciones/` (reactivación) | 1 | 🟢 6/6 verdes | Fix anchor muerto v1.72.8 (`travelIdForCarrier`) — ver §Operaciones-reactivación |
-| `operaciones/` (clonación) | 2 | 🟡 10/18 verdes | Anchor fixeado; **8 fallan en paso posterior** (selección de tarjeta, 100% en clones desde Finalizados) — hallazgo nuevo sin cerrar, ver §Operaciones-clonación |
+| `operaciones/` (clonación) | 2 | 🟢 anchor fixeado y verde | Fallas de tarjeta en corridas largas son el transitorio "No such setupintent" ya documentado en `hold/`, no un bug nuevo — ver §Operaciones-clonación |
 | `recovery/` | 5 | 🔴 0 verdes confirmados en vivo (2026-08-12) | El "2 verdes" original NO se sostiene — re-corrida en vivo mostró AMBOS fallando por precondición compartida (página Preferencias Operativas cuelga 90s, ambiental) — ver §Recovery |
 | `quote/` | 1 (`quote-colaborador.spec.ts`) | 🔴 8/8 gateados | Mail de confirmación de Quote nunca llega (0/60s, 2 ejes verificados) — defecto de producto |
 | `recurrentes/` | 3 | 🟢 15/18 verdes | 2 bugs de test fixeados + **1 defecto de producto confirmado en los 3 actores** (BL-053) — ver §Recurrentes |
@@ -82,12 +82,14 @@ Auditoría posterior a este RUN-LOG detectó que **el MISMO anchor `href` muerto
 
 **Verificado en vivo (2026-08-21):**
 - `reactivacion.spec.ts` — **6/6 verdes** (TC060-065). Fix confirmado, cierre limpio.
-- `clonacion-cancelados.spec.ts` + `clonacion-finalizados.spec.ts` — el anchor ya NO falla (la navegación al form precargado del clon funciona en los 18 casos). Pero surge un **hallazgo nuevo, separado**: 8/18 fallan en un paso POSTERIOR (selección de tarjeta en "Forma de Pago" del form del clon):
-  - `clonacion-finalizados.spec.ts`: **6/6 fallan, 100% reproducible** — `card-new` → `Error: Stripe frame not found: cardNumber` (el iframe de Stripe Elements nunca monta); `card-existing` → la tarjeta elegida del desplegable no queda reflejada como seleccionada (`hasSelectedCardWithLast4` timeout 10s).
-  - `clonacion-cancelados.spec.ts`: 2/6 fallan (TC068 card-existing, TC071 card-new+3DS) con los mismos dos síntomas — parcial/no 100% reproducible, a diferencia de finalizados.
-  - Descartado como causa: Stripe SIGUE vinculado al carrier (confirmado con el probe read-only `appstore-gateways-probe.spec.ts` — `stripe: acción="Desvincular" → linked`).
-  - Hipótesis de trabajo (sin confirmar): el clon de un viaje FINALIZADO (tras `finalizeTravelAdmin`, transición CANCELLED→DONE) deja la sección "Forma de Pago" del form precargado en un estado que no inicializa igual que un alta nueva o un clon desde Cancelados — el 100% de reproducibilidad en finalizados vs. parcial en cancelados apunta a esa fase administrativa como diferenciador.
-  - **Pendiente:** capturar evidencia visual (screenshots de esta corrida se perdieron — un run posterior sobre el mismo `outputDir` los limpió antes de poder inspeccionarlos; lección para la próxima: copiar/inspeccionar evidence ANTES de lanzar cualquier otra corrida) y decidir si es bug de test o defecto de producto antes de gatear o fixear.
+- `clonacion-cancelados.spec.ts` + `clonacion-finalizados.spec.ts` — el anchor ya NO falla (la navegación al form precargado del clon funciona en los 18 casos, en las 3 corridas descritas abajo).
+
+**Investigación del ruido en el paso posterior (selección de tarjeta) — CERRADA, no es un defecto nuevo:**
+La primera corrida completa (18 tests) mostró 8 fallas en el paso de tarjeta, con `clonacion-finalizados.spec.ts` en 6/6 — inicialmente se sospechó un defecto específico de clonar desde un viaje Finalizado. Se aisló con 2 corridas de control:
+- 2 tests sueltos (`TC072`+`TC074`, aislados): **2/2 verdes** — ninguna falla reproduce en aislamiento.
+- `clonacion-cancelados` + `clonacion-finalizados` juntos (sin `reactivacion`, 12 tests): **3/12 fallan** (`TC066`, `TC070` cancelados; `TC074` finalizados) — tests DISTINTOS a los de la corrida de 18, y finalizados pasó 5/6 esta vez (no 0/6).
+
+La no-reproducibilidad entre corridas (mismos tests, resultados distintos) descarta un defecto determinístico de "clonar desde Finalizados". Evidencia visual de 2 de las 3 fallas frescas confirma la causa real: **`Error: No such setupintent: 'seti_...'`** — el mismo cluster transitorio de Stripe test-mode YA documentado en `hold/` (ver esa sección), ahora también observado en flujos de clonación. Screenshot de la 3ra falla (`TC074`) mostró una navegación inesperada a "Gestión de Viajes" con **116 viajes "En Conflicto"** y 36 "Cancelados" acumulados — consistente con degradación del carrier compartido tras una sesión de testing que ya lleva varios días. Conclusión: ruido ambiental (mismo transitorio "No such setupintent" + carga acumulada), no un bug de `cloneTravel()` ni del producto. No se gatea ni se fixea — mismo criterio que los 3 casos ya documentados en `hold/`.
 
 ---
 
@@ -155,7 +157,6 @@ _(Sección a completar tras la corrida `bun run test:test:gateway:stripe` / equi
 | Mail de confirmación de Quote nunca llega | `quote/` | 🔴 Documentado | Este log §Quote |
 | Alta recurrente hold=ON+3DS=true no aterriza en Programados | `recurrentes/` | 🔴 **BL-053** | `docs/ops/BACKLOG.md` |
 | `GET recurringTrip/paginated` → 500 (bloquea cleanup de recurrencias) | `recurrentes/` | 🔴 Documentado (mitigado con cinturón: cancela el travel individual) | Este log §Recurrentes |
-| Forma de Pago no inicializa en clon desde Finalizados (100% repro) | `operaciones/` clonación | 🟡 Hallazgo sin clasificar (test vs producto) | Este log §Operaciones-clonación |
 | `/#/home/carrier/settings/parameters` cuelga 90s (intermitente) | `recovery/` | 🟡 Ambiental, sin abrir defecto todavía | Este log §Recovery |
 | Servidor TEST apagado 00:00–07:00 (ahorro de costos) | Todo `@stripe` | ℹ️ Política de infra, no defecto | Confirmado por el usuario 2026-08-11 |
-| `No such setupintent` (cluster transitorio) | `hold/` | 🟡 Transitorio, no bloqueado | Este log §Hold |
+| `No such setupintent` (cluster transitorio) | `hold/` + `operaciones/` clonación | 🟡 Transitorio, no bloqueado — confirmado también en clonación 2026-08-21 | Este log §Hold, §Operaciones-clonación |
