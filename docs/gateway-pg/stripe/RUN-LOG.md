@@ -15,8 +15,10 @@
 | `hold/` | 7 | 🟢 45/49 verdes | 1 fixeado (idempotencia wallet), 3 = transitorio backend documentado (`No such setupintent`) |
 | `contractor/` | 3 | 🟢 verde | Oráculos veraces + re-vinculación Stripe tras interferencia externa |
 | `cargo-a-bordo/` (web) | 12 | 🟢 verde | Precondición skip + oráculo pasajero empresa (TC1081/TC1111) |
-| `operaciones/` | 5 | 🟡 25/28 destrabados | 21 gateados por 2 blockers de producto confirmados (cancel-500, editor de pago roto en ABM edición) |
-| `recovery/` | 5 | 🟡 2 verdes, resto gateado | **4 regresiones de producto v1.72.8 confirmadas** — ver §Recovery |
+| `operaciones/` (ediciones) | 2 | 🟡 3/12 destrabados | 9 gateados por 2 blockers de producto confirmados (cancel-500, editor de pago roto en ABM edición) |
+| `operaciones/` (reactivación) | 1 | 🟢 6/6 verdes | Fix anchor muerto v1.72.8 (`travelIdForCarrier`) — ver §Operaciones-reactivación |
+| `operaciones/` (clonación) | 2 | 🟡 10/18 verdes | Anchor fixeado; **8 fallan en paso posterior** (selección de tarjeta, 100% en clones desde Finalizados) — hallazgo nuevo sin cerrar, ver §Operaciones-clonación |
+| `recovery/` | 5 | 🔴 0 verdes confirmados en vivo (2026-08-12) | El "2 verdes" original NO se sostiene — re-corrida en vivo mostró AMBOS fallando por precondición compartida (página Preferencias Operativas cuelga 90s, ambiental) — ver §Recovery |
 | `quote/` | 1 (`quote-colaborador.spec.ts`) | 🔴 8/8 gateados | Mail de confirmación de Quote nunca llega (0/60s, 2 ejes verificados) — defecto de producto |
 | `recurrentes/` | 3 | 🟢 15/18 verdes | 2 bugs de test fixeados + **1 defecto de producto confirmado en los 3 actores** (BL-053) — ver §Recurrentes |
 | `_parametrized/` + smoke | — | ⏳ pendiente de la corrida final agregada | Ver §Corrida final |
@@ -72,11 +74,30 @@ Precondición de tarjeta convertida de `throw` duro a `test.skip` (mismo criteri
 
 ---
 
+## `operaciones/` — reactivación y clonación (auditoría 2026-08-12)
+
+**Commit:** `4843aec`
+
+Auditoría posterior a este RUN-LOG detectó que **el MISMO anchor `href` muerto por v1.72.8** (ya fixeado en `expectTripRowInCurrentTab` de `recurrentes/`, commit `fcf2679`) también rompía `TravelManagementPage.reactivate()` y `CarrierTravelManagementPage.cloneTravel()` — ambos ACTIVOS, sin skip, no cubiertos por aquel fix. Migrados al mismo patrón (`travelIdForCarrier` + búsqueda con `Enter` explícito, boundary-safe por celda "Código").
+
+**Verificado en vivo (2026-08-21):**
+- `reactivacion.spec.ts` — **6/6 verdes** (TC060-065). Fix confirmado, cierre limpio.
+- `clonacion-cancelados.spec.ts` + `clonacion-finalizados.spec.ts` — el anchor ya NO falla (la navegación al form precargado del clon funciona en los 18 casos). Pero surge un **hallazgo nuevo, separado**: 8/18 fallan en un paso POSTERIOR (selección de tarjeta en "Forma de Pago" del form del clon):
+  - `clonacion-finalizados.spec.ts`: **6/6 fallan, 100% reproducible** — `card-new` → `Error: Stripe frame not found: cardNumber` (el iframe de Stripe Elements nunca monta); `card-existing` → la tarjeta elegida del desplegable no queda reflejada como seleccionada (`hasSelectedCardWithLast4` timeout 10s).
+  - `clonacion-cancelados.spec.ts`: 2/6 fallan (TC068 card-existing, TC071 card-new+3DS) con los mismos dos síntomas — parcial/no 100% reproducible, a diferencia de finalizados.
+  - Descartado como causa: Stripe SIGUE vinculado al carrier (confirmado con el probe read-only `appstore-gateways-probe.spec.ts` — `stripe: acción="Desvincular" → linked`).
+  - Hipótesis de trabajo (sin confirmar): el clon de un viaje FINALIZADO (tras `finalizeTravelAdmin`, transición CANCELLED→DONE) deja la sección "Forma de Pago" del form precargado en un estado que no inicializa igual que un alta nueva o un clon desde Cancelados — el 100% de reproducibilidad en finalizados vs. parcial en cancelados apunta a esa fase administrativa como diferenciador.
+  - **Pendiente:** capturar evidencia visual (screenshots de esta corrida se perdieron — un run posterior sobre el mismo `outputDir` los limpió antes de poder inspeccionarlos; lección para la próxima: copiar/inspeccionar evidence ANTES de lanzar cualquier otra corrida) y decidir si es bug de test o defecto de producto antes de gatear o fixear.
+
+---
+
 ## `recovery/` — 5 specs
 
 **Commit:** `1a8333a` (sin corrida live confirmada en commits posteriores — ver nota)
 
-2 verdes; resto gateado con evidencia. **4 regresiones de producto v1.72.8 confirmadas**, listas para reporte de defecto:
+⚠️ **CORRECCIÓN 2026-08-12:** este log afirmaba "2 verdes" (TC1053, TC1039). Auditoría + re-corrida en vivo (fuera de la ventana de apagado 00-07) mostró **AMBOS fallando** — no por su propia lógica de negocio, sino porque el precondition step compartido (`OperationalPreferencesPage.goto()` → `/#/home/carrier/settings/parameters`, usado para validar "Hold activo") cuelga y agota el timeout de 90s del test. Coincide con el cluster `[parameters-api] GET parameters 403` visto en la corrida de 9.4h de la sección "Corrida final" — parece un TERCER factor ambiental de esta sesión (además del apagado 00:00-07:00 y la acumulación de datos de prueba), específico e intermitente de la página "Preferencias Operativas". No es un bug de código de estos 2 tests; reintentar cuando esa página esté estable.
+
+Resto: gateado con evidencia. **4 regresiones de producto v1.72.8 confirmadas**, listas para reporte de defecto:
 
 1. **Ruta de detalle `/#/home/carrier/travels/{id}` eliminada** — boot completo rebota a `#/`; navegación same-document también pisada por la SPA. Confirmado con evidencia de probe sobre viaje real (68230, fila 3818-W).
 2. **Recovery 3DS sin superficie web** — consecuencia directa de (1): sin ruta de detalle, no hay forma de reintentar el pago recuperable desde el portal web.
@@ -85,7 +106,7 @@ Precondición de tarjeta convertida de `throw` duro a `test.skip` (mismo criteri
 
 Flujo real de dos ventanas de 3DS confirmado en vivo (challenge de validación aprobado → POST `/travels` captura `travelId` → challenge post-envío rechazado → estado NO_AUTORIZADO vía "En Conflicto", no vía excepción).
 
-**Nota:** el helper canónico de recovery (`setupTravelWithFailed3DS`) fue endurecido en una sesión posterior (limpieza BL-050 + `RecoverySteps` delegando en el helper en vez de duplicar el flujo de una ventana) — cambios no commiteados a la fecha de este log; confirmar estado antes de la corrida final.
+**Nota:** el helper canónico de recovery (`setupTravelWithFailed3DS`) fue endurecido y COMMITEADO dentro de `1a8333a` (confirmado por auditoría 2026-08-12 — el working tree está limpio, no quedaron cambios sueltos como este log especulaba originalmente).
 
 ---
 
@@ -134,4 +155,7 @@ _(Sección a completar tras la corrida `bun run test:test:gateway:stripe` / equi
 | Mail de confirmación de Quote nunca llega | `quote/` | 🔴 Documentado | Este log §Quote |
 | Alta recurrente hold=ON+3DS=true no aterriza en Programados | `recurrentes/` | 🔴 **BL-053** | `docs/ops/BACKLOG.md` |
 | `GET recurringTrip/paginated` → 500 (bloquea cleanup de recurrencias) | `recurrentes/` | 🔴 Documentado (mitigado con cinturón: cancela el travel individual) | Este log §Recurrentes |
+| Forma de Pago no inicializa en clon desde Finalizados (100% repro) | `operaciones/` clonación | 🟡 Hallazgo sin clasificar (test vs producto) | Este log §Operaciones-clonación |
+| `/#/home/carrier/settings/parameters` cuelga 90s (intermitente) | `recovery/` | 🟡 Ambiental, sin abrir defecto todavía | Este log §Recovery |
+| Servidor TEST apagado 00:00–07:00 (ahorro de costos) | Todo `@stripe` | ℹ️ Política de infra, no defecto | Confirmado por el usuario 2026-08-11 |
 | `No such setupintent` (cluster transitorio) | `hold/` | 🟡 Transitorio, no bloqueado | Este log §Hold |
