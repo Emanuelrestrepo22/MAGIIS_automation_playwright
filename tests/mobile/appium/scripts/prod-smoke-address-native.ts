@@ -45,7 +45,7 @@ const SETTLE_MS = 3200;
 const log = (m: string): void => console.log(`[smoke] ${m}`);
 
 /** Filas de la lista de predicciones, leidas del arbol nativo en el orden en que se muestran. */
-function extractPredictions(source: string): string[] {
+function extractPredictions(source: string, excluir: string[] = []): string[] {
 	const filas: string[] = [];
 	// Las predicciones se renderizan como nodos con texto por debajo del campo editable. Se toman
 	// los textos "largos" (una direccion nunca es una etiqueta de 2 palabras de menu) y se descartan
@@ -83,9 +83,12 @@ function extractPredictions(source: string): string[] {
 		'Dest Fijo'
 	]);
 
+	// El valor del campo ORIGEN vive en su propio EditText y aparece en el arbol como texto: no es
+	// una prediccion. Se excluye dinamicamente en vez de por lista fija, porque cambia por usuario.
 	for (const m of source.matchAll(/text="([^"]{6,})"/g)) {
 		const t = m[1].trim();
 		if (!t || RUIDO.has(t)) continue;
+		if (excluir.some(e => e && (t === e || t.startsWith(e.slice(0, 24))))) continue;
 		if (!filas.includes(t)) filas.push(t);
 	}
 	return filas;
@@ -104,6 +107,76 @@ async function screenshot(driver: Driver, nombre: string): Promise<string> {
 const MARCAS_ALTA_VIAJE = ['Solo Ida', 'Ida y Vuelta', 'Seleccionar Veh'];
 /** Marcadores de la pantalla de login. Si aparecen, NO se toca ningun campo. */
 const MARCAS_LOGIN = ['Ingresar', 'Olvidaste tu Contrase', 'Bienvenido'];
+
+/**
+ * Cierra el dialogo de permisos del sistema si esta presente. POR ELEMENTO, nunca por coordenada.
+ *
+ * POR QUE EXISTE, y por que NO usa coordenadas — incidente del 2026-08-21. Al actualizar la app a
+ * v2.5.19 Android volvio a pedir el permiso de notificaciones. Se leyeron las coordenadas del boton
+ * "No permitir" de un `uiautomator dump` y se ejecuto un `adb input tap` con ellas. Entre el dump y
+ * el tap el dialogo ya se habia cerrado, asi que esas coordenadas cayeron sobre lo que habia debajo:
+ * el boton "Llamar" de la barra inferior, que INICIO UNA LLAMADA SALIENTE REAL al numero del carrier.
+ * Se corto de inmediato y el registro del dispositivo confirma `duration=0` — sono sin conectarse.
+ *
+ * Un tap por coordenada golpea lo que este ahi. Un tap por elemento falla si el elemento no existe.
+ * Esa es toda la diferencia, y es la razon de que este helper busque el texto en vez de una posicion.
+ *
+ * Se elige NO PERMITIR: no concede capacidades nuevas a una app de produccion y es reversible desde
+ * Ajustes. Nunca se toca "Permitir".
+ */
+async function tocarPorTexto(driver: Driver, texto: string): Promise<boolean> {
+	const el = await driver.$(`//*[@text="${texto}"]`);
+	if (!(await el.isExisting().catch(() => false))) return false;
+	await el.click().catch(() => undefined);
+	await driver.pause(1800);
+	return true;
+}
+
+/**
+ * Atiende los dialogos de permisos del sistema. Cada uno se responde distinto A PROPOSITO.
+ *
+ * NOTIFICACIONES -> "No permitir". La suite no necesita notificaciones, y no se conceden
+ * capacidades nuevas a una app de produccion sin motivo.
+ *
+ * UBICACION -> "Solo esta vez", con precision "Precisa". Aca SI hace falta conceder: el fix que se
+ * esta validando consiste en que el sesgo salga de la posicion del DISPOSITIVO, y sin permiso de
+ * ubicacion la app no tiene esa coordenada — el test no podria medir nada. Se elige la opcion de
+ * una sola vez porque se AUTO-REVOCA al cerrar la app, en vez de dejar un permiso persistente. Y
+ * "Precisa" porque una ubicacion aproximada moveria el sesgo y contaminaria la medicion.
+ *
+ * Se llama antes de cada medicion, no solo al arranque: la actualizacion de la app resetea los
+ * permisos y Android los pide de a uno, apareciendo a mitad de la corrida. La primera version de
+ * este script lo llamaba una sola vez y el segundo dialogo la hizo caer con "0 elements".
+ */
+async function atenderDialogosDePermisos(driver: Driver): Promise<string> {
+	const atendidos: string[] = [];
+
+	for (let ronda = 0; ronda < 4; ronda++) {
+		const fuente = await driver.getPageSource().catch(() => '');
+		if (!fuente.includes('permissioncontroller')) break;
+
+		if (fuente.includes('ubicaci') || fuente.toLowerCase().includes('location')) {
+			// Precision primero: el boton de duracion aplica la precision que este seleccionada.
+			await tocarPorTexto(driver, 'Precisa');
+			const ok = (await tocarPorTexto(driver, 'Solo esta vez')) || (await tocarPorTexto(driver, 'Only this time'));
+			atendidos.push(ok ? 'ubicacion: solo esta vez (precisa)' : 'ubicacion: NO se pudo responder');
+			if (!ok) break;
+			continue;
+		}
+
+		let ok = false;
+		for (const texto of ['No permitir', "Don't allow", 'Deny']) {
+			if (await tocarPorTexto(driver, texto)) {
+				ok = true;
+				atendidos.push(`otro permiso: ${texto}`);
+				break;
+			}
+		}
+		if (!ok) break;
+	}
+
+	return atendidos.length ? atendidos.join(' | ') : 'no habia dialogos de permisos';
+}
 
 /**
  * Verifica en que pantalla esta la app ANTES de tocar cualquier campo.
@@ -159,6 +232,10 @@ function versionInstalada(paquete: string): string {
 
 async function medirTermino(driver: Driver, campo: AppElement, termino: string, etiqueta: string): Promise<{ termino: string; filas: string[]; captura: string }> {
 	log(`termino "${termino}"`);
+	// Los permisos se piden de a uno y aparecen a mitad de la corrida: hay que atenderlos antes de
+	// cada medicion, no solo al arranque.
+	const perm = await atenderDialogosDePermisos(driver);
+	if (perm !== 'no habia dialogos de permisos') log(`   permisos: ${perm}`);
 	await campo.click();
 	await driver.pause(600);
 	await campo.clearValue().catch(() => undefined);
@@ -167,7 +244,10 @@ async function medirTermino(driver: Driver, campo: AppElement, termino: string, 
 	await driver.pause(SETTLE_MS);
 
 	const source = await driver.getPageSource();
-	const filas = extractPredictions(source);
+	// Se lee el ORIGEN para excluirlo: es el otro EditText de la pantalla, no una prediccion.
+	const campos = await driver.$$('//android.widget.EditText');
+	const origen = (await campos.length) > 0 ? await campos[0].getText().catch(() => '') : '';
+	const filas = extractPredictions(source, [origen, termino]);
 	log(`   predicciones leidas: ${filas.length}`);
 	filas.forEach((f, i) => log(`     ${String(i + 1).padStart(2)}. ${f.slice(0, 78)}`));
 
@@ -211,6 +291,7 @@ async function main(): Promise<void> {
 		await driver.pause(9000);
 		await screenshot(driver, '00-pantalla-inicial');
 
+		log(`permisos: ${await atenderDialogosDePermisos(driver)}`);
 		const chequeo = await verificarPantalla(driver);
 		log(`pantalla: ${chequeo.motivo}`);
 		if (!chequeo.ok) {
