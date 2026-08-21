@@ -120,9 +120,11 @@ export class CarrierReactivationSteps extends UiBase {
 
 			await test.step('Reactivar el viaje cancelado desde Gestión de Viajes', async () => {
 				await this.management.goto();
-				// Anclaje por travelId del seed (fix 2026-08-05): sin id, la primera coincidencia por
-				// texto en el carrier compartido podia ser una fila ya-reactivada/ajena (review MEDIUM-4).
-				await this.management.reactivate(scenario.passenger, shortDest, createdId as number);
+				// Anclaje por código WEB del seed (fix 2026-08-05 travelId, migrado 2026-08-12 a
+				// travelIdForCarrier — el href de travelId está muerto desde v1.72.8, confirmado en
+				// vivo): sin ancla, la primera coincidencia por texto en el carrier compartido podia
+				// ser una fila ya-reactivada/ajena (review MEDIUM-4).
+				await this.management.reactivate(scenario.passenger, shortDest, createdId as number, travelIdRef?.travelIdForCarrier ?? undefined);
 			});
 
 			await test.step('Verificar reactivación — navega al despacho/asignación de conductores', async () => {
@@ -156,7 +158,8 @@ export class CarrierReactivationSteps extends UiBase {
 	 */
 	async reactivateSeededCancelledTrip(
 		scenario: Pick<ReactivationScenario, 'passenger' | 'destination'>,
-		seededTravelId?: number
+		seededTravelId?: number,
+		seededTravelIdForCarrier?: number
 	): Promise<void> {
 		const shortDest = scenario.destination.split(',')[0].trim();
 		let reactivatedId: number | null = null;
@@ -164,8 +167,9 @@ export class CarrierReactivationSteps extends UiBase {
 		try {
 			await test.step('Reactivar el viaje cancelado desde Gestión de Viajes', async () => {
 				await this.management.goto();
-				// Anclaje por travelId del seed cuando esta disponible (fix 2026-08-05, MEDIUM-4).
-				await this.management.reactivate(scenario.passenger, shortDest, seededTravelId);
+				// Anclaje por código WEB del seed cuando está disponible (fix 2026-08-05 travelId,
+				// migrado 2026-08-12 a travelIdForCarrier — href muerto desde v1.72.8).
+				await this.management.reactivate(scenario.passenger, shortDest, seededTravelId, seededTravelIdForCarrier);
 			});
 
 			await test.step('Verificar reactivación — navega al despacho/asignación de conductores', async () => {
@@ -222,6 +226,7 @@ export class CarrierReactivationSteps extends UiBase {
 			});
 
 			const seededTravelId = seedRef.travelId;
+			const seededTravelIdForCarrier = seedRef.travelIdForCarrier;
 			await seedRef.dispose();
 			// Verificacion explicita de la PRECONDICION cancelado (2026-08-06): el cleanup interno de
 			// runHoldScenario cancela en silencio (catch) — si el endpoint esta roto (5xx blocker) el
@@ -231,7 +236,7 @@ export class CarrierReactivationSteps extends UiBase {
 				const cancel = await cancelTravelDetailed(this.page, seededTravelId);
 				test.skip(cancel.status >= 500, `BLOQUEADO backend TEST: cancel ${seededTravelId} -> ${cancel.status} ${cancel.body.slice(0, 120)}`);
 			}
-			await this.reactivateSeededCancelledTrip(scenario, seededTravelId ?? undefined);
+			await this.reactivateSeededCancelledTrip(scenario, seededTravelId ?? undefined, seededTravelIdForCarrier ?? undefined);
 		} finally {
 			if (options.hold === 'off') {
 				await test.step('Restaurar hold al final del test', async () => {

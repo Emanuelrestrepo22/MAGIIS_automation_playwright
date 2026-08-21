@@ -87,8 +87,13 @@ export class CarrierTravelManagementPage extends UiBase {
 	 * (área REACT — pendiente reasignar; idmap API-level sin 1:1 con TS-STRIPE-P2-TC060).
 	 */
 	@atc('MG-440', { severity: 'normal', description: 'Reactivar viaje cancelado desde Gestión de Viajes' })
-	async reactivate(passenger: string, destination?: string, travelId?: number): Promise<void> {
-		await this.legacy.reactivate(passenger, destination, travelId);
+	async reactivate(
+		passenger: string,
+		destination?: string,
+		travelId?: number,
+		travelIdForCarrier?: number
+	): Promise<void> {
+		await this.legacy.reactivate(passenger, destination, travelId, travelIdForCarrier);
 	}
 
 	/**
@@ -153,9 +158,18 @@ export class CarrierTravelManagementPage extends UiBase {
 	 *
 	 * @param searchText texto para el buscador de la grilla (aísla la fila; usar destino corto).
 	 * @param from pestaña origen del clonado.
+	 * @param travelId legacy — ancla por `href`, MUERTO desde v1.72.8 (ver `travelIdForCarrier`).
+	 * @param travelIdForCarrier PREFERIDO — ancla por el código WEB visible ("NNNN-W"), mismo fix
+	 *   2026-08-12 que `TravelManagementPage.reactivate()`/`expectTripRowInCurrentTab`. Cuando se
+	 *   provee, se usa como query del buscador (con `Enter` explícito — `fill()` solo es no-op).
 	 */
 	@atc('MG-428', { severity: 'normal', description: 'Clonar viaje desde Gestión de Viajes (form de alta precargado)' })
-	async cloneTravel(searchText: string, from: CloneSourceTab, travelId?: number): Promise<void> {
+	async cloneTravel(
+		searchText: string,
+		from: CloneSourceTab,
+		travelId?: number,
+		travelIdForCarrier?: number
+	): Promise<void> {
 		if (from === 'cancelados') {
 			await this.legacy.openCanceladosTab();
 		} else if (from === 'finalizados') {
@@ -168,26 +182,36 @@ export class CarrierTravelManagementPage extends UiBase {
 		// Bilingüe por la convención BL-048 (el portal puede quedar en EN en sesiones manuales).
 		const search = this.page.getByRole('textbox', { name: /Buscar\.\.\.|Search\.\.\./i }).first();
 		if (await search.count()) {
-			await search.fill(searchText);
+			await search.fill(travelIdForCarrier != null ? String(travelIdForCarrier) : searchText);
+			if (travelIdForCarrier != null) {
+				await search.press('Enter');
+			}
 		}
 
 		// La fila objetivo debe quedar visible tras el filtro (reemplaza el sleep de debounce del
 		// POM legacy por una espera observable — lint `playwright/no-wait-for-timeout`).
-		// ANCLAJE POR travelId cuando el caller lo provee (fix 2026-08-05 — review MEDIUM-4
-		// materializado en reactivacion): el first-match por texto puede tomar una fila ajena en el
-		// carrier compartido; cada fila publica el link de detalle del viaje -> fila deterministica
-		// (selector boundary-safe, review LOW-1).
-		const row = travelId
-			? this.page
-					.locator('tbody tr')
-					.filter({ has: this.page.locator(travelDetailHrefSelector(travelId)) })
-					.first()
-			: this.page.locator('tbody tr').filter({ hasText: searchText }).first();
+		// ANCLAJE (fix 2026-08-05 travelId/href — MUERTO desde v1.72.8 confirmado en vivo 2026-08-11
+		// —, ampliado 2026-08-12 travelIdForCarrier boundary-safe por celda "Código"): el first-match
+		// por texto puede tomar una fila ajena en el carrier compartido.
+		const row =
+			travelIdForCarrier != null
+				? this.page
+						.locator('tbody tr')
+						.filter({ has: this.page.locator('td:first-child').filter({ hasText: `${travelIdForCarrier}-W` }) })
+						.first()
+				: travelId != null
+					? this.page
+							.locator('tbody tr')
+							.filter({ has: this.page.locator(travelDetailHrefSelector(travelId)) })
+							.first()
+					: this.page.locator('tbody tr').filter({ hasText: searchText }).first();
 		await expect(
 			row,
-			travelId
-				? `La fila del viaje ${travelId} debe estar visible en la pestania tras filtrar (anclaje por travelId)`
-				: `La grilla debe publicar una fila que matchee "${searchText}" tras filtrar`
+			travelIdForCarrier != null
+				? `La fila del viaje ${travelIdForCarrier}-W debe estar visible en la pestaña tras filtrar (anclaje por código WEB)`
+				: travelId != null
+					? `La fila del viaje ${travelId} debe estar visible en la pestania tras filtrar (anclaje por travelId)`
+					: `La grilla debe publicar una fila que matchee "${searchText}" tras filtrar`
 		).toBeVisible({ timeout: 15_000 });
 
 		// Botón Clonar de la fila: ícono fa-files-o (FE) con fallback por tooltip title/aria.

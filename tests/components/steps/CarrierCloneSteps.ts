@@ -126,6 +126,7 @@ export class CarrierCloneSteps extends UiBase {
 			// POST /travels — vivo durante el alta del clon, ambos refs capturaban el MISMO id y
 			// el assert de identidad clon≠fuente se auto-derrotaba (12 tests rojos por diseño).
 			const sourceTravelId = seedRef.travelId as number;
+			const sourceTravelIdForCarrier = seedRef.travelIdForCarrier ?? undefined;
 			await seedRef.dispose();
 
 			// Verificacion explicita de la PRECONDICION cancelado + GATE de blocker (2026-08-06): el
@@ -166,7 +167,7 @@ export class CarrierCloneSteps extends UiBase {
 
 			await test.step(`Clonar viaje desde Gestión de Viajes (pestaña ${options.source})`, async () => {
 				await this.management.goto();
-				await this.management.cloneTravel(shortDest, options.source, sourceTravelId);
+				await this.management.cloneTravel(shortDest, options.source, sourceTravelId, sourceTravelIdForCarrier);
 			});
 
 			await test.step('Verificar formulario de alta precargado con los datos del viaje fuente', async () => {

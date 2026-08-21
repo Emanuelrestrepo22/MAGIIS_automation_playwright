@@ -327,33 +327,52 @@ export class TravelManagementPage {
 	 * la fila y botón `Reactivar Viaje` (tooltip → `getByRole('button', { description })`). FE:
 	 * `cloneTravel(travelId)` = API + navegación a `listDriverOnline`.
 	 * Nota: tras filtrar se reactiva la primera coincidencia (el viaje recién cancelado suele ser el más reciente).
+	 *
+	 * `travelIdForCarrier` (opcional, PREFERIDO) ancla por el código WEB visible ("NNNN-W") — mismo
+	 * fix que `expectTripRowInCurrentTab` (2026-08-12): el `travelId`/href está muerto desde v1.72.8
+	 * y el buscador exige `Enter` explícito (`fill()` solo es no-op, confirmado en vivo). `travelId`
+	 * (legacy) se conserva por compatibilidad pero NUNCA matchea en la grilla actual.
 	 */
-	async reactivate(passenger: string, destination?: string, travelId?: number): Promise<void> {
+	async reactivate(
+		passenger: string,
+		destination?: string,
+		travelId?: number,
+		travelIdForCarrier?: number
+	): Promise<void> {
 		await this.openCanceladosTab();
 
 		const search = this.page.getByRole('textbox', { name: 'Buscar...' });
 		if (await search.count()) {
-			await search.fill(destination ?? passenger);
+			await search.fill(travelIdForCarrier != null ? String(travelIdForCarrier) : (destination ?? passenger));
+			if (travelIdForCarrier != null) {
+				await search.press('Enter');
+			}
 			await this.page.waitForTimeout(500); // debounce del filtro de la grilla
 		}
 
-		// ANCLAJE POR travelId (fix 2026-08-05, corrida live TC060..065 — review MEDIUM-4
-		// materializado): la primera coincidencia por texto en el carrier compartido puede ser una
-		// fila YA reactivada (el FE oculta su boton Reactivar, `!item.isReactivated`) o un viaje
-		// ajeno con el mismo destino canonico -> click no-op y la URL nunca navega al despacho.
-		// Cada fila publica el link de detalle del viaje -> con el id del seed la fila objetivo es
-		// deterministica (selector boundary-safe, review LOW-1); sin id (callers legacy) se
-		// conserva el first-match.
-		const anchoredRow = travelId
-			? this.page
-					.locator('tbody tr')
-					.filter({ has: this.page.locator(travelDetailHrefSelector(travelId)) })
-					.first()
-			: null;
+		// ANCLAJE (fix 2026-08-05 travelId, ampliado 2026-08-12 travelIdForCarrier): la primera
+		// coincidencia por texto en el carrier compartido puede ser una fila YA reactivada (el FE
+		// oculta su boton Reactivar, `!item.isReactivated`) o un viaje ajeno con el mismo destino
+		// canonico -> click no-op y la URL nunca navega al despacho. Boundary-safe (celda "Código"
+		// únicamente, mismo criterio que `expectTripRowInCurrentTab`).
+		const anchoredRow =
+			travelIdForCarrier != null
+				? this.page
+						.locator('tbody tr')
+						.filter({ has: this.page.locator('td:first-child').filter({ hasText: `${travelIdForCarrier}-W` }) })
+						.first()
+				: travelId != null
+					? this.page
+							.locator('tbody tr')
+							.filter({ has: this.page.locator(travelDetailHrefSelector(travelId)) })
+							.first()
+					: null;
 		if (anchoredRow) {
 			await expect(
 				anchoredRow,
-				`La fila del viaje ${travelId} debe estar visible en Cancelados (anclaje por travelId)`
+				travelIdForCarrier != null
+					? `La fila del viaje ${travelIdForCarrier}-W debe estar visible en Cancelados (anclaje por código WEB)`
+					: `La fila del viaje ${travelId} debe estar visible en Cancelados (anclaje por travelId)`
 			).toBeVisible({ timeout: 15_000 });
 		}
 
