@@ -14,10 +14,15 @@
  * BL-009 Fase 2 — SoT skeleton. Scripts actuales (`passenger-login-and-dump`,
  * `PassengerNewTripScreen`) migran en Fase 3.
  *
- * Env vars consumidas (por ambiente):
- *   test  → PASSENGER_EMAIL_TEST | PASSENGER_EMAIL   + PASSENGER_PASSWORD_TEST | PASSENGER_PASSWORD
- *   uat   → PASSENGER_EMAIL_UAT  | PASSENGER_EMAIL   + PASSENGER_PASSWORD_UAT  | PASSENGER_PASSWORD
- *   prod  → PASSENGER_EMAIL_PROD | PASSENGER_EMAIL   + PASSENGER_PASSWORD_PROD | PASSENGER_PASSWORD
+ * Env vars consumidas (por ambiente), en orden de preferencia:
+ *   test  → PASSENGER_EMAIL_TEST | USER_PASSENGER_TEST | PASSENGER_EMAIL | USER_PASSENGER
+ *           PASSENGER_PASSWORD_TEST | PASS_PASSENGER_TEST | PASSENGER_PASSWORD | PASS_PASSENGER
+ *   uat   → idem con sufijo UAT
+ *   prod  → idem con sufijo PROD
+ *
+ * Los nombres `USER_PASSENGER` / `PASS_PASSENGER` se aceptan porque asi estan escritas las
+ * credenciales en `.env.uat`, con el mismo patron `USER_<actor>` de `USER_CARRIER` y
+ * `USER_CONTRACTOR`. No colisionan con PAX_WEB (`USER_PAX_*` / `PAX_USER`).
  *
  * Evidencia:
  *   - tests/mobile/appium/scripts/passenger-login-and-dump.ts → PASSENGER_EMAIL / PASSENGER_PASSWORD
@@ -32,13 +37,28 @@ import type { EnvironmentMap, MobileUser } from '../types';
 
 const LABEL = 'passenger (Android app)';
 
+/**
+ * Construye el fixture del pasajero para un ambiente.
+ *
+ * SOBRE LOS ALIAS `USER_PASSENGER` / `PASS_PASSENGER`. Estan en la lista porque es como estan
+ * escritas las credenciales del pasajero en `.env.uat`, con el mismo patron `USER_<actor>` que ya
+ * usan `USER_CARRIER` y `USER_CONTRACTOR` en ese mismo archivo. Antes de agregarlos NADIE en el
+ * codigo leia esos nombres: las credenciales existian y el fixture no las veia, asi que un ambiente
+ * correctamente configurado igual fallaba con "Missing env var". No colisionan con PAX_WEB, que lee
+ * `USER_PAX_*` / `PAX_USER` — son actores distintos.
+ *
+ * EL ORDEN IMPORTA: primero lo especifico por ambiente, despues lo generico. `requireEnv` devuelve
+ * el PRIMER candidato con valor y trata "" como ausente, asi que una clave declarada vacia no tapa
+ * a la siguiente de la lista — que es exactamente el caso de `.env.uat`, donde `PASSENGER_EMAIL`
+ * esta declarada vacia y `USER_PASSENGER` tiene el valor.
+ */
 function buildPassenger(envSuffix: 'TEST' | 'UAT' | 'PROD', environment: MobileUser['environment']): MobileUser {
   const emailEnv = lazyEnv(
-    [`PASSENGER_EMAIL_${envSuffix}`, 'PASSENGER_EMAIL'],
+    [`PASSENGER_EMAIL_${envSuffix}`, `USER_PASSENGER_${envSuffix}`, 'PASSENGER_EMAIL', 'USER_PASSENGER'],
     `${LABEL} [${environment}] email`,
   );
   const passEnv = lazyEnv(
-    [`PASSENGER_PASSWORD_${envSuffix}`, 'PASSENGER_PASSWORD'],
+    [`PASSENGER_PASSWORD_${envSuffix}`, `PASS_PASSENGER_${envSuffix}`, 'PASSENGER_PASSWORD', 'PASS_PASSENGER'],
     `${LABEL} [${environment}] password`,
   );
 

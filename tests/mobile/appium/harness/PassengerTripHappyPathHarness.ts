@@ -1,6 +1,11 @@
 import type { AppiumDriver } from '../base/AppiumSessionBase';
 import type { MobileActorConfig } from '../config/appiumRuntime';
 import type { PassengerProfileMode } from '../../../features/gateway-pg/contracts/gateway-pg.types';
+// Import relativo y al archivo `index` explicito, no al directorio: estos scripts corren bajo
+// `ts-node/esm` crudo (no hay tsconfig-paths ni tsx instalados), asi que los alias `@fixtures/*` de
+// tsconfig NO resuelven en runtime, y un import de DIRECTORIO depende de un flag que no todos los
+// runners pasan.
+import { PASSENGER_APP_USER, getCurrentUserEnvironment } from '../../../fixtures/users/index';
 import { PassengerHomeScreen } from '../passenger/PassengerHomeScreen';
 import { PassengerNewTripScreen } from '../passenger/PassengerNewTripScreen';
 import { PassengerTripStatusScreen } from '../passenger/PassengerTripStatusScreen';
@@ -38,8 +43,22 @@ const DEFAULT_TIMEOUTS_MS = {
 	payment: 120_000
 } as const;
 
-const DEFAULT_PASSENGER_EMAIL = process.env.PASSENGER_EMAIL ?? 'emanuel.restrepo@yopmail.com';
-const DEFAULT_PASSENGER_PASSWORD = process.env.PASSENGER_PASSWORD ?? '123';
+/*
+ * Las credenciales NO viven aca. Salen de `PASSENGER_APP_USER`, que es el SoT declarado de las
+ * credenciales de login del pasajero (`tests/fixtures/users/mobile/passenger.ts`).
+ *
+ * QUE HABIA ANTES, y por que era un defecto y no un detalle de estilo:
+ *
+ *   const DEFAULT_PASSENGER_EMAIL = process.env.PASSENGER_EMAIL ?? '<un email del ambiente test>';
+ *   const DEFAULT_PASSENGER_PASSWORD = process.env.PASSENGER_PASSWORD ?? '<una password trivial>';
+ *
+ * 1. Una password commiteada en el repo, por trivial que sea.
+ * 2. Y el dano mas concreto: TAPABA UN ERROR DE CONFIGURACION. `??` solo cae al fallback con
+ *    null/undefined, asi que una variable SIN DEFINIR hacia que el harness intentara silenciosamente
+ *    la cuenta del ambiente TEST contra UAT — un intento de login con la cuenta equivocada
+ *    disfrazado de default que funciona. El fixture, en cambio, normaliza "" a ausente y lanza
+ *    nombrando la variable exacta y el ENV activo.
+ */
 
 export class PassengerTripHappyPathHarness {
 	private homeScreen: PassengerHomeScreen;
@@ -343,15 +362,17 @@ export class PassengerTripHappyPathHarness {
 		this.statusScreen = new PassengerTripStatusScreen(this.config, driver);
 	}
 
+	/**
+	 * Credenciales del pasajero, desde el fixture canonico y por ambiente activo.
+	 *
+	 * No hay chequeo de vacio ni throw propio: los getters del fixture ya normalizan "" a ausente y
+	 * lanzan un mensaje MEJOR que el que habia aca — nombra la variable exacta que falta, sus
+	 * alternativas y el ENV activo. Duplicar la validacion solo daria dos mensajes distintos para la
+	 * misma causa, y el menos informativo ganaria por llegar primero.
+	 */
 	private getLoginCredentials(): { email: string; password: string } {
-		const email = DEFAULT_PASSENGER_EMAIL.trim();
-		const password = DEFAULT_PASSENGER_PASSWORD.trim();
-
-		if (!email || !password) {
-			throw new Error('Passenger login credentials are missing. Set PASSENGER_EMAIL and PASSENGER_PASSWORD.');
-		}
-
-		return { email, password };
+		const user = PASSENGER_APP_USER[getCurrentUserEnvironment()];
+		return { email: user.email, password: user.password };
 	}
 
 	private isLoginUrl(url: string): boolean {

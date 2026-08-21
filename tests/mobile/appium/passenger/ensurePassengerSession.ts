@@ -16,14 +16,20 @@
  * estado explicito y el llamador decide. Un fallo de login NO es un defecto del producto y nunca
  * debe convertirse en un test rojo — el spec lo traduce a superficie inalcanzable con motivo.
  *
- * NOTA DE DUPLICACION, deliberada. `PassengerTripHappyPathHarness` ya resuelve esto para su propio
- * flujo, con metodos privados. No se refactorizo ese harness para compartir codigo: funciona, lo usan
- * varios scripts, y tocarlo a mitad de una campania de release es riesgo sin beneficio inmediato.
- * Este modulo es la version compartible; si el harness se toca por otro motivo, deberia adoptarlo.
- * A diferencia del harness, ACA NO HAY CREDENCIALES POR DEFECTO EN EL CODIGO.
+ * QUE SE COMPARTE CON EL HARNESS Y QUE NO. `PassengerTripHappyPathHarness` resuelve el mismo
+ * problema para su propio flujo con metodos privados. Hoy los dos leen las credenciales del MISMO
+ * SoT (`PASSENGER_APP_USER`), asi que no puede haber divergencia en esa parte. Lo que sigue
+ * duplicado es la LOGICA de deteccion y submit del login; no se unifico porque el harness funciona,
+ * lo usan varios scripts, y refactorizarlo a mitad de una campania de release es riesgo sin
+ * beneficio inmediato. Si el harness se toca por otro motivo, deberia adoptar este modulo.
+ *
+ * Las credenciales NO se leen de `process.env` aca, y no hay defaults en el codigo.
  */
 
 import type { remote } from 'webdriverio';
+// Relativo y al `index` explicito: los runners Appium corren bajo `ts-node/esm` crudo, donde los
+// alias de tsconfig no resuelven y un import de directorio depende de un flag no universal.
+import { PASSENGER_APP_USER, getCurrentUserEnvironment } from '../../../fixtures/users/index';
 
 type Driver = Awaited<ReturnType<typeof remote>>;
 
@@ -75,14 +81,24 @@ export async function ensurePassengerSession(driver: Driver): Promise<SessionOut
 	const modal = await closeExpiredModalIfPresent(driver);
 	if (modal === 'modal-cerrado') await driver.pause(1200);
 
-	// Credenciales SOLO del entorno. Un default en el codigo seria un secreto en el repo, y ademas
-	// haria que una variable mal escrita se vea como "credenciales incorrectas" en vez de "faltan".
-	const email = (process.env.PASSENGER_EMAIL ?? '').trim();
-	const password = (process.env.PASSENGER_PASSWORD ?? '').trim();
-	if (!email || !password) {
+	// Credenciales desde el fixture canonico, NO leyendo process.env aca. La primera version de este
+	// modulo leia el entorno por su cuenta, y eso creaba un SEGUNDO lector de credenciales que podia
+	// divergir del SoT: el fixture acepta nombres por ambiente (`PASSENGER_EMAIL_UAT`) y los alias
+	// `USER_PASSENGER` / `PASS_PASSENGER` que usa `.env.uat`, y un lector propio no veia ninguno de
+	// esos. Se arreglaba el harness y se dejaba el mismo defecto aca.
+	//
+	// El fixture LANZA cuando falta la variable; aca eso se traduce a un estado, no a una excepcion,
+	// porque un problema de sesion no debe pintar un test de rojo.
+	let email: string;
+	let password: string;
+	try {
+		const user = PASSENGER_APP_USER[getCurrentUserEnvironment()];
+		email = user.email;
+		password = user.password;
+	} catch (e) {
 		return {
 			status: 'sin-credenciales',
-			detalle: `la app cayo en login (modal: ${modal}) y no hay PASSENGER_EMAIL / PASSENGER_PASSWORD en el entorno para recuperarla`
+			detalle: `la app cayo en login (modal: ${modal}) y no hay credenciales para recuperarla — ${(e as Error).message}`
 		};
 	}
 
