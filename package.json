@@ -99,7 +99,9 @@
     "test:uat:mg116:address-guards": "cross-env ENV=uat APPIUM_SERVER_URL=http://localhost:4723 npx playwright test tests/mobile/appium/passenger/specs/pax-address-surfaces.spec.ts --project=chromium --workers=1",
     "test:uat:mg116:behaviors": "cross-env ENV=uat APPIUM_SERVER_URL=http://localhost:4723 npx playwright test tests/mobile/appium/passenger/specs/pax-address-behaviors.spec.ts --project=chromium --workers=1",
     "test:uat:mg116:all": "cross-env ENV=uat APPIUM_SERVER_URL=http://localhost:4723 ALLURE=1 npx playwright test tests/mobile/appium/passenger/specs/pax-address-behaviors.spec.ts tests/mobile/appium/passenger/specs/pax-address-surfaces.spec.ts --project=chromium --workers=1",
-    "test:uat:mg117:address-guards": "cross-env ENV=uat APPIUM_SERVER_URL=http://localhost:4723 npx playwright test tests/mobile/appium/driver/specs/driver-address-surfaces.spec.ts --project=chromium --workers=1"
+    "test:uat:mg117:address-guards": "cross-env ENV=uat APPIUM_SERVER_URL=http://localhost:4723 npx playwright test tests/mobile/appium/driver/specs/driver-address-surfaces.spec.ts --project=chromium --workers=1",
+    "test:uat:mg116:api": "cross-env ENV=uat playwright test --config=playwright.mg116-api.config.ts",
+    "test:test:mg116:api": "cross-env ENV=test playwright test --config=playwright.mg116-api.config.ts"
   },
   "keywords": [
     "playwright",
