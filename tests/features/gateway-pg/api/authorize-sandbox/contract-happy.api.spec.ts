@@ -25,7 +25,7 @@
 
 import { test, expect } from '@TestFixture';
 import { AUTHORIZE_CARDS } from '@fixtures/gateways/authorize/card-policy';
-import { AuthorizeSandboxApi, hasAuthorizeCredentials } from '@api/AuthorizeSandboxApi';
+import { AuthorizeSandboxApi, describeAuthorizeFailure, hasAuthorizeCredentials } from '@api/AuthorizeSandboxApi';
 import type { AuthorizeApiResponse } from '@schemas/authorize.types';
 import { AUTHORIZE_CONTRACT_XRAY_KEYS } from '@features/gateway-pg/data/xray-keys';
 import { expectEchoCodeOrSkip } from './sandbox-echo.helpers';
@@ -45,7 +45,7 @@ test.describe('[BL-036][API] Authorize.net sandbox — Happy paths (Response Cod
 				refId: `bl-036-happy-visa-${Date.now()}`
 			});
 
-			expect(response.messages.resultCode).toBe('Ok');
+			expect(response.messages.resultCode, describeAuthorizeFailure(response)).toBe('Ok');
 			expect(response.transactionResponse?.responseCode).toBe('1');
 			expect(response.transactionResponse?.authCode).toBeTruthy();
 			expect(response.transactionResponse?.transId).toBeTruthy();
@@ -65,7 +65,7 @@ test.describe('[BL-036][API] Authorize.net sandbox — Happy paths (Response Cod
 				refId: `bl-036-happy-mc-${Date.now()}`
 			});
 
-			expect(response.messages.resultCode).toBe('Ok');
+			expect(response.messages.resultCode, describeAuthorizeFailure(response)).toBe('Ok');
 			expect(response.transactionResponse?.responseCode).toBe('1');
 			expect(response.transactionResponse?.accountType).toBe('MasterCard');
 		}
@@ -83,7 +83,7 @@ test.describe('[BL-036][API] Authorize.net sandbox — Happy paths (Response Cod
 				refId: `bl-036-happy-amex-${Date.now()}`
 			});
 
-			expect(response.messages.resultCode).toBe('Ok');
+			expect(response.messages.resultCode, describeAuthorizeFailure(response)).toBe('Ok');
 			expect(response.transactionResponse?.responseCode).toBe('1');
 			expect(response.transactionResponse?.accountType).toBe('AmericanExpress');
 		}

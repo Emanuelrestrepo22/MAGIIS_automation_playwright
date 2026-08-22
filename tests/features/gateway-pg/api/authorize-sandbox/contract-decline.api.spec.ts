@@ -22,7 +22,7 @@
 
 import { test, expect } from '@TestFixture';
 import { AUTHORIZE_CARDS } from '@fixtures/gateways/authorize/card-policy';
-import { AuthorizeSandboxApi, hasAuthorizeCredentials } from '@api/AuthorizeSandboxApi';
+import { AuthorizeSandboxApi, describeAuthorizeFailure, hasAuthorizeCredentials } from '@api/AuthorizeSandboxApi';
 import type { AuthorizeApiResponse } from '@schemas/authorize.types';
 import { AUTHORIZE_CONTRACT_XRAY_KEYS } from '@features/gateway-pg/data/xray-keys';
 import { assertAuthorizeAccountMeasuresRealAuthorizations } from '@features/gateway-pg/helpers/authorize-account-guard';
@@ -45,13 +45,20 @@ test.describe('[BL-036][API] Authorize.net sandbox — Declines (Response Code 2
 
 			// resultCode puede ser "Ok" porque el request fue procesado correctamente,
 			// pero el transactionResponse.responseCode = "2" indica decline.
-			expect(response.messages.resultCode).toBe('Ok');
+			expect(response.messages.resultCode, describeAuthorizeFailure(response)).toBe('Ok');
 			expect(response.transactionResponse?.responseCode).toBe('2');
 
-			// La transacción declinada normalmente NO devuelve authCode válido.
-			// transId puede o no estar presente según versión del sandbox.
-			const messages = response.transactionResponse?.messages ?? [];
-			expect(messages.length).toBeGreaterThan(0);
+			// El decline debe venir CON MOTIVO legible. Authorize lo publica en `errors[]`, NO en
+			// `messages[]` (medido en vivo 2026-08-21, BL-049): un RC 2 devuelve
+			// `errors: [{ errorCode: '2', errorText: 'This transaction has been declined.' }]` y
+			// `messages` vacío. El assert anterior exigía `messages.length > 0` y fallaba por esa
+			// suposición, no porque faltara el motivo. Se aceptan ambas fuentes (el propio sandbox
+			// varía según versión) sin relajar la exigencia de que el motivo exista.
+			const reasons = [
+				...(response.transactionResponse?.messages ?? []).map(m => `[${m.code}] ${m.description}`),
+				...(response.transactionResponse?.errors ?? []).map(e => `[${e.errorCode}] ${e.errorText}`)
+			];
+			expect(reasons.length, `el decline debe informar un motivo (messages[] o errors[]) — ${describeAuthorizeFailure(response)}`).toBeGreaterThan(0);
 		}
 	);
 });
