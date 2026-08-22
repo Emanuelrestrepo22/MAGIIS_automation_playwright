@@ -21,7 +21,8 @@
 | `recovery/` | 5 | 🔴 0 verdes confirmados en vivo (2026-08-12) | El "2 verdes" original NO se sostiene — re-corrida en vivo mostró AMBOS fallando por precondición compartida (página Preferencias Operativas cuelga 90s, ambiental) — ver §Recovery |
 | `quote/` | 1 (`quote-colaborador.spec.ts`) | 🔴 8/8 gateados | Mail de confirmación de Quote nunca llega (0/60s, 2 ejes verificados) — defecto de producto |
 | `recurrentes/` | 3 | 🟢 15/18 verdes | 2 bugs de test fixeados + **1 defecto de producto confirmado en los 3 actores** (BL-053) — ver §Recurrentes |
-| `_parametrized/` + smoke | — | ⏳ pendiente de la corrida final agregada | Ver §Corrida final |
+| `_parametrized/` (GATEWAYS=stripe) | 4 | 🟢 24/24 verdes | Incluye 3 specs unit de consistencia + piloto BL-028 |
+| smoke (project) | 14 | 🟢 Stripe en verde | 1 bug real fixeado (TC1042, race del listener); 6 fallos son de MP/Authorize por exclusividad de pasarela — ver §smoke |
 
 ---
 
@@ -140,9 +141,45 @@ Primera corrida en vivo de los 3 actores de la matriz (App Pax, Colaborador, Emp
 
 ---
 
+## `_parametrized/` + smoke (2026-08-21) — última fila pendiente, cerrada
+
+**Commit:** `82d7549`
+
+Ejecutados en dos bloques separados a propósito (una corrida monolítica se degrada — ver §Corrida final).
+
+### Bloque 1 — `_parametrized/` con `GATEWAYS=stripe`
+
+**24/24 verdes** (4 archivos, 1.6 min). Incluye los 3 specs `.unit.spec.ts` de consistencia (`adapters-consistency`, `authorize-account-guard`, `ebiz-cards-fidelity`) más el piloto live de BL-028 (`hold-happy-no3ds.parametrized.spec.ts`, `TS-STRIPE-TC1049`). Cierre limpio, sin hallazgos.
+
+### Bloque 2 — project `smoke`
+
+38 tests: **26 passed · 4 skipped · 8 failed** (47 min). Los 8 fallos se separan en dos grupos de naturaleza distinta:
+
+**a) 1 bug de test REAL — fixeado y verificado.** `TS-STRIPE-TC1042` (carrier colaborador hold OFF): el assert de `travelId` era **síncrono** y corría antes de que el handler async de `captureCreatedTravelId` resolviera. Probado por el orden del log — el test falló diciendo "travelId es null" y el `[travel-cleanup] Capturado travelId=69613` se emitió igual: el viaje **sí** se había creado. Migrado a `expect.poll`, re-verificado en verde.
+
+> Esto **corrige un supuesto** del fix hermano de `contractor/` (commit `8383f7b`), que anotaba: *"el portal carrier NO lo sufre porque navega a /travels/{id} con más pasos antes del assert"*. Es falso: la ventana del carrier es más chica, no inexistente. El mismo patrón se aplicó preventivamente a los otros dos asserts síncronos de `travelId` que quedaban (`CarrierCloneSteps` del clon, `CarrierEditVariantsSteps` del seed programado).
+>
+> **Patrón recurrente de esta sesión, ya la tercera vez:** un fix correcto aplicado a un consumidor y no a sus hermanos (antes: `expectTripRowInCurrentTab` vs `reactivate`/`cloneTravel`). Al arreglar algo en un Steps/POM, buscar los hermanos con `grep` del mismo patrón antes de cerrar.
+
+**b) 7 fallos que NO son bugs de test.**
+- **2 de Stripe contractor** (`TC001`, `TC002`): no reproducen en aislamiento — `TC001` pasó solo (1.8 min), y entre corridas el fallo se movió de test *y* de causa (validación de tarjeta rechazada → tipo de servicio ausente). Contaminación entre tests / degradación del ambiente, no código. Contribuyente identificado: `[card-cleanup] DELETE card <id> failed: 500 — skipping` ×3 en la corrida — cuando la limpieza de wallet falla, la tarjeta queda vinculada y el alta `card-new` puede ser rechazada por duplicado (misma familia que BL-050).
+- **5 de MercadoPago + 1 de Authorize**: fallan porque esas pasarelas **no están vinculadas** al carrier (probe read-only: `stripe → linked`, `mercado-pago → No disponible en tu región`, `authorize → No Disponible`). Fallan *correctamente* dado el estado del ambiente.
+
+### Hallazgo estructural del project `smoke`
+
+El project `smoke` mezcla tests de las **4 pasarelas**, pero MAGIIS solo admite **una activa por carrier**. Consecuencia: **el smoke no puede pasar entero nunca** — 6 de sus 38 tests están garantizados a fallar sea cual sea la pasarela vinculada. Hoy eso obliga a leer el rojo del smoke a mano para separar "falla porque su pasarela no está activa" de "falla de verdad".
+
+No se cambió nada al respecto: la opción de fondo (gatear cada test por la pasarela activa, reusando `assertActiveGatewayInDb` de `gateway-identity-guard.ts`, vs. filtrar el smoke por pasarela) es una decisión de diseño del suite. **Anotado para su propio BL.**
+
+**Veredicto Stripe:** con el fix de `TC1042`, todos los tests de Stripe del smoke pasan.
+
+---
+
 ## Corrida final (`@stripe` completo)
 
-_(Sección a completar tras la corrida `bun run test:test:gateway:stripe` / equivalente sobre el estado final de la rama — pendiente al momento de escribir este log.)_
+No se ejecutó una corrida monolítica final, **por decisión fundamentada**: el intento de 2026-08-11 corrió **9.4 h** y terminó en 164 failed / 95 passed, pero 112 de esos 164 (68 %) fueron un solo fallo en cascada — el server TEST se apaga 00:00–07:00 por ahorro de costos y la corrida cruzó la ventana. El resto se explicó por acumulación de datos en el carrier compartido (116 viajes "En Conflicto" al final) y por el transitorio `No such setupintent`.
+
+La evidencia válida de esta iteración son las **corridas por grupo**, cada una verificada en vivo y con su fix confirmado — que es lo que documentan las secciones anteriores. Para una corrida agregada futura: partirla en bloques que no cruzen medianoche y limpiar el carrier antes.
 
 ---
 
@@ -160,3 +197,5 @@ _(Sección a completar tras la corrida `bun run test:test:gateway:stripe` / equi
 | `/#/home/carrier/settings/parameters` cuelga 90s (intermitente) | `recovery/` | 🟡 Ambiental, sin abrir defecto todavía | Este log §Recovery |
 | Servidor TEST apagado 00:00–07:00 (ahorro de costos) | Todo `@stripe` | ℹ️ Política de infra, no defecto | Confirmado por el usuario 2026-08-11 |
 | `No such setupintent` (cluster transitorio) | `hold/` + `operaciones/` clonación | 🟡 Transitorio, no bloqueado — confirmado también en clonación 2026-08-21 | Este log §Hold, §Operaciones-clonación |
+| `DELETE` de tarjeta del wallet → 500 (rompe la limpieza de idempotencia) | `contractor/`, clonación | 🟡 Contribuyente de intermitencia en altas `card-new` | Este log §smoke (b) |
+| El project `smoke` mezcla las 4 pasarelas y solo una puede estar activa | smoke | 🟡 Hallazgo de diseño — 6/38 fallan siempre | Este log §Hallazgo estructural |
