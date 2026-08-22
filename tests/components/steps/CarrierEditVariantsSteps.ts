@@ -160,7 +160,16 @@ export class CarrierEditVariantsSteps extends UiBase {
 			await waitForTravelCreation(this.page);
 		});
 
-		expect(travelIdRef.travelId, 'POST /travels debe haber capturado el travelId del viaje programado').not.toBeNull();
+		// `expect.poll`, NO assert síncrono: el handler de `captureCreatedTravelId` es async y puede
+		// resolver después del assert (race confirmada en vivo 2026-08-21 sobre `CarrierHoldSteps`,
+		// donde el log mostró el travelId capturado y el assert falló igual). Preventivo acá: mismo
+		// patrón — assert de travelId inmediatamente después de `waitForTravelCreation`.
+		await expect
+			.poll(() => travelIdRef.travelId ?? null, {
+				message: 'POST /travels debe haber capturado el travelId del viaje programado',
+				timeout: 10_000
+			})
+			.not.toBeNull();
 		return travelIdRef;
 	}
 

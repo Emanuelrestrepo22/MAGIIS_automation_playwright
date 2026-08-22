@@ -407,7 +407,22 @@ export class CarrierHoldSteps extends UiBase {
 			}
 
 			if (trackTravelId) {
-				expect(travelIdRef?.travelId, 'POST /travels debe haber capturado travelId').not.toBeNull();
+				// `expect.poll`, NO assert síncrono (fix 2026-08-21, corrida smoke TC1042): el handler
+				// de `captureCreatedTravelId` es async (`page.on('response')` + `response.json()`) y
+				// puede resolver DESPUÉS del assert. Confirmado por el orden del log: el test falló
+				// diciendo "travelId es null" y el `[travel-cleanup] Capturado travelId=69613` salió
+				// igual — el viaje SÍ se había creado.
+				//
+				// CORRIGE un supuesto previo: al arreglar este mismo race en `ContractorHoldSteps`
+				// (2026-08-07) se anotó que "el portal carrier NO lo sufre porque navega a
+				// /travels/{id} con más pasos antes del assert". Es falso: la ventana del carrier es
+				// más chica, no inexistente, y con el portal cargado se pierde igual.
+				await expect
+					.poll(() => travelIdRef?.travelId ?? null, {
+						message: 'POST /travels debe haber capturado travelId',
+						timeout: 10_000
+					})
+					.not.toBeNull();
 			}
 
 			await test.step('Validar viaje en gestión — columna Por Asignar', async () => {

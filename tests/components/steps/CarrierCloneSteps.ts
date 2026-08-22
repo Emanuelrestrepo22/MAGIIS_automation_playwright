@@ -234,7 +234,17 @@ export class CarrierCloneSteps extends UiBase {
 				).toBe(true);
 			}
 
-			expect(cloneRef.travelId, 'POST /travels del clon debe haber capturado travelId').not.toBeNull();
+			// `expect.poll`, NO assert síncrono: el handler de `captureCreatedTravelId` es async y
+			// puede resolver después del assert (race confirmada en vivo 2026-08-21 sobre
+			// `CarrierHoldSteps`, donde el log mostró el travelId capturado y el assert falló igual).
+			// Preventivo acá: mismo patrón — assert de travelId post-submit del clon.
+			await expect
+				.poll(() => cloneRef?.travelId ?? null, {
+					message: 'POST /travels del clon debe haber capturado travelId',
+					timeout: 10_000
+				})
+				.not.toBeNull();
+			// La identidad clon≠fuente se evalúa DESPUÉS del poll, con el valor ya establecido.
 			expect(cloneRef.travelId, 'El clon debe ser un viaje NUEVO (id distinto del fuente)').not.toBe(sourceTravelId);
 
 			await test.step('Validar viaje clonado en gestión — columna Por Asignar', async () => {
