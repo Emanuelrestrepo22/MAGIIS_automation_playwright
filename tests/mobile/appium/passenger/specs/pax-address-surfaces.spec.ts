@@ -239,10 +239,48 @@ test.describe('[MG-116] Guards de los campos de dirección — App PAX', () => {
 	});
 
 	test('[TM-727] Las direcciones locales de cache se rankean por encima de aeropuertos lejanos', { annotation: [{ type: 'tms', description: 'TM-727' }], tag: ['@regression', '@mg116'] }, async () => {
-		const { driver } = await newSession();
+		const { driver, webview } = await newSession();
 		try {
-			const url = (await driver.execute(() => window.location.href)) as string;
-			test.skip(!/HomePage/i.test(url), 'La app no esta en el home: guard no ejercido.');
+			// SE CONSTRUYE la precondicion, no se asume. Antes esto era
+			//   test.skip(!/HomePage/i.test(url), 'La app no esta en el home')
+			// y el caso se rendia por el ESTADO QUE DEJARON los tests anteriores: este guard corre
+			// despues de 30+ tests que dejan la app tres pantallas adentro (perfil, viaje programado,
+			// billetera), asi que el skip era casi seguro y el caso nunca se medía.
+			//
+			// La navegacion se hace ACA, con el driver que ya tiene el contexto WEBVIEW activo desde
+			// `newSession()`. NO se reusa `PassengerNewTripScreen.openNewTrip()`: ese helper esta
+			// pensado para arrancar desde cero y llama `switchToWebView()` — es decir `getContexts()`
+			// mas `switchContext()` — en CADA uno de sus dos chequeos, seis intentos seguidos. Sobre un
+			// contexto ya establecido ese re-switch repetido deja a chromedriver enganchado a un target
+			// que no responde, y el helper agota sus timeouts sin avanzar: medido el 2026-08-24, 160 s
+			// consumidos para terminar reportando que no llego al home cuando la app SI estaba en
+			// `/navigator/HomePage` con el ancla "solo ida" visible en 5 elementos.
+			//
+			// El ancla es doble a proposito: la URL sola no alcanza porque cambia antes de que Ionic
+			// termine de montar el DOM.
+			const enHomeAhora = async (): Promise<boolean> => {
+				const u = (await driver.execute(() => window.location.href).catch(() => '')) as string;
+				if (!/HomePage/i.test(u)) return false;
+				return (await driver
+					.execute(() => {
+						const vis = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
+						return Array.from(document.querySelectorAll('ion-segment-button, ion-label, span, div'))
+							.filter(vis)
+							.some(e => (e.textContent ?? '').toLowerCase().includes('solo ida'));
+					})
+					.catch(() => false)) as boolean;
+			};
+
+			let enHome = await enHomeAhora();
+			for (let intento = 0; intento < 4 && !enHome; intento++) {
+				// Tab "Inicio" si esta visible; si no (sub-pagina sin bottom-nav), back nativo de Android.
+				const tapeoInicio = await tapNativeByCss(driver, webview, 'ion-tab-button, a, button, ion-item', 'inicio');
+				if (!tapeoInicio) await driver.back().catch(() => undefined);
+				await driver.pause(1500);
+				enHome = await enHomeAhora();
+			}
+			// El skip NO desaparece: si navegar falla de verdad, el caso sigue sin ejercerse y lo dice.
+			test.skip(!enHome, 'No se pudo llevar la app al home tras 4 intentos: guard no ejercido.');
 
 			// Capturar el CUERPO de la respuesta por fetch y XHR (el request puede salir por cualquiera).
 			await driver.execute(`
