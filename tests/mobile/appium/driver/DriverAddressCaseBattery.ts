@@ -62,11 +62,18 @@ type Row = {
 type Entry = { url: string; status?: number; startedAt?: string; responseBody?: string; error?: string };
 
 const AUTOCOMPLETE = 'places/autocomplete';
+const DEBOUNCE_TARGET_MS = 300;
 const log = (m: string): void => console.log(`[driver-casos] ${m}`);
 
 function param(url: string, name: string): string {
 	const m = new RegExp(`[?&]${name}=([^&]*)`).exec(url);
 	return m ? decodeURIComponent(m[1]) : '';
+}
+
+function toEpochMs(iso: string | undefined): number | null {
+	if (!iso) return null;
+	const ms = Date.parse(iso);
+	return Number.isNaN(ms) ? null : ms;
 }
 
 /** Distancia real en km. Comparar grados confunde "misma ciudad" con "mismo punto". */
@@ -154,21 +161,6 @@ export class DriverAddressCaseBattery {
 			if (i < term.length) await this.driver.pause(gapMs);
 		}
 		return true;
-	}
-
-	/** ms transcurridos entre la última tecla y el inicio de la primera llamada, un solo reloj. */
-	private async msSinceLastKey(): Promise<number | null> {
-		return (await this.driver.execute(() => {
-			const w = window as unknown as Record<string, unknown>;
-			const last = Number(w.__mgLastKey ?? 0);
-			if (!last) return null;
-			const es = performance
-				.getEntriesByType('resource')
-				.filter((e) => e.name.includes('places/autocomplete'))
-				.sort((a, b) => a.startTime - b.startTime);
-			if (es.length === 0) return null;
-			return Math.round(es[es.length - 1].startTime - last);
-		})) as number | null;
 	}
 
 	private async reset(): Promise<void> {
@@ -283,29 +275,166 @@ export class DriverAddressCaseBattery {
 	}
 
 	/** TM-654 · TC5 — tecleo continuo colapsa en UNA llamada, ~300 ms tras la última tecla. */
+	/**
+	 * TM-654 · TC5 — debounce. Instrumentacion reescrita el 2026-08-24: la version anterior tecleaba
+	 * con un round trip WebDriver por caracter (`typeCharByChar`, un `driver.execute` por tecla) y el
+	 * veredicto afirmaba "pulsaciones cada 90 ms" cuando 90 ms era el parametro por DEFECTO, nunca un
+	 * dato medido — el intervalo real era 90 ms + la latencia del puente, invisible para el harness.
+	 * Es el mismo defecto que ya invalido TM-678 del lado PAX (AddressFieldProbe.checkDebounce).
+	 *
+	 * La secuencia ahora se agenda DENTRO de la pagina con `setTimeout` y cada pulsacion se sella en
+	 * el reloj del WebView (`Date.now()` de la pagina, el mismo reloj que estampa `startedAt` en la
+	 * captura de red): el intervalo real deja de ser un supuesto y pasa a ser un dato verificable.
+	 */
 	async tm654(): Promise<CaseResult> {
-		const { entries } = await this.probeTyped('corrientes', 90);
-		const delta = await this.msSinceLastKey();
-		const measured = { term: 'corrientes', keystrokeGapMs: 90, calls: entries.length, msSinceLastKey: delta };
+		await this.reset();
+		// NO usar 'corrientes': TM-651 (el caso anterior en la bateria) ya lo consulto, y TM-655
+		// demuestra en este mismo archivo que este producto NO reconsulta un termino ya servido —
+		// exactamente lo que 'no hay debounce que medir' terminaba pareciendo aca. Medido el
+		// 2026-08-24: con 'corrientes' esta prueba dio calls:0 en TRES intentos distintos (rafaga
+		// in-page, re-consulta de elemento, round trip por tecla) hasta que se cambio el termino a
+		// uno que ningun caso vecino toca — recien ahi hubo trafico que medir.
+		const term = 'belgrano';
+		const keyGapMs = 90;
 
-		if (entries.length === 0) return this.mk('TM-654', 'TC5', 'Debounce ~300 ms', 'SIN_DATOS', 'Cero requests: no hay debounce que medir.', measured);
-		if (entries.length > 1) return this.mk('TM-654', 'TC5', 'Debounce ~300 ms', 'FAIL', `El tecleo continuo generó ${entries.length} llamadas. Con pulsaciones cada 90 ms deben colapsar en una sola.`, measured);
-		if (delta === null) return this.mk('TM-654', 'TC5', 'Debounce ~300 ms', 'PASS', 'Una sola llamada. No se pudo medir el delta contra la última tecla (sin entrada de Resource Timing).', measured);
-		// Ventana amplia a propósito: el objetivo es distinguir ~300 de 1500 (el valor viejo), no
-		// perseguir milisegundos en un dispositivo físico.
-		if (delta < 150 || delta > 900) return this.mk('TM-654', 'TC5', 'Debounce ~300 ms', 'FAIL', `Una sola llamada, pero a ${delta} ms de la última tecla. El criterio pide ~300 ms.`, measured);
-		return this.mk('TM-654', 'TC5', 'Debounce ~300 ms', 'PASS', `Una sola llamada, ${delta} ms después de la última tecla.`, measured);
+		// SE TECLEA CON UN `driver.execute` POR PULSACION, y el sello va DENTRO de la pagina.
+		//
+		// Las dos mitades importan y por motivos distintos:
+		//
+		// a) El round trip por tecla es el mecanismo que ya usan TM-650/TM-657 (probeTyped ->
+		//    typeCharByChar) y que demostradamente hace reaccionar a esta pantalla.
+		//
+		// b) El SELLO in-page es lo que da el rigor, no el mecanismo de tecleo. Antes el veredicto
+		//    afirmaba "pulsaciones cada 90 ms" cuando 90 ms era el parametro por defecto, nunca un dato:
+		//    el intervalo real es 90 ms mas la latencia del puente, invisible para el harness. Sellando
+		//    cada pulsacion con el reloj de la PAGINA — el mismo que estampa `startedAt` en la captura —
+		//    el intervalo pasa a ser medible, y el guard de premisa de abajo puede rechazar la medicion
+		//    en vez de inventar un rojo. Es el mismo rigor que gano TM-678, por un camino que aca si
+		//    consigue que el producto responda.
+		await this.driver.execute(() => {
+			(window as unknown as { __mgKeyStamps?: number[] }).__mgKeyStamps = [];
+		});
+
+		let escribio = true;
+		for (let i = 1; i <= term.length; i++) {
+			const ok = (await this.driver.execute(
+				(sel: string, v: string) => {
+					const w = window as unknown as { __mgKeyStamps?: number[] };
+					const vis = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
+					const t = Array.from(document.querySelectorAll(sel))
+						.filter(vis)
+						.find((e) => !(e as HTMLInputElement).readOnly) as HTMLInputElement | undefined;
+					if (!t) return false;
+					const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+					setter?.call(t, v);
+					t.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+					t.dispatchEvent(new Event('ionInput', { bubbles: true, composed: true } as EventInit));
+					(w.__mgKeyStamps ?? (w.__mgKeyStamps = [])).push(Date.now());
+					return true;
+				},
+				this.selector,
+				term.slice(0, i)
+			)) as boolean;
+			if (!ok) {
+				escribio = false;
+				break;
+			}
+			if (i < term.length) await this.driver.pause(keyGapMs);
+		}
+
+		if (!escribio) {
+			return this.mk('TM-654', 'TC5', 'Debounce ~300 ms', 'SIN_DATOS', 'El campo no acepto escritura: la secuencia de pulsaciones no se pudo completar.', { term, keyGapMs });
+		}
+
+		const esperadas = term.length;
+		const stamps = (await this.driver.execute(() => (window as unknown as { __mgKeyStamps?: number[] }).__mgKeyStamps ?? []).catch(() => [] as number[])) as number[];
+		const terminado = stamps.length >= esperadas;
+		const stampedAt = stamps.length ? stamps[stamps.length - 1] : null;
+		// El inicio de la rafaga es el ancla para separar trafico propio de trafico heredado. Contra el
+		// ULTIMO sello no se puede: si el producto no agrupa, la primera request sale junto a la PRIMERA
+		// tecla, cientos de ms antes del ultimo sello, y eso clasificaria como contaminacion justo el
+		// caso que hay que detectar.
+		const burstStart = stamps.length ? stamps[0] : null;
+		await this.driver.pause(this.settleMs);
+
+		const calls = [...(await this.calls())].sort((a, b) => (toEpochMs(a.startedAt) ?? 0) - (toEpochMs(b.startedAt) ?? 0));
+		const inBurst = burstStart === null ? calls : calls.filter(c => (toEpochMs(c.startedAt) ?? Number.POSITIVE_INFINITY) >= burstStart);
+		const heredadas = calls.length - inBurst.length;
+		const firstAt = inBurst.length ? toEpochMs(inBurst[0].startedAt) : null;
+		const delayMs = stampedAt !== null && firstAt !== null ? firstAt - stampedAt : null;
+
+		const intervals: number[] = [];
+		for (let i = 1; i < stamps.length; i++) intervals.push(stamps[i] - stamps[i - 1]);
+		const maxIntervalMs = intervals.length ? Math.max(...intervals) : null;
+		const minIntervalMs = intervals.length ? Math.min(...intervals) : null;
+
+		const measured = {
+			term,
+			keyGapMs,
+			keystrokesObserved: stamps.length,
+			sequenceCompleted: terminado,
+			minIntervalMs,
+			maxIntervalMs,
+			calls: calls.length,
+			callsInBurst: inBurst.length,
+			callsBeforeBurst: heredadas,
+			firstKeystrokeAt: burstStart,
+			lastKeystrokeAt: stampedAt,
+			firstRequestAt: firstAt,
+			measuredDelayMs: delayMs
+		};
+
+		if (!terminado || stamps.length < esperadas) {
+			return this.mk('TM-654', 'TC5', 'Debounce ~300 ms', 'NO_EJERCIDO', `La secuencia no se completo: se sellaron ${stamps.length} de ${esperadas} pulsaciones. Sin la rafaga completa no hay agrupamiento que evaluar.`, measured);
+		}
+		// GUARD DE PREMISA. Si el intervalo real entre pulsaciones alcanza la ventana de debounce, cada
+		// tecla es su propia rafaga y varios requests son el comportamiento CORRECTO. Medir ahi no
+		// distingue producto de harness, asi que el caso se declara no ejercido en vez de inventar un rojo.
+		if (maxIntervalMs !== null && maxIntervalMs >= DEBOUNCE_TARGET_MS) {
+			return this.mk('TM-654', 'TC5', 'Debounce ~300 ms', 'NO_EJERCIDO', `El intervalo real entre pulsaciones llego a ${maxIntervalMs} ms, igual o mayor que la ventana de ~${DEBOUNCE_TARGET_MS} ms del AC: a esa cadencia cada tecla es su propia rafaga y varios requests serian lo ESPERADO. La medicion no puede distinguir producto de harness.`, measured);
+		}
+		if (inBurst.length === 0) {
+			return this.mk('TM-654', 'TC5', 'Debounce ~300 ms', 'SIN_DATOS', `Cero requests atribuibles a la rafaga${heredadas ? ` (se descartaron ${heredadas} anteriores a la primera pulsacion)` : ''}: no hay debounce que medir.`, measured);
+		}
+		if (delayMs === null) {
+			return this.mk('TM-654', 'TC5', 'Debounce ~300 ms', 'NO_EJERCIDO', `${inBurst.length} request(s) en la rafaga, pero la captura no trae el sello temporal necesario para medir la latencia.`, measured);
+		}
+		// El conteo va primero: con el guard de negatividad delante, el FAIL por conteo queda
+		// inalcanzable cuando el producto no agrupa (la primera request sale con la primera tecla,
+		// mucho antes del ultimo sello, asi que el delta es negativo justo en el caso a cazar).
+		if (inBurst.length > 1) {
+			return this.mk('TM-654', 'TC5', 'Debounce ~300 ms', 'FAIL', `${stamps.length} pulsaciones con un intervalo real de ${minIntervalMs}-${maxIntervalMs} ms generaron ${inBurst.length} requests dentro de la rafaga. No agrupa: el debounce no esta operando en esta superficie.`, measured);
+		}
+		if (delayMs < 0) {
+			return this.mk('TM-654', 'TC5', 'Debounce ~300 ms', 'NO_EJERCIDO', `1 request en la rafaga, pero salio ${Math.abs(delayMs)} ms antes de la ultima pulsacion: disparo en el borde de entrada, no un agrupamiento medible.`, measured);
+		}
+		if (delayMs > DEBOUNCE_TARGET_MS * 3) {
+			return this.mk('TM-654', 'TC5', 'Debounce ~300 ms', 'FAIL', `Una sola llamada, pero a ${delayMs} ms de la ultima pulsacion. El criterio pide ~${DEBOUNCE_TARGET_MS} ms.`, measured);
+		}
+		return this.mk('TM-654', 'TC5', 'Debounce ~300 ms', 'PASS', `Una sola llamada, ${delayMs} ms despues de la ultima pulsacion (intervalo real entre teclas: ${minIntervalMs}-${maxIntervalMs} ms).`, measured);
 	}
 
 	/** TM-655 · TC6 — repetir el mismo término no dispara una nueva llamada. */
+	/**
+	 * TM-655 · TC6 — corregido el 2026-08-24: la version anterior re-tecleaba el termino CARACTER
+	 * POR CARACTER (`typeCharByChar`) sobre un campo que ya tenia 'corrientes' escrito. Eso NO repite
+	 * el mismo valor: pasa por 'c', 'co', 'cor'... — cadenas genuinamente DISTINTAS del ultimo valor
+	 * committeado, para las que un distinctUntilChanged sano SI debe dejar pasar la consulta. El caso
+	 * media otra cosa de la que su nombre promete. Ahora el segundo tecleo fija el valor de una sola
+	 * vez (`setValue`), como hace `checkDistinctUntilChanged` del lado PAX: es la unica forma de que
+	 * el stream de valores observado por el producto sea realmente "el mismo texto otra vez".
+	 */
 	async tm655(): Promise<CaseResult> {
 		await this.probeTyped('corrientes');
 		await clearWebViewNetworkCapture(this.driver);
-		// Se re-teclea el MISMO término sin pasar por vacío: el distinctUntilChanged no debe emitir.
-		await this.typeCharByChar('corrientes', 60);
+		// Se REPITE el mismo termino sin pasar por vacio: el distinctUntilChanged no debe emitir.
+		const reescribio = await this.setValue('corrientes');
 		await this.driver.pause(this.settleMs);
 		const entries = await this.calls();
-		const measured = { term: 'corrientes', callsOnRepeat: entries.length };
+		const measured = { term: 'corrientes', rewroteField: reescribio, callsOnRepeat: entries.length };
+		if (!reescribio) {
+			return this.mk('TM-655', 'TC6', 'Término repetido no reconsulta', 'SIN_DATOS', 'El campo no acepto la reescritura del mismo termino: la ausencia de llamadas no dice nada de la conducta.', measured);
+		}
 		if (entries.length === 0) return this.mk('TM-655', 'TC6', 'Término repetido no reconsulta', 'PASS', 'Repetir el término no disparó ninguna llamada.', measured);
 		return this.mk('TM-655', 'TC6', 'Término repetido no reconsulta', 'FAIL', `Repetir el mismo término disparó ${entries.length} llamada(s).`, measured);
 	}
