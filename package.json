@@ -98,10 +98,9 @@
     "mobile:passenger:address-cases:uat": "cross-env APPIUM_SERVER_URL=http://localhost:4723 ENV=uat NODE_OPTIONS=--experimental-specifier-resolution=node node --loader ts-node/esm tests/mobile/appium/scripts/passenger-mg116-uat-cases.ts",
     "test:uat:mg116:address-guards": "cross-env ENV=uat APPIUM_SERVER_URL=http://localhost:4723 npx playwright test tests/mobile/appium/passenger/specs/pax-address-surfaces.spec.ts --project=chromium --workers=1",
     "test:uat:mg116:behaviors": "cross-env ENV=uat APPIUM_SERVER_URL=http://localhost:4723 npx playwright test tests/mobile/appium/passenger/specs/pax-address-behaviors.spec.ts --project=chromium --workers=1",
-    "test:uat:mg116:all": "cross-env ENV=uat APPIUM_SERVER_URL=http://localhost:4723 ALLURE=1 npx playwright test tests/mobile/appium/passenger/specs/pax-address-behaviors.spec.ts tests/mobile/appium/passenger/specs/pax-address-surfaces.spec.ts --project=chromium --workers=1",
+    "test:uat:mg116:all": "cross-env ENV=uat APPIUM_SERVER_URL=http://localhost:4723 ALLURE=1 XRAY=1 playwright test --config=playwright.mg116-device.config.ts",
     "test:uat:mg117:address-guards": "cross-env ENV=uat APPIUM_SERVER_URL=http://localhost:4723 npx playwright test tests/mobile/appium/driver/specs/driver-address-surfaces.spec.ts --project=chromium --workers=1",
-    "test:uat:mg116:api": "cross-env ENV=uat playwright test --config=playwright.mg116-api.config.ts",
-    "test:test:mg116:api": "cross-env ENV=test playwright test --config=playwright.mg116-api.config.ts",
+    "test:uat:mg117:all": "cross-env ENV=uat APPIUM_SERVER_URL=http://localhost:4723 ALLURE=1 XRAY=1 playwright test --config=playwright.mg117-device.config.ts",
     "prod:smoke:mg116": "cross-env ENV=prod ANDROID_PASSENGER_APP_PACKAGE=com.magiis.app.passenger APPIUM_SERVER_URL=http://localhost:4723 NODE_OPTIONS=--experimental-specifier-resolution=node node --no-warnings --loader ts-node/esm tests/mobile/appium/scripts/prod-smoke-address-native.ts",
     "prod:smoke:mg116:allure": "node tests/mobile/appium/scripts/prod-smoke-to-allure.mjs && allure generate evidence/prod/allure-results -o evidence/prod/allure-report --name \"MG-116 - Smoke en PRODUCCION\"",
     "prod:smoke:mg116:open": "allure open evidence/prod/allure-report"
