@@ -20,10 +20,13 @@
 
 import type { Locator } from '@playwright/test';
 import type { TestContextOptions } from '@TestContext';
+import type { GatewayName } from '@fixtures/gateways/_shared';
+import type { CardFormFillInput } from '@ui/carrier/card-forms';
 
 import { TravelDetailPage as LegacyTravelDetailPage } from '@pages/carrier';
 import { atc, step } from '@utils/decorators';
 import { UiBase } from '@ui/UiBase';
+import { cardFormFor } from '@ui/carrier/card-forms';
 
 export class CarrierTravelDetailPage extends UiBase {
 	private readonly legacy: LegacyTravelDetailPage;
@@ -60,6 +63,40 @@ export class CarrierTravelDetailPage extends UiBase {
 	async linkAndValidatePreauthorizedCard(cardNumber: string): Promise<void> {
 		await this.legacy.selectPaymentMethodOption('Tarjeta de Crédito - Preautorizada');
 		await this.legacy.fillPreauthorizedCard(cardNumber);
+		await this.legacy.clickValidateCard();
+	}
+
+	/**
+	 * Mini-flujo ATC — variante MULTI-PASARELA de `linkAndValidatePreauthorizedCard`: vincula y
+	 * valida una tarjeta durante la edición del viaje usando el form que corresponda a la pasarela
+	 * activa (`cardFormFor(gateway)` → Stripe Elements o form nativo Angular).
+	 *
+	 * Por qué es un método aparte y no un refactor del anterior: el hermano Stripe delega en
+	 * `legacy.fillPreauthorizedCard(cardNumber)`, que fija vencimiento/CVV/titular/ZIP desde las
+	 * constantes `STRIPE_*` del POM legacy. Rutear Stripe por acá cambiaría su fuente de verdad a
+	 * lo que pase el caller — deriva silenciosa en un spec que hoy pasa. El path Stripe queda
+	 * intacto byte a byte (multi-session safety, regla del repo).
+	 *
+	 * ⚠️ FRAGILE / TODO(live) — el Strategy `NativeAngularCardForm` fue construido y verificado
+	 * contra el form del ALTA DE VIAJE (`NewTravelPage`), NO contra el de la EDICIÓN del detalle.
+	 * Asume que la app reusa el mismo componente Angular de tarjeta preautorizada en ambas
+	 * pantallas (mismos `formcontrolname`: creditCardNumber / expiryDate / creditCardCVV /
+	 * creditCardOwnerName + 5° campo). Es plausible (misma opción "Tarjeta de Crédito -
+	 * Preautorizada") pero NO está confirmado en vivo: la primera corrida real sobre el detalle
+	 * con Authorize debe verificarlo y, si los selectores difieren, extraer una variante de
+	 * Strategy para esta pantalla en vez de parchear la del alta.
+	 *
+	 * @atc MG-415 — misma key de área EDIT que el hermano Stripe (mapeo por área, convención del
+	 * repo: N mini-flujos → 1 key cuando no hay 1:1 con el idmap). Sólo uno corre por test.
+	 */
+	@atc('MG-415', { severity: 'critical', description: 'Edición de viaje: vincular + validar tarjeta preautorizada (multi-pasarela)' })
+	async linkAndValidateCardForGateway(args: { gateway: GatewayName; card: CardFormFillInput }): Promise<void> {
+		await this.legacy.selectPaymentMethodOption('Tarjeta de Crédito - Preautorizada');
+		const form = cardFormFor(args.gateway);
+		await form.fill(this.page, args.card);
+		// El form nativo es reactivo y puede limpiar el número tras un re-render — aseverar el
+		// llenado ANTES de disparar la validación contra la pasarela (ver CardFormStrategy).
+		await form.expectFilled?.(this.page, args.card);
 		await this.legacy.clickValidateCard();
 	}
 

@@ -2,6 +2,13 @@
 
 This folder contains the Android mobile execution layer used by MAGIIS hybrid E2E journeys.
 
+> **Appium MCP connection (discovery layer)**: for wiring the `appium-mcp-driver` /
+> `appium-mcp-passenger` servers in the `agentic-qa-boilerplate` repo — env vars,
+> the `${VAR}` vs `.env` gotcha, and how to verify the connection to this same
+> device — see `docs/testing/mobile-appium-mcp.md` in that repo. This README stays
+> the canonical source for stable WebdriverIO execution (runners, harnesses,
+> confirmed selectors); that doc only covers the MCP discovery layer.
+
 ## Quick start: Windows onboarding
 
 Use this flow when you need to bring up Appium, mirror the phone, and inspect Driver or Passenger from PowerShell.
@@ -29,10 +36,37 @@ winget install Genymobile.scrcpy
 
 - Driver App and Passenger App already installed on the device.
 
+### Environment resolution
+
+`ENV` selects both the env file and the app package. There is no hardcoded fallback:
+
+| `ENV`  | env file loaded | driver package               |
+| ------ | --------------- | ---------------------------- |
+| `test` (default) | `.env.test` | `com.magiis.app.test.driver` |
+| `uat`  | `.env.uat`      | `com.magiis.app.uat.driver`  |
+| `prod` | `.env.prod`     | `com.magiis.app.driver`      |
+
+- The env file is loaded by `config/mobileEnvFile.ts`, mirroring the web layer's
+  `tests/config/runtime.ts` convention (`ENV_FILE` wins, else `.env.<ENV>`). Variables already
+  exported in the shell take precedence over the file.
+- **Do not declare `ANDROID_*_APP_PACKAGE` in an env file.** The package is derived from `ENV`;
+  declaring it lets the two drift apart, which is how a run ends up labelled `uat` while driving
+  the `test` app.
+- An unknown `ENV` **fails** — it does not fall back to `test`. A run that cannot name its
+  environment is not auditable evidence.
+- Device and server come from `ANDROID_<ACTOR>_UDID` (falling back to `ANDROID_UDID`) and
+  `APPIUM_SERVER_URL`. Both are required; there is no default device.
+
+Every run prints one header line naming its target, emitted by the resolver itself:
+
+```
+[target] OBJETIVO -> env=uat  package=com.magiis.app.uat.driver  udid=R92XB0B8F3J
+```
+
 ### Terminal roles
 
 - Global terminal: any PowerShell window, even outside the repo.
-- Project terminal: PowerShell opened at the root of `qa-gateway-magiis`.
+- Project terminal: PowerShell opened at the root of `magiis-playwright`.
 
 ### Sanity checks
 
@@ -93,7 +127,7 @@ Passenger:
 From the repo root:
 
 ```powershell
-cd "C:\Users\Erika\OneDrive - MAGIIS USA LLC (1)\Escritorio\qa-gateway-magiis"
+cd "C:\Users\Erika\OneDrive - MAGIIS USA LLC (1)\Escritorio\automation-projects\magiis-playwright"
 $env:ANDROID_UDID="R92XB0B8F3J"
 pnpm mobile:driver:home-dump
 ```
@@ -112,7 +146,7 @@ pnpm mobile:driver:login-smoke
 From the repo root:
 
 ```powershell
-cd "C:\Users\Erika\OneDrive - MAGIIS USA LLC (1)\Escritorio\qa-gateway-magiis"
+cd "C:\Users\Erika\OneDrive - MAGIIS USA LLC (1)\Escritorio\automation-projects\magiis-playwright"
 $env:ANDROID_UDID="R92XB0B8F3J"
 pnpm mobile:passenger:home-dump
 ```

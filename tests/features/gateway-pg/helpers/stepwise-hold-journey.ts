@@ -67,7 +67,7 @@
  */
 
 import type { Page } from '@playwright/test';
-import type { CardIntent, GatewayName } from '@fixtures/gateways/_shared';
+import type { CardIntent, GatewayName, GenericTestCard } from '@fixtures/gateways/_shared';
 
 import { expect, test } from '@TestFixture';
 import { resolveCard } from '@fixtures/gateways/_shared';
@@ -131,6 +131,33 @@ export type HoldMode = 'on' | 'off';
 /** Eje "flujo de tarjeta" del journey. Default `'new'` (alta de tarjeta nueva, histórico). */
 export type StepwiseCardFlow = 'new' | 'existing';
 
+/**
+ * Eje "momento del pickup". Default `'now'` = el form ya viene en "Now"/"Ahora" y el motor NO toca el
+ * campo (histórico). `'scheduled'` fija una hora futura, y eso **cambia el oráculo**: el viaje NO cae
+ * en "Por asignar" sino en la pestaña "Programados".
+ */
+export type StepwisePickupSchedule = 'now' | 'scheduled';
+
+/**
+ * Eje "despacho del viaje". Default `'service'` = "Send Service", despacho automático al pool de
+ * conductores (histórico). `'manual'` asigna el viaje DIRECTO a un conductor
+ * ("Send Manual" → "Assign" → "Assign"), que es lo que hace un dispatcher cuando no quiere pasar por
+ * el timer de oferta.
+ */
+export type StepwiseDispatch = 'service' | 'manual';
+
+/**
+ * Tarjeta del PRELUDE: se vincula, se valida contra la pasarela y se ELIMINA de la wallet antes de
+ * vincular la tarjeta del caso. Modela "el pasajero ya tenía OTRA tarjeta y se la reemplazó".
+ *
+ * Es explícita —no se resuelve por intent— porque el resolver expone UN solo intent happy por
+ * pasarela (`HAPPY_NO_AUTH`), así que una segunda tarjeta aprobada no tiene intent propio. Los specs
+ * la toman de las tablas de referencia de la fixture (p. ej. `EBIZ_CVV2_REFERENCE`).
+ */
+export type StepwisePreludeCard = Pick<GenericTestCard, 'number' | 'last4' | 'expiry' | 'cvc' | 'holderName'> & {
+	zip?: string;
+};
+
 export type StepwiseHoldJourneyInput = {
 	gateway: GatewayName;
 	/** Intent canónico de la tarjeta (`resolveCard`). Default 'HAPPY_NO_AUTH'. */
@@ -179,6 +206,28 @@ export type StepwiseHoldJourneyInput = {
 	 * pasajero no la tiene.
 	 */
 	cardFlow?: StepwiseCardFlow;
+	/**
+	 * Eje del momento del pickup. Default `'now'` (histórico). `'scheduled'` requiere `scheduledTime`
+	 * y mueve el oráculo de "Por asignar" a "Programados".
+	 */
+	schedule?: StepwisePickupSchedule;
+	/**
+	 * Hora del pickup para `schedule: 'scheduled'`, tal como la muestra el selector del alta
+	 * (p. ej. `'12:10 PM'`). Obligatoria con `'scheduled'`: el motor NO la deriva de la hora actual
+	 * porque las opciones disponibles dependen del día y de la grilla horaria del carrier, así que
+	 * inventarla haría fallar el click por una razón que no es un bug.
+	 */
+	scheduledTime?: string;
+	/**
+	 * Eje del despacho. Default `'service'` (histórico: "Send Service"). `'manual'` asigna el viaje
+	 * directo a un conductor.
+	 */
+	dispatch?: StepwiseDispatch;
+	/**
+	 * Tarjeta a vincular, validar y ELIMINAR antes de la del caso — modela el reemplazo de un medio de
+	 * pago ya vinculado. Sólo aplica con `cardFlow: 'new'`.
+	 */
+	preludeCard?: StepwisePreludeCard;
 };
 
 /**
@@ -193,6 +242,9 @@ export async function runStepwiseHoldJourney(page: Page, input: StepwiseHoldJour
 	const outcome: JourneyOutcome = input.expectOutcome ?? outcomeForIntent(intent);
 	const holdMode = input.holdMode;
 	const cardFlow: StepwiseCardFlow = input.cardFlow ?? 'new';
+	const schedule: StepwisePickupSchedule = input.schedule ?? 'now';
+	const dispatch: StepwiseDispatch = input.dispatch ?? 'service';
+	const preludeCard = input.preludeCard;
 
 	// Guard DESTRUCTIVO — el mismo que la suite CFG (`gateway-config.factory.ts`): apagar el hold
 	// escribe sobre los parámetros del carrier COMPARTIDO. Va ANTES de abrir el browser para que el
@@ -209,6 +261,18 @@ export async function runStepwiseHoldJourney(page: Page, input: StepwiseHoldJour
 		throw new Error(`runStepwiseHoldJourney: cardFlow 'existing' sólo modela el desenlace 'trip-created' y se pidió '${outcome}' (intent '${intent}'). Con la tarjeta YA vinculada el paso "Validar" no se ejecuta, así que no hay hold de vinculación que la pasarela pueda declinar — el desenlace de un decline sobre tarjeta guardada NO está verificado. Observar una corrida real antes de modelarlo.`);
 	}
 
+	// `'scheduled'` sin hora es un error de configuración del spec, no algo que el motor pueda suplir:
+	// las opciones del selector dependen del día y de la grilla horaria del carrier.
+	if (schedule === 'scheduled' && !input.scheduledTime) {
+		throw new Error("runStepwiseHoldJourney: schedule 'scheduled' requiere `scheduledTime` (ej. '12:10 PM'), tal como la muestra el selector de hora del alta. El motor no la deriva de la hora actual porque las opciones disponibles dependen del día y de la grilla horaria del carrier.");
+	}
+
+	// El prelude vincula y BORRA una tarjeta antes de la del caso; con `existing` no se abre el form,
+	// así que no hay dónde ejecutarlo. Lanzar es mejor que ignorarlo en silencio.
+	if (preludeCard && cardFlow !== 'new') {
+		throw new Error(`runStepwiseHoldJourney: \`preludeCard\` sólo aplica con cardFlow 'new' (se pidió '${cardFlow}'). Con la tarjeta ya vinculada el form no se abre y no hay paso donde vincular/eliminar la del prelude.`);
+	}
+
 	const adapter = getGatewayPgAdapter(gateway);
 	// Queries de búsqueda del pax por pasarela — las consume la precondición API del paso 2.
 	const defaults = journeyDefaultsFor(gateway);
@@ -219,6 +283,13 @@ export async function runStepwiseHoldJourney(page: Page, input: StepwiseHoldJour
 	// override para reproducir un caso puntual (espeja el override por env de Stripe, `4b4d45b`).
 	const holderName = input.holderName ?? process.env.AUTHORIZE_CARD_HOLDER ?? resolved.holderName;
 	const card = { ...resolved, holderName };
+
+	// Vincular la del prelude y la del caso con el MISMO número no modela un reemplazo: el paso de
+	// borrado del flujo `new` ya elimina la del mismo last4, así que el prelude no aportaría nada.
+	if (preludeCard && preludeCard.last4 === card.last4) {
+		throw new Error(`runStepwiseHoldJourney: \`preludeCard\` tiene el mismo last4 (•••• ${card.last4}) que la tarjeta del caso. El eje modela REEMPLAZAR un medio de pago por OTRO distinto — con el mismo número el flujo 'new' ya lo cubre (borra la guardada antes de dar de alta).`);
+	}
+
 	const travel = new CarrierNewTravelPage({ page });
 	const management = new CarrierTravelManagementPage({ page });
 	// Cliente que auto-asigna pasajero (empresa individuo / individuo MP): mismo valor.
@@ -407,6 +478,28 @@ export async function runStepwiseHoldJourney(page: Page, input: StepwiseHoldJour
 			return;
 		}
 
+		if (preludeCard) {
+			// PRELUDE: vincular OTRA tarjeta, validarla y ELIMINARLA. Modela el reemplazo de un medio de
+			// pago ya vinculado (matriz eBiz §Eliminación de Tarjeta de la Wallet), que es distinto del
+			// borrado implícito de `selectPreauthorizedCardMethod`: ese elimina la del MISMO last4 para
+			// respetar la unicidad de la wallet; acá se elimina una tarjeta DISTINTA y el caso asevera
+			// que el alta sigue adelante con la nueva.
+			await step(`PRELUDE: vincular la tarjeta a reemplazar (•••• ${preludeCard.last4})`, async () => {
+				await travel.selectPreauthorizedCardMethod(preludeCard.last4);
+				const form = cardFormFor(gateway);
+				await form.fill(page, preludeCard);
+				await form.expectFilled?.(page, preludeCard);
+				await travel.validateNativeCard();
+			});
+
+			await step(`PRELUDE: eliminar de la wallet la tarjeta •••• ${preludeCard.last4}`, async () => {
+				await travel.deleteHighlightedSavedCard();
+				// Debería quedar fuera de la wallet: si sobrevive, el caso ya no está probando un
+				// reemplazo sino una wallet con dos tarjetas, y el hold podría aplicarse a la vieja.
+				expect(await travel.hasSavedCardWithLast4(preludeCard.last4), `La tarjeta del prelude •••• ${preludeCard.last4} sigue vinculada tras el borrado — el caso dejaría de modelar un reemplazo. Forma de Pago muestra: "${await travel.getPaymentMethodText()}"`).toBe(false);
+			});
+		}
+
 		await step(`Método de pago pre-autorizado, listo para tarjeta nueva (•••• ${card.last4})`, async () => {
 			// UNA sola llamada que modela las DOS ramas de las grabaciones validadas (ver el JSDoc de
 			// `selectPreauthorizedCardMethod`): con tarjeta previa hay que seleccionar la guardada,
@@ -523,8 +616,20 @@ export async function runStepwiseHoldJourney(page: Page, input: StepwiseHoldJour
 				const diagnosis = cardLinked ? `La tarjeta •••• ${card.last4} SÍ quedó vinculada (Forma de Pago: "${paymentMethod}"), así que el paso de tarjeta se completó. Si el botón igual no habilita, el faltante está AGUAS ARRIBA de la pasarela: tarifa/ruta sin computar (verificar que el ambiente resuelva origen y destino), o un hold aceptado pero NO aprobado — en el dashboard del sandbox eso se ve como transacción en "Fraud Review" (Response Code 4) en vez de "Authorized".` : `La tarjeta •••• ${card.last4} NO figura vinculada (Forma de Pago: "${paymentMethod}"): el problema está en el paso de tarjeta, no en el armado del viaje.`;
 				throw new Error(`${(error as Error).message}\n\n[diagnóstico paso ${stepIndex}] ${diagnosis}`);
 			}
+			// PROGRAMADO: la hora va DESPUÉS de que la tarjeta quedó validada y ANTES de seleccionar
+			// vehículo — el orden de la grabación del 2026-07-30. Si se fija antes, el recálculo de
+			// tarifa que dispara el cambio de horario puede volver a deshabilitar "Seleccionar Vehículo".
+			if (schedule === 'scheduled') {
+				await travel.setPickupTime(input.scheduledTime as string);
+			}
+
 			await travel.clickSelectVehicle();
-			await travel.clickSendService();
+
+			if (dispatch === 'manual') {
+				await travel.clickSendManualAndAssign();
+			} else {
+				await travel.clickSendService();
+			}
 			// Debería haber un POST /travels exitoso con id: le da IDENTIDAD al viaje de ESTA corrida.
 			// Sin esto el paso de la grilla buscaría una fila por (pasajero + destino), que son
 			// CONSTANTES entre corridas: si el hold falla y quedó un viaje de una corrida anterior sin
@@ -537,7 +642,9 @@ export async function runStepwiseHoldJourney(page: Page, input: StepwiseHoldJour
 				.not.toBeNull();
 		});
 
-		await step(`Verificar el viaje en Gestión de Viajes → columna "${outcome === 'trip-unauthorized' ? 'En conflicto' : 'Por asignar'}" (${gridName})`, async () => {
+		const expectedColumn = outcome === 'trip-unauthorized' ? 'En conflicto' : schedule === 'scheduled' ? 'Programados' : 'Por asignar';
+
+		await step(`Verificar el viaje en Gestión de Viajes → columna "${expectedColumn}" (${gridName})`, async () => {
 			await management.goto();
 
 			if (outcome === 'trip-unauthorized') {
@@ -569,7 +676,17 @@ export async function runStepwiseHoldJourney(page: Page, input: StepwiseHoldJour
 			// hay fila en ninguna columna (el alta no se completó → causa aguas arriba). En la corrida
 			// de TC1011 del 2026-07-28 esa ambigüedad dejó sin responder justamente la pregunta del caso.
 			try {
-				await management.expectPassengerInPorAsignar(gridName, shortDestination(destination), HOLD_APPROVED_ROW_STATUS);
+				if (schedule === 'scheduled') {
+					// Un viaje con hora futura NO entra en "Por asignar": queda en "Programados" hasta que
+					// llega su horario. Verificado en las dos grabaciones del 2026-07-30 (alta programada
+					// desde carrier y desde el widget Quote, donde la pestaña mostró "Programados (1)").
+					// El estado de la fila NO se asevera: un programado sin conductor y uno ya asignado son
+					// los dos resultados válidos del hold aprobado, y `HOLD_APPROVED_ROW_STATUS` está
+					// calibrado para el ciclo de un viaje inmediato.
+					await management.expectPassengerInProgramados(gridName, shortDestination(destination));
+				} else {
+					await management.expectPassengerInPorAsignar(gridName, shortDestination(destination), HOLD_APPROVED_ROW_STATUS);
+				}
 			} catch (error) {
 				const column = await management.findTripColumn(gridName, shortDestination(destination)).catch(() => null);
 				const diagnosis = column ? `El viaje SÍ existe pero está en la columna "${column}": se creó y el hold no quedó aprobado. Es un hallazgo de PAGO — verificar en el dashboard de la pasarela si la transacción quedó declinada o retenida para revisión (Response Code 4), y escalar a dev con esa evidencia.` : 'El viaje NO aparece en NINGUNA columna: el alta no se completó, así que la causa está aguas arriba del pago (tarifa/ruta sin computar, o el submit no llegó al backend). NO es un hallazgo de la pasarela.';
