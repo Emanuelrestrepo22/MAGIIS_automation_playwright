@@ -215,9 +215,17 @@ test.describe('[MG-117] Guards del buscador de direcciones — App Driver', () =
 		}
 	});
 
+	// Sólo un formato de key de Jira se anota como `tms`. `ORDEN(sin-key)` no lo es: anotarlo
+	// escribiría una key inventada en el reporte de Xray.
+	const JIRA_KEY = /^[A-Z][A-Z0-9]+-[0-9]+$/;
+
 	/** Busca el resultado de un caso y lo convierte en aserción de Playwright. */
 	function guard(key: string, descripcion: string): void {
-		test(`[${key}] ${descripcion}`, async () => {
+		// La anotación `tms` es lo que leen el xray-reporter y el `urlTemplate` de Allure. El título
+		// NO alcanza: el fallback por título del reporter captura UNA sola key y sólo corre cuando no
+		// hay anotaciones (xray-reporter.ts:68 y :114-118), y Allure no genera link desde el título.
+		const opts = JIRA_KEY.test(key) ? { annotation: [{ type: 'tms', description: key }] } : {};
+		test(`[${key}] ${descripcion}`, opts, async () => {
 			test.skip(Boolean(SETUP_ERROR), SETUP_ERROR ?? '');
 			const r = RESULTS.find((x) => x.key === key);
 			test.skip(!r, `La batería no produjo resultado para ${key}.`);

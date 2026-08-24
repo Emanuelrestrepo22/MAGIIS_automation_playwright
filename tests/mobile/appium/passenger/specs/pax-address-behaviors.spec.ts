@@ -207,6 +207,24 @@ async function newSession(): Promise<{ driver: Driver; webview: string }> {
 			'appium:noReset': true,
 			'appium:forceAppLaunch': true,
 			'appium:newCommandTimeout': 300
+			// NO poner `appium:recreateChromeDriverSessions: true` — se probó y TUMBA EL SERVIDOR.
+			//
+			// El problema que parecía resolver es real: cada superficie relanza la app, eso destruye la
+			// página de la WebView, y el chromedriver queda apuntando al target muerto respondiendo
+			// `Can't restart when we're not online` a todo switch posterior — un estado del que no se
+			// sale reintentando (medido: 45 s de reintentos, tres superficies, cero recuperaciones).
+			//
+			// Pero la cura resultó peor. Con la capability puesta, Appium mata y recrea el chromedriver
+			// en CADA cambio de contexto, y matar el binario de Chrome 151 excede los 20 s que
+			// `teen_process` tolera: el timeout sale como rechazo NO MANEJADO y el proceso de Appium
+			// MUERE. Medido el 2026-08-23: el servidor se cayó a mitad de corrida y la suite siguió
+			// golpeando un puerto muerto durante NUEVE HORAS, con cero mediciones.
+			//   Error: Process didn't end after 20000ms (cmd: chromedriver-win64_v151.0.7922.138.exe)
+			//
+			// El fallo sin la capability es acotado (`attachToWebview` se rinde a los 45 s y la
+			// superficie se reporta inalcanzable); con ella es ilimitado. Entre los dos, se elige el
+			// acotado. La solución de fondo es no relanzar la app entre superficies — volver al home
+			// navegando dentro del SPA, que no destruye la WebView — y está pendiente de validar.
 		}
 	});
 	const contexts = (await driver.getContexts()) as unknown as string[];
@@ -245,6 +263,40 @@ async function newSession(): Promise<{ driver: Driver; webview: string }> {
  * Cadena vacía = la app no volvió a montar su vista web. El llamador lo traduce a superficie
  * inalcanzable, nunca a un rojo.
  */
+/**
+ * Engancha la WebView recién montada, con reintento. Devuelve `false` si nunca queda utilizable.
+ *
+ * POR QUE NO ALCANZA UN `switchContext` SUELTO — medido el 2026-08-22, primera corrida que ejerció
+ * `relaunchApp`. Que `getContexts()` devuelva el nombre del contexto NO significa que su página sea
+ * navegable: tras `terminateApp`/`activateApp` chromedriver puede seguir enganchado al target
+ * ANTERIOR, ya muerto, y responde `Can't restart when we're not online`. Ese error tumbó las cuatro
+ * superficies de Home (S1, S3, S5, S6) en el hook, y con ellas 20 tests quedaron en "did not run" —
+ * mientras S7, que corría más tarde, pasaba sin problema. Un fallo de re-attach se leía como
+ * "el harness no llega a las pantallas".
+ *
+ * El reintento vuelve a NATIVE_APP entremedio para forzar el re-attach, y confirma con una lectura
+ * barata (`getUrl`) que el contexto sirve de verdad: sin esa prueba de vida, un switch "exitoso"
+ * contra una página muerta se descubre recién en la primera medición, ya como SIN_DATOS.
+ */
+async function attachToWebview(driver: Driver, webview: string): Promise<boolean> {
+	const deadline = Date.now() + 45_000;
+	let ultimoError = '';
+	while (Date.now() < deadline) {
+		try {
+			await driver.switchContext(webview);
+			// Prueba de vida: el nombre del contexto existe antes que la página sea navegable.
+			await driver.getUrl();
+			return true;
+		} catch (e) {
+			ultimoError = (e as Error).message ?? String(e);
+			await driver.switchContext('NATIVE_APP').catch(() => undefined);
+			await driver.pause(1500);
+		}
+	}
+	console.log(`[mg116] la WebView no quedó utilizable tras el relanzamiento: ${ultimoError}`);
+	return false;
+}
+
 async function relaunchApp(driver: Driver): Promise<string> {
 	// Salir del WEBVIEW ANTES de matar la app: los comandos de app son nativos, y quedarse en un
 	// contexto web que está por morir es la receta de un error de contexto inválido.
@@ -267,7 +319,7 @@ async function relaunchApp(driver: Driver): Promise<string> {
 	}
 	if (!webview) return '';
 
-	await driver.switchContext(webview);
+	if (!(await attachToWebview(driver, webview))) return '';
 
 	// El arranque en frio vuelve a correr el bootstrap de autenticacion. Con la sesion compartida eso
 	// pasaba CERO veces; ahora pasa una por superficie, asi que un token vencido dejaria las CINCO
@@ -326,7 +378,19 @@ test.describe(`[MG-116] Consistencia de los campos de dirección — App PAX (${
 	for (const def of SURFACES) {
 		const rows = [...commonRows(def.tripFlow), ...(def.carriesSingleSurfaceRows ? SINGLE_SURFACE_ROWS : [])];
 
-		test.describe.serial(`${def.id} — ${def.label}`, () => {
+		// NO es `describe.serial`, y la diferencia es de MEDICIÓN, no de estilo.
+		//
+		// En modo serial Playwright saltea todos los tests siguientes en cuanto uno falla. Acá eso
+		// convertía un defecto REAL del producto en pérdida de cobertura: medido el 2026-08-22, el
+		// debounce falla de verdad en S1/S5/S7 (10 pulsaciones a 80 ms → 2, 5 y 2 requests), y ese
+		// rojo legítimo se llevaba puestas las 4-5 conductas siguientes de cada superficie — piso de
+		// caracteres, distinctUntilChanged, sessionToken y su rotación quedaban sin medir. Corrieron
+		// 8 de 33 tests. El estado no justifica el modo serial: cada conducta re-establece su
+		// superficie antes de medir (ver el `reach()` de más abajo), así que son independientes.
+		//
+		// El orden se conserva igual porque la suite corre con `--workers=1`: un dispositivo físico
+		// no se paraleliza.
+		test.describe(`${def.id} — ${def.label}`, () => {
 			// El timeout tambien se declara ACA, no solo en el describe externo: el `beforeAll` que crea
 			// la sesion vive en este describe, y con el valor global de 60 s se aborta antes de conectar.
 			test.describe.configure({ timeout: 240_000 });
