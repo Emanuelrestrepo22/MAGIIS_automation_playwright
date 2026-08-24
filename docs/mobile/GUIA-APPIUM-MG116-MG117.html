@@ -108,7 +108,15 @@ Cada caso enlaza a su ticket de Xray por anotación <code>tms</code>: el resulta
 se consulta en el reporte (Allure / JSON de importación), no preguntándole a quien la corrió.
 </p>
 
-<h3>A.2 · Estado medido, por caso</h3>
+<h3>A.2 · Qué casos están funcionales hoy</h3>
+<div class="callout">
+<b>Funcionales y en verde: 12 de 26.</b> App Driver: <b>8 de 10</b> casos operativos y aprobados en la
+última corrida. App Passenger: <b>4 en verde</b>, <b>1 rojo esperado</b> (TM-731 reproduce un defecto
+conocido del producto — que falle es el trabajo del caso), 1 intermitente entre corridas (TM-734) y
+10 pendientes. Los pendientes son de <i>precondición o instrumentación del harness</i>
+(pantallas que exigen una navegación que la suite aún no construye), <b>no defectos del producto</b>:
+cada uno lleva su motivo escrito en el artefacto.
+</div>
 <p>
 Estados de la <b>última corrida verificada de cada suite</b> (artefactos
 <code>xray-results-mg117-20260824-144841</code> y <code>xray-results-mg116-20260824-151921</code>).
@@ -163,13 +171,38 @@ La suite de API quedó en rojo <i>a propósito</i>: es el criterio de cierre de 
 entre, ese caso pasa a verde sin tocar el test — así el reporte avisa solo.
 </p>
 
-<h3>A.4 · Cómo se corre</h3>
-<pre><code># Precondición: teléfono conectado, Appium arriba, y UNA sola app MAGIIS abierta.
-pnpm test:uat:mg117:all     # App Driver    (3–8 min)
+<h3>A.4 · Cómo usar estas automatizaciones</h3>
+<p>El ciclo completo son cuatro pasos: preparar el teléfono, correr, guardar el artefacto y leer el resultado.</p>
+
+<p><b>1 · Preparar.</b> Teléfono conectado por USB, Appium corriendo, y <b>una sola</b> app MAGIIS
+abierta — la del actor que vas a probar. Si la otra quedó al frente de una corrida anterior:</p>
+<pre><code># para correr la suite del DRIVER:
+adb shell am force-stop com.magiis.app.uat.passenger
+adb shell am start -W -n com.magiis.app.uat.driver/.MainActivity
+
+# para correr la suite del PASSENGER:
+adb shell am force-stop com.magiis.app.uat.driver
+adb shell am start -W -n com.magiis.app.uat.passenger/.MainActivity</code></pre>
+
+<p><b>2 · Correr.</b> Desde la raíz del repo <code>magiis-playwright</code>:</p>
+<pre><code>pnpm test:uat:mg117:all     # App Driver    (3–8 min)
 pnpm test:uat:mg116:all     # App Passenger (10–15 min)
 pnpm test:uat:mg116:api     # contrato del endpoint, sin teléfono (segundos)</code></pre>
+
+<p><b>3 · Guardar el artefacto</b> (si el resultado importa — el reporter pisa la ruta por defecto
+en cada corrida):</p>
+<pre><code>$env:XRAY_OUTPUT_FILE = "evidence/uat/xray-results-mg117-$(Get-Date -f yyyyMMdd-HHmmss).json"
+pnpm test:uat:mg117:all</code></pre>
+
+<p><b>4 · Leer el resultado.</b> Todo queda en <code>evidence/uat/</code>:</p>
+<table>
+  <tr><th>Artefacto</th><th>Qué es</th><th>Cómo se consume</th></tr>
+  <tr><td><code>report/</code></td><td>Reporte HTML navegable de la corrida</td><td><code>npx playwright show-report evidence/uat/report</code></td></tr>
+  <tr><td><code>xray-results-*.json</code></td><td>Un estado por caso Xray (PASSED/FAILED/TODO), con el detalle medido en el comentario</td><td>Se importa a Xray o se lee directo; es la fuente de la tabla A.2</td></tr>
+  <tr><td><code>junit.xml</code></td><td>Resumen por test con el motivo de cada skip</td><td>CI / lectura rápida</td></tr>
+</table>
 <p class="small muted">
-El detalle operativo completo (instalación, verificación del stack, solución de bloqueos) vive en
+Requisitos de instalación desde cero: sección B.2. El detalle operativo completo vive en
 <code>tests/mobile/appium/README.md</code> del repo — es la fuente viva; este PDF es la foto del 24-ago.
 </p>
 
@@ -196,9 +229,22 @@ Las apps MAGIIS son <b>híbridas</b>: lo que se <i>toca</i> vive en el lado nati
 diagnóstico difícil termina siendo «estabas en el contexto equivocado».
 </p>
 
-<h3>B.2 · De cero a correr</h3>
+<h3>B.2 · Requisitos y de cero a correr</h3>
+<p><b>Requisitos</b> — las versiones con las que esta capa funciona hoy:</p>
+<table>
+  <tr><th>Qué</th><th>Versión</th><th>Para qué</th></tr>
+  <tr><td>Node.js</td><td>20+ (probado en 24.x)</td><td>correr el repo — y el render de este PDF</td></tr>
+  <tr><td>pnpm</td><td>11.x</td><td>dependencias (<code>pnpm install</code>)</td></tr>
+  <tr><td>Android SDK + <code>platform-tools</code></td><td>reciente, con <code>ANDROID_HOME</code> exportado</td><td>aporta <code>adb</code>; <b>sin esta variable Appium no ve el teléfono</b></td></tr>
+  <tr><td>Java JDK</td><td>17+, con <code>JAVA_HOME</code></td><td>lo exige el driver de Android</td></tr>
+  <tr><td>Appium</td><td><b>3.x</b> (hoy 3.5.2)</td><td>servidor de automatización, en <code>:4723</code></td></tr>
+  <tr><td>Driver <code>uiautomator2</code></td><td>7.x</td><td><code>appium driver install uiautomator2</code></td></tr>
+  <tr><td>Teléfono Android</td><td>depuración USB activa y autorizada</td><td>el dispositivo de pruebas</td></tr>
+  <tr><td>Apps MAGIIS del ambiente</td><td><code>com.magiis.app.uat.*</code></td><td><b>instaladas y con sesión iniciada</b> — los tests no crean cuentas; <code>noReset</code> conserva la sesión</td></tr>
+  <tr><td><code>scrcpy</code> <span class="muted">(opcional)</span></td><td>cualquiera</td><td>ver la pantalla en vivo: la diferencia entre «falló» y «falló porque quedó un modal abierto»</td></tr>
+</table>
 <p>
-El paso a paso completo —con verificación por nivel— está en
+El paso a paso de instalación —con verificación por nivel— está en
 <code>tests/mobile/appium/README.md</code> §1–§5. El checklist mínimo antes de cualquier corrida:
 </p>
 <ol class="flow">
