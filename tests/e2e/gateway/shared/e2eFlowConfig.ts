@@ -39,47 +39,47 @@ export type GatewayFlowConfig = {
 export const GATEWAY_CONFIGS: Record<string, GatewayFlowConfig> = {
 	/** Stripe — tarjeta directa sin 3DS, hold habilitado. */
 	'stripe-hold-no3ds': {
-		gateway:     'stripe',
-		cardLast4:   '4242',
+		gateway: 'stripe',
+		cardLast4: '4242',
 		holdEnabled: true,
 		requires3DS: false,
-		label:       'Stripe Hold ON sin 3DS (4242 4242 4242 4242)',
+		label: 'Stripe Hold ON sin 3DS (4242 4242 4242 4242)'
 	},
 	/** Stripe — tarjeta 3DS requerido, hold habilitado. */
 	'stripe-hold-3ds': {
-		gateway:     'stripe',
-		cardLast4:   '3184',
+		gateway: 'stripe',
+		cardLast4: '3184',
 		holdEnabled: true,
 		requires3DS: true,
-		label:       'Stripe Hold ON con 3DS (4000 0027 6000 3184)',
+		label: 'Stripe Hold ON con 3DS (4000 0027 6000 3184)'
 	},
 	/** MercadoPago — placeholder para futura implementación. */
 	'mercado-pago-hold-no3ds': {
-		gateway:     'mercado-pago',
-		cardLast4:   '0000', // TODO: reemplazar con tarjeta de prueba MercadoPago real
+		gateway: 'mercado-pago',
+		cardLast4: '0000', // TODO: reemplazar con tarjeta de prueba MercadoPago real
 		holdEnabled: true,
 		requires3DS: false,
-		label:       'MercadoPago Hold ON sin 3DS',
+		label: 'MercadoPago Hold ON sin 3DS'
 	},
 
 	// ── Flow 3: Contractor (Colaborador) ────────────────────────────────────
 
 	/** Stripe — colaborador sin 3DS, hold habilitado. */
 	'contractor-stripe-hold-no3ds': {
-		gateway:     'stripe',
-		cardLast4:   '4242',
+		gateway: 'stripe',
+		cardLast4: '4242',
 		holdEnabled: true,
 		requires3DS: false,
-		label:       'Contractor · Stripe Hold ON sin 3DS (4242)',
+		label: 'Contractor · Stripe Hold ON sin 3DS (4242)'
 	},
 	/** Stripe — colaborador con 3DS, hold habilitado. */
 	'contractor-stripe-hold-3ds': {
-		gateway:     'stripe',
-		cardLast4:   '3184',
+		gateway: 'stripe',
+		cardLast4: '3184',
 		holdEnabled: true,
 		requires3DS: true,
-		label:       'Contractor · Stripe Hold ON con 3DS (3184)',
-	},
+		label: 'Contractor · Stripe Hold ON con 3DS (3184)'
+	}
 };
 
 /**
@@ -87,11 +87,11 @@ export const GATEWAY_CONFIGS: Record<string, GatewayFlowConfig> = {
  * Se serializa en evidence/journey-context/<journeyId>.json al completar.
  */
 export type MobilePhaseResult = {
-	journeyId:     string;
-	status:        'driver-completed' | 'failed';
-	totalAmount:   string;
+	journeyId: string;
+	status: 'driver-completed' | 'failed';
+	totalAmount: string;
 	paymentMethod: string;
-	checkpoints:   string[];
+	checkpoints: string[];
 	errorMessage?: string;
 };
 

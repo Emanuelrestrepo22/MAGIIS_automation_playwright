@@ -19,12 +19,7 @@
  *   - .env.test declara USER_CONTRACTOR + PASS_CONTRACTOR (UAT/PROD todavía no).
  */
 
-import {
-  ENV_SUFFIX_BY_ENVIRONMENT,
-  lazyEnv,
-  resolveActiveEnvironment,
-  type EnvSuffix,
-} from '../internal/env-resolver';
+import { ENV_SUFFIX_BY_ENVIRONMENT, lazyEnv, resolveActiveEnvironment, type EnvSuffix } from '../internal/env-resolver';
 import type { EnvironmentMap, UserEnvironment, WebUser } from '../types';
 import type { GatewayName } from '../../gateways/_shared';
 import { GATEWAY_ENV_SUFFIX } from './gateway-suffix';
@@ -38,45 +33,41 @@ const LABEL = 'contractor collaborator (contractor portal)';
  * Con gateway:                            `[<PREFIX>_<GW>_<ENV>, <PREFIX>_<GW>, <PREFIX>_<ENV>, <PREFIX>]`
  */
 function contractorCandidates(
-  prefix: 'USER_CONTRACTOR' | 'PASS_CONTRACTOR',
-  envSuffix: EnvSuffix,
-  gateway?: GatewayName,
+	prefix: 'USER_CONTRACTOR' | 'PASS_CONTRACTOR',
+	envSuffix: EnvSuffix,
+	gateway?: GatewayName
 ): string[] {
-  if (!gateway) {
-    return [`${prefix}_${envSuffix}`, prefix];
-  }
-  const gw = GATEWAY_ENV_SUFFIX[gateway];
-  return [`${prefix}_${gw}_${envSuffix}`, `${prefix}_${gw}`, `${prefix}_${envSuffix}`, prefix];
+	if (!gateway) {
+		return [`${prefix}_${envSuffix}`, prefix];
+	}
+	const gw = GATEWAY_ENV_SUFFIX[gateway];
+	return [`${prefix}_${gw}_${envSuffix}`, `${prefix}_${gw}`, `${prefix}_${envSuffix}`, prefix];
 }
 
-function buildCollaborator(
-  envSuffix: EnvSuffix,
-  environment: WebUser['environment'],
-  gateway?: GatewayName,
-): WebUser {
-  const emailEnv = lazyEnv(
-    contractorCandidates('USER_CONTRACTOR', envSuffix, gateway),
-    `${LABEL} [${environment}] email`,
-  );
-  const passEnv = lazyEnv(
-    contractorCandidates('PASS_CONTRACTOR', envSuffix, gateway),
-    `${LABEL} [${environment}] password`,
-  );
+function buildCollaborator(envSuffix: EnvSuffix, environment: WebUser['environment'], gateway?: GatewayName): WebUser {
+	const emailEnv = lazyEnv(
+		contractorCandidates('USER_CONTRACTOR', envSuffix, gateway),
+		`${LABEL} [${environment}] email`
+	);
+	const passEnv = lazyEnv(
+		contractorCandidates('PASS_CONTRACTOR', envSuffix, gateway),
+		`${LABEL} [${environment}] password`
+	);
 
-  return {
-    role: 'contractor-collaborator',
-    environment,
-    get email() {
-      return emailEnv.value;
-    },
-    get password() {
-      return passEnv.value;
-    },
-    notes:
-      `Usuario "collaborator" del portal Contractor en ${environment}. ` +
-      `Equivale a resolveRoleCredentials('contractor'). ` +
-      `Cliente de referencia en TEST: "fast car" (ver features/gateway-pg/data/passengers.ts).`,
-  };
+	return {
+		role: 'contractor-collaborator',
+		environment,
+		get email() {
+			return emailEnv.value;
+		},
+		get password() {
+			return passEnv.value;
+		},
+		notes:
+			`Usuario "collaborator" del portal Contractor en ${environment}. ` +
+			`Equivale a resolveRoleCredentials('contractor'). ` +
+			`Cliente de referencia en TEST: "fast car" (ver features/gateway-pg/data/passengers.ts).`
+	};
 }
 
 /**
@@ -87,9 +78,9 @@ function buildCollaborator(
  *   const { email, password } = CONTRACTOR_COLLABORATOR.test;
  */
 export const CONTRACTOR_COLLABORATOR = {
-  test: buildCollaborator('TEST', 'test'),
-  uat: buildCollaborator('UAT', 'uat'),
-  prod: buildCollaborator('PROD', 'prod'),
+	test: buildCollaborator('TEST', 'test'),
+	uat: buildCollaborator('UAT', 'uat'),
+	prod: buildCollaborator('PROD', 'prod')
 } as const satisfies EnvironmentMap<WebUser>;
 
 /**
@@ -103,8 +94,8 @@ export const CONTRACTOR_COLLABORATOR = {
  * @param environment - ambiente (opcional). Default = ambiente activo (`process.env.ENV`).
  */
 export function getContractorCollaborator(
-  gateway?: GatewayName,
-  environment: UserEnvironment = resolveActiveEnvironment(),
+	gateway?: GatewayName,
+	environment: UserEnvironment = resolveActiveEnvironment()
 ): WebUser {
-  return buildCollaborator(ENV_SUFFIX_BY_ENVIRONMENT[environment], environment, gateway);
+	return buildCollaborator(ENV_SUFFIX_BY_ENVIRONMENT[environment], environment, gateway);
 }

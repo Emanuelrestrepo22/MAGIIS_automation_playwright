@@ -4,7 +4,7 @@
  */
 export const SERVICE_TYPES = {
 	/** Tipo "Regular" — viaje estándar. Límite ilimitado en config. */
-	REGULAR: 226,
+	REGULAR: 226
 } as const;
 
-export type ServiceTypeId = typeof SERVICE_TYPES[keyof typeof SERVICE_TYPES];
+export type ServiceTypeId = (typeof SERVICE_TYPES)[keyof typeof SERVICE_TYPES];

@@ -10,16 +10,29 @@
  *   - **El NÚMERO de tarjeta determina el outcome** (determinístico), igual que Stripe
  *     y a diferencia de Authorize.net (que usa CVV/ZIP). NO depende de monto, CVV ni ZIP.
  *   - Expiración fija `0930` (MMYY = 09/30) en casi todas; excepción documentada abajo.
- *   - CVV: los declines usan `999`; el resto acepta cualquier CVV ("any").
+ *   - **CVV: la doc lo declara POR TABLA, no por categoría.** No generalizar:
+ *       · tabla Decline Responses → `999` en las 14 filas.
+ *       · tabla AVS Responses → `123` en la primera fila, `321` en la segunda y `999` en
+ *         las 15 restantes. NO es "cualquier CVV" — el valor está fijado por fila.
+ *       · tabla CVV2 Responses → literal `any` en las 21 filas (ahí sí vale cualquiera).
+ *       · Fraud Profiler / Slow Processing → la doc no fija CVV.
+ *       · tabla Referral Response → `999`.
+ *     Por eso `EBIZ_AVS_REFERENCE` lleva su `cvc` explícito por fila.
  *   - **No requiere 3DS** en el flujo MAGIIS (`ebizchargeGatewayAdapter.requires3ds = false`).
  *     La categoría CAVV es un *indicador de respuesta*, no un challenge.
  *
  * Estructura de referencia completa:
  *   - `EBIZ_TEST_CARDS`  — objetos completos para las tarjetas con outcome de negocio
- *     (approved default, las 14 declines, CVV2 clave, fraud profiler, processing delay).
+ *     (approved default, las 14 declines, el decline de CVV2 de Amex, referral,
+ *     CVV2 clave, fraud profiler, processing delay).
  *   - Arrays `EBIZ_*_REFERENCE` — capturan TODOS los números/códigos documentados de las
  *     categorías puramente de anotación (AVS, CVV2 completo, CAVV, Card Level), sin
  *     promoverlos a objetos de card (no son outcomes de negocio distintos para MAGIIS).
+ *
+ * Cobertura de la doc: **92 números en 8 tablas** (17 AVS + 21 CVV2 + 14 declines +
+ * 2 fraud profiler + 1 referral + 5 slow processing + 12 CAVV + 20 card level, sin
+ * solapes). `ebiz-cards-fidelity.unit.spec.ts` transcribe las 8 tablas y falla si este
+ * archivo divierge de ellas.
  *
  * Regla arquitectónica (igual que Stripe/Authorize):
  *   - Importar tarjetas desde `tests/fixtures/gateways/ebizcharge/cards` — no duplicar inline.
@@ -28,7 +41,7 @@
 
 export type EbizCardBrand = 'visa' | 'mastercard' | 'amex' | 'discover';
 
-export type EbizOutcomeCategory = 'approved' | 'declined' | 'cvv2' | 'fraud-profiler' | 'processing-delay';
+export type EbizOutcomeCategory = 'approved' | 'declined' | 'cvv2' | 'fraud-profiler' | 'processing-delay' | 'referral';
 
 export type EbizTestCard = {
 	number: string;
@@ -44,6 +57,16 @@ export type EbizTestCard = {
 	declineMessage?: string;
 	/** Código AVS devuelto por la tarjeta approved (ej. 'YYY', 'NNN'). */
 	avsResponse?: string;
+	/**
+	 * Dirección de facturación — AUTOCOMPLETE exclusivo de eBizCharge (verificado en vivo
+	 * 2026-07-30). Se escribe, aparecen sugerencias como en pick-up/drop-off, y al elegir la
+	 * que matchea el sistema DERIVA el código postal. Obligatorio en el alta de tarjeta.
+	 */
+	billingAddress?: string;
+	/** Sugerencia del geocoder a elegir — evita depender del orden de la lista. */
+	addressOption?: string;
+	/** ZIP que el sistema debe autocompletar. Valor DERIVADO: se asserta, nunca se tipea. */
+	expectedZip?: string;
 	/** Resultado CVV2 (M/N/P/S/U/X/n-a). */
 	cvv2Result?: string;
 	profilerResponse?: 'review' | 'reject';
@@ -64,14 +87,28 @@ export const EBIZ_ANY_CVV_AMEX = '1234' as const;
 export const EBIZ_DEFAULT_HOLDER = 'MAGIIS QA Test';
 
 /**
- * Datos de facturación para el form nativo eBizCharge (`app-credit-card-payment-data`).
- * eBiz agrega dos campos que las otras PSP no piden: `address` (Dirección de Facturación) y
- * `zipCode`. El control `address` tiene **maxlength=30**: pasarse invalida el FormGroup y
- * deja GUARDAR deshabilitado (verificado en device 2026-07-30). Mantener ≤30 chars.
- * El outcome eBiz lo define el NÚMERO de tarjeta, así que address/zip son inertes al resultado.
+ * Dirección de facturación por defecto para el 5° campo del form nativo (eBiz la exige y el
+ * ZIP se DERIVA de la sugerencia elegida). Es un dato INERTE al outcome: en eBizCharge el
+ * trigger es el NÚMERO de tarjeta y la respuesta AVS está fijada por fila de la tabla del
+ * sandbox, no por la dirección ingresada. Por eso puede ser default compartido — una card
+ * que necesite una dirección específica declara la suya (`billingAddress`/`addressOption`
+ * en la celda pisan el default en el resolver).
+ * Texto de la opción = sugerencia EXACTA del geocoder (snapshot DOM real, 2026-07-30):
+ * devuelve 4 variantes de "1234 Main Street"; sin sufijo de ciudad la elección sería
+ * arbitraria y el ZIP derivado dependería de un orden que no controlamos.
+ */
+export const EBIZ_DEFAULT_BILLING_ADDRESS = '1234 Main street' as const;
+export const EBIZ_DEFAULT_BILLING_ADDRESS_OPTION = '1234 Main Street, Los Angeles, CA, USA' as const;
+
+/**
+ * Datos de facturacion para el form NATIVO de app-pax (`app-credit-card-payment-data`), distinto
+ * del par `EBIZ_DEFAULT_BILLING_ADDRESS`/`_OPTION` que usa el flujo web con autocompletado.
+ * En el form nativo el control `address` tiene **maxlength=30**: pasarse invalida el FormGroup y
+ * deja GUARDAR deshabilitado (verificado en device 2026-07-30). Mantener <=30 chars.
+ * El outcome eBiz lo define el NUMERO de tarjeta, asi que address/zip son inertes al resultado.
  */
 export const EBIZ_BILLING = {
-	address: '123 Main St, Dallas TX', // 22 chars (≤30)
+	address: '123 Main St, Dallas TX', // 22 chars (<=30)
 	zip: '75201'
 } as const;
 
@@ -94,7 +131,72 @@ export const EBIZ_TEST_CARDS = {
 		expectedOutcome: 'approved',
 		avsResponse: 'YYY',
 		cvv2Result: 'M',
+		// Dirección verificada en el exploratorio en vivo (2026-07-30). El ZIP NO se declara: el
+		// sistema lo deriva al elegir la sugerencia, y el oráculo asserta que llegó. Explícita acá
+		// (misma que el default del resolver) porque es la card del happy path canónico.
+		billingAddress: EBIZ_DEFAULT_BILLING_ADDRESS,
+		addressOption: EBIZ_DEFAULT_BILLING_ADDRESS_OPTION,
 		description: 'Visa → approved (AVS YYY, CVV2 M). Default happy path.'
+	},
+
+	/**
+	 * Approved con AVS `NNN` (dirección Y ZIP no coinciden) — fila 6 de la tabla AVS.
+	 * Promovida a card de negocio porque el riesgo NO es un rechazo sino lo contrario:
+	 * la transacción se aprueba con la verificación de dirección fallida, y hay que
+	 * comprobar que el sistema no la trate como una verificación limpia.
+	 */
+	visaApprovedAvsMismatch: {
+		number: '4000100511112229',
+		brand: 'visa',
+		exp: EBIZ_DEFAULT_EXPIRY,
+		cvc: '999', // la doc fija 999 para esta fila de la tabla AVS
+		holderName: EBIZ_DEFAULT_HOLDER,
+		category: 'approved',
+		expectedOutcome: 'approved-avs-mismatch',
+		avsResponse: 'NNN',
+		cvv2Result: 'M',
+		description: 'Visa → approved con AVS NNN (dirección y ZIP no coinciden).'
+	},
+
+	// ═══════════════════════════════════════════════════════════════════
+	// APPROVED POR MARCA (fila `M` de la tabla CVV2 de cada marca)
+	// ═══════════════════════════════════════════════════════════════════
+
+	mastercardApproved: {
+		number: '5555444433332226',
+		brand: 'mastercard',
+		exp: EBIZ_DEFAULT_EXPIRY,
+		cvc: EBIZ_ANY_CVV,
+		holderName: EBIZ_DEFAULT_HOLDER,
+		category: 'approved',
+		expectedOutcome: 'approved',
+		avsResponse: 'YYY',
+		cvv2Result: 'M',
+		description: 'Mastercard → approved (AVS YYY, CVV2 M).'
+	},
+	amexApproved: {
+		number: '371122223332225',
+		brand: 'amex',
+		exp: EBIZ_DEFAULT_EXPIRY,
+		cvc: EBIZ_ANY_CVV_AMEX, // Amex: CVV de 4 dígitos
+		holderName: EBIZ_DEFAULT_HOLDER,
+		category: 'approved',
+		expectedOutcome: 'approved',
+		avsResponse: 'YYY',
+		cvv2Result: 'M',
+		description: 'Amex → approved (AVS YYY, CVV2 M). Único caso con CVV de 4 dígitos en el happy path.'
+	},
+	discoverApproved: {
+		number: '6011222233332224',
+		brand: 'discover',
+		exp: EBIZ_DEFAULT_EXPIRY,
+		cvc: EBIZ_ANY_CVV,
+		holderName: EBIZ_DEFAULT_HOLDER,
+		category: 'approved',
+		expectedOutcome: 'approved',
+		avsResponse: 'YYY',
+		cvv2Result: 'M',
+		description: 'Discover → approved (AVS YYY, CVV2 M).'
 	},
 
 	// ═══════════════════════════════════════════════════════════════════
@@ -296,16 +398,23 @@ export const EBIZ_TEST_CARDS = {
 		cvv2Result: 'P',
 		description: 'CVV2 P (Not Processed). AVS YYY.'
 	},
+	/**
+	 * La doc la lista en la tabla CVV2 Responses, pero su CVV2 Response es
+	 * `CVV2 No Match (Decline)` y su AVS Response viene VACÍO: el outcome de negocio es
+	 * un RECHAZO, no una aprobación con anotación. Por eso `category: 'declined'` — el
+	 * front debe mostrar tarjeta rechazada. Clasificarla como `'cvv2'` hacía que se
+	 * pudiera tomar por happy path.
+	 */
 	amexCvv2Decline: {
 		number: '371122223332241',
 		brand: 'amex',
 		exp: EBIZ_DEFAULT_EXPIRY,
 		cvc: EBIZ_ANY_CVV_AMEX,
 		holderName: EBIZ_DEFAULT_HOLDER,
-		category: 'cvv2',
-		expectedOutcome: 'cvv2-no-match-decline',
+		category: 'declined',
+		expectedOutcome: 'declined',
 		cvv2Result: 'no-match-decline',
-		description: 'Amex → CVV2 No Match que resulta en Decline.'
+		description: 'Amex → CVV2 No Match que resulta en Decline (tabla CVV2 de la doc, outcome = decline).'
 	},
 
 	// ═══════════════════════════════════════════════════════════════════
@@ -333,6 +442,27 @@ export const EBIZ_TEST_CARDS = {
 		expectedOutcome: 'fraud-reject',
 		profilerResponse: 'reject',
 		description: 'Fraud Profiler → reject.'
+	},
+
+	// ═══════════════════════════════════════════════════════════════════
+	// REFERRAL (tabla propia en la doc — 1 sola tarjeta)
+	// ═══════════════════════════════════════════════════════════════════
+
+	/**
+	 * Tabla `Referral Response` de la doc. Es una CUARTA clase de outcome, distinta de
+	 * approved / declined / fraud: el emisor no aprueba ni rechaza, deriva la operación a
+	 * autorización por voz. Para MAGIIS el viaje NO puede quedar autorizado.
+	 * La doc no publica AVS/CVV2/CAVV/Card Level para esta fila.
+	 */
+	referral: {
+		number: '4000300111112229',
+		brand: 'visa',
+		exp: EBIZ_DEFAULT_EXPIRY,
+		cvc: EBIZ_DECLINE_CVV,
+		holderName: EBIZ_DEFAULT_HOLDER,
+		category: 'referral',
+		expectedOutcome: 'referral',
+		description: 'Referral — el emisor deriva a autorización por voz (no aprueba ni rechaza).'
 	},
 
 	// ═══════════════════════════════════════════════════════════════════
@@ -403,25 +533,32 @@ export type EbizTestCardKey = keyof typeof EBIZ_TEST_CARDS;
 // Capturan todos los números/códigos documentados sin inflar el registry.
 // ═══════════════════════════════════════════════════════════════════════
 
-/** AVS — serie approved `4000100…`. Todas devuelven approved con CVV2 M / CAVV A. */
-export const EBIZ_AVS_REFERENCE: ReadonlyArray<{ number: string; avs: string }> = [
-	{ number: '4000100011112224', avs: 'YYY' },
-	{ number: '4000100111112223', avs: 'YYX' },
-	{ number: '4000100211112222', avs: 'NYZ' },
-	{ number: '4000100311112221', avs: 'NYW' },
-	{ number: '4000100411112220', avs: 'YNA' },
-	{ number: '4000100511112229', avs: 'NNN' },
-	{ number: '4000100611112228', avs: 'XXW' },
-	{ number: '4000100711112227', avs: 'XXU' },
-	{ number: '4000100811112226', avs: 'XXR' },
-	{ number: '4000100911112225', avs: 'XXS' },
-	{ number: '4000101011112222', avs: 'XXE' },
-	{ number: '4000101111112221', avs: 'XXG' },
-	{ number: '4000101211112220', avs: 'YYG' },
-	{ number: '4000101311112229', avs: 'GGG' },
-	{ number: '4000101411112228', avs: 'YGG' },
-	{ number: '4000101511112227', avs: 'NN' },
-	{ number: '4000101611112226', avs: 'N/A' }
+/**
+ * AVS — serie approved `4000100…`. Las 17 devuelven approved con CVV2 `M` y CAVV `A`
+ * (y Card Level `A`), o sea el AVS es la ÚNICA variable de la tabla.
+ *
+ * `cvc` va explícito POR FILA porque la doc lo fija: `123` en la primera, `321` en la
+ * segunda y `999` en las 15 restantes. Consumir estas filas con `EBIZ_ANY_CVV` metería
+ * un dato que la doc no respalda (ver la regla de CVV por tabla en el header).
+ */
+export const EBIZ_AVS_REFERENCE: ReadonlyArray<{ number: string; avs: string; cvc: string }> = [
+	{ number: '4000100011112224', avs: 'YYY', cvc: '123' },
+	{ number: '4000100111112223', avs: 'YYX', cvc: '321' },
+	{ number: '4000100211112222', avs: 'NYZ', cvc: '999' },
+	{ number: '4000100311112221', avs: 'NYW', cvc: '999' },
+	{ number: '4000100411112220', avs: 'YNA', cvc: '999' },
+	{ number: '4000100511112229', avs: 'NNN', cvc: '999' },
+	{ number: '4000100611112228', avs: 'XXW', cvc: '999' },
+	{ number: '4000100711112227', avs: 'XXU', cvc: '999' },
+	{ number: '4000100811112226', avs: 'XXR', cvc: '999' },
+	{ number: '4000100911112225', avs: 'XXS', cvc: '999' },
+	{ number: '4000101011112222', avs: 'XXE', cvc: '999' },
+	{ number: '4000101111112221', avs: 'XXG', cvc: '999' },
+	{ number: '4000101211112220', avs: 'YYG', cvc: '999' },
+	{ number: '4000101311112229', avs: 'GGG', cvc: '999' },
+	{ number: '4000101411112228', avs: 'YGG', cvc: '999' },
+	{ number: '4000101511112227', avs: 'NN', cvc: '999' },
+	{ number: '4000101611112226', avs: 'N/A', cvc: '999' }
 ] as const;
 
 /** CVV2 completo — por marca. `cvv2` = resultado esperado. */

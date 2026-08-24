@@ -84,18 +84,7 @@ export class AuthorizeSandboxApi extends ApiBase {
 		return this.post(payload);
 	}
 
-	/**
-	 * Arma el payload canónico `createTransactionRequest` para un authOnlyTransaction.
-	 *
-	 * `transactionSettings.duplicateWindow=0` deshabilita la Duplicate Transaction Detection
-	 * de Authorize.net (rechaza con resultCode="Error" si card+amount+billTo... se repiten
-	 * dentro de una ventana de 120s por defecto — confirmado contra la doc oficial:
-	 * https://developer.authorize.net/api/reference/dist/json/responseCodes.json). Los
-	 * fixtures usan combinaciones fijas (mismo número+CVV+ZIP+amount) por diseño para que el
-	 * outcome sea determinístico → correr la suite más de una vez en <2min dispara falsos
-	 * "Error" que no son un fallo del contrato. Deshabilitar el window es la práctica estándar
-	 * de la plataforma para test suites repetibles (no baja ningún assert de negocio).
-	 */
+	/** Arma el payload canónico `createTransactionRequest` para un authOnlyTransaction. */
 	private buildAuthOnlyPayload(input: AuthorizeAuthOnlyInput): AuthorizeCreateTransactionRequest {
 		const { card, amount, refId } = input;
 		// expirationDate en formato MMYY (ej. "1230" para 12/2030).
@@ -115,6 +104,12 @@ export class AuthorizeSandboxApi extends ApiBase {
 						lastName: card.holderName.split(' ').slice(1).join(' ') || 'Test',
 						zip: card.zip
 					},
+					// duplicateWindow=0: recomendación oficial de la guía de testing de Authorize.net
+					// para transacciones repetidas. Sin esto, misma tarjeta + mismo monto (10.00 fijo
+					// en el pack de contrato) dentro de la ventana de dedupe → responseCode 3
+					// (error 11, duplicate) — observado en vivo 2026-07-29 sobre la Visa 4111
+					// martillada por las corridas del día. Va DESPUÉS de billTo (API JSON de
+					// Authorize sensible al orden de campos).
 					transactionSettings: {
 						setting: [{ settingName: 'duplicateWindow', settingValue: '0' }]
 					}
@@ -133,12 +128,20 @@ export class AuthorizeSandboxApi extends ApiBase {
 
 		const cleaned = (await response.text()).replace(/^﻿/, '').trim();
 		if (!cleaned) {
-			throw new AuthorizeApiError(`Authorize sandbox respondió body vacío (status ${response.status()})`, response, cleaned);
+			throw new AuthorizeApiError(
+				`Authorize sandbox respondió body vacío (status ${response.status()})`,
+				response,
+				cleaned
+			);
 		}
 		try {
 			return JSON.parse(cleaned) as AuthorizeApiResponse;
 		} catch (err) {
-			throw new AuthorizeApiError(`Authorize sandbox devolvió JSON inválido: ${(err as Error).message}`, response, cleaned);
+			throw new AuthorizeApiError(
+				`Authorize sandbox devolvió JSON inválido: ${(err as Error).message}`,
+				response,
+				cleaned
+			);
 		}
 	}
 }

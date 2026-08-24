@@ -112,25 +112,6 @@ export class QuoteWidgetPage extends UiBase {
 	}
 
 	/**
-	 * Fija la cantidad de pasajeros del paso 1.
-	 *
-	 * SÍ forma parte del happy path: medido en vivo el 2026-07-29, el widget arranca en
-	 * **0 pasajeros** y con 0 NO avanza a la selección de vehículo. El comentario previo del POM
-	 * ("el default de 1 pax alcanza") no se sostiene contra el widget real — y la grabación de
-	 * referencia también incrementaba el contador antes de avanzar.
-	 *
-	 * Usa el rol semántico `spinbutton` (el widget lo expone) en vez del `i:nth-child(3)`
-	 * posicional de `increasePassengerCount()`, y ASEVERA el valor: si el input reactivo descarta
-	 * el fill, esto falla acá con el motivo real en vez de arrastrar el síntoma dos pasos.
-	 */
-	@step
-	async setPassengerCount(count = 1): Promise<void> {
-		const field = this.page.getByRole('spinbutton').first();
-		await field.fill(String(count));
-		await expect(field, `la cantidad de pasajeros debe quedar en ${count}`).toHaveValue(String(count), { timeout: 10_000 });
-	}
-
-	/**
 	 * Avanza a la selección de vehículo. Botón "Select Vehicle" / "Seleccionar Vehículo".
 	 *
 	 * Asevera la TRANSICIÓN, no sólo el click: sin esto el click "pasa" aunque el widget se quede
@@ -139,6 +120,13 @@ export class QuoteWidgetPage extends UiBase {
 	 */
 	@step
 	async selectVehicle(): Promise<void> {
+		// GATE DE SINCRONIZACIÓN: tras elegir la sugerencia del typeahead, el control de dirección
+		// queda `ng-invalid` hasta que resuelve el geocode/cálculo de ruta (~2-5 s, medido en vivo
+		// 2026-07-30). Si se pulsa antes, el submit se DESCARTA EN SILENCIO —sin toast ni mensaje—
+		// y el paso siguiente (Trip Note) nunca monta; el síntoma era un timeout en `setTripNote`
+		// que parecía un problema de selector y no lo era.
+		// Se espera el estado observable del form, no un sleep fijo.
+		await expect(this.page.locator('app-input-search-place-quote.ng-invalid')).toHaveCount(0, { timeout: 30_000 });
 		await this.page.getByRole('button', { name: /^Select Vehicle$|^Seleccionar Veh[íi]culo$/i }).click();
 		await expect(this.tripNoteField(), 'el widget debe avanzar al paso de selección de vehículo').toBeVisible({ timeout: 20_000 });
 	}
@@ -210,17 +198,27 @@ export class QuoteWidgetPage extends UiBase {
 	}
 
 	/**
-	 * Ajusta la cantidad de pasajeros.
+	 * Fija la cantidad de pasajeros. **Es parte del happy path**, no un extra.
 	 *
-	 * ⚠️ FRAGILE — la grabación usa `dblclick` sobre `.pax-count-default` y luego `i:nth-child(3)`,
-	 * un locator posicional sin semántica. NO forma parte del happy path (el default de 1 pax
-	 * alcanza), así que queda expuesto aparte para no arrastrar la fragilidad al camino principal.
-	 * Confirmar el selector real antes de usarlo en un caso que dependa del número de pasajeros.
+	 * El comentario anterior de este método afirmaba que "el default de 1 pax alcanza" — es FALSO:
+	 * el widget nace con `paxCount = 0` y el input arranca `ng-invalid invalid-input-pax-qty`
+	 * (medido en vivo 2026-07-30 sobre apps-test / carrier 1521). Con 0 pasajeros el botón
+	 * "Select Vehicle" NO avanza y **no emite ninguna validación visible** — el paso siguiente
+	 * (Trip Note) nunca se monta. Ver el hallazgo QUOTE-PAX-0 del RUN-LOG.
+	 *
+	 * Se setea por el rol `spinbutton` (semántico) en vez del `dblclick` posicional de la grabación.
 	 */
 	@step
-	async increasePassengerCount(): Promise<void> {
-		await this.page.locator('.d-flex.align-items-center.pax-count-default').dblclick();
-		await this.page.locator('i:nth-child(3)').dblclick();
+	async setPassengerCount(count: number): Promise<void> {
+		const field = this.page.getByRole('spinbutton').first();
+		await field.fill(String(count));
+		// BLUR OBLIGATORIO: sin él el control queda `ng-untouched` y "Select Vehicle" no avanza —
+		// aunque el valor ya sea 1 y `ng-valid`. Medido en vivo 2026-07-30: con blur avanza al
+		// primer click; sin blur no avanza ni al tercero.
+		await field.blur();
+		// El fill de un input Angular reactivo puede no commitear si el componente lo revierte:
+		// se verifica el valor efectivo antes de seguir (misma trampa que el form de tarjeta).
+		await expect(field).toHaveValue(String(count), { timeout: 10_000 });
 	}
 }
 

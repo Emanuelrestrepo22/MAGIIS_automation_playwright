@@ -63,16 +63,23 @@ export class GatewaySwitchSteps extends UiBase {
 		const merchantUser = process.env.EBIZ_MERCHANT_USER ?? '';
 		const merchantPassword = process.env.EBIZ_MERCHANT_PASSWORD ?? '';
 		const securityKey = process.env.EBIZ_SECURITY_KEY ?? '';
-		if (!merchantUser || !merchantPassword || !securityKey) {
-			throw new Error('Faltan EBIZ_MERCHANT_USER / EBIZ_MERCHANT_PASSWORD / EBIZ_SECURITY_KEY en .env.test (ver .env.example y el adapter ebizcharge.credsEnvKeys).');
+		// 4.º factor del modal real (EBizSubscription-Key) — verificado en vivo 2026-07-30.
+		const subscriptionKey = process.env.EBIZ_SUBSCRIPTION_KEY ?? '';
+		if (!merchantUser || !merchantPassword || !securityKey || !subscriptionKey) {
+			throw new Error(
+				'Faltan EBIZ_MERCHANT_USER / EBIZ_MERCHANT_PASSWORD / EBIZ_SECURITY_KEY / EBIZ_SUBSCRIPTION_KEY en .env.test (ver .env.example y el adapter ebizcharge.credsEnvKeys).'
+			);
 		}
-		return { merchantUser, merchantPassword, securityKey };
+		return { merchantUser, merchantPassword, securityKey, subscriptionKey };
 	}
 
 	/** Navega al App Store y devuelve la pasarela actualmente vinculada (o null). */
 	async currentActiveGateway(): Promise<SwitchableGateway | null> {
 		await this.appStore.goto();
 		for (const gateway of ALL_GATEWAYS) {
+			// Card ausente en el carrier → saltar (mismo patrón que expectExclusivity):
+			// readState espera la card visible 20s y reventaría por una pasarela no ofrecida.
+			if ((await this.appStore.cardFor(gateway).count()) === 0) continue;
 			if ((await this.appStore.readState(gateway)) === 'linked') return gateway;
 		}
 		return null;
@@ -92,6 +99,36 @@ export class GatewaySwitchSteps extends UiBase {
 		});
 
 		return active;
+	}
+
+	/**
+	 * Idempotente: garantiza que `gateway` quede VINCULABLE (slot de exclusividad libre para él),
+	 * con la MÍNIMA destrucción necesaria. Precondición de los casos CFG de link.
+	 *
+	 * POR QUÉ existe (fix live 2026-07-28): los Given de la suite CFG llamaban
+	 * `unlinkActiveGateway()` de forma INCONDICIONAL — incluso cuando la pasarela bajo prueba ya
+	 * estaba `linkable`. Eso (a) desvinculaba una pasarela ajena sin necesidad, disparando el
+	 * cascade `cleaningWallets` del carrier compartido, y (b) rompía la suite cuando la activa era
+	 * Stripe, cuyo "Desvincular" no responde al click programático (flujo OAuth Connect, F5).
+	 *
+	 * Semántica por estado de la card de `gateway`:
+	 *   - `linkable`    → no-op (el slot ya está libre para él).
+	 *   - `linked`      → se desvincula A SÍ MISMO (DESTRUCTIVO) y queda vinculable.
+	 *   - `unavailable` → otra pasarela ocupa el slot → se desvincula LA ACTIVA (DESTRUCTIVO).
+	 * Devuelve la pasarela desvinculada, o null si no hizo falta desvincular nada.
+	 */
+	async ensureGatewayLinkable(gateway: SwitchableGateway): Promise<SwitchableGateway | null> {
+		await this.appStore.goto();
+		const state = await this.appStore.readState(gateway);
+		if (state === 'linkable') return null;
+		if (state === 'linked') {
+			await test.step(`Desvincular ${gateway} (se libera a sí mismo) — DESTRUCTIVO (cleaningWallets)`, async () => {
+				await this.appStore.unlinkGateway(gateway);
+			});
+			return gateway;
+		}
+		// unavailable/unknown → el slot lo ocupa otra pasarela.
+		return this.unlinkActiveGateway();
 	}
 
 	/**

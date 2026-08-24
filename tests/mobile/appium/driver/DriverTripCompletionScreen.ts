@@ -30,14 +30,20 @@ export class DriverTripCompletionScreen extends AppiumSessionBase {
 			}
 
 			return await driver.execute(() => {
-				const normalize = (value: unknown): string => String(value ?? '').replace(/\s+/g, ' ').trim();
+				const normalize = (value: unknown): string =>
+					String(value ?? '')
+						.replace(/\s+/g, ' ')
+						.trim();
 				const isVisible = (element: Element): boolean => {
 					const html = element as HTMLElement;
 					const rect = html.getBoundingClientRect();
 					const style = window.getComputedStyle(html);
-					return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+					return (
+						style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0
+					);
 				};
-				const textOf = (element: Element): string => normalize((element as HTMLElement).innerText || element.textContent);
+				const textOf = (element: Element): string =>
+					normalize((element as HTMLElement).innerText || element.textContent);
 				const attrOf = (element: Element, name: string): string => normalize(element.getAttribute(name));
 
 				const visibleElements = Array.from(document.querySelectorAll('*'))
@@ -47,25 +53,30 @@ export class DriverTripCompletionScreen extends AppiumSessionBase {
 						return {
 							tag: html.tagName.toLowerCase(),
 							id: normalize(html.id),
-							accessibilityId: attrOf(html, 'aria-label') || attrOf(html, 'content-desc') || attrOf(html, 'data-testid'),
+							accessibilityId:
+								attrOf(html, 'aria-label') ||
+								attrOf(html, 'content-desc') ||
+								attrOf(html, 'data-testid'),
 							text: textOf(html),
 							className: normalize(typeof html.className === 'string' ? html.className : ''),
-							role: attrOf(html, 'role'),
+							role: attrOf(html, 'role')
 						};
 					})
 					.filter(item => item.id || item.accessibilityId || item.text || item.className || item.role);
 
 				const matchingTexts = visibleElements.filter(item => {
-					const haystacks = [item.id, item.accessibilityId, item.text, item.className, item.role]
-						.map(value => value.toLowerCase());
-					return haystacks.some(value =>
-						value.includes('finalizado') ||
-						value.includes('completado') ||
-						value.includes('confirmado') ||
-						value.includes('pago') ||
-						value.includes('charged') ||
-						value.includes('amount') ||
-						value.includes('resume')
+					const haystacks = [item.id, item.accessibilityId, item.text, item.className, item.role].map(value =>
+						value.toLowerCase()
+					);
+					return haystacks.some(
+						value =>
+							value.includes('finalizado') ||
+							value.includes('completado') ||
+							value.includes('confirmado') ||
+							value.includes('pago') ||
+							value.includes('charged') ||
+							value.includes('amount') ||
+							value.includes('resume')
 					);
 				});
 
@@ -75,10 +86,11 @@ export class DriverTripCompletionScreen extends AppiumSessionBase {
 
 				const ids = Array.from(new Set(visibleElements.map(item => item.id).filter(Boolean))).slice(0, 100);
 				const texts = Array.from(new Set(visibleElements.map(item => item.text).filter(Boolean))).slice(0, 100);
-				const chargedAmountMatch = visibleElements.find(item =>
-					/\$|\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?/.test(item.text) ||
-					/(charged|amount|monto|total)/i.test(item.id) ||
-					/(charged|amount|monto|total)/i.test(item.className)
+				const chargedAmountMatch = visibleElements.find(
+					item =>
+						/\$|\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?/.test(item.text) ||
+						/(charged|amount|monto|total)/i.test(item.id) ||
+						/(charged|amount|monto|total)/i.test(item.className)
 				);
 
 				return {
@@ -86,14 +98,18 @@ export class DriverTripCompletionScreen extends AppiumSessionBase {
 					texts,
 					ids,
 					buttons,
-					matches: matchingTexts.map(item =>
-						`${item.tag} | id=${item.id} | aria=${item.accessibilityId} | text=${item.text} | class=${item.className} | role=${item.role}`
+					matches: matchingTexts.map(
+						item =>
+							`${item.tag} | id=${item.id} | aria=${item.accessibilityId} | text=${item.text} | class=${item.className} | role=${item.role}`
 					),
-					chargedAmount: chargedAmountMatch?.text ?? '',
+					chargedAmount: chargedAmountMatch?.text ?? ''
 				};
 			});
 		} catch (error) {
-			console.warn('[DriverTripCompletionScreen] WebView snapshot failed:', error instanceof Error ? error.message : error);
+			console.warn(
+				'[DriverTripCompletionScreen] WebView snapshot failed:',
+				error instanceof Error ? error.message : error
+			);
 			return null;
 		}
 	}
@@ -131,7 +147,9 @@ export class DriverTripCompletionScreen extends AppiumSessionBase {
 				}
 			}
 
-			lastSource = await this.getDriver().getPageSource().catch(() => '');
+			lastSource = await this.getDriver()
+				.getPageSource()
+				.catch(() => '');
 			if (/finalizado|completado|confirmado|pago|charged|amount|summary|resumen/i.test(lastSource)) {
 				return;
 			}
@@ -142,7 +160,9 @@ export class DriverTripCompletionScreen extends AppiumSessionBase {
 		const details = lastSnapshot
 			? `URL=${lastSnapshot.url} | Textos=${lastSnapshot.texts.join(' || ')} | Botones=${lastSnapshot.buttons.join(' || ')}`
 			: `pageSource=${lastSource.slice(0, 500) || '<empty>'}`;
-		throw new Error(`[DriverTripCompletionScreen] Completion screen did not appear within ${timeout}ms. ${details}`);
+		throw new Error(
+			`[DriverTripCompletionScreen] Completion screen did not appear within ${timeout}ms. ${details}`
+		);
 	}
 
 	async getChargedAmount(timeout = 10_000): Promise<string> {
@@ -151,7 +171,9 @@ export class DriverTripCompletionScreen extends AppiumSessionBase {
 			return snapshot.chargedAmount;
 		}
 
-		const source = await this.getDriver().getPageSource().catch(() => '');
+		const source = await this.getDriver()
+			.getPageSource()
+			.catch(() => '');
 		const match = source.match(/\$[0-9.,]+/);
 		if (match) {
 			return match[0];
@@ -169,13 +191,24 @@ export class DriverTripCompletionScreen extends AppiumSessionBase {
 			const webview = await this.switchToWebView();
 			if (webview) {
 				clicked = await this.getDriver().execute(() => {
-					const normalize = (value: unknown): string => String(value ?? '').replace(/\s+/g, ' ').trim().toLowerCase();
+					const normalize = (value: unknown): string =>
+						String(value ?? '')
+							.replace(/\s+/g, ' ')
+							.trim()
+							.toLowerCase();
 					const isVisible = (element: HTMLElement): boolean => {
 						const rect = element.getBoundingClientRect();
 						const style = window.getComputedStyle(element);
-						return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+						return (
+							style.display !== 'none' &&
+							style.visibility !== 'hidden' &&
+							rect.width > 0 &&
+							rect.height > 0
+						);
 					};
-					const buttons = Array.from(document.querySelectorAll('button, [role="button"], ion-button, a')) as HTMLElement[];
+					const buttons = Array.from(
+						document.querySelectorAll('button, [role="button"], ion-button, a')
+					) as HTMLElement[];
 					const match = buttons.find(element => {
 						if (!isVisible(element)) {
 							return false;
@@ -183,7 +216,12 @@ export class DriverTripCompletionScreen extends AppiumSessionBase {
 
 						const text = normalize(element.innerText || element.textContent);
 						const id = normalize(element.id);
-						return text.includes('cerrar') || text.includes('close') || id.includes('close') || id.includes('cerrar');
+						return (
+							text.includes('cerrar') ||
+							text.includes('close') ||
+							id.includes('close') ||
+							id.includes('cerrar')
+						);
 					});
 
 					if (match) {
@@ -195,16 +233,22 @@ export class DriverTripCompletionScreen extends AppiumSessionBase {
 				});
 			}
 		} catch (error) {
-			console.warn('[DriverTripCompletionScreen] close web fallback:', error instanceof Error ? error.message : error);
+			console.warn(
+				'[DriverTripCompletionScreen] close web fallback:',
+				error instanceof Error ? error.message : error
+			);
 		}
 
 		if (!clicked) {
-			clicked = await this.clickFirstNative([
-				'//*[@text="Cerrar"]',
-				'//*[@text="Cerrar viaje"]',
-				'//*[contains(@text, "Cerrar")]',
-				'//*[contains(@text, "Close")]',
-			], 5_000);
+			clicked = await this.clickFirstNative(
+				[
+					'//*[@text="Cerrar"]',
+					'//*[@text="Cerrar viaje"]',
+					'//*[contains(@text, "Cerrar")]',
+					'//*[contains(@text, "Close")]'
+				],
+				5_000
+			);
 		}
 
 		if (!clicked) {

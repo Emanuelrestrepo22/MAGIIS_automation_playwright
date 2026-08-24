@@ -38,21 +38,30 @@ test.describe('Gateway PG · Carrier · Configuración Pasarela Stripe — casos
 		'[TS-STRIPE-TC1002] @smoke @critical @cfg Validar vincular Stripe con credenciales válidas',
 		{ annotation: [{ type: 'tms', description: 'MG-212' }] },
 		async () => {
-			test.fixme(true, 'PENDIENTE: link Stripe = OAuth Connect (sin modal de credenciales) — sin driver genérico en la factory CFG (TODO F5).');
+			test.fixme(
+				true,
+				'PENDIENTE: link Stripe = OAuth Connect (sin modal de credenciales) — sin driver genérico en la factory CFG (TODO F5).'
+			);
 		}
 	);
 	test(
 		'[TS-STRIPE-TC1003] @regression @cfg Validar impedir vincular Stripe con credenciales inválidas',
 		{ annotation: [{ type: 'tms', description: 'MG-213' }] },
 		async () => {
-			test.fixme(true, 'PENDIENTE: rechazo de link Stripe ocurre dentro del flujo OAuth Connect — sin driver genérico en la factory CFG (TODO F5).');
+			test.fixme(
+				true,
+				'PENDIENTE: rechazo de link Stripe ocurre dentro del flujo OAuth Connect — sin driver genérico en la factory CFG (TODO F5).'
+			);
 		}
 	);
 	test(
 		'[TS-STRIPE-TC1008] @regression @cfg Validar la request de link de Stripe retorna un status de éxito conocido',
 		{ annotation: [{ type: 'tms', description: 'MG-218' }] },
 		async () => {
-			test.fixme(true, 'PENDIENTE: la mutación de link Stripe viaja por el redirect OAuth (no por el modal) — sin driver genérico en la factory CFG (TODO F5).');
+			test.fixme(
+				true,
+				'PENDIENTE: la mutación de link Stripe viaja por el redirect OAuth (no por el modal) — sin driver genérico en la factory CFG (TODO F5).'
+			);
 		}
 	);
 });

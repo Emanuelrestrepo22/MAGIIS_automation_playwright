@@ -44,8 +44,8 @@ export function resolveActiveEnvironment(): UserEnvironment {
 
 /** Devuelve el valor trimeado o undefined si está vacío / ausente. */
 function normalize(value: string | undefined): string | undefined {
-  const trimmed = value?.trim();
-  return trimmed ? trimmed : undefined;
+	const trimmed = value?.trim();
+	return trimmed ? trimmed : undefined;
 }
 
 /**
@@ -56,18 +56,18 @@ function normalize(value: string | undefined): string | undefined {
  * @param label - descriptor humano del fixture (para el mensaje de error)
  */
 export function requireEnv(candidates: readonly string[], label: string): string {
-  for (const name of candidates) {
-    const value = normalize(process.env[name]);
-    if (value) {
-      return value;
-    }
-  }
+	for (const name of candidates) {
+		const value = normalize(process.env[name]);
+		if (value) {
+			return value;
+		}
+	}
 
-  const joined = candidates.join(' or ');
-  throw new Error(
-    `[fixtures/users] Missing env var ${joined} for ${label}. ` +
-      `Set it in the active env file (ENV=${process.env.ENV ?? 'test'}).`,
-  );
+	const joined = candidates.join(' or ');
+	throw new Error(
+		`[fixtures/users] Missing env var ${joined} for ${label}. ` +
+			`Set it in the active env file (ENV=${process.env.ENV ?? 'test'}).`
+	);
 }
 
 /**
@@ -76,9 +76,9 @@ export function requireEnv(candidates: readonly string[], label: string): string
  * (p. ej. si un test modifica ENV en setup).
  */
 export function lazyEnv(candidates: readonly string[], label: string): { readonly value: string } {
-  return {
-    get value() {
-      return requireEnv(candidates, label);
-    },
-  };
+	return {
+		get value() {
+			return requireEnv(candidates, label);
+		}
+	};
 }

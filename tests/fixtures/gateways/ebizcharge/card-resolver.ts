@@ -32,7 +32,9 @@ export type EbizCardId = EbizCardPolicyKey;
 export function resolveCard(cardId: EbizCardId): EbizTestCard {
 	const card = EBIZ_CARDS[cardId];
 	if (!card) {
-		throw new Error(`eBizCharge card '${cardId}' no existe en EBIZ_CARDS. Agregarla al policy en tests/fixtures/gateways/ebizcharge/card-policy.ts.`);
+		throw new Error(
+			`eBizCharge card '${cardId}' no existe en EBIZ_CARDS. Agregarla al policy en tests/fixtures/gateways/ebizcharge/card-policy.ts.`
+		);
 	}
 	return card;
 }

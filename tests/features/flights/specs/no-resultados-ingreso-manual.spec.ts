@@ -23,7 +23,13 @@ test.describe(`[FLIGHT][${env.toUpperCase()}] getFlights sin resultados → Ingr
 	// los locators de la suite son en español. Forzamos el locale del browser a español.
 	test.use({ role: 'carrier', storageState: { cookies: [], origins: [] }, locale: 'es-AR' });
 
-	test('@flight @carrier @negative [TS-MX5824-TC17] Búsqueda sin resultados muestra "No se encontraron vuelos" + "Ingreso Manual"', async ({ page, dashboard, travel, travelForm, flightModal }) => {
+	test('@flight @carrier @negative [TS-MX5824-TC17] Búsqueda sin resultados muestra "No se encontraron vuelos" + "Ingreso Manual"', async ({
+		page,
+		dashboard,
+		travel,
+		travelForm,
+		flightModal
+	}) => {
 		await test.step(`Given: dispatcher logueado en carrier (${env.toUpperCase()})`, async () => {
 			await loginAsDispatcher(page);
 		});
@@ -38,11 +44,18 @@ test.describe(`[FLIGHT][${env.toUpperCase()}] getFlights sin resultados → Ingr
 
 		await test.step('When: se busca una aerolínea + número de vuelo inexistente', async () => {
 			await flightModal.open();
-			await flightModal.searchExpectingNoResults(FLIGHT_TEST_DATA.airlineQuery, FLIGHT_TEST_DATA.airlineLabel, FLIGHT_TEST_DATA.missingFlightNumber);
+			await flightModal.searchExpectingNoResults(
+				FLIGHT_TEST_DATA.airlineQuery,
+				FLIGHT_TEST_DATA.airlineLabel,
+				FLIGHT_TEST_DATA.missingFlightNumber
+			);
 		});
 
 		await test.step('Then: el modal ofrece el ingreso manual (aserción dentro del POM)', async () => {
-			debugLog('flight', `[TC17] getFlights 200 [] → "No se encontraron vuelos" + "Ingreso Manual" en ${env.toUpperCase()} ✅`);
+			debugLog(
+				'flight',
+				`[TC17] getFlights 200 [] → "No se encontraron vuelos" + "Ingreso Manual" en ${env.toUpperCase()} ✅`
+			);
 		});
 	});
 });

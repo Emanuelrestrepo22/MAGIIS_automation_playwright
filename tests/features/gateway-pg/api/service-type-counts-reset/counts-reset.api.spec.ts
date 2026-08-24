@@ -67,24 +67,30 @@ test.describe('[MX-6057][API] serviceTypes/countsReset @regression @service-type
 		}
 	});
 
-	test('[EC-REG-01][EC-DT-02][AC1] reset de service type completo → 200 + "true" (sin ORA-00932)', {
-		annotation: [
-			{ type: 'tms', description: 'MX-6132' },
-			{ type: 'issue', description: 'MX-6057' }
-		]
-	}, async ({ request }) => {
-		// Gate de regresión: la operación responde 200 en lugar de 500/SQLGrammarException.
-		const res = await new ServiceTypeCountsApi({ request }).resetCounts({
-			carrierId: CARRIER_ID,
-			serviceTypeId: ST_HAPPY,
-			userId: USER_ID,
-			authToken
-		});
-		expect(res.status, `esperado 200, body=${res.body}`).toBe(200);
-		expect(res.body).toBe('true');
-	});
+	test(
+		'[EC-REG-01][EC-DT-02][AC1] reset de service type completo → 200 + "true" (sin ORA-00932)',
+		{
+			annotation: [
+				{ type: 'tms', description: 'MX-6132' },
+				{ type: 'issue', description: 'MX-6057' }
+			]
+		},
+		async ({ request }) => {
+			// Gate de regresión: la operación responde 200 en lugar de 500/SQLGrammarException.
+			const res = await new ServiceTypeCountsApi({ request }).resetCounts({
+				carrierId: CARRIER_ID,
+				serviceTypeId: ST_HAPPY,
+				userId: USER_ID,
+				authToken
+			});
+			expect(res.status, `esperado 200, body=${res.body}`).toBe(200);
+			expect(res.body).toBe('true');
+		}
+	);
 
-	test('[EC-EP-01] serviceTypeId inexistente → 200 + "true" (no-op, sin validación de input)', async ({ request }) => {
+	test('[EC-EP-01] serviceTypeId inexistente → 200 + "true" (no-op, sin validación de input)', async ({
+		request
+	}) => {
 		const res = await new ServiceTypeCountsApi({ request }).resetCounts({
 			carrierId: CARRIER_ID,
 			serviceTypeId: ST_NONEXISTENT,
@@ -95,7 +101,9 @@ test.describe('[MX-6057][API] serviceTypes/countsReset @regression @service-type
 		expect(res.body).toBe('true');
 	});
 
-	test('[EC-ISO-01] serviceType de otro carrier bajo carrierId propio → 200 (aislamiento cross-carrier)', async ({ request }) => {
+	test('[EC-ISO-01] serviceType de otro carrier bajo carrierId propio → 200 (aislamiento cross-carrier)', async ({
+		request
+	}) => {
 		// API confirma 200; la NO-afectación del carrier ajeno es aserción DB (manual — ATR).
 		const res = await new ServiceTypeCountsApi({ request }).resetCounts({
 			carrierId: CARRIER_ID,
@@ -137,10 +145,26 @@ test.describe('[MX-6057][API] serviceTypes/countsReset @regression @service-type
 	const COMBOS: { id: string; desc: string; opts: ComboOpts }[] = [
 		{ id: 'EC-DT-03', desc: 'solo contractorId (010)', opts: { contractorId: CONTRACTOR_ID } },
 		{ id: 'EC-DT-04', desc: 'solo contractorEmployeeId (001, AC4)', opts: { contractorEmployeeId: EMP_A } },
-		{ id: 'EC-DT-05', desc: 'serviceTypeId + contractorId (110)', opts: { serviceTypeId: ST_QUOTA, contractorId: CONTRACTOR_ID } },
-		{ id: 'EC-DT-06', desc: 'serviceTypeId + contractorEmployeeId (101)', opts: { serviceTypeId: ST_QUOTA, contractorEmployeeId: EMP_A } },
-		{ id: 'EC-DT-07', desc: 'contractorId + contractorEmployeeId (011)', opts: { contractorId: CONTRACTOR_ID, contractorEmployeeId: EMP_A } },
-		{ id: 'EC-DT-08', desc: 'serviceTypeId + contractorId + contractorEmployeeId (111)', opts: { serviceTypeId: ST_QUOTA, contractorId: CONTRACTOR_ID, contractorEmployeeId: EMP_A } }
+		{
+			id: 'EC-DT-05',
+			desc: 'serviceTypeId + contractorId (110)',
+			opts: { serviceTypeId: ST_QUOTA, contractorId: CONTRACTOR_ID }
+		},
+		{
+			id: 'EC-DT-06',
+			desc: 'serviceTypeId + contractorEmployeeId (101)',
+			opts: { serviceTypeId: ST_QUOTA, contractorEmployeeId: EMP_A }
+		},
+		{
+			id: 'EC-DT-07',
+			desc: 'contractorId + contractorEmployeeId (011)',
+			opts: { contractorId: CONTRACTOR_ID, contractorEmployeeId: EMP_A }
+		},
+		{
+			id: 'EC-DT-08',
+			desc: 'serviceTypeId + contractorId + contractorEmployeeId (111)',
+			opts: { serviceTypeId: ST_QUOTA, contractorId: CONTRACTOR_ID, contractorEmployeeId: EMP_A }
+		}
 	];
 	for (const c of COMBOS) {
 		test(`[${c.id}] ${c.desc} → 200`, async ({ request }) => {

@@ -48,6 +48,9 @@ importers:
       allure:
         specifier: ^3.14.3
         version: 3.14.3(preact@10.29.7)(typescript@5.9.3)
+      allure-js-commons:
+        specifier: ^3.4.2
+        version: 3.4.2(allure-playwright@3.4.2(@playwright/test@1.56.1))
       allure-playwright:
         specifier: ^3.2.0
         version: 3.4.2(@playwright/test@1.56.1)

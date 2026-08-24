@@ -52,7 +52,10 @@ test.describe('[MG · G][DB] vendor/cleaningWallets — verificación de efecto 
 		!DESTRUCTIVE_OK,
 		'destructivo: desvincula la pasarela del carrier 1521 (compartido). Setear MG25_RUN_DESTRUCTIVE=1 + entorno dedicado + teardown de re-vinculación.'
 	);
-	test.skip(!CARRIER_USER_ID || !APP_ID, 'Faltan MG25_CARRIER_USER_ID / MG25_APP_ID (datos de 1521 en TEST) [confirmar].');
+	test.skip(
+		!CARRIER_USER_ID || !APP_ID,
+		'Faltan MG25_CARRIER_USER_ID / MG25_APP_ID (datos de 1521 en TEST) [confirmar].'
+	);
 
 	let authToken: string;
 
@@ -85,43 +88,53 @@ test.describe('[MG · G][DB] vendor/cleaningWallets — verificación de efecto 
 		);
 	});
 
-	test('[G-DB-EFFECT] cleaning → user_wallet=0, card=0, link desactivado', {
-		annotation: [{ type: 'tms', description: 'MG-166' }]
-	}, async ({ request }) => {
-		const cfg = ORACLE!;
-		const filter = { carrierAccountId: CARRIER_ACCOUNT_ID, appId: APP_ID };
+	test(
+		'[G-DB-EFFECT] cleaning → user_wallet=0, card=0, link desactivado',
+		{
+			annotation: [{ type: 'tms', description: 'MG-166' }]
+		},
+		async ({ request }) => {
+			const cfg = ORACLE!;
+			const filter = { carrierAccountId: CARRIER_ACCOUNT_ID, appId: APP_ID };
 
-		// Precondición: debe haber al menos una card sembrada para que el borrado sea observable.
-		const cardsBefore = await countCardsByCarrierAndApp(cfg, filter);
-		test.skip(cardsBefore === 0, `sin cards para carrier ${CARRIER_ACCOUNT_ID} / app ${APP_ID} — sembrar card antes de correr.`);
+			// Precondición: debe haber al menos una card sembrada para que el borrado sea observable.
+			const cardsBefore = await countCardsByCarrierAndApp(cfg, filter);
+			test.skip(
+				cardsBefore === 0,
+				`sin cards para carrier ${CARRIER_ACCOUNT_ID} / app ${APP_ID} — sembrar card antes de correr.`
+			);
 
-		// Desvinculación (destructiva).
-		const res = await new VendorApi({ request }).cleaningWallets({
-			provider: PROVIDER,
-			carrierUserId: CARRIER_USER_ID,
-			appId: APP_ID,
-			authToken
-		});
-		expect(res.status, `cleaningWallets esperado 200, body=${res.body}`).toBe(200);
+			// Desvinculación (destructiva).
+			const res = await new VendorApi({ request }).cleaningWallets({
+				provider: PROVIDER,
+				carrierUserId: CARRIER_USER_ID,
+				appId: APP_ID,
+				authToken
+			});
+			expect(res.status, `cleaningWallets esperado 200, body=${res.body}`).toBe(200);
 
-		// @Async: el borrado físico termina DESPUÉS del 200 → poll hasta 0.
-		await expect
-			.poll(async () => countWalletsByCarrierAndApp(cfg, filter), {
-				message: 'user_wallet debe quedar en 0 tras el cleaning (borrado físico cascade)',
-				timeout: 20_000,
-				intervals: [1_000, 2_000, 3_000, 5_000]
-			})
-			.toBe(0);
+			// @Async: el borrado físico termina DESPUÉS del 200 → poll hasta 0.
+			await expect
+				.poll(async () => countWalletsByCarrierAndApp(cfg, filter), {
+					message: 'user_wallet debe quedar en 0 tras el cleaning (borrado físico cascade)',
+					timeout: 20_000,
+					intervals: [1_000, 2_000, 3_000, 5_000]
+				})
+				.toBe(0);
 
-		const cardsAfter = await countCardsByCarrierAndApp(cfg, filter);
-		expect(cardsAfter, 'card debe quedar en 0 (cascade desde user_wallet)').toBe(0);
+			const cardsAfter = await countCardsByCarrierAndApp(cfg, filter);
+			expect(cardsAfter, 'card debe quedar en 0 (cascade desde user_wallet)').toBe(0);
 
-		// Estado del link: sin columna STATUS física → se infiere de ACTIVE=0 y/o DELETE_DATE seteado.
-		const links = await readMgwLinkStatus(cfg, { carrierAccountId: CARRIER_ACCOUNT_ID, provider: PROVIDER });
-		expect(links.length, 'debe existir la fila mgw_linked del provider').toBeGreaterThan(0);
-		const unlinked = links.some(l => l.active === 0 || l.active === null || l.deleteDate !== null);
-		expect(unlinked, `mgw_linked debe reflejar desvinculación (active=0 o delete_date). Filas: ${JSON.stringify(links)}`).toBe(true);
-	});
+			// Estado del link: sin columna STATUS física → se infiere de ACTIVE=0 y/o DELETE_DATE seteado.
+			const links = await readMgwLinkStatus(cfg, { carrierAccountId: CARRIER_ACCOUNT_ID, provider: PROVIDER });
+			expect(links.length, 'debe existir la fila mgw_linked del provider').toBeGreaterThan(0);
+			const unlinked = links.some(l => l.active === 0 || l.active === null || l.deleteDate !== null);
+			expect(
+				unlinked,
+				`mgw_linked debe reflejar desvinculación (active=0 o delete_date). Filas: ${JSON.stringify(links)}`
+			).toBe(true);
+		}
+	);
 
 	test('[G-RELINK] teardown de re-vinculación', () => {
 		test.fixme(

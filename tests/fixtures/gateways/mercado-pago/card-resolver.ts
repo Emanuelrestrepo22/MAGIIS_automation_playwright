@@ -31,7 +31,9 @@ export type MercadoPagoCardId = MercadoPagoCardPolicyKey;
 export function resolveCard(cardId: MercadoPagoCardId): MercadoPagoTestCard {
 	const card = MP_CARDS[cardId];
 	if (!card) {
-		throw new Error(`MercadoPago card '${cardId}' no existe en MP_CARDS. Agregarla al policy en tests/fixtures/gateways/mercado-pago/card-policy.ts.`);
+		throw new Error(
+			`MercadoPago card '${cardId}' no existe en MP_CARDS. Agregarla al policy en tests/fixtures/gateways/mercado-pago/card-policy.ts.`
+		);
 	}
 	return card;
 }

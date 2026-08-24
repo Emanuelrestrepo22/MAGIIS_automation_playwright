@@ -1035,6 +1035,19 @@ Checklist (en orden):
 
 ---
 
+### BL-052 — Config de pnpm 11: `.npmrc` muerto + placeholders de `allowBuilds` rompen `pnpm run`
+
+- **Estado:** 🟢 Resuelto (2026-07-28)
+- **Prioridad:** P1
+- **Tipo:** Configuración
+- **Reportado:** 2026-07-28
+- **Contexto:** Dos defectos independientes en la config de pnpm, ambos detectados al verificar un install limpio en un worktree nuevo (pnpm 11.4.0). **(a)** `.npmrc` declaraba `node-linker=hoisted`, pero desde pnpm 11 ese archivo solo se lee para auth y registry: la clave se mudó a `pnpm-workspace.yaml` como `nodeLinker` (camelCase). Confirmado en vivo: `pnpm config get node-linker` → `undefined` con la línea en `.npmrc`, → `hoisted` con la clave en el YAML. npm además avisa `Unknown project config "node-linker"`. Efecto: todos los worktrees corrían con el linker `isolated` mientras el repo creía estar en `hoisted`. **(b)** `pnpm-workspace.yaml` tenía dos placeholders del codemod v10→v11 sin resolver (`edgedriver: set this to true or false`, `geckodriver: ...`). pnpm 11 corre un deps-status check antes de cualquier script, así que en un install limpio **cualquier** `pnpm run <script>` abortaba con `ERR_PNPM_IGNORED_BUILDS` y exit 1.
+- **Decisión tomada:** NO restaurar `hoisted`. El linker `isolated` es justo lo que destapó la dependencia fantasma `allure-js-commons` (importada por `tests/utils/decorators.ts` sin estar declarada en `package.json`); volver a plano vuelve a enmascarar esa clase de bug. El motivo original del `hoisted` — symlinks colgados por OneDrive — sigue vigente solo para el clone bajo OneDrive, no para los worktrees de `C:\worktrees\*`. Si ese clone lo necesita, se configura local con `pnpm config set nodeLinker hoisted --location project`.
+- **Próxima acción:** Ninguna. Verificado en worktree limpio: `pnpm install` sin `ERR_PNPM_IGNORED_BUILDS`, `pnpm run test:test:gateway:unit` arranca, `npx tsc --noEmit` exit 0.
+- **Referencias:** `.npmrc`, `pnpm-workspace.yaml`, rama `scripts/allure-js-commons-dep`, commit `6e53441` (declaración de `allure-js-commons`), BL-023 (política de hotspot files)
+
+---
+
 ## Resuelto recientemente (últimos 30 días)
 
 ### BL-RES-001 — Consolidación TIER 1-5 (14 MRs + 1 revert)
@@ -1069,6 +1082,55 @@ Checklist (en orden):
 - **Contexto:** La capa DB del cupo (`oracledb` Thin mode) quedó implementada (`tests/features/gateway-pg/helpers/oracle-service-usage.ts` + `counts-reset-db.api.spec.ts`), pero requiere una conexión Oracle **alcanzable** — el Oracle de UAT probablemente esté firewalleado desde local. Alternativa sin Oracle: descubrir el endpoint de lectura de uso del app (el que alimenta el contador en Gestión de Empresas → Associates) y aseverar el efecto real (uso → 0, aislamiento) vía API.
 - **Próxima acción:** Capturar por red el endpoint de lectura de uso (en Associates o al chequear cupo en alta de viaje, en un entorno estable), agregar helper de lectura API + aserción de efecto que complemente/reemplace la capa DB.
 - **Referencias:** ATR MX-6122, `oracle-service-usage.ts`, `counts-reset-db.api.spec.ts`, BL-047
+
+#### Avance 2026-07-29 — CONFIRMADO, y no es solo UAT: **TEST tampoco es alcanzable desde local**
+
+Este registro suponía que el firewall afectaba a UAT ("el Oracle de UAT **probablemente** esté firewalleado desde local"). Medido hoy al intentar cerrar el eje DB de la Ronda 1 de Authorize: **el Oracle de TEST (`magiis-test-v2`) tampoco responde desde esta máquina.** La suposición pasa a hecho, y con alcance mayor al registrado.
+
+Diagnóstico en tres niveles, para que quede descartado todo lo que no es:
+
+| Prueba | Resultado |
+| --- | --- |
+| `oracleConfigFromEnv()` con `ENV=test` | ✅ resuelve (las 5 `ORACLE_*_TEST` de `.env.test` están pobladas) |
+| DNS del host (`*.rds.amazonaws.com`) | ✅ resuelve a `52.15.107.228` |
+| Control HTTPS a `apps-test.magiis.com:443` | ✅ 185 ms — la red del equipo funciona |
+| **TCP crudo a `52.15.107.228:1521`** | ❌ **TIMEOUT** (dos intentos: 8 s y 12 s) |
+| Oracle Thin (`select 1 from dual`) | ❌ `NJS-510: connection … timed out. Request exceeded "transportConnectTimeout" of 20 seconds` |
+
+**Lo que esto descarta:** no son las credenciales (la config resuelve), no es DNS, no es Thin mode ni el verificador de contraseña (nunca se llega al handshake), no es el guard SELECT-only, no es el código. Es **acceso de red a la instancia RDS**: security group de AWS que no incluye la IP pública de esta máquina, o VPN requerida y ausente.
+
+**Dato que vuelve esto accionable:** MG-166 (cascada de `cleaningWallets`) **sí** conectó contra `magiis-test-v2` el 2026-07-24 y dejó su verificación DB en verde. O sea que entre el 24 y el 29 **cambió algo** — el security group, o la red desde la que se corre. Vale preguntar a infra si se modificó la regla del puerto 1521, y desde qué IP/VPN se corrió aquella vez.
+
+**Impacto medido en el release de pasarelas:** el eje DB de la trifuerza queda **no medible desde local**, y con él cuatro verificaciones que ya estaban diseñadas y listas:
+
+1. **La más valiosa: AC9 idempotencia.** Existía la posibilidad de buscar `transaction_ref` con más de una fila aprobada en `MGW_TRANSACTIONS` — evidencia **directa** del doble cobro, sin crear ningún cobro. El veto CRITICAL del release sigue apoyado solo en "0 hits de `Idempotency` en el código", que es evidencia de ausencia.
+2. Estado de vinculación de Authorize en `MGW_LINKED` (hoy solo hay evidencia de UI, vía probe).
+3. Sustento en DB para MG-285 / `TS-AUTHORIZE-WAL-01`, la única key verde real del release, hoy acreditada solo por UI.
+4. El contraste de tarjetas por pasajero que explicaría por qué TC1011/TC1051 pasaron y TC1061 falló con el mismo flujo (ver Avance de BL-050).
+
+**Además queda sin verificar el esquema de `MGW_TRANSACTIONS`.** `oracle-wallet.ts` documenta `transaction_ref` y `status IN ('APPROVED','CONFIRM')` como **asumidos, nunca ejecutados**; la verificación contra `USER_TAB_COLUMNS` era el primer paso y no pudo correr.
+
+- **Próxima acción ampliada:** la alternativa por API que este ticket ya propone **deja de ser opcional** para el release de pasarelas: sin acceso a Oracle es el único camino a la capa de datos. Sube de prioridad. En paralelo, confirmar con infra el acceso al 1521 desde la red de QA, porque cuatro verificaciones diseñadas dependen de eso.
+- **Evidencia:** medición del 2026-07-29 registrada en `.context/reports/gonogo-pasarelas-2026-07-29.md` (repo `agentic-qa-boilerplate`), sección del eje DB.
+
+#### Avance 2026-07-29 (más tarde) — DESBLOQUEADO: el CTO habilitó la IP y la capa DB quedó medida
+
+Habilitada la IP `190.137.114.50/32` en el security group, **la conexión funciona: 2126 ms contra `magiis-test-v2`**. Se ejecutaron 14 queries, todas SELECT, cero escrituras, sin imprimir credenciales.
+
+**Primera verificación de esquema que existe en el repo** (contra `all_tab_columns`), y corrige un dato del propio código:
+
+| Tabla | Resultado |
+| --- | --- |
+| `MGW_TRANSACTIONS` (16 cols) | ✅ el supuesto era **correcto**: `TRANSACTION_REF` y `STATUS` existen. Bonus: `PAYMENT_PROVIDER`, `CARRIERACCOUNT_ID`, `AMOUNT`, `TRANSACTION_TYPE`, `APPROVED_DATE` |
+| `MGW_LINKED` (8 cols) | ⚠️ **el comentario de `oracle-wallet.ts:9-17` está equivocado**: afirma *"NO existe columna STATUS en el esquema observado"* y **sí existe**. Se puebla con `UNLINKED` al desvincular y es `NULL` mientras está activa — de ahí el error de quien lo escribió mirando una fila activa. **Conviene corregir ese comentario**, porque induce a inferir la desvinculación de `ACTIVE`/`DELETE_DATE` cuando hay una columna directa. |
+| `USER_WALLET` (8 cols) | ✅ `CARRIERACCOUNT_ID` (sin guion). Trae `FIRST_NAME`/`LAST_NAME`/`EMAIL` |
+| `CARD` (17 cols) | ✅ `LAST_FOUR_DIGITS`, `USER_WALLET_ID`, `PAYMENT_METHOD_ID` |
+
+Valores reales — `STATUS`: `APPROVED` 171 · `CONFIRM` 131 · `REJECTED` 86 · `REQUEST` 32 · `CANCEL` 19 · `REQUIRES_ACTION` 16 (total 455). `PAYMENT_PROVIDER`: `STRIPE` 343 · `MERCADOPAGO` 78 · `EBIZ` 27 · `AUTHORIZE` 7.
+
+**Advertencia operativa:** la IP habilitada es de un ISP residencial y muy probablemente **dinámica** — la regla `/32` se va a romper al renovar DHCP. Alternativas más estables ya propuestas: VPN a la VPC, bastion/túnel SSH, o CIDR de oficina con IP fija.
+
+- **Estado sugerido:** el bloqueo de acceso quedó resuelto; la alternativa de lectura por API que este ticket propone vuelve a ser **opcional** (deseable por robustez, no imprescindible). Queda a criterio del dueño cerrarlo o reorientarlo a la estabilidad del acceso.
 
 ### BL-047 — MX-6057: discovery + validación del blueprint UI en CI estable
 
@@ -1116,6 +1178,34 @@ Checklist (en orden):
 - **Defecto colateral detectado:** el `refId` de los specs `authorize-sandbox` excede el límite documentado. El propio código anota *"max 20 chars"* pero `bl-036-cvv-mismatch-${Date.now()}` produce ~33. No causó estos fallos (`resultCode: 'Ok'`), pero es riesgo de errores intermitentes → truncar a 20.
 - **Referencias:** BL-036 (registro previo, diagnóstico a corregir), `tests/components/api/AuthorizeSandboxApi.ts`, `tests/features/gateway-pg/api/authorize-sandbox/*.api.spec.ts`, `docs/gateway-pg/authorize/EXTERNAL-BLOCKERS.md`, plan `~/.claude/plans/quiet-marinating-reddy.md` §1.5
 
+#### Avance 2026-07-28 — el diagnóstico queda PARCIALMENTE REFUTADO por medición en vivo
+
+Corrida de la Ronda 1 de Authorize (`--project=api`, 12 tests, ambiente `test`): **7 PASSED · 4 FAILED · 1 SKIPPED**. El registro anterior predecía 8 fallos sobre 12.
+
+**Los magic triggers de CVV y AVS SÍ se evalúan ahora.** Tres casos que este ticket declara imposibles pasaron en verde:
+
+| Caso | Esperado | Resultado 2026-07-28 |
+| --- | --- | --- |
+| CVV 901 → `cvvResultCode` `N` | síntoma (a): volvía vacío | ✅ PASSED |
+| ZIP 46205 → `avsResultCode` `N` | síntoma (b): mismo valor que 46204 | ✅ PASSED |
+| ZIP 46204 → `avsResultCode` `G` | síntoma (b) | ✅ PASSED |
+| ZIP 46225 → aprobación parcial | ~19 casos no provocables | ✅ PASSED |
+| ZIP 46228 → prepaid procesado | ídem | ✅ PASSED |
+
+Lo más probable es que se hayan activado los filtros **AVS / Card Code Verification** en el Merchant Interface — exactamente la *Próxima acción* (2) de este ticket. Conviene confirmarlo con quien administre la cuenta y dejarlo asentado.
+
+**Persisten dos síntomas, con alcance mucho menor al registrado:**
+
+1. **El happy path con CVV 900 devuelve `cvvResultCode: "P"` (Is NOT Processed) donde debería dar `M`.** Reproducido en Amex (`contract-happy.api.spec.ts:73`). Es el síntoma (a), pero restringido al happy path — no a todos los casos de CVV.
+2. **El ZIP 46282 sigue aprobando en vez de declinar** (síntoma (c), sin cambios).
+
+**Tres de los cuatro fallos tienen `messages.resultCode: "Error"`**, no un código de resultado distinto del esperado: la transacción fue **rechazada por la API**, no evaluada. Afecta a `contract-cvv-avs` (CVV 904), `contract-decline` (ZIP 46282) y `contract-happy` (Visa y Amex).
+
+**El `refId` queda DESCARTADO como causa** (contra lo que sugería el *Defecto colateral detectado*). Correlacionado uno a uno: los que fallan miden 31-32 caracteres y varios de los que pasan miden 33-35 (`bl-036-edge-avs-nonus-` = 35 ✅). La longitud no explica nada.
+
+- **Próxima acción actualizada:** (1) confirmar con el administrador de la cuenta si se activaron AVS/CCV entre el 27 y el 28 de julio, y asentar la fecha; (2) **capturar `response.messages.message[0]` en los asserts de `authorize-sandbox`** — hoy los specs asertan `resultCode === 'Ok'` sin loguear el mensaje de error, así que un `Error` de la API es indiagnosticable desde el log y esa es la razón por la que la causa raíz de los 3 fallos sigue abierta; (3) recién con ese mensaje, decidir si el ticket se cierra parcialmente.
+- **Evidencia:** `evidence/test/xray-results.authorize.api.json`, log de la corrida en `%TEMP%/claude/authorize-api-run.log`, reporte `.context/reports/gonogo-pasarelas-*.md` del repo `agentic-qa-boilerplate`.
+
 ### BL-050 — Divergencia de negocio: duplicado de tarjetas en wallet (Authorize rechaza, Stripe permite)
 
 - **Estado:** 🔴 Pendiente — regla de negocio confirmada en vivo, spec por desarrollar
@@ -1134,6 +1224,39 @@ Checklist (en orden):
   3. **Spec nuevo de la divergencia** (pedido del líder de QA): cubrir que **Stripe permite N tarjetas iguales** en la wallet y que **Authorize lo bloquea**. Es cobertura que la matriz Authorize **no tiene** (§2.2 sólo cubre alta de tarjeta nueva válida/CVV/AVS/expiry/Luhn — no el duplicado). Antes de desarrollarlo hay que **crear el TC en la matriz** y asignarle ID canónico (regla de trazabilidad de CLAUDE.md: prohibido inventar IDs) — marcar como `[SIN-ID-MATRIZ]` hasta entonces.
 - **Pregunta abierta para negocio/dev:** ¿el límite de 20 tarjetas de Stripe es una regla intencional de MAGIIS o el default del proveedor? ¿Debería MAGIIS unificar el comportamiento entre pasarelas (bloquear duplicados en todas)? Si la respuesta es sí, el comportamiento de Stripe pasa a ser un **defect**, no una divergencia aceptada.
 - **Referencias:** `tests/test-3.spec.ts` (grabación del flujo, untracked), `tests/features/gateway-pg/specs/_parametrized/factories/wallet-add-card.factory.ts`, `tests/features/gateway-pg/helpers/card-precondition.ts`, `docs/gateway-pg/authorize/matriz_cases2.md` §2.2, BL-049
+
+#### Avance 2026-07-28 — NO se reprodujo en la Ronda 1
+
+Los tres casos que este ticket predecía en `timedOut` **pasaron en verde**:
+
+| Caso | Predicción del ticket | Resultado 2026-07-28 |
+| --- | --- | --- |
+| `TS-AUTHORIZE-WAL-01` | `timedOut` 240 s (el botón *Válido* nunca se habilita) | ✅ PASSED — y exporta MG-285 |
+| `TS-AUTHORIZE-TC1011` (A1, `cardFlow: new`) | afectado | ✅ PASSED |
+| `TS-AUTHORIZE-TC1051` (C2, `cardFlow: new`) | afectado | ✅ PASSED |
+
+O sea, la precondición de borrado por API (`cleanupCardsByLast4` → `deletePassengerCard`) **sí resolvió el pax y borró la tarjeta** en esta corrida, que es justamente el paso que el ticket describe como fallido. El mecanismo descrito no está refutado —la divergencia de negocio (Authorize rechaza duplicados, Stripe los permite) sigue siendo real y está confirmada en vivo— pero **su manifestación como timeout es intermitente, no determinista**.
+
+Contraste útil dentro de la misma corrida: `TS-AUTHORIZE-TC1061` (C1, también `cardFlow: new`, cliente empresa individuo) **sí falló**, con timeout de 15 s en `selectPreauthorizedCardMethod("1111")` (`CarrierNewTravelPage.ts:524`) después de que su paso 3 borrara la tarjeta con éxito. Mismo patrón de flujo, resultado distinto según el cliente → apunta a estado del wallet por pasajero, no a la regla de duplicado en sí.
+
+- **Próxima acción actualizada:** antes de invertir en el fix de la precondición, instrumentar por qué el borrado resuelve el pax para algunos clientes y no para otros (comparar TC1011/TC1051 contra TC1061 con el mismo dato). Bajar la prioridad del fix si se confirma que es intermitente y no bloqueante.
+- **Evidencia:** log de la corrida UI en `%TEMP%/claude/authorize-ui-run.log`, `evidence/test/xray-results.authorize.ui.json`.
+
+#### Avance 2026-07-29 (DB) — el fallo de TC1061 queda EXPLICADO, y no es este ticket
+
+Con acceso a Oracle habilitado, la consulta de tarjetas por dueño en el carrier 1521 cierra la pregunta que este avance dejaba abierta:
+
+| `userId` | Nombre | Tarjetas |
+| --- | --- | --- |
+| 15156 | Emanuel smith | `0015` (master), `0002` (amex) |
+| **12055** | **Emanuel Restrepo** | **`1111` (visa)** |
+
+La tarjeta `1111` pertenece **solo** al pasajero `12055`. **TC1061 es el caso de empresa individuo, cuyo pasajero es otro y nunca tuvo esa tarjeta vinculada** → el desplegable de Forma de Pago no la ofrece → `selectPreauthorizedCardMethod('1111')` agota sus 15 s (`CarrierNewTravelPage.ts:524`). Eso explica exactamente por qué TC1011 y TC1051 pasan y TC1061 no, con el mismo `cardFlow: 'new'`.
+
+**Lo que queda descartado como causa:** la precondición de borrado por API, la regla de duplicado de Authorize, y cualquier defecto de producto. **Es un problema de DATOS DE PRUEBA**: el caso de empresa individuo apunta a una tarjeta que vive en el wallet de otro pasajero.
+
+- **Próxima acción reorientada:** el fix no va en `card-precondition.ts` sino en los **datos del caso de empresa individuo** — o vincular la `1111` al pasajero de ese cliente como precondición explícita, o apuntar el caso a una tarjeta que ese pasajero sí tenga. Revisar `journey-defaults` / los datos del cliente de empresa. La divergencia de negocio que este ticket describe (Authorize rechaza duplicados) sigue siendo real y no se ve afectada por este hallazgo.
+- **Evidencia:** 14 queries SELECT del 2026-07-29 registradas en `.context/reports/gonogo-pasarelas-2026-07-29.md` §5.bis (repo `agentic-qa-boilerplate`).
 
 ### BL-051 — El hold se aplica DOS veces (vinculación + viaje): ¿se libera el hold de vinculación?
 

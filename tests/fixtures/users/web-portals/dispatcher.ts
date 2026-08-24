@@ -24,12 +24,7 @@
  *   - .env.test / .env.uat / .env.prod declaran USER_CARRIER + PASS_CARRIER
  */
 
-import {
-  ENV_SUFFIX_BY_ENVIRONMENT,
-  lazyEnv,
-  resolveActiveEnvironment,
-  type EnvSuffix,
-} from '../internal/env-resolver';
+import { ENV_SUFFIX_BY_ENVIRONMENT, lazyEnv, resolveActiveEnvironment, type EnvSuffix } from '../internal/env-resolver';
 import type { EnvironmentMap, UserEnvironment, WebUser } from '../types';
 import type { GatewayName } from '../../gateways/_shared';
 import { GATEWAY_ENV_SUFFIX } from './gateway-suffix';
@@ -43,38 +38,37 @@ const LABEL = 'dispatcher (carrier portal)';
  * Con gateway:                            `[<PREFIX>_<GW>_<ENV>, <PREFIX>_<GW>, <PREFIX>_<ENV>, <PREFIX>]`
  */
 function carrierCandidates(
-  prefix: 'USER_CARRIER' | 'PASS_CARRIER',
-  envSuffix: EnvSuffix,
-  gateway?: GatewayName,
+	prefix: 'USER_CARRIER' | 'PASS_CARRIER',
+	envSuffix: EnvSuffix,
+	gateway?: GatewayName
 ): string[] {
-  if (!gateway) {
-    return [`${prefix}_${envSuffix}`, prefix];
-  }
-  const gw = GATEWAY_ENV_SUFFIX[gateway];
-  return [`${prefix}_${gw}_${envSuffix}`, `${prefix}_${gw}`, `${prefix}_${envSuffix}`, prefix];
+	if (!gateway) {
+		return [`${prefix}_${envSuffix}`, prefix];
+	}
+	const gw = GATEWAY_ENV_SUFFIX[gateway];
+	return [`${prefix}_${gw}_${envSuffix}`, `${prefix}_${gw}`, `${prefix}_${envSuffix}`, prefix];
 }
 
-function buildDispatcher(
-  envSuffix: EnvSuffix,
-  environment: WebUser['environment'],
-  gateway?: GatewayName,
-): WebUser {
-  const emailEnv = lazyEnv(carrierCandidates('USER_CARRIER', envSuffix, gateway), `${LABEL} [${environment}] email`);
-  const passEnv = lazyEnv(carrierCandidates('PASS_CARRIER', envSuffix, gateway), `${LABEL} [${environment}] password`);
+function buildDispatcher(envSuffix: EnvSuffix, environment: WebUser['environment'], gateway?: GatewayName): WebUser {
+	const emailEnv = lazyEnv(carrierCandidates('USER_CARRIER', envSuffix, gateway), `${LABEL} [${environment}] email`);
+	const passEnv = lazyEnv(
+		carrierCandidates('PASS_CARRIER', envSuffix, gateway),
+		`${LABEL} [${environment}] password`
+	);
 
-  return {
-    role: 'dispatcher',
-    environment,
-    get email() {
-      return emailEnv.value;
-    },
-    get password() {
-      return passEnv.value;
-    },
-    notes:
-      `Dispatcher del portal Carrier en ${environment}. ` +
-      `Equivale a resolveRoleCredentials('carrier') + getPortalCredentials('carrier').`,
-  };
+	return {
+		role: 'dispatcher',
+		environment,
+		get email() {
+			return emailEnv.value;
+		},
+		get password() {
+			return passEnv.value;
+		},
+		notes:
+			`Dispatcher del portal Carrier en ${environment}. ` +
+			`Equivale a resolveRoleCredentials('carrier') + getPortalCredentials('carrier').`
+	};
 }
 
 /**
@@ -89,9 +83,9 @@ function buildDispatcher(
  * no necesariamente usan TEST/UAT/PROD al mismo tiempo.
  */
 export const DISPATCHER = {
-  test: buildDispatcher('TEST', 'test'),
-  uat: buildDispatcher('UAT', 'uat'),
-  prod: buildDispatcher('PROD', 'prod'),
+	test: buildDispatcher('TEST', 'test'),
+	uat: buildDispatcher('UAT', 'uat'),
+	prod: buildDispatcher('PROD', 'prod')
 } as const satisfies EnvironmentMap<WebUser>;
 
 /**
@@ -105,8 +99,8 @@ export const DISPATCHER = {
  * @param environment - ambiente (opcional). Default = ambiente activo (`process.env.ENV`).
  */
 export function getDispatcher(
-  gateway?: GatewayName,
-  environment: UserEnvironment = resolveActiveEnvironment(),
+	gateway?: GatewayName,
+	environment: UserEnvironment = resolveActiveEnvironment()
 ): WebUser {
-  return buildDispatcher(ENV_SUFFIX_BY_ENVIRONMENT[environment], environment, gateway);
+	return buildDispatcher(ENV_SUFFIX_BY_ENVIRONMENT[environment], environment, gateway);
 }

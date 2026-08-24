@@ -1,4 +1,9 @@
-import type { GatewayPgJourneyContext, JourneyPhase, PaymentGateway, PaymentValidationSource } from '../contracts/gateway-pg.types';
+import type {
+	GatewayPgJourneyContext,
+	JourneyPhase,
+	PaymentGateway,
+	PaymentValidationSource
+} from '../contracts/gateway-pg.types';
 import { getGatewayPgAdapter } from './adapters';
 
 // Estas funciones son helpers funcionales para crear y evolucionar
@@ -49,7 +54,12 @@ export function createGatewayPgJourney(input: CreateGatewayPgJourneyInput): Gate
 	};
 }
 
-export function advanceGatewayPgJourney(context: GatewayPgJourneyContext, phase: JourneyPhase, status: GatewayPgJourneyContext['status'], note?: string): GatewayPgJourneyContext {
+export function advanceGatewayPgJourney(
+	context: GatewayPgJourneyContext,
+	phase: JourneyPhase,
+	status: GatewayPgJourneyContext['status'],
+	note?: string
+): GatewayPgJourneyContext {
 	// Este helper muta el "estado lógico" del journey sin tocar datos de viaje.
 	return {
 		...context,
@@ -60,7 +70,10 @@ export function advanceGatewayPgJourney(context: GatewayPgJourneyContext, phase:
 	};
 }
 
-export function attachTripData(context: GatewayPgJourneyContext, data: Pick<GatewayPgJourneyContext, 'tripId' | 'driverId' | 'riderId' | 'paymentReference' | 'cardReference'>): GatewayPgJourneyContext {
+export function attachTripData(
+	context: GatewayPgJourneyContext,
+	data: Pick<GatewayPgJourneyContext, 'tripId' | 'driverId' | 'riderId' | 'paymentReference' | 'cardReference'>
+): GatewayPgJourneyContext {
 	// Se usa cuando la fase web o mobile devuelve IDs reales que luego
 	// otras fases necesitan reutilizar.
 	return {
@@ -69,7 +82,10 @@ export function attachTripData(context: GatewayPgJourneyContext, data: Pick<Gate
 	};
 }
 
-export function registerValidationSource(context: GatewayPgJourneyContext, source: PaymentValidationSource): GatewayPgJourneyContext {
+export function registerValidationSource(
+	context: GatewayPgJourneyContext,
+	source: PaymentValidationSource
+): GatewayPgJourneyContext {
 	// Evitamos duplicados porque una misma fuente de validación puede chequearse
 	// varias veces durante el flujo.
 	if (context.validationSources.includes(source)) {

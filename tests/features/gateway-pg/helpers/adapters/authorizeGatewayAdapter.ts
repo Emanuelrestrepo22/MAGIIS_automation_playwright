@@ -1,4 +1,5 @@
 import { JOURNEY_DEFAULTS_BY_GATEWAY } from '../../data/journey-defaults';
+import { AUTHORIZE_LINK_MUTATION_URL_PATTERN, AUTHORIZE_LINK_SUCCESS_STATUSES } from '../../data/link-status-defaults';
 import { XRAY_KEYS_BY_GATEWAY } from '../../data/xray-keys';
 import type { GatewayPgAdapter } from './types';
 import { areEnvKeysConfigured } from './types';
@@ -34,14 +35,8 @@ export const authorizeGatewayAdapter: GatewayPgAdapter = {
 		'Confirm Authorize.Net-specific branch after shared card-linking form',
 		'Capture payment token or reference when available'
 	],
-	mobileTodos: [
-		'Finish trip from Android app',
-		'Confirm charge event reaches Authorize flow'
-	],
-	validationTodos: [
-		'Confirm backend payment state',
-		'Validate Authorize transaction visibility when required'
-	],
+	mobileTodos: ['Finish trip from Android app', 'Confirm charge event reaches Authorize flow'],
+	validationTodos: ['Confirm backend payment state', 'Validate Authorize transaction visibility when required'],
 
 	// ── Config operacional (S2) ──────────────────────────────────────────────
 	cardForm: 'native-angular',
@@ -51,10 +46,11 @@ export const authorizeGatewayAdapter: GatewayPgAdapter = {
 	nativeExtraField: 'zip',
 	// Quirk backend VERIFICADO (HANDOFF 2026-07-25): 500 = conectada desde estado
 	// limpio; 409 = ya vinculada por otra sesión. 400 = NO conectada.
-	linkSuccessStatuses: [500, 409],
-	// Matcher VERIFICADO live (endpoint del link = odnService, MG-476) — mismo regex
-	// que AppStoreGatewaysPage.expectLinkStatusOk.
-	linkMutationUrlPattern: /odnservice|payment.?gateway|paymentgateway|vendor|integration|authorize/i,
+	// FUENTE ÚNICA compartida con el POM (data/link-status-defaults.ts — anti-drift T11).
+	linkSuccessStatuses: [...AUTHORIZE_LINK_SUCCESS_STATUSES],
+	// Matcher VERIFICADO live (endpoint del link = odnService, MG-476) — misma constante
+	// que consume AppStoreGatewaysPage.expectLinkStatusOk.
+	linkMutationUrlPattern: AUTHORIZE_LINK_MUTATION_URL_PATTERN,
 	credsEnvKeys: AUTHORIZE_CREDS_ENV_KEYS,
 	isConfigured: () => areEnvKeysConfigured(AUTHORIZE_CREDS_ENV_KEYS),
 	xrayKeys: XRAY_KEYS_BY_GATEWAY.authorize,

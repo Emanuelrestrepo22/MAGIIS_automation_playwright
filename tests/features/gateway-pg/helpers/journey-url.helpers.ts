@@ -39,14 +39,12 @@ export async function waitForTravelCreation(page: Page, timeout = 30_000): Promi
 
 	await Promise.race([
 		page.waitForURL(limitExceededPattern, { timeout, waitUntil: 'commit' }),
-		page.waitForURL(detailPattern, { timeout, waitUntil: 'commit' }),
+		page.waitForURL(detailPattern, { timeout, waitUntil: 'commit' })
 	]);
 
 	const url = page.url();
 	if (/limitExceeded=true/.test(url)) {
-		throw new Error(
-			`[limitExceeded=true] Backend rechazó el alta por límite excedido. URL: ${url}`,
-		);
+		throw new Error(`[limitExceeded=true] Backend rechazó el alta por límite excedido. URL: ${url}`);
 	}
 	// Si el URL contiene /travels/{id}, extraer el ID. Si no, retornar string vacío
 	// (callers deben usar captureCreatedTravelId para obtener el travelId post-submit).

@@ -32,6 +32,22 @@ import { UiBase } from '@ui/UiBase';
 export type { NewTravelFormInput } from '@pages/carrier';
 
 /**
+ * Endpoint del alta de tarjeta a la wallet del pasajero, VERIFICADO en vivo el 2026-07-28
+ * (`POST /magiis-v0.2/passengers/5289/cards` → 200, probe de la ronda 3 del RUN-LOG de
+ * Authorize). Es el único evento observable que marca el fin del round-trip con la pasarela:
+ * lo usa `expectNativeCardRejected` como asentamiento real.
+ */
+const ADD_CARD_URL_PATTERN = /\/passengers\/\d+\/cards(\?|$)/;
+
+/**
+ * Firma de un alta EXITOSA en el cuerpo de esa respuesta (misma corrida en vivo): la tarjeta
+ * queda persistida con id propio y últimos 4 dígitos. Se usa NEGADA — un rechazo no puede
+ * haber persistido la tarjeta.
+ */
+const PERSISTED_CARD_ID_PATTERN = /"id"\s*:\s*\d+/;
+const PERSISTED_CARD_LAST4_PATTERN = /"lastFourDigits"\s*:\s*"\d{4}"/;
+
+/**
  * Entrada del alta de viaje con método "Cargo a Bordo".
  * `passenger` opcional: cuando el cliente auto-asigna el pasajero (app pax /
  * empresa individuo, `#passenger` con `ng-reflect-is-disabled="true"`) se omite.
@@ -86,7 +102,10 @@ export class CarrierNewTravelPage extends UiBase {
 	 * Mini-flujo ATC: completa el formulario mínimo (cliente/pasajero/origen/destino) y
 	 * vincula/valida la tarjeta preautorizada. @atc MG-148 (área C — pendiente reasignar).
 	 */
-	@atc('MG-148', { severity: 'critical', description: 'Alta de viaje: completar formulario + validar tarjeta preautorizada' })
+	@atc('MG-148', {
+		severity: 'critical',
+		description: 'Alta de viaje: completar formulario + validar tarjeta preautorizada'
+	})
 	async fillMinimum(opts: NewTravelFormInput): Promise<void> {
 		await this.legacy.fillMinimum(opts);
 	}
@@ -102,7 +121,10 @@ export class CarrierNewTravelPage extends UiBase {
 	 * es API-level (TC-PAY-F-*); los TS-STRIPE-TC10xx UI de Cargo a Bordo no tienen 1:1.
 	 * MG-161 (TC-PAY-F-01) es el MG más cercano del área de cobro.
 	 */
-	@atc('MG-161', { severity: 'critical', description: 'Alta de viaje Cargo a Bordo: completar formulario + método Cargo a Bordo' })
+	@atc('MG-161', {
+		severity: 'critical',
+		description: 'Alta de viaje Cargo a Bordo: completar formulario + método Cargo a Bordo'
+	})
 	async fillCargoABordo(opts: CargoTravelInput): Promise<void> {
 		await this.legacy.selectClient(opts.client);
 		if (opts.passenger) {
@@ -255,14 +277,49 @@ export class CarrierNewTravelPage extends UiBase {
 	}
 
 	/**
-	 * Click en "Validar" del form NATIVO Angular y espera el oráculo de tarjeta válida
-	 * ("Tarjeta válida" / "Valid card") — VERIFICADO en vivo para Authorize (4111/900/10001);
-	 * eBiz comparte el form (oráculo asumido, TODO live). Para Stripe Elements usar el flujo
-	 * `fillMinimum`/`selectCardByLast4` (valida vía `clickValidateCard` del POM legacy).
+	 * Detecta si la Forma de Pago ya quedó RESUELTA a la tarjeta guardada del pax
+	 * ("Tarjeta de crédito VISA *** <last4>") — con tarjeta vigente el form nativo NO se
+	 * renderiza y el dropdown la preselecciona (confirmado por screenshot live 2026-07-27,
+	 * carrier 1521 / Authorize). Utility read-only: silent-fail → false.
 	 */
 	@step
-	async validateNativeCard(last4?: string): Promise<void> {
-		const outcome = await this.readNativeCardValidationOutcome(last4);
+	async isSavedCardPreselected(last4: string): Promise<boolean> {
+		try {
+			await this.page
+				.getByText(new RegExp(`\\*+\\s*${last4}`))
+				.first()
+				.waitFor({ state: 'visible', timeout: 3_000 });
+			return true;
+		} catch {
+			return false;
+		}
+	}
+
+	/**
+	 * Click en "Validar" del form NATIVO Angular y espera que la pasarela ACEPTE la tarjeta —
+	 * VERIFICADO en vivo para Authorize (4111/900/10001); eBiz comparte el form (oráculo asumido,
+	 * TODO live). Para Stripe Elements usar `fillMinimum`/`selectCardByLast4` (POM legacy).
+	 *
+	 * El desenlace REAL lo lee `readNativeCardValidationOutcome`, que distingue TRES estados
+	 * (`accepted` / `rejected` / `timeout`); acá sólo se declara cuál es el correcto para el happy
+	 * path. Ver ese método para el detalle de por qué el oráculo no es sólo el toast.
+	 *
+	 * HISTORIA DEL ORÁCULO — leer antes de tocar el oráculo positivo. El 2026-07-28 el toast
+	 * "Tarjeta válida" dejó de observarse y se lo reemplazó por el estado persistente creyendo que
+	 * era un cambio de comportamiento del FE. El log de red probó la causa real: la política AVS
+	 * estricta de la cuenta sandbox (A/Z/Y → "authorize and hold for review", luego Z → Decline)
+	 * RETENÍA la transacción de validación → sin aprobación no hay toast. Corregida la política
+	 * (Z/W/Y → Allow), el toast volvió. De ahí que el oráculo acepte CUALQUIERA de las dos
+	 * manifestaciones del éxito —toast, o Forma de Pago resuelta a "*** <last4>"—: cubre las dos
+	 * presentaciones verificadas sin depender de la config de la cuenta, y ninguna debilita a la
+	 * otra (ambas sólo ocurren si la pasarela aprobó).
+	 */
+	@step
+	async validateNativeCard(last4?: string, timeoutMs?: number): Promise<void> {
+		// `timeoutMs` viene del DATO de la celda (slowMs de las tarjetas DELAY_* de eBiz: el
+		// procesador demora a propósito) — sin él, el default de 20s cortaría antes de que la
+		// pasarela responda y un caso de demora legítima se reportaría como timeout de ambiente.
+		const outcome = await this.readNativeCardValidationOutcome(last4, timeoutMs);
 
 		// Debería confirmar la tarjeta. `readNativeCardValidationOutcome` explica por qué el oráculo
 		// no es sólo el toast "Tarjeta válida".
@@ -279,6 +336,17 @@ export class CarrierNewTravelPage extends UiBase {
 	 * acreditaría como decline correcto. Ese es el falso verde más peligroso acá, porque un
 	 * unhappy path "pasa" precisamente cuando nada funciona.
 	 *
+	 * DOS oráculos independientes, en este orden:
+	 *   1. **UI** — desenlace `rejected` leído por `readNativeCardValidationOutcome` (error visible).
+	 *   2. **API (más fuerte)** — un alta rechazada no puede haber PERSISTIDO la tarjeta: se escucha
+	 *      el `POST /passengers/{id}/cards` del paso de validación y se exige que su respuesta NO
+	 *      tenga la firma del alta exitosa (HTTP 2xx + `id` + `lastFourDigits`), firma observada en
+	 *      vivo. El listener se arma ANTES del click (la respuesta se observó a t+1.1-1.7s), y el
+	 *      chequeo sobrevive aunque la UI muestre el error: es lo que detecta la contradicción
+	 *      "rechazo en pantalla, tarjeta guardada en el backend".
+	 * El copy del rechazo en la UI no se asserta como texto fijo: se lee y se devuelve como
+	 * evidencia (ver `nativeCardErrorOracle`).
+	 *
 	 * No reusa `clickValidateCardAllowingReject()` del POM legacy por dos razones verificables:
 	 *   1. Ese método devuelve `success:false` con el mensaje sintético "Validar button never
 	 *      enabled and no Stripe error surfaced" cuando expira sin error — o sea, convierte el
@@ -287,10 +355,24 @@ export class CarrierNewTravelPage extends UiBase {
 	 *      rompe si el portal queda en inglés) y `cardValidationErrorText` apunta a
 	 *      `app-credit-card-payment-data-validate`, el sub-componente de Stripe Elements.
 	 *
+	 * Ver `docs/gateway-pg/authorize/RUN-LOG.md` (hallazgos 2 y 5) para las dos versiones vacuas
+	 * anteriores de este método (`not.toBeVisible` instantáneo y asentamiento por `toBeDisabled`).
+	 *
+	 * @param last4 últimos 4 de la tarjeta que debía ser rechazada (mejora los diagnósticos).
+	 * @param settleMs ventana para la respuesta del alta de tarjeta del chequeo de no-persistencia.
 	 * @returns el texto del error mostrado al usuario, para que el spec lo registre como evidencia.
 	 */
 	@step
-	async expectNativeCardRejected(last4?: string): Promise<string> {
+	async expectNativeCardRejected(last4?: string, settleMs = 20_000): Promise<string> {
+		// El listener se arma ANTES del click (el click ocurre dentro de
+		// `readNativeCardValidationOutcome`): la respuesta se observó a t+1.1s, esperarla después la
+		// perdería.
+		const addCardResponse = this.page
+			.waitForResponse(response => response.request().method() === 'POST' && ADD_CARD_URL_PATTERN.test(response.url()), {
+				timeout: settleMs
+			})
+			.catch(() => null);
+
 		const outcome = await this.readNativeCardValidationOutcome(last4);
 
 		// Debería mostrar el error de la pasarela y NO vincular la tarjeta. Los dos desenlaces que
@@ -300,6 +382,19 @@ export class CarrierNewTravelPage extends UiBase {
 		//     de Decline), o MAGIIS ignora el rechazo. NO es un problema del test.
 		//   · 'timeout'  → no hubo respuesta: ambiente/red. El caso no es concluyente.
 		expect(outcome, outcome === 'accepted' ? `La pasarela ACEPTÓ y vinculó la tarjeta •••• ${last4 ?? '????'} que debía rechazar. Revisar en el dashboard del sandbox si la transacción quedó en "Fraud Review" (Response Code 4 = retenida para revisión, que MAGIIS trata como válida) en lugar de declinada — eso indica que la acción del filtro es "Authorize and hold for review" y no "Decline".` : 'Tras "Validar" no apareció ni el error ni la confirmación — la pasarela no respondió (revisar ambiente/red), así que el caso no es concluyente.').toBe('rejected');
+
+		// Oráculo ADICIONAL, independiente de la UI: el rechazo visible no alcanza si el backend
+		// igual guardó la tarjeta. Si la respuesta nunca llegó no hay nada que aseverar acá (el
+		// desenlace de UI ya cubrió el caso).
+		const response = await addCardResponse;
+		if (response) {
+			const body = await response.text().catch(() => '');
+			const cardPersisted = response.ok() && PERSISTED_CARD_ID_PATTERN.test(body) && PERSISTED_CARD_LAST4_PATTERN.test(body);
+			expect(
+				cardPersisted,
+				`la pasarela rechazó la tarjeta: el backend NO debe persistirla. Respondió HTTP ${response.status()} con: ${body.slice(0, 400)}`
+			).toBe(false);
+		}
 
 		return (await this.nativeCardErrorOracle().textContent())?.trim() ?? '';
 	}

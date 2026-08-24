@@ -36,6 +36,13 @@ const YOPMAIL_URL = 'https://yopmail.com/';
 const MAGIIS_SENDER = 'no-reply@magiis.com';
 
 /**
+ * Asunto del mail de cotización. El widget corre en EN (el idioma sale del query param), así que el
+ * asunto llega en inglés. Si un caso futuro corre el widget en ES habrá que ampliarlo — no se
+ * inventa la traducción acá sin haberla observado.
+ */
+const QUOTE_MAIL_SUBJECT = 'BOOK YOUR TRIP';
+
+/**
  * Entrada del mail de MAGIIS en la bandeja de yopmail. Se resuelve en cada uso (no se cachea) porque
  * el iframe de la bandeja se re-renderiza al refrescar y un handle viejo apuntaría a un nodo muerto.
  */
@@ -43,7 +50,11 @@ function magiisMailInInbox(page: Page) {
 	return page
 		.locator('iframe[name="ifinbox"]')
 		.contentFrame()
-		.getByRole('button', { name: new RegExp(MAGIIS_SENDER, 'i') })
+		// Se ancla al ASUNTO además del remitente: la casilla acumula muchos mails de
+		// `no-reply@magiis.com` (notificaciones "Remises EEUU-trip-****" de otras corridas), y sólo
+		// el de cotización trae el link de confirmación. Filtrar sólo por remitente abría el mail
+		// equivocado y el fallo parecía "el link no existe".
+		.getByRole('button', { name: new RegExp(`${MAGIIS_SENDER}\\s+${QUOTE_MAIL_SUBJECT}`, 'i') })
 		.first();
 }
 
@@ -84,15 +95,32 @@ export async function confirmQuoteByMail(page: Page, options: ConfirmQuoteByMail
 	return test.step('Confirmar el viaje desde el link del mail', async () => {
 		await magiisMailInInbox(page).click();
 
-		// El link de confirmación abre el viaje en una pestaña nueva.
-		const confirmPagePromise = page.waitForEvent('popup');
-		await page
-			.locator('iframe[name="ifmail"]')
-			.contentFrame()
-			.getByRole('link', { name: /confirm_your_trip/i })
-			.click();
-		const confirmPage = await confirmPagePromise;
-		await confirmPage.waitForLoadState('domcontentloaded');
+		// El CTA del mail es una IMAGEN sin texto accesible: `getByRole('link', {name:
+		// /confirm_your_trip/i})` (la plantilla vieja) ya no matchea nada. Observado en vivo
+		// 2026-07-30: el mail trae UN solo link, hacia `#/mv?bt=<token>&l=<idioma>&k=<pluginKey>`.
+		const ctaLink = page.locator('iframe[name="ifmail"]').contentFrame().getByRole('link').first();
+		const href = await ctaLink.getAttribute('href');
+
+		expect(
+			href,
+			`El mail de cotización llegó pero su CTA no apunta a la app MAGIIS con un token de reserva ` +
+				`(href="${href}") — sin ese link el solicitante no puede confirmar el viaje.`
+		).toMatch(/magiis\.com\/#\/mv\?bt=\d+/i);
+
+		// Se abre el href REAL del mail en una pestaña nueva en vez de depender del evento `popup`:
+		// el CTA no declara target y el popup nunca llegaba. Es el mismo request que dispara el
+		// click del usuario — no se saltea ningún paso ni se usa un atajo de backend.
+		const confirmPage = await page.context().newPage();
+		await confirmPage.goto(href as string, { waitUntil: 'domcontentloaded' });
+
+		// La landing debe resolver el token: o confirma el viaje ahora, o informa que ya estaba
+		// confirmado (el link es idempotente). Un token inválido/expirado NO da ninguno de los dos.
+		// El oráculo del caso NO es esta pantalla sino el viaje en el portal (paso siguiente del
+		// spec); acá sólo se verifica que el link del mail sea funcional.
+		await expect(
+			confirmPage.getByText(/Confirmed|Confirmad[oa]/i).first(),
+			'El link del mail no confirmó la reserva ni la reportó como ya confirmada — token roto o landing en error.'
+		).toBeVisible({ timeout: 30_000 });
 
 		return confirmPage;
 	});

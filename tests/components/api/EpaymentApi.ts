@@ -134,9 +134,13 @@ export class EpaymentApi extends ApiBase {
 	 * Mini-flujo ATC: lee el estado del ePayment (approved/rejected/pending + statusDetail del
 	 * sandbox MP). Devuelve el contrato HTTP. Fail-fast si falta el ePaymentId.
 	 *
-	 * @atc MG-162 — área F/COB (lectura de estado del cobro). Ejecución real = UAT.
+	 * @atc MG-161 — área F. El Step 5 de MG-161 (F-01) es "Verificar el estado final del viaje":
+	 *   leer el estado del cobro ES ese oráculo. Antes decía MG-162, que es "un reintento de cobro
+	 *   sobre el mismo viaje no genera doble cargo" (F-02) — idempotencia, que se acredita contando
+	 *   filas aprobadas en la DB, no leyendo un estado. MG-162 pasa a su spec real
+	 *   (`api/epayment-idempotency/double-charge-db.api.spec.ts`). Ejecución real = UAT.
 	 */
-	@atc('MG-162', { severity: 'normal', description: 'getEpaymentStatus — lee el estado del cobro MP' })
+	@atc('MG-161', { severity: 'normal', description: 'getEpaymentStatus — lee el estado del cobro MP' })
 	async getEpaymentStatus(input: GetEpaymentStatusInput): Promise<MercadopagoHttpResult<MercadopagoEpaymentStatus>> {
 		if (input.ePaymentId == null) {
 			throw new Error('[EpaymentApi.getEpaymentStatus] ePaymentId es obligatorio.');

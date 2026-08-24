@@ -1,3 +1,13 @@
-# oracledb se usa en Thin mode (JS puro) → NO se ejecuta su build script nativo (Thick mode).
+# Decisión explícita de build scripts nativos. Los tres quedan en `false` a propósito:
+#   - oracledb: se usa en Thin mode (JS puro) → NO se ejecuta su build nativo (Thick mode).
+#   - edgedriver / geckodriver: la suite corre en Chromium (playwright.gateway-pg.config.ts);
+#     los drivers de Edge/Firefox llegan como transitivas y su postinstall descarga binarios
+#     que nadie usa.
+#
+# Los valores NO pueden quedar como placeholder: pnpm 11 aborta con
+# ERR_PNPM_IGNORED_BUILDS (exit 1) ante un valor no booleano, y como los hooks de husky
+# shellean por `pnpm exec`, eso rompe TODO commit en un worktree/clone recién creado.
 allowBuilds:
+  edgedriver: false
+  geckodriver: false
   oracledb: false

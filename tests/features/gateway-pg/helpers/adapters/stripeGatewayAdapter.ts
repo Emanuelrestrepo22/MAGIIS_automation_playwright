@@ -35,10 +35,7 @@ export const stripeGatewayAdapter: GatewayPgAdapter = {
 		'Confirm shared card-linking selectors in web portal',
 		'Capture Stripe payment or card reference after linking'
 	],
-	mobileTodos: [
-		'Finish driver trip from Android app',
-		'Confirm charge trigger in mobile completion flow'
-	],
+	mobileTodos: ['Finish driver trip from Android app', 'Confirm charge trigger in mobile completion flow'],
 	validationTodos: [
 		'Validate payment outcome by API',
 		'Validate Stripe dashboard or webhook callback if required',
