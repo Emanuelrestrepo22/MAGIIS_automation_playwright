@@ -172,6 +172,110 @@ export class AddressFieldProbe {
 		return v;
 	}
 
+	/**
+	 * Handle del contexto WEBVIEW actual. Se lee en el momento y NO se cachea: cada relanzamiento de
+	 * la app monta una vista web nueva, y un handle guardado antes queda muerto.
+	 */
+	private async webviewHandle(): Promise<string> {
+		const contexts = (await this.driver.getContexts().catch(() => [])) as unknown as string[];
+		return contexts.map(String).find(c => c.startsWith('WEBVIEW')) ?? '';
+	}
+
+	/** Valor actual del campo. Cadena vacia si no se pudo leer — nunca lanza. */
+	private async fieldValue(selector: string): Promise<string> {
+		return (await this.driver
+			.execute((sel: string) => {
+				const vis = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
+				const t = Array.from(document.querySelectorAll(sel)).filter(vis)[0] as HTMLInputElement | undefined;
+				return t ? String(t.value ?? '') : '';
+			}, selector)
+			.catch(() => '')) as string;
+	}
+
+	/**
+	 * Tapea la PRIMERA prediccion con un tap NATIVO. Devuelve su etiqueta, o null si no habia ninguna.
+	 *
+	 * POR QUE NATIVO Y NO `row.click()`. El click programatico del DOM NO dispara el handler de Ionic
+	 * en esta app: el campo no se puebla y la seleccion nunca ocurre. Este repo ya lo tiene MEDIDO
+	 * (`passenger-mg116-selection-control.ts`, veredicto `harness-limitation` con `populated:false`), y
+	 * ese metodo ya simulo dos defectos INEXISTENTES en los casos TM-684 y TM-687: el token no rotaba
+	 * porque nunca se selecciono nada, y el harness lo reportaba como defecto del producto.
+	 *
+	 * El tap se calcula desde el rect del elemento dentro de la pagina y se escala al recuadro nativo
+	 * de la WebView, que no arranca en (0,0) — de ahi el offset. Es tap por ELEMENTO, no por coordenada
+	 * de un dump viejo: nunca se toca la barra inferior, donde vive el boton que llama por telefono.
+	 */
+	private async tapFirstPredictionNative(): Promise<string | null> {
+		const rect = (await this.driver
+			.execute(() => {
+				const items = Array.from(document.querySelectorAll('ion-item.prediction-item')).filter(el => {
+					const r = el.getBoundingClientRect();
+					return r.width > 0 && r.height > 0;
+				});
+				const t = items[0] as HTMLElement | undefined;
+				if (!t) return null;
+				const r = t.getBoundingClientRect();
+				return {
+					x: r.left + r.width / 2,
+					y: r.top + r.height / 2,
+					vw: window.innerWidth,
+					vh: window.innerHeight,
+					label: (t.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 90)
+				};
+			})
+			.catch(() => null)) as { x: number; y: number; vw: number; vh: number; label: string } | null;
+		if (!rect) return null;
+
+		const webview = await this.webviewHandle();
+		await this.driver.switchContext('NATIVE_APP');
+		try {
+			let ox = 0;
+			let oy = 0;
+			let sw = 0;
+			let sh = 0;
+			try {
+				const wv = (await this.driver.$('//android.webkit.WebView')) as unknown as {
+					getLocation: () => Promise<{ x: number; y: number }>;
+					getSize: () => Promise<{ width: number; height: number }>;
+				};
+				const loc = await wv.getLocation();
+				const sz = await wv.getSize();
+				ox = loc.x;
+				oy = loc.y;
+				sw = sz.width;
+				sh = sz.height;
+			} catch {
+				sw = 0;
+			}
+			if (!sw || !sh) {
+				const size = await this.driver.getWindowSize();
+				sw = size.width;
+				sh = size.height;
+			}
+			const x = Math.round(ox + rect.x * (sw / rect.vw));
+			const y = Math.round(oy + rect.y * (sh / rect.vh));
+			await this.driver.performActions([
+				{
+					type: 'pointer',
+					id: 'finger1',
+					parameters: { pointerType: 'touch' },
+					actions: [
+						{ type: 'pointerMove', duration: 0, x, y },
+						{ type: 'pointerDown', button: 0 },
+						{ type: 'pause', duration: 120 },
+						{ type: 'pointerUp', button: 0 }
+					]
+				}
+			]);
+			await this.driver.releaseActions().catch(() => undefined);
+		} finally {
+			if (webview) await this.driver.switchContext(webview).catch(() => undefined);
+		}
+		// La resolucion de la direccion elegida dispara su propia llamada; hay que dejarla terminar.
+		await this.driver.pause(4000);
+		return rect.label;
+	}
+
 	private async autocompleteCalls(): Promise<CaptureEntry[]> {
 		const cap = await readWebViewNetworkCapture(this.driver);
 		return (cap.entries as CaptureEntry[]).filter(e => String(e.url).includes(AUTOCOMPLETE_PATH));
@@ -272,35 +376,147 @@ export class AddressFieldProbe {
 	async checkDebounce(selector: string, term = 'libertad 479', keyGapMs = 80): Promise<BehaviorVerdict> {
 		await this.reset(selector);
 
-		for (let i = 3; i <= term.length; i++) {
-			await this.typeAndStamp(selector, term.slice(0, i));
-			await this.driver.pause(keyGapMs);
+		// LAS PULSACIONES SE GENERAN DENTRO DE LA PAGINA, y esto es la correccion central del caso.
+		//
+		// Antes el bucle vivia en Node y hacia UN round trip WebDriver por tecla. El veredicto entonces
+		// afirmaba "pulsaciones separadas por 80 ms" cuando 80 ms era el valor por DEFECTO del parametro,
+		// nunca un dato: el intervalo real era 80 ms + la latencia del puente, invisible para el harness.
+		// Reconstruido despues, ese intervalo real caia en 293-334 ms — practicamente encima de la ventana
+		// de debounce del producto (297-301 ms medidos). Con premisa y magnitud superpuestas, el conteo de
+		// requests no distingue "el producto no agrupa" de "el harness tecleo demasiado lento": el mismo
+		// test dio FAIL y PASS en dos corridas consecutivas sobre el mismo build.
+		// Con la secuencia agendada in-page por setTimeout, el intervalo lo controla el WebView y se SELLA
+		// por pulsacion, asi que la premisa deja de ser un supuesto y pasa a ser un dato verificable.
+		const arranco = (await this.driver.execute(
+			(sel: string, full: string, from: number, gap: number) => {
+				const w = window as unknown as { __mgKeyStamps?: number[]; __mgKeyDone?: boolean };
+				w.__mgKeyStamps = [];
+				w.__mgKeyDone = false;
+				const vis = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
+				const t = Array.from(document.querySelectorAll(sel)).filter(vis)[0] as HTMLInputElement | undefined;
+				if (!t || t.readOnly || t.disabled) return false;
+				const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+				let i = from;
+				const step = (): void => {
+					setter?.call(t, full.slice(0, i));
+					t.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+					t.dispatchEvent(new Event('ionInput', { bubbles: true, composed: true } as EventInit));
+					(w.__mgKeyStamps as number[]).push(Date.now());
+					(window as unknown as { __mgLastKeystrokeAt?: number }).__mgLastKeystrokeAt = Date.now();
+					i += 1;
+					if (i <= full.length) setTimeout(step, gap);
+					else w.__mgKeyDone = true;
+				};
+				step();
+				return true;
+			},
+			selector,
+			term,
+			3,
+			keyGapMs
+		)) as boolean;
+
+		if (!arranco) {
+			return {
+				behavior: 'B2',
+				title: `Debounce ~${DEBOUNCE_TARGET_MS} ms`,
+				status: 'SIN_DATOS',
+				verdict: 'El campo no acepto escritura: la secuencia de pulsaciones no se pudo iniciar.',
+				measured: { term, keyGapMs }
+			};
 		}
-		const stampedAt = await this.lastKeystrokeAt();
+
+		// Esperar a que la propia pagina termine la secuencia, con plazo: si el setTimeout se corta
+		// (navegacion, re-render de Ionic), no se puede afirmar que se tecleo lo que se pidio.
+		const esperadas = term.length - 2;
+		const plazo = Date.now() + esperadas * keyGapMs + 15_000;
+		let terminado = false;
+		while (Date.now() < plazo) {
+			terminado = (await this.driver
+				.execute(() => (window as unknown as { __mgKeyDone?: boolean }).__mgKeyDone === true)
+				.catch(() => false)) as boolean;
+			if (terminado) break;
+			await this.driver.pause(250);
+		}
+
+		const stamps = (await this.driver
+			.execute(() => (window as unknown as { __mgKeyStamps?: number[] }).__mgKeyStamps ?? [])
+			.catch(() => [] as number[])) as number[];
+		const stampedAt = stamps.length ? stamps[stamps.length - 1] : await this.lastKeystrokeAt();
+		// El inicio de la rafaga es el ANCLA para separar trafico propio de trafico heredado. Contra el
+		// ULTIMO sello no se puede: si el producto no agrupa, la primera request sale junto a la PRIMERA
+		// tecla, cientos de ms antes del ultimo sello, y "anterior al ultimo sello" clasificaria como
+		// contaminacion justamente el caso que hay que detectar.
+		const burstStart = stamps.length ? stamps[0] : null;
 		await this.driver.pause(this.settleMs);
 
-		const calls = await this.autocompleteCalls();
-		const firstAt = calls.length ? toEpochMs(calls[0].startedAt) : null;
+		// Ordenar por `startedAt`: la captura empuja la entrada cuando la request TERMINA, asi que
+		// `calls[0]` sin ordenar es la primera en completarse, no la primera en salir.
+		const calls = [...(await this.autocompleteCalls())].sort((a, b) => (toEpochMs(a.startedAt) ?? 0) - (toEpochMs(b.startedAt) ?? 0));
+		// Solo las requests nacidas DENTRO de la rafaga son atribuibles a estas pulsaciones. Una que
+		// seguia en vuelo cuando el reset limpio la captura arranca antes de `burstStart`.
+		const inBurst = burstStart === null ? calls : calls.filter(c => (toEpochMs(c.startedAt) ?? Number.POSITIVE_INFINITY) >= burstStart);
+		const heredadas = calls.length - inBurst.length;
+		const firstAt = inBurst.length ? toEpochMs(inBurst[0].startedAt) : null;
 		const delayMs = stampedAt !== null && firstAt !== null ? firstAt - stampedAt : null;
+		const delayDesdePrimeraMs = burstStart !== null && firstAt !== null ? firstAt - burstStart : null;
+
+		const intervals: number[] = [];
+		for (let i = 1; i < stamps.length; i++) intervals.push(stamps[i] - stamps[i - 1]);
+		const maxIntervalMs = intervals.length ? Math.max(...intervals) : null;
+		const minIntervalMs = intervals.length ? Math.min(...intervals) : null;
 
 		const measured = {
 			term,
 			keystrokes: term.length - 2,
 			keyGapMs,
+			keystrokesObserved: stamps.length,
+			sequenceCompleted: terminado,
+			minIntervalMs,
+			maxIntervalMs,
 			calls: calls.length,
-			addresses: calls.map(c => param(String(c.url), 'address')),
+			callsInBurst: inBurst.length,
+			callsBeforeBurst: heredadas,
+			addresses: inBurst.map(c => param(String(c.url), 'address')),
+			firstKeystrokeAt: burstStart,
 			lastKeystrokeAt: stampedAt,
 			firstRequestAt: firstAt,
+			// Los DOS deltas viajan por separado para que el JSON diga cual sostiene el veredicto.
+			delayFromLastKeystrokeMs: delayMs,
+			delayFromFirstKeystrokeMs: delayDesdePrimeraMs,
 			measuredDelayMs: delayMs,
 			acTargetMs: DEBOUNCE_TARGET_MS
 		};
 
-		if (calls.length === 0) {
+		if (!terminado || stamps.length < esperadas) {
+			return {
+				behavior: 'B2',
+				title: `Debounce ~${DEBOUNCE_TARGET_MS} ms`,
+				status: 'NO_EJERCIDO',
+				verdict: `La secuencia no se completo: se sellaron ${stamps.length} de ${esperadas} pulsaciones. Sin la rafaga completa no hay agrupamiento que evaluar.`,
+				measured
+			};
+		}
+
+		// GUARD DE PREMISA. Si el intervalo real entre pulsaciones alcanza la ventana de debounce, cada
+		// tecla es su propia rafaga y varios requests son el comportamiento CORRECTO. Medir ahi no
+		// distingue producto de harness, asi que el caso se declara no ejercido en vez de inventar un rojo.
+		if (maxIntervalMs !== null && maxIntervalMs >= DEBOUNCE_TARGET_MS) {
+			return {
+				behavior: 'B2',
+				title: `Debounce ~${DEBOUNCE_TARGET_MS} ms`,
+				status: 'NO_EJERCIDO',
+				verdict: `El intervalo real entre pulsaciones llego a ${maxIntervalMs} ms, igual o mayor que la ventana de ~${DEBOUNCE_TARGET_MS} ms del AC: a esa cadencia cada tecla es su propia rafaga y varios requests serian lo ESPERADO. La medicion no puede distinguir producto de harness.`,
+				measured
+			};
+		}
+
+		if (inBurst.length === 0) {
 			return {
 				behavior: 'B2',
 				title: `Debounce ~${DEBOUNCE_TARGET_MS} ms`,
 				status: 'SIN_DATOS',
-				verdict: 'Cero requests: no hay debounce que medir. La conducta no se ejercio.',
+				verdict: `Cero requests atribuibles a la rafaga${heredadas ? ` (se descartaron ${heredadas} anteriores a la primera pulsacion)` : ''}: no hay debounce que medir. La conducta no se ejercio.`,
 				measured
 			};
 		}
@@ -309,16 +525,35 @@ export class AddressFieldProbe {
 				behavior: 'B2',
 				title: `Debounce ~${DEBOUNCE_TARGET_MS} ms`,
 				status: 'NO_EJERCIDO',
-				verdict: `${calls.length} request(s), pero la captura no trae el sello temporal necesario para medir la latencia.`,
+				verdict: `${inBurst.length} request(s) en la rafaga, pero la captura no trae el sello temporal necesario para medir la latencia.`,
 				measured
 			};
 		}
-		if (calls.length > 1) {
+		// EL CONTEO VA PRIMERO, y el orden de estas dos ramas es load-bearing.
+		//
+		// Con el guard de negatividad delante, este FAIL era INALCANZABLE: cuando el producto no agrupa,
+		// la primera request sale junto a la PRIMERA tecla, o sea cientos de ms antes del ultimo sello,
+		// asi que `delayMs` es negativo POR CONSTRUCCION justo en el caso que hay que cazar. El caso
+		// salia NO_EJERCIDO siempre y el unico rojo real quedaba invisible. Al filtrar por `inBurst` la
+		// contaminacion ya se descarto contra el INICIO de la rafaga, que es el ancla correcta.
+		if (inBurst.length > 1) {
 			return {
 				behavior: 'B2',
 				title: `Debounce ~${DEBOUNCE_TARGET_MS} ms`,
 				status: 'FAIL',
-				verdict: `${term.length - 2} pulsaciones separadas por ${keyGapMs} ms generaron ${calls.length} requests. No agrupa: el debounce no esta operando en esta superficie.`,
+				verdict: `${stamps.length} pulsaciones con un intervalo real de ${minIntervalMs}-${maxIntervalMs} ms (por debajo de la ventana de ~${DEBOUNCE_TARGET_MS} ms) generaron ${inBurst.length} requests dentro de la rafaga. No agrupa: el debounce no esta operando en esta superficie.`,
+				measured
+			};
+		}
+		// Con UNA sola request en la rafaga, un delta negativo contra la ultima tecla no es
+		// contaminacion — ya se filtro — sino un disparo en el borde de entrada: la request salio con las
+		// primeras teclas y nada mas se emitio. No alcanza para afirmar agrupamiento ni para negarlo.
+		if (delayMs < 0) {
+			return {
+				behavior: 'B2',
+				title: `Debounce ~${DEBOUNCE_TARGET_MS} ms`,
+				status: 'NO_EJERCIDO',
+				verdict: `1 request en la rafaga, pero salio ${Math.abs(delayMs)} ms antes de la ultima pulsacion (${delayDesdePrimeraMs} ms despues de la primera): disparo en el borde de entrada, no un agrupamiento medible.`,
 				measured
 			};
 		}
@@ -335,7 +570,7 @@ export class AddressFieldProbe {
 			behavior: 'B2',
 			title: `Debounce ~${DEBOUNCE_TARGET_MS} ms`,
 			status: 'PASS',
-			verdict: `1 request para ${term.length - 2} pulsaciones, disparado ${delayMs} ms despues de la ultima tecla.`,
+			verdict: `1 request para ${stamps.length} pulsaciones con intervalo real de ${minIntervalMs}-${maxIntervalMs} ms, disparado ${delayMs} ms despues de la ultima tecla.`,
 			measured
 		};
 	}
@@ -440,15 +675,35 @@ export class AddressFieldProbe {
 
 		await clearWebViewNetworkCapture(this.driver);
 		// El mismo texto otra vez. Con `distinctUntilChanged` no deberia salir nada.
-		await this.typeAndStamp(selector, term);
+		const reescribio = await this.typeAndStamp(selector, term);
 		await this.driver.pause(this.settleMs);
 		const repeated = await this.autocompleteCalls();
+
+		// PRUEBA DE VIDA, y sin ella este caso da PASS sobre un campo muerto.
+		//
+		// El veredicto de abajo se apoya en una AUSENCIA ("no salio ningun request"), y cero requests es
+		// exactamente lo que produce un campo que dejo de aceptar texto. El read-back de `typeAndStamp`
+		// no alcanza: con el valor ya presente, `t.value === v` es cierto aunque el evento `input` no
+		// llegue a ninguna suscripcion. Y `firstRound > 0` solo descarta el campo muerto DESDE EL
+		// ARRANQUE, no el que muere ENTRE rondas — que es justo lo documentado en Perfil > Mis
+		// Direcciones el 2026-08-19, donde B4 y B6 se publicaron en verde sin sostenerlos.
+		//
+		// Se sonda con un texto DISTINTO, nunca vaciando el campo: inyectar '' entre las dos emisiones
+		// puede hacer que un producto SANO vuelva a emitir, y eso seria un falso rojo.
+		await clearWebViewNetworkCapture(this.driver);
+		const textoSonda = `${term} 2`;
+		const escribioSonda = await this.typeAndStamp(selector, textoSonda);
+		await this.driver.pause(this.settleMs);
+		const sonda = (await this.autocompleteCalls()).length;
 
 		const measured = {
 			term,
 			callsFirstRound: firstRound,
 			callsOnRepeat: repeated.length,
-			repeatedAddresses: repeated.map(c => param(String(c.url), 'address'))
+			repeatedAddresses: repeated.map(c => param(String(c.url), 'address')),
+			livenessTerm: textoSonda,
+			livenessTyped: escribioSonda,
+			livenessCalls: sonda
 		};
 
 		if (firstRound === 0) {
@@ -457,6 +712,15 @@ export class AddressFieldProbe {
 				title: 'distinctUntilChanged',
 				status: 'SIN_DATOS',
 				verdict: 'La primera consulta no salio, asi que "no repite" no distingue la conducta de un campo inerte.',
+				measured
+			};
+		}
+		if (!reescribio) {
+			return {
+				behavior: 'B4',
+				title: 'distinctUntilChanged',
+				status: 'SIN_DATOS',
+				verdict: 'El campo no acepto la reescritura del mismo texto, asi que la ausencia de requests no dice nada de la conducta.',
 				measured
 			};
 		}
@@ -469,11 +733,20 @@ export class AddressFieldProbe {
 				measured
 			};
 		}
+		if (sonda === 0) {
+			return {
+				behavior: 'B4',
+				title: 'distinctUntilChanged',
+				status: 'SIN_DATOS',
+				verdict: `Cero requests al repetir, pero tambien cero con un texto DISTINTO ("${textoSonda}"): el campo esta inerte y la ausencia no acredita distinctUntilChanged.`,
+				measured
+			};
+		}
 		return {
 			behavior: 'B4',
 			title: 'distinctUntilChanged',
 			status: 'PASS',
-			verdict: 'Reescribir el mismo texto no genero ningun request nuevo.',
+			verdict: `Reescribir el mismo texto no genero ningun request nuevo, y el campo seguia vivo: un texto distinto si disparo ${sonda} request(s).`,
 			measured
 		};
 	}
@@ -575,8 +848,11 @@ export class AddressFieldProbe {
 		await this.reset(selector);
 
 		const seen: { address: string; token: string }[] = [];
+		// Se acumula QUE TERMINOS entraron de verdad: el veredicto de abajo compara tokens entre
+		// consultas, y si el campo dejo de aceptar texto a mitad de camino no hubo "entre consultas".
+		const rechazados: string[] = [];
 		for (const t of terms) {
-			await this.typeAndStamp(selector, t);
+			if (!(await this.typeAndStamp(selector, t))) rechazados.push(t);
 			await this.driver.pause(this.settleMs);
 			for (const c of await this.autocompleteCalls()) {
 				seen.push({ address: param(String(c.url), 'address'), token: param(String(c.url), 'sessionToken') });
@@ -585,7 +861,8 @@ export class AddressFieldProbe {
 		}
 
 		const tokens = Array.from(new Set(seen.map(s => s.token).filter(Boolean)));
-		const measured = { terms, calls: seen.length, observed: seen, distinctTokens: tokens };
+		const consultasDistintas = new Set(seen.map(s => s.address).filter(Boolean)).size;
+		const measured = { terms, termsRejected: rechazados, calls: seen.length, distinctQueries: consultasDistintas, observed: seen, distinctTokens: tokens };
 
 		if (seen.length === 0) {
 			return {
@@ -614,11 +891,23 @@ export class AddressFieldProbe {
 				measured
 			};
 		}
+		// "Estable" es una afirmacion SOBRE VARIAS consultas. Con una sola, `tokens.length === 1` es
+		// trivialmente cierto y no prueba nada: un campo que acepto el primer termino y despues se murio
+		// produce exactamente esta firma — y es lo que paso en Perfil > Mis Direcciones el 2026-08-19.
+		if (consultasDistintas < 2) {
+			return {
+				behavior: 'B6',
+				title: 'sessionToken presente y estable en el campo',
+				status: 'NO_EJERCIDO',
+				verdict: `Solo se observo ${consultasDistintas} consulta distinta de las ${terms.length} pedidas${rechazados.length ? ` (el campo rechazo: ${rechazados.join(', ')})` : ''}: un unico request no puede acreditar estabilidad ENTRE consultas.`,
+				measured
+			};
+		}
 		return {
 			behavior: 'B6',
 			title: 'sessionToken presente y estable en el campo',
 			status: 'PASS',
-			verdict: `${seen.length} request(s) del mismo campo comparten un unico token (${tokens[0]}).`,
+			verdict: `${seen.length} request(s) sobre ${consultasDistintas} consultas distintas del mismo campo comparten un unico token (${tokens[0]}).`,
 			measured
 		};
 	}
@@ -651,18 +940,9 @@ export class AddressFieldProbe {
 		await this.driver.pause(this.settleMs);
 		const before = (await this.autocompleteCalls()).map(c => param(String(c.url), 'sessionToken')).filter(Boolean);
 
-		// Elegir la PRIMERA prediccion de la lista. Es la accion que deberia cerrar la sesion.
-		const picked = (await this.driver
-			.execute(() => {
-				const vis = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
-				const row = Array.from(document.querySelectorAll('ion-item, ion-list ion-label, li'))
-					.filter(vis)
-					.find(e => (e.textContent ?? '').trim().length > 8) as HTMLElement | undefined;
-				if (!row) return '';
-				row.click();
-				return (row.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 70);
-			})
-			.catch(() => '')) as string;
+		// Elegir la PRIMERA prediccion con un TAP NATIVO. Es la accion que deberia cerrar la sesion.
+		const valueBefore = await this.fieldValue(selector);
+		const picked = await this.tapFirstPredictionNative();
 
 		if (!picked) {
 			return {
@@ -670,20 +950,73 @@ export class AddressFieldProbe {
 				title,
 				status: 'NO_EJERCIDO',
 				verdict: 'No aparecio ninguna prediccion para seleccionar, asi que la transicion no se ejercio. NO es un defecto: sin seleccion no hay rotacion que medir.',
-				measured: { term, tokensBefore: [...new Set(before)] }
+				measured: { term, tokensBefore: [...new Set(before)], valueBefore }
+			};
+		}
+
+		// GUARD DE PREMISA — sin esto el caso miente. Que el tap encuentre una fila NO significa que la
+		// app haya procesado la eleccion; si el campo no se puebla, la seleccion no ocurrio y el token
+		// no tenia por que rotar. Sin este guard, "el token no rota" es la conclusion inevitable de una
+		// seleccion que nunca paso, y eso ya se reporto como defecto de producto por error en TM-687.
+		const valueAfter = await this.fieldValue(selector);
+		const selectionPopulated = valueAfter.length > 0 && valueAfter !== valueBefore;
+		if (!selectionPopulated) {
+			return {
+				behavior: 'B7',
+				title,
+				status: 'SIN_DATOS',
+				verdict: `Se tapeo "${picked}" pero el campo no cambio ("${valueBefore}" -> "${valueAfter}"): la seleccion no llego a concretarse, asi que NO hay rotacion que medir. Limite del harness, NO un defecto del producto.`,
+				measured: { term, picked, tokensBefore: [...new Set(before)], valueBefore, valueAfter, selectionPopulated }
 			};
 		}
 		await this.driver.pause(2600);
 
 		await clearWebViewNetworkCapture(this.driver);
-		await this.reset(selector);
-		await this.typeAndStamp(selector, term);
+
+		// NO se vacia el campo antes de medir el "despues", y es deliberado. Escribir '' es, en Places,
+		// el cierre natural de una sesion de busqueda: un producto que rota el token al REINICIAR la
+		// consulta pero NO al elegir habria salido PASS por efecto del propio harness. El veredicto
+		// tiene que ser atribuible a la seleccion, que es lo que pide CA-30.
+		await this.focusField(selector);
+
+		// Termino DISTINTO para la segunda consulta. Con el mismo texto, `distinctUntilChanged` — que
+		// este repo tiene medido en verde — no vuelve a consultar, y "cero requests despues" es
+		// indistinguible de "no hay token que comparar": el caso saldria SIN_DATOS por diseno del test.
+		const termAfter = term.slice(0, -1);
+		const escribioDespues = await this.typeAndStamp(selector, termAfter);
 		await this.driver.pause(this.settleMs);
-		const after = (await this.autocompleteCalls()).map(c => param(String(c.url), 'sessionToken')).filter(Boolean);
+
+		if (!escribioDespues) {
+			return {
+				behavior: 'B7',
+				title,
+				status: 'SIN_DATOS',
+				verdict: `Tras seleccionar "${picked}" el campo no acepto la segunda consulta ("${termAfter}"), asi que no hay token posterior que comparar. Limite del harness, no un defecto.`,
+				measured: { term, termAfter, picked, tokensBefore: [...new Set(before)], valueBefore, valueAfter, selectionPopulated }
+			};
+		}
+
+		// Correlacionar por `address`: una request rezagada de la consulta ANTERIOR trae el token viejo,
+		// y contarla aca leeria "el token no rota" sobre trafico que no pertenece a esta medicion — el
+		// mismo falso rojo que TM-687 ya produjo una vez.
+		const callsAfter = (await this.autocompleteCalls()).filter(c => param(String(c.url), 'address') === termAfter);
+		const after = callsAfter.map(c => param(String(c.url), 'sessionToken')).filter(Boolean);
 
 		const uniqBefore = [...new Set(before)];
 		const uniqAfter = [...new Set(after)];
-		const measured = { term, picked, tokensBefore: uniqBefore, tokensAfter: uniqAfter };
+		// `valueBefore`/`valueAfter` viajan en el measured a proposito: sin ellos el veredicto no es
+		// auditable a posteriori — no se puede saber si la seleccion realmente ocurrio.
+		const measured = {
+			term,
+			termAfter,
+			picked,
+			tokensBefore: uniqBefore,
+			tokensAfter: uniqAfter,
+			addressesAfter: callsAfter.map(c => param(String(c.url), 'address')),
+			valueBefore,
+			valueAfter,
+			selectionPopulated
+		};
 
 		if (!uniqBefore.length || !uniqAfter.length) {
 			return {
