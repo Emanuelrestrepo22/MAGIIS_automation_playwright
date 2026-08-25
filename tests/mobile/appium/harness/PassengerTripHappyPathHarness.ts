@@ -1,6 +1,11 @@
 import type { AppiumDriver } from '../base/AppiumSessionBase';
 import type { MobileActorConfig } from '../config/appiumRuntime';
 import type { PassengerProfileMode } from '../../../features/gateway-pg/contracts/gateway-pg.types';
+// Import relativo y al archivo `index` explicito, no al directorio: estos scripts corren bajo
+// `ts-node/esm` crudo (no hay tsconfig-paths ni tsx instalados), asi que los alias `@fixtures/*` de
+// tsconfig NO resuelven en runtime, y un import de DIRECTORIO depende de un flag que no todos los
+// runners pasan.
+import { PASSENGER_APP_USER, getCurrentUserEnvironment } from '../../../fixtures/users/index';
 import { PassengerHomeScreen } from '../passenger/PassengerHomeScreen';
 import { PassengerNewTripScreen } from '../passenger/PassengerNewTripScreen';
 import { PassengerTripStatusScreen } from '../passenger/PassengerTripStatusScreen';
@@ -38,8 +43,22 @@ const DEFAULT_TIMEOUTS_MS = {
 	payment: 120_000
 } as const;
 
-const DEFAULT_PASSENGER_EMAIL = process.env.PASSENGER_EMAIL ?? 'emanuel.restrepo@yopmail.com';
-const DEFAULT_PASSENGER_PASSWORD = process.env.PASSENGER_PASSWORD ?? '123';
+/*
+ * Las credenciales NO viven aca. Salen de `PASSENGER_APP_USER`, que es el SoT declarado de las
+ * credenciales de login del pasajero (`tests/fixtures/users/mobile/passenger.ts`).
+ *
+ * QUE HABIA ANTES, y por que era un defecto y no un detalle de estilo:
+ *
+ *   const DEFAULT_PASSENGER_EMAIL = process.env.PASSENGER_EMAIL ?? '<un email del ambiente test>';
+ *   const DEFAULT_PASSENGER_PASSWORD = process.env.PASSENGER_PASSWORD ?? '<una password trivial>';
+ *
+ * 1. Una password commiteada en el repo, por trivial que sea.
+ * 2. Y el dano mas concreto: TAPABA UN ERROR DE CONFIGURACION. `??` solo cae al fallback con
+ *    null/undefined, asi que una variable SIN DEFINIR hacia que el harness intentara silenciosamente
+ *    la cuenta del ambiente TEST contra UAT — un intento de login con la cuenta equivocada
+ *    disfrazado de default que funciona. El fixture, en cambio, normaliza "" a ausente y lanza
+ *    nombrando la variable exacta y el ENV activo.
+ */
 
 export class PassengerTripHappyPathHarness {
 	private homeScreen: PassengerHomeScreen;
@@ -97,10 +116,7 @@ export class PassengerTripHappyPathHarness {
 		await this.ensureProfileMode(this.profileMode);
 	}
 
-	async ensureWalletCard(
-		card: CardInput,
-		timeoutMs: number = DEFAULT_TIMEOUTS_MS.wallet
-	): Promise<'added' | 'already-present'> {
+	async ensureWalletCard(card: CardInput, timeoutMs: number = DEFAULT_TIMEOUTS_MS.wallet): Promise<'added' | 'already-present'> {
 		return this.withFailureDump('passenger-wallet-setup', async () => {
 			await this.ensurePassengerShell();
 			await this.walletScreen.openWallet();
@@ -120,16 +136,19 @@ export class PassengerTripHappyPathHarness {
 			await this.walletScreen.tapAddCard();
 			await this.walletScreen.fillCardForm(card);
 			await this.walletScreen.saveCard();
-			const threeDsResult = await handleThreeDsPopup(
-				this.getDriver(),
-				label => dumpAppiumState(this.getDriver(), label),
-				timeoutMs,
-				'passenger-wallet-setup'
-			);
+
+			// v2.5.17: el nuevo flujo de guardado (Stripe SetupIntent — initStripeElements /
+			// fetchStripeSetupIntent / doConfirmCardSetup / saveCardToBackend) monta elementos/contextos
+			// que hacen COLGAR a handleThreeDsPopup (switch a WEBVIEW externo + stale elements). eBiz y
+			// MercadoPago NO tienen 3DS: si la tarjeta ya aparece tras el save, retornamos ANTES de tocar
+			// el wait de 3DS. El 3DS sigue cubierto abajo para las tarjetas Stripe que sí lo disparan.
+			if (await this.walletScreen.hasCard(last4, 8_000)) {
+				return 'added';
+			}
+
+			const threeDsResult = await handleThreeDsPopup(this.getDriver(), label => dumpAppiumState(this.getDriver(), label), timeoutMs, 'passenger-wallet-setup');
 			if (threeDsResult === 'failed') {
-				throw new Error(
-					`PassengerTripHappyPathHarness.ensureWalletCard() - 3DS challenge was not completed: ${threeDsResult}`
-				);
+				throw new Error(`PassengerTripHappyPathHarness.ensureWalletCard() - 3DS challenge was not completed: ${threeDsResult}`);
 			}
 
 			// Guard: re-check before verifyCardAdded — Stripe may have already persisted the card
@@ -143,6 +162,7 @@ export class PassengerTripHappyPathHarness {
 			return 'added';
 		});
 	}
+
 
 	async cleanWallet(maxIterations = 50): Promise<number> {
 		return this.withFailureDump('passenger-wallet-cleanup', async () => {
@@ -257,7 +277,7 @@ export class PassengerTripHappyPathHarness {
 				const passengerEmail = process.env.PASSENGER_EMAIL?.trim() || 'unknown-passenger';
 				throw new Error(
 					`ENV_BLOCKER: Passenger ${passengerEmail} has an active or NO_AUTORIZADO trip that blocks new trip creation. ` +
-						'Clean up via Carrier portal before re-running.'
+					'Clean up via Carrier portal before re-running.'
 				);
 			}
 
@@ -284,22 +304,14 @@ export class PassengerTripHappyPathHarness {
 		return this.statusScreen.getTripStatus();
 	}
 
-	async verifyPaymentProcessed(
-		expectedAmount?: string,
-		timeoutMs: number = DEFAULT_TIMEOUTS_MS.payment
-	): Promise<void> {
+	async verifyPaymentProcessed(expectedAmount?: string, timeoutMs: number = DEFAULT_TIMEOUTS_MS.payment): Promise<void> {
 		await this.withFailureDump('passenger-trip-payment-processed', async () => {
 			await this.startSession();
 			await this.statusScreen.verifyPaymentProcessed(expectedAmount ?? undefined, timeoutMs);
 		});
 	}
 
-	async runHappyPath(
-		card: CardInput,
-		origin: string,
-		destination: string,
-		options: PassengerTripHappyPathOptions = {}
-	): Promise<PassengerTripHappyPathResult> {
+	async runHappyPath(card: CardInput, origin: string, destination: string, options: PassengerTripHappyPathOptions = {}): Promise<PassengerTripHappyPathResult> {
 		return this.withFailureDump('passenger-trip-happy-path', async () => {
 			await this.startSession();
 
@@ -308,10 +320,7 @@ export class PassengerTripHappyPathHarness {
 				...(options.timeoutsMs ?? {})
 			};
 
-			const walletState =
-				options.ensureWalletCard === false
-					? 'already-present'
-					: await this.ensureWalletCard(card, timeouts.wallet);
+			const walletState = options.ensureWalletCard === false ? 'already-present' : await this.ensureWalletCard(card, timeouts.wallet);
 
 			const cardLast4 = this.getCardLast4(card);
 			const tripId = await this.createTrip(origin, destination, cardLast4);
@@ -353,15 +362,17 @@ export class PassengerTripHappyPathHarness {
 		this.statusScreen = new PassengerTripStatusScreen(this.config, driver);
 	}
 
+	/**
+	 * Credenciales del pasajero, desde el fixture canonico y por ambiente activo.
+	 *
+	 * No hay chequeo de vacio ni throw propio: los getters del fixture ya normalizan "" a ausente y
+	 * lanzan un mensaje MEJOR que el que habia aca — nombra la variable exacta que falta, sus
+	 * alternativas y el ENV activo. Duplicar la validacion solo daria dos mensajes distintos para la
+	 * misma causa, y el menos informativo ganaria por llegar primero.
+	 */
 	private getLoginCredentials(): { email: string; password: string } {
-		const email = DEFAULT_PASSENGER_EMAIL.trim();
-		const password = DEFAULT_PASSENGER_PASSWORD.trim();
-
-		if (!email || !password) {
-			throw new Error('Passenger login credentials are missing. Set PASSENGER_EMAIL and PASSENGER_PASSWORD.');
-		}
-
-		return { email, password };
+		const user = PASSENGER_APP_USER[getCurrentUserEnvironment()];
+		return { email: user.email, password: user.password };
 	}
 
 	private isLoginUrl(url: string): boolean {
@@ -388,9 +399,7 @@ export class PassengerTripHappyPathHarness {
 	private async closeExpiredModalIfPresent(driver: AppiumDriver): Promise<string> {
 		return driver
 			.execute<string, []>(() => {
-				const modal = Array.from(document.querySelectorAll('ion-modal')).find(el =>
-					(el.textContent ?? '').includes('Su sesión ha expirado')
-				);
+				const modal = Array.from(document.querySelectorAll('ion-modal')).find(el => (el.textContent ?? '').includes('Su sesión ha expirado'));
 				if (!modal) {
 					return 'no-modal';
 				}
@@ -411,12 +420,8 @@ export class PassengerTripHappyPathHarness {
 		return driver
 			.execute<string, [string, string]>(
 				(loginEmail: string, loginPassword: string): string => {
-					const emailInput = document.querySelector(
-						'input[type="email"], input[placeholder="Email"]'
-					) as HTMLInputElement | null;
-					const passwordInput = document.querySelector(
-						'input[type="password"], input[placeholder="Contraseña"]'
-					) as HTMLInputElement | null;
+					const emailInput = document.querySelector('input[type="email"], input[placeholder="Email"]') as HTMLInputElement | null;
+					const passwordInput = document.querySelector('input[type="password"], input[placeholder="Contraseña"]') as HTMLInputElement | null;
 
 					if (!emailInput || !passwordInput) {
 						return 'missing-fields';
@@ -435,9 +440,7 @@ export class PassengerTripHappyPathHarness {
 					const buttons = Array.from(document.querySelectorAll('button, ion-button, [role="button"]'));
 					const submit = buttons.find(el => {
 						const text = el.textContent?.trim();
-						return (
-							text === 'Ingresar' || text === 'Entrar' || text === 'Login' || text === 'Iniciar sesión'
-						);
+						return text === 'Ingresar' || text === 'Entrar' || text === 'Login' || text === 'Iniciar sesión';
 					}) as HTMLElement | undefined;
 
 					if (submit) {

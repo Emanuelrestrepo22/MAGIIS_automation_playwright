@@ -88,7 +88,14 @@ export default defineConfig({
       // "Test timeout of 120000ms exceeded" — el peor tipo de fallo para triar.
       // Nota: `test.describe.configure({ timeout })` dentro de las factories NO alcanza
       // (hold.factory declara 240s y aun así vencía a los 120s); el project sí manda.
-      timeout: 300 * 1000,
+      //
+      // 300s → 600s (2026-07-29): con 300s el bloque B1 dio 3 failed donde 2 casos habían
+      // COMPLETADO su objetivo — viaje creado, oráculo "Por asignar" PASS y viaje cancelado por
+      // el cleanup — y el test se reportó failed igual. El journey aislado tarda ~90s, pero
+      // encadenando casos contra `apps-test` lento el acumulado (login ~50s + 13 pasos) pasa los
+      // 5 min. Con el techo bajo el reporte miente en la dirección más cara de triar: dice que
+      // falló algo que funcionó.
+      timeout: 600 * 1000,
       use: {
         browserName: "chromium",
       },

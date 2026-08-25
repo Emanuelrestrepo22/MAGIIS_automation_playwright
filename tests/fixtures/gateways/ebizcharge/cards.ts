@@ -101,6 +101,18 @@ export const EBIZ_DEFAULT_BILLING_ADDRESS = '1234 Main street' as const;
 export const EBIZ_DEFAULT_BILLING_ADDRESS_OPTION = '1234 Main Street, Los Angeles, CA, USA' as const;
 
 /**
+ * Datos de facturacion para el form NATIVO de app-pax (`app-credit-card-payment-data`), distinto
+ * del par `EBIZ_DEFAULT_BILLING_ADDRESS`/`_OPTION` que usa el flujo web con autocompletado.
+ * En el form nativo el control `address` tiene **maxlength=30**: pasarse invalida el FormGroup y
+ * deja GUARDAR deshabilitado (verificado en device 2026-07-30). Mantener <=30 chars.
+ * El outcome eBiz lo define el NUMERO de tarjeta, asi que address/zip son inertes al resultado.
+ */
+export const EBIZ_BILLING = {
+	address: '123 Main St, Dallas TX', // 22 chars (<=30)
+	zip: '75201'
+} as const;
+
+/**
  * Registry de tarjetas eBizCharge con outcome de negocio.
  * El número determina el resultado; holderName/CVV "any" son inertes al outcome.
  */

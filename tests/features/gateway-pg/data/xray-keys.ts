@@ -71,7 +71,16 @@ export type GatewayHoldCase =
 	| 'empresaHappyExistingHoldOn' /*      carrier · empresa individuo · tarjeta existente · Hold ON */
 	| 'empresaHappyNewHoldOff' /*          carrier · empresa individuo · tarjeta nueva · Hold OFF */
 	| 'empresaHappyExistingHoldOff' /*     carrier · empresa individuo · tarjeta existente · Hold OFF */
-	| 'empresaDecline'; /*                 carrier · empresa individuo · decline genérico */
+	| 'empresaDecline' /*                  carrier · empresa individuo · decline genérico */
+	// ── Ejes agregados el 2026-07-30 desde el E2E exploratorio eBizCharge #2 ────────────────────────
+	// (`recorded/ebizcharge-e2e-3actores-hold-onoff-delete-recard-programado.recorded.ts`).
+	// Cada uno aísla UN eje nuevo: con varios ejes en un mismo caso, un fallo no diría cuál rompió.
+	| 'personalHappyExistingHoldOn' /*     carrier · personal · tarjeta existente · Hold ON */
+	| 'personalHappyExistingHoldOff' /*    carrier · personal · tarjeta existente · Hold OFF */
+	| 'empresaReplaceCardHoldOn' /*        carrier · empresa · ELIMINAR tarjeta vinculada + vincular otra · Hold ON */
+	| 'empresaReplaceCardHoldOff' /*       carrier · empresa · ELIMINAR tarjeta vinculada + vincular otra · Hold OFF */
+	| 'empresaScheduledManualHoldOn' /*    carrier · empresa · viaje PROGRAMADO + asignación manual · Hold ON */
+	| 'empresaManualAssignHoldOn'; /*      carrier · empresa · viaje inmediato + asignación MANUAL · Hold ON */
 
 /**
  * Casos del área CARGO (Cargo a Bordo — cobro directo sin retención previa; el cobro
@@ -136,7 +145,13 @@ const noHoldKeys = (): Record<GatewayHoldCase, XrayIssueKey | null> => ({
 	empresaHappyExistingHoldOn: null,
 	empresaHappyNewHoldOff: null,
 	empresaHappyExistingHoldOff: null,
-	empresaDecline: null
+	empresaDecline: null,
+	personalHappyExistingHoldOn: null,
+	personalHappyExistingHoldOff: null,
+	empresaReplaceCardHoldOn: null,
+	empresaReplaceCardHoldOff: null,
+	empresaScheduledManualHoldOn: null,
+	empresaManualAssignHoldOn: null
 });
 
 /** Plantilla de keys CARGO sin issue Xray (mismo criterio que `noHoldKeys`). */
@@ -205,7 +220,16 @@ export const XRAY_KEYS_BY_GATEWAY: Record<GatewayCompany, GatewayXrayRegistry> =
 			empresaHappyNewHoldOff: 'TS-STRIPE-TC1066',
 			empresaHappyExistingHoldOff: 'TS-STRIPE-TC1068',
 			// §6 no define decline para empresa individuo en alta de viaje (sólo en Cargo, TC1112).
-			empresaDecline: null
+			empresaDecline: null,
+			// Ejes agregados desde el E2E eBizCharge #2 (2026-07-30): la matriz Stripe no tiene filas
+			// para tarjeta existente en personal, reemplazo de tarjeta, programado ni asignación manual.
+			// `null` = unmapped visible; se pueblan si/cuando se deriven los casos para Stripe.
+			personalHappyExistingHoldOn: null,
+			personalHappyExistingHoldOff: null,
+			empresaReplaceCardHoldOn: null,
+			empresaReplaceCardHoldOff: null,
+			empresaScheduledManualHoldOn: null,
+			empresaManualAssignHoldOn: null
 		},
 		// TODO(xray): mismo criterio que `hold` — el área F (Cargo) mapea por área a MG-161.
 		cargo: noCargoKeys(),
@@ -268,7 +292,16 @@ export const XRAY_KEYS_BY_GATEWAY: Record<GatewayCompany, GatewayXrayRegistry> =
 			empresaHappyExistingHoldOn: 'TS-AUTHORIZE-TC1062',
 			empresaHappyNewHoldOff: 'TS-AUTHORIZE-TC1063',
 			empresaHappyExistingHoldOff: 'TS-AUTHORIZE-TC1064',
-			empresaDecline: 'TS-AUTHORIZE-TC1065'
+			empresaDecline: 'TS-AUTHORIZE-TC1065',
+			// Ejes agregados desde el E2E eBizCharge #2 (2026-07-30). La matriz Authorize tampoco los
+			// tiene: sus filas de personal son todas "vincular nueva", y no modela reemplazo de tarjeta,
+			// alta programada ni asignación manual. `null` = unmapped visible, no se inventan IDs.
+			personalHappyExistingHoldOn: null,
+			personalHappyExistingHoldOff: null,
+			empresaReplaceCardHoldOn: null,
+			empresaReplaceCardHoldOff: null,
+			empresaScheduledManualHoldOn: null,
+			empresaManualAssignHoldOn: null
 		},
 		// Sólo los DOS casos happy tienen Test Xray, y las keys se leyeron EN VIVO de Jira
 		// (2026-07-29) para no cablear por inferencia:
@@ -376,17 +409,19 @@ export const XRAY_KEYS_BY_GATEWAY: Record<GatewayCompany, GatewayXrayRegistry> =
 		hold: { ...noHoldKeys(), colaboradorHappyNewHoldOn: 'MG-148' },
 		// Matriz ebizcharge/matriz_cases.md — colaborador TC1058..1062, personal TC1063..1066,
 		// empresa TC1067..1070. Asimetrías reales frente a Authorize/Stripe:
-		//   · personal: las 4 filas (TC1063..1066) son TODAS "Hold OFF" (variantes de
-		//     origen/destino, refs TS-STRIPE-TC1050/1052/1058/1060) → NO hay fila personal
-		//     con Hold ON en la matriz eBiz. Nota: existe TS-EBIZ-TC1040 ("Hold happy path
-		//     (parametrizado)", intent HAPPY_NO_AUTH) pero es una fila cross-gateway SIN tipo
-		//     de cliente → no se mapea 1:1 a `personalHappyHoldOn` (decisión de QA pendiente).
+		//   · personal: las 4 filas DERIVADAS (TC1063..1066) son TODAS "Hold OFF" (variantes de
+		//     origen/destino, refs TS-STRIPE-TC1050/1052/1058/1060) → la matriz eBiz NO tenía fila
+		//     personal con Hold ON. RESUELTO el 2026-07-30: el E2E exploratorio #2 ejecutó ese caso
+		//     en vivo (tramo 2, Amex aprobada) y se creó `TS-EBIZ-TC1256` para él. Se descartó usar
+		//     TS-EBIZ-TC1040 ("Hold happy path (parametrizado)") porque es una fila cross-gateway SIN
+		//     tipo de cliente y mapearla a `personalHappyHoldOn` sería un 1:1 falso.
 		//   · declines: los declines eBiz (TC1010..1016) son filas por TRIGGER de tarjeta, sin
 		//     ejes tipo-de-cliente ni Hold ON/OFF → no hay correspondencia 1:1 con la taxonomía.
 		//   · AVS: eBiz NO soporta el intent DECLINE_ZIP_MISMATCH (el resolver lanza; sus
 		//     números AVS son referencia y todos devuelven approved) → caso inaplicable.
 		holdTcIds: {
-			personalHappyHoldOn: null,
+			// Creado el 2026-07-30 para cerrar el gap descrito arriba (E2E exploratorio #2, tramo 2).
+			personalHappyHoldOn: 'TS-EBIZ-TC1256',
 			personalHappyHoldOff: 'TS-EBIZ-TC1063',
 			personalDeclineHoldOn: null,
 			personalDeclineHoldOff: null,
@@ -401,7 +436,18 @@ export const XRAY_KEYS_BY_GATEWAY: Record<GatewayCompany, GatewayXrayRegistry> =
 			empresaHappyExistingHoldOn: 'TS-EBIZ-TC1069',
 			empresaHappyNewHoldOff: 'TS-EBIZ-TC1068',
 			empresaHappyExistingHoldOff: 'TS-EBIZ-TC1070',
-			empresaDecline: null
+			empresaDecline: null,
+			// Ejes agregados el 2026-07-30 tras el E2E exploratorio #2
+			// (`recorded/ebizcharge-e2e-3actores-hold-onoff-delete-recard-programado.recorded.ts`).
+			// Los 7 TC se CREARON en la matriz para ellos — antes no existía fila donde acreditar la
+			// evidencia. eBiz es la única pasarela que los tiene poblados porque es la única donde se
+			// ejecutaron en vivo.
+			personalHappyExistingHoldOn: 'TS-EBIZ-TC1257',
+			personalHappyExistingHoldOff: 'TS-EBIZ-TC1258',
+			empresaReplaceCardHoldOn: 'TS-EBIZ-TC1259',
+			empresaReplaceCardHoldOff: 'TS-EBIZ-TC1260',
+			empresaScheduledManualHoldOn: 'TS-EBIZ-TC1261',
+			empresaManualAssignHoldOn: 'TS-EBIZ-TC1262'
 		},
 		cargo: noCargoKeys(),
 		// Matriz ebizcharge/matriz_cases.md — Cargo a Bordo personal TC1108..1110,
@@ -459,7 +505,15 @@ export const XRAY_KEYS_BY_GATEWAY: Record<GatewayCompany, GatewayXrayRegistry> =
 			empresaHappyExistingHoldOn: null,
 			empresaHappyNewHoldOff: null,
 			empresaHappyExistingHoldOff: null,
-			empresaDecline: null
+			empresaDecline: null,
+			// Ejes agregados desde el E2E eBizCharge #2 (2026-07-30). MP no tiene runtime todavía, así
+			// que todo su bloque HOLD sigue en `null` — estos seis no son la excepción.
+			personalHappyExistingHoldOn: null,
+			personalHappyExistingHoldOff: null,
+			empresaReplaceCardHoldOn: null,
+			empresaReplaceCardHoldOff: null,
+			empresaScheduledManualHoldOn: null,
+			empresaManualAssignHoldOn: null
 		},
 		cargo: noCargoKeys(),
 		cargoTcIds: {

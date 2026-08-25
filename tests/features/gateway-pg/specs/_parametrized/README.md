@@ -13,6 +13,15 @@ No es una carpeta productiva todavía. Cuando el approach se confirme contra
 se irán refactorizando progresivamente para consumir el mismo patrón y
 estos pilotos se podrán deprecar o promover a estructura definitiva.
 
+> ⚠️ **Estado real (2026-07-29)**: la evolución NO fue por este camino. Los specs
+> productivos de Authorize/eBizCharge no consumen el piloto de acá — corren sobre
+> `runStepwiseHoldJourney` (`helpers/stepwise-hold-journey.ts`), el motor
+> paso-a-paso pedido por el líder de QA (2026-07-27) para que el step que falla
+> identifique el punto exacto sin abrir el trace. El piloto de este directorio es
+> el único consumidor de `CarrierHoldSteps.runHoldScenario` hoy. Ambos motores
+> coexisten a propósito; ver los docblocks cruzados de ambos archivos antes de
+> refactorizar cualquiera.
+
 ## Qué demuestra el spec piloto
 
 `hold-happy-no3ds.parametrized.spec.ts`:
@@ -33,25 +42,36 @@ estos pilotos se podrán deprecar o promover a estructura definitiva.
 Principio rector (BL-024): _"comportamiento esperado constante, datos
 variables por gateway"_.
 
-## Cuándo se suman más gateways
+## Cómo se resuelve el set de gateways (actualizado 2026-07-29)
 
-`ACTIVE_GATEWAYS = ['stripe']` hoy.
+`ACTIVE_GATEWAYS` **ya NO está hardcodeado**. El spec lo obtiene de
+`resolveActiveGateways()` (`helpers/adapters/index.ts`), que resuelve en
+tiempo de colección:
 
-| Gateway        | Estado                              | Habilitador          |
-| -------------- | ----------------------------------- | -------------------- |
-| `stripe`       | runtime web completo                | producción           |
-| `authorize`    | fixtures listos, **runtime falta**  | **BL-025**           |
-| `mercado-pago` | investigación pendiente             | BL-026               |
-| `ebizcharge`   | investigación pendiente             | BL-027               |
+1. Si `GATEWAYS` está seteada en env (CSV, ej. `GATEWAYS=authorize,stripe`),
+   usa exactamente ese set — y **falla ruidosamente** si contiene un nombre
+   desconocido.
+2. Si no, devuelve los gateways cuyo adapter reporta `isConfigured()` — es
+   decir, los que tienen sus credenciales presentes en el `.env` activo.
 
-Cuando BL-025 termine (POMs Authorize + login del portal), simplemente
-agregar `'authorize'` al array. El resolver ya soporta el intent
-`HAPPY_NO_AUTH` para Authorize (mapea a card `SUCCESS`, número
-`4111 1111 1111 1111`, CVV `900`).
+Estado real de cobertura (no solo del piloto de este directorio):
 
-Si el flujo de UI difiere por gateway (ej. Authorize no usa Stripe Elements
-iframe), condicionar dentro del `test.step` con `if (gateway === 'authorize')`
-o delegar al adapter en `tests/features/gateway-pg/helpers/adapters/`.
+| Gateway        | Estado                                                                                  |
+| -------------- | --------------------------------------------------------------------------------------- |
+| `stripe`       | runtime web completo (~223 specs); card form vía Stripe Elements (3 iframes)             |
+| `authorize`    | **runtime completo**: CFG (5 ATC MG-220/221/223/224/226) + HOLD (14 casos) + CARGO + WAL |
+| `ebizcharge`   | specs CFG/card-matrix/hold/cargo escritos; **nunca ejecutados live** (faltan `EBIZ_*`)   |
+| `mercado-pago` | specs no-hold + wallet web; sin cobertura de cobro real en TEST (no transacciona)        |
+
+> El estado "fixtures listos, runtime falta (BL-025)" que este README declaraba
+> para Authorize quedó obsoleto: BL-025 se cerró y Authorize es hoy la segunda
+> pasarela con cobertura KATA real.
+
+Si el flujo de UI difiere por gateway, **no** condicionar con
+`if (gateway === 'authorize')`: el branch canónico es por capacidad declarada
+en el adapter — `adapter.cardForm` (`'stripe-elements'` vs `'native-angular'`,
+resuelto por `cardFormFor(gateway)`), `adapter.requires3ds`,
+`adapter.outcomeTrigger`. Ver `helpers/adapters/types.ts`.
 
 ## Cómo extender el patrón
 

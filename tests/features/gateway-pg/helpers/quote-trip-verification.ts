@@ -29,6 +29,7 @@ import type { GatewayName } from '@fixtures/gateways/_shared';
 
 import { test } from '@TestFixture';
 import { loginAsDispatcher } from '@features/gateway-pg/fixtures/gateway.fixtures';
+import { shortDestination } from '@features/gateway-pg/helpers/journey-url.helpers';
 import { CarrierTravelManagementPage } from '@ui/carrier';
 
 /**
@@ -62,10 +63,7 @@ export type ExpectQuoteTripInPortalOptions = {
 	travelId?: number;
 };
 
-/** Tramo corto de una dirección: el autocomplete y la grilla devuelven distinto sufijo de localidad. */
-function shortDestination(destination: string): string {
-	return destination.split(',')[0].trim();
-}
+// `shortDestination()` (tramo corto de la dirección) se importa de `journey-url.helpers` — SoT única.
 
 /**
  * Abre una sesión NUEVA del portal como dispatcher y verifica que el viaje del solicitante figure
