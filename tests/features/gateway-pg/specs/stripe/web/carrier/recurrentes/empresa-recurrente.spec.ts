@@ -94,7 +94,10 @@ test.describe(
 			// evidencia 2026-08-11): el alta recurrente hold=ON+3DS=true aprueba el 3DS pero el viaje
 			// no aterriza en "Programados" (queda en Asignar). Confirmado sistémico en los 3 actores
 			// de la matriz (app pax, colaborador, empresa individuo). Reportar, no enmascarar.
-			test.skip(true, 'BLOQUEADO producto: alta recurrente hold=ON+3DS=true no aterriza en Programados (queda en Asignar) — evidencia 2026-08-11, sistémico en 3 actores');
+			test.skip(
+				true,
+				'BLOQUEADO producto: alta recurrente hold=ON+3DS=true no aterriza en Programados (queda en Asignar) — evidencia 2026-08-11, sistémico en 3 actores'
+			);
 			await new RecurrentesSteps({ page }).runRecurrentScenario(empresaScenario('new'), {
 				hold: 'on',
 				threeDs: true

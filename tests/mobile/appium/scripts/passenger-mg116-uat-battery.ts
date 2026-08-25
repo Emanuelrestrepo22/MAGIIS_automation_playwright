@@ -20,7 +20,12 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { resolveDriverTarget } from './_shared/resolveDriverTarget';
 import { ScreenEvidence } from '../helpers/screenEvidence';
-import { AddressFieldProbe, summarizeMatrix, type AddressSurface, type SurfaceReport } from '../passenger/AddressFieldProbe';
+import {
+	AddressFieldProbe,
+	summarizeMatrix,
+	type AddressSurface,
+	type SurfaceReport
+} from '../passenger/AddressFieldProbe';
 import {
 	HomeOriginSurface,
 	HomeDestinationSurface,
@@ -143,7 +148,8 @@ async function run(): Promise<void> {
 			.map(s => s.trim().toUpperCase())
 			.filter(Boolean);
 		const surfaces = only.length ? all.filter(s => only.includes(s.id.toUpperCase())) : all;
-		if (only.length) log(`filtro MG116_ONLY=${only.join(',')} -> ${surfaces.map(s => s.id).join(',') || '(ninguna)'}`);
+		if (only.length)
+			log(`filtro MG116_ONLY=${only.join(',')} -> ${surfaces.map(s => s.id).join(',') || '(ninguna)'}`);
 
 		for (const surface of surfaces) {
 			await evidence.capture(`${surface.id}-antes`);

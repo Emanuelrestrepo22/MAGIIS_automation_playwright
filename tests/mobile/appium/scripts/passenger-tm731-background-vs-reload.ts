@@ -68,7 +68,10 @@ async function run(): Promise<void> {
 		startedAt: new Date().toISOString()
 	};
 	let webview = '';
-	const evidence = new ScreenEvidence(driver, `tm731-bg-vs-reload-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}`);
+	const evidence = new ScreenEvidence(
+		driver,
+		`tm731-bg-vs-reload-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}`
+	);
 
 	try {
 		const contexts = (await driver.getContexts()) as unknown as string[];
@@ -85,8 +88,9 @@ async function run(): Promise<void> {
 					urlLength: location.href.length,
 					title: document.title ?? '',
 					isChromeErrorPage:
-						/no est.? disponible|ERR_|no se puede acceder|webpage not available|no disponible/i.test(body) ||
-						/error/i.test(document.title ?? ''),
+						/no est.? disponible|ERR_|no se puede acceder|webpage not available|no disponible/i.test(
+							body
+						) || /error/i.test(document.title ?? ''),
 					visibleText: body.slice(0, 300)
 				};
 			})) as Snapshot;
@@ -105,9 +109,11 @@ async function run(): Promise<void> {
 		const printConsole = (label: string, entries: ConsoleEntry[]): void => {
 			const interesting = entries.filter(e => /SEVERE|WARNING|ERROR/i.test(e.level ?? ''));
 			log(`  consola — ${entries.length} entradas, ${interesting.length} de nivel error/warning`);
-			for (const e of interesting.slice(0, 12)) log(`     ${e.level}: ${(e.message ?? '').replace(/\s+/g, ' ').slice(0, 220)}`);
+			for (const e of interesting.slice(0, 12))
+				log(`     ${e.level}: ${(e.message ?? '').replace(/\s+/g, ' ').slice(0, 220)}`);
 			if (!interesting.length && entries.length) {
-				for (const e of entries.slice(0, 5)) log(`     ${e.level}: ${(e.message ?? '').replace(/\s+/g, ' ').slice(0, 160)}`);
+				for (const e of entries.slice(0, 5))
+					log(`     ${e.level}: ${(e.message ?? '').replace(/\s+/g, ' ').slice(0, 160)}`);
 			}
 		};
 
@@ -129,7 +135,12 @@ async function run(): Promise<void> {
 						t.scrollIntoView({ block: 'center' });
 						const b = t.getBoundingClientRect();
 						if (!b.width || !b.height) return null;
-						return { x: b.left + b.width / 2, y: b.top + b.height / 2, vw: window.innerWidth, vh: window.innerHeight };
+						return {
+							x: b.left + b.width / 2,
+							y: b.top + b.height / 2,
+							vw: window.innerWidth,
+							vh: window.innerHeight
+						};
 					},
 					sel,
 					needle
@@ -146,7 +157,12 @@ async function run(): Promise<void> {
 					id: 'finger1',
 					parameters: { pointerType: 'touch' },
 					actions: [
-						{ type: 'pointerMove', duration: 0, x: Math.round(loc.x + box.x * (size.width / box.vw)), y: Math.round(loc.y + box.y * (size.height / box.vh)) },
+						{
+							type: 'pointerMove',
+							duration: 0,
+							x: Math.round(loc.x + box.x * (size.width / box.vw)),
+							y: Math.round(loc.y + box.y * (size.height / box.vh))
+						},
 						{ type: 'pointerDown', button: 0 },
 						{ type: 'pause', duration: 130 },
 						{ type: 'pointerUp', button: 0 }
@@ -177,7 +193,9 @@ async function run(): Promise<void> {
 		}
 		const atInfo = await snap();
 		out.step2 = atInfo;
-		log(`paso 2 -> ${/travel-info/i.test(atInfo.url) ? 'PASA: llego a la pantalla de estimacion' : 'NO llego a travel-info'}`);
+		log(
+			`paso 2 -> ${/travel-info/i.test(atInfo.url) ? 'PASA: llego a la pantalla de estimacion' : 'NO llego a travel-info'}`
+		);
 		log(`   URL de ${atInfo.urlLength} caracteres`);
 		log(`   pantalla: ${atInfo.visibleText.slice(0, 140)}`);
 		await evidence.capture('01-estimacion').catch(() => undefined);
@@ -231,18 +249,25 @@ async function run(): Promise<void> {
 			printConsole('tras la recarga', rlConsole);
 			await evidence.capture('03-tras-recarga').catch(() => undefined);
 			log('');
-			log(`VEREDICTO B: la pantalla ${afterReload.isChromeErrorPage ? 'CAE en la pagina de error' : 'sobrevive'} al reload.`);
+			log(
+				`VEREDICTO B: la pantalla ${afterReload.isChromeErrorPage ? 'CAE en la pagina de error' : 'sobrevive'} al reload.`
+			);
 		}
 
 		line();
 		log('CONCLUSION — los dos disparadores no son el mismo hecho:');
 		log(`   segundo plano y vuelta : ${survivedBackground ? 'sobrevive' : 'rompe'}`);
-		log(`   recarga del renderer   : ${out.afterReload ? ((out.afterReload as Snapshot).isChromeErrorPage ? 'rompe' : 'sobrevive') : 'no medido'}`);
+		log(
+			`   recarga del renderer   : ${out.afterReload ? ((out.afterReload as Snapshot).isChromeErrorPage ? 'rompe' : 'sobrevive') : 'no medido'}`
+		);
 		line();
 	} finally {
 		const dir = path.join(process.cwd(), 'evidence', 'network-capture');
 		await mkdir(dir, { recursive: true }).catch(() => undefined);
-		const file = path.join(dir, `tm731-background-vs-reload-${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
+		const file = path.join(
+			dir,
+			`tm731-background-vs-reload-${new Date().toISOString().replace(/[:.]/g, '-')}.json`
+		);
 		await writeFile(file, JSON.stringify(out, null, 2), 'utf8');
 		log(`volcado -> ${path.relative(process.cwd(), file)}`);
 		await driver.deleteSession().catch(() => undefined);

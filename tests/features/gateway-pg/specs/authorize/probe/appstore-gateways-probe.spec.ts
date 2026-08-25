@@ -16,7 +16,7 @@ const TARGETS = [
 	{ key: 'stripe', needle: 'stripe' },
 	{ key: 'mercado-pago', needle: 'mercado' },
 	{ key: 'authorize', needle: 'authorize' },
-	{ key: 'ebizcharge', needle: 'ebiz' },
+	{ key: 'ebizcharge', needle: 'ebiz' }
 ];
 
 // Clasifica el estado de una card por el texto de su acción (link/span inferior).
@@ -50,8 +50,20 @@ test.describe(`[PROBE][${env.toUpperCase()}] App Store — soporte Authorize / e
 			const cards = page.locator('.card');
 			const n = await cards.count();
 			for (let i = 0; i < n; i++) {
-				const sub = (await cards.nth(i).locator('.card-subtitle').first().textContent().catch(() => null)) ?? '';
-				const title = (await cards.nth(i).locator('.card-title').first().textContent().catch(() => null)) ?? '';
+				const sub =
+					(await cards
+						.nth(i)
+						.locator('.card-subtitle')
+						.first()
+						.textContent()
+						.catch(() => null)) ?? '';
+				const title =
+					(await cards
+						.nth(i)
+						.locator('.card-title')
+						.first()
+						.textContent()
+						.catch(() => null)) ?? '';
 				const txt = `${title} ${sub}`.trim().replace(/\s+/g, ' ');
 				if (txt) subtitles.push(txt);
 			}
@@ -64,7 +76,10 @@ test.describe(`[PROBE][${env.toUpperCase()}] App Store — soporte Authorize / e
 		const findings: Record<string, { present: boolean; action?: string; verdict?: string }> = {};
 		for (const target of TARGETS) {
 			await test.step(`Probe pasarela: ${target.key}`, async () => {
-				const card = page.locator('.card').filter({ hasText: new RegExp(target.needle, 'i') }).first();
+				const card = page
+					.locator('.card')
+					.filter({ hasText: new RegExp(target.needle, 'i') })
+					.first();
 				const present = (await card.count()) > 0 && (await card.isVisible().catch(() => false));
 				findings[target.key] = { present };
 				if (!present) {
@@ -72,7 +87,15 @@ test.describe(`[PROBE][${env.toUpperCase()}] App Store — soporte Authorize / e
 					return;
 				}
 				// El texto de acción es el último link/span del footer de la card.
-				const action = ((await card.locator('a, .card-footer, span').last().textContent().catch(() => '')) ?? '').trim().replace(/\s+/g, ' ');
+				const action = (
+					(await card
+						.locator('a, .card-footer, span')
+						.last()
+						.textContent()
+						.catch(() => '')) ?? ''
+				)
+					.trim()
+					.replace(/\s+/g, ' ');
 				findings[target.key].action = action;
 				findings[target.key].verdict = classify(action);
 				await card.screenshot({ path: `${EVID}/${target.key}-card.png` }).catch(() => {});
@@ -83,9 +106,12 @@ test.describe(`[PROBE][${env.toUpperCase()}] App Store — soporte Authorize / e
 		console.log(`[PROBE][RESUMEN] ${JSON.stringify(findings)}`);
 		// GATE: para que la suite UI de una PSP sea viable, su card debe ser 'linked' o 'linkable'.
 		// 'unavailable' (No Disponible) = NO-GO UI para ese PSP en este carrier/entorno.
-		const authorizeGo = findings['authorize']?.verdict === 'linked' || findings['authorize']?.verdict === 'linkable';
+		const authorizeGo =
+			findings['authorize']?.verdict === 'linked' || findings['authorize']?.verdict === 'linkable';
 		const ebizGo = findings['ebizcharge']?.verdict === 'linked' || findings['ebizcharge']?.verdict === 'linkable';
-		console.log(`[PROBE][GATE] authorize-UI=${authorizeGo ? 'GO' : 'NO-GO'} · ebizcharge-UI=${ebizGo ? 'GO' : 'NO-GO'}`);
+		console.log(
+			`[PROBE][GATE] authorize-UI=${authorizeGo ? 'GO' : 'NO-GO'} · ebizcharge-UI=${ebizGo ? 'GO' : 'NO-GO'}`
+		);
 		// Soft: el probe siempre pasa; el GATE se lee de los logs. Solo exige que el App Store cargue.
 		expect(subtitles.length, 'el App Store debe renderizar al menos una card').toBeGreaterThan(0);
 	});

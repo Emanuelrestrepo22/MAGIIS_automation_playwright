@@ -49,7 +49,11 @@ test('recorded — Mercado Pago alta de viaje con DNI en UAT → terminó En Con
 	// El origen viene pre-cargado ("220 Center Ave, Brownwood") → se reemplaza.
 	await page.getByText('220 Center Ave, Brownwood,').click();
 	await page.getByText('Ciudad de la Paz 2238, Buenos').first().click();
-	await page.locator('.bootstrap.width-combo.input-search.ng-untouched.ng-pristine.ng-valid > .below > .single > .placeholder').click();
+	await page
+		.locator(
+			'.bootstrap.width-combo.input-search.ng-untouched.ng-pristine.ng-valid > .below > .single > .placeholder'
+		)
+		.click();
 	await page.getByText('Reconquista 661, Buenos Aires').click();
 
 	// Método de pago → tarjeta preautorizada.

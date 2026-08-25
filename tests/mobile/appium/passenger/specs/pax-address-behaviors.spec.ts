@@ -53,7 +53,13 @@ import { resolveDriverTarget } from '../../scripts/_shared/resolveDriverTarget';
 import { AddressFieldProbe, type AddressSurface, type BehaviorVerdict } from '../AddressFieldProbe';
 import { installWebViewNetworkCapture } from '../../helpers/webViewNetworkCapture';
 import { ensurePassengerSession } from '../ensurePassengerSession';
-import { HomeOriginSurface, HomeStopSurface, ProfileAddressSurface, ScheduledTripEditSurface, TripTypeAddressSurface } from '../surfaces/homeSurfaces';
+import {
+	HomeOriginSurface,
+	HomeStopSurface,
+	ProfileAddressSurface,
+	ScheduledTripEditSurface,
+	TripTypeAddressSurface
+} from '../surfaces/homeSurfaces';
 
 const TARGET = resolveDriverTarget('passenger');
 const SEED_DESTINATION = process.env.MG116_SEED_DESTINATION ?? 'Arenales 1233';
@@ -113,7 +119,9 @@ function commonRows(tripFlow: boolean): BehaviorRow[] {
 			// Perfil › Direcciones acordó 4 — es un formulario de guardado y nadie guarda un aeropuerto
 			// como Casa o Trabajo. Antes esta fila esperaba 3 en las dos y marcaba rojo un
 			// comportamiento correcto: el defecto estaba en el test, no en el producto.
-			title: tripFlow ? 'respeta el piso de 3 caracteres del AC' : 'respeta el piso de 4 caracteres acordado para esta pantalla',
+			title: tripFlow
+				? 'respeta el piso de 3 caracteres del AC'
+				: 'respeta el piso de 4 caracteres acordado para esta pantalla',
 			tms: tripFlow ? ['TM-680', 'TM-681'] : ['TM-734'],
 			run: (probe, sel) => probe.checkMinLength(sel, { expectedFloor: tripFlow ? 3 : 4 })
 		},
@@ -181,8 +189,19 @@ type SurfaceDef = {
  *        encima. Es límite del harness; queda documentado en el censo, con su camino de salida.
  */
 const SURFACES: SurfaceDef[] = [
-	{ id: 'S1', label: 'Home · Origen', make: () => new HomeOriginSurface(), tripFlow: true, carriesSingleSurfaceRows: true },
-	{ id: 'S3', label: 'Home · Agregar otro destino', make: () => new HomeStopSurface(SEED_DESTINATION), tripFlow: true },
+	{
+		id: 'S1',
+		label: 'Home · Origen',
+		make: () => new HomeOriginSurface(),
+		tripFlow: true,
+		carriesSingleSurfaceRows: true
+	},
+	{
+		id: 'S3',
+		label: 'Home · Agregar otro destino',
+		make: () => new HomeStopSurface(SEED_DESTINATION),
+		tripFlow: true
+	},
 	{ id: 'S5', label: 'Home · Solo Ida', make: () => new TripTypeAddressSurface('S5', 'Solo Ida'), tripFlow: true },
 	{ id: 'S6', label: 'Editar viaje programado', make: () => new ScheduledTripEditSurface(), tripFlow: true },
 	{ id: 'S7', label: 'Perfil › Mis Direcciones', make: () => new ProfileAddressSurface(), tripFlow: false }
@@ -341,7 +360,10 @@ async function relaunchApp(driver: Driver): Promise<string> {
 }
 
 test.describe(`[MG-116] Consistencia de los campos de dirección — App PAX (${TARGET.env})`, () => {
-	test.skip(!process.env.APPIUM_SERVER_URL, 'Sin APPIUM_SERVER_URL: la suite necesita un dispositivo físico con Appium.');
+	test.skip(
+		!process.env.APPIUM_SERVER_URL,
+		'Sin APPIUM_SERVER_URL: la suite necesita un dispositivo físico con Appium.'
+	);
 
 	// El timeout global del proyecto es de 60 s, pensado para tests de navegador. Acá cada test
 	// arranca una sesión Appium (~15-40 s con relanzamiento de la app) y además re-establece la
@@ -436,7 +458,10 @@ test.describe(`[MG-116] Consistencia de los campos de dirección — App PAX (${
 				test(
 					`${def.id}: ${row.title}`,
 					{
-						annotation: [...row.tms.map(key => ({ type: 'tms', description: key })), { type: 'surface', description: `${def.id} — ${def.label}` }],
+						annotation: [
+							...row.tms.map(key => ({ type: 'tms', description: key })),
+							{ type: 'surface', description: `${def.id} — ${def.label}` }
+						],
 						tag: ['@regression', '@mg116']
 					},
 					async () => {
@@ -447,7 +472,9 @@ test.describe(`[MG-116] Consistencia de los campos de dirección — App PAX (${
 						// siguientes salen SIN_DATOS con el producto sano (medido el 2026-08-19).
 						await surface!.reach(driver as Driver);
 						const current = surface!.fieldSelector();
-						expect(current.trim(), `${def.id} perdió su selector al re-establecer la superficie`).not.toBe('');
+						expect(current.trim(), `${def.id} perdió su selector al re-establecer la superficie`).not.toBe(
+							''
+						);
 
 						const verdict = await row.run(probe as AddressFieldProbe, current);
 
@@ -461,7 +488,10 @@ test.describe(`[MG-116] Consistencia de los campos de dirección — App PAX (${
 						});
 
 						// Cero datos NO es una falla del producto: es una conducta que no se ejerció.
-						test.skip(verdict.status === 'SIN_DATOS' || verdict.status === 'NO_EJERCIDO', `${verdict.status}: ${verdict.verdict}`);
+						test.skip(
+							verdict.status === 'SIN_DATOS' || verdict.status === 'NO_EJERCIDO',
+							`${verdict.status}: ${verdict.verdict}`
+						);
 
 						if (row.assertMeasured && verdict.measured) {
 							row.assertMeasured(verdict.measured);

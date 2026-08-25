@@ -65,13 +65,19 @@ test.describe(
 				// para viajes NO_AUTH — "Forma de Pago" es label read-only bajo "Datos Finales"
 				// (screenshots evidence/.../stripe-web-carrier-operaci-{fe85d,95195,55f93}). Sujeto del
 				// TC bloqueado por cambio/regresion de producto v1.72.8+ (defect report, hallazgo #3).
-				test.skip(true, 'BLOQUEADO producto: editor de forma de pago ausente en ABM edicion (mode=3) para viajes NO_AUTH — defect report 2026-08-07');
+				test.skip(
+					true,
+					'BLOQUEADO producto: editor de forma de pago ausente en ABM edicion (mode=3) para viajes NO_AUTH — defect report 2026-08-07'
+				);
 				// GATE producto (2026-08-07, corrida live): el seed llega VERDE a "En Conflicto" y el ABM
 				// mode=3 abre, pero el EDITOR de forma de pago (#add_travel_payment_methods) NO existe
 				// para viajes NO_AUTH — "Forma de Pago" es label read-only bajo "Datos Finales"
 				// (screenshots evidence/.../stripe-web-carrier-operaci-{fe85d,95195,55f93}). Sujeto del
 				// TC bloqueado por cambio/regresion de producto v1.72.8+ (defect report, hallazgo #3).
-				test.skip(true, 'BLOQUEADO producto: editor de forma de pago ausente en ABM edicion (mode=3) para viajes NO_AUTH — defect report 2026-08-07');
+				test.skip(
+					true,
+					'BLOQUEADO producto: editor de forma de pago ausente en ABM edicion (mode=3) para viajes NO_AUTH — defect report 2026-08-07'
+				);
 				await new CarrierEditVariantsSteps({ page }).runConflictEditScenario(conflictScenario(), {
 					variant: 'link-new-card'
 				});
@@ -92,7 +98,10 @@ test.describe(
 				// para viajes NO_AUTH — "Forma de Pago" es label read-only bajo "Datos Finales"
 				// (screenshots evidence/.../stripe-web-carrier-operaci-{fe85d,95195,55f93}). Sujeto del
 				// TC bloqueado por cambio/regresion de producto v1.72.8+ (defect report, hallazgo #3).
-				test.skip(true, 'BLOQUEADO producto: editor de forma de pago ausente en ABM edicion (mode=3) para viajes NO_AUTH — defect report 2026-08-07');
+				test.skip(
+					true,
+					'BLOQUEADO producto: editor de forma de pago ausente en ABM edicion (mode=3) para viajes NO_AUTH — defect report 2026-08-07'
+				);
 				await new CarrierEditVariantsSteps({ page }).runConflictEditScenario(conflictScenario(), {
 					variant: 'select-existing'
 				});

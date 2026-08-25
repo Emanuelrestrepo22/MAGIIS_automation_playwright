@@ -30,48 +30,72 @@ async function run(): Promise<void> {
 
 		await trip.openNewTrip();
 		log('home ok, seteando origen…');
-		await trip.setOrigin(ORIGIN).catch((e: unknown) => log(`setOrigin err: ${e instanceof Error ? e.message : String(e)}`));
+		await trip
+			.setOrigin(ORIGIN)
+			.catch((e: unknown) => log(`setOrigin err: ${e instanceof Error ? e.message : String(e)}`));
 		log('seteando destino…');
-		await trip.setDestination(DESTINATION).catch((e: unknown) => log(`setDestination err: ${e instanceof Error ? e.message : String(e)}`));
+		await trip
+			.setDestination(DESTINATION)
+			.catch((e: unknown) => log(`setDestination err: ${e instanceof Error ? e.message : String(e)}`));
 		await driver.pause(2_500);
 
 		// Screenshot del paso siguiente.
 		try {
 			mkdirSync('evidence/ebiz', { recursive: true });
-			await (driver as unknown as { saveScreenshot: (p: string) => Promise<unknown> }).saveScreenshot('evidence/ebiz/newtrip-after-od-v2517.png');
+			await (driver as unknown as { saveScreenshot: (p: string) => Promise<unknown> }).saveScreenshot(
+				'evidence/ebiz/newtrip-after-od-v2517.png'
+			);
 			log('screenshot → evidence/ebiz/newtrip-after-od-v2517.png');
 		} catch (e) {
 			log(`screenshot err: ${e instanceof Error ? e.message : String(e)}`);
 		}
 
 		// Dump de botones / CTAs / componentes visibles.
-		const dump = await driver.execute(() => {
-			const isVisible = (el: Element): boolean => {
-				const h = el as HTMLElement;
-				const r = h.getBoundingClientRect();
-				const s = window.getComputedStyle(h);
-				return s.display !== 'none' && s.visibility !== 'hidden' && r.width > 0 && r.height > 0;
-			};
-			const url = location.href;
-			const apps = Array.from(document.querySelectorAll('ion-router-outlet > *, app-home, app-travel-info, app-travel-summary, app-vehicle-selection, app-select-vehicle'))
-				.map(e => `${e.tagName.toLowerCase()}${(e as HTMLElement).offsetParent === null ? '(hidden)' : ''}`)
-				.filter((v, i, a) => a.indexOf(v) === i);
-			const buttons = Array.from(document.querySelectorAll('button, ion-button, [role="button"], ion-fab-button'))
-				.filter(isVisible)
-				.map(e => (e.textContent || '').replace(/\s+/g, ' ').trim() || e.getAttribute('aria-label') || '[icon]')
-				.filter(Boolean)
-				.slice(0, 25);
-			const primary = Array.from(document.querySelectorAll('.btn.primary, button.primary, ion-button[color="primary"]'))
-				.filter(isVisible)
-				.map(e => (e.textContent || '').replace(/\s+/g, ' ').trim() || '[icon]')
-				.slice(0, 10);
-			const bodyText = (document.body?.innerText || '').replace(/\s+/g, ' ').trim().slice(0, 500);
-			return { url, apps, buttons, primary, bodyText };
-		}).catch((e: unknown) => ({ err: e instanceof Error ? e.message : String(e) }));
+		const dump = await driver
+			.execute(() => {
+				const isVisible = (el: Element): boolean => {
+					const h = el as HTMLElement;
+					const r = h.getBoundingClientRect();
+					const s = window.getComputedStyle(h);
+					return s.display !== 'none' && s.visibility !== 'hidden' && r.width > 0 && r.height > 0;
+				};
+				const url = location.href;
+				const apps = Array.from(
+					document.querySelectorAll(
+						'ion-router-outlet > *, app-home, app-travel-info, app-travel-summary, app-vehicle-selection, app-select-vehicle'
+					)
+				)
+					.map(e => `${e.tagName.toLowerCase()}${(e as HTMLElement).offsetParent === null ? '(hidden)' : ''}`)
+					.filter((v, i, a) => a.indexOf(v) === i);
+				const buttons = Array.from(
+					document.querySelectorAll('button, ion-button, [role="button"], ion-fab-button')
+				)
+					.filter(isVisible)
+					.map(
+						e =>
+							(e.textContent || '').replace(/\s+/g, ' ').trim() ||
+							e.getAttribute('aria-label') ||
+							'[icon]'
+					)
+					.filter(Boolean)
+					.slice(0, 25);
+				const primary = Array.from(
+					document.querySelectorAll('.btn.primary, button.primary, ion-button[color="primary"]')
+				)
+					.filter(isVisible)
+					.map(e => (e.textContent || '').replace(/\s+/g, ' ').trim() || '[icon]')
+					.slice(0, 10);
+				const bodyText = (document.body?.innerText || '').replace(/\s+/g, ' ').trim().slice(0, 500);
+				return { url, apps, buttons, primary, bodyText };
+			})
+			.catch((e: unknown) => ({ err: e instanceof Error ? e.message : String(e) }));
 		log(`PASO POST ORIGEN+DESTINO:\n${JSON.stringify(dump, null, 2)}`);
 	} finally {
 		await harness.endSession();
 	}
 }
 
-run().catch((e: unknown) => { console.error(`[newtrip-explore] ${e instanceof Error ? e.message : String(e)}`); process.exit(1); });
+run().catch((e: unknown) => {
+	console.error(`[newtrip-explore] ${e instanceof Error ? e.message : String(e)}`);
+	process.exit(1);
+});

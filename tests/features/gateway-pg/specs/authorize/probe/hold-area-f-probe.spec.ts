@@ -37,13 +37,22 @@
 import type { Page } from '@playwright/test';
 
 import { test, expect } from '@TestFixture';
-import { CarrierDashboardPage, CarrierNewTravelPage, CarrierOperationalPreferencesPage, CarrierTravelManagementPage } from '@ui/carrier';
+import {
+	CarrierDashboardPage,
+	CarrierNewTravelPage,
+	CarrierOperationalPreferencesPage,
+	CarrierTravelManagementPage
+} from '@ui/carrier';
 import { cardFormFor } from '@ui/carrier/card-forms';
 import { intentSupport, type CardIntent } from '@fixtures/gateways/_shared';
 import { getGatewayPgAdapter } from '@features/gateway-pg/helpers/adapters';
 import { loginAsDispatcher } from '@features/gateway-pg/fixtures/gateway.fixtures';
 import { cleanupGatewayCardByLast4 } from '@features/gateway-pg/helpers/card-precondition';
-import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '@features/gateway-pg/helpers/travel-cleanup';
+import {
+	captureCreatedTravelId,
+	cancelTravelIfCreated,
+	type TravelIdRef
+} from '@features/gateway-pg/helpers/travel-cleanup';
 import { waitForTravelCreation } from '@features/gateway-pg/helpers/journey-url.helpers';
 
 const LOG = '[PROBE][HOLD-AREA-F]';
@@ -118,7 +127,9 @@ test.describe('[PROBE] área F de Authorize — qué estado toma el viaje cuando
 				void response
 					.text()
 					.then(body => {
-						netLog.push(`t+${offset}ms ${request.method()} ${response.status()} ${url}\n      body: ${body.slice(0, 700)}`);
+						netLog.push(
+							`t+${offset}ms ${request.method()} ${response.status()} ${url}\n      body: ${body.slice(0, 700)}`
+						);
 						if (!/paymentMethodsByPax/.test(url)) return;
 						try {
 							const parsed = JSON.parse(body) as { cards?: InventarioTarjeta[] };
@@ -127,7 +138,9 @@ test.describe('[PROBE] área F de Authorize — qué estado toma el viaje cuando
 							/* cuerpo no-JSON: el inventario queda como estaba */
 						}
 					})
-					.catch(() => netLog.push(`t+${offset}ms ${request.method()} ${response.status()} ${url} (body no legible)`));
+					.catch(() =>
+						netLog.push(`t+${offset}ms ${request.method()} ${response.status()} ${url} (body no legible)`)
+					);
 			});
 
 			console.log(
@@ -185,7 +198,13 @@ test.describe('[PROBE] área F de Authorize — qué estado toma el viaje cuando
 					if (espera > 0) await page.waitForTimeout(espera); // reloj del probe: se MIDE en t fijos
 					const total = await exito.count().catch(() => -1);
 					const visibles: boolean[] = [];
-					for (let i = 0; i < Math.max(total, 0); i++) visibles.push((await exito.nth(i).isVisible().catch(() => false)) === true);
+					for (let i = 0; i < Math.max(total, 0); i++)
+						visibles.push(
+							(await exito
+								.nth(i)
+								.isVisible()
+								.catch(() => false)) === true
+						);
 					const nuevo = newLines(baseAlta, await visibleLines(page));
 					console.log(
 						`${LOG} área C  t+${at} | nodos "Tarjeta válida"=${total} | visibles=${JSON.stringify(visibles)} | ` +
@@ -229,8 +248,12 @@ test.describe('[PROBE] área F de Authorize — qué estado toma el viaje cuando
 					.then(() => page.url())
 					.catch((err: Error) => `ERROR: ${err.message} (URL actual ${page.url()})`);
 				console.log(`${LOG} área F — URL post-envío: ${urlPostEnvio}`);
-				console.log(`${LOG} área F — texto NUEVO tras enviar: ${JSON.stringify(newLines(baseEnvio, await visibleLines(page)))}`);
-				console.log(`${LOG} área F — travelId capturado: ${travelIdRef.travelId ?? 'NINGUNO (el POST /travels no devolvió travelId)'}`);
+				console.log(
+					`${LOG} área F — texto NUEVO tras enviar: ${JSON.stringify(newLines(baseEnvio, await visibleLines(page)))}`
+				);
+				console.log(
+					`${LOG} área F — travelId capturado: ${travelIdRef.travelId ?? 'NINGUNO (el POST /travels no devolvió travelId)'}`
+				);
 
 				// ── Estado del viaje: se lee del DETALLE por travelId ──
 				// El selector `statusBadge()` del POM legacy está marcado TODO/no validado, así que el
@@ -241,16 +264,23 @@ test.describe('[PROBE] área F de Authorize — qué estado toma el viaje cuando
 					await page.waitForLoadState('domcontentloaded');
 					await page.waitForTimeout(6_000); // el detalle hidrata por API; se muestrea una vez asentado
 					const detalle = await visibleLines(page);
-					console.log(`${LOG} detalle viaje ${travelIdRef.travelId} — texto: ${JSON.stringify(detalle.slice(0, 80))}`);
+					console.log(
+						`${LOG} detalle viaje ${travelIdRef.travelId} — texto: ${JSON.stringify(detalle.slice(0, 80))}`
+					);
 					console.log(
 						`${LOG} detalle viaje ${travelIdRef.travelId} — líneas con estado: ` +
-							JSON.stringify(detalle.filter(l => /No autorizado|Buscando|autoriz|conflicto|Pendiente/i.test(l)))
+							JSON.stringify(
+								detalle.filter(l => /No autorizado|Buscando|autoriz|conflicto|Pendiente/i.test(l))
+							)
 					);
 				}
 
 				// ── Grilla de gestión: se vuelcan las pestañas y su contenido, sin asumir cuál ──
 				await management.goto();
-				const tabs = await page.locator('tabset ul li a').allTextContents().catch(() => []);
+				const tabs = await page
+					.locator('tabset ul li a')
+					.allTextContents()
+					.catch(() => []);
 				console.log(`${LOG} gestión — pestañas: ${JSON.stringify(tabs.map(t => t.trim()).filter(Boolean))}`);
 				const idViaje = travelIdRef.travelId != null ? String(travelIdRef.travelId) : null;
 				const dumpTab = async (nombre: string) => {

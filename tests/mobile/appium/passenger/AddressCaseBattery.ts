@@ -156,22 +156,96 @@ export class AddressCaseBattery {
 		const { entries, rows } = await this.probe('eze');
 		const airports = rows.filter(r => r.source === 'AIRPORT');
 		const eze = rows.find(r => (r.iataCode ?? '').toUpperCase() === 'EZE');
-		const measured = { term: 'eze', calls: entries.length, rows: rows.length, airports: airports.length, firstRow: rows[0] };
-		if (entries.length === 0) return this.mk('TM-683', 'TC10', 'IATA de 3 letras devuelve aeropuerto', 'SIN_DATOS', 'Cero requests con "eze".', measured);
-		if (rows.length === 0) return this.mk('TM-683', 'TC10', 'IATA de 3 letras devuelve aeropuerto', 'FAIL', 'El endpoint respondio vacio para el codigo IATA "eze".', measured);
-		if (!eze) return this.mk('TM-683', 'TC10', 'IATA de 3 letras devuelve aeropuerto', 'FAIL', `Ninguna fila trae iataCode EZE. Se recibieron ${rows.length} fila(s).`, measured);
-		return this.mk('TM-683', 'TC10', 'IATA de 3 letras devuelve aeropuerto', 'PASS', `"eze" devolvio ${rows.length} fila(s), con "${eze.mainText}" (iataCode EZE, source ${eze.source}).`, measured);
+		const measured = {
+			term: 'eze',
+			calls: entries.length,
+			rows: rows.length,
+			airports: airports.length,
+			firstRow: rows[0]
+		};
+		if (entries.length === 0)
+			return this.mk(
+				'TM-683',
+				'TC10',
+				'IATA de 3 letras devuelve aeropuerto',
+				'SIN_DATOS',
+				'Cero requests con "eze".',
+				measured
+			);
+		if (rows.length === 0)
+			return this.mk(
+				'TM-683',
+				'TC10',
+				'IATA de 3 letras devuelve aeropuerto',
+				'FAIL',
+				'El endpoint respondio vacio para el codigo IATA "eze".',
+				measured
+			);
+		if (!eze)
+			return this.mk(
+				'TM-683',
+				'TC10',
+				'IATA de 3 letras devuelve aeropuerto',
+				'FAIL',
+				`Ninguna fila trae iataCode EZE. Se recibieron ${rows.length} fila(s).`,
+				measured
+			);
+		return this.mk(
+			'TM-683',
+			'TC10',
+			'IATA de 3 letras devuelve aeropuerto',
+			'PASS',
+			`"eze" devolvio ${rows.length} fila(s), con "${eze.mainText}" (iataCode EZE, source ${eze.source}).`,
+			measured
+		);
 	}
 
 	/** TM-682 · TC9 — con 4 caracteres la respuesta combina aeropuertos y cache. */
 	async tm682(): Promise<CaseResult> {
 		const { entries, rows } = await this.probe('corr');
 		const sources = Array.from(new Set(rows.map(r => String(r.source ?? '')).filter(Boolean)));
-		const measured = { term: 'corr', calls: entries.length, rows: rows.length, sources, order: rows.map(r => r.source) };
-		if (entries.length === 0) return this.mk('TM-682', 'TC9', '4 caracteres combinan aeropuertos y cache', 'SIN_DATOS', 'Cero requests con "corr".', measured);
-		if (rows.length === 0) return this.mk('TM-682', 'TC9', '4 caracteres combinan aeropuertos y cache', 'FAIL', 'Respuesta vacia con 4 caracteres.', measured);
-		if (sources.length < 2) return this.mk('TM-682', 'TC9', '4 caracteres combinan aeropuertos y cache', 'FAIL', `Solo se devolvio la fuente ${sources.join(', ')}. El AC pide que 4+ caracteres sumen aeropuertos por nombre Y direcciones de cache.`, measured);
-		return this.mk('TM-682', 'TC9', '4 caracteres combinan aeropuertos y cache', 'PASS', `"corr" devolvio ${rows.length} fila(s) mezclando ${sources.join(' y ')}.`, measured);
+		const measured = {
+			term: 'corr',
+			calls: entries.length,
+			rows: rows.length,
+			sources,
+			order: rows.map(r => r.source)
+		};
+		if (entries.length === 0)
+			return this.mk(
+				'TM-682',
+				'TC9',
+				'4 caracteres combinan aeropuertos y cache',
+				'SIN_DATOS',
+				'Cero requests con "corr".',
+				measured
+			);
+		if (rows.length === 0)
+			return this.mk(
+				'TM-682',
+				'TC9',
+				'4 caracteres combinan aeropuertos y cache',
+				'FAIL',
+				'Respuesta vacia con 4 caracteres.',
+				measured
+			);
+		if (sources.length < 2)
+			return this.mk(
+				'TM-682',
+				'TC9',
+				'4 caracteres combinan aeropuertos y cache',
+				'FAIL',
+				`Solo se devolvio la fuente ${sources.join(', ')}. El AC pide que 4+ caracteres sumen aeropuertos por nombre Y direcciones de cache.`,
+				measured
+			);
+		return this.mk(
+			'TM-682',
+			'TC9',
+			'4 caracteres combinan aeropuertos y cache',
+			'PASS',
+			`"corr" devolvio ${rows.length} fila(s) mezclando ${sources.join(' y ')}.`,
+			measured
+		);
 	}
 
 	/** TM-727 · TC25 — las direcciones cercanas de cache deberian ir sobre aeropuertos lejanos. */
@@ -179,16 +253,63 @@ export class AddressCaseBattery {
 		const { entries, rows } = await this.probe('corr');
 		const firstCache = rows.findIndex(r => r.source === 'CACHE');
 		const firstAirport = rows.findIndex(r => r.source === 'AIRPORT');
-		const head = rows.slice(0, 4).map(r => ({ main: r.mainText, source: r.source, iata: r.iataCode, sec: r.secondaryText }));
-		const measured = { term: 'corr', calls: entries.length, rows: rows.length, firstCacheIndex: firstCache, firstAirportIndex: firstAirport, head };
-		if (entries.length === 0 || rows.length === 0) return this.mk('TM-727', 'TC25', 'Cache cercana por encima de aeropuertos lejanos', 'SIN_DATOS', 'Sin filas para evaluar el orden.', measured);
-		if (firstAirport === -1) return this.mk('TM-727', 'TC25', 'Cache cercana por encima de aeropuertos lejanos', 'PASS', 'No se devolvieron aeropuertos, asi que no hay precedencia que evaluar en este termino.', measured);
-		if (firstCache === -1) return this.mk('TM-727', 'TC25', 'Cache cercana por encima de aeropuertos lejanos', 'FAIL', 'Solo aeropuertos: ninguna direccion local en la lista.', measured);
+		const head = rows
+			.slice(0, 4)
+			.map(r => ({ main: r.mainText, source: r.source, iata: r.iataCode, sec: r.secondaryText }));
+		const measured = {
+			term: 'corr',
+			calls: entries.length,
+			rows: rows.length,
+			firstCacheIndex: firstCache,
+			firstAirportIndex: firstAirport,
+			head
+		};
+		if (entries.length === 0 || rows.length === 0)
+			return this.mk(
+				'TM-727',
+				'TC25',
+				'Cache cercana por encima de aeropuertos lejanos',
+				'SIN_DATOS',
+				'Sin filas para evaluar el orden.',
+				measured
+			);
+		if (firstAirport === -1)
+			return this.mk(
+				'TM-727',
+				'TC25',
+				'Cache cercana por encima de aeropuertos lejanos',
+				'PASS',
+				'No se devolvieron aeropuertos, asi que no hay precedencia que evaluar en este termino.',
+				measured
+			);
+		if (firstCache === -1)
+			return this.mk(
+				'TM-727',
+				'TC25',
+				'Cache cercana por encima de aeropuertos lejanos',
+				'FAIL',
+				'Solo aeropuertos: ninguna direccion local en la lista.',
+				measured
+			);
 		if (firstAirport < firstCache) {
 			const a = rows[firstAirport];
-			return this.mk('TM-727', 'TC25', 'Cache cercana por encima de aeropuertos lejanos', 'FAIL', `La posicion ${firstAirport} es el aeropuerto "${a.mainText}" (${a.secondaryText ?? ''}), por delante de la primera direccion local, que aparece recien en la posicion ${firstCache}.`, measured);
+			return this.mk(
+				'TM-727',
+				'TC25',
+				'Cache cercana por encima de aeropuertos lejanos',
+				'FAIL',
+				`La posicion ${firstAirport} es el aeropuerto "${a.mainText}" (${a.secondaryText ?? ''}), por delante de la primera direccion local, que aparece recien en la posicion ${firstCache}.`,
+				measured
+			);
 		}
-		return this.mk('TM-727', 'TC25', 'Cache cercana por encima de aeropuertos lejanos', 'PASS', `La primera direccion de cache aparece en la posicion ${firstCache}, antes del primer aeropuerto (${firstAirport}).`, measured);
+		return this.mk(
+			'TM-727',
+			'TC25',
+			'Cache cercana por encima de aeropuertos lejanos',
+			'PASS',
+			`La primera direccion de cache aparece en la posicion ${firstCache}, antes del primer aeropuerto (${firstAirport}).`,
+			measured
+		);
 	}
 
 	/** TM-691 · TC18 — una fila de cache no deberia venir marcada como aeropuerto. */
@@ -199,12 +320,32 @@ export class AddressCaseBattery {
 			term: 'ezeiza',
 			calls: entries.length,
 			rows: rows.length,
-			cacheRowsFlaggedAirport: badFlag.map(r => ({ placeId: r.placeId, mainText: r.mainText, iataCode: r.iataCode, source: r.source }))
+			cacheRowsFlaggedAirport: badFlag.map(r => ({
+				placeId: r.placeId,
+				mainText: r.mainText,
+				iataCode: r.iataCode,
+				source: r.source
+			}))
 		};
-		if (entries.length === 0 || rows.length === 0) return this.mk('TM-691', 'TC18', 'Fila de cache marcada como aeropuerto', 'SIN_DATOS', 'Sin filas para inspeccionar el flag.', measured);
+		if (entries.length === 0 || rows.length === 0)
+			return this.mk(
+				'TM-691',
+				'TC18',
+				'Fila de cache marcada como aeropuerto',
+				'SIN_DATOS',
+				'Sin filas para inspeccionar el flag.',
+				measured
+			);
 		if (badFlag.length > 0) {
 			const r = badFlag[0];
-			return this.mk('TM-691', 'TC18', 'Fila de cache marcada como aeropuerto', 'FAIL', `${badFlag.length} fila(s) con source CACHE llegan con airport=true. Ejemplo: "${r.mainText}" con iataCode ${r.iataCode ?? 'null'} — es una direccion de calle marcada como aeropuerto. El defecto es del DATO, no del cliente: la app pinta el icono que el contrato le indica.`, measured);
+			return this.mk(
+				'TM-691',
+				'TC18',
+				'Fila de cache marcada como aeropuerto',
+				'FAIL',
+				`${badFlag.length} fila(s) con source CACHE llegan con airport=true. Ejemplo: "${r.mainText}" con iataCode ${r.iataCode ?? 'null'} — es una direccion de calle marcada como aeropuerto. El defecto es del DATO, no del cliente: la app pinta el icono que el contrato le indica.`,
+				measured
+			);
 		}
 		// NO es PASS: es la AUSENCIA DEL FIXTURE.
 		//
@@ -229,11 +370,49 @@ export class AddressCaseBattery {
 		const { entries, rows } = await this.probe(term);
 		const errors = await this.screenErrors();
 		const usable = await this.fieldUsable();
-		const measured = { term, calls: entries.length, rows: rows.length, screenErrors: errors, fieldUsable: usable, statuses: entries.map(e => e.status) };
-		if (entries.length === 0) return this.mk('TM-688', 'TC15', 'Termino sin resultados muestra vacio', 'SIN_DATOS', `Cero requests con "${term}".`, measured);
-		if (rows.length > 0) return this.mk('TM-688', 'TC15', 'Termino sin resultados muestra vacio', 'SIN_DATOS', `El termino "${term}" devolvio ${rows.length} fila(s), asi que no sirve como caso de vacio. Elegir otro termino.`, measured);
-		if (errors.length > 0) return this.mk('TM-688', 'TC15', 'Termino sin resultados muestra vacio', 'FAIL', `Sin resultados se muestra un error en pantalla: ${errors.join(' | ')}. El AC pide estado vacio, no error.`, measured);
-		return this.mk('TM-688', 'TC15', 'Termino sin resultados muestra vacio', 'PASS', `Respuesta vacia con status ${entries.map(e => e.status).join(', ')}, sin error en pantalla y con el campo usable.`, measured);
+		const measured = {
+			term,
+			calls: entries.length,
+			rows: rows.length,
+			screenErrors: errors,
+			fieldUsable: usable,
+			statuses: entries.map(e => e.status)
+		};
+		if (entries.length === 0)
+			return this.mk(
+				'TM-688',
+				'TC15',
+				'Termino sin resultados muestra vacio',
+				'SIN_DATOS',
+				`Cero requests con "${term}".`,
+				measured
+			);
+		if (rows.length > 0)
+			return this.mk(
+				'TM-688',
+				'TC15',
+				'Termino sin resultados muestra vacio',
+				'SIN_DATOS',
+				`El termino "${term}" devolvio ${rows.length} fila(s), asi que no sirve como caso de vacio. Elegir otro termino.`,
+				measured
+			);
+		if (errors.length > 0)
+			return this.mk(
+				'TM-688',
+				'TC15',
+				'Termino sin resultados muestra vacio',
+				'FAIL',
+				`Sin resultados se muestra un error en pantalla: ${errors.join(' | ')}. El AC pide estado vacio, no error.`,
+				measured
+			);
+		return this.mk(
+			'TM-688',
+			'TC15',
+			'Termino sin resultados muestra vacio',
+			'PASS',
+			`Respuesta vacia con status ${entries.map(e => e.status).join(', ')}, sin error en pantalla y con el campo usable.`,
+			measured
+		);
 	}
 
 	/** TM-694 · TC21 — el autocompletado no debe disparar el loader de pantalla. */
@@ -246,9 +425,32 @@ export class AddressCaseBattery {
 		const after = await this.loaderVisible();
 		const entries = await this.calls();
 		const measured = { calls: entries.length, loaderDuringTyping: during, loaderAfter: after };
-		if (entries.length === 0) return this.mk('TM-694', 'TC21', 'El autocompletado no dispara el loader', 'SIN_DATOS', 'Cero requests: no hubo busqueda durante la cual observar el loader.', measured);
-		if (during.length > 0 || after.length > 0) return this.mk('TM-694', 'TC21', 'El autocompletado no dispara el loader', 'FAIL', `Aparecio overlay de carga durante la busqueda: ${[...during, ...after].join(', ')}.`, measured);
-		return this.mk('TM-694', 'TC21', 'El autocompletado no dispara el loader', 'PASS', `${entries.length} request(s) sin que aparezca ningun overlay de carga.`, measured);
+		if (entries.length === 0)
+			return this.mk(
+				'TM-694',
+				'TC21',
+				'El autocompletado no dispara el loader',
+				'SIN_DATOS',
+				'Cero requests: no hubo busqueda durante la cual observar el loader.',
+				measured
+			);
+		if (during.length > 0 || after.length > 0)
+			return this.mk(
+				'TM-694',
+				'TC21',
+				'El autocompletado no dispara el loader',
+				'FAIL',
+				`Aparecio overlay de carga durante la busqueda: ${[...during, ...after].join(', ')}.`,
+				measured
+			);
+		return this.mk(
+			'TM-694',
+			'TC21',
+			'El autocompletado no dispara el loader',
+			'PASS',
+			`${entries.length} request(s) sin que aparezca ningun overlay de carga.`,
+			measured
+		);
 	}
 
 	/**
@@ -279,18 +481,47 @@ export class AddressCaseBattery {
 			fieldUsable: usable,
 			screenBlank: crashed
 		};
-		if (entries.length === 0) return this.mk('TM-689', 'TC16', 'Error 5xx del endpoint', 'SIN_DATOS', 'La inyeccion no llego a interceptar ningun request.', measured);
-		if (crashed) return this.mk('TM-689', 'TC16', 'Error 5xx del endpoint', 'FAIL', 'Con el endpoint devolviendo 500 la pantalla quedo en blanco.', measured);
-		if (!usable) return this.mk('TM-689', 'TC16', 'Error 5xx del endpoint', 'FAIL', 'Tras el 500 el campo quedo inutilizable: el usuario no puede seguir escribiendo.', measured);
-		return this.mk('TM-689', 'TC16', 'Error 5xx del endpoint', 'PASS', `Con ${entries.length} request(s) interceptado(s) en 500, la app no se rompe y el campo sigue usable${errors.length ? ` (avisa: ${errors.join(' | ')})` : ' (sin mensaje al usuario)'}.`, measured);
+		if (entries.length === 0)
+			return this.mk(
+				'TM-689',
+				'TC16',
+				'Error 5xx del endpoint',
+				'SIN_DATOS',
+				'La inyeccion no llego a interceptar ningun request.',
+				measured
+			);
+		if (crashed)
+			return this.mk(
+				'TM-689',
+				'TC16',
+				'Error 5xx del endpoint',
+				'FAIL',
+				'Con el endpoint devolviendo 500 la pantalla quedo en blanco.',
+				measured
+			);
+		if (!usable)
+			return this.mk(
+				'TM-689',
+				'TC16',
+				'Error 5xx del endpoint',
+				'FAIL',
+				'Tras el 500 el campo quedo inutilizable: el usuario no puede seguir escribiendo.',
+				measured
+			);
+		return this.mk(
+			'TM-689',
+			'TC16',
+			'Error 5xx del endpoint',
+			'PASS',
+			`Con ${entries.length} request(s) interceptado(s) en 500, la app no se rompe y el campo sigue usable${errors.length ? ` (avisa: ${errors.join(' | ')})` : ' (sin mensaje al usuario)'}.`,
+			measured
+		);
 	}
 
 	/** TM-697 · TC24 — el campo sigue usable si se corta la conexion. */
 	async tm697(): Promise<CaseResult> {
 		await this.reset();
-		await installWebViewFaultInjection(this.driver, [
-			{ urlPattern: AUTOCOMPLETE, mode: 'networkError' } as never
-		]);
+		await installWebViewFaultInjection(this.driver, [{ urlPattern: AUTOCOMPLETE, mode: 'networkError' } as never]);
 		await this.type('libertad 47');
 		await this.driver.pause(this.settleMs);
 
@@ -299,10 +530,39 @@ export class AddressCaseBattery {
 		const usable = await this.fieldUsable();
 		await clearWebViewFaultInjection(this.driver).catch(() => undefined);
 
-		const measured = { injected: 'networkError', calls: entries.length, errors: entries.map(e => e.error), screenErrors: errors, fieldUsable: usable };
-		if (entries.length === 0) return this.mk('TM-697', 'TC24', 'El campo sigue usable sin conexion', 'SIN_DATOS', 'La inyeccion no intercepto ningun request.', measured);
-		if (!usable) return this.mk('TM-697', 'TC24', 'El campo sigue usable sin conexion', 'FAIL', 'Con la red caida el campo quedo inutilizable.', measured);
-		return this.mk('TM-697', 'TC24', 'El campo sigue usable sin conexion', 'PASS', `Con ${entries.length} request(s) fallando por red, el campo sigue aceptando texto${errors.length ? ` y la app avisa: ${errors.join(' | ')}` : ' (sin aviso al usuario)'}.`, measured);
+		const measured = {
+			injected: 'networkError',
+			calls: entries.length,
+			errors: entries.map(e => e.error),
+			screenErrors: errors,
+			fieldUsable: usable
+		};
+		if (entries.length === 0)
+			return this.mk(
+				'TM-697',
+				'TC24',
+				'El campo sigue usable sin conexion',
+				'SIN_DATOS',
+				'La inyeccion no intercepto ningun request.',
+				measured
+			);
+		if (!usable)
+			return this.mk(
+				'TM-697',
+				'TC24',
+				'El campo sigue usable sin conexion',
+				'FAIL',
+				'Con la red caida el campo quedo inutilizable.',
+				measured
+			);
+		return this.mk(
+			'TM-697',
+			'TC24',
+			'El campo sigue usable sin conexion',
+			'PASS',
+			`Con ${entries.length} request(s) fallando por red, el campo sigue aceptando texto${errors.length ? ` y la app avisa: ${errors.join(' | ')}` : ' (sin aviso al usuario)'}.`,
+			measured
+		);
 	}
 
 	/**
@@ -314,7 +574,14 @@ export class AddressCaseBattery {
 	async tm675(): Promise<CaseResult> {
 		const { entries } = await this.probe('libertad 479');
 		if (entries.length === 0) {
-			return this.mk('TM-675', 'TC2', 'El request lleva address y el sesgo', 'SIN_DATOS', 'Cero requests para inspeccionar el query.', { calls: 0 });
+			return this.mk(
+				'TM-675',
+				'TC2',
+				'El request lleva address y el sesgo',
+				'SIN_DATOS',
+				'Cero requests para inspeccionar el query.',
+				{ calls: 0 }
+			);
 		}
 		const url = String(entries[0].url);
 		const address = param(url, 'address');
@@ -345,16 +612,47 @@ export class AddressCaseBattery {
 			distanceToDeviceKm: distKm === null ? null : Number(distKm.toFixed(2))
 		};
 
-		if (!address) return this.mk('TM-675', 'TC2', 'El request lleva address y el sesgo', 'FAIL', 'El request salio sin el parametro obligatorio address.', measured);
-		if (!hasBoth) return this.mk('TM-675', 'TC2', 'El request lleva address y el sesgo', 'FAIL', 'Falta latitude o longitude, o no son numeros. El sesgo solo aplica si van los dos.', measured);
+		if (!address)
+			return this.mk(
+				'TM-675',
+				'TC2',
+				'El request lleva address y el sesgo',
+				'FAIL',
+				'El request salio sin el parametro obligatorio address.',
+				measured
+			);
+		if (!hasBoth)
+			return this.mk(
+				'TM-675',
+				'TC2',
+				'El request lleva address y el sesgo',
+				'FAIL',
+				'Falta latitude o longitude, o no son numeros. El sesgo solo aplica si van los dos.',
+				measured
+			);
 
-		const note = distKm === null
-			? ' No se pudo leer la posicion del dispositivo para contrastar.'
-			: ` El punto enviado esta a ${distKm.toFixed(2)} km de lo que informa el dispositivo.`;
-		return this.mk('TM-675', 'TC2', 'El request lleva address y el sesgo', 'PASS', `El query lleva address="${address}" y un sesgo numericamente valido (${lat}, ${lng}).${note} Que ese punto sea el CORRECTO no lo define ningun criterio de aceptacion todavia — es el hueco de definicion ya reportado.`, measured);
+		const note =
+			distKm === null
+				? ' No se pudo leer la posicion del dispositivo para contrastar.'
+				: ` El punto enviado esta a ${distKm.toFixed(2)} km de lo que informa el dispositivo.`;
+		return this.mk(
+			'TM-675',
+			'TC2',
+			'El request lleva address y el sesgo',
+			'PASS',
+			`El query lleva address="${address}" y un sesgo numericamente valido (${lat}, ${lng}).${note} Que ese punto sea el CORRECTO no lo define ningun criterio de aceptacion todavia — es el hueco de definicion ya reportado.`,
+			measured
+		);
 	}
 
-	private mk(key: string, tc: string, title: string, status: CaseStatus, verdict: string, measured?: Record<string, unknown>): CaseResult {
+	private mk(
+		key: string,
+		tc: string,
+		title: string,
+		status: CaseStatus,
+		verdict: string,
+		measured?: Record<string, unknown>
+	): CaseResult {
 		return { key, tc, title, status, verdict, measured };
 	}
 
@@ -394,7 +692,13 @@ export class AddressCaseBattery {
 				log(`  ${result.key} ${result.tc.padEnd(5)} ${result.status.padEnd(11)} ${result.verdict}`);
 			} catch (e) {
 				const msg = (e as Error).message ?? String(e);
-				result = { key: 'ERROR', tc: '-', title: 'paso con excepcion', status: 'SIN_DATOS', verdict: `El paso lanzo: ${msg}` };
+				result = {
+					key: 'ERROR',
+					tc: '-',
+					title: 'paso con excepcion',
+					status: 'SIN_DATOS',
+					verdict: `El paso lanzo: ${msg}`
+				};
 				log(`  EXCEPCION: ${msg}`);
 			}
 			out.push(result);

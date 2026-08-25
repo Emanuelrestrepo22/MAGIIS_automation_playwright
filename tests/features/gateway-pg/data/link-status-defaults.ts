@@ -49,7 +49,8 @@ export const AUTHORIZE_LINK_MUTATION_URL_PATTERN = /vendor\/authorize/i;
 export const EBIZCHARGE_LINK_SUCCESS_STATUSES = [200] as const;
 
 /** TODO(live): matcher NO verificado — base del matcher Authorize + needle propio eBiz. */
-export const EBIZCHARGE_LINK_MUTATION_URL_PATTERN = /odnservice|payment.?gateway|paymentgateway|vendor|integration|ebiz/i;
+export const EBIZCHARGE_LINK_MUTATION_URL_PATTERN =
+	/odnservice|payment.?gateway|paymentgateway|vendor|integration|ebiz/i;
 
 /**
  * TODO(live): [200] ASUMIDO — status real de la mutación de link Stripe NO verificado

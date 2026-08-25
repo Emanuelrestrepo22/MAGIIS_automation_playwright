@@ -336,7 +336,12 @@ export class CarrierNewTravelPage extends UiBase {
 
 		// Debería confirmar la tarjeta. `readNativeCardValidationOutcome` explica por qué el oráculo
 		// no es sólo el toast "Tarjeta válida".
-		expect(outcome, outcome === 'rejected' ? 'La pasarela RECHAZÓ la tarjeta que debía aceptar (mensaje de error visible).' : 'Tras "Validar" no apareció ni la confirmación ni el error, y la tarjeta no quedó vinculada en Forma de Pago — la pasarela no respondió (revisar ambiente/red).').toBe('accepted');
+		expect(
+			outcome,
+			outcome === 'rejected'
+				? 'La pasarela RECHAZÓ la tarjeta que debía aceptar (mensaje de error visible).'
+				: 'Tras "Validar" no apareció ni la confirmación ni el error, y la tarjeta no quedó vinculada en Forma de Pago — la pasarela no respondió (revisar ambiente/red).'
+		).toBe('accepted');
 	}
 
 	/**
@@ -381,9 +386,12 @@ export class CarrierNewTravelPage extends UiBase {
 		// `readNativeCardValidationOutcome`): la respuesta se observó a t+1.1s, esperarla después la
 		// perdería.
 		const addCardResponse = this.page
-			.waitForResponse(response => response.request().method() === 'POST' && ADD_CARD_URL_PATTERN.test(response.url()), {
-				timeout: settleMs
-			})
+			.waitForResponse(
+				response => response.request().method() === 'POST' && ADD_CARD_URL_PATTERN.test(response.url()),
+				{
+					timeout: settleMs
+				}
+			)
 			.catch(() => null);
 
 		const outcome = await this.readNativeCardValidationOutcome(last4);
@@ -394,7 +402,12 @@ export class CarrierNewTravelPage extends UiBase {
 		//     o la política de la cuenta no está guardada (filtros AVS/CVV en "hold for review" en vez
 		//     de Decline), o MAGIIS ignora el rechazo. NO es un problema del test.
 		//   · 'timeout'  → no hubo respuesta: ambiente/red. El caso no es concluyente.
-		expect(outcome, outcome === 'accepted' ? `La pasarela ACEPTÓ y vinculó la tarjeta •••• ${last4 ?? '????'} que debía rechazar. Revisar en el dashboard del sandbox si la transacción quedó en "Fraud Review" (Response Code 4 = retenida para revisión, que MAGIIS trata como válida) en lugar de declinada — eso indica que la acción del filtro es "Authorize and hold for review" y no "Decline".` : 'Tras "Validar" no apareció ni el error ni la confirmación — la pasarela no respondió (revisar ambiente/red), así que el caso no es concluyente.').toBe('rejected');
+		expect(
+			outcome,
+			outcome === 'accepted'
+				? `La pasarela ACEPTÓ y vinculó la tarjeta •••• ${last4 ?? '????'} que debía rechazar. Revisar en el dashboard del sandbox si la transacción quedó en "Fraud Review" (Response Code 4 = retenida para revisión, que MAGIIS trata como válida) en lugar de declinada — eso indica que la acción del filtro es "Authorize and hold for review" y no "Decline".`
+				: 'Tras "Validar" no apareció ni el error ni la confirmación — la pasarela no respondió (revisar ambiente/red), así que el caso no es concluyente.'
+		).toBe('rejected');
 
 		// Oráculo ADICIONAL, independiente de la UI: el rechazo visible no alcanza si el backend
 		// igual guardó la tarjeta. Si la respuesta nunca llegó no hay nada que aseverar acá (el
@@ -402,7 +415,8 @@ export class CarrierNewTravelPage extends UiBase {
 		const response = await addCardResponse;
 		if (response) {
 			const body = await response.text().catch(() => '');
-			const cardPersisted = response.ok() && PERSISTED_CARD_ID_PATTERN.test(body) && PERSISTED_CARD_LAST4_PATTERN.test(body);
+			const cardPersisted =
+				response.ok() && PERSISTED_CARD_ID_PATTERN.test(body) && PERSISTED_CARD_LAST4_PATTERN.test(body);
 			expect(
 				cardPersisted,
 				`la pasarela rechazó la tarjeta: el backend NO debe persistirla. Respondió HTTP ${response.status()} con: ${body.slice(0, 400)}`
@@ -430,7 +444,10 @@ export class CarrierNewTravelPage extends UiBase {
 	 * @returns 'accepted' | 'rejected' | 'timeout' — nunca lanza por sí mismo: quien llama decide
 	 *   qué desenlace es el correcto para su caso.
 	 */
-	private async readNativeCardValidationOutcome(last4?: string, timeout = 20_000): Promise<'accepted' | 'rejected' | 'timeout'> {
+	private async readNativeCardValidationOutcome(
+		last4?: string,
+		timeout = 20_000
+	): Promise<'accepted' | 'rejected' | 'timeout'> {
 		await this.page.getByRole('button', { name: /^(Valid|Validar)$/i }).click();
 
 		let outcome: 'accepted' | 'rejected' | 'timeout' = 'timeout';
@@ -440,12 +457,20 @@ export class CarrierNewTravelPage extends UiBase {
 				async () => {
 					// El error se evalúa PRIMERO: si la pasarela rechazó, la tarjeta no debe figurar
 					// vinculada, y ante señales contradictorias el rechazo es el dato relevante.
-					if (await this.nativeCardErrorOracle().isVisible().catch(() => false)) {
+					if (
+						await this.nativeCardErrorOracle()
+							.isVisible()
+							.catch(() => false)
+					) {
 						outcome = 'rejected';
 
 						return outcome;
 					}
-					if (await this.nativeCardValidOracle().isVisible().catch(() => false)) {
+					if (
+						await this.nativeCardValidOracle()
+							.isVisible()
+							.catch(() => false)
+					) {
 						outcome = 'accepted';
 
 						return outcome;
@@ -458,7 +483,11 @@ export class CarrierNewTravelPage extends UiBase {
 
 					return 'timeout';
 				},
-				{ message: 'La validación de tarjeta no produjo ningún desenlace observable.', timeout, intervals: [250, 250, 500, 500, 1_000] }
+				{
+					message: 'La validación de tarjeta no produjo ningún desenlace observable.',
+					timeout,
+					intervals: [250, 250, 500, 500, 1_000]
+				}
 			)
 			.not.toBe('timeout')
 			// El timeout no es un fallo de este método: es uno de los tres desenlaces que reporta.
@@ -481,7 +510,9 @@ export class CarrierNewTravelPage extends UiBase {
 	 * no-2xx del paso de validación, que es lo que separa las dos causas.
 	 */
 	private nativeCardErrorOracle(): Locator {
-		return this.page.getByText(/Error al validar tarjeta|Error validating card|revise los datos ingresados/i).first();
+		return this.page
+			.getByText(/Error al validar tarjeta|Error validating card|revise los datos ingresados/i)
+			.first();
 	}
 
 	/**
@@ -499,7 +530,9 @@ export class CarrierNewTravelPage extends UiBase {
 		// (confirmado en la grabación tests/test-3.spec.ts); el carrier ARG (MP) usa "Eliminar".
 		await this.page.getByRole('button', { name: /^(Delete|Eliminar)$/i }).click();
 		// Tras eliminar, el trash de una tarjeta resaltada no debe seguir visible.
-		await expect(paymentMethods.locator('.highlighted .deselect-payment-method')).toHaveCount(0, { timeout: 10_000 });
+		await expect(paymentMethods.locator('.highlighted .deselect-payment-method')).toHaveCount(0, {
+			timeout: 10_000
+		});
 	}
 
 	/**
@@ -581,7 +614,10 @@ export class CarrierNewTravelPage extends UiBase {
 		// `DEBUG=gateway-pg:wallet`.
 		const wasSelected = hadSavedCard && (await this.legacy.hasSelectedCardWithLast4(last4));
 
-		debugLog('gateway-pg:wallet', `estado inicial del wallet para •••• ${last4}: ${hadSavedCard ? (wasSelected ? 'tarjeta PRESENTE y SELECCIONADA (estado 3)' : 'tarjeta PRESENTE, NO seleccionada (estado 1)') : 'SIN tarjeta (estado 2)'}`);
+		debugLog(
+			'gateway-pg:wallet',
+			`estado inicial del wallet para •••• ${last4}: ${hadSavedCard ? (wasSelected ? 'tarjeta PRESENTE y SELECCIONADA (estado 3)' : 'tarjeta PRESENTE, NO seleccionada (estado 1)') : 'SIN tarjeta (estado 2)'}`
+		);
 
 		if (hadSavedCard) {
 			// Rama "pax CON tarjeta". El click en `.highlighted` reproduce la grabación validada
@@ -661,7 +697,10 @@ export class CarrierNewTravelPage extends UiBase {
 		if (!(await option.isVisible().catch(() => false))) {
 			await this.openPaymentMethodsDropdown();
 		}
-		await expect(option, `La tarjeta •••• ${last4} no figura entre las vinculadas en Forma de Pago: "${await this.getPaymentMethodText()}".`).toBeVisible({ timeout: 10_000 });
+		await expect(
+			option,
+			`La tarjeta •••• ${last4} no figura entre las vinculadas en Forma de Pago: "${await this.getPaymentMethodText()}".`
+		).toBeVisible({ timeout: 10_000 });
 		await option.click();
 		// Debería quedar seleccionada en Forma de Pago — el estado que los pasos siguientes necesitan.
 		await expect
@@ -682,7 +721,10 @@ export class CarrierNewTravelPage extends UiBase {
 	 * seleccionando "Cuenta Corriente" como Forma de Pago y el borrado de la tarjeta nunca ocurrió.
 	 */
 	private highlightedOption(): Locator {
-		return this.page.locator('#add_travel_payment_methods').locator('.ng-star-inserted.highlighted > .data-with-icon-col').first();
+		return this.page
+			.locator('#add_travel_payment_methods')
+			.locator('.ng-star-inserted.highlighted > .data-with-icon-col')
+			.first();
 	}
 
 	/**
@@ -730,11 +772,19 @@ export class CarrierNewTravelPage extends UiBase {
 
 			const trash = rows.first().locator('.deselect-payment-method').first();
 
-			await expect(trash, `La fila de la tarjeta •••• ${last4} no expone ícono de borrado en el desplegable (Forma de Pago: "${await this.legacy.getPaymentMethodText()}").`).toBeVisible({ timeout: 10_000 });
+			await expect(
+				trash,
+				`La fila de la tarjeta •••• ${last4} no expone ícono de borrado en el desplegable (Forma de Pago: "${await this.legacy.getPaymentMethodText()}").`
+			).toBeVisible({ timeout: 10_000 });
 			await trash.click();
 
 			// La escucha se arma ANTES de confirmar, porque el `DELETE` sale con el click de confirmación.
-			const deleteResponse = this.page.waitForResponse(response => DELETE_CARD_URL.test(response.url()) && response.request().method() === 'DELETE', { timeout: 15_000 }).catch(() => null);
+			const deleteResponse = this.page
+				.waitForResponse(
+					response => DELETE_CARD_URL.test(response.url()) && response.request().method() === 'DELETE',
+					{ timeout: 15_000 }
+				)
+				.catch(() => null);
 
 			// Confirmación bilingüe: el portal del spec queda en ES por `ensureSpanishLanguage`; una
 			// sesión manual puede estar en inglés ("Delete", como en las grabaciones).
@@ -744,13 +794,22 @@ export class CarrierNewTravelPage extends UiBase {
 
 			// Debería haber salido el DELETE al backend: si el diálogo se confirma y no sale request, el
 			// click cayó en un control que no borra (así se veía el hallazgo 5 desde el control cerrado).
-			expect(response, `La confirmación de borrado de la tarjeta •••• ${last4} no disparó ningún DELETE /users/{pax}/cards/{id}: el diálogo se confirmó pero el borrado nunca salió al backend.`).not.toBeNull();
+			expect(
+				response,
+				`La confirmación de borrado de la tarjeta •••• ${last4} no disparó ningún DELETE /users/{pax}/cards/{id}: el diálogo se confirmó pero el borrado nunca salió al backend.`
+			).not.toBeNull();
 			// Y debería haberlo aceptado. Un no-2xx acá es un rechazo del BACKEND, no un fallo del test.
-			expect(response?.status() ?? 0, `El BACKEND rechazó el borrado de la tarjeta •••• ${last4}: ${response?.status()} DELETE ${response?.url()}`).toBeLessThan(400);
+			expect(
+				response?.status() ?? 0,
+				`El BACKEND rechazó el borrado de la tarjeta •••• ${last4}: ${response?.status()} DELETE ${response?.url()}`
+			).toBeLessThan(400);
 			deleted += 1;
 		}
 
-		expect(deleted, `No se borró ninguna tarjeta •••• ${last4}: el desplegable no publicó ninguna fila con esos últimos 4 dígitos.`).toBeGreaterThan(0);
+		expect(
+			deleted,
+			`No se borró ninguna tarjeta •••• ${last4}: el desplegable no publicó ninguna fila con esos últimos 4 dígitos.`
+		).toBeGreaterThan(0);
 		await this.expectSavedCardDeleted(last4);
 	}
 
@@ -795,7 +854,10 @@ export class CarrierNewTravelPage extends UiBase {
 		// 3. Ni debe seguir LISTADA entre las opciones. Reabrir es lo que permite contar de verdad.
 		const dropdown = await this.tryOpenPaymentMethodsDropdown();
 
-		expect(dropdown.open, `No se pudo reabrir el desplegable para verificar que la tarjeta •••• ${last4} ya no figura entre las vinculadas — ${dropdown.reason}`).toBe(true);
+		expect(
+			dropdown.open,
+			`No se pudo reabrir el desplegable para verificar que la tarjeta •••• ${last4} ya no figura entre las vinculadas — ${dropdown.reason}`
+		).toBe(true);
 		await expect
 			.poll(async () => this.savedCardByLast4(last4).count(), {
 				message: `La tarjeta •••• ${last4} sigue LISTADA como opción del desplegable tras eliminarla`,
@@ -831,7 +893,10 @@ export class CarrierNewTravelPage extends UiBase {
 		if (!(await option.isVisible().catch(() => false))) {
 			await this.openPaymentMethodsDropdown();
 		}
-		await expect(option, 'No apareció la opción "Tarjeta de Crédito - Preautorizada" en Forma de Pago.').toBeVisible({ timeout: 10_000 });
+		await expect(
+			option,
+			'No apareció la opción "Tarjeta de Crédito - Preautorizada" en Forma de Pago.'
+		).toBeVisible({ timeout: 10_000 });
 		await option.click();
 	}
 
@@ -883,7 +948,12 @@ export class CarrierNewTravelPage extends UiBase {
 
 					return (await this.isPaymentMethodsDropdownOpen()) ? 'sigue abierto' : 'cerrado';
 				},
-				{ message: 'El desplegable de Forma de Pago quedó abierto; sus opciones TAPAN el form de tarjeta nueva.', timeout: 5_000, intervals: [200, 300, 500, 1_000, 1_000] }
+				{
+					message:
+						'El desplegable de Forma de Pago quedó abierto; sus opciones TAPAN el form de tarjeta nueva.',
+					timeout: 5_000,
+					intervals: [200, 300, 500, 1_000, 1_000]
+				}
 			)
 			.toBe('cerrado');
 	}
@@ -916,9 +986,18 @@ export class CarrierNewTravelPage extends UiBase {
 		const container = this.page.locator('#add_travel_payment_methods');
 
 		return [
-			{ label: '.data-with-icon-col.option-content-container (grabación validada)', locator: container.locator('.data-with-icon-col.option-content-container').first() },
-			{ label: '.below > .single > .value (BasePage)', locator: container.locator('.below > .single > .value').first() },
-			{ label: '.below > .single > .placeholder (BasePage, sin valor elegido)', locator: container.locator('.below > .single > .placeholder').first() },
+			{
+				label: '.data-with-icon-col.option-content-container (grabación validada)',
+				locator: container.locator('.data-with-icon-col.option-content-container').first()
+			},
+			{
+				label: '.below > .single > .value (BasePage)',
+				locator: container.locator('.below > .single > .value').first()
+			},
+			{
+				label: '.below > .single > .placeholder (BasePage, sin valor elegido)',
+				locator: container.locator('.below > .single > .placeholder').first()
+			},
 			{ label: '.value (paymentMethodValue del POM legacy)', locator: container.locator('.value').first() }
 		];
 	}
@@ -958,7 +1037,9 @@ export class CarrierNewTravelPage extends UiBase {
 			}
 		}
 
-		const detail = attempted.length ? `ningún trigger lo desplegó [${attempted.join(' · ')}]` : 'el selector no expone ningún trigger visible';
+		const detail = attempted.length
+			? `ningún trigger lo desplegó [${attempted.join(' · ')}]`
+			: 'el selector no expone ningún trigger visible';
 
 		return `${detail} (Forma de Pago: "${await this.legacy.getPaymentMethodText()}")`;
 	}
@@ -980,7 +1061,11 @@ export class CarrierNewTravelPage extends UiBase {
 
 					return state;
 				},
-				{ message: 'El desplegable de Forma de Pago no llegó a abrirse.', timeout, intervals: [250, 250, 500, 500, 1_000, 1_000] }
+				{
+					message: 'El desplegable de Forma de Pago no llegó a abrirse.',
+					timeout,
+					intervals: [250, 250, 500, 500, 1_000, 1_000]
+				}
 			)
 			.toBe(DROPDOWN_OPEN)
 			// El "no abrió" no es un fallo de este método: es el estado que reporta a quien llama.
@@ -1055,7 +1140,10 @@ export class CarrierNewTravelPage extends UiBase {
 		const dropdown = await this.tryOpenPaymentMethodsDropdown();
 
 		if (!dropdown.open) {
-			debugLog('gateway-pg:wallet', `hasSavedCardWithLast4(${last4}): no se pudo inspeccionar el desplegable (${dropdown.reason}) — se informa false, la prueba del borrado la tiene expectSavedCardDeleted()`);
+			debugLog(
+				'gateway-pg:wallet',
+				`hasSavedCardWithLast4(${last4}): no se pudo inspeccionar el desplegable (${dropdown.reason}) — se informa false, la prueba del borrado la tiene expectSavedCardDeleted()`
+			);
 
 			return false;
 		}
@@ -1099,7 +1187,9 @@ export class CarrierNewTravelPage extends UiBase {
 		// el sistema ya la eligió sola. Los dos caminos existen porque la estructura del desplegable
 		// no es estable entre pantallas (ver la corrida del 2026-07-27).
 		const byLast4 = this.savedCardByLast4(last4);
-		const trash = (await byLast4.count()) ? byLast4.first().locator('.deselect-payment-method').first() : this.page.locator('#add_travel_payment_methods').locator('.highlighted .deselect-payment-method').first();
+		const trash = (await byLast4.count())
+			? byLast4.first().locator('.deselect-payment-method').first()
+			: this.page.locator('#add_travel_payment_methods').locator('.highlighted .deselect-payment-method').first();
 
 		if (!(await trash.isVisible().catch(() => false))) {
 			return false;
@@ -1178,7 +1268,9 @@ export class CarrierNewTravelPage extends UiBase {
 	/** Verifica que haya una tarjeta vinculada RESALTADA en el dropdown de métodos de pago. */
 	@step
 	async expectHighlightedSavedCard(): Promise<void> {
-		await expect(this.page.locator('#add_travel_payment_methods').locator('.highlighted .data-with-icon-col').first()).toBeVisible({
+		await expect(
+			this.page.locator('#add_travel_payment_methods').locator('.highlighted .data-with-icon-col').first()
+		).toBeVisible({
 			timeout: 10_000
 		});
 	}

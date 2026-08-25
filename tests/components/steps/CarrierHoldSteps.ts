@@ -153,9 +153,18 @@ export class CarrierHoldSteps extends UiBase {
 		// acababa de mutar era tautológico. UN solo GET posterior y los 3 campos de hold se
 		// assertan desde ESE objeto leído del backend — campo ausente (undefined) = fallo.
 		const persisted = await getCarrierParameters(this.page);
-		expect(persisted.enableCreditCardHold, 'read-back API: enableCreditCardHold debe quedar true tras el POST (campo ausente = fallo)').toBe(true);
-		expect(persisted.ccHoldPreviousHs, 'read-back API: ccHoldPreviousHs debe persistir en 2 (campo ausente = fallo)').toBe(2);
-		expect(persisted.ccHoldCoverage, 'read-back API: ccHoldCoverage debe persistir en 10 (campo ausente = fallo)').toBe(10);
+		expect(
+			persisted.enableCreditCardHold,
+			'read-back API: enableCreditCardHold debe quedar true tras el POST (campo ausente = fallo)'
+		).toBe(true);
+		expect(
+			persisted.ccHoldPreviousHs,
+			'read-back API: ccHoldPreviousHs debe persistir en 2 (campo ausente = fallo)'
+		).toBe(2);
+		expect(
+			persisted.ccHoldCoverage,
+			'read-back API: ccHoldCoverage debe persistir en 10 (campo ausente = fallo)'
+		).toBe(10);
 	}
 
 	/**
@@ -172,7 +181,10 @@ export class CarrierHoldSteps extends UiBase {
 	 */
 	async disableHoldViaApi(): Promise<void> {
 		await setHoldViaApi(this.page, false);
-		expect(await readHoldRaw(this.page), 'read-back API: enableCreditCardHold debe quedar false tras el POST (campo ausente = fallo)').toBe(false);
+		expect(
+			await readHoldRaw(this.page),
+			'read-back API: enableCreditCardHold debe quedar false tras el POST (campo ausente = fallo)'
+		).toBe(false);
 	}
 
 	/**
@@ -238,7 +250,10 @@ export class CarrierHoldSteps extends UiBase {
 			// (UAT/entorno transaccional) de un fallo distinguible de la limitación sandbox — hoy
 			// ningún camino lo retorna en TEST (el error explícito "Error al validar tarjeta" es la
 			// manifestación documentada del sandbox → habilita el skip de abajo).
-			expect(mpLink, 'MP: señal de fallo real de validación distinguible de la limitación sandbox (evidencia live)').not.toBe('validation-failed');
+			expect(
+				mpLink,
+				'MP: señal de fallo real de validación distinguible de la limitación sandbox (evidencia live)'
+			).not.toBe('validation-failed');
 			test.skip(
 				mpLink !== 'linked',
 				'MP: validación de tarjeta no completa en TEST (sandbox MP no transacciona) — UAT-only. Form-fill + habilitación de "Validar" verificados.'
@@ -313,7 +328,10 @@ export class CarrierHoldSteps extends UiBase {
 					token = await extractAuthToken(this.page);
 				}
 				if (!token) {
-					debugLog('gateway-pg:carrier', '[card-cleanup] JWT no capturado tras 3 intentos — cleanup correrá sin auth y no-op');
+					debugLog(
+						'gateway-pg:carrier',
+						'[card-cleanup] JWT no capturado tras 3 intentos — cleanup correrá sin auth y no-op'
+					);
 				}
 				const queries = [scenario.passenger, ...(adapter.journeyDefaults.paxSearchQueries ?? [])];
 				await cleanupGatewayCardByLast4(this.page, queries, cardLast4);
@@ -377,7 +395,10 @@ export class CarrierHoldSteps extends UiBase {
 					// fill+Validar divergen y "Tarjeta válida" nunca aparece (falso negativo).
 					// Oráculo funcional de esta rama: la selección visible "*** <last4>".
 					if (await this.travel.isSavedCardPreselected(cardLast4)) {
-						debugLog('gateway-pg:hold', `[card] tarjeta guardada *** ${cardLast4} preseleccionada — se omite fill/Validar (rama CARD-EXISTING nativa)`);
+						debugLog(
+							'gateway-pg:hold',
+							`[card] tarjeta guardada *** ${cardLast4} preseleccionada — se omite fill/Validar (rama CARD-EXISTING nativa)`
+						);
 					} else {
 						await this.travel.selectPaymentMethod('Preautorizada');
 						await cardFormFor(gateway).fill(this.page, card);

@@ -77,7 +77,10 @@ test.describe(
 				// viaje no aterriza en "Programados" (queda en Asignar). Reproducido acá con el
 				// mismo error exacto (expectTripRowInCurrentTab timeout tras 30s de re-fetch activo)
 				// — confirma que es sistémico, no aislado a un actor. Reportar, no enmascarar.
-				test.skip(true, 'BLOQUEADO producto: alta recurrente hold=ON+3DS=true no aterriza en Programados (queda en Asignar) — evidencia 2026-08-11, mismo patrón que TC052');
+				test.skip(
+					true,
+					'BLOQUEADO producto: alta recurrente hold=ON+3DS=true no aterriza en Programados (queda en Asignar) — evidencia 2026-08-11, mismo patrón que TC052'
+				);
 				await new RecurrentesSteps({ page }).runRecurrentScenario(colaboradorScenario('new'), {
 					hold: 'on',
 					threeDs: true

@@ -41,7 +41,8 @@ import { setHoldViaApi, getCarrierParameters } from '@features/gateway-pg/helper
 import { extractAuthToken, cleanupGatewayCardByLast4 } from '@features/gateway-pg/helpers/card-precondition';
 import { finalizeTravelAdmin } from '@features/gateway-pg/helpers/travel-finalize';
 import {
-	captureCreatedTravelId, cancelTravelDetailed,
+	captureCreatedTravelId,
+	cancelTravelDetailed,
 	cancelTravelIfCreated,
 	type TravelIdRef
 } from '@features/gateway-pg/helpers/travel-cleanup';
@@ -135,7 +136,10 @@ export class CarrierCloneSteps extends UiBase {
 			// finalizeAdmin (CANCELLED->DONE) son alcanzables. ok o 4xx (ya cancelado) -> seguir.
 			await test.step('Precondición: verificar cancelación del fuente (gate blocker 5xx)', async () => {
 				const cancel = await cancelTravelDetailed(this.page, sourceTravelId);
-				test.skip(cancel.status >= 500, `BLOQUEADO backend TEST: cancel ${sourceTravelId} -> ${cancel.status} ${cancel.body.slice(0, 120)}`);
+				test.skip(
+					cancel.status >= 500,
+					`BLOQUEADO backend TEST: cancel ${sourceTravelId} -> ${cancel.status} ${cancel.body.slice(0, 120)}`
+				);
 			});
 
 			if (options.source === 'finalizados') {
@@ -158,7 +162,10 @@ export class CarrierCloneSteps extends UiBase {
 						token = await extractAuthToken(this.page);
 					}
 					if (!token) {
-						debugLog('gateway-pg:clone', '[card-cleanup] JWT no capturado tras 3 intentos — cleanup correrá sin auth y no-op');
+						debugLog(
+							'gateway-pg:clone',
+							'[card-cleanup] JWT no capturado tras 3 intentos — cleanup correrá sin auth y no-op'
+						);
 					}
 					const queries = [scenario.passenger, ...(scenario.apiSearchQuery ? [scenario.apiSearchQuery] : [])];
 					await cleanupGatewayCardByLast4(this.page, queries, cardLast4);
@@ -245,7 +252,9 @@ export class CarrierCloneSteps extends UiBase {
 				})
 				.not.toBeNull();
 			// La identidad clon≠fuente se evalúa DESPUÉS del poll, con el valor ya establecido.
-			expect(cloneRef.travelId, 'El clon debe ser un viaje NUEVO (id distinto del fuente)').not.toBe(sourceTravelId);
+			expect(cloneRef.travelId, 'El clon debe ser un viaje NUEVO (id distinto del fuente)').not.toBe(
+				sourceTravelId
+			);
 
 			await test.step('Validar viaje clonado en gestión — columna Por Asignar', async () => {
 				await this.management.goto();
@@ -264,7 +273,10 @@ export class CarrierCloneSteps extends UiBase {
 					await setHoldViaApi(this.page, true);
 					// Read-back CRUDO (misma disciplina que CarrierHoldSteps.enableHoldViaApi).
 					const persisted = await getCarrierParameters(this.page);
-					expect(persisted.enableCreditCardHold, 'read-back API: enableCreditCardHold debe quedar true tras restaurar').toBe(true);
+					expect(
+						persisted.enableCreditCardHold,
+						'read-back API: enableCreditCardHold debe quedar true tras restaurar'
+					).toBe(true);
 				});
 			}
 		}

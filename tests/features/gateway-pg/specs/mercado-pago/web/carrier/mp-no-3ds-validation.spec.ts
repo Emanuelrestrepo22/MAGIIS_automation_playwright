@@ -45,7 +45,7 @@ test.describe(`[MP][${env.toUpperCase()}] Validación de tarjeta MP sin challeng
 				await travel.selectPaymentMethod('Preautorizada');
 				await fillMercadoPagoNativeCard(page, {
 					holderName: APRO.holderName,
-					docNumber: APRO.identificationNumber,
+					docNumber: APRO.identificationNumber
 				});
 			});
 
@@ -73,6 +73,6 @@ test.describe(`[MP][${env.toUpperCase()}] Validación de tarjeta MP sin challeng
 				await expectNoThreeDSModal(page);
 				await page.screenshot({ path: `evidence/${env}/mp-194-no-3ds.png`, fullPage: true });
 			});
-		},
+		}
 	);
 });

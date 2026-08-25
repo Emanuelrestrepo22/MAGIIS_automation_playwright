@@ -107,7 +107,11 @@ async function run(): Promise<void> {
 			return acc;
 		}, {});
 		for (const r of results) log(`  ${r.key.padEnd(8)} ${r.tc.padEnd(5)} ${r.status.padEnd(11)} ${r.title}`);
-		log(`\n  totales: ${Object.entries(byStatus).map(([k, v]) => `${k}=${v}`).join(' · ')}`);
+		log(
+			`\n  totales: ${Object.entries(byStatus)
+				.map(([k, v]) => `${k}=${v}`)
+				.join(' · ')}`
+		);
 
 		line();
 		log('CAPTURAS');

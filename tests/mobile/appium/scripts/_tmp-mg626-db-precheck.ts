@@ -128,23 +128,24 @@ async function main(): Promise<void> {
 	log(`CONTRACTOR_EMPLOYEE cols: ${ceCols.map(c => c.C).join(', ')}`);
 
 	for (const id of ids) {
-		const ce = await db.query(
-			`SELECT * FROM contractor_employee WHERE passenger_id = :id`,
-			{ id }
-		).catch((e: unknown) => [{ err: e instanceof Error ? e.message.slice(0, 160) : String(e) }]);
+		const ce = await db
+			.query(`SELECT * FROM contractor_employee WHERE passenger_id = :id`, { id })
+			.catch((e: unknown) => [{ err: e instanceof Error ? e.message.slice(0, 160) : String(e) }]);
 		log(`contractor_employee de passenger_id=${id}: ${JSON.stringify(ce)}`);
 	}
 
 	// 9) Cards actuales del pax (efecto físico del alta) — user_wallet + card por user_id.
 	for (const r of [...byId, ...byEmail]) {
 		const row = r as Record<string, unknown>;
-		const cards = await db.query(
-			`SELECT c.id AS "cardId", c.last_four_digits AS "last4", w.id AS "walletId",
+		const cards = await db
+			.query(
+				`SELECT c.id AS "cardId", c.last_four_digits AS "last4", w.id AS "walletId",
 			        w.carrieraccount_id AS "carrier", w.mercadopago_app_id AS "appId"
 			   FROM card c JOIN user_wallet w ON c.user_wallet_id = w.id
 			  WHERE w.user_id = :paxuser ORDER BY c.id DESC`,
-			{ paxuser: Number(row.userId) }
-		).catch((e: unknown) => [{ err: e instanceof Error ? e.message.slice(0, 160) : String(e) }]);
+				{ paxuser: Number(row.userId) }
+			)
+			.catch((e: unknown) => [{ err: e instanceof Error ? e.message.slice(0, 160) : String(e) }]);
 		log(`cards de user_id=${row.userId} (${row.email}) → ${JSON.stringify(cards)}`);
 	}
 }

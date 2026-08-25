@@ -541,7 +541,11 @@ export async function validateCardPrecondition(
  *
  * @returns cantidad de tarjetas borradas.
  */
-export async function cleanupCardsByLast4(page: Page, searchQueries: readonly string[], last4: string): Promise<number> {
+export async function cleanupCardsByLast4(
+	page: Page,
+	searchQueries: readonly string[],
+	last4: string
+): Promise<number> {
 	for (const query of searchQueries) {
 		try {
 			const passengerId = await getPassengerId(page, query);
@@ -552,7 +556,10 @@ export async function cleanupCardsByLast4(page: Page, searchQueries: readonly st
 			for (const card of toDelete) {
 				await deletePassengerCard(page, passengerId, card.id);
 			}
-			debugLog('gateway-pg:card-precondition', `[cleanup] query="${query}" pax=${passengerId}: ${cards.length} tarjetas, borradas ${toDelete.length} con last4=${last4}`);
+			debugLog(
+				'gateway-pg:card-precondition',
+				`[cleanup] query="${query}" pax=${passengerId}: ${cards.length} tarjetas, borradas ${toDelete.length} con last4=${last4}`
+			);
 			if (toDelete.length > 0) {
 				return toDelete.length;
 			}

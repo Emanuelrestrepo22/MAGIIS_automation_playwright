@@ -59,7 +59,11 @@ export class CarrierTravelManagementPage extends UiBase {
 	 * pendiente reasignar).
 	 */
 	@atc('MG-158', { severity: 'critical', description: 'Verificar viaje en "Por Asignar" tras hold aprobado' })
-	async expectPassengerInPorAsignar(passenger: string, destination?: string, status?: string | RegExp): Promise<void> {
+	async expectPassengerInPorAsignar(
+		passenger: string,
+		destination?: string,
+		status?: string | RegExp
+	): Promise<void> {
 		await this.legacy.expectPassengerInPorAsignar(passenger, destination, status);
 	}
 
@@ -106,10 +110,13 @@ export class CarrierTravelManagementPage extends UiBase {
 	 * la verificacion UI de un alta programada, y las keys jamas se inventan. Queda unmapped-visible.
 	 */
 	@step
-	async expectPassengerInProgramados(passenger: string, destination?: string, status?: string | RegExp): Promise<void> {
+	async expectPassengerInProgramados(
+		passenger: string,
+		destination?: string,
+		status?: string | RegExp
+	): Promise<void> {
 		await this.legacy.expectPassengerInProgramados(passenger, destination, status);
 	}
-
 
 	/**
 	 * Contraparte UNHAPPY: confirma que el viaje quedó en "En conflicto" con estado "No autorizado"
@@ -178,7 +185,10 @@ export class CarrierTravelManagementPage extends UiBase {
 	 *   2026-08-12 que `TravelManagementPage.reactivate()`/`expectTripRowInCurrentTab`. Cuando se
 	 *   provee, se usa como query del buscador (con `Enter` explícito — `fill()` solo es no-op).
 	 */
-	@atc('MG-428', { severity: 'normal', description: 'Clonar viaje desde Gestión de Viajes (form de alta precargado)' })
+	@atc('MG-428', {
+		severity: 'normal',
+		description: 'Clonar viaje desde Gestión de Viajes (form de alta precargado)'
+	})
 	async cloneTravel(
 		searchText: string,
 		from: CloneSourceTab,
@@ -212,7 +222,9 @@ export class CarrierTravelManagementPage extends UiBase {
 			travelIdForCarrier != null
 				? this.page
 						.locator('tbody tr')
-						.filter({ has: this.page.locator('td:first-child').filter({ hasText: `${travelIdForCarrier}-W` }) })
+						.filter({
+							has: this.page.locator('td:first-child').filter({ hasText: `${travelIdForCarrier}-W` })
+						})
 						.first()
 				: travelId != null
 					? this.page
@@ -231,7 +243,9 @@ export class CarrierTravelManagementPage extends UiBase {
 
 		// Botón Clonar de la fila: ícono fa-files-o (FE) con fallback por tooltip title/aria.
 		const cloneBtn = row
-			.locator('button.action-btn:has(i.fa-files-o), button[title="Clonar"], button[aria-description="Clonar"], button[title="Clone"]')
+			.locator(
+				'button.action-btn:has(i.fa-files-o), button[title="Clonar"], button[aria-description="Clonar"], button[title="Clone"]'
+			)
 			.first();
 		await expect(cloneBtn, 'La fila debe exponer el botón Clonar (fa-files-o)').toBeVisible({ timeout: 10_000 });
 		await cloneBtn.click();

@@ -24,7 +24,12 @@ async function url(driver: WebdriverIO.Browser): Promise<string> {
 }
 
 /** Tap nativo: el `.click()` del DOM no dispara los handlers de Ionic en esta app. */
-async function tapNative(driver: WebdriverIO.Browser, selector: string, needle: string, timeout = 8000): Promise<boolean> {
+async function tapNative(
+	driver: WebdriverIO.Browser,
+	selector: string,
+	needle: string,
+	timeout = 8000
+): Promise<boolean> {
 	const target = needle.toLowerCase();
 	const deadline = Date.now() + timeout;
 	while (Date.now() < deadline) {
@@ -34,7 +39,11 @@ async function tapNative(driver: WebdriverIO.Browser, selector: string, needle: 
 		} catch {
 			els = [];
 		}
-		for (const el of els as { isDisplayed: () => Promise<boolean>; getText: () => Promise<string>; click: () => Promise<void> }[]) {
+		for (const el of els as {
+			isDisplayed: () => Promise<boolean>;
+			getText: () => Promise<string>;
+			click: () => Promise<void>;
+		}[]) {
 			try {
 				if (!(await el.isDisplayed())) continue;
 				if (!(await el.getText()).toLowerCase().includes(target)) continue;
@@ -55,7 +64,9 @@ async function tapBackArrow(driver: WebdriverIO.Browser): Promise<boolean> {
 	const tapped = (await driver
 		.execute(() => {
 			const vis = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
-			const el = Array.from(document.querySelectorAll('ion-back-button, ion-icon, .arrow-back, ion-buttons ion-button'))
+			const el = Array.from(
+				document.querySelectorAll('ion-back-button, ion-icon, .arrow-back, ion-buttons ion-button')
+			)
 				.filter(vis)
 				.find(e => {
 					const n = `${e.getAttribute('name') ?? ''} ${e.getAttribute('ng-reflect-name') ?? ''} ${e.className} ${e.getAttribute('aria-label') ?? ''}`;
@@ -125,7 +136,9 @@ async function ensureEditable(driver: WebdriverIO.Browser, selector: string): Pr
 	 * El input lleva `pointer-events: none` cuando esta inactivo (`class="no-pointer"`), asi que un
 	 * tap sobre sus coordenadas atraviesa hasta la fila — que es justo el efecto buscado.
 	 */
-	const rectOf = async (kind: 'text' | 'row' | 'input'): Promise<{ x: number; y: number; vw: number; vh: number } | null> =>
+	const rectOf = async (
+		kind: 'text' | 'row' | 'input'
+	): Promise<{ x: number; y: number; vw: number; vh: number } | null> =>
 		(await driver
 			.execute(
 				(sel: string, k: string) => {
@@ -166,7 +179,10 @@ async function ensureEditable(driver: WebdriverIO.Browser, selector: string): Pr
  * input choca con el elemento que lo tapa. Mapear CSS -> pantalla y tocar ahi es lo unico que
  * reproduce lo que hace un dedo.
  */
-async function tapAtCssPoint(driver: WebdriverIO.Browser, rect: { x: number; y: number; vw: number; vh: number }): Promise<void> {
+async function tapAtCssPoint(
+	driver: WebdriverIO.Browser,
+	rect: { x: number; y: number; vw: number; vh: number }
+): Promise<void> {
 	const ctx = (await driver.getContext()) as string;
 	await driver.switchContext('NATIVE_APP');
 	try {
@@ -352,7 +368,14 @@ export class TripTypeAddressSurface implements AddressSurface {
 		if (!(await goHome(driver))) return false;
 
 		// El boton del tipo de viaje. Si este carrier no lo ofrece, la superficie no existe aca.
-		if (!(await tapNative(driver, 'button.travelHistory-btn, button, ion-segment-button, ion-label', this.typeText, 7000))) {
+		if (
+			!(await tapNative(
+				driver,
+				'button.travelHistory-btn, button, ion-segment-button, ion-label',
+				this.typeText,
+				7000
+			))
+		) {
 			return false;
 		}
 		await driver.pause(2200);
@@ -463,7 +486,9 @@ export class HomeStopSurface implements AddressSurface {
 			const vis = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
 			const el = Array.from(document.querySelectorAll('input'))
 				.filter(vis)
-				.find(i => ((i as HTMLInputElement).placeholder ?? '').trim().toLowerCase().startsWith('agregar otro destino'));
+				.find(i =>
+					((i as HTMLInputElement).placeholder ?? '').trim().toLowerCase().startsWith('agregar otro destino')
+				);
 			return el ? JSON.stringify((el as HTMLInputElement).placeholder) : null;
 		})) as string | null;
 
@@ -531,12 +556,19 @@ export class ScheduledTripEditSurface implements AddressSurface {
 			const rect = (await driver
 				.execute(() => {
 					const vis = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
-					const el = Array.from(document.querySelectorAll('div.edit, .col-edit div, .col-edit')).filter(vis)[0] as HTMLElement | undefined;
+					const el = Array.from(document.querySelectorAll('div.edit, .col-edit div, .col-edit')).filter(
+						vis
+					)[0] as HTMLElement | undefined;
 					if (!el) return null;
 					el.scrollIntoView({ block: 'center' });
 					const b = el.getBoundingClientRect();
 					if (!b.width || !b.height) return null;
-					return { x: b.left + b.width / 2, y: b.top + b.height / 2, vw: window.innerWidth, vh: window.innerHeight };
+					return {
+						x: b.left + b.width / 2,
+						y: b.top + b.height / 2,
+						vw: window.innerWidth,
+						vh: window.innerHeight
+					};
 				})
 				.catch(() => null)) as { x: number; y: number; vw: number; vh: number } | null;
 			if (!rect) return false;
@@ -546,7 +578,12 @@ export class ScheduledTripEditSurface implements AddressSurface {
 		}
 
 		// En `travel-edit` valen las mismas tres filas del home: se toma la que este editable.
-		for (const sel of ['input[placeholder="Agregar otro destino "]', DESTINATION_SELECTOR, ORIGIN_SELECTOR, 'input[name="input-from"]']) {
+		for (const sel of [
+			'input[placeholder="Agregar otro destino "]',
+			DESTINATION_SELECTOR,
+			ORIGIN_SELECTOR,
+			'input[name="input-from"]'
+		]) {
 			if (await ensureEditable(driver, sel)) {
 				this.resolved = sel;
 				return true;
@@ -608,7 +645,9 @@ export class ProfileAddressSurface implements AddressSurface {
 	private async pickAddressType(driver: WebdriverIO.Browser): Promise<boolean> {
 		const already = (await driver
 			.execute(() => {
-				const el = document.querySelector('#inputAddressType ion-select, ion-select') as (HTMLElement & { value?: unknown }) | null;
+				const el = document.querySelector('#inputAddressType ion-select, ion-select') as
+					| (HTMLElement & { value?: unknown })
+					| null;
 				return el && el.value ? String(el.value) : '';
 			})
 			.catch(() => '')) as string;
@@ -623,7 +662,11 @@ export class ProfileAddressSurface implements AddressSurface {
 		const picked = (await driver
 			.execute(() => {
 				const vis = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
-				const opt = Array.from(document.querySelectorAll('ion-select-popover ion-item, ion-popover ion-item, ion-radio, ion-select-option')).filter(vis)[0] as HTMLElement | undefined;
+				const opt = Array.from(
+					document.querySelectorAll(
+						'ion-select-popover ion-item, ion-popover ion-item, ion-radio, ion-select-option'
+					)
+				).filter(vis)[0] as HTMLElement | undefined;
 				if (!opt) return '';
 				const label = (opt.textContent ?? '').trim();
 				opt.click();
@@ -663,7 +706,9 @@ export class ProfileAddressSurface implements AddressSurface {
 				const vis = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
 				const el = Array.from(document.querySelectorAll('ion-icon, ion-back-button, .arrow-back'))
 					.filter(vis)
-					.find(e => /arrow-back|arrow_back/i.test(`${e.getAttribute('name') ?? ''}${e.className}`)) as HTMLElement | undefined;
+					.find(e => /arrow-back|arrow_back/i.test(`${e.getAttribute('name') ?? ''}${e.className}`)) as
+					| HTMLElement
+					| undefined;
 				el?.click();
 			})
 			.catch(() => undefined);

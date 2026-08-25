@@ -58,7 +58,10 @@ test.describe('[BL-036][API] Authorize.net sandbox — Declines (Response Code 2
 				...(response.transactionResponse?.messages ?? []).map(m => `[${m.code}] ${m.description}`),
 				...(response.transactionResponse?.errors ?? []).map(e => `[${e.errorCode}] ${e.errorText}`)
 			];
-			expect(reasons.length, `el decline debe informar un motivo (messages[] o errors[]) — ${describeAuthorizeFailure(response)}`).toBeGreaterThan(0);
+			expect(
+				reasons.length,
+				`el decline debe informar un motivo (messages[] o errors[]) — ${describeAuthorizeFailure(response)}`
+			).toBeGreaterThan(0);
 		}
 	);
 });

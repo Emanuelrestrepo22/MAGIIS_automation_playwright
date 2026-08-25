@@ -42,9 +42,12 @@ async function hasSearchField(driver: WebdriverIO.Browser): Promise<boolean> {
 }
 
 async function tapNative(driver: WebdriverIO.Browser, webview: string, script: string): Promise<boolean> {
-	const rect = (await driver.execute(script).catch(() => null)) as
-		| { x: number; y: number; vw: number; vh: number }
-		| null;
+	const rect = (await driver.execute(script).catch(() => null)) as {
+		x: number;
+		y: number;
+		vw: number;
+		vh: number;
+	} | null;
 	if (!rect) return false;
 
 	await driver.switchContext('NATIVE_APP');
@@ -122,7 +125,9 @@ async function navigateToSearch(driver: WebdriverIO.Browser, webview: string): P
 			});
 			await driver.pause(1400);
 			await driver.execute(() => {
-				const nodes = Array.from(document.querySelectorAll('app-confirm-modal button.btn.primary')) as HTMLElement[];
+				const nodes = Array.from(
+					document.querySelectorAll('app-confirm-modal button.btn.primary')
+				) as HTMLElement[];
 				nodes.find(n => n.offsetParent !== null)?.click();
 			});
 		}
@@ -337,7 +342,13 @@ async function run(): Promise<void> {
 		const dump = (await driver.execute(DUMP_SCRIPT)) as {
 			page: string;
 			matches: Array<{ text: string; desc: string; chain: string; top: number; h: number }>;
-			listContainers: Array<{ container: string; rowTag: string; rowCount: number; rowSample: string; text: string }>;
+			listContainers: Array<{
+				container: string;
+				rowTag: string;
+				rowCount: number;
+				rowSample: string;
+				text: string;
+			}>;
 			allClasses: string[];
 		};
 
@@ -359,10 +370,7 @@ async function run(): Promise<void> {
 		}
 
 		log(`\n=== CLASES EN PANTALLA CON "pred" / "list" / "item" / "auto" ===`);
-		log(
-			'  ' +
-				dump.allClasses.filter(c => /pred|list|item|auto|result|suggest/i.test(c)).join(', ')
-		);
+		log('  ' + dump.allClasses.filter(c => /pred|list|item|auto|result|suggest/i.test(c)).join(', '));
 
 		const dir = path.resolve(process.cwd(), 'evidence', 'network-capture');
 		await mkdir(dir, { recursive: true });

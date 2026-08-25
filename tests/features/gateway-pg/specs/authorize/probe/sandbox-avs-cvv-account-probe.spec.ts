@@ -30,10 +30,22 @@ const LOG = '[PROBE][AUTHORIZE-ACCOUNT]';
 /** Tarjetas cuyo outcome depende del filtro AVS / CVV del merchant, + el control aprobado. */
 const CASES = [
 	{ nombre: 'CONTROL aprobada (CVV 900 / ZIP 90210)', card: AUTHORIZE_CARDS.SUCCESS, esperado: 'responseCode 1' },
-	{ nombre: 'DECLINE_AUTHORIZE (ZIP 46282)', card: AUTHORIZE_CARDS.DECLINE_GENERIC, esperado: 'responseCode 2 (declined)' },
+	{
+		nombre: 'DECLINE_AUTHORIZE (ZIP 46282)',
+		card: AUTHORIZE_CARDS.DECLINE_GENERIC,
+		esperado: 'responseCode 2 (declined)'
+	},
 	{ nombre: 'DECLINE_INVALID_CVC (CVV 901)', card: AUTHORIZE_CARDS.DECLINE_CVV, esperado: 'cvvResultCode N' },
-	{ nombre: 'DECLINE_PREPAID_ZERO_BALANCE (ZIP 46228)', card: AUTHORIZE_CARDS.PREPAID_ZERO, esperado: 'prepaid, balance 0' },
-	{ nombre: 'HAPPY_PARTIAL_AUTH (ZIP 46225)', card: AUTHORIZE_CARDS.PARTIAL_AUTH, esperado: 'authAmount < amount pedido' }
+	{
+		nombre: 'DECLINE_PREPAID_ZERO_BALANCE (ZIP 46228)',
+		card: AUTHORIZE_CARDS.PREPAID_ZERO,
+		esperado: 'prepaid, balance 0'
+	},
+	{
+		nombre: 'HAPPY_PARTIAL_AUTH (ZIP 46225)',
+		card: AUTHORIZE_CARDS.PARTIAL_AUTH,
+		esperado: 'authAmount < amount pedido'
+	}
 ] as const;
 
 test.describe('[PROBE] cuenta sandbox Authorize — filtros AVS/CVV y autorización parcial @probe', () => {

@@ -71,7 +71,10 @@ async function run(): Promise<void> {
 	};
 	const measures: Measure[] = [];
 	let webview = '';
-	const evidence = new ScreenEvidence(driver, `mg116-iata-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}`);
+	const evidence = new ScreenEvidence(
+		driver,
+		`mg116-iata-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}`
+	);
 
 	try {
 		const contexts = (await driver.getContexts()) as unknown as string[];
@@ -95,8 +98,10 @@ async function run(): Promise<void> {
 			return all.filter(n => pattern.test(n));
 		};
 
-		const ownUrls = async (): Promise<string[]> => resourceUrls(new RegExp(AUTOCOMPLETE_PATH.replace('/', '\\/'), 'i'));
-		const googleCount = async (): Promise<number> => (await resourceUrls(/maps\.googleapis\.com|places\.googleapis\.com/i)).length;
+		const ownUrls = async (): Promise<string[]> =>
+			resourceUrls(new RegExp(AUTOCOMPLETE_PATH.replace('/', '\\/'), 'i'));
+		const googleCount = async (): Promise<number> =>
+			(await resourceUrls(/maps\.googleapis\.com|places\.googleapis\.com/i)).length;
 
 		const readPredictions = async (): Promise<string[]> =>
 			(await driver.execute(() => {
@@ -144,7 +149,12 @@ async function run(): Promise<void> {
 						t.scrollIntoView({ block: 'center' });
 						const b = t.getBoundingClientRect();
 						if (!b.width || !b.height) return null;
-						return { x: b.left + b.width / 2, y: b.top + b.height / 2, vw: window.innerWidth, vh: window.innerHeight };
+						return {
+							x: b.left + b.width / 2,
+							y: b.top + b.height / 2,
+							vw: window.innerWidth,
+							vh: window.innerHeight
+						};
 					},
 					sel,
 					needle
@@ -161,7 +171,12 @@ async function run(): Promise<void> {
 					id: 'finger1',
 					parameters: { pointerType: 'touch' },
 					actions: [
-						{ type: 'pointerMove', duration: 0, x: Math.round(loc.x + box.x * (size.width / box.vw)), y: Math.round(loc.y + box.y * (size.height / box.vh)) },
+						{
+							type: 'pointerMove',
+							duration: 0,
+							x: Math.round(loc.x + box.x * (size.width / box.vw)),
+							y: Math.round(loc.y + box.y * (size.height / box.vh))
+						},
 						{ type: 'pointerDown', button: 0 },
 						{ type: 'pause', duration: 130 },
 						{ type: 'pointerUp', button: 0 }
@@ -195,9 +210,13 @@ async function run(): Promise<void> {
 				predictions: await readPredictions()
 			};
 			measures.push(m);
-			log(`  "${term}" -> ${m.ownCalls} consulta(s) a places/autocomplete · ${m.googleResources} recurso(s) de Google`);
+			log(
+				`  "${term}" -> ${m.ownCalls} consulta(s) a places/autocomplete · ${m.googleResources} recurso(s) de Google`
+			);
 			for (const p of m.predictions.slice(0, 3)) log(`       prediccion: ${p.slice(0, 90)}`);
-			await evidence.capture(`${surface.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}-${term}`).catch(() => undefined);
+			await evidence
+				.capture(`${surface.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}-${term}`)
+				.catch(() => undefined);
 			return m;
 		};
 
@@ -216,24 +235,24 @@ async function run(): Promise<void> {
 		if (process.env.MG116_SKIP_HOME === '1') {
 			log('MG116_SKIP_HOME=1 -> se omite la pata del home');
 		} else {
-		log('HOME — la fila de direccion editable');
-		const homeSel = (await driver.execute(() => {
-			const vis = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
-			const hit = Array.from(document.querySelectorAll('input'))
-				.filter(vis)
-				.map(el => el as HTMLInputElement)
-				.filter(i => /origen|destino/i.test(i.placeholder ?? ''))
-				.find(i => !i.readOnly && !i.disabled);
-			return hit ? hit.placeholder : '';
-		})) as string;
-		if (!homeSel) {
-			log('  ABORTA: el home no tiene ninguna fila de direccion editable en este estado.');
-		} else {
-			const sel = `input[placeholder=${JSON.stringify(homeSel)}]`;
-			log(`  campo: "${homeSel.trim()}"`);
-			await measure('home', sel, TERM);
-			await measure('home', sel, CONTROL);
-		}
+			log('HOME — la fila de direccion editable');
+			const homeSel = (await driver.execute(() => {
+				const vis = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
+				const hit = Array.from(document.querySelectorAll('input'))
+					.filter(vis)
+					.map(el => el as HTMLInputElement)
+					.filter(i => /origen|destino/i.test(i.placeholder ?? ''))
+					.find(i => !i.readOnly && !i.disabled);
+				return hit ? hit.placeholder : '';
+			})) as string;
+			if (!homeSel) {
+				log('  ABORTA: el home no tiene ninguna fila de direccion editable en este estado.');
+			} else {
+				const sel = `input[placeholder=${JSON.stringify(homeSel)}]`;
+				log(`  campo: "${homeSel.trim()}"`);
+				await measure('home', sel, TERM);
+				await measure('home', sel, CONTROL);
+			}
 		}
 
 		// --------------------------------------------------------------- superficie 2: Mis Direcciones
@@ -250,9 +269,9 @@ async function run(): Promise<void> {
 			await driver
 				.execute(() => {
 					const vis = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
-					const opt = Array.from(document.querySelectorAll('ion-select-popover ion-item, ion-popover ion-item, ion-radio')).filter(vis)[0] as
-						| HTMLElement
-						| undefined;
+					const opt = Array.from(
+						document.querySelectorAll('ion-select-popover ion-item, ion-popover ion-item, ion-radio')
+					).filter(vis)[0] as HTMLElement | undefined;
 					opt?.click();
 				})
 				.catch(() => undefined);
@@ -266,7 +285,9 @@ async function run(): Promise<void> {
 		line();
 		log('COMPARACION');
 		line();
-		const rows = measures.map(m => `  ${m.surface.padEnd(18)} "${m.term}" (${m.term.length} car.) -> ${m.ownCalls} consulta(s)`);
+		const rows = measures.map(
+			m => `  ${m.surface.padEnd(18)} "${m.term}" (${m.term.length} car.) -> ${m.ownCalls} consulta(s)`
+		);
 		for (const r of rows) log(r);
 
 		const homeIata = measures.find(m => m.surface === 'home' && m.term === TERM);
@@ -276,12 +297,20 @@ async function run(): Promise<void> {
 		log('');
 		if (homeIata && dirIata) {
 			if (homeIata.ownCalls > 0 && dirIata.ownCalls === 0) {
-				log(`VEREDICTO: DIVERGENCIA CONFIRMADA. "${TERM}" consulta en el home y NO consulta en Mis Direcciones.`);
+				log(
+					`VEREDICTO: DIVERGENCIA CONFIRMADA. "${TERM}" consulta en el home y NO consulta en Mis Direcciones.`
+				);
 				if (dirControl && dirControl.ownCalls > 0) {
-					log(`           Y el control de ${CONTROL.length} caracteres SI consulta ahi, asi que el campo funciona:`);
-					log(`           el piso de Mis Direcciones es 4 y no 3. Un codigo IATA no dispara busqueda en esa pantalla.`);
+					log(
+						`           Y el control de ${CONTROL.length} caracteres SI consulta ahi, asi que el campo funciona:`
+					);
+					log(
+						`           el piso de Mis Direcciones es 4 y no 3. Un codigo IATA no dispara busqueda en esa pantalla.`
+					);
 				} else {
-					log('           El control tampoco consulto, asi que no se puede afirmar el piso: revisar el estado del campo.');
+					log(
+						'           El control tampoco consulto, asi que no se puede afirmar el piso: revisar el estado del campo.'
+					);
 				}
 			} else if (homeIata.ownCalls > 0 && dirIata.ownCalls > 0) {
 				log(`VEREDICTO: sin divergencia con "${TERM}" — las dos superficies consultan.`);
@@ -289,7 +318,9 @@ async function run(): Promise<void> {
 				log('VEREDICTO: SIN DATOS suficientes — el home no consulto, asi que no hay linea base para comparar.');
 			}
 		} else if (process.env.MG116_SKIP_HOME === '1' && dirIata) {
-			log(`PATA AISLADA (Mis Direcciones): "${TERM}" -> ${dirIata.ownCalls} consulta(s) · "${CONTROL}" -> ${dirControl?.ownCalls ?? 'no medido'} consulta(s).`);
+			log(
+				`PATA AISLADA (Mis Direcciones): "${TERM}" -> ${dirIata.ownCalls} consulta(s) · "${CONTROL}" -> ${dirControl?.ownCalls ?? 'no medido'} consulta(s).`
+			);
 			log('           Comparar contra la corrida del home, que se mide en su propia sesion.');
 		} else {
 			log('VEREDICTO: SIN DATOS — falto alcanzar una de las dos superficies. Ver el volcado.');

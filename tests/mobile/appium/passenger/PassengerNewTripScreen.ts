@@ -19,61 +19,66 @@ export class PassengerNewTripScreen extends AppiumSessionBase {
 	private async clickVisibleMatchingElement(
 		selector: string,
 		candidates: string[],
-		timeout = 10_000,
+		timeout = 10_000
 	): Promise<boolean> {
 		const driver = this.getDriver();
 		const deadline = Date.now() + timeout;
-		const normalizedCandidates = Array.from(
-			new Set(
-				candidates
-					.map(candidate => candidate.trim())
-					.filter(Boolean),
-			),
-		);
+		const normalizedCandidates = Array.from(new Set(candidates.map(candidate => candidate.trim()).filter(Boolean)));
 
 		while (Date.now() < deadline) {
-			const clicked = await this.executeInWebView((querySelector: string, texts: string[]) => {
-				const normalize = (value: unknown): string =>
-					String(value ?? '')
-						.replace(/\s+/g, ' ')
-						.trim()
-						.toLowerCase()
-						.normalize('NFD')
-						.replace(/[\u0300-\u036f]/g, '');
+			const clicked = (await this.executeInWebView(
+				(querySelector: string, texts: string[]) => {
+					const normalize = (value: unknown): string =>
+						String(value ?? '')
+							.replace(/\s+/g, ' ')
+							.trim()
+							.toLowerCase()
+							.normalize('NFD')
+							.replace(/[\u0300-\u036f]/g, '');
 
-				const isVisible = (element: Element): boolean => {
-					const html = element as HTMLElement;
-					const rect = html.getBoundingClientRect();
-					const style = window.getComputedStyle(html);
-					return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
-				};
+					const isVisible = (element: Element): boolean => {
+						const html = element as HTMLElement;
+						const rect = html.getBoundingClientRect();
+						const style = window.getComputedStyle(html);
+						return (
+							style.display !== 'none' &&
+							style.visibility !== 'hidden' &&
+							rect.width > 0 &&
+							rect.height > 0
+						);
+					};
 
-				const targets = texts.map(normalize).filter(Boolean);
-				const elements = Array.from(document.querySelectorAll(querySelector)) as HTMLElement[];
-				const match = elements.find(element => {
-					if (!isVisible(element)) {
+					const targets = texts.map(normalize).filter(Boolean);
+					const elements = Array.from(document.querySelectorAll(querySelector)) as HTMLElement[];
+					const match = elements.find(element => {
+						if (!isVisible(element)) {
+							return false;
+						}
+
+						const haystack = normalize(
+							[
+								element.innerText,
+								element.textContent,
+								element.getAttribute('aria-label'),
+								element.getAttribute('content-desc'),
+								element.getAttribute('title'),
+								element.getAttribute('class')
+							].join(' ')
+						);
+
+						return targets.some(target => haystack.includes(target));
+					});
+
+					if (!match) {
 						return false;
 					}
 
-					const haystack = normalize([
-						element.innerText,
-						element.textContent,
-						element.getAttribute('aria-label'),
-						element.getAttribute('content-desc'),
-						element.getAttribute('title'),
-						element.getAttribute('class'),
-					].join(' '));
-
-					return targets.some(target => haystack.includes(target));
-				});
-
-				if (!match) {
-					return false;
-				}
-
-				match.click();
-				return true;
-			}, selector, normalizedCandidates) as boolean;
+					match.click();
+					return true;
+				},
+				selector,
+				normalizedCandidates
+			)) as boolean;
 
 			if (clicked) {
 				return true;
@@ -106,18 +111,23 @@ export class PassengerNewTripScreen extends AppiumSessionBase {
 
 	private async fillAndChooseAddress(inputSelector: string, address: string): Promise<void> {
 		const input = await this.findVisibleInput(inputSelector);
-		await this.executeInWebView((element: HTMLElement, value: string) => {
-			const target =
-				((element as unknown as { shadowRoot?: ShadowRoot | null }).shadowRoot?.querySelector('input') as HTMLInputElement | null) ??
-				(element as unknown as HTMLInputElement);
+		await this.executeInWebView(
+			(element: HTMLElement, value: string) => {
+				const target =
+					((element as unknown as { shadowRoot?: ShadowRoot | null }).shadowRoot?.querySelector(
+						'input'
+					) as HTMLInputElement | null) ?? (element as unknown as HTMLInputElement);
 
-			const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
-			setter?.call(target, value);
-			target.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
-			target.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
-			target.dispatchEvent(new Event('ionInput', { bubbles: true, composed: true } as EventInit));
-			target.focus?.();
-		}, input, address);
+				const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+				setter?.call(target, value);
+				target.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+				target.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
+				target.dispatchEvent(new Event('ionInput', { bubbles: true, composed: true } as EventInit));
+				target.focus?.();
+			},
+			input,
+			address
+		);
 
 		await this.pause(800);
 
@@ -142,7 +152,12 @@ export class PassengerNewTripScreen extends AppiumSessionBase {
 		const driver = this.getDriver();
 		const deadline = Date.now() + timeout;
 		const normalize = (value: string): string =>
-			value.replace(/\s+/g, ' ').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+			value
+				.replace(/\s+/g, ' ')
+				.trim()
+				.toLowerCase()
+				.normalize('NFD')
+				.replace(/[\u0300-\u036f]/g, '');
 		const target = normalize(street);
 
 		while (Date.now() < deadline) {
@@ -205,13 +220,9 @@ export class PassengerNewTripScreen extends AppiumSessionBase {
 
 	private cardCandidates(last4: string): string[] {
 		const digits = last4.replace(/\D/g, '').slice(-4);
-		return Array.from(new Set([
-			`VISA ****${digits}`,
-			`VISA ${digits}`,
-			`**** ${digits}`,
-			`...${digits}`,
-			digits,
-		])).filter(Boolean);
+		return Array.from(
+			new Set([`VISA ****${digits}`, `VISA ${digits}`, `**** ${digits}`, `...${digits}`, digits])
+		).filter(Boolean);
 	}
 
 	// El código de viaje del pax usa letra MINÚSCULA (p.ej. "4885-a", "8973-e").
@@ -248,7 +259,10 @@ export class PassengerNewTripScreen extends AppiumSessionBase {
 	 * `excludeCodes` = códigos ya presentes ANTES de confirmar (historial) → se ignoran para no
 	 * devolver un viaje viejo como falso positivo.
 	 */
-	private async extractTripCode(excludeCodes: Set<string> = new Set(), timeoutMs = 25_000): Promise<string | undefined> {
+	private async extractTripCode(
+		excludeCodes: Set<string> = new Set(),
+		timeoutMs = 25_000
+	): Promise<string | undefined> {
 		const driver = this.getDriver();
 		const deadline = Date.now() + timeoutMs;
 
@@ -260,7 +274,9 @@ export class PassengerNewTripScreen extends AppiumSessionBase {
 			// Preferir un código NUEVO (no visto antes de confirmar).
 			for (const code of codes) {
 				if (!excludeCodes.has(code)) {
-					console.warn(`[PassengerNewTripScreen] trip code NUEVO detectado: ${code} (excluidos=${[...excludeCodes].join(',') || '∅'})`);
+					console.warn(
+						`[PassengerNewTripScreen] trip code NUEVO detectado: ${code} (excluidos=${[...excludeCodes].join(',') || '∅'})`
+					);
 					return code;
 				}
 				lastFallback = lastFallback ?? code;
@@ -276,7 +292,9 @@ export class PassengerNewTripScreen extends AppiumSessionBase {
 		}
 
 		// Sin código nuevo tras el timeout: devolver uno visto (mejor que undefined si el viaje existe).
-		console.warn(`[PassengerNewTripScreen] NO se detectó código NUEVO tras ${timeoutMs}ms. fallback=${lastFallback ?? 'undefined'}. Códigos vistos y excluidos como historial.`);
+		console.warn(
+			`[PassengerNewTripScreen] NO se detectó código NUEVO tras ${timeoutMs}ms. fallback=${lastFallback ?? 'undefined'}. Códigos vistos y excluidos como historial.`
+		);
 		return lastFallback;
 	}
 
@@ -304,7 +322,9 @@ export class PassengerNewTripScreen extends AppiumSessionBase {
 					const html = element as HTMLElement;
 					const rect = html.getBoundingClientRect();
 					const style = window.getComputedStyle(html);
-					return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+					return (
+						style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0
+					);
 				};
 
 				const modals = Array.from(document.querySelectorAll('app-confirm-modal')) as HTMLElement[];
@@ -344,7 +364,9 @@ export class PassengerNewTripScreen extends AppiumSessionBase {
 					const html = element as HTMLElement;
 					const rect = html.getBoundingClientRect();
 					const style = window.getComputedStyle(html);
-					return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+					return (
+						style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0
+					);
 				};
 
 				const modals = Array.from(document.querySelectorAll('app-confirm-modal')) as HTMLElement[];
@@ -372,7 +394,9 @@ export class PassengerNewTripScreen extends AppiumSessionBase {
 			await driver.pause(250);
 		}
 
-		throw new Error('PassengerNewTripScreen.dismissTripAlreadyCreatedModal() - modal not found or "Aceptar" not clickable');
+		throw new Error(
+			'PassengerNewTripScreen.dismissTripAlreadyCreatedModal() - modal not found or "Aceptar" not clickable'
+		);
 	}
 
 	/**
@@ -386,13 +410,18 @@ export class PassengerNewTripScreen extends AppiumSessionBase {
 		// si no está visible (sub-página), usamos el back nativo de Android.
 		const driver = this.getDriver();
 		const atHome = async (waitMs: number): Promise<boolean> =>
-			(await this.waitForWebUrlContains('HomePage', waitMs)) && (await this.waitForWebText('Solo Ida', waitMs, true));
+			(await this.waitForWebUrlContains('HomePage', waitMs)) &&
+			(await this.waitForWebText('Solo Ida', waitMs, true));
 
 		for (let attempt = 0; attempt < 6; attempt++) {
 			if (await atHome(3_000)) {
 				return;
 			}
-			const tappedInicio = await this.tapNativeByText('ion-tab-button, a, button, [role="button"], ion-item', 'inicio', 2_500);
+			const tappedInicio = await this.tapNativeByText(
+				'ion-tab-button, a, button, [role="button"], ion-item',
+				'inicio',
+				2_500
+			);
 			if (!tappedInicio) {
 				await driver.back().catch(() => undefined);
 			}
@@ -434,15 +463,8 @@ export class PassengerNewTripScreen extends AppiumSessionBase {
 
 		const openedCardDialog = await this.clickVisibleMatchingElement(
 			'ion-col.payment-method, ion-col.payment-method-selected, .payment-method',
-			[
-				'tarjeta de crédito',
-				'credit card',
-				'visa',
-				`visa ...${digits}`,
-				`...${digits}`,
-				digits,
-			],
-			10_000,
+			['tarjeta de crédito', 'credit card', 'visa', `visa ...${digits}`, `...${digits}`, digits],
+			10_000
 		);
 
 		if (openedCardDialog) {
@@ -453,7 +475,7 @@ export class PassengerNewTripScreen extends AppiumSessionBase {
 					await this.clickVisibleMatchingElement(
 						'ion-modal ion-item.card-item, app-credit-card-dialog ion-item.card-item, ion-modal .card-item',
 						[candidate, `VISA ${digits}`, `...${digits}`, digits],
-						5_000,
+						5_000
 					)
 				) {
 					return;
@@ -468,7 +490,9 @@ export class PassengerNewTripScreen extends AppiumSessionBase {
 			return;
 		}
 
-		console.warn(`[PassengerNewTripScreen] card ending ${digits} not explicitly selectable on this screen; continuing with current default card`);
+		console.warn(
+			`[PassengerNewTripScreen] card ending ${digits} not explicitly selectable on this screen; continuing with current default card`
+		);
 	}
 
 	/**
@@ -513,7 +537,9 @@ export class PassengerNewTripScreen extends AppiumSessionBase {
 			(await this.waitForWebText('Cancelar Viaje', 15_000, true)) ||
 			(await this.waitForWebText('Buscando servicio', 3_000, true));
 		if (!created) {
-			throw new Error('PassengerNewTripScreen.confirmTrip() - viaje no creado (sin "Buscando servicio"/"Cancelar Viaje" tras "Viajo Ahora")');
+			throw new Error(
+				'PassengerNewTripScreen.confirmTrip() - viaje no creado (sin "Buscando servicio"/"Cancelar Viaje" tras "Viajo Ahora")'
+			);
 		}
 
 		// Código del viaje best-effort (puede volver undefined si no está visible en esta pantalla).
@@ -547,11 +573,15 @@ export class PassengerNewTripScreen extends AppiumSessionBase {
 
 					const rect = html.getBoundingClientRect();
 					const style = window.getComputedStyle(html);
-					return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+					return (
+						style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0
+					);
 				};
 
 				const overlays = Array.from(
-					document.querySelectorAll('ion-alert, ion-modal, ion-toast, app-confirm-modal, .alert-wrapper, .toast-wrapper')
+					document.querySelectorAll(
+						'ion-alert, ion-modal, ion-toast, app-confirm-modal, .alert-wrapper, .toast-wrapper'
+					)
 				) as HTMLElement[];
 
 				const patterns = [
@@ -561,7 +591,7 @@ export class PassengerNewTripScreen extends AppiumSessionBase {
 					/credit.*limit/,
 					/saldo.*insuficient/,
 					/supero.*limite/,
-					/excede.*limite/,
+					/excede.*limite/
 				];
 
 				for (const overlay of overlays) {

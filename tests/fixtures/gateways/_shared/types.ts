@@ -200,7 +200,10 @@ void _allIntentsExhaustive;
  * Un `AVS_*` / `CVV2_*` / `CAVV_*` / `CARD_LEVEL_*` dentro de `CardIntent` significaría
  * que alguien convirtió un código de respuesta en un caso de prueba.
  */
-type _AnnotationLeak = Extract<CardIntent, `AVS_${string}` | `CVV2_${string}` | `CAVV_${string}` | `CARD_LEVEL_${string}`>;
+type _AnnotationLeak = Extract<
+	CardIntent,
+	`AVS_${string}` | `CVV2_${string}` | `CAVV_${string}` | `CARD_LEVEL_${string}`
+>;
 const _axesAreSeparate: _AnnotationLeak extends never ? true : never = true;
 void _axesAreSeparate;
 

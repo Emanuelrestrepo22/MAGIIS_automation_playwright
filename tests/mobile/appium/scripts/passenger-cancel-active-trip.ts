@@ -14,7 +14,9 @@ import { getPassengerAppConfig } from '../config/appiumRuntime';
 const log = (m: string): void => console.log(`[cancel] ${m}`);
 
 class Bare extends AppiumSessionBase {
-	async web(): Promise<void> { await this.switchToWebView(); }
+	async web(): Promise<void> {
+		await this.switchToWebView();
+	}
 	async tapText(text: string, exact = false): Promise<boolean> {
 		const driver = this.getDriver();
 		const target = text.toLowerCase();
@@ -30,9 +32,30 @@ class Bare extends AppiumSessionBase {
 	}
 	async dumpButtons(): Promise<unknown> {
 		return this.getDriver().execute(() => {
-			const isVisible = (el: Element): boolean => { const h = el as HTMLElement; const r = h.getBoundingClientRect(); const s = getComputedStyle(h); return s.display !== 'none' && s.visibility !== 'hidden' && r.width > 0 && r.height > 0; };
-			const btns = (Array.from(document.querySelectorAll('button, ion-button, .btn, [role="button"], ion-col, a')) as HTMLElement[]).filter(isVisible).map(e => ({ tag: e.tagName.toLowerCase(), cls: (e.className || '').toString().slice(0, 45), text: (e.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 40) })).filter(b => b.text).slice(0, 20);
-			return { url: location.href, bodyText: (document.body?.innerText || '').replace(/\s+/g, ' ').trim().slice(0, 300), btns };
+			const isVisible = (el: Element): boolean => {
+				const h = el as HTMLElement;
+				const r = h.getBoundingClientRect();
+				const s = getComputedStyle(h);
+				return s.display !== 'none' && s.visibility !== 'hidden' && r.width > 0 && r.height > 0;
+			};
+			const btns = (
+				Array.from(
+					document.querySelectorAll('button, ion-button, .btn, [role="button"], ion-col, a')
+				) as HTMLElement[]
+			)
+				.filter(isVisible)
+				.map(e => ({
+					tag: e.tagName.toLowerCase(),
+					cls: (e.className || '').toString().slice(0, 45),
+					text: (e.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 40)
+				}))
+				.filter(b => b.text)
+				.slice(0, 20);
+			return {
+				url: location.href,
+				bodyText: (document.body?.innerText || '').replace(/\s+/g, ' ').trim().slice(0, 300),
+				btns
+			};
 		});
 	}
 }
@@ -47,7 +70,10 @@ async function run(): Promise<void> {
 
 		const tapped = await s.tapText('cancelar viaje');
 		log(`tap "Cancelar Viaje": ${tapped ? 'yes' : 'no'}`);
-		if (!tapped) { log('no hay viaje activo'); return; }
+		if (!tapped) {
+			log('no hay viaje activo');
+			return;
+		}
 		await s.getDriver().pause(2500);
 
 		const modal = await s.dumpButtons();
@@ -65,4 +91,7 @@ async function run(): Promise<void> {
 	}
 }
 
-run().catch((e: unknown) => { console.error(`[cancel] ${e instanceof Error ? e.message : String(e)}`); process.exit(1); });
+run().catch((e: unknown) => {
+	console.error(`[cancel] ${e instanceof Error ? e.message : String(e)}`);
+	process.exit(1);
+});

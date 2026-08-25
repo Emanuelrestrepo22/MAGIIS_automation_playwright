@@ -32,7 +32,9 @@ async function main(): Promise<void> {
 	log(`wallets:\n${JSON.stringify(wallets, null, 2)}`);
 }
 
-main().then(() => log('done')).catch((e: unknown) => {
-	console.error(`[mg626-owner] ${e instanceof Error ? e.message : String(e)}`);
-	process.exit(1);
-});
+main()
+	.then(() => log('done'))
+	.catch((e: unknown) => {
+		console.error(`[mg626-owner] ${e instanceof Error ? e.message : String(e)}`);
+		process.exit(1);
+	});

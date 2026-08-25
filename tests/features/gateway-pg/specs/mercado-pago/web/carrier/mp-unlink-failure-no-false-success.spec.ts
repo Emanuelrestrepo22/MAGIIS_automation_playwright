@@ -46,9 +46,10 @@ test.describe(`[MG · G][UI][${env.toUpperCase()}] MercadoPago — cleaningWalle
 
 			await test.step('And: App Store de pasarelas cargado — precondición MercadoPago vinculada', async () => {
 				await appStore.goto();
-				expect(await appStore.readState('mercado-pago'), 'precondición: MercadoPago debe estar vinculada para este carrier').toBe(
-					'linked'
-				);
+				expect(
+					await appStore.readState('mercado-pago'),
+					'precondición: MercadoPago debe estar vinculada para este carrier'
+				).toBe('linked');
 			});
 
 			await test.step('When: se confirma la desvinculación con un 500 mockeado en cleaningWallets — Then: NO debe reportar éxito falso', async () => {

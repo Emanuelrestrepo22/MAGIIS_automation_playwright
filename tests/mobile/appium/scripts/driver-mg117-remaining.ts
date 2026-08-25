@@ -82,7 +82,9 @@ async function currentUrl(driver: WebdriverIO.Browser): Promise<string> {
 async function hasSearchField(driver: WebdriverIO.Browser): Promise<boolean> {
 	return (await driver.execute(() => {
 		const visible = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
-		return Array.from(document.querySelectorAll('input')).filter(visible).some(el => !(el as HTMLInputElement).readOnly);
+		return Array.from(document.querySelectorAll('input'))
+			.filter(visible)
+			.some(el => !(el as HTMLInputElement).readOnly);
 	})) as boolean;
 }
 
@@ -96,9 +98,12 @@ async function hasSearchField(driver: WebdriverIO.Browser): Promise<boolean> {
  * offset and the scale error.
  */
 async function tapNative(driver: WebdriverIO.Browser, webview: string, locate: () => string): Promise<boolean> {
-	const rect = (await driver
-		.execute(locate())
-		.catch(() => null)) as { x: number; y: number; vw: number; vh: number } | null;
+	const rect = (await driver.execute(locate()).catch(() => null)) as {
+		x: number;
+		y: number;
+		vw: number;
+		vh: number;
+	} | null;
 	if (!rect) return false;
 
 	await driver.switchContext('NATIVE_APP');
@@ -133,7 +138,9 @@ async function tapNative(driver: WebdriverIO.Browser, webview: string, locate: (
 		const y = Math.round(originY + rect.y * (spanH / rect.vh));
 		await driver.performActions([
 			{
-				type: 'pointer', id: 'finger1', parameters: { pointerType: 'touch' },
+				type: 'pointer',
+				id: 'finger1',
+				parameters: { pointerType: 'touch' },
 				actions: [
 					{ type: 'pointerMove', duration: 0, x, y },
 					{ type: 'pointerDown', button: 0 },
@@ -190,13 +197,17 @@ async function navigateToSearch(driver: WebdriverIO.Browser, webview: string): P
 		if (url.includes('TravelInProgress')) {
 			const rows = (await driver.execute(() => {
 				const visible = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
-				return Array.from(document.querySelectorAll('input')).filter(visible).filter(el => (el as HTMLInputElement).readOnly).length;
+				return Array.from(document.querySelectorAll('input'))
+					.filter(visible)
+					.filter(el => (el as HTMLInputElement).readOnly).length;
 			})) as number;
 
 			if (rows > 0) {
 				await driver.execute(() => {
 					const visible = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
-					const ro = Array.from(document.querySelectorAll('input')).filter(visible).filter(el => (el as HTMLInputElement).readOnly) as HTMLInputElement[];
+					const ro = Array.from(document.querySelectorAll('input'))
+						.filter(visible)
+						.filter(el => (el as HTMLInputElement).readOnly) as HTMLInputElement[];
 					const t = ro[ro.length - 1];
 					if (!t) return;
 					t.focus();
@@ -214,7 +225,9 @@ async function navigateToSearch(driver: WebdriverIO.Browser, webview: string): P
 			});
 			await driver.pause(1400);
 			await driver.execute(() => {
-				const nodes = Array.from(document.querySelectorAll('app-confirm-modal button.btn.primary')) as HTMLElement[];
+				const nodes = Array.from(
+					document.querySelectorAll('app-confirm-modal button.btn.primary')
+				) as HTMLElement[];
 				const el = nodes.find(n => n.offsetParent !== null);
 				el?.click();
 			});
@@ -227,7 +240,9 @@ async function navigateToSearch(driver: WebdriverIO.Browser, webview: string): P
 async function setValue(driver: WebdriverIO.Browser, value: string): Promise<void> {
 	await driver.execute((v: string) => {
 		const visible = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
-		const t = Array.from(document.querySelectorAll('input')).filter(visible).find(el => !(el as HTMLInputElement).readOnly) as HTMLInputElement | undefined;
+		const t = Array.from(document.querySelectorAll('input'))
+			.filter(visible)
+			.find(el => !(el as HTMLInputElement).readOnly) as HTMLInputElement | undefined;
 		if (!t) return;
 		const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
 		setter?.call(t, v);
@@ -237,7 +252,10 @@ async function setValue(driver: WebdriverIO.Browser, value: string): Promise<voi
 }
 
 /** Types a term and returns the last autocomplete call with its parsed body. */
-async function search(driver: WebdriverIO.Browser, term: string): Promise<{ url: string; predictions: Prediction[] } | null> {
+async function search(
+	driver: WebdriverIO.Browser,
+	term: string
+): Promise<{ url: string; predictions: Prediction[] } | null> {
 	await clearWebViewNetworkCapture(driver);
 	await setValue(driver, '');
 	await driver.pause(700);
@@ -305,7 +323,9 @@ async function run(): Promise<void> {
 			const ui = (await driver.execute(() => {
 				const visible = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
 				return {
-					items: Array.from(document.querySelectorAll('ion-item.prediction-item, [class*="prediction-item"]')).filter(visible).length,
+					items: Array.from(
+						document.querySelectorAll('ion-item.prediction-item, [class*="prediction-item"]')
+					).filter(visible).length,
 					spinner: Array.from(document.querySelectorAll('ion-spinner')).some(visible)
 				};
 			})) as { items: number; spinner: boolean };
@@ -327,7 +347,9 @@ async function run(): Promise<void> {
 		} else {
 			const tokenBefore = param(caza.url, 'sessionToken');
 			const target = caza.predictions.find(p => !p.placeId && p.airport);
-			log(`    predicciones: ${caza.predictions.length} · sin placeId: ${caza.predictions.filter(p => !p.placeId).length}`);
+			log(
+				`    predicciones: ${caza.predictions.length} · sin placeId: ${caza.predictions.filter(p => !p.placeId).length}`
+			);
 			log(`    token antes de seleccionar: ${tokenBefore}`);
 
 			if (!target) {
@@ -337,7 +359,9 @@ async function run(): Promise<void> {
 				await shot(driver, 'TM-660', 'lista-predicciones');
 
 				await clearWebViewNetworkCapture(driver);
-				const tapped = await tapNative(driver, webview, () => rectOfPredictionContaining(target.mainText.slice(0, 10)));
+				const tapped = await tapNative(driver, webview, () =>
+					rectOfPredictionContaining(target.mainText.slice(0, 10))
+				);
 				await driver.pause(3500);
 
 				const afterCapture = await readWebViewNetworkCapture(driver);
@@ -356,7 +380,9 @@ async function run(): Promise<void> {
 
 				record('TM-660', lastGet && resolvedByName ? 'PASSED' : lastGet ? 'REVISAR' : 'NO EJERCIDO', [
 					`tap nativo: ${tapped}`,
-					lastGet ? `getPlace llamado: ${String(lastGet.url).split('?')[1]?.slice(0, 90)}` : 'no se llamó a getPlace',
+					lastGet
+						? `getPlace llamado: ${String(lastGet.url).split('?')[1]?.slice(0, 90)}`
+						: 'no se llamó a getPlace',
 					`resuelto por nombre: ${resolvedByName} · por placeId: ${resolvedById}`,
 					'una predicción sin placeId debe resolverse por nombre (address=)'
 				]);
@@ -370,7 +396,9 @@ async function run(): Promise<void> {
 				for (let i = 0; i < 12; i++) {
 					rowState = (await driver.execute(() => {
 						const visible = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
-						const ro = Array.from(document.querySelectorAll('input')).filter(visible).filter(el => (el as HTMLInputElement).readOnly) as HTMLInputElement[];
+						const ro = Array.from(document.querySelectorAll('input'))
+							.filter(visible)
+							.filter(el => (el as HTMLInputElement).readOnly) as HTMLInputElement[];
 						return { rows: ro.length, values: ro.map(el => String(el.value ?? '')) };
 					})) as { rows: number; values: string[] };
 					loaded = rowState.values.some(v => v.toLowerCase().includes(needle));
@@ -435,7 +463,9 @@ async function run(): Promise<void> {
 						for (let i = 0; i < 12; i++) {
 							rows2 = (await driver.execute(() => {
 								const visible = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
-								const ro = Array.from(document.querySelectorAll('input')).filter(visible).filter(el => (el as HTMLInputElement).readOnly) as HTMLInputElement[];
+								const ro = Array.from(document.querySelectorAll('input'))
+									.filter(visible)
+									.filter(el => (el as HTMLInputElement).readOnly) as HTMLInputElement[];
 								return { rows: ro.length, values: ro.map(el => String(el.value ?? '')) };
 							})) as { rows: number; values: string[] };
 							ok2 = rows2.values.some(v => v.toLowerCase().includes(need2));
@@ -479,7 +509,9 @@ async function run(): Promise<void> {
 						rotated ? 'el token rotó tras la selección' : 'el token no cambió'
 					]);
 				} else {
-					record('TM-663', 'PENDIENTE', ['el buscador se cerró tras seleccionar; reabrir para medir el token siguiente']);
+					record('TM-663', 'PENDIENTE', [
+						'el buscador se cerró tras seleccionar; reabrir para medir el token siguiente'
+					]);
 				}
 			}
 		}
@@ -496,8 +528,11 @@ async function run(): Promise<void> {
 		let moved = false;
 		try {
 			await driver.switchContext('NATIVE_APP');
-			await (driver as unknown as { setGeoLocation: (l: { latitude: number; longitude: number; altitude: number }) => Promise<unknown> })
-				.setGeoLocation({ latitude: -32.8895, longitude: -68.8458, altitude: 15 });
+			await (
+				driver as unknown as {
+					setGeoLocation: (l: { latitude: number; longitude: number; altitude: number }) => Promise<unknown>;
+				}
+			).setGeoLocation({ latitude: -32.8895, longitude: -68.8458, altitude: 15 });
 			moved = true;
 		} catch {
 			moved = false;
@@ -518,21 +553,32 @@ async function run(): Promise<void> {
 			const sigA = fromHere ? signature(fromHere.predictions.filter(p => p.source === 'AIRPORT')) : '';
 			const sigB = fromMendoza ? signature(fromMendoza.predictions.filter(p => p.source === 'AIRPORT')) : '';
 			const coordsA = fromHere ? `${param(fromHere.url, 'latitude')},${param(fromHere.url, 'longitude')}` : '-';
-			const coordsB = fromMendoza ? `${param(fromMendoza.url, 'latitude')},${param(fromMendoza.url, 'longitude')}` : '-';
+			const coordsB = fromMendoza
+				? `${param(fromMendoza.url, 'latitude')},${param(fromMendoza.url, 'longitude')}`
+				: '-';
 
 			record('TM-661', sigA && sigB ? (sigA === sigB ? 'PASSED' : 'REVISAR') : 'NO EJERCIDO', [
 				`coords enviadas #1: ${coordsA}`,
 				`coords enviadas #2: ${coordsB}`,
 				`aeropuertos #1: ${sigA || '(ninguno)'}`,
 				`aeropuertos #2: ${sigB || '(ninguno)'}`,
-				sigA === sigB ? 'la pata de aeropuertos no varía con la ubicación' : 'la respuesta difiere entre ubicaciones'
+				sigA === sigB
+					? 'la pata de aeropuertos no varía con la ubicación'
+					: 'la respuesta difiere entre ubicaciones'
 			]);
 
 			// Devolver el GPS a Buenos Aires para no dejar el dispositivo desplazado.
 			try {
 				await driver.switchContext('NATIVE_APP');
-				await (driver as unknown as { setGeoLocation: (l: { latitude: number; longitude: number; altitude: number }) => Promise<unknown> })
-					.setGeoLocation({ latitude: -34.6001, longitude: -58.3721, altitude: 15 });
+				await (
+					driver as unknown as {
+						setGeoLocation: (l: {
+							latitude: number;
+							longitude: number;
+							altitude: number;
+						}) => Promise<unknown>;
+					}
+				).setGeoLocation({ latitude: -34.6001, longitude: -58.3721, altitude: 15 });
 			} catch {
 				log('    aviso: no se pudo restaurar el GPS a Buenos Aires');
 			} finally {

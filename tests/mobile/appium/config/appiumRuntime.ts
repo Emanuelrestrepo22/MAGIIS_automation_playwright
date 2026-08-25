@@ -44,22 +44,22 @@ export type MobileEnvironment = 'test' | 'uat' | 'prod' | 'savio';
 // Confirmados en: emulator-5554 (Pixel_7) y R92XB0B8F3J (Samsung Galaxy A05)
 const APP_PACKAGES: Record<MobileEnvironment, Partial<Record<MobileActor, string>>> = {
 	test: {
-		driver:    'com.magiis.app.test.driver',
-		passenger: 'com.magiis.app.test.passenger',
+		driver: 'com.magiis.app.test.driver',
+		passenger: 'com.magiis.app.test.passenger'
 	},
 	uat: {
-		driver:    'com.magiis.app.uat.driver',
-		passenger: 'com.magiis.app.uat.passenger',
+		driver: 'com.magiis.app.uat.driver',
+		passenger: 'com.magiis.app.uat.passenger'
 	},
 	prod: {
-		driver:    'com.magiis.app.driver',
-		passenger: 'com.magiis.app.passenger',
+		driver: 'com.magiis.app.driver',
+		passenger: 'com.magiis.app.passenger'
 	},
 	// Ambiente savio: solo passenger (white-label / cliente específico)
 	// Confirmado en Samsung Galaxy A05 (R92XB0B8F3J)
 	savio: {
-		passenger: 'com.magiis.app.savio.passenger',
-	},
+		passenger: 'com.magiis.app.savio.passenger'
+	}
 };
 
 // Activity principal de todas las apps MAGIIS (relativa al package)
@@ -144,29 +144,20 @@ function resolveEnvironment(): MobileEnvironment {
 	// corrida verde contra el ambiente equivocado, indistinguible de evidencia buena salvo que
 	// alguien mirara el paquete a mano. Mismo criterio que `scripts/_shared/resolveDriverTarget.ts`,
 	// que ya fallaba; tener dos políticas distintas para la misma decisión era la fuga.
-	throw new Error(
-		`ENV="${readOptionalEnv('ENV')}" no es un ambiente válido. Usá uno de: test | uat | prod | savio.`,
-	);
+	throw new Error(`ENV="${readOptionalEnv('ENV')}" no es un ambiente válido. Usá uno de: test | uat | prod | savio.`);
 }
 
 // ─── Config builder ───────────────────────────────────────────────────────────
 
-function buildActorConfig(
-	actor: MobileActor,
-	appPathEnvVar: string,
-	appPackageEnvVar: string,
-): MobileActorConfig {
+function buildActorConfig(actor: MobileActor, appPathEnvVar: string, appPackageEnvVar: string): MobileActorConfig {
 	const appiumServerUrl = readRequiredEnv('APPIUM_SERVER_URL');
-	const environment     = resolveEnvironment();
+	const environment = resolveEnvironment();
 
 	// Si hay APK path en el entorno → modo instalación de APK
 	const appPath = readOptionalEnv(appPathEnvVar);
 
 	// Package: override de env var > package map por ambiente
-	const appPackage =
-		readOptionalEnv(appPackageEnvVar) ??
-		APP_PACKAGES[environment][actor] ??
-		null;
+	const appPackage = readOptionalEnv(appPackageEnvVar) ?? APP_PACKAGES[environment][actor] ?? null;
 
 	// noReset: true por default cuando usamos app instalada (no APK)
 	const usingInstalledApp = appPath === null;
@@ -175,19 +166,19 @@ function buildActorConfig(
 		actor,
 		environment,
 		appiumServerUrl,
-		appiumBasePath:    resolveBasePathFromServerUrl(appiumServerUrl),
+		appiumBasePath: resolveBasePathFromServerUrl(appiumServerUrl),
 		appPath,
 		appPackage,
-		appActivity:       MAGIIS_MAIN_ACTIVITY,
-		deviceName:        readOptionalEnv('ANDROID_DEVICE_NAME')      ?? 'Pixel_7',
-		platformVersion:   readOptionalEnv('ANDROID_PLATFORM_VERSION') ?? '15.0',
+		appActivity: MAGIIS_MAIN_ACTIVITY,
+		deviceName: readOptionalEnv('ANDROID_DEVICE_NAME') ?? 'Pixel_7',
+		platformVersion: readOptionalEnv('ANDROID_PLATFORM_VERSION') ?? '15.0',
 		// Rol primero, genérica como fallback — misma convención que `tests/config/runtime.ts`
 		// (`USER_CARRIER` → `USER`). `.env.test` ya declaraba `ANDROID_DRIVER_UDID`, que hasta
 		// ahora no leía nadie: el código sólo miraba `ANDROID_UDID`.
-		udid:              readOptionalEnv(`ANDROID_${actor.toUpperCase()}_UDID`) ?? readOptionalEnv('ANDROID_UDID'),
+		udid: readOptionalEnv(`ANDROID_${actor.toUpperCase()}_UDID`) ?? readOptionalEnv('ANDROID_UDID'),
 		newCommandTimeout: readOptionalNumberEnv('APPIUM_NEW_COMMAND_TIMEOUT', 120),
-		noReset:           readOptionalBooleanEnv('APPIUM_NO_RESET', usingInstalledApp),
-		fullReset:         readOptionalBooleanEnv('APPIUM_FULL_RESET', false),
+		noReset: readOptionalBooleanEnv('APPIUM_NO_RESET', usingInstalledApp),
+		fullReset: readOptionalBooleanEnv('APPIUM_FULL_RESET', false)
 	};
 }
 
@@ -206,8 +197,8 @@ export function buildAppiumRemoteConnection(config: MobileActorConfig): AppiumRe
 	return {
 		protocol: (appiumUrl.protocol.replace(':', '') as 'http' | 'https') || 'http',
 		hostname: appiumUrl.hostname,
-		port:     Number(appiumUrl.port) || 4723,
-		path:     config.appiumBasePath,
+		port: Number(appiumUrl.port) || 4723,
+		path: config.appiumBasePath
 	};
 }
 
@@ -221,25 +212,25 @@ export function buildAndroidCapabilities(config: MobileActorConfig): Record<stri
 	const useInstalledApp = config.appPath === null && config.appPackage !== null;
 
 	return {
-		platformName:               'Android',
-		'appium:deviceName':        config.deviceName,
-		'appium:platformVersion':   config.platformVersion,
-		'appium:automationName':    'UiAutomator2',
+		platformName: 'Android',
+		'appium:deviceName': config.deviceName,
+		'appium:platformVersion': config.platformVersion,
+		'appium:automationName': 'UiAutomator2',
 		'appium:newCommandTimeout': config.newCommandTimeout,
-		'appium:noReset':           config.noReset,
-		'appium:fullReset':         config.fullReset,
+		'appium:noReset': config.noReset,
+		'appium:fullReset': config.fullReset,
 		...(config.udid ? { 'appium:udid': config.udid } : {}),
 		...(useInstalledApp
 			? {
-				// App instalada: lanzar por package, sin instalar APK
-				'appium:appPackage':  config.appPackage,
-				'appium:appActivity': config.appActivity,
-			}
+					// App instalada: lanzar por package, sin instalar APK
+					'appium:appPackage': config.appPackage,
+					'appium:appActivity': config.appActivity
+				}
 			: {
-				// APK: Appium instala la app antes de lanzar
-				'appium:app': config.appPath,
-				...(config.appPackage  ? { 'appium:appPackage':  config.appPackage }  : {}),
-				...(config.appActivity ? { 'appium:appActivity': config.appActivity } : {}),
-			}),
+					// APK: Appium instala la app antes de lanzar
+					'appium:app': config.appPath,
+					...(config.appPackage ? { 'appium:appPackage': config.appPackage } : {}),
+					...(config.appActivity ? { 'appium:appActivity': config.appActivity } : {})
+				})
 	};
 }

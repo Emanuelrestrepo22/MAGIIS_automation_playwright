@@ -66,6 +66,8 @@ export class CarrierGlobalIntegrationsPage extends UiBase {
 	@step
 	async startLink(): Promise<void> {
 		await expect(this.linkAction).toBeVisible({ timeout: 10_000 });
-		throw new Error('TODO(MG-178 · CFG): vinculación Stripe es OAuth redirect externo — TCs requieren rediseño (no credenciales).');
+		throw new Error(
+			'TODO(MG-178 · CFG): vinculación Stripe es OAuth redirect externo — TCs requieren rediseño (no credenciales).'
+		);
 	}
 }

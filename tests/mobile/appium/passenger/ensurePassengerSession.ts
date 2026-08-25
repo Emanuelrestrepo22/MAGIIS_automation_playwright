@@ -34,7 +34,11 @@ import { PASSENGER_APP_USER, getCurrentUserEnvironment } from '../../../fixtures
 type Driver = Awaited<ReturnType<typeof remote>>;
 
 /** Resultado de intentar asegurar la sesion. Todos los caminos son explicitos a proposito. */
-export type SessionOutcome = { status: 'con-sesion'; detalle: string } | { status: 'recuperada'; detalle: string } | { status: 'sin-credenciales'; detalle: string } | { status: 'fallo'; detalle: string };
+export type SessionOutcome =
+	| { status: 'con-sesion'; detalle: string }
+	| { status: 'recuperada'; detalle: string }
+	| { status: 'sin-credenciales'; detalle: string }
+	| { status: 'fallo'; detalle: string };
 
 /**
  * La app usa dos formas de decir "no hay sesion": la ruta /login y el parametro invalid_token.
@@ -53,7 +57,9 @@ export function isLoginUrl(url: string): boolean {
 export async function closeExpiredModalIfPresent(driver: Driver): Promise<string> {
 	return driver
 		.execute<string, []>(() => {
-			const modal = Array.from(document.querySelectorAll('ion-modal')).find(el => (el.textContent ?? '').includes('Su sesión ha expirado'));
+			const modal = Array.from(document.querySelectorAll('ion-modal')).find(el =>
+				(el.textContent ?? '').includes('Su sesión ha expirado')
+			);
 			if (!modal) return 'sin-modal';
 
 			const buttons = Array.from(document.querySelectorAll('button, ion-button, [role="button"]'));
@@ -105,8 +111,12 @@ export async function ensurePassengerSession(driver: Driver): Promise<SessionOut
 	const relleno = await driver
 		.execute<string, [string, string]>(
 			(loginEmail: string, loginPassword: string): string => {
-				const emailInput = document.querySelector('input[type="email"], input[placeholder="Email"]') as HTMLInputElement | null;
-				const passwordInput = document.querySelector('input[type="password"], input[placeholder="Contraseña"]') as HTMLInputElement | null;
+				const emailInput = document.querySelector(
+					'input[type="email"], input[placeholder="Email"]'
+				) as HTMLInputElement | null;
+				const passwordInput = document.querySelector(
+					'input[type="password"], input[placeholder="Contraseña"]'
+				) as HTMLInputElement | null;
 				if (!emailInput || !passwordInput) return 'sin-campos';
 
 				const setValue = (el: HTMLInputElement, value: string): void => {
@@ -150,5 +160,8 @@ export async function ensurePassengerSession(driver: Driver): Promise<SessionOut
 		}
 	}
 
-	return { status: 'fallo', detalle: `el login se envio pero la app sigue en login tras 25 s (url: ${ultima.slice(-70) || 'sin dato'})` };
+	return {
+		status: 'fallo',
+		detalle: `el login se envio pero la app sigue en login tras 25 s (url: ${ultima.slice(-70) || 'sin dato'})`
+	};
 }

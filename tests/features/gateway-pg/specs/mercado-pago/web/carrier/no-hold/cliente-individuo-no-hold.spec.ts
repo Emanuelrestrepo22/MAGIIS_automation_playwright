@@ -27,13 +27,15 @@ test.describe(`[SMOKE][MP][${env.toUpperCase()}] Alta sin hold · cliente indivi
 	// El fixture KATA (@TestFixture) no define la opción `role` — login explícito en el Step.
 	test.use({ storageState: { cookies: [], origins: [] } });
 
-	test('@smoke @gateway @gateway-pg @mercadopago @carrier @no-hold @happy [MP-NOHOLD-CLIENTE-INDIVIDUO] Alta sin hold con tarjeta APRO → "Buscando chofer"', async ({ page }) => {
+	test('@smoke @gateway @gateway-pg @mercadopago @carrier @no-hold @happy [MP-NOHOLD-CLIENTE-INDIVIDUO] Alta sin hold con tarjeta APRO → "Buscando chofer"', async ({
+		page
+	}) => {
 		await new CarrierHoldSteps({ page }).runHoldScenario(
 			{
 				gateway: 'mercado-pago',
 				client: MP.client, // 'Emanuel mercadopago' (id=10785) — auto-asigna pasajero y origen
 				passenger: MP.client, // la grilla de gestión muestra el nombre del cliente
-				destination: MP.destination, // Reconquista 661 (sin origin: auto del cliente individuo)
+				destination: MP.destination // Reconquista 661 (sin origin: auto del cliente individuo)
 			},
 			{
 				hold: 'off',
@@ -44,8 +46,8 @@ test.describe(`[SMOKE][MP][${env.toUpperCase()}] Alta sin hold · cliente indivi
 				waitForCreation: false,
 				waitForVehicleReady: true,
 				matchDestination: false,
-				expectStatus: 'Buscando chofer',
-			},
+				expectStatus: 'Buscando chofer'
+			}
 		);
 	});
 });

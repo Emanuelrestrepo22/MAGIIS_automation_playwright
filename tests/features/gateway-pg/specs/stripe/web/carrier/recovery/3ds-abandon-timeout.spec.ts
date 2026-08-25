@@ -37,7 +37,7 @@ import {
 	CarrierDashboardPage,
 	CarrierNewTravelPage,
 	CarrierOperationalPreferencesPage,
-	CarrierTravelDetailPage,
+	CarrierTravelDetailPage
 } from '@ui/carrier';
 import { ThreeDsChallengePage } from '@ui/ThreeDsChallengePage';
 import { loginAsDispatcher, STRIPE_TEST_CARDS, TEST_DATA } from '@features/gateway-pg/fixtures/gateway.fixtures';
@@ -63,88 +63,93 @@ test.use({ storageState: undefined });
 const BLOQUEADO_DETALLE_3DS =
 	'BLOQUEADO: cambio de producto FE v1.72.8 — ruta de detalle /travels/{id} eliminada y sin superficie de recuperación 3DS (red flag / "Reintentar autenticación") en travel/detail?mode=1|2|3 (probe 2026-08-07, viaje 68230/3818-W En Conflicto). AC6 no verificable por UI hasta que el producto re-publique la superficie de detalle.';
 
-test.describe('Gateway PG · Carrier · App Pax — Abandono del challenge 3DS (AC6) @gateway @stripe @web @3ds @hold', { annotation: [{ type: 'tms', description: 'MG-155' }] }, () => {
+test.describe(
+	'Gateway PG · Carrier · App Pax — Abandono del challenge 3DS (AC6) @gateway @stripe @web @3ds @hold',
+	{ annotation: [{ type: 'tms', description: 'MG-155' }] },
+	() => {
+		test.beforeEach(async ({ page }) => {
+			await loginAsDispatcher(page);
+		});
 
-	test.beforeEach(async ({ page }) => {
-		await loginAsDispatcher(page);
-	});
+		test.describe('[MG-155] Hold ON + 3DS recuperable (4000 0000 0000 3220) — challenge ABANDONADO → NO_AUTORIZADO recuperable (sin hold huérfano) → reintento recupera', () => {
+			test('al abandonar el challenge 3DS el viaje queda NO_AUTORIZADO recuperable y el reintento lo recupera', async ({
+				page
+			}) => {
+				test.skip(true, BLOQUEADO_DETALLE_3DS);
 
-	test.describe('[MG-155] Hold ON + 3DS recuperable (4000 0000 0000 3220) — challenge ABANDONADO → NO_AUTORIZADO recuperable (sin hold huérfano) → reintento recupera', () => {
-		test('al abandonar el challenge 3DS el viaje queda NO_AUTORIZADO recuperable y el reintento lo recupera', async ({ page }) => {
-			test.skip(true, BLOQUEADO_DETALLE_3DS);
+				const dashboard = new CarrierDashboardPage({ page });
+				const preferences = new CarrierOperationalPreferencesPage({ page });
+				const travel = new CarrierNewTravelPage({ page });
+				const threeDS = new ThreeDsChallengePage({ page });
+				const detail = new CarrierTravelDetailPage({ page });
 
-			const dashboard = new CarrierDashboardPage({ page });
-			const preferences = new CarrierOperationalPreferencesPage({ page });
-			const travel = new CarrierNewTravelPage({ page });
-			const threeDS = new ThreeDsChallengePage({ page });
-			const detail = new CarrierTravelDetailPage({ page });
-
-			await test.step('Precondición: limpiar 3220 previa del pax (idempotencia BL-050)', async () => {
-				await ensureRecoverableCardIdempotence(page, {
-					passenger: TEST_DATA.appPaxPassenger,
-					apiSearchQuery: PASSENGERS.appPax.apiSearchQuery
+				await test.step('Precondición: limpiar 3220 previa del pax (idempotencia BL-050)', async () => {
+					await ensureRecoverableCardIdempotence(page, {
+						passenger: TEST_DATA.appPaxPassenger,
+						apiSearchQuery: PASSENGERS.appPax.apiSearchQuery
+					});
 				});
-			});
 
-			await test.step('Activar hold en preferencias operativas', async () => {
-				await preferences.goto();
-				await preferences.ensureHoldEnabled();
-				await preferences.assertHoldEnabled();
-			});
-
-			await test.step('Ir al formulario de nuevo viaje', async () => {
-				await dashboard.openNewTravel();
-				await travel.ensureLoaded();
-			});
-
-			await test.step('Crear viaje con tarjeta 3DS recuperable (4000 0000 0000 3220)', async () => {
-				await travel.fillMinimum({
-					client: TEST_DATA.appPaxPassenger,
-					passenger: TEST_DATA.appPaxPassenger,
-					origin: TEST_DATA.origin,
-					destination: TEST_DATA.destination,
-					cardLast4: STRIPE_TEST_CARDS.threeDSRequired.slice(-4), // 4000000000003220 (3DS requerido, recuperable)
+				await test.step('Activar hold en preferencias operativas', async () => {
+					await preferences.goto();
+					await preferences.ensureHoldEnabled();
+					await preferences.assertHoldEnabled();
 				});
-			});
 
-			await test.step('Aprobar el challenge de VALIDACIÓN (ventana 1, si aparece) — abandonarlo abortaría el alta', async () => {
-				const validationChallenge = await threeDS.waitForOptionalVisible(8_000);
-				if (validationChallenge) {
-					await threeDS.completeSuccess();
-					await threeDS.waitForHidden();
+				await test.step('Ir al formulario de nuevo viaje', async () => {
+					await dashboard.openNewTravel();
+					await travel.ensureLoaded();
+				});
+
+				await test.step('Crear viaje con tarjeta 3DS recuperable (4000 0000 0000 3220)', async () => {
+					await travel.fillMinimum({
+						client: TEST_DATA.appPaxPassenger,
+						passenger: TEST_DATA.appPaxPassenger,
+						origin: TEST_DATA.origin,
+						destination: TEST_DATA.destination,
+						cardLast4: STRIPE_TEST_CARDS.threeDSRequired.slice(-4) // 4000000000003220 (3DS requerido, recuperable)
+					});
+				});
+
+				await test.step('Aprobar el challenge de VALIDACIÓN (ventana 1, si aparece) — abandonarlo abortaría el alta', async () => {
+					const validationChallenge = await threeDS.waitForOptionalVisible(8_000);
+					if (validationChallenge) {
+						await threeDS.completeSuccess();
+						await threeDS.waitForHidden();
+					}
+				});
+
+				// Listener del POST /travels: tras un challenge SIN RESOLVER el FE no redirige —
+				// el id capturado permite navegar al detalle y asertar el estado real del viaje.
+				const createdRef = await captureCreatedTravelId(page);
+				try {
+					await test.step('Enviar el alta (vehículo + enviar servicio)', async () => {
+						await travel.submit();
+					});
+
+					await test.step('ABANDONAR el challenge 3DS post-envío (Popup A Stripe) sin COMPLETE ni FAIL', async () => {
+						await threeDS.waitForVisible();
+						await threeDS.abandonChallenge();
+					});
+
+					await test.step('Validar viaje NO_AUTORIZADO RECUPERABLE — red flag + reintento visibles, NO "Buscando conductor"', async () => {
+						await gotoTravelDetailAfterPostSubmitChallenge(page, createdRef);
+						await expect(detail.statusBadge()).not.toContainText('Buscando conductor', { timeout: 10_000 });
+						await detail.expectRedFlagVisible();
+						await expect(detail.retryButton()).toBeVisible({ timeout: 10_000 });
+					});
+
+					await test.step('Reintentar 3DS desde el detalle + completar el challenge → viaje recuperado ("Buscando conductor")', async () => {
+						await detail.clickRetry();
+						await threeDS.waitForVisible();
+						await threeDS.completeSuccess();
+						await threeDS.waitForHidden();
+						await detail.expectStatus('Buscando conductor');
+					});
+				} finally {
+					await createdRef.dispose();
 				}
 			});
-
-			// Listener del POST /travels: tras un challenge SIN RESOLVER el FE no redirige —
-			// el id capturado permite navegar al detalle y asertar el estado real del viaje.
-			const createdRef = await captureCreatedTravelId(page);
-			try {
-				await test.step('Enviar el alta (vehículo + enviar servicio)', async () => {
-					await travel.submit();
-				});
-
-				await test.step('ABANDONAR el challenge 3DS post-envío (Popup A Stripe) sin COMPLETE ni FAIL', async () => {
-					await threeDS.waitForVisible();
-					await threeDS.abandonChallenge();
-				});
-
-				await test.step('Validar viaje NO_AUTORIZADO RECUPERABLE — red flag + reintento visibles, NO "Buscando conductor"', async () => {
-					await gotoTravelDetailAfterPostSubmitChallenge(page, createdRef);
-					await expect(detail.statusBadge()).not.toContainText('Buscando conductor', { timeout: 10_000 });
-					await detail.expectRedFlagVisible();
-					await expect(detail.retryButton()).toBeVisible({ timeout: 10_000 });
-				});
-
-				await test.step('Reintentar 3DS desde el detalle + completar el challenge → viaje recuperado ("Buscando conductor")', async () => {
-					await detail.clickRetry();
-					await threeDS.waitForVisible();
-					await threeDS.completeSuccess();
-					await threeDS.waitForHidden();
-					await detail.expectStatus('Buscando conductor');
-				});
-			} finally {
-				await createdRef.dispose();
-			}
 		});
-	});
-});
+	}
+);

@@ -72,7 +72,9 @@ export class TravelManagementPage {
 		// (`runScheduledTripCardEdit`) necesita el ABM de EDICIÓN (`mode=3`), que es el ícono
 		// fa-pencil ("lápiz de edición", mismo botón que `toggleEditButton` publica para NO_AUTH).
 		const editBtn = firstRow
-			.locator('button.action-btn:has(i.fa-pencil), button[title="Editar"], button[aria-description="Editar"], button[title="Edit"]')
+			.locator(
+				'button.action-btn:has(i.fa-pencil), button[title="Editar"], button[aria-description="Editar"], button[title="Edit"]'
+			)
 			.first();
 		if (await editBtn.count()) {
 			await expect(editBtn, 'La fila debe exponer el botón Editar (fa-pencil)').toBeVisible({ timeout: 10_000 });
@@ -82,8 +84,13 @@ export class TravelManagementPage {
 
 		// Último recurso histórico — EXCLUYE explícitamente el botón destructivo (fa-times/Cancelar),
 		// nunca clickear una cancelación como "mejor esfuerzo" de navegación.
-		const actionBtn = firstRow.getByRole('button').filter({ hasNot: this.page.locator('i.fa-times') }).last();
-		await expect(actionBtn, 'La fila debe exponer al menos un botón de acción no-destructivo').toBeVisible({ timeout: 10_000 });
+		const actionBtn = firstRow
+			.getByRole('button')
+			.filter({ hasNot: this.page.locator('i.fa-times') })
+			.last();
+		await expect(actionBtn, 'La fila debe exponer al menos un botón de acción no-destructivo').toBeVisible({
+			timeout: 10_000
+		});
 		await actionBtn.click();
 	}
 
@@ -139,7 +146,10 @@ export class TravelManagementPage {
 	 * patrón que `expectPassengerInEnConflicto`.
 	 */
 	async openPorAsignarTab(): Promise<void> {
-		const tab = this.page.locator('tabset ul li a').filter({ hasText: /asignar/i }).first();
+		const tab = this.page
+			.locator('tabset ul li a')
+			.filter({ hasText: /asignar/i })
+			.first();
 		if (await tab.count()) {
 			await expect(tab).toBeVisible({ timeout: 10_000 });
 			await tab.click();
@@ -203,7 +213,11 @@ export class TravelManagementPage {
 	 * 2026-07-27, con pago exitoso desde la App Driver). Pasar un literal fijo introduce una
 	 * condición de carrera que hace fallar el test por una razón que no es un bug.
 	 */
-	async expectPassengerInPorAsignar(passenger: string, destination?: string, status?: string | RegExp): Promise<void> {
+	async expectPassengerInPorAsignar(
+		passenger: string,
+		destination?: string,
+		status?: string | RegExp
+	): Promise<void> {
 		// La grilla arranca en otra pestaña: sin este click la fila no existe en el DOM.
 		await this.openPorAsignarTab();
 		await this.expectTripRowInCurrentTab({ passenger, destination, status });
@@ -261,7 +275,9 @@ export class TravelManagementPage {
 			travelIdForCarrier != null
 				? this.page
 						.locator('tbody tr')
-						.filter({ has: this.page.locator('td:first-child').filter({ hasText: `${travelIdForCarrier}-W` }) })
+						.filter({
+							has: this.page.locator('td:first-child').filter({ hasText: `${travelIdForCarrier}-W` })
+						})
 						.first()
 				: travelId != null
 					? this.page
@@ -320,7 +336,11 @@ export class TravelManagementPage {
 	 * de un programado depende de si ya se le asignó conductor, y fijar un literal introduce una
 	 * condición de carrera.
 	 */
-	async expectPassengerInProgramados(passenger: string, destination?: string, status?: string | RegExp): Promise<void> {
+	async expectPassengerInProgramados(
+		passenger: string,
+		destination?: string,
+		status?: string | RegExp
+	): Promise<void> {
 		await this.openScheduledTrips();
 		await this.page.waitForSelector('table tbody', { state: 'visible', timeout: 15_000 }).catch(() => {});
 		const row = await this.tripRow(passenger, destination);
@@ -380,7 +400,9 @@ export class TravelManagementPage {
 			travelIdForCarrier != null
 				? this.page
 						.locator('tbody tr')
-						.filter({ has: this.page.locator('td:first-child').filter({ hasText: `${travelIdForCarrier}-W` }) })
+						.filter({
+							has: this.page.locator('td:first-child').filter({ hasText: `${travelIdForCarrier}-W` })
+						})
 						.first()
 				: travelId != null
 					? this.page
@@ -401,7 +423,9 @@ export class TravelManagementPage {
 		// opción no soportada en PW 1.56 → equivalente por atributo (tooltip title/aria-description) con
 		// fallback al ícono `fa-refresh` confirmado en el FE (robusto a versión y locale).
 		const reactivateBtn = (anchoredRow ?? this.page)
-			.locator('button[title="Reactivar Viaje"], button[aria-description="Reactivar Viaje"], button.action-btn-primary:has(i.fa-refresh)')
+			.locator(
+				'button[title="Reactivar Viaje"], button[aria-description="Reactivar Viaje"], button.action-btn-primary:has(i.fa-refresh)'
+			)
 			.first();
 		await expect(reactivateBtn).toBeVisible({ timeout: 10_000 });
 		await reactivateBtn.click();

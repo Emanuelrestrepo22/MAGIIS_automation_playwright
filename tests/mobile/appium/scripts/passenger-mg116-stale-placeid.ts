@@ -122,11 +122,7 @@ async function visibleErrors(driver: WebdriverIO.Browser): Promise<string[]> {
 }
 
 /** Tap nativo mapeando el rect CSS del item al rect NATIVO del WebView. */
-async function tapPredictionNative(
-	driver: WebdriverIO.Browser,
-	webview: string,
-	needle: string
-): Promise<boolean> {
+async function tapPredictionNative(driver: WebdriverIO.Browser, webview: string, needle: string): Promise<boolean> {
 	const script = `
 		return (function () {
 			var needle = ${JSON.stringify(needle)}.toLowerCase();
@@ -137,9 +133,12 @@ async function tapPredictionNative(
 			var r = t.getBoundingClientRect();
 			return { x: r.left + r.width / 2, y: r.top + r.height / 2, vw: window.innerWidth, vh: window.innerHeight };
 		})();`;
-	const rect = (await driver.execute(script).catch(() => null)) as
-		| { x: number; y: number; vw: number; vh: number }
-		| null;
+	const rect = (await driver.execute(script).catch(() => null)) as {
+		x: number;
+		y: number;
+		vw: number;
+		vh: number;
+	} | null;
 	if (!rect) return false;
 
 	await driver.switchContext('NATIVE_APP');
@@ -348,7 +347,8 @@ async function run(): Promise<void> {
 
 				const failedCalls = staleRes.resolutionCalls.filter(c => (c.status ?? 0) >= 400);
 				const noCoords = staleRes.resolutionCalls.some(
-					c => (c.status ?? 0) === 200 && c.bodyPreview && !/latitude|longitude|lat"|lng"/i.test(c.bodyPreview)
+					c =>
+						(c.status ?? 0) === 200 && c.bodyPreview && !/latitude|longitude|lat"|lng"/i.test(c.bodyPreview)
 				);
 
 				line();

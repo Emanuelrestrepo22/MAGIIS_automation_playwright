@@ -11,7 +11,12 @@
 import type { Page } from '@playwright/test';
 import type { TravelIdRef } from '@features/gateway-pg/helpers/travel-cleanup';
 import { expect } from '@playwright/test';
-import { NewTravelPage, OperationalPreferencesPage, TravelManagementPage, travelDetailHrefSelector } from '@pages/carrier';
+import {
+	NewTravelPage,
+	OperationalPreferencesPage,
+	TravelManagementPage,
+	travelDetailHrefSelector
+} from '@pages/carrier';
 import { ThreeDsChallengePage } from '@ui/ThreeDsChallengePage';
 import { captureCreatedTravelId } from '@features/gateway-pg/helpers/travel-cleanup';
 import { cleanupGatewayCardByLast4, extractAuthToken } from '@features/gateway-pg/helpers/card-precondition';
@@ -98,10 +103,9 @@ async function settledOnTravelDetail(page: Page, stabilityMs = 6_000): Promise<b
  * @returns travelId del viaje, con la página YA posicionada en su detalle.
  */
 export async function gotoTravelDetailAfterPostSubmitChallenge(page: Page, createdRef: TravelIdRef): Promise<string> {
-	const urlId = await Promise.race([
-		extractTravelIdFromUrl(page),
-		page.waitForTimeout(8_000).then(() => null)
-	]).catch(() => null);
+	const urlId = await Promise.race([extractTravelIdFromUrl(page), page.waitForTimeout(8_000).then(() => null)]).catch(
+		() => null
+	);
 	if (urlId) return urlId;
 
 	if (createdRef.travelId) {
@@ -180,7 +184,10 @@ export async function expectTravelInEnConflicto(
 	await enConflictoTab.click();
 
 	const row = createdRef.travelIdForCarrier
-		? page.locator('tbody tr').filter({ hasText: `${createdRef.travelIdForCarrier}-W` }).first()
+		? page
+				.locator('tbody tr')
+				.filter({ hasText: `${createdRef.travelIdForCarrier}-W` })
+				.first()
 		: page
 				.locator('tbody tr')
 				.filter({ hasText: opts.passenger.trim().split(/\s+/).slice(-1)[0] })

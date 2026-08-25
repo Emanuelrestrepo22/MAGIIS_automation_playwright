@@ -45,7 +45,9 @@ async function run(): Promise<void> {
 		await harness.ensurePassengerShell();
 
 		// Precondición: tarjeta en wallet.
-		const walletResult = await harness.ensureWalletCard(card).catch((e: unknown) => `err:${e instanceof Error ? e.message : String(e)}`);
+		const walletResult = await harness
+			.ensureWalletCard(card)
+			.catch((e: unknown) => `err:${e instanceof Error ? e.message : String(e)}`);
 		log(`wallet: ${walletResult} (last4 ${card.last4})`);
 
 		const driver = harness.getDriver();
@@ -62,17 +64,52 @@ async function run(): Promise<void> {
 		log('O+D seleccionados, confirmTrip() (Seleccionar Vehículo → travel-info → Confirmar)…');
 
 		// Flujo completo v2.5.17 via el POM.
-		const code = await trip.confirmTrip().catch((e: unknown) => `ERR:${e instanceof Error ? e.message : String(e)}`);
+		const code = await trip
+			.confirmTrip()
+			.catch((e: unknown) => `ERR:${e instanceof Error ? e.message : String(e)}`);
 		log(`confirmTrip → código/resultado: ${code}`);
 		await driver.pause(2500);
 
-		try { mkdirSync('evidence/ebiz', { recursive: true }); await (driver as unknown as { saveScreenshot: (p: string) => Promise<unknown> }).saveScreenshot('evidence/ebiz/newtrip-fullflow-v2517.png'); log('screenshot ok'); } catch { /* noop */ }
+		try {
+			mkdirSync('evidence/ebiz', { recursive: true });
+			await (driver as unknown as { saveScreenshot: (p: string) => Promise<unknown> }).saveScreenshot(
+				'evidence/ebiz/newtrip-fullflow-v2517.png'
+			);
+			log('screenshot ok');
+		} catch {
+			/* noop */
+		}
 
 		const dump = await driver.execute(() => {
-			const isVisible = (el: Element): boolean => { const h = el as HTMLElement; const r = h.getBoundingClientRect(); const s = getComputedStyle(h); return s.display !== 'none' && s.visibility !== 'hidden' && r.width > 0 && r.height > 0; };
-			const pages = Array.from(document.querySelectorAll('ion-router-outlet > *, ion-modal, ion-modal > *')).map(e => `${e.tagName.toLowerCase()}${(e as HTMLElement).offsetParent === null ? '(h)' : ''}`).filter((v, i, a) => a.indexOf(v) === i).slice(0, 15);
-			const btns = (Array.from(document.querySelectorAll('button, ion-button, .btn, [role="button"], ion-item, ion-card')) as HTMLElement[]).filter(isVisible).map(e => ({ tag: e.tagName.toLowerCase(), cls: (e.className || '').toString().slice(0, 55), text: (e.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 45) })).filter(b => b.text || b.cls).slice(0, 35);
-			return { url: location.href, pages, bodyText: (document.body?.innerText || '').replace(/\s+/g, ' ').trim().slice(0, 600), btns };
+			const isVisible = (el: Element): boolean => {
+				const h = el as HTMLElement;
+				const r = h.getBoundingClientRect();
+				const s = getComputedStyle(h);
+				return s.display !== 'none' && s.visibility !== 'hidden' && r.width > 0 && r.height > 0;
+			};
+			const pages = Array.from(document.querySelectorAll('ion-router-outlet > *, ion-modal, ion-modal > *'))
+				.map(e => `${e.tagName.toLowerCase()}${(e as HTMLElement).offsetParent === null ? '(h)' : ''}`)
+				.filter((v, i, a) => a.indexOf(v) === i)
+				.slice(0, 15);
+			const btns = (
+				Array.from(
+					document.querySelectorAll('button, ion-button, .btn, [role="button"], ion-item, ion-card')
+				) as HTMLElement[]
+			)
+				.filter(isVisible)
+				.map(e => ({
+					tag: e.tagName.toLowerCase(),
+					cls: (e.className || '').toString().slice(0, 55),
+					text: (e.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 45)
+				}))
+				.filter(b => b.text || b.cls)
+				.slice(0, 35);
+			return {
+				url: location.href,
+				pages,
+				bodyText: (document.body?.innerText || '').replace(/\s+/g, ' ').trim().slice(0, 600),
+				btns
+			};
 		});
 		log(`PASO VEHÍCULO/PAGO:\n${JSON.stringify(dump, null, 2)}`);
 	} finally {
@@ -80,4 +117,7 @@ async function run(): Promise<void> {
 	}
 }
 
-run().catch((e: unknown) => { console.error(`[fullflow] ${e instanceof Error ? e.message : String(e)}`); process.exit(1); });
+run().catch((e: unknown) => {
+	console.error(`[fullflow] ${e instanceof Error ? e.message : String(e)}`);
+	process.exit(1);
+});

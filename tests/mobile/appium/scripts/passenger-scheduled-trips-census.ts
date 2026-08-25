@@ -75,7 +75,9 @@ async function run(): Promise<void> {
 					tabs: Array.from(document.querySelectorAll('ion-tab-button, ion-segment-button'))
 						.filter(vis)
 						.map(e => ({ text: txt(e).slice(0, 40), tag: e.tagName.toLowerCase() })),
-					tappables: Array.from(document.querySelectorAll('ion-item, ion-button, button, ion-card, ion-label[role], a'))
+					tappables: Array.from(
+						document.querySelectorAll('ion-item, ion-button, button, ion-card, ion-label[role], a')
+					)
 						.filter(vis)
 						.map(e => ({
 							text: txt(e).slice(0, 70),
@@ -104,14 +106,19 @@ async function run(): Promise<void> {
 			log(`    url    : ${map.url}`);
 			log(`    titulo : ${map.title || '(sin ion-title)'}`);
 			if (map.tabs.length) log(`    tabs   : ${map.tabs.map(t => `"${t.text}"`).join(' · ')}`);
-			log(`    inputs : ${map.inputs.length ? map.inputs.map(i => `[${i.placeholder || i.name}]${i.readOnly ? '(ro)' : ''}${i.disabled ? '(dis)' : ''}`).join(' ') : '(ninguno)'}`);
+			log(
+				`    inputs : ${map.inputs.length ? map.inputs.map(i => `[${i.placeholder || i.name}]${i.readOnly ? '(ro)' : ''}${i.disabled ? '(dis)' : ''}`).join(' ') : '(ninguno)'}`
+			);
 			log(`    tocables (primeros 14):`);
 			for (const t of map.tappables.slice(0, 14)) log(`        <${t.tag}> "${t.text}"`);
 			return map;
 		};
 
 		/** Tap de NAVEGACION: tercio izquierdo de la fila, nunca el borde derecho. */
-		const tapNav = async (needle: string, sel = 'ion-item, ion-button, button, ion-card, ion-label, ion-tab-button, a'): Promise<boolean> => {
+		const tapNav = async (
+			needle: string,
+			sel = 'ion-item, ion-button, button, ion-card, ion-label, ion-tab-button, a'
+		): Promise<boolean> => {
 			const box = (await driver
 				.execute(
 					(s: string, q: string) => {
@@ -124,7 +131,12 @@ async function run(): Promise<void> {
 						const b = t.getBoundingClientRect();
 						if (!b.width || !b.height) return null;
 						// Tercio IZQUIERDO: los iconos de accion viven a la derecha.
-						return { x: b.left + b.width / 6, y: b.top + b.height / 2, vw: window.innerWidth, vh: window.innerHeight };
+						return {
+							x: b.left + b.width / 6,
+							y: b.top + b.height / 2,
+							vw: window.innerWidth,
+							vh: window.innerHeight
+						};
 					},
 					sel,
 					needle
@@ -206,8 +218,15 @@ async function run(): Promise<void> {
 	} finally {
 		const dir = path.join(process.cwd(), 'evidence', 'network-capture');
 		await mkdir(dir, { recursive: true }).catch(() => undefined);
-		const file = path.join(dir, `pax-scheduled-trips-census-${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
-		await writeFile(file, JSON.stringify({ env: TARGET.env, appPackage: TARGET.appPackage, steps }, null, 2), 'utf8');
+		const file = path.join(
+			dir,
+			`pax-scheduled-trips-census-${new Date().toISOString().replace(/[:.]/g, '-')}.json`
+		);
+		await writeFile(
+			file,
+			JSON.stringify({ env: TARGET.env, appPackage: TARGET.appPackage, steps }, null, 2),
+			'utf8'
+		);
 		line();
 		log(`censo guardado en ${path.relative(process.cwd(), file)}`);
 		await driver.deleteSession().catch(() => undefined);

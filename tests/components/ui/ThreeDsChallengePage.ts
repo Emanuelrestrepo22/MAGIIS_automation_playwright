@@ -169,7 +169,10 @@ export class ThreeDsChallengePage extends UiBase {
 	 * cierra el modal con Escape + click fuera del overlay (no hay botón de cierre estable).
 	 * @atc MG-155 (área D — abandono/timeout 3DS).
 	 */
-	@atc('MG-155', { severity: 'critical', description: 'Abandonar el challenge 3DS sin COMPLETE/FAIL (cerrar el modal)' })
+	@atc('MG-155', {
+		severity: 'critical',
+		description: 'Abandonar el challenge 3DS sin COMPLETE/FAIL (cerrar el modal)'
+	})
 	async abandonChallenge(): Promise<void> {
 		const challengeFrame = await this.waitForChallengeFrame();
 		const completeButton = challengeFrame.getByRole('button', { name: /^COMPLETE$/i });

@@ -122,7 +122,9 @@ test.describe(`Gateway PG · Quote · Authorize — usuario personal SIN hold [$
 			await test.step('10. Confirmar la cotización (aún NO crea el viaje)', async () => {
 				await quote.confirmQuote();
 				// Debería salir del paso de pago (el form de tarjeta ya no está montado).
-				await expect(page.getByRole('textbox', { name: /Card number|N[uú]mero de tarjeta/i })).toHaveCount(0, { timeout: 30_000 });
+				await expect(page.getByRole('textbox', { name: /Card number|N[uú]mero de tarjeta/i })).toHaveCount(0, {
+					timeout: 30_000
+				});
 			});
 
 			await test.step('11. Confirmar el viaje desde el mail del solicitante → alta como PROGRAMADO', async () => {

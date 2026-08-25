@@ -42,7 +42,10 @@ import { debugLog } from '../../../../../../../helpers';
 async function disableHoldAndSave(preferences: OperationalPreferencesPage): Promise<void> {
 	const page = preferences.getPage();
 	await setHoldViaApi(page, false);
-	expect(await readHoldRaw(page), 'read-back API: enableCreditCardHold debe quedar false tras el POST (campo ausente = fallo)').toBe(false);
+	expect(
+		await readHoldRaw(page),
+		'read-back API: enableCreditCardHold debe quedar false tras el POST (campo ausente = fallo)'
+	).toBe(false);
 }
 
 async function restoreHoldAndSave(page: Page, _preferences: OperationalPreferencesPage): Promise<void> {
@@ -51,9 +54,17 @@ async function restoreHoldAndSave(page: Page, _preferences: OperationalPreferenc
 	// acababa de mutar era tautológico. UN solo GET posterior y los 3 campos de hold se
 	// assertan desde ESE objeto leído del backend — campo ausente (undefined) = fallo.
 	const persisted = await getCarrierParameters(page);
-	expect(persisted.enableCreditCardHold, 'read-back API: enableCreditCardHold debe quedar true tras el POST (campo ausente = fallo)').toBe(true);
-	expect(persisted.ccHoldPreviousHs, 'read-back API: ccHoldPreviousHs debe persistir en 2 (campo ausente = fallo)').toBe(2);
-	expect(persisted.ccHoldCoverage, 'read-back API: ccHoldCoverage debe persistir en 10 (campo ausente = fallo)').toBe(10);
+	expect(
+		persisted.enableCreditCardHold,
+		'read-back API: enableCreditCardHold debe quedar true tras el POST (campo ausente = fallo)'
+	).toBe(true);
+	expect(
+		persisted.ccHoldPreviousHs,
+		'read-back API: ccHoldPreviousHs debe persistir en 2 (campo ausente = fallo)'
+	).toBe(2);
+	expect(persisted.ccHoldCoverage, 'read-back API: ccHoldCoverage debe persistir en 10 (campo ausente = fallo)').toBe(
+		10
+	);
 }
 
 type Hold3dsScenario = {

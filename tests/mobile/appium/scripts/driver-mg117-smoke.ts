@@ -148,8 +148,9 @@ async function describeInputs(driver: WebdriverIO.Browser): Promise<string> {
 		return Array.from(document.querySelectorAll('input, ion-input'))
 			.filter(visible)
 			.map(el => {
-				const inner = ((el as unknown as { shadowRoot?: ShadowRoot | null }).shadowRoot?.querySelector('input') ??
-					null) as HTMLInputElement | null;
+				const inner = ((el as unknown as { shadowRoot?: ShadowRoot | null }).shadowRoot?.querySelector(
+					'input'
+				) ?? null) as HTMLInputElement | null;
 				const target = inner ?? (el as HTMLInputElement);
 				return `<${el.tagName.toLowerCase()} placeholder="${target.placeholder ?? ''}" readonly=${target.readOnly} value="${target.value ?? ''}">`;
 			})
@@ -323,11 +324,7 @@ async function run(): Promise<void> {
 		await mkdir(outDir, { recursive: true });
 		const stamp = new Date().toISOString().replace(/[:.]/g, '-');
 		const file = path.join(outDir, `mg117-smoke-${TERM}-${stamp}.json`);
-		await writeFile(
-			file,
-			JSON.stringify({ term: TERM, url, capture, googleBefore, googleAfter }, null, 2),
-			'utf8'
-		);
+		await writeFile(file, JSON.stringify({ term: TERM, url, capture, googleBefore, googleAfter }, null, 2), 'utf8');
 		log(`\nEvidencia -> ${file}`);
 	} finally {
 		await driver.deleteSession();

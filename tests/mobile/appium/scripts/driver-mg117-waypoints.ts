@@ -188,12 +188,16 @@ async function run(): Promise<void> {
 			return;
 		}
 		if (stops.length < 2) {
-			log('\nSolo hay una parada: para este caso hace falta un viaje con origen, destino y al menos una parada intermedia.');
+			log(
+				'\nSolo hay una parada: para este caso hace falta un viaje con origen, destino y al menos una parada intermedia.'
+			);
 		}
 
 		for (let i = 0; i < stops.length; i++) {
 			const stop = stops[i];
-			log(`\n── Editando parada ${i + 1}/${stops.length} — "${stop.placeholder}" (valor actual: ${stop.value || 'vacío'})`);
+			log(
+				`\n── Editando parada ${i + 1}/${stops.length} — "${stop.placeholder}" (valor actual: ${stop.value || 'vacío'})`
+			);
 
 			if (!(await openRow(driver, i))) {
 				log('   no se pudo abrir el buscador para esta fila');
@@ -234,7 +238,9 @@ async function run(): Promise<void> {
 
 			log(`   coords enviadas: ${sample.latitude ?? '—'}, ${sample.longitude ?? '—'}`);
 			log(`   sessionToken:    ${sample.sessionToken ?? '—'}`);
-			log(`   predicciones:    ${sample.predictionCount}${sample.firstPrediction ? ` (1ª: ${sample.firstPrediction})` : ''}`);
+			log(
+				`   predicciones:    ${sample.predictionCount}${sample.firstPrediction ? ` (1ª: ${sample.firstPrediction})` : ''}`
+			);
 
 			await closeSearch(driver);
 		}

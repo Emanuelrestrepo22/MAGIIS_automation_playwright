@@ -88,7 +88,7 @@ const CARD = {
 	cvv: '123',
 	holder: 'ematrepoquote holdebiz',
 	address: 'san martin 536',
-	addressOption: 'San Martín 536, AAL, Ciudad',
+	addressOption: 'San Martín 536, AAL, Ciudad'
 };
 
 /** Invitado del widget: datos NUEVOS, sin usuario previo en el sistema (ver delta 1 del encabezado). */
@@ -96,7 +96,7 @@ const GUEST = {
 	firstName: 'ema',
 	lastName: 'trepo',
 	email: 'ematrepo@yopmail.com',
-	phone: '+1 (654) 148-54848',
+	phone: '+1 (654) 148-54848'
 };
 
 test('[EXPLORATORIO][eBizCharge] Quote con hold · invitado · viaje programado', async ({ page, context }) => {
@@ -182,7 +182,10 @@ test('[EXPLORATORIO][eBizCharge] Quote con hold · invitado · viaje programado'
 
 	await test.step('6. Oráculo en el portal: el viaje quedó en PROGRAMADOS', async () => {
 		await page.bringToFront();
-		await page.getByRole('banner').getByRole('link', { name: /Gestión de Viajes|Trips Management/i }).click();
+		await page
+			.getByRole('banner')
+			.getByRole('link', { name: /Gestión de Viajes|Trips Management/i })
+			.click();
 		await page.getByRole('link', { name: /Programados/i }).click();
 		// El invitado aparece con el marcador `(inv)` — la evidencia del delta 1 del encabezado.
 		await expect(page.getByRole('cell', { name: /trepo, ema \(inv\)/i })).toBeVisible({ timeout: 15_000 });

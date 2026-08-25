@@ -27,11 +27,7 @@
  */
 
 import { test, expect } from '@TestFixture';
-import {
-	CarrierOperationalPreferencesPage,
-	CarrierTravelDetailPage,
-	CarrierTravelManagementPage
-} from '@ui/carrier';
+import { CarrierOperationalPreferencesPage, CarrierTravelDetailPage, CarrierTravelManagementPage } from '@ui/carrier';
 import { ThreeDsChallengePage } from '@ui/ThreeDsChallengePage';
 import { RecoverySteps } from '@steps/index';
 import { loginAsDispatcher, TEST_DATA } from '@features/gateway-pg/fixtures/gateway.fixtures';

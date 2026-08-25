@@ -19,7 +19,14 @@
  * veredicto lleva el valor MEDIDO, no solo el binario, para que sea auditable.
  */
 
-import { installWebViewNetworkCapture, clearWebViewNetworkCapture, readWebViewNetworkCapture, readWebViewGoogleActivity, installWebViewFaultInjection, clearWebViewFaultInjection } from '../helpers/webViewNetworkCapture';
+import {
+	installWebViewNetworkCapture,
+	clearWebViewNetworkCapture,
+	readWebViewNetworkCapture,
+	readWebViewGoogleActivity,
+	installWebViewFaultInjection,
+	clearWebViewFaultInjection
+} from '../helpers/webViewNetworkCapture';
 
 /** Una superficie es cualquier pantalla de PAX que monte un campo de direccion. */
 export interface AddressSurface {
@@ -78,7 +85,17 @@ function toEpochMs(iso: string | undefined): number | null {
 }
 
 /** Los 9 campos que el contrato del endpoint devuelve, medidos en vivo el 2026-08-12. */
-const CONTRACT_FIELDS = ['placeId', 'mainText', 'secondaryText', 'shortName', 'latitude', 'longitude', 'airport', 'iataCode', 'source'] as const;
+const CONTRACT_FIELDS = [
+	'placeId',
+	'mainText',
+	'secondaryText',
+	'shortName',
+	'latitude',
+	'longitude',
+	'airport',
+	'iataCode',
+	'source'
+] as const;
 
 const AUTOCOMPLETE_PATH = 'places/autocomplete';
 const GOOGLE_HOST_RE = /maps\.googleapis\.com|places\.googleapis\.com/i;
@@ -452,10 +469,15 @@ export class AddressFieldProbe {
 
 		// Ordenar por `startedAt`: la captura empuja la entrada cuando la request TERMINA, asi que
 		// `calls[0]` sin ordenar es la primera en completarse, no la primera en salir.
-		const calls = [...(await this.autocompleteCalls())].sort((a, b) => (toEpochMs(a.startedAt) ?? 0) - (toEpochMs(b.startedAt) ?? 0));
+		const calls = [...(await this.autocompleteCalls())].sort(
+			(a, b) => (toEpochMs(a.startedAt) ?? 0) - (toEpochMs(b.startedAt) ?? 0)
+		);
 		// Solo las requests nacidas DENTRO de la rafaga son atribuibles a estas pulsaciones. Una que
 		// seguia en vuelo cuando el reset limpio la captura arranca antes de `burstStart`.
-		const inBurst = burstStart === null ? calls : calls.filter(c => (toEpochMs(c.startedAt) ?? Number.POSITIVE_INFINITY) >= burstStart);
+		const inBurst =
+			burstStart === null
+				? calls
+				: calls.filter(c => (toEpochMs(c.startedAt) ?? Number.POSITIVE_INFINITY) >= burstStart);
 		const heredadas = calls.length - inBurst.length;
 		const firstAt = inBurst.length ? toEpochMs(inBurst[0].startedAt) : null;
 		const delayMs = stampedAt !== null && firstAt !== null ? firstAt - stampedAt : null;
@@ -598,7 +620,10 @@ export class AddressFieldProbe {
 	 * escribe una calle que ya conoce, y no existe el caso de uso de guardar un aeropuerto como
 	 * direccion favorita. Clavar un unico piso marcaria rojo un comportamiento correcto.
 	 */
-	async checkMinLength(selector: string, opts: { term?: string; maxLen?: number; expectedFloor?: number } = {}): Promise<BehaviorVerdict> {
+	async checkMinLength(
+		selector: string,
+		opts: { term?: string; maxLen?: number; expectedFloor?: number } = {}
+	): Promise<BehaviorVerdict> {
 		const term = opts.term ?? 'libertad';
 		const maxLen = opts.maxLen ?? 6;
 		const expectedFloor = opts.expectedFloor ?? MIN_CHARS;
@@ -618,14 +643,21 @@ export class AddressFieldProbe {
 
 		const rejected = perLength.filter(p => p.calls < 0).map(p => p.length);
 		const firstQuery = perLength.find(p => p.calls > 0)?.length ?? null;
-		const measured = { term, perLength, firstQueryAtLength: firstQuery, lengthsRejectedByField: rejected, expectedFloor };
+		const measured = {
+			term,
+			perLength,
+			firstQueryAtLength: firstQuery,
+			lengthsRejectedByField: rejected,
+			expectedFloor
+		};
 
 		if (rejected.length === perLength.length) {
 			return {
 				behavior: 'B3',
 				title: `minLength ${expectedFloor}`,
 				status: 'SIN_DATOS',
-				verdict: 'El campo no acepto texto en ninguna longitud: no hay piso que medir. Revisar el estado de la pantalla antes de concluir algo del producto.',
+				verdict:
+					'El campo no acepto texto en ninguna longitud: no hay piso que medir. Revisar el estado de la pantalla antes de concluir algo del producto.',
 				measured
 			};
 		}
@@ -711,7 +743,8 @@ export class AddressFieldProbe {
 				behavior: 'B4',
 				title: 'distinctUntilChanged',
 				status: 'SIN_DATOS',
-				verdict: 'La primera consulta no salio, asi que "no repite" no distingue la conducta de un campo inerte.',
+				verdict:
+					'La primera consulta no salio, asi que "no repite" no distingue la conducta de un campo inerte.',
 				measured
 			};
 		}
@@ -720,7 +753,8 @@ export class AddressFieldProbe {
 				behavior: 'B4',
 				title: 'distinctUntilChanged',
 				status: 'SIN_DATOS',
-				verdict: 'El campo no acepto la reescritura del mismo texto, asi que la ausencia de requests no dice nada de la conducta.',
+				verdict:
+					'El campo no acepto la reescritura del mismo texto, asi que la ausencia de requests no dice nada de la conducta.',
 				measured
 			};
 		}
@@ -831,7 +865,9 @@ export class AddressFieldProbe {
 			behavior: 'B5',
 			title: 'Mapeo del DTO (contrato 7.3)',
 			status: 'PASS',
-			verdict: `Los 9 campos del contrato estan presentes en ${rows.length} fila(s). ` + `El AC nombra "isAirport" y el endpoint devuelve "airport"${hasIsAirport ? ' — aca vinieron los dos' : ' (isAirport no viene, como estaba medido)'}.`,
+			verdict:
+				`Los 9 campos del contrato estan presentes en ${rows.length} fila(s). ` +
+				`El AC nombra "isAirport" y el endpoint devuelve "airport"${hasIsAirport ? ' — aca vinieron los dos' : ' (isAirport no viene, como estaba medido)'}.`,
 			measured
 		};
 	}
@@ -862,7 +898,14 @@ export class AddressFieldProbe {
 
 		const tokens = Array.from(new Set(seen.map(s => s.token).filter(Boolean)));
 		const consultasDistintas = new Set(seen.map(s => s.address).filter(Boolean)).size;
-		const measured = { terms, termsRejected: rechazados, calls: seen.length, distinctQueries: consultasDistintas, observed: seen, distinctTokens: tokens };
+		const measured = {
+			terms,
+			termsRejected: rechazados,
+			calls: seen.length,
+			distinctQueries: consultasDistintas,
+			observed: seen,
+			distinctTokens: tokens
+		};
 
 		if (seen.length === 0) {
 			return {
@@ -949,7 +992,8 @@ export class AddressFieldProbe {
 				behavior: 'B7',
 				title,
 				status: 'NO_EJERCIDO',
-				verdict: 'No aparecio ninguna prediccion para seleccionar, asi que la transicion no se ejercio. NO es un defecto: sin seleccion no hay rotacion que medir.',
+				verdict:
+					'No aparecio ninguna prediccion para seleccionar, asi que la transicion no se ejercio. NO es un defecto: sin seleccion no hay rotacion que medir.',
 				measured: { term, tokensBefore: [...new Set(before)], valueBefore }
 			};
 		}
@@ -966,7 +1010,14 @@ export class AddressFieldProbe {
 				title,
 				status: 'SIN_DATOS',
 				verdict: `Se tapeo "${picked}" pero el campo no cambio ("${valueBefore}" -> "${valueAfter}"): la seleccion no llego a concretarse, asi que NO hay rotacion que medir. Limite del harness, NO un defecto del producto.`,
-				measured: { term, picked, tokensBefore: [...new Set(before)], valueBefore, valueAfter, selectionPopulated }
+				measured: {
+					term,
+					picked,
+					tokensBefore: [...new Set(before)],
+					valueBefore,
+					valueAfter,
+					selectionPopulated
+				}
 			};
 		}
 		await this.driver.pause(2600);
@@ -992,7 +1043,15 @@ export class AddressFieldProbe {
 				title,
 				status: 'SIN_DATOS',
 				verdict: `Tras seleccionar "${picked}" el campo no acepto la segunda consulta ("${termAfter}"), asi que no hay token posterior que comparar. Limite del harness, no un defecto.`,
-				measured: { term, termAfter, picked, tokensBefore: [...new Set(before)], valueBefore, valueAfter, selectionPopulated }
+				measured: {
+					term,
+					termAfter,
+					picked,
+					tokensBefore: [...new Set(before)],
+					valueBefore,
+					valueAfter,
+					selectionPopulated
+				}
 			};
 		}
 
@@ -1059,7 +1118,11 @@ export class AddressFieldProbe {
 	 * sino que el CAMPO SIGUE VIVO: que se pueda seguir escribiendo y que una consulta posterior
 	 * vuelva a salir. Un campo que muere ante el primer 5xx obliga al usuario a reiniciar el alta.
 	 */
-	async checkDegradedResponse(selector: string, mode: 'status' | 'timeout' = 'status', term = 'libertad 479'): Promise<BehaviorVerdict> {
+	async checkDegradedResponse(
+		selector: string,
+		mode: 'status' | 'timeout' = 'status',
+		term = 'libertad 479'
+	): Promise<BehaviorVerdict> {
 		const title = `Degradacion ante ${mode === 'status' ? 'un 5xx' : 'un timeout'}`;
 
 		await installWebViewFaultInjection(this.driver, [
@@ -1141,7 +1204,9 @@ export class AddressFieldProbe {
 	async checkOfflineUsable(selector: string, term = 'libertad 479'): Promise<BehaviorVerdict> {
 		const title = 'El campo sigue usable sin conexion';
 
-		await installWebViewFaultInjection(this.driver, [{ id: 'mg116-offline', urlPattern: AUTOCOMPLETE_PATH, mode: 'networkError' }]);
+		await installWebViewFaultInjection(this.driver, [
+			{ id: 'mg116-offline', urlPattern: AUTOCOMPLETE_PATH, mode: 'networkError' }
+		]);
 
 		try {
 			await this.reset(selector);
@@ -1169,7 +1234,8 @@ export class AddressFieldProbe {
 					behavior: 'B9',
 					title,
 					status: 'FAIL',
-					verdict: 'Con la red caida el campo NO acepto texto. El usuario no puede ni siquiera escribir su direccion mientras espera que vuelva la conexion.',
+					verdict:
+						'Con la red caida el campo NO acepto texto. El usuario no puede ni siquiera escribir su direccion mientras espera que vuelva la conexion.',
 					measured
 				};
 			}
@@ -1187,7 +1253,8 @@ export class AddressFieldProbe {
 					behavior: 'B9',
 					title,
 					status: 'FAIL',
-					verdict: 'El campo sigue editable pero no volvio a consultar cuando la red se restablecio: hay que reiniciar el alta para recuperar las predicciones.',
+					verdict:
+						'El campo sigue editable pero no volvio a consultar cuando la red se restablecio: hay que reiniciar el alta para recuperar las predicciones.',
 					measured
 				};
 			}
@@ -1235,7 +1302,8 @@ export class AddressFieldProbe {
 					behavior: b,
 					title: 'no evaluada',
 					status: 'SIN_DATOS' as VerdictStatus,
-					verdict: 'El navegador de la superficie devolvio exito pero sin selector de campo. Es un fallo del harness, NO del producto.'
+					verdict:
+						'El navegador de la superficie devolvio exito pero sin selector de campo. Es un fallo del harness, NO del producto.'
 				}))
 			};
 		}
@@ -1250,7 +1318,8 @@ export class AddressFieldProbe {
 					behavior: b,
 					title: 'no evaluada',
 					status: 'SIN_DATOS' as VerdictStatus,
-					verdict: 'Superficie inalcanzable en esta corrida. NO se reporta como defecto: es limitacion del harness o superficie inexistente en esta version.'
+					verdict:
+						'Superficie inalcanzable en esta corrida. NO se reporta como defecto: es limitacion del harness o superficie inexistente en esta version.'
 				}))
 			};
 		}

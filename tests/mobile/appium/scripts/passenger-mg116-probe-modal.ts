@@ -38,7 +38,9 @@ async function snap(driver: WebdriverIO.Browser, label: string): Promise<Snap> {
 				.map(p => ({ tag: p.tagName.toLowerCase(), cls: p.className })),
 			modals: Array.from(document.querySelectorAll('ion-modal')).filter(vis).length,
 			backdrops: Array.from(document.querySelectorAll('ion-backdrop')).filter(vis).length,
-			buttons: Array.from(document.querySelectorAll('ion-button, button, ion-back-button, ion-icon[role="button"]'))
+			buttons: Array.from(
+				document.querySelectorAll('ion-button, button, ion-back-button, ion-icon[role="button"]')
+			)
 				.filter(vis)
 				.slice(0, 18)
 				.map(b => ({
@@ -51,7 +53,9 @@ async function snap(driver: WebdriverIO.Browser, label: string): Promise<Snap> {
 	log(`\n===== ${label} =====`);
 	log(`url: ${s.url}`);
 	log(`inputs readonly (${s.readonlyInputs.length}): ${s.readonlyInputs.map(i => `"${i.placeholder}"`).join(', ')}`);
-	log(`inputs editables (${s.editableInputs.length}): ${s.editableInputs.map(i => `"${i.placeholder}"="${i.value}"`).join(', ')}`);
+	log(
+		`inputs editables (${s.editableInputs.length}): ${s.editableInputs.map(i => `"${i.placeholder}"="${i.value}"`).join(', ')}`
+	);
 	log(`ion-page visibles: ${s.pages.map(p => `${p.tag}[${p.cls.slice(0, 40)}]`).join(' | ')}`);
 	log(`ion-modal: ${s.modals} · ion-backdrop: ${s.backdrops}`);
 	log(`botones visibles:`);

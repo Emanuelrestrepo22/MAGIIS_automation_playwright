@@ -57,9 +57,12 @@ const ALERT_BTN_RECT = `
 
 /** Mapea un punto del WebView sobre las coordenadas NATIVAS del propio WebView y tapea ahí. */
 async function tapNative(driver: WebdriverIO.Browser, webview: string, script: string): Promise<boolean> {
-	const rect = (await driver.execute(script).catch(() => null)) as
-		| { x: number; y: number; vw: number; vh: number }
-		| null;
+	const rect = (await driver.execute(script).catch(() => null)) as {
+		x: number;
+		y: number;
+		vw: number;
+		vh: number;
+	} | null;
 	if (!rect) return false;
 
 	await driver.switchContext('NATIVE_APP');
@@ -211,11 +214,14 @@ async function run(): Promise<void> {
 		log(`página: ${dump.page}`);
 
 		log(`\n=== TEXTOS EN PANTALLA ===`);
-		for (const t of dump.texts.slice(0, 25)) log(`  top=${String(t.top).padStart(4)}  "${t.text}"   ${t.desc.slice(0, 60)}`);
+		for (const t of dump.texts.slice(0, 25))
+			log(`  top=${String(t.top).padStart(4)}  "${t.text}"   ${t.desc.slice(0, 60)}`);
 
 		log(`\n=== CONTROLES (${dump.controls.length}) ===`);
 		for (const c of dump.controls.slice(0, 45)) {
-			log(`  top=${String(c.top).padStart(4)} left=${String(c.left).padStart(4)} ${c.w}x${c.h}  ${c.desc.slice(0, 70)}`);
+			log(
+				`  top=${String(c.top).padStart(4)} left=${String(c.left).padStart(4)} ${c.w}x${c.h}  ${c.desc.slice(0, 70)}`
+			);
 			if (c.text) log(`        "${c.text}"`);
 		}
 

@@ -42,7 +42,10 @@ const TARGET = resolveDriverTarget('driver');
 const APPIUM_URL = TARGET.appiumUrl;
 const UDID = TARGET.udid;
 const APP_PACKAGE = TARGET.appPackage;
-const ONLY = (process.env.MATRIX_ONLY ?? '').split(',').map(s => s.trim()).filter(Boolean);
+const ONLY = (process.env.MATRIX_ONLY ?? '')
+	.split(',')
+	.map(s => s.trim())
+	.filter(Boolean);
 
 const log = (msg: string): void => console.log(`[matrix] ${msg}`);
 
@@ -215,7 +218,9 @@ async function run(): Promise<void> {
 				results.push(result);
 
 				const flag = result.firstIsAirport && probe.category !== 'iata' ? '  ⚠ AEROPUERTO PRIMERO' : '';
-				log(`"${probe.term}" [${probe.category}] -> ${result.total} filas (✈${result.airports} 📍${result.cache})${flag}`);
+				log(
+					`"${probe.term}" [${probe.category}] -> ${result.total} filas (✈${result.airports} 📍${result.cache})${flag}`
+				);
 				for (const row of result.topThree) log(`      ${row}`);
 			} catch (error) {
 				log(`"${probe.term}" -> ERROR: ${(error as Error).message}`);
@@ -229,7 +234,7 @@ async function run(): Promise<void> {
 		const perdidos = probes.length - results.length;
 		if (results.length === 0) {
 			log(`\nABORTA: fallaron los ${probes.length} terminos. Causa tipica: el buscador no esta abierto.`);
-			log("No se emite resumen: sobre cero datos se leeria como un verde, y no lo es.");
+			log('No se emite resumen: sobre cero datos se leeria como un verde, y no lo es.');
 			throw new Error(`Fallaron los ${probes.length} terminos: no hay datos que resumir.`);
 		}
 		if (perdidos > 0) {

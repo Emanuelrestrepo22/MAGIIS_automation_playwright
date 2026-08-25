@@ -114,7 +114,9 @@ export class ScreenEvidence {
 		const raw = (await this.driver.execute(() => {
 			const vis = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
 			const containers = Array.from(
-				document.querySelectorAll('app-confirm-modal, ion-alert, ion-modal, ion-toast, .alert-wrapper, .toast-wrapper')
+				document.querySelectorAll(
+					'app-confirm-modal, ion-alert, ion-modal, ion-toast, .alert-wrapper, .toast-wrapper'
+				)
 			).filter(vis);
 
 			const out = containers.map(c => ({
@@ -135,7 +137,9 @@ export class ScreenEvidence {
 			// Para contar como bloqueo hace falta una senal de MODALIDAD: un backdrop, o la pareja
 			// confirmar/cancelar junta, que es la forma que tienen los dialogos de esta app.
 			if (out.length === 0) {
-				const backdrop = Array.from(document.querySelectorAll('ion-backdrop, .modal-wrapper, .backdrop')).filter(vis);
+				const backdrop = Array.from(
+					document.querySelectorAll('ion-backdrop, .modal-wrapper, .backdrop')
+				).filter(vis);
 				const confirm = Array.from(document.querySelectorAll('button.btn.primary')).filter(vis);
 				const cancel = Array.from(document.querySelectorAll('button.btn-outlined-red')).filter(vis);
 				const isModal = backdrop.length > 0 || (confirm.length > 0 && cancel.length > 0);
@@ -193,7 +197,9 @@ export class ScreenEvidence {
 				const vis = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
 				const el = Array.from(document.querySelectorAll('button, ion-button, [role="button"]'))
 					.filter(vis)
-					.find(e => (e.textContent ?? '').trim().toLowerCase() === label.toLowerCase()) as HTMLElement | undefined;
+					.find(e => (e.textContent ?? '').trim().toLowerCase() === label.toLowerCase()) as
+					| HTMLElement
+					| undefined;
 				if (!el) return false;
 				el.click();
 				return true;
@@ -225,7 +231,9 @@ export class ScreenEvidence {
 		const tappables = (await this.driver.execute(() => {
 			const vis = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
 			return Array.from(
-				document.querySelectorAll('button, ion-button, ion-item, ion-tab-button, [role="button"], ion-fab-button, a')
+				document.querySelectorAll(
+					'button, ion-button, ion-item, ion-tab-button, [role="button"], ion-fab-button, a'
+				)
 			)
 				.filter(vis)
 				.map(el => {

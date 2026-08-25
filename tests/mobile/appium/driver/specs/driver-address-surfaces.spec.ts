@@ -76,7 +76,7 @@ async function newSession(): Promise<{ driver: Driver; webview: string }> {
 		} as Record<string, unknown>
 	});
 	const ctx = (await driver.getContexts()) as string[];
-	const webview = ctx.find((cc) => String(cc).startsWith('WEBVIEW')) ?? '';
+	const webview = ctx.find(cc => String(cc).startsWith('WEBVIEW')) ?? '';
 	if (!webview) {
 		await driver.deleteSession().catch(() => undefined);
 		throw new Error('Sin contexto WEBVIEW: la app híbrida no expone su DOM.');
@@ -99,11 +99,18 @@ async function tapNative(driver: Driver, webview: string, selector: string, need
 			(s: string, t: string | null) => {
 				const vis = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
 				const all = Array.from(document.querySelectorAll(s)).filter(vis);
-				const el = (t ? all.find((e) => (e.textContent ?? '').toLowerCase().includes(t)) : all[all.length - 1]) as HTMLElement | undefined;
+				const el = (
+					t ? all.find(e => (e.textContent ?? '').toLowerCase().includes(t)) : all[all.length - 1]
+				) as HTMLElement | undefined;
 				if (!el) return null;
 				const r = el.getBoundingClientRect();
 				if (!r.width || !r.height) return null;
-				return { x: r.left + r.width / 2, y: r.top + r.height / 2, vw: window.innerWidth, vh: window.innerHeight };
+				return {
+					x: r.left + r.width / 2,
+					y: r.top + r.height / 2,
+					vw: window.innerWidth,
+					vh: window.innerHeight
+				};
 			},
 			selector,
 			needle ? needle.toLowerCase() : null
@@ -145,7 +152,9 @@ async function tapNative(driver: Driver, webview: string, selector: string, need
 async function editableFields(driver: Driver): Promise<number> {
 	return (await driver.execute((sel: string) => {
 		const vis = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
-		return Array.from(document.querySelectorAll(sel)).filter(vis).filter((e) => !(e as HTMLInputElement).readOnly).length;
+		return Array.from(document.querySelectorAll(sel))
+			.filter(vis)
+			.filter(e => !(e as HTMLInputElement).readOnly).length;
 	}, SEARCH_INPUT)) as number;
 }
 
@@ -199,11 +208,12 @@ test.describe('[MG-117] Guards del buscador de direcciones — App Driver', () =
 			driver = s.driver;
 			REACHED = await reachAddressSearch(s.driver, s.webview);
 			if (!REACHED) {
-				SETUP_ERROR = 'No se alcanzó el buscador de dirección: el dispositivo no está en un viaje en curso con origen definido.';
+				SETUP_ERROR =
+					'No se alcanzó el buscador de dirección: el dispositivo no está en un viaje en curso con origen definido.';
 				return;
 			}
 			const battery = new DriverAddressCaseBattery(s.driver, SEARCH_INPUT);
-			RESULTS = await battery.runAll(async (r) => {
+			RESULTS = await battery.runAll(async r => {
 				// La captura se toma ACÁ, con la pantalla todavía en el estado que produjo el
 				// veredicto. Si se tomaran al final, las 11 imágenes serían el mismo frame.
 				await snap(s.driver, `${r.key}-${r.status}`);
@@ -227,7 +237,7 @@ test.describe('[MG-117] Guards del buscador de direcciones — App Driver', () =
 		const opts = JIRA_KEY.test(key) ? { annotation: [{ type: 'tms', description: key }] } : {};
 		test(`[${key}] ${descripcion}`, opts, async () => {
 			test.skip(Boolean(SETUP_ERROR), SETUP_ERROR ?? '');
-			const r = RESULTS.find((x) => x.key === key);
+			const r = RESULTS.find(x => x.key === key);
 			test.skip(!r, `La batería no produjo resultado para ${key}.`);
 
 			const detalle = `${r!.verdict}${r!.measured ? `\n  medido: ${JSON.stringify(r!.measured)}` : ''}`;
@@ -240,7 +250,7 @@ test.describe('[MG-117] Guards del buscador de direcciones — App Driver', () =
 	// Precondición: si hay más de un buscador abierto, la batería aborta y todo queda en skip.
 	test('[PRECONDICION] Un solo buscador abierto', async () => {
 		test.skip(Boolean(SETUP_ERROR), SETUP_ERROR ?? '');
-		const abort = RESULTS.find((r) => r.key === 'PRECONDICION');
+		const abort = RESULTS.find(r => r.key === 'PRECONDICION');
 		expect(abort, abort ? abort.verdict : 'sin abort').toBeUndefined();
 	});
 

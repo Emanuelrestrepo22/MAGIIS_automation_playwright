@@ -32,34 +32,29 @@
  */
 import { mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import { dirname, basename } from 'node:path';
-import type {
-	FullResult,
-	Reporter,
-	TestCase,
-	TestResult,
-} from '@playwright/test/reporter';
+import type { FullResult, Reporter, TestCase, TestResult } from '@playwright/test/reporter';
 
 // Estados Xray Cloud válidos para import.
 type XrayStatus = 'PASSED' | 'FAILED' | 'ABORTED' | 'TODO';
 
 // Evidencia embebida en el import de Xray Cloud (`evidence[]` por test): screenshot base64.
 interface XrayEvidence {
-	data: string
-	filename: string
-	contentType: string
+	data: string;
+	filename: string;
+	contentType: string;
 }
 
 interface XrayTestResult {
-	testKey: string
-	status: XrayStatus
-	start?: string
-	finish?: string
-	comment?: string
-	evidence?: XrayEvidence[]
+	testKey: string;
+	status: XrayStatus;
+	start?: string;
+	finish?: string;
+	comment?: string;
+	evidence?: XrayEvidence[];
 }
 
 interface ReporterOptions {
-	outputFile?: string
+	outputFile?: string;
 }
 
 // Tipos de annotation que portan la key del Test de Xray (orden = prioridad).
@@ -75,12 +70,17 @@ function clean(text: string): string {
 
 function mapStatus(status: TestResult['status']): XrayStatus {
 	switch (status) {
-		case 'passed': return 'PASSED';
+		case 'passed':
+			return 'PASSED';
 		case 'failed':
-		case 'timedOut': return 'FAILED';
-		case 'interrupted': return 'ABORTED';
-		case 'skipped': return 'TODO';
-		default: return 'FAILED';
+		case 'timedOut':
+			return 'FAILED';
+		case 'interrupted':
+			return 'ABORTED';
+		case 'skipped':
+			return 'TODO';
+		default:
+			return 'FAILED';
 	}
 }
 
@@ -95,7 +95,7 @@ const KEY_DENYLIST = new Set(
 	(process.env.XRAY_KEY_DENYLIST ?? '')
 		.split(',')
 		.map(s => s.trim())
-		.filter(Boolean),
+		.filter(Boolean)
 );
 
 // Emit-all: UNA automatización (un test) puede cubrir VARIOS Test de Xray — un spec
@@ -129,10 +129,11 @@ class XrayReporter implements Reporter {
 		// XRAY_OUTPUT_FILE gana sobre el outputFile fijado en playwright.config.ts:
 		// los scripts :xray por pasarela lo usan para emitir un JSON aislado por run
 		// (evidence/test/xray-results.<gw>.json) sin pisar el output default del env.
-		this.outputFile = process.env.XRAY_OUTPUT_FILE
-			?? options.outputFile
-			?? process.env.XRAY_RESULTS_FILE
-			?? 'evidence/xray-results.json';
+		this.outputFile =
+			process.env.XRAY_OUTPUT_FILE ??
+			options.outputFile ??
+			process.env.XRAY_RESULTS_FILE ??
+			'evidence/xray-results.json';
 	}
 
 	onTestEnd(test: TestCase, result: TestResult): void {
@@ -148,9 +149,10 @@ class XrayReporter implements Reporter {
 		const status = mapStatus(result.status);
 		const start = result.startTime.toISOString();
 		const finish = new Date(result.startTime.getTime() + result.duration).toISOString();
-		const comment = result.status === 'passed'
-			? undefined
-			: clean(result.error?.message ?? `status=${result.status}`).slice(0, 2000);
+		const comment =
+			result.status === 'passed'
+				? undefined
+				: clean(result.error?.message ?? `status=${result.status}`).slice(0, 2000);
 
 		// Evidencia: screenshots (image/png) que Playwright adjunta al test. Con `--screenshot=on`
 		// los PASSED capturan un screenshot final → se embebe base64 en el import y queda anclado
@@ -162,9 +164,11 @@ class XrayReporter implements Reporter {
 				evidence.push({
 					data: readFileSync(att.path).toString('base64'),
 					filename: basename(att.path),
-					contentType: att.contentType,
+					contentType: att.contentType
 				});
-			} catch { /* artefacto ausente (ENOENT en OneDrive) → seguir sin él */ }
+			} catch {
+				/* artefacto ausente (ENOENT en OneDrive) → seguir sin él */
+			}
 			if (evidence.length >= 3) break;
 		}
 
@@ -173,8 +177,12 @@ class XrayReporter implements Reporter {
 			const prev = this.results.get(testKey);
 			if (!prev || SEVERITY[status] > SEVERITY[prev.status]) {
 				this.results.set(testKey, {
-					testKey, status, start, finish, comment,
-					...(evidence.length > 0 ? { evidence } : {}),
+					testKey,
+					status,
+					start,
+					finish,
+					comment,
+					...(evidence.length > 0 ? { evidence } : {})
 				});
 			}
 		}
@@ -186,8 +194,7 @@ class XrayReporter implements Reporter {
 		const payload: Record<string, unknown> = { tests };
 		if (process.env.XRAY_EXECUTION_KEY) {
 			payload.testExecutionKey = process.env.XRAY_EXECUTION_KEY;
-		}
-		else {
+		} else {
 			// Sin ejecución existente: describir una para que el import cree el ATR.
 			const info: Record<string, unknown> = {};
 			if (process.env.XRAY_SUMMARY) info.summary = process.env.XRAY_SUMMARY;
@@ -204,12 +211,12 @@ class XrayReporter implements Reporter {
 			: 'nueva ejecución (info)';
 		console.log(
 			'\n\x1b[36m%s\x1b[0m',
-			`🧾 Xray: ${tests.length} test(s) mapeados → ${this.outputFile} (${target})`,
+			`🧾 Xray: ${tests.length} test(s) mapeados → ${this.outputFile} (${target})`
 		);
 		if (this.unmapped > 0) {
 			console.log(
 				'\x1b[33m%s\x1b[0m',
-				`⚠️  Xray: ${this.unmapped} spec(s) sin key → NO exportados. Añade annotation type:'tms' (o [KEY] en el título).`,
+				`⚠️  Xray: ${this.unmapped} spec(s) sin key → NO exportados. Añade annotation type:'tms' (o [KEY] en el título).`
 			);
 		}
 	}

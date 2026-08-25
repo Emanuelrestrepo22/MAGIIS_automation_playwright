@@ -127,9 +127,12 @@ const BTN_RECT = `
 	})();`;
 
 async function tapNative(driver: WebdriverIO.Browser, webview: string, script: string): Promise<boolean> {
-	const rect = (await driver.execute(script).catch(() => null)) as
-		| { x: number; y: number; vw: number; vh: number }
-		| null;
+	const rect = (await driver.execute(script).catch(() => null)) as {
+		x: number;
+		y: number;
+		vw: number;
+		vh: number;
+	} | null;
 	if (!rect) return false;
 
 	await driver.switchContext('NATIVE_APP');
@@ -228,11 +231,15 @@ async function run(): Promise<void> {
 					...(INJECT_TIMES > 0 ? { times: INJECT_TIMES } : {})
 				}
 			]);
-			log(`INYECCION ACTIVA: ${INJECT_MODE}${INJECT_MODE === 'status' ? ` ${INJECT_STATUS}` : ''} sobre "${INJECT_PATTERN}" (times=${INJECT_TIMES > 0 ? INJECT_TIMES : 'ilimitado'})`);
+			log(
+				`INYECCION ACTIVA: ${INJECT_MODE}${INJECT_MODE === 'status' ? ` ${INJECT_STATUS}` : ''} sobre "${INJECT_PATTERN}" (times=${INJECT_TIMES > 0 ? INJECT_TIMES : 'ilimitado'})`
+			);
 		}
 
 		const before = (await driver.execute(STATE)) as Sample & { present: boolean; visible: boolean };
-		log(`estado ANTES: presente=${before.present} visible=${before.visible} disabled=${before.disabled} iconos=${before.icons} label="${before.label}" pointerEvents=${before.pointerEvents} updatingState=${String(before.updatingState)}`);
+		log(
+			`estado ANTES: presente=${before.present} visible=${before.visible} disabled=${before.disabled} iconos=${before.icons} label="${before.label}" pointerEvents=${before.pointerEvents} updatingState=${String(before.updatingState)}`
+		);
 
 		if (!before.present) {
 			log('ABORTA: no se encontró button#availability en el home.');
@@ -251,10 +258,28 @@ async function run(): Promise<void> {
 			const tMs = Date.now() - t0;
 			if (!s) {
 				log(`  t=${(tMs / 1000).toFixed(1)}s  (el WebView no respondió — señal de hilo saturado)`);
-				samples.push({ tMs, disabled: null, icons: -1, label: 'sin-respuesta', spinners: -1, pointerEvents: '', updatingState: 'sin-respuesta' });
+				samples.push({
+					tMs,
+					disabled: null,
+					icons: -1,
+					label: 'sin-respuesta',
+					spinners: -1,
+					pointerEvents: '',
+					updatingState: 'sin-respuesta'
+				});
 			} else {
-				samples.push({ tMs, disabled: s.disabled, icons: s.icons, label: s.label, spinners: s.spinners, pointerEvents: s.pointerEvents, updatingState: s.updatingState });
-				log(`  t=${(tMs / 1000).toFixed(1).padStart(5)}s  disabled=${String(s.disabled).padEnd(5)} iconos=${s.icons} label="${s.label}" pe=${s.pointerEvents} updatingState=${String(s.updatingState)}`);
+				samples.push({
+					tMs,
+					disabled: s.disabled,
+					icons: s.icons,
+					label: s.label,
+					spinners: s.spinners,
+					pointerEvents: s.pointerEvents,
+					updatingState: s.updatingState
+				});
+				log(
+					`  t=${(tMs / 1000).toFixed(1).padStart(5)}s  disabled=${String(s.disabled).padEnd(5)} iconos=${s.icons} label="${s.label}" pe=${s.pointerEvents} updatingState=${String(s.updatingState)}`
+				);
 				// Liberado = el botón vuelve a estar habilitado Y el ícono reaparece.
 				if (!released && s.disabled === false && s.icons > 0) {
 					released = true;
@@ -279,14 +304,16 @@ async function run(): Promise<void> {
 			log(`  ${String(e.status ?? '-').padStart(3)}  ${String(e.durationMs ?? '-').padStart(6)}ms  ${short}`);
 		}
 		log(`\n=== repeticiones por endpoint (un conteo alto = bucle de reintento) ===`);
-		for (const [k, v] of Object.entries(byUrl).sort((a, b) => b[1] - a[1])) log(`  ${String(v).padStart(3)} x  ${k}`);
+		for (const [k, v] of Object.entries(byUrl).sort((a, b) => b[1] - a[1]))
+			log(`  ${String(v).padStart(3)} x  ${k}`);
 
 		let injectionHits = 0;
 		if (INJECT_PATTERN) {
 			const st = await readWebViewFaultInjectionState(driver).catch(() => null);
 			injectionHits = st?.totalHits ?? 0;
 			log(`\ninyección: ${injectionHits} match(es) del patrón "${INJECT_PATTERN}"`);
-			if (injectionHits === 0) log('  ⚠ el patrón NO matcheó ninguna request — la corrida degradada no ejerció nada');
+			if (injectionHits === 0)
+				log('  ⚠ el patrón NO matcheó ninguna request — la corrida degradada no ejerció nada');
 		}
 
 		const verdict = released
@@ -305,7 +332,15 @@ async function run(): Promise<void> {
 					released,
 					releasedAtMs: releasedAt,
 					watchMs: WATCH_MS,
-					injection: INJECT_PATTERN ? { pattern: INJECT_PATTERN, mode: INJECT_MODE, status: INJECT_STATUS, times: INJECT_TIMES, hits: injectionHits } : null,
+					injection: INJECT_PATTERN
+						? {
+								pattern: INJECT_PATTERN,
+								mode: INJECT_MODE,
+								status: INJECT_STATUS,
+								times: INJECT_TIMES,
+								hits: injectionHits
+							}
+						: null,
 					before,
 					samples,
 					http: entries,

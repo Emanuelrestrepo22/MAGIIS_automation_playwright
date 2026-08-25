@@ -48,7 +48,7 @@ export async function fillAuthorizeNativeCard(page: Page, input: AuthorizeNative
 
 	// ZIP (US) — FRAGILE: probar formcontrolnames candidatos; fallback al textbox posicional del recording.
 	const zipCandidates = page.locator(
-		'input[formcontrolname="creditCardOwnerZipCode"], input[formcontrolname="zipCode"], input[formcontrolname="postalCode"], input[formcontrolname="creditCardOwnerZip"]',
+		'input[formcontrolname="creditCardOwnerZipCode"], input[formcontrolname="zipCode"], input[formcontrolname="postalCode"], input[formcontrolname="creditCardOwnerZip"]'
 	);
 	if (await zipCandidates.count()) {
 		await zipCandidates.first().pressSequentially(input.zip, { delay: 40 });

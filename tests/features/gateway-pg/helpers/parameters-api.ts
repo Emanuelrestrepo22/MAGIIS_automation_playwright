@@ -64,15 +64,24 @@ export async function setHoldViaApi(
 	// cae al throw detallado de abajo (retryAsync no la reintenta porque no lanzamos).
 	const res = await retryAsync(
 		async () => {
-			const r = await page.request.post(`${apiBase(page)}/carriers/${carrierId}/parameters`, { headers, data: params });
+			const r = await page.request.post(`${apiBase(page)}/carriers/${carrierId}/parameters`, {
+				headers,
+				data: params
+			});
 			if (!r.ok() && RETRYABLE_STATUS.has(r.status())) {
-				throw new Error(`[parameters-api] POST parameters ${r.status()} ${r.statusText()} (transitorio) — reintentando`);
+				throw new Error(
+					`[parameters-api] POST parameters ${r.status()} ${r.statusText()} (transitorio) — reintentando`
+				);
 			}
 			return r;
 		},
 		// El 403 en TEST puede persistir varios segundos (bug v1.72.8 preauth-save / ventana de permisos):
 		// 5 intentos con backoff incremental (~1.5+3+4.5+6 ≈ 15s) para tolerar la ventana antes de fallar.
-		{ attempts: 5, delayMs: 1500, onRetry: (attempt, err) => console.warn(`[parameters-api] retry ${attempt}/4: ${err.message}`) },
+		{
+			attempts: 5,
+			delayMs: 1500,
+			onRetry: (attempt, err) => console.warn(`[parameters-api] retry ${attempt}/4: ${err.message}`)
+		}
 	);
 	if (!res.ok()) {
 		const body = await res.text().catch(() => '');

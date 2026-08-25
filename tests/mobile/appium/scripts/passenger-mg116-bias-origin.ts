@@ -191,8 +191,7 @@ async function run(): Promise<void> {
 				const dLat = toRad(bLat - aLat);
 				const dLng = toRad(bLng - aLng);
 				const h =
-					Math.sin(dLat / 2) ** 2 +
-					Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) * Math.sin(dLng / 2) ** 2;
+					Math.sin(dLat / 2) ** 2 + Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) * Math.sin(dLng / 2) ** 2;
 				return 2 * R * Math.asin(Math.sqrt(h));
 			};
 

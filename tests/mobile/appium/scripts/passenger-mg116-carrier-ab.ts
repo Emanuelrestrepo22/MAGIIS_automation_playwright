@@ -95,9 +95,9 @@ async function run(): Promise<void> {
 		await driver.pause(5000);
 
 		const urls = async (): Promise<string[]> =>
-			((await driver.execute(() => performance.getEntriesByType('resource').map(e => e.name))) as string[]).filter(n =>
-				/places\/autocomplete/i.test(n)
-			);
+			(
+				(await driver.execute(() => performance.getEntriesByType('resource').map(e => e.name))) as string[]
+			).filter(n => /places\/autocomplete/i.test(n));
 
 		const preds = async (): Promise<string[]> =>
 			(await driver.execute(() => {
@@ -135,7 +135,12 @@ async function run(): Promise<void> {
 			}
 			await driver.pause(SETTLE_MS);
 			const nuevas = (await urls()).slice(before);
-			const s: Shot = { term, calls: nuevas.length, urls: nuevas.map(x => x.slice(0, 170)), predictions: await preds() };
+			const s: Shot = {
+				term,
+				calls: nuevas.length,
+				urls: nuevas.map(x => x.slice(0, 170)),
+				predictions: await preds()
+			};
 			log(`   "${term}" (${term.length} car.) -> ${s.calls} consulta(s)`);
 			for (const p of s.predictions.slice(0, 3)) log(`        ${p.slice(0, 78)}`);
 			return s;
@@ -159,7 +164,12 @@ async function run(): Promise<void> {
 						t.scrollIntoView({ block: 'center' });
 						const b = t.getBoundingClientRect();
 						if (!b.width || !b.height) return null;
-						return { x: b.left + b.width / 2, y: b.top + b.height / 2, vw: window.innerWidth, vh: window.innerHeight };
+						return {
+							x: b.left + b.width / 2,
+							y: b.top + b.height / 2,
+							vw: window.innerWidth,
+							vh: window.innerHeight
+						};
 					},
 					sel,
 					needle
@@ -176,7 +186,12 @@ async function run(): Promise<void> {
 					id: 'f1',
 					parameters: { pointerType: 'touch' },
 					actions: [
-						{ type: 'pointerMove', duration: 0, x: Math.round(loc.x + box.x * (size.width / box.vw)), y: Math.round(loc.y + box.y * (size.height / box.vh)) },
+						{
+							type: 'pointerMove',
+							duration: 0,
+							x: Math.round(loc.x + box.x * (size.width / box.vw)),
+							y: Math.round(loc.y + box.y * (size.height / box.vh))
+						},
 						{ type: 'pointerDown', button: 0 },
 						{ type: 'pause', duration: 130 },
 						{ type: 'pointerUp', button: 0 }
@@ -229,9 +244,9 @@ async function run(): Promise<void> {
 			await driver
 				.execute(() => {
 					const vis = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
-					const opt = Array.from(document.querySelectorAll('ion-select-popover ion-item, ion-popover ion-item, ion-radio')).filter(vis)[0] as
-						| HTMLElement
-						| undefined;
+					const opt = Array.from(
+						document.querySelectorAll('ion-select-popover ion-item, ion-popover ion-item, ion-radio')
+					).filter(vis)[0] as HTMLElement | undefined;
 					opt?.click();
 				})
 				.catch(() => undefined);
@@ -261,13 +276,19 @@ async function run(): Promise<void> {
 		line();
 		log('VEREDICTO DE LA CELDA');
 		line();
-		const todas = [...(home?.urls ?? []), ...(((out.misDirecciones as { eze?: Shot; ezei?: Shot } | undefined)?.ezei?.urls) ?? [])];
+		const todas = [
+			...(home?.urls ?? []),
+			...((out.misDirecciones as { eze?: Shot; ezei?: Shot } | undefined)?.ezei?.urls ?? [])
+		];
 		const lat = /[?&]latitude=([^&]*)/.exec(todas[0] ?? '')?.[1] ?? '';
 		const lon = /[?&]longitude=([^&]*)/.exec(todas[0] ?? '')?.[1] ?? '';
 		out.sesgoMedido = { lat, lon };
 		log(`   sesgo medido: latitude=${lat || '(sin dato)'}  longitude=${lon || '(sin dato)'}`);
 		const dUser = lat && lon ? distKm(USER_POS.lat, USER_POS.lon, Number(lat), Number(lon)) : null;
-		if (dUser !== null) log(`   distancia del sesgo al usuario (${USER_POS.label}): ${dUser < 1 ? Math.round(dUser * 1000) + ' m' : dUser.toFixed(1) + ' km'}`);
+		if (dUser !== null)
+			log(
+				`   distancia del sesgo al usuario (${USER_POS.label}): ${dUser < 1 ? Math.round(dUser * 1000) + ' m' : dUser.toFixed(1) + ' km'}`
+			);
 
 		if (lat === CARRIER_US.lat && lon === CARRIER_US.lon) {
 			log(`   >>> SIGUE ENVIANDO ${CARRIER_US.label}.`);
@@ -279,7 +300,9 @@ async function run(): Promise<void> {
 			log('       el carrier de EE.UU., ademas el cambio de vinculacion no tomo efecto.');
 			out.veredicto = 'FAIL — usa la direccion del carrier argentino';
 		} else if (dUser !== null && dUser <= USER_TOLERANCE_KM) {
-			log(`   >>> ES LA POSICION DEL DISPOSITIVO (a ${dUser < 1 ? Math.round(dUser * 1000) + ' m' : dUser.toFixed(1) + ' km'} del usuario).`);
+			log(
+				`   >>> ES LA POSICION DEL DISPOSITIVO (a ${dUser < 1 ? Math.round(dUser * 1000) + ' m' : dUser.toFixed(1) + ' km'} del usuario).`
+			);
 			log('       No coincide con ningun CARRIERPLACE conocido. EL FIX ESTA: el sesgo ya sale del');
 			log('       dispositivo y no del carrier, incluso estando vinculado al carrier de EE.UU.');
 			out.veredicto = 'PASS — el sesgo es la posicion del dispositivo';

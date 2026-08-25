@@ -49,7 +49,10 @@ export class GatewaySwitchSteps extends UiBase {
 		const apiLoginId = process.env.AUTHORIZE_API_LOGIN_ID ?? '';
 		const transactionKey = process.env.AUTHORIZE_TRANSACTION_KEY ?? '';
 		if (!apiLoginId || !transactionKey) {
-			throw new Error('Faltan AUTHORIZE_API_LOGIN_ID / AUTHORIZE_TRANSACTION_KEY en .env.test ' + '(ver docs/gateway-pg/authorize/EXTERNAL-BLOCKERS.md §1).');
+			throw new Error(
+				'Faltan AUTHORIZE_API_LOGIN_ID / AUTHORIZE_TRANSACTION_KEY en .env.test ' +
+					'(ver docs/gateway-pg/authorize/EXTERNAL-BLOCKERS.md §1).'
+			);
 		}
 		return { apiLoginId, transactionKey, gatewayId: process.env.AUTHORIZE_GATEWAY_ID || undefined };
 	}
@@ -185,7 +188,10 @@ export class GatewaySwitchSteps extends UiBase {
 			} catch (error) {
 				const message = error instanceof Error ? error.message : String(error);
 				// eslint-disable-next-line no-console -- aviso deliberado de teardown manual
-				console.warn(`⚠️ RESTAURACIÓN MANUAL REQUERIDA: el carrier quedó SIN Stripe activo. ${message} ` + 'Re-vincular Stripe y re-seed de la tarjeta del pax manualmente en la ventana exclusiva.');
+				console.warn(
+					`⚠️ RESTAURACIÓN MANUAL REQUERIDA: el carrier quedó SIN Stripe activo. ${message} ` +
+						'Re-vincular Stripe y re-seed de la tarjeta del pax manualmente en la ventana exclusiva.'
+				);
 			}
 		});
 	}

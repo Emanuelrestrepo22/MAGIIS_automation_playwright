@@ -89,8 +89,14 @@ test.describe('[BL-036][API] Authorize.net sandbox — Edge triggers @gateway @a
 			// decline ('2') o error ('3'), lo que CONTRADICE el título. El contrato de matriz
 			// TS-AUTHORIZE-TC1041 exige aprobación → responseCode '1' + mensaje de aprobación.
 			expect(response.messages.resultCode, describeAuthorizeFailure(response)).toBe('Ok');
-			expect(response.transactionResponse?.responseCode, 'partial auth debe quedar APROBADA (Response Code 1)').toBe('1');
-			expect(response.transactionResponse?.messages?.[0]?.code, 'el mensaje de transacción debe ser el de aprobación (code 1)').toBe('1');
+			expect(
+				response.transactionResponse?.responseCode,
+				'partial auth debe quedar APROBADA (Response Code 1)'
+			).toBe('1');
+			expect(
+				response.transactionResponse?.messages?.[0]?.code,
+				'el mensaje de transacción debe ser el de aprobación (code 1)'
+			).toBe('1');
 
 			// TODO(live): el oráculo COMPLETO de TS-AUTHORIZE-TC1041 ("solo $1.23 autorizado del
 			// total") NO es asertable hoy — la respuesta del sandbox NO trae el monto parcial ni
@@ -123,8 +129,14 @@ test.describe('[BL-036][API] Authorize.net sandbox — Edge triggers @gateway @a
 			// TS-AUTHORIZE-TC1043 es "Approved con balance cero", así que el approved es parte
 			// del oráculo, no un detalle. `toBeTruthy()` aceptaba un decline.
 			expect(response.messages.resultCode, describeAuthorizeFailure(response)).toBe('Ok');
-			expect(response.transactionResponse?.responseCode, 'prepaid balance cero debe quedar APROBADA (Response Code 1)').toBe('1');
-			expect(response.transactionResponse?.messages?.[0]?.code, 'el mensaje de transacción debe ser el de aprobación (code 1)').toBe('1');
+			expect(
+				response.transactionResponse?.responseCode,
+				'prepaid balance cero debe quedar APROBADA (Response Code 1)'
+			).toBe('1');
+			expect(
+				response.transactionResponse?.messages?.[0]?.code,
+				'el mensaje de transacción debe ser el de aprobación (code 1)'
+			).toBe('1');
 
 			// TODO(live): el "flag explícito" de balance cero que pide TS-AUTHORIZE-TC1043 NO es
 			// asertable hoy — la respuesta NO trae el bloque `prePaidCard`

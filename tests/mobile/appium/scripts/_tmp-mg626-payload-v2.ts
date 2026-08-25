@@ -66,12 +66,19 @@ function installHardened(driver: AppiumDriver, storageKey: string): Promise<unkn
 			if (!h) return o;
 			try {
 				if (typeof Headers !== 'undefined' && h instanceof Headers) {
-					h.forEach((v: string, kk: string) => { o[kk] = v; });
+					h.forEach((v: string, kk: string) => {
+						o[kk] = v;
+					});
 					return o;
 				}
-				if (Array.isArray(h)) { for (const p of h) if (Array.isArray(p)) o[String(p[0])] = String(p[1]); return o; }
+				if (Array.isArray(h)) {
+					for (const p of h) if (Array.isArray(p)) o[String(p[0])] = String(p[1]);
+					return o;
+				}
 				for (const kk of Object.keys(h)) o[kk] = String(h[kk]);
-			} catch { /* headers opacos */ }
+			} catch {
+				/* headers opacos */
+			}
 			return o;
 		};
 		const bodyStr = async (b: any): Promise<string> => {
@@ -79,11 +86,16 @@ function installHardened(driver: AppiumDriver, storageKey: string): Promise<unkn
 			if (typeof b === 'string') return b;
 			try {
 				if (typeof URLSearchParams !== 'undefined' && b instanceof URLSearchParams) return b.toString();
-				if (typeof FormData !== 'undefined' && b instanceof FormData) return Array.from((b as any).entries()).map((e: any) => `${e[0]}=${String(e[1])}`).join('&');
+				if (typeof FormData !== 'undefined' && b instanceof FormData)
+					return Array.from((b as any).entries())
+						.map((e: any) => `${e[0]}=${String(e[1])}`)
+						.join('&');
 				if (typeof Request !== 'undefined' && b instanceof Request) return await b.clone().text();
 				if (typeof Blob !== 'undefined' && b instanceof Blob) return await b.text();
 				return JSON.stringify(b);
-			} catch { return String(b); }
+			} catch {
+				return String(b);
+			}
 		};
 
 		// ── fetch (envuelto + blindado contra reasignación) ────────────────────
@@ -98,9 +110,12 @@ function installHardened(driver: AppiumDriver, storageKey: string): Promise<unkn
 				try {
 					const input = args[0];
 					const init = args[1];
-					if (typeof input === 'string' || (typeof URL !== 'undefined' && input instanceof URL)) url = String(input);
+					if (typeof input === 'string' || (typeof URL !== 'undefined' && input instanceof URL))
+						url = String(input);
 					else if (typeof Request !== 'undefined' && input instanceof Request) {
-						url = input.url; method = input.method || method; reqHeaders = hdrs(input.headers);
+						url = input.url;
+						method = input.method || method;
+						reqHeaders = hdrs(input.headers);
 						reqBody = await bodyStr(input);
 					}
 					if (init?.method) method = init.method;
@@ -108,11 +123,32 @@ function installHardened(driver: AppiumDriver, storageKey: string): Promise<unkn
 					if (typeof init?.body !== 'undefined') reqBody = await bodyStr(init.body);
 					const res = await orig.apply(win, args);
 					let resBody = '';
-					try { resBody = await res.clone().text(); } catch { resBody = '<unreadable>'; }
-					entries.push({ kind: 'fetch', method, url, at, status: res.status, reqHeaders, reqBody: cut(reqBody), resBody: cut(resBody) });
+					try {
+						resBody = await res.clone().text();
+					} catch {
+						resBody = '<unreadable>';
+					}
+					entries.push({
+						kind: 'fetch',
+						method,
+						url,
+						at,
+						status: res.status,
+						reqHeaders,
+						reqBody: cut(reqBody),
+						resBody: cut(resBody)
+					});
 					return res;
 				} catch (e: any) {
-					entries.push({ kind: 'fetch', method, url, at, reqHeaders, reqBody: cut(reqBody), error: String(e?.message ?? e) });
+					entries.push({
+						kind: 'fetch',
+						method,
+						url,
+						at,
+						reqHeaders,
+						reqBody: cut(reqBody),
+						error: String(e?.message ?? e)
+					});
 					throw e;
 				}
 			};
@@ -125,7 +161,9 @@ function installHardened(driver: AppiumDriver, storageKey: string): Promise<unkn
 			Object.defineProperty(win, 'fetch', {
 				configurable: true,
 				get: () => current,
-				set: (v: any) => { current = wrap(v); }
+				set: (v: any) => {
+					current = wrap(v);
+				}
 			});
 		} catch {
 			win.fetch = current; // sin accessor: al menos queda el wrapper inicial
@@ -138,11 +176,17 @@ function installHardened(driver: AppiumDriver, storageKey: string): Promise<unkn
 			const oSend = proto.send;
 			const oHdr = proto.setRequestHeader;
 			proto.open = function (m: string, u: string, ...rest: any[]) {
-				(this as any).__mg626 = { method: m || 'GET', url: String(u ?? ''), at: new Date().toISOString(), reqHeaders: {} as Record<string, string> };
+				(this as any).__mg626 = {
+					method: m || 'GET',
+					url: String(u ?? ''),
+					at: new Date().toISOString(),
+					reqHeaders: {} as Record<string, string>
+				};
 				return oOpen.apply(this, [m, u, ...rest]);
 			};
 			proto.setRequestHeader = function (n: string, v: string) {
-				const cx = (this as any).__mg626; if (cx) cx.reqHeaders[n] = v;
+				const cx = (this as any).__mg626;
+				if (cx) cx.reqHeaders[n] = v;
 				return oHdr.call(this, n, v);
 			};
 			proto.send = function (b?: any) {
@@ -152,7 +196,16 @@ function installHardened(driver: AppiumDriver, storageKey: string): Promise<unkn
 				const fin = (): void => {
 					if (!cx || cx.done) return;
 					cx.done = true;
-					entries.push({ kind: 'xhr', method: cx.method, url: cx.url, at: cx.at, status: self.status, reqHeaders: cx.reqHeaders, reqBody: cut(cx.reqBody ?? ''), resBody: cut(String(self.responseText ?? '')) });
+					entries.push({
+						kind: 'xhr',
+						method: cx.method,
+						url: cx.url,
+						at: cx.at,
+						status: self.status,
+						reqHeaders: cx.reqHeaders,
+						reqBody: cut(cx.reqBody ?? ''),
+						resBody: cut(String(self.responseText ?? ''))
+					});
 				};
 				self.addEventListener('loadend', fin);
 				self.addEventListener('error', fin);
@@ -164,7 +217,9 @@ function installHardened(driver: AppiumDriver, storageKey: string): Promise<unkn
 
 		win[k] = {
 			installed: true,
-			clear: () => { entries.length = 0; },
+			clear: () => {
+				entries.length = 0;
+			},
 			snapshot: () => entries.map(e => JSON.parse(JSON.stringify(e))),
 			probe: () => ({
 				fetchIsWrapped: Boolean((win.fetch as any)?.__mg626Wrapped),
@@ -188,11 +243,21 @@ async function toWebView(driver: AppiumDriver): Promise<string | null> {
 }
 
 async function probe(driver: AppiumDriver): Promise<unknown> {
-	return driver.execute((k: string) => (window as never as Record<string, { probe?: () => unknown }>)[k]?.probe?.() ?? 'no-capture', KEY).catch((e: unknown) => `probe-err:${e instanceof Error ? e.message : String(e)}`);
+	return driver
+		.execute(
+			(k: string) => (window as never as Record<string, { probe?: () => unknown }>)[k]?.probe?.() ?? 'no-capture',
+			KEY
+		)
+		.catch((e: unknown) => `probe-err:${e instanceof Error ? e.message : String(e)}`);
 }
 
 async function snapshot(driver: AppiumDriver): Promise<Entry[]> {
-	return (await driver.execute((k: string) => (window as never as Record<string, { snapshot?: () => unknown[] }>)[k]?.snapshot?.() ?? [], KEY).catch(() => [])) as Entry[];
+	return (await driver
+		.execute(
+			(k: string) => (window as never as Record<string, { snapshot?: () => unknown[] }>)[k]?.snapshot?.() ?? [],
+			KEY
+		)
+		.catch(() => [])) as Entry[];
 }
 
 async function run(): Promise<void> {
@@ -207,7 +272,9 @@ async function run(): Promise<void> {
 		await wallet.openWallet();
 		if (await wallet.hasCard(LAST4, 5_000).catch(() => false)) {
 			log(`…${LAST4} ya vinculada → borro para forzar el POST`);
-			await wallet.deleteCard(LAST4).catch((e: unknown) => log(`delete err: ${e instanceof Error ? e.message : String(e)}`));
+			await wallet
+				.deleteCard(LAST4)
+				.catch((e: unknown) => log(`delete err: ${e instanceof Error ? e.message : String(e)}`));
 		}
 
 		await toWebView(driver);
@@ -222,7 +289,9 @@ async function run(): Promise<void> {
 		await toWebView(driver);
 		log(`probe pre-save: ${JSON.stringify(await probe(driver))}`);
 
-		await wallet.saveCard().catch((e: unknown) => log(`saveCard err: ${e instanceof Error ? e.message : String(e)}`));
+		await wallet
+			.saveCard()
+			.catch((e: unknown) => log(`saveCard err: ${e instanceof Error ? e.message : String(e)}`));
 
 		// Muestreo repetido: el POST puede resolver después del dismiss del modal.
 		let entries: Entry[] = [];
@@ -247,7 +316,9 @@ async function run(): Promise<void> {
 		}
 
 		log(`hasCard(${LAST4}) final = ${await wallet.hasCard(LAST4, 12_000).catch(() => false)}`);
-		await (driver as unknown as { saveScreenshot: (p: string) => Promise<unknown> }).saveScreenshot('evidence/mg626/07-v2-wallet-after-add.png').catch(() => {});
+		await (driver as unknown as { saveScreenshot: (p: string) => Promise<unknown> })
+			.saveScreenshot('evidence/mg626/07-v2-wallet-after-add.png')
+			.catch(() => {});
 	} finally {
 		await harness.endSession();
 	}

@@ -32,45 +32,74 @@ async function run(): Promise<void> {
 		}
 
 		// 1) Tap "Mi cuenta" (tab child 4, selector dado por el usuario).
-		const tappedAccount = await driver.execute(() => {
-			const el = document.querySelector('#app-tab-bar > ion-tab-button:nth-child(4)') as HTMLElement | null;
-			if (!el) return false;
-			el.click();
-			return true;
-		}).catch(() => false);
+		const tappedAccount = await driver
+			.execute(() => {
+				const el = document.querySelector('#app-tab-bar > ion-tab-button:nth-child(4)') as HTMLElement | null;
+				if (!el) return false;
+				el.click();
+				return true;
+			})
+			.catch(() => false);
 		log(`tap "Mi cuenta" = ${tappedAccount}`);
 		await driver.pause(1_500);
 
 		// 2) Tap "Mis Direcciones".
-		const tappedAddr = await driver.execute(() => {
-			const els = Array.from(document.querySelectorAll('a, ion-item, button, ion-label, div, span')) as HTMLElement[];
-			const t = els.find(e => /mis\s+direcciones/i.test((e.textContent || '').trim()) && (e.offsetParent !== null));
-			if (!t) return false;
-			t.click();
-			return true;
-		}).catch(() => false);
+		const tappedAddr = await driver
+			.execute(() => {
+				const els = Array.from(
+					document.querySelectorAll('a, ion-item, button, ion-label, div, span')
+				) as HTMLElement[];
+				const t = els.find(
+					e => /mis\s+direcciones/i.test((e.textContent || '').trim()) && e.offsetParent !== null
+				);
+				if (!t) return false;
+				t.click();
+				return true;
+			})
+			.catch(() => false);
 		log(`tap "Mis Direcciones" = ${tappedAddr}`);
 		await driver.pause(2_500);
 
 		// 3) Dump de la página de direcciones.
-		const dump = await driver.execute(() => {
-			const url = location.href;
-			const body = (document.body?.innerText || '').replace(/\s+/g, ' ').trim().slice(0, 1200);
-			const addrItems = Array.from(document.querySelectorAll('ion-item, ion-card, [class*="direccion"], [class*="address"], app-addresses *'))
-				.map(e => (e.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 70))
-				.filter(Boolean)
-				.slice(0, 20);
-			const ctas = Array.from(document.querySelectorAll('button, ion-button, ion-fab-button, [role="button"], ion-icon[name="add"]'))
-				.map(e => `${(e.textContent || '').replace(/\s+/g, ' ').trim()}|${e.getAttribute('aria-label') || ''}|${e.getAttribute('name') || ''}`.replace(/\|+$/, ''))
-				.filter(s => s && s !== '||')
-				.slice(0, 20);
-			const appTag = document.querySelector('app-addresses, app-account, ion-router-outlet > *')?.tagName?.toLowerCase() ?? '';
-			return { url, appTag, addrCount: addrItems.length, addrItems, ctas };
-		}).catch((e: unknown) => ({ err: e instanceof Error ? e.message : String(e) }));
+		const dump = await driver
+			.execute(() => {
+				const url = location.href;
+				const body = (document.body?.innerText || '').replace(/\s+/g, ' ').trim().slice(0, 1200);
+				const addrItems = Array.from(
+					document.querySelectorAll(
+						'ion-item, ion-card, [class*="direccion"], [class*="address"], app-addresses *'
+					)
+				)
+					.map(e => (e.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 70))
+					.filter(Boolean)
+					.slice(0, 20);
+				const ctas = Array.from(
+					document.querySelectorAll(
+						'button, ion-button, ion-fab-button, [role="button"], ion-icon[name="add"]'
+					)
+				)
+					.map(e =>
+						`${(e.textContent || '').replace(/\s+/g, ' ').trim()}|${e.getAttribute('aria-label') || ''}|${e.getAttribute('name') || ''}`.replace(
+							/\|+$/,
+							''
+						)
+					)
+					.filter(s => s && s !== '||')
+					.slice(0, 20);
+				const appTag =
+					document
+						.querySelector('app-addresses, app-account, ion-router-outlet > *')
+						?.tagName?.toLowerCase() ?? '';
+				return { url, appTag, addrCount: addrItems.length, addrItems, ctas };
+			})
+			.catch((e: unknown) => ({ err: e instanceof Error ? e.message : String(e) }));
 		log(`MIS DIRECCIONES (business/9869):\n${JSON.stringify(dump, null, 2)}`);
 	} finally {
 		await harness.endSession();
 	}
 }
 
-run().catch((e: unknown) => { console.error(`[ebiz-address] ${e instanceof Error ? e.message : String(e)}`); process.exit(1); });
+run().catch((e: unknown) => {
+	console.error(`[ebiz-address] ${e instanceof Error ? e.message : String(e)}`);
+	process.exit(1);
+});
