@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Automatización móvil Appium — MAGIIS</title>
+<style>
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; color: #1a2233; font-size: 10.3pt; line-height: 1.5; margin: 0; }
+  h1 { font-size: 20pt; margin: 0 0 4px; color: #0b3d91; }
+  h2 { font-size: 14pt; margin: 24px 0 10px; color: #0b3d91; border-bottom: 2px solid #0b3d91; padding-bottom: 4px; }
+  h3 { font-size: 11.5pt; margin: 16px 0 6px; }
+  h4 { font-size: 10.3pt; margin: 12px 0 4px; color: #334; }
+  p { margin: 6px 0; }
+  .cover { height: 100vh; display: flex; flex-direction: column; justify-content: center;
+    background: linear-gradient(135deg, #0b3d91 0%, #1655c4 100%); color: white; padding: 0 50px; }
+  .cover .kicker { font-size: 10.5pt; letter-spacing: 2px; text-transform: uppercase; opacity: .85; margin-bottom: 10px; }
+  .cover h1 { color: white; font-size: 29pt; margin-bottom: 14px; }
+  .cover .sub { font-size: 12.5pt; opacity: .92; max-width: 500px; }
+  .cover .meta { margin-top: 36px; font-size: 9.3pt; opacity: .8; border-top: 1px solid rgba(255,255,255,.3); padding-top: 14px; }
+  .content { padding: 6px 4px; }
+  .page-break { page-break-before: always; }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0 16px; font-size: 8.9pt; }
+  th, td { border: 1px solid #d5dcea; padding: 5px 7px; text-align: left; vertical-align: top; }
+  th { background: #eef2fb; color: #0b3d91; font-weight: 600; }
+  tr:nth-child(even) td { background: #f8faff; }
+  code, .mono { font-family: 'Cascadia Code', Consolas, monospace; font-size: 8.9pt; background: #eef1f8; padding: 1px 4px; border-radius: 3px; color: #0b3d91; }
+  pre { background: #16213a; color: #e8edf7; padding: 11px 13px; border-radius: 6px;
+    font-family: 'Cascadia Code', Consolas, monospace; font-size: 8.9pt; margin: 8px 0 14px; line-height: 1.5; overflow-x: auto; }
+  pre .cmt { color: #7f95c4; }
+  .callout { border-left: 4px solid #0b3d91; background: #eef2fb; padding: 10px 14px; margin: 10px 0; border-radius: 0 4px 4px 0; }
+  .callout.warn { border-color: #b8860b; background: #fdf6e3; }
+  .callout.ok { border-color: #1a7f37; background: #eaf7ee; }
+  .callout.danger { border-color: #b42318; background: #fdecea; }
+  .callout strong { display: block; margin-bottom: 3px; }
+  .badge { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 8pt; font-weight: 600; white-space: nowrap; }
+  .badge.green { background: #eaf7ee; color: #1a7f37; }
+  .badge.red { background: #fdecea; color: #b42318; }
+  .badge.amber { background: #fdf6e3; color: #8a6100; }
+  .badge.gray { background: #eef1f8; color: #556; }
+  ul, ol { margin: 6px 0; padding-left: 21px; }
+  li { margin: 3px 0; }
+  .kpi-row { display: flex; gap: 11px; margin: 14px 0; }
+  .kpi { flex: 1; background: #eef2fb; border-radius: 6px; padding: 11px 12px; text-align: center; }
+  .kpi .num { font-size: 20pt; font-weight: 700; color: #0b3d91; }
+  .kpi .lbl { font-size: 8.2pt; color: #556; text-transform: uppercase; letter-spacing: .4px; }
+  .toc-item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px dotted #ccd5ea; font-size: 9.8pt; }
+  .footnote { font-size: 8.4pt; color: #778; margin-top: 4px; }
+  .arch { background: #f6f8fd; border: 1px solid #d5dcea; border-radius: 6px; padding: 12px 14px; margin: 10px 0;
+    font-family: 'Cascadia Code', Consolas, monospace; font-size: 8.5pt; line-height: 1.7; white-space: pre; overflow-x: auto; }
+  .step-num { display: inline-flex; align-items: center; justify-content: center; width: 19px; height: 19px;
+    background: #0b3d91; color: white; border-radius: 50%; font-size: 9pt; font-weight: 700; margin-right: 7px; }
+  .fp { font-family: monospace; color: #0b3d91; font-size: 8.7pt; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="kicker">Automatización QA · MAGIIS</div>
+  <h1>Automatización móvil<br>con Appium</h1>
+  <div class="sub">Visión general del desarrollo: qué cubrimos en las apps PAX y Driver, cómo se conecta con el resto de la automatización del proyecto, y cómo sumar cobertura.</div>
+  <div class="meta">
+    Emanuel Restrepo · QA Automation, MAGIIS<br>
+    25 de agosto de 2026 · Repo <span class="mono">magiis-testing</span> · Ambiente de referencia UAT<br>
+    Inventario verificado contra el código, no contra documentación previa
+  </div>
+</div>
+
+<div class="content page-break">
+<h2>Índice</h2>
+<div class="toc-item"><span>1 · Qué cubre esta capa y qué no</span><span>alcance</span></div>
+<div class="toc-item"><span>2 · Inventario completo de cobertura</span><span>por feature, con estado real</span></div>
+<div class="toc-item"><span>3 · Cómo se conecta con el resto del proyecto</span><span>arquitectura</span></div>
+<div class="toc-item"><span>4 · Los dos modelos de trazabilidad</span><span>TM-* y MG-*</span></div>
+<div class="toc-item"><span>5 · Taxonomía de suites</span><span>dónde encaja Appium</span></div>
+<div class="toc-item"><span>6 · Nada de esto corre en CI</span><span>y por qué</span></div>
+<div class="toc-item"><span>7 · Cómo correr y cómo leer el resultado</span><span>operación</span></div>
+<div class="toc-item"><span>8 · Cómo sumar cobertura a un ticket</span><span>para QA automation</span></div>
+<div class="toc-item"><span>9 · Trampas conocidas del repo</span><span>lo que confunde</span></div>
+
+<h2>1 · Qué cubre esta capa y qué no</h2>
+
+<p>Appium automatiza las <strong>dos apps móviles nativas</strong> de MAGIIS: <strong>App PAX</strong> (pasajero) y <strong>App Driver</strong> (conductor). Los portales web —carrier, contractor, owner— no pasan por acá: van con Playwright puro contra el navegador.</p>
+
+<div class="kpi-row">
+  <div class="kpi"><div class="num">37</div><div class="lbl">casos Xray distintos trazados</div></div>
+  <div class="kpi"><div class="num">18</div><div class="lbl">specs automatizadas</div></div>
+  <div class="kpi"><div class="num">2</div><div class="lbl">apps cubiertas</div></div>
+</div>
+
+<div class="callout warn">
+<strong>Es Android exclusivamente</strong>
+Todo corre sobre el driver <span class="mono">uiautomator2</span> contra un teléfono Android físico conectado por USB. <strong>No hay automatización de iOS</strong> — ni XCUITest, ni simulador. Cuando hizo falta evidencia de iOS (campaña MG-116), se resolvió capturando el payload a mano en el dispositivo y analizándolo con un script aparte (<span class="fp">scripts/mg116-analizar-payload-ios.mjs</span>). Es un workaround consciente, no cobertura automatizada.
+</div>
+
+<h3>Dos tipos de archivo que se parecen y no son lo mismo</h3>
+
+<p>Esta distinción es la que más confunde al llegar al repo, y decide si algo cuenta como cobertura:</p>
+
+<table>
+<tr><th>Tipo</th><th>Cómo se reconoce</th><th>¿Es cobertura?</th></tr>
+<tr>
+  <td><strong>Spec</strong></td>
+  <td>Importa <span class="mono">test</span>/<span class="mono">expect</span> de <span class="mono">@playwright/test</span>. La colecta un <span class="mono">playwright.*.config.ts</span>. Produce reporte Allure/Xray.</td>
+  <td><span class="badge green">Sí</span></td>
+</tr>
+<tr>
+  <td><strong>Script de diagnóstico</strong></td>
+  <td>Termina en <span class="mono">run().catch(...)</span>. Se invoca a mano con <span class="mono">node --loader ts-node/esm</span>. Ningún config lo colecta.</td>
+  <td><span class="badge red">No</span></td>
+</tr>
+</table>
+
+<p>Hay <strong>106 scripts de diagnóstico</strong> bajo <span class="fp">tests/mobile/appium/scripts/</span>. Son instrumentos de investigación — sirven para descubrir un selector, medir un comportamiento, reproducir un defecto. Varios <em>citan</em> keys de Xray en comentarios, y eso hace fácil contarlos por error como cobertura. <strong>No lo son</strong>: no emiten veredicto por el runner y no llegan a ningún reporte.</p>
+
+<div class="callout">
+<strong>La excepción que vale conocer</strong>
+El par <span class="mono">prod-smoke-address-native.ts</span> + <span class="mono">prod-smoke-to-allure.mjs</span> sí produce evidencia trazada a Xray, por un camino lateral: el primero mide leyendo el árbol de accesibilidad de Android (en producción la WebView no es inspeccionable), el segundo convierte esa salida a formato Allure con enlaces <span class="mono">tms</span>. Es evidencia real, pero no es una spec.
+</div>
+
+<h2 class="page-break">2 · Inventario completo de cobertura</h2>
+
+<p>Verificado ejecutando el propio Playwright (<span class="mono">--list</span>) y leyendo las anotaciones del código, no la documentación previa. La columna de estado es lo importante: <strong>una spec cuyos tests están en <span class="mono">test.fixme()</span> no aporta cobertura</strong>, aunque exista y esté bien escrita.</p>
+
+<h3>2.1 · Autocomplete de direcciones — la campaña más reciente</h3>
+
+<table>
+<tr><th>Spec</th><th>App</th><th>Casos Xray</th><th>Estado</th></tr>
+<tr>
+  <td><span class="fp">passenger/specs/pax-address-behaviors.spec.ts</span></td>
+  <td>PAX</td>
+  <td>TM-674, 675, 678, 679, 680, 681, 686, 687, 689, 697, 733, 734</td>
+  <td><span class="badge green">activa</span></td>
+</tr>
+<tr>
+  <td><span class="fp">passenger/specs/pax-address-surfaces.spec.ts</span></td>
+  <td>PAX</td>
+  <td>TM-727, 729, 730, 731</td>
+  <td><span class="badge green">activa</span></td>
+</tr>
+<tr>
+  <td><span class="fp">driver/specs/driver-address-surfaces.spec.ts</span></td>
+  <td>Driver</td>
+  <td>TM-650, 651, 654, 655, 656, 657, 662, 663, 664, 665</td>
+  <td><span class="badge green">activa</span></td>
+</tr>
+</table>
+
+<p><strong>26 casos Xray</strong>, todos con anotación <span class="mono">tms</span> real. Es la cobertura mejor instrumentada de la capa: mide comportamiento del cliente (agrupamiento de pulsaciones, piso de caracteres, reutilización y rotación del token de sesión) capturando el tráfico dentro de la WebView.</p>
+
+<div class="callout ok">
+<strong>Último resultado medido — 24 de agosto de 2026, UAT</strong>
+La superficie principal de PAX (Home · Origen) midió sus <strong>9 conductas en verde</strong>. Un solo rojo en toda la corrida: <strong>TM-731</strong>, un defecto de producto confirmado — recargar la WebView en <span class="mono">travel-info</span> deja la app en la página de error de Chrome.
+</div>
+
+<h3>2.2 · Pagos y wallet — cobertura previa, sobre el gateway</h3>
+
+<p>Vive en otro árbol (<span class="fp">tests/features/gateway-pg/specs/</span>) y ningún documento la mencionaba hasta ahora, aunque depende del mismo motor Appium.</p>
+
+<table>
+<tr><th>Spec</th><th>Qué cubre</th><th>Casos Xray</th><th>Estado</th></tr>
+<tr>
+  <td><span class="fp">apppax-wallet-delete</span></td>
+  <td>Borrar una tarjeta 3DS vinculada de la wallet</td>
+  <td>MG-174, MG-495</td>
+  <td><span class="badge green">activa</span></td>
+</tr>
+<tr>
+  <td><span class="fp">apppax-wallet-management</span></td>
+  <td>Gestión de la wallet del pasajero</td>
+  <td>MG-295, MG-302</td>
+  <td><span class="badge green">activa</span></td>
+</tr>
+<tr>
+  <td><span class="fp">viaje-calle/driver-viaje-calle-3ds</span></td>
+  <td>Viaje de calle → cobro a bordo con 3DS → vuelta al home</td>
+  <td>MG-161</td>
+  <td><span class="badge green">activa</span></td>
+</tr>
+<tr>
+  <td><span class="fp">_parametrized/apppax-wallet.parametrized</span></td>
+  <td>Alta de tarjeta multi-pasarela, parametrizado</td>
+  <td>MG-148, MG-288, MG-293, MG-295</td>
+  <td><span class="badge green">activa</span></td>
+</tr>
+<tr>
+  <td><span class="fp">cargo-a-bordo/apppax-cargo-asignado-success</span><br><span class="fp">cargo-a-bordo/apppax-cargo-asignado-3ds</span></td>
+  <td>Cobro a bordo asignado, con y sin 3DS</td>
+  <td>MG-158, MG-161</td>
+  <td><span class="badge amber">parcial</span></td>
+</tr>
+<tr>
+  <td><span class="fp">apppax-personal-3ds</span> · <span class="fp">-no3ds</span><br><span class="fp">apppax-business-3ds</span> · <span class="fp">-no3ds</span><br><span class="fp">apppax-business-hold-3ds</span> · <span class="fp">-no3ds</span></td>
+  <td>Alta de tarjeta y hold, wallet personal y de colaborador</td>
+  <td>MG-148, 152, 153, 158, 161</td>
+  <td><span class="badge red">mayormente fixme</span></td>
+</tr>
+<tr>
+  <td><span class="fp">carrier-driver-happy-path-template</span></td>
+  <td>Happy path carrier web → app Driver, data-driven</td>
+  <td><em>ninguna</em></td>
+  <td><span class="badge red">1 de 3 escenarios</span></td>
+</tr>
+</table>
+
+<div class="callout danger">
+<strong>Seis specs de alta de tarjeta están escritas pero no corren</strong>
+Sus tests están marcados <span class="mono">test.fixme()</span> esperando validación manual en dispositivo. Existen, compilan y tienen trazabilidad declarada — pero <strong>no producen evidencia</strong>. Contarlas como cobertura sería el error más fácil de cometer al leer este repo, y es la razón por la que este inventario lleva columna de estado.
+</div>
+
+<h3>2.3 · Flujos híbridos — web y móvil en una sola prueba</h3>
+
+<table>
+<tr><th>Spec</th><th>Qué cubre</th><th>Estado</th></tr>
+<tr><td><span class="fp">tests/e2e/gateway/flow1-carrier-driver</span></td><td>Alta desde carrier web → el driver completa en la app</td><td><span class="badge amber">activa, sin trazabilidad</span></td></tr>
+<tr><td><span class="fp">tests/e2e/gateway/flow3-contractor-driver</span></td><td>Igual, originado por contractor</td><td><span class="badge amber">activa, sin trazabilidad</span></td></tr>
+<tr><td><span class="fp">tests/e2e/gateway/flow2-passenger-driver</span></td><td>Alta desde el pasajero</td><td><span class="badge red">100 % fixme</span></td></tr>
+<tr><td><span class="fp">tests/e2e/flow1-carrier-driver.e2e.spec.ts</span></td><td>Versión legacy de flow1, aún presente</td><td><span class="badge gray">legacy</span></td></tr>
+</table>
+
+<p class="footnote">Ninguno de los cuatro traza casos de Xray. Sus títulos usan identificadores propios (<span class="mono">FLOW1-TC01</span>) que no son keys de Jira.</p>
+
+<h2 class="page-break">3 · Cómo se conecta con el resto del proyecto</h2>
+
+<p>La clave para entender esta capa: <strong>Appium comparte el runner con todo el resto, pero no el driver.</strong></p>
+
+<div class="arch">Playwright  =  el runner  (test(), expect(), hooks, anotaciones, reporters, tags, retries)
+     |
+     +-- specs web  ---->  driver = Playwright  (page, browser, contexts)
+     |
+     +-- specs móvil -->  driver = WebdriverIO  (remote() -> Appium -> uiautomator2 -> teléfono)</div>
+
+<p>Una spec de Appium importa <span class="mono">test</span> y <span class="mono">expect</span> de Playwright igual que cualquier otra —por eso funcionan las anotaciones, Allure y el reporter de Xray sin nada especial— pero abre la sesión con <span class="mono">remote()</span> de WebdriverIO y <strong>nunca usa las fixtures <span class="mono">page</span> ni <span class="mono">browser</span></strong>. Los configs de dispositivo declaran <span class="mono">storageState</span> vacío justamente para no arrastrar la autenticación de los portales web.</p>
+
+<h3>Tres arquitecturas conviven dentro de la capa móvil</h3>
+
+<table>
+<tr><th>Patrón</th><th>Dónde</th><th>Cómo funciona</th></tr>
+<tr>
+  <td><strong>La spec maneja su sesión</strong></td>
+  <td>autocomplete (MG-116/117)</td>
+  <td>Abre la sesión, corre una batería de mediciones, cada test lee su resultado. Control total, sesión pagada una vez.</td>
+</tr>
+<tr>
+  <td><strong>Screen objects + harness</strong></td>
+  <td>gateway <span class="mono">e2e-mobile</span></td>
+  <td>La spec orquesta objetos de pantalla y recorridos reutilizables (<span class="fp">harness/</span>). Más parecido al patrón POM del resto del repo.</td>
+</tr>
+<tr>
+  <td><strong>Proceso hijo</strong></td>
+  <td><span class="fp">tests/e2e/gateway/flow1</span>, <span class="fp">flow3</span></td>
+  <td>La fase web corre en el proceso de Playwright y <strong>lanza la fase móvil como proceso aparte</strong>, parseando su salida estándar. El estado del viaje se pasa por un archivo de contexto.</td>
+</tr>
+</table>
+
+<h3>Y una capa que no comparte: la arquitectura KATA</h3>
+
+<p>El repo tiene una arquitectura por capas llamada KATA (<span class="mono">TestContext → ApiBase/UiBase → componentes → fixtures</span>) que usan las suites de API y las pantallas web nuevas. <strong>La capa móvil no la extiende</strong>: <span class="mono">AppiumSessionBase</span> es una clase independiente que envuelve WebdriverIO y no comparte jerarquía con esa estructura. Tiene su propia organización paralela por directorios (<span class="mono">config/</span>, <span class="mono">base/</span>, Screens, <span class="mono">harness/</span>, <span class="mono">helpers/</span>).</p>
+
+<h2>4 · Los dos modelos de trazabilidad</h2>
+
+<p>Dentro de la misma capa Appium conviven <strong>dos convenciones distintas</strong> para vincular una prueba con su caso en Jira, y ninguna documentación del repo lo explicaba. Confundirlas lleva a leer mal un reporte.</p>
+
+<table>
+<tr><th></th><th>TM-* · autocomplete</th><th>MG-* · gateway</th></tr>
+<tr><td><strong>Dónde viven los casos</strong></td><td>Proyecto Xray separado (TM)</td><td>El mismo proyecto de producto (MG)</td></tr>
+<tr><td><strong>Granularidad</strong></td><td>Un caso por conducta medida</td><td>Una key por <em>área</em> funcional</td></tr>
+<tr><td><strong>Dónde se declara</strong></td><td>En cada <span class="mono">test()</span></td><td>A nivel <span class="mono">describe</span></td></tr>
+<tr><td><strong>Cómo se lee el resultado</strong></td><td>Un veredicto por conducta</td><td><strong>Todos los tests del área colapsan a una fila</strong></td></tr>
+</table>
+
+<div class="callout danger">
+<strong>El detalle que hay que entender antes de leer un reporte de gateway</strong>
+El reporter deduplica por key y <strong>gana el peor estado</strong>. Con la convención por área, veinte tests que comparten una key colapsan en una sola fila, y esa fila refleja el <em>peor</em> de los veinte. Un rojo entre veinte pinta toda el área de rojo. No es un bug del reporter: es la consecuencia de trazar por área en vez de por caso — y explica por qué el autocomplete eligió la convención granular.
+</div>
+
+<h3>Cómo una anotación llega a ser un resultado en Xray</h3>
+<pre><span class="cmt">// 1. En el test — la forma explícita</span>
+test('...', { annotation: [{ type: 'tms', description: 'TM-678' }] }, async () =&gt; { ... });
+
+<span class="cmt">// 2. O vía decorador, en un componente KATA (empuja la anotación en runtime)</span>
+@atc('MG-152', { severity: 'critical', description: '...' })</pre>
+
+<p>El reporter junta las anotaciones estáticas y las de runtime, recoge <strong>todas</strong> las keys distintas (una prueba puede acreditar varios casos) y las escribe al JSON de importación. Si una prueba no tiene ninguna anotación, cae a un respaldo que busca algo con forma de key <em>en el título</em> — y ese respaldo captura <strong>una sola</strong> key y no genera el enlace a Jira en Allure. Por eso la anotación explícita no es opcional.</p>
+
+<h2 class="page-break">5 · Taxonomía de suites</h2>
+
+<table>
+<tr><th>Config</th><th>Qué colecta</th><th>Tipo</th></tr>
+<tr><td><span class="fp">playwright.config.ts</span></td><td>Todo el árbol de tests; hace login web de carrier y contractor al arrancar</td><td>Web UI general</td></tr>
+<tr><td><span class="fp">playwright.gateway-pg.config.ts</span></td><td>Suite de pagos, dividida en proyectos: web, API, unit, visual y <strong><span class="mono">e2e-mobile</span></strong></td><td>Mixta — acá viven las specs móviles de gateway</td></tr>
+<tr><td><span class="fp">playwright.mg116-device.config.ts</span></td><td>Solo el autocomplete de PAX. Sin login web, un worker, sin reintentos</td><td>Dispositivo</td></tr>
+<tr><td><span class="fp">playwright.mg117-device.config.ts</span></td><td>Solo el autocomplete de Driver. Igual criterio</td><td>Dispositivo</td></tr>
+</table>
+
+<div class="callout warn">
+<strong>Nunca pasar <span class="mono">--reporter=</span> por línea de comandos</strong>
+Ese flag reemplaza la lista completa de reporters del config, incluido el de Xray. La corrida se ve perfecta y el JSON de trazabilidad nunca se escribe. Para ver salida tipo lista conservando el reporter, usar las variables (<span class="mono">XRAY=1</span>, <span class="mono">ALLURE=1</span>).
+</div>
+
+<h2>6 · Nada de esto corre en CI</h2>
+
+<p>Conviene decirlo sin rodeos, porque es lo primero que alguien nuevo asume mal: <strong>ninguna prueba de Appium corre en los pipelines.</strong> Toda la capa es de ejecución local, contra un teléfono conectado por USB.</p>
+
+<p>Es una decisión, no un olvido: el pipeline de gateway excluye explícitamente las specs móviles porque sin un emulador disponible la corrida rompe. Hay una propuesta de CI para Android en <span class="fp">docs/mobile-ci/</span>, pero es una propuesta, no un pipeline implementado.</p>
+
+<p><strong>Qué implica en la práctica:</strong> esta cobertura no protege contra regresiones de forma automática. Protege cuando alguien la corre. Planificarla como gate de release exige agendar la corrida, no asumirla.</p>
+
+<h2>7 · Cómo correr y cómo leer el resultado</h2>
+
+<h4><span class="step-num">1</span>Verificar el stack antes de correr</h4>
+<pre>adb devices                          <span class="cmt"># el teléfono tiene que aparecer</span>
+curl localhost:4723/status           <span class="cmt"># Appium responde</span></pre>
+
+<h4><span class="step-num">2</span>Correr la suite</h4>
+<pre><span class="cmt"># autocomplete App PAX</span>
+pnpm test:uat:mg116:all
+
+<span class="cmt"># autocomplete App Driver</span>
+pnpm test:uat:mg117:all
+
+<span class="cmt"># pagos / wallet / cargo a bordo (proyecto e2e-mobile)</span>
+npx playwright test -c playwright.gateway-pg.config.ts --project=e2e-mobile</pre>
+
+<h4><span class="step-num">3</span>Leer el resultado — sin confiar en el banner</h4>
+
+<div class="callout danger">
+<strong>El resumen final no es criterio de éxito</strong>
+Un cartel de "ALL TESTS PASSED" puede estar contando cuatro pruebas que pasaron y veinticinco que se saltearon — pasó en esta campaña. Lo que hay que leer es <strong>cuántos casos tienen veredicto medido</strong>: un skip con motivo escrito es honesto, pero no es cobertura. El JSON de resultados es la fuente, el banner es decoración.
+</div>
+
+<table>
+<tr><th>Herramienta</th><th>Para qué</th></tr>
+<tr><td>Consola</td><td>Veredicto inmediato con el mensaje de cada medición</td></tr>
+<tr><td>Allure (<span class="mono">ALLURE=1</span>)</td><td>Reporte navegable con capturas y enlace al ticket</td></tr>
+<tr><td>Xray (<span class="mono">XRAY=1</span>)</td><td>Genera el JSON para importar y actualizar los casos en Jira</td></tr>
+</table>
+
+<p class="footnote">El archivo de resultados se sobrescribe en cada corrida. Si la evidencia importa, fijar <span class="mono">XRAY_OUTPUT_FILE</span> con un nombre propio antes de correr.</p>
+
+<h2 class="page-break">8 · Cómo sumar cobertura a un ticket</h2>
+
+<h4><span class="step-num">1</span>Primero: decidir la capa</h4>
+
+<div class="callout ok">
+<strong>La pregunta que decide</strong>
+<em>¿El aserto sigue teniendo sentido si el propio test construye la petición?</em><br>
+Si <strong>no</strong> —porque lo que se prueba es qué manda la app, cuándo la manda, qué guarda entre pantallas— es conducta del cliente y va al dispositivo.<br>
+Si <strong>sí</strong> —porque lo que se prueba es qué contesta el backend— es un hecho del response: va a la capa de API, corre en segundos y no necesita teléfono.
+</div>
+
+<p class="footnote">Nota honesta: este criterio no estaba escrito en ningún lado del repo hasta este documento. Se formuló durante la campaña de autocomplete, cuando se descubrió que varios casos atribuidos a la capa de API en realidad verificaban pantalla. Vale como guía, no como política heredada.</p>
+
+<h4><span class="step-num">2</span>Buscar antes de escribir</h4>
+<p>La mayoría de las conductas ya están implementadas y solo hace falta invocarlas sobre una superficie nueva. Agregar una superficie cuesta una clase; escribir la conducta de nuevo cuesta un duplicado que va a divergir.</p>
+
+<h4><span class="step-num">3</span>Trazar con anotación explícita</h4>
+<pre>test(
+  'descripción de la conducta',
+  { annotation: [{ type: 'tms', description: 'TM-XXX' }] },
+  async () =&gt; { <span class="cmt">/* ... */</span> }
+);</pre>
+<p>Nunca confiar en el respaldo por título: captura una sola key y no genera el enlace en Allure.</p>
+
+<h4><span class="step-num">4</span>Respetar la disciplina de veredicto</h4>
+<table>
+<tr><th>Situación</th><th>Veredicto correcto</th></tr>
+<tr><td>Se midió y cumple</td><td><span class="mono">PASS</span></td></tr>
+<tr><td>Se midió y no cumple</td><td><span class="mono">FAIL</span></td></tr>
+<tr><td>No se pudo medir (pantalla inalcanzable, sin datos)</td><td><span class="mono">SIN_DATOS</span> / <span class="mono">NO_EJERCIDO</span> — nunca FAIL</td></tr>
+<tr><td>La medición no puede distinguir producto de harness</td><td><span class="mono">NO_EJERCIDO</span>, con el motivo escrito</td></tr>
+</table>
+
+<div class="callout danger">
+<strong>Nunca un verde sobre una ausencia</strong>
+"Cero requests" puede significar "el producto agrupa bien" o "el campo dejó de aceptar texto" — son indistinguibles sin una prueba de vida. Ya pasó en este repo: dos conductas se publicaron en verde sobre un campo inerte. Si el veredicto se apoya en que algo <em>no</em> ocurrió, hay que probar primero que el campo seguía vivo.
+</div>
+
+<h4><span class="step-num">5</span>Verificar antes de reportar</h4>
+<pre>npx tsc --noEmit                     <span class="cmt"># compila</span>
+npx playwright test --config=... --list   <span class="cmt"># colecta lo esperado</span></pre>
+
+<h4><span class="step-num">6</span>Importar a Xray solo si la corrida midió</h4>
+<p>Si la mayoría quedó en skip, el JSON no se importa: escribiría estados que nadie verificó.</p>
+
+<h2>9 · Trampas conocidas del repo</h2>
+
+<p>Cosas que parecen una cosa y son otra. Todas verificadas leyendo el código.</p>
+
+<table>
+<tr><th>Qué</th><th>Realidad</th></tr>
+<tr>
+  <td><span class="fp">tests/mobile/appium/recorded/*.recorded.ts</span></td>
+  <td><strong>No es Appium.</strong> Son volcados crudos del codegen de Playwright sobre un portal <em>web</em>. Ningún config los colecta. Están mal ubicados bajo el árbol móvil.</td>
+</tr>
+<tr>
+  <td><span class="fp">tests/mobile/appium/gateway-pg/*Draft.ts</span></td>
+  <td><strong>Código muerto.</strong> Nadie los importa; uno de sus métodos es literalmente vacío. No están conectados a nada.</td>
+</tr>
+<tr>
+  <td><span class="fp">passenger/specs/pax-new-trip-blocked.spec.ts</span></td>
+  <td>Spec real y bien escrita, pero <strong>huérfana</strong>: ningún config la colecta y no tiene anotaciones. Su propio encabezado se declara borrador pendiente de validación.</td>
+</tr>
+<tr>
+  <td>Scripts que citan keys TM-*</td>
+  <td>Citarlas en un comentario no las convierte en cobertura. Son instrumentos de investigación.</td>
+</tr>
+<tr>
+  <td>Un archivo web dentro de <span class="mono">e2e-mobile</span></td>
+  <td>El proyecto selecciona por etiqueta, así que una spec de carrier web etiquetada igual también entra. Explica por qué el conteo del proyecto es mayor que el de archivos móviles.</td>
+</tr>
+</table>
+
+<div class="callout">
+<strong>Dónde seguir</strong>
+La referencia técnica viva del motor —instalación paso a paso, anatomía de directorios, verificación del stack, glosario— está en <span class="fp">tests/mobile/appium/README.md</span>, junto al código. Este documento da la visión general; ese otro es el manual de operación.
+</div>
+
+</div>
+</body>
+</html>
