@@ -271,7 +271,7 @@ suite nueva no logra crear sesión y todos sus casos quedan sin medir.
 |---|---|---|
 | `pnpm test:uat:mg117:all` | Autocomplete de direcciones, **App Driver** (MG-117): endpoint propio, contrato del request, debounce, piso de caracteres, sessionToken, degradación ante 5xx | ~3-8 min |
 | `pnpm test:uat:mg116:all` | Autocomplete de direcciones, **App Passenger** (MG-116): las mismas conductas sobre las distintas pantallas donde el pasajero escribe una dirección | ~10-15 min |
-| `pnpm test:uat:mg116:api` | El **contrato del endpoint**, sin teléfono | segundos |
+| `npx playwright test -c playwright.gateway-pg.config.ts --project=e2e-mobile` | **Pagos, wallet y cargo a bordo** (keys MG-*): alta de tarjeta 3DS/no-3DS, borrado de tarjeta, cobro a bordo, viaje calle | ~5-20 min |
 | `pnpm mobile:driver:home-dump` | Volcado de la pantalla del driver — para investigar, no es un test | segundos |
 | `pnpm mobile:passenger:home-dump` | Idem, app del pasajero | segundos |
 
@@ -577,3 +577,115 @@ RUN_MOBILE_HAPPY_PATH=true npx playwright test tests/features/gateway-pg/specs/s
 - Active business specs: `tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-no3ds.e2e.spec.ts` and `tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-business-3ds.e2e.spec.ts`
 - Passenger mobile runners: `pnpm mobile:passenger:personal-3ds-hold-flow` and `pnpm mobile:passenger:business-no3ds-hold-flow`
 - Traceability doc: `docs/test-cases/mobile/TC-PASSENGER-FLOW.md`
+
+---
+
+## Toda la cobertura Appium del proyecto, no sólo autocomplete
+
+Este README nació documentando la campaña de autocomplete (MG-116/MG-117), pero **el motor Appium
+sostiene más cobertura que eso**, y vive en otro árbol. Inventario verificado con `--list` del propio
+Playwright y leyendo las anotaciones del código.
+
+### Autocomplete de direcciones — `tests/mobile/appium/*/specs/`
+
+| Spec | Casos Xray | Estado |
+|---|---|---|
+| `passenger/specs/pax-address-behaviors.spec.ts` | TM-674, 675, 678, 679, 680, 681, 686, 687, 689, 697, 733, 734 | activa |
+| `passenger/specs/pax-address-surfaces.spec.ts` | TM-727, 729, 730, 731 | activa |
+| `driver/specs/driver-address-surfaces.spec.ts` | TM-650, 651, 654, 655, 656, 657, 662, 663, 664, 665 | activa |
+
+### Pagos, wallet y cargo a bordo — `tests/features/gateway-pg/specs/`
+
+Las colecta `playwright.gateway-pg.config.ts`, proyecto **`e2e-mobile`** (selecciona por la etiqueta
+`@e2e-hybrid`, timeout 300 s, 2 reintentos). Dependen del mismo motor de este directorio: usan los
+Screens de `passenger/`/`driver/` y los recorridos de `harness/`.
+
+| Spec | Casos Xray | Estado |
+|---|---|---|
+| `stripe/e2e-mobile/apppax-wallet-delete` | MG-174, MG-495 | activa |
+| `stripe/e2e-mobile/apppax-wallet-management` | MG-295, MG-302 | activa |
+| `stripe/e2e-mobile/viaje-calle/driver-viaje-calle-3ds` | MG-161 | activa |
+| `_parametrized/apppax-wallet.parametrized` | MG-148, 288, 293, 295 | activa |
+| `stripe/e2e-mobile/cargo-a-bordo/*` (2 specs) | MG-158, MG-161 | parcial |
+| `stripe/e2e-mobile/apppax-{personal,business}-{3ds,no3ds}` y `-hold-*` (6 specs) | MG-148, 152, 153, 158, 161 | **mayormente `test.fixme()`** |
+| `stripe/e2e-mobile/carrier-driver-happy-path-template` | ninguna | 1 de 3 escenarios activo |
+
+> **Ojo con las seis specs de alta de tarjeta**: están escritas y compilan, pero sus tests están en
+> `test.fixme()` esperando validación manual en dispositivo. **No producen evidencia.** Contarlas como
+> cobertura activa es el error más fácil de cometer leyendo este árbol.
+
+### Flujos híbridos — `tests/e2e/gateway/`
+
+Un tercer patrón, distinto a los dos de este directorio: la fase web corre en el proceso de Playwright
+y **lanza la fase móvil como proceso hijo**, parseando su salida estándar. El estado del viaje se pasa
+por un archivo de contexto.
+
+| Spec | Estado |
+|---|---|
+| `flow1-carrier-driver` · `flow3-contractor-driver` | activas, **sin trazabilidad a Xray** |
+| `flow2-passenger-driver` | 100 % `test.fixme()` |
+| `tests/e2e/flow1-carrier-driver.e2e.spec.ts` | versión legacy, aún presente |
+
+---
+
+## Los dos modelos de trazabilidad que conviven
+
+Dentro de la capa Appium hay **dos convenciones distintas** para vincular prueba y caso. Confundirlas
+lleva a leer mal un reporte.
+
+| | **TM-\*** (autocomplete) | **MG-\*** (gateway) |
+|---|---|---|
+| Proyecto | Xray separado (TM) | El mismo de producto (MG) |
+| Granularidad | Un caso por conducta | Una key por **área** funcional |
+| Se declara en | cada `test()` | nivel `describe` |
+| Resultado | un veredicto por conducta | **todos los tests del área colapsan a una fila** |
+
+El reporter deduplica por key y **gana el peor estado**. Con la convención por área, veinte tests que
+comparten una key colapsan en una sola fila que refleja el *peor* de los veinte: un rojo pinta toda el
+área. No es un bug — es la consecuencia de trazar por área, y es la razón por la que el autocomplete
+eligió la convención granular.
+
+---
+
+## Nada de esto corre en CI
+
+**Ninguna prueba de Appium corre en los pipelines.** Toda la capa es de ejecución local contra un
+teléfono conectado por USB.
+
+Es deliberado: el workflow de gateway excluye explícitamente las specs móviles porque sin emulador la
+corrida rompe. Hay una propuesta de CI Android en `docs/mobile-ci/`, pero es una propuesta.
+
+**Implicancia práctica:** esta cobertura no protege contra regresiones automáticamente. Protege cuando
+alguien la corre. Como gate de release hay que agendarla, no asumirla.
+
+---
+
+## Android-only
+
+Todo corre sobre `uiautomator2` contra Android físico. **No hay automatización de iOS** — ni XCUITest,
+ni simulador. Cuando hizo falta evidencia de iOS se capturó el payload a mano en el dispositivo y se
+analizó con `scripts/mg116-analizar-payload-ios.mjs`. Es un workaround consciente, no cobertura.
+
+---
+
+## Trampas de este directorio
+
+Cosas que parecen una cosa y son otra:
+
+| Qué | Realidad |
+|---|---|
+| `recorded/*.recorded.ts` | **No es Appium.** Volcados crudos del codegen de Playwright sobre un portal **web**. Ningún config los colecta (el `testMatch` por defecto exige `.spec.`/`.test.`). Están mal ubicados acá. |
+| `gateway-pg/*Draft.ts` | **Código muerto.** Nadie los importa; `GatewayPaymentMobileDraft.completeTripAndTriggerCharge()` es literalmente un no-op con un TODO. |
+| `passenger/specs/pax-new-trip-blocked.spec.ts` | Spec real y bien escrita pero **huérfana**: ningún config la colecta, no tiene anotaciones, y su encabezado se declara borrador. Su título usa `[PASO-4]`, que el respaldo por título del reporter **confundiría con una key de Jira** si alguna vez se conectara con `XRAY=1`. |
+| Scripts que citan `TM-*` en comentarios | Citarlas no las convierte en cobertura. Los 106 archivos de `scripts/` son instrumentos de investigación: no emiten veredicto por el runner ni llegan a ningún reporte. |
+| El proyecto `e2e-mobile` colecta más archivos que los móviles | Selecciona por etiqueta, así que una spec de carrier **web** etiquetada `@e2e-hybrid` también entra. Explica por qué el conteo del proyecto es mayor. |
+
+---
+
+## Visión general y onboarding
+
+Para el panorama completo —cómo esta capa se conecta con KATA y con las suites web/API, la taxonomía
+de configs, y el criterio para decidir si un caso va a dispositivo o a API— está la guía en
+`docs/mobile/GUIA-APPIUM-MAGIIS.pdf` (fuente editable: el `.html` al lado).
+
+Este README es el manual de operación del motor; esa guía es la visión general.
