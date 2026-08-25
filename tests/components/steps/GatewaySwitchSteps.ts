@@ -12,9 +12,9 @@
  * cascada**: borra las tarjetas guardadas del pax (p.ej. la 4242). Consecuencias:
  *   - Correr SÓLO en una ventana exclusiva (nadie más usando el carrier 1521).
  *   - Requiere credenciales sandbox en `.env.test` (AUTHORIZE_* / EBIZ_*).
- *   - El teardown `restoreStripe()` re-vincula Stripe, pero HOY está INCOMPLETO (ver TODOs:
- *     falta el OAuth Connect test-mode y el re-seed de la tarjeta del pax). Hasta cerrarlos,
- *     la restauración es MANUAL.
+ *   - El teardown `restoreStripe()` re-vincula Stripe vía OAuth Connect test-mode (F5 —
+ *     `linkStripeViaConnect`). RESIDUAL MANUAL: el re-seed de la tarjeta del pax que
+ *     cleaningWallets borró (la 4242) sigue pendiente (ver TODO de `restoreStripe`).
  * Nada de esto corre solo: el spec que lo consume gatea por creds (test.skip) y el switching
  * sólo ocurre cuando un humano ejecuta la suite con el ambiente preparado.
  *
@@ -134,9 +134,10 @@ export class GatewaySwitchSteps extends UiBase {
 	/**
 	 * Idempotente: garantiza que `gateway` sea la pasarela activa del carrier.
 	 *   - Ya activa → no-op.
-	 *   - Otra activa → la desvincula (DESTRUCTIVO) y vincula la target (creds de env).
-	 * Implementadas: `authorize` (F4) y `ebizcharge` (S5 — FRAGILE: modal eBiz sin verificar live).
-	 * stripe (OAuth Connect = live F5) y mercado-pago lanzan (TODO).
+	 *   - Otra activa → la desvincula (DESTRUCTIVO) y vincula la target.
+	 * Implementadas: `authorize` (F4), `ebizcharge` (S5 — FRAGILE: modal eBiz sin verificar
+	 * live) y `stripe` (F5 — OAuth Connect test-mode, sin credenciales de env; FRAGILE:
+	 * selectores del onboarding hosteado sin verificar live). mercado-pago lanza (TODO).
 	 */
 	async ensureActiveGateway(gateway: SwitchableGateway): Promise<void> {
 		const active = await this.currentActiveGateway();
@@ -154,9 +155,12 @@ export class GatewaySwitchSteps extends UiBase {
 					await this.appStore.linkEbizcharge(this.ebizchargeCredsFromEnv());
 					break;
 				case 'stripe':
-					// TODO F5: restaurar Stripe vía Connect test-mode (portar el OAuth loop de
-					// agentic-qa-boilerplate/tests/gateway-legacy/link-stripe-gateway.test.ts).
-					throw new Error('ensureActiveGateway(stripe) no implementado — requiere OAuth Connect test-mode (TODO F5).');
+					// F5 — OAuth Connect test-mode (loop portado del record legacy, sin sleeps
+					// fijos). Sin credenciales de env: el consent lo completa el auto-fill
+					// test-mode de Stripe. Precondición linkable garantizada por el unlink de
+					// arriba (o el slot ya estaba libre).
+					await this.appStore.linkStripeViaConnect();
+					break;
 				case 'mercado-pago':
 					throw new Error('ensureActiveGateway(mercado-pago) no implementado — fuera de alcance F4.');
 			}
@@ -165,32 +169,17 @@ export class GatewaySwitchSteps extends UiBase {
 
 	/**
 	 * Teardown: restaura Stripe como pasarela activa del carrier.
-	 * ⚠️ DESTRUCTIVO + INCOMPLETO: hoy `ensureActiveGateway('stripe')` lanza (OAuth pendiente),
-	 * por eso se atrapa y se registra un aviso de RESTAURACIÓN MANUAL en vez de romper el run.
-	 * TODOs para cerrarlo:
-	 *   - Implementar el switch a Stripe vía Connect test-mode (TODO F5 en ensureActiveGateway).
-	 *   - Re-seed de la tarjeta 4242 del pax (cleaningWallets la borró al desvincular) —
-	 *     confirmar el helper de alta de tarjeta (wallet add-card) antes de habilitar.
-	 *
-	 * ── DEUDA DE CONVENCIÓN (documentada 2026-07-29) ─────────────────────────────────────────
-	 * El resto de la capa Steps auto-limpia con `try/finally` DENTRO del propio orquestador
-	 * (`CarrierHoldSteps.runHoldScenario`, `ContractorHoldSteps.runColaboradorScenario`,
-	 * `CargoABordoSteps.runCargoScenario`): el caller no puede olvidarse del cleanup. Acá, en
-	 * cambio, el restore es un método público SEPARADO que el spec debe acordarse de invocar — y
-	 * es justamente el Step cuyas operaciones son destructivas sobre estado COMPARTIDO (carrier
-	 * 1521), donde olvidarse duele más.
-	 *
-	 * NO se convierte al patrón self-cleaning todavía a propósito: mientras `restoreStripe()` siga
-	 * incompleto (los dos TODOs de arriba), envolverlo en un `try/finally` automático haría que
-	 * CADA spec que switchee pasarela emita el warning de "RESTAURACIÓN MANUAL" — ruido sin
-	 * beneficio, porque el restore real no ocurre.
-	 *
-	 * CRITERIO DE CIERRE: cuando el OAuth Connect test-mode + el re-seed de tarjeta estén
-	 * implementados, mover la restauración a un `try/finally` dentro de `ensureActiveGateway`
-	 * (o de un wrapper `withGateway(gateway, fn)`), convergiendo con los otros tres Steps.
+	 * ⚠️ DESTRUCTIVO. FUNCIONAL desde F5: `ensureActiveGateway('stripe')` re-vincula vía
+	 * OAuth Connect test-mode (`linkStripeViaConnect`). El try/catch se CONSERVA como
+	 * defensa en profundidad: un teardown jamás debe romper el run — si el OAuth falla
+	 * (selectores del onboarding cambiados, red, etc.), se degrada al aviso de
+	 * restauración manual de siempre.
+	 * TODO residual: re-seed de la tarjeta 4242 del pax (cleaningWallets la borró al
+	 * desvincular) — confirmar el helper de alta de tarjeta (wallet add-card) antes de
+	 * automatizarlo; hasta entonces ese paso sigue siendo manual.
 	 */
 	async restoreStripe(): Promise<void> {
-		await test.step('Teardown: restaurar Stripe (DESTRUCTIVO / INCOMPLETO)', async () => {
+		await test.step('Teardown: restaurar Stripe (DESTRUCTIVO)', async () => {
 			try {
 				await this.ensureActiveGateway('stripe');
 			} catch (error) {

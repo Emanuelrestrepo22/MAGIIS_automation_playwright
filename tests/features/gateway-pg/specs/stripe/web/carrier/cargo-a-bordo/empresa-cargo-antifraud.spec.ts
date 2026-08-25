@@ -31,7 +31,10 @@ const DRIVER_E2E_PICKUP = 'Ciudad de la Paz 2238, Buenos Aires, Argentina';
 
 const empresaScenario: CargoScenario = {
 	client: TEST_DATA.client,
-	passenger: TEST_DATA.passenger,
+	// FIX 2026-08-07 (mismo diagnóstico que TC1111, empresa-cargo-happy.spec.ts): empresa individuo
+	// auto-asigna el pasajero al NOMBRE DEL CLIENTE (BL-003) — el oráculo de la grilla nunca
+	// encuentra 'Emanuel Restrepo' porque el formulario no lo muestra para este actor.
+	passenger: TEST_DATA.client,
 	origin: DRIVER_E2E_PICKUP,
 	destination: TEST_DATA.destination,
 };

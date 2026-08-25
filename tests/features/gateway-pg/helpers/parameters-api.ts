@@ -98,3 +98,23 @@ export async function readHoldEnabled(page: Page, carrierId = DEFAULT_CARRIER_ID
 export async function readHoldRaw(page: Page, carrierId = DEFAULT_CARRIER_ID): Promise<boolean | undefined> {
 	return (await getCarrierParameters(page, carrierId)).enableCreditCardHold;
 }
+
+/**
+ * Re-asegura hold=ON de forma IDEMPOTENTE y best-effort (lee primero; sólo postea si quedó OFF).
+ *
+ * Pensado para el `test.afterEach` de los specs que apagan el hold (review MEDIUM-4): un timeout
+ * del test ABORTA el `finally` del orquestador y dejaría el carrier compartido sin hold para el
+ * resto de la suite; el afterEach sí corre tras el timeout, con presupuesto propio (mismo
+ * precedente de cleanup post-timeout que `hold-capture.spec.ts`). Nunca lanza: la restauración no
+ * debe tapar el desenlace del test — si falla, queda el warn como diagnóstico y el próximo
+ * `setHold` del orquestador corrige el estado al arrancar.
+ */
+export async function ensureHoldRestoredOn(page: Page, carrierId = DEFAULT_CARRIER_ID): Promise<void> {
+	try {
+		if ((await readHoldRaw(page, carrierId)) === true) return;
+		await setHoldViaApi(page, true, { carrierId });
+		console.log('[parameters-api] hold re-asegurado a ON (red de seguridad afterEach)');
+	} catch (err) {
+		console.warn('[parameters-api] ensureHoldRestoredOn falló (best-effort, no fatal):', err);
+	}
+}

@@ -291,12 +291,19 @@ export class CarrierHoldSteps extends UiBase {
 			await this.login(scenario.gateway);
 		});
 
-		// Precondición de idempotencia (form nativo): si la MISMA tarjeta quedó vinculada al
-		// pax por un run previo, el alta diverge y "Tarjeta válida" nunca aparece (falso
-		// negativo confirmado live 2026-07-27 — el piloto hold reproducía el fallo que WAL
-		// evitaba con su cleanup). Mismo helper compartido; silent-fail por query.
-		if (adapter.cardForm === 'native-angular') {
-			await test.step('Precondición: limpiar tarjeta nativa previa (idempotencia)', async () => {
+		// Precondición de idempotencia (TODAS las pasarelas, cardFlow 'new'): si la MISMA tarjeta
+		// quedó vinculada al pax por un run previo, el alta diverge a tarjeta-guardada — el
+		// dropdown la PRESELECCIONA ("VISA *** <last4>"), el form de tarjeta nueva no aplica y el
+		// oráculo del método de pago falla (falso negativo). Confirmado live 2026-07-27 para
+		// native-angular y REPRODUCIDO 2026-08-05 para Stripe (baseline corrida 2: 8/8 rojos tras
+		// persistir la 4242 en la corrida 1 — históricamente lo tapaba el cleaningWallets de los
+		// switches de pasarela, que ya no ocurre con Stripe estable). Solo cardFlow 'new'
+		// (default): los flujos 'existing'/preferSavedCard NECESITAN la tarjeta guardada.
+		// NO gatear por useCardFlow: los specs app-pax lo apagan (salta resolveCardFlow) pero
+		// fillMinimum SIGUE ingresando tarjeta nueva — la wallet sucia los diverge igual
+		// (corrida 3 del baseline 2026-08-05: cleanup salteado por useCardFlow=false → 7/8 rojos).
+		if ((scenario.cardFlow ?? 'new') === 'new') {
+			await test.step('Precondición: limpiar tarjeta previa del pax (idempotencia)', async () => {
 				// Warm-up del JWT ANTES del cleanup (root-cause live 2026-07-28): extractAuthToken
 				// sin retry devuelve null recién logueado → 401 → catch silencioso por query →
 				// cleanup no-op y el alta diverge a tarjeta-guardada. Patrón retry ×3 establecido
@@ -410,7 +417,22 @@ export class CarrierHoldSteps extends UiBase {
 			}
 
 			if (trackTravelId) {
-				expect(travelIdRef?.travelId, 'POST /travels debe haber capturado travelId').not.toBeNull();
+				// `expect.poll`, NO assert síncrono (fix 2026-08-21, corrida smoke TC1042): el handler
+				// de `captureCreatedTravelId` es async (`page.on('response')` + `response.json()`) y
+				// puede resolver DESPUÉS del assert. Confirmado por el orden del log: el test falló
+				// diciendo "travelId es null" y el `[travel-cleanup] Capturado travelId=69613` salió
+				// igual — el viaje SÍ se había creado.
+				//
+				// CORRIGE un supuesto previo: al arreglar este mismo race en `ContractorHoldSteps`
+				// (2026-08-07) se anotó que "el portal carrier NO lo sufre porque navega a
+				// /travels/{id} con más pasos antes del assert". Es falso: la ventana del carrier es
+				// más chica, no inexistente, y con el portal cargado se pierde igual.
+				await expect
+					.poll(() => travelIdRef?.travelId ?? null, {
+						message: 'POST /travels debe haber capturado travelId',
+						timeout: 10_000
+					})
+					.not.toBeNull();
 			}
 
 			await test.step('Validar viaje en gestión — columna Por Asignar', async () => {

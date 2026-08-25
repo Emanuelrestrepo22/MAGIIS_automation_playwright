@@ -23,7 +23,7 @@
 
 import { test, expect } from '@TestFixture';
 import { AUTHORIZE_CARDS } from '@fixtures/gateways/authorize/card-policy';
-import { AuthorizeSandboxApi, hasAuthorizeCredentials } from '@api/AuthorizeSandboxApi';
+import { AuthorizeSandboxApi, describeAuthorizeFailure, hasAuthorizeCredentials } from '@api/AuthorizeSandboxApi';
 import type { AuthorizeApiResponse } from '@schemas/authorize.types';
 import { AUTHORIZE_CONTRACT_XRAY_KEYS } from '@features/gateway-pg/data/xray-keys';
 import { assertAuthorizeAccountMeasuresRealAuthorizations } from '@features/gateway-pg/helpers/authorize-account-guard';
@@ -43,7 +43,7 @@ test.describe('[BL-036][API] Authorize.net sandbox — Edge triggers @gateway @a
 				refId: `bl-036-edge-discover-${Date.now()}`
 			});
 
-			expect(response.messages.resultCode).toBe('Ok');
+			expect(response.messages.resultCode, describeAuthorizeFailure(response)).toBe('Ok');
 			expect(response.transactionResponse?.responseCode).toBe('1');
 			expect(response.transactionResponse?.accountType).toBeTruthy();
 		}
@@ -67,7 +67,7 @@ test.describe('[BL-036][API] Authorize.net sandbox — Edge triggers @gateway @a
 				refId: `bl-036-edge-avs-nonus-${Date.now()}`
 			});
 
-			expect(response.messages.resultCode).toBe('Ok');
+			expect(response.messages.resultCode, describeAuthorizeFailure(response)).toBe('Ok');
 			// El determinístico es el código AVS; responseCode puede variar por política.
 			expect(response.transactionResponse?.avsResultCode).toBe('G');
 		}
@@ -88,7 +88,7 @@ test.describe('[BL-036][API] Authorize.net sandbox — Edge triggers @gateway @a
 			// Endurecido (auditoría 2026-07-28): `responseCode` truthy pasaba también con un
 			// decline ('2') o error ('3'), lo que CONTRADICE el título. El contrato de matriz
 			// TS-AUTHORIZE-TC1041 exige aprobación → responseCode '1' + mensaje de aprobación.
-			expect(response.messages.resultCode).toBe('Ok');
+			expect(response.messages.resultCode, describeAuthorizeFailure(response)).toBe('Ok');
 			expect(response.transactionResponse?.responseCode, 'partial auth debe quedar APROBADA (Response Code 1)').toBe('1');
 			expect(response.transactionResponse?.messages?.[0]?.code, 'el mensaje de transacción debe ser el de aprobación (code 1)').toBe('1');
 
@@ -122,7 +122,7 @@ test.describe('[BL-036][API] Authorize.net sandbox — Edge triggers @gateway @a
 			// Endurecido (auditoría 2026-07-28): idem partial — el contrato de matriz
 			// TS-AUTHORIZE-TC1043 es "Approved con balance cero", así que el approved es parte
 			// del oráculo, no un detalle. `toBeTruthy()` aceptaba un decline.
-			expect(response.messages.resultCode).toBe('Ok');
+			expect(response.messages.resultCode, describeAuthorizeFailure(response)).toBe('Ok');
 			expect(response.transactionResponse?.responseCode, 'prepaid balance cero debe quedar APROBADA (Response Code 1)').toBe('1');
 			expect(response.transactionResponse?.messages?.[0]?.code, 'el mensaje de transacción debe ser el de aprobación (code 1)').toBe('1');
 

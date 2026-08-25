@@ -30,7 +30,7 @@
 
 import { test, expect } from '@TestFixture';
 import { AUTHORIZE_CARDS } from '@fixtures/gateways/authorize/card-policy';
-import { AuthorizeSandboxApi, hasAuthorizeCredentials } from '@api/AuthorizeSandboxApi';
+import { AuthorizeSandboxApi, describeAuthorizeFailure, hasAuthorizeCredentials } from '@api/AuthorizeSandboxApi';
 import type { AuthorizeApiResponse } from '@schemas/authorize.types';
 import { AUTHORIZE_CONTRACT_XRAY_KEYS } from '@features/gateway-pg/data/xray-keys';
 import { assertAuthorizeAccountMeasuresRealAuthorizations } from '@features/gateway-pg/helpers/authorize-account-guard';
@@ -51,7 +51,7 @@ test.describe('[BL-036][API] Authorize.net sandbox — CVV + AVS triggers @gatew
 				refId: `bl-036-cvv-mismatch-${Date.now()}`
 			});
 
-			expect(response.messages.resultCode).toBe('Ok');
+			expect(response.messages.resultCode, describeAuthorizeFailure(response)).toBe('Ok');
 			// El responseCode puede ser 1 o 2 según política del merchant;
 			// lo determinístico es cvvResultCode.
 			expect(response.transactionResponse?.cvvResultCode).toBe('N');
@@ -71,7 +71,7 @@ test.describe('[BL-036][API] Authorize.net sandbox — CVV + AVS triggers @gatew
 				refId: `bl-036-cvv-notproc-${Date.now()}`
 			});
 
-			expect(response.messages.resultCode).toBe('Ok');
+			expect(response.messages.resultCode, describeAuthorizeFailure(response)).toBe('Ok');
 			expect(response.transactionResponse?.cvvResultCode).toBe('P');
 		}
 	);
@@ -89,7 +89,7 @@ test.describe('[BL-036][API] Authorize.net sandbox — CVV + AVS triggers @gatew
 				refId: `bl-036-avs-nomatch-${Date.now()}`
 			});
 
-			expect(response.messages.resultCode).toBe('Ok');
+			expect(response.messages.resultCode, describeAuthorizeFailure(response)).toBe('Ok');
 			expect(response.transactionResponse?.avsResultCode).toBe('N');
 		}
 	);

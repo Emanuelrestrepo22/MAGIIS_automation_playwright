@@ -53,6 +53,14 @@ export type ExpectQuoteTripInPortalOptions = {
 	destination: string;
 	/** Pasarela activa — define la cadena de credenciales del dispatcher. */
 	gateway: GatewayName;
+	/**
+	 * travelId del viaje creado por ESTA corrida (capturado del POST `confirmToTravel`). Con él,
+	 * el oráculo se ANCLA a la fila de ese viaje por su link de detalle (boundary-safe) — el match
+	 * por solicitante+destino solo puede tomar una fila IDÉNTICA de una corrida anterior y tapar
+	 * un alta que nunca ocurrió (review CRITICAL-1). Sin id se conserva el match por texto como
+	 * fallback, dejando un warn.
+	 */
+	travelId?: number;
 };
 
 // `shortDestination()` (tramo corto de la dirección) se importa de `journey-url.helpers` — SoT única.
@@ -64,7 +72,7 @@ export type ExpectQuoteTripInPortalOptions = {
  * Cierra el contexto siempre — también si la assertion falla — para no dejar sesiones abiertas.
  */
 export async function expectQuoteTripInPortal(browser: Browser, options: ExpectQuoteTripInPortalOptions): Promise<void> {
-	const { requester, destination, gateway } = options;
+	const { requester, destination, gateway, travelId } = options;
 
 	await test.step(`Verificar en el portal que el viaje de "${requester}" quedó dado de alta`, async () => {
 		// Sesión limpia: el widget es anónimo y el portal autenticado — no se comparten cookies.
@@ -81,9 +89,25 @@ export async function expectQuoteTripInPortal(browser: Browser, options: ExpectQ
 			// una lista donde el viaje nunca puede estar y fallaba con "No travel row found" aunque
 			// el viaje existiera — medido en vivo 2026-07-30 (Asignar 0 / Programados 2).
 			await management.openScheduledTrips();
-			// Debería aparecer el viaje del solicitante con un estado post-confirmación válido.
+			// Debería aparecer el viaje del solicitante con un estado post-confirmación válido,
+			// verificado SOBRE la pestaña recién abierta (expectTripRowInCurrentTab — review
+			// MEDIUM-1: expectPassengerInPorAsignar re-clickeaba "Asignar" por dentro y el oráculo
+			// dependía de que ese locator silenciosamente no matchee). Con travelId capturado, la
+			// fila se ancla al viaje de ESTA corrida (review CRITICAL-1) — un viaje viejo idéntico
+			// en solicitante+destino ya no puede tapar un alta fallida.
 			// Si cae en "En conflicto"/"No autorizado", el pago falló → escalar a dev.
-			await management.expectPassengerInPorAsignar(requester, shortDestination(destination), QUOTE_TRIP_ROW_STATUS);
+			if (travelId == null) {
+				console.warn(
+					'[quote-verification] sin travelId capturado del confirmToTravel — oráculo por texto ' +
+						`(solicitante "${requester}" + destino corto), susceptible a filas idénticas de corridas previas`
+				);
+			}
+			await management.expectTripRowInCurrentTab({
+				passenger: requester,
+				destination: shortDestination(destination),
+				status: QUOTE_TRIP_ROW_STATUS,
+				travelId
+			});
 		} finally {
 			await portalContext.close();
 		}

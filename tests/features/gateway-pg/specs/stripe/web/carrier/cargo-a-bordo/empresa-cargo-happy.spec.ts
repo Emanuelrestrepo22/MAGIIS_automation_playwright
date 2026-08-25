@@ -25,7 +25,12 @@ test.describe.configure({ timeout: 120_000 });
 
 const empresaScenario: CargoScenario = {
 	client: TEST_DATA.client,
-	passenger: TEST_DATA.passenger,
+	// FIX 2026-08-07 (diagnóstico live TC1111): empresa individuo auto-asigna el campo pasajero al
+	// NOMBRE DEL CLIENTE (BL-003, ng-reflect-is-disabled) — el formulario nunca muestra
+	// TEST_DATA.passenger ('Emanuel Restrepo'). El oráculo de la grilla (CargoABordoSteps) busca por
+	// `scenario.passenger ?? scenario.client`; con passenger=Restrepo seteado, ese fallback nunca
+	// entra y la búsqueda fallaba con "No travel row found for passenger 'Emanuel Restrepo'".
+	passenger: TEST_DATA.client,
 	origin: TEST_DATA.origin,
 	destination: TEST_DATA.destination
 };

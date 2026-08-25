@@ -3,7 +3,7 @@
 > Fuente única de verdad para tareas pendientes, decisiones en espera y deuda técnica activa.
 > **Regla:** toda sesión de trabajo debe arrancar validando este documento. Si un ítem aparece aquí como pendiente pero ya fue resuelto por otra vía, actualizar su estado en lugar de duplicarlo.
 
-**Última revisión:** 2026-05-19 (Erika + Claude — análisis comparativo vs `https://playwright.dev/docs/intro` + best practices oficiales. **7 BLs nuevos abiertos** derivados del gap-analysis hacia estandarización y mejora continua: **BL-039** ESLint Playwright plugin (P1, guardrail estructural) + **BL-040** soft assertions + `expect.configure` por dominio (P3) + **BL-041** auth como project dependency reemplaza `global-setup.multi-role.ts` (P1, mitiga BL-002) + **BL-042** sharding CI con blob reporter (P1, alivia cuota GitLab — sinérgico con BL-035) + **BL-043** network mocking Stripe/Authorize + API project separado (P2, absorbe BL-036 al cerrarse) + **BL-044** visual regression dirigida modales 3DS + popups críticos (P2) + **BL-045** tags + grep para reemplazar 50 scripts npm proliferados (P3). Anterior: 2026-05-13 (15 hitos cerrados + 3 BLs nuevos abiertos. Hitos cerraron TIER 1/2/cleanup organización multi-gateway + BL-024 6 fases + BL-009 fases 3.0/3.1/3.2/4 + BL-025 docs Authorize (agent Opus) + BL-028 piloto + BL-035 cleanup + BL-036 frente B plantilla API + **mejora continua orquestador** DRY JOURNEY_DEFAULTS + STRIPE_CARD_BY_LAST4 extraído al fixture + JSDoc deuda Strategy Pattern; nuevos abiertos: BL-036 / BL-037 / BL-038).
+**Última revisión:** 2026-08-21 (Emanuel + Claude — instrumentación BL-049: la capa API de Authorize pasa de 7/12 a **11/12 verde**; el ticket se reduce a UN síntoma y su hipótesis principal queda refutada (es el ZIP del fixture happy, no la config de la cuenta). **BL-037 corregido**: pedía un codegen que ya no hace falta — el switching está implementado y la suite Authorize son 75 tests listos; el blocker pasó a ser de agenda (Stripe y Authorize compiten por el único ambiente donde se automatizan pasarelas). Anterior: 2026-08-11 (iteración completa Stripe web `carrier/stripe-full-iteration`: **BL-053** nuevo abierto (alta recurrente hold=ON+3DS=true no aterriza en Programados, confirmado en los 3 actores de la matriz recurrentes). Anterior: 2026-05-19 (Erika + Claude — análisis comparativo vs `https://playwright.dev/docs/intro` + best practices oficiales. **7 BLs nuevos abiertos** derivados del gap-analysis hacia estandarización y mejora continua: **BL-039** ESLint Playwright plugin (P1, guardrail estructural) + **BL-040** soft assertions + `expect.configure` por dominio (P3) + **BL-041** auth como project dependency reemplaza `global-setup.multi-role.ts` (P1, mitiga BL-002) + **BL-042** sharding CI con blob reporter (P1, alivia cuota GitLab — sinérgico con BL-035) + **BL-043** network mocking Stripe/Authorize + API project separado (P2, absorbe BL-036 al cerrarse) + **BL-044** visual regression dirigida modales 3DS + popups críticos (P2) + **BL-045** tags + grep para reemplazar 50 scripts npm proliferados (P3). Anterior: 2026-05-13 (15 hitos cerrados + 3 BLs nuevos abiertos. Hitos cerraron TIER 1/2/cleanup organización multi-gateway + BL-024 6 fases + BL-009 fases 3.0/3.1/3.2/4 + BL-025 docs Authorize (agent Opus) + BL-028 piloto + BL-035 cleanup + BL-036 frente B plantilla API + **mejora continua orquestador** DRY JOURNEY_DEFAULTS + STRIPE_CARD_BY_LAST4 extraído al fixture + JSDoc deuda Strategy Pattern; nuevos abiertos: BL-036 / BL-037 / BL-038).
 
 ---
 
@@ -736,8 +736,33 @@
      - Test 1: switch Stripe → Authorize. Asserts: indicador UI, side effect wallet (TODO), side effect transacciones pendientes (TODO).
      - Test 2: switch Authorize → Stripe (reset). Mismo set de asserts.
   5. Documentar en `docs/gateway-pg/authorize/matriz_cases.md` (sección admin) los TCs nuevos.
-- **Bloqueantes:** captura humana del flujo + URL real del panel admin + credenciales admin sandbox.
+- **Bloqueantes:** ~~captura humana del flujo + URL real del panel admin + credenciales admin sandbox~~ → **YA NO APLICAN, ver Actualización 2026-08-21.**
 - **Marker propuesto:** `@gateway-switching` (smoke crítico operacional, no concurrente con suites de cards).
+
+#### Actualización 2026-08-21 — el codegen YA NO HACE FALTA; el blocker cambió de naturaleza
+
+Auditoría del código contra este ticket: **la "Próxima acción" 1-4 está implementada.** No pedir el codegen otra vez.
+
+| Lo que este ticket pedía | Dónde está hoy |
+| --- | --- |
+| Spec del switch + selectores estables | `AppStoreGatewaysPage.ts` (POM nativo, docstring "✅ RECONCILIADO EN VIVO") |
+| Vincular / impedir link inválido | ATCs `MG-220` / `MG-221` (Authorize), `MG-212` / `MG-213` (Stripe OAuth Connect) |
+| Desvincular (`cleaningWallets`) | ATCs `MG-223` / `MG-215` |
+| Exclusividad una-pasarela-por-carrier | ATCs `MG-224` / `MG-216` — regla confirmada en vivo |
+| Helper `ensureActiveGateway()` | `GatewaySwitchSteps.ensureActiveGateway()` |
+| Suite de switching | `defineGatewayConfigSuite()` (factory multi-gateway) × 3 consumidores: `stripe/config/`, `authorize/.../config/authorize-link-unlink.spec.ts`, `ebizcharge/.../config/` |
+
+Y la suite Authorize completa existe: **75 tests en 13 archivos** (`tests/features/gateway-pg/specs/authorize/`), varios rotulados `[requiere GATEWAY_ALLOW_DESTRUCTIVE_SWITCH]`.
+
+**El blocker real, y es de agenda, no técnico.** Combinando dos restricciones ya confirmadas:
+
+- Las pasarelas se automatizan **solo en TEST** (UAT usa tarjetas reales → gateway en UAT es manual). ⇒ un único ambiente disponible.
+- MAGIIS permite **una sola pasarela activa por carrier** (exclusividad, verificada con el probe read-only).
+
+⇒ **Stripe y Authorize compiten por el mismo y único recurso.** Vincular Authorize no agrega cobertura: la *intercambia*, dejando fuera de servicio la suite Stripe mientras dure el switch, y afectando a cualquier otra sesión que comparta el carrier 1521.
+
+- **Próxima acción (revisada):** ya no hay tarea de automatización pendiente acá. Lo que falta es **decidir la ventana** para correr Authorize (con `GATEWAY_ALLOW_DESTRUCTIVE_SWITCH=true` + aviso a quien comparta el carrier) y revertir el switch al terminar. Los "side effects abiertos" (wallet al switchear, viajes con hold activo, propagación) siguen sin confirmar con backend — ésos sí son preguntas de negocio genuinas.
+- **Estado sugerido:** de 🔴 Pendiente a 🟡 (código listo, esperando ventana operativa).
 - **Actualización 2026-07-20 (release Stripe 3DS, owner Emanuel):** el flujo de desvincular se está desarrollando como ticket de producto **MG-25** `[Stripe][Carrier v1] Modal de desvinculación` (`cleaningWallets(provider)`, estado `CLEANING_WALLETS→UNLINKED`). MG-25 **es el insumo** de este BL: la captura del modal de desvinculación y su cobertura alimentan el helper `ensureActiveGateway()`. La regresión UI cross-gateway con switching real es la **meta elegida** para el portafolio, con gate interino (sin switching) para esta release. **Toda prueba de pago corre en TEST** (UAT usa tarjetas reales). Detalle en `docs/gateway-pg/RELEASE-3DS-multigateway-test-plan.md` + matriz maestra por intents `docs/gateway-pg/MATRIZ-MAESTRA-multigateway.md`. Capa API: `magiis-api-e2e/docs/RELEASE-MG3-payments-api-plan.md`.
 - **Referencias:** `docs/gateway-pg/authorize/ARCHITECTURE.md` §1.bis (modelo exclusivo), BL-025 (runtime Authorize), BL-036 (API frente alternativo para validar el switch sin UI), MG-25 (desvinculación = insumo del switching), `docs/gateway-pg/RELEASE-3DS-multigateway-test-plan.md`
 
@@ -1206,6 +1231,43 @@ Lo más probable es que se hayan activado los filtros **AVS / Card Code Verifica
 - **Próxima acción actualizada:** (1) confirmar con el administrador de la cuenta si se activaron AVS/CCV entre el 27 y el 28 de julio, y asentar la fecha; (2) **capturar `response.messages.message[0]` en los asserts de `authorize-sandbox`** — hoy los specs asertan `resultCode === 'Ok'` sin loguear el mensaje de error, así que un `Error` de la API es indiagnosticable desde el log y esa es la razón por la que la causa raíz de los 3 fallos sigue abierta; (3) recién con ese mensaje, decidir si el ticket se cierra parcialmente.
 - **Evidencia:** `evidence/test/xray-results.authorize.api.json`, log de la corrida en `%TEMP%/claude/authorize-api-run.log`, reporte `.context/reports/gonogo-pasarelas-*.md` del repo `agentic-qa-boilerplate`.
 
+#### Avance 2026-08-21 — instrumentación aplicada; el ticket se reduce a UN síntoma
+
+Se ejecutó la *Próxima acción* (2): `describeAuthorizeFailure()` en `AuthorizeSandboxApi.ts` expone `messages.message[]` + `transactionResponse.errors[]` + `responseCode`, y los 11 asserts de `resultCode` de los 4 specs lo usan como mensaje de fallo. También se truncó `refId` al límite de 20 chars (conservando el SUFIJO, que es donde vive el timestamp que da unicidad).
+
+**Resultado de la corrida (`--project=api`, 12 tests): 11 PASSED · 1 FAILED.** Progresión del ticket: 8 fallos previstos → 4 (Ronda 1) → **1**.
+
+Lo que quedó CERRADO, con medición:
+
+| Síntoma registrado | Estado 2026-08-21 |
+| --- | --- |
+| (c) ZIP 46282 aprueba en vez de declinar | ✅ **RESUELTO** — `responseCode: '2'` correcto |
+| 3 fallos con `resultCode: "Error"` (API rechaza el request) | ✅ **NO REPRODUCEN** — los 11 asserts de `resultCode` pasan |
+| `messages.length > 0` en el decline | ✅ **Era bug de test** — ver abajo |
+
+**Bug de test corregido (no era del sandbox):** el spec de decline exigía el motivo en `transactionResponse.messages[]`. Medido en vivo, un RC 2 lo publica en `transactionResponse.errors[]` y deja `messages` vacío:
+
+```json
+{"responseCode":"2","avsResultCode":"Y","cvvResultCode":"M","transId":"80058532235",
+ "testRequest":"0","errors":[{"errorCode":"2","errorText":"This transaction has been declined."}]}
+```
+
+El assert ahora acepta ambas fuentes sin relajar la exigencia de que el motivo exista.
+
+**Único síntoma que PERSISTE — y su hipótesis principal queda REFUTADA.** El happy path con CVV 900 devuelve `cvvResultCode: "P"` donde debería dar `M`. Pero NO es "la cuenta no tiene CCV habilitado", porque los triggers de CVV **sí se evalúan**:
+
+| CVV | ZIP | `cvvResultCode` | ¿Correcto? |
+| --- | --- | --- | --- |
+| 901 (no match) | 90210 | `N` | ✅ el trigger funciona con ZIP arbitrario |
+| 904 (not processed) | 90210 | `P` | ✅ el trigger funciona |
+| **900 (match)** | **90210** | **`P`** | ❌ esperado `M` |
+| **900 (match)** | **46282** | **`M`** | ✅ el MISMO CVV 900 sí da `M` |
+
+Misma card (Visa 4111), mismo CVV 900: con ZIP `46282` (trigger reconocido) reporta `M`; con ZIP `90210` (arbitrario) reporta `P`. Los triggers de *no-match* se reportan con cualquier ZIP; el de *match* parece necesitar que el ZIP también sea evaluable. Es decir: **el blocker se reduce a que el fixture del happy path usa un ZIP fuera de la tabla de triggers del sandbox** — no a configuración de cuenta ni a permisos. `testRequest: "0"` confirma además que la cuenta NO está en Test Mode.
+
+- **Próxima acción (revisada):** decidir el fix del test `Echo CVV (M)` — cambiar el ZIP del fixture happy a uno que active la evaluación y siga aprobando (requiere identificar cuál en la testing guide), o re-encuadrar la expectativa a `P` documentando que con ZIP neutro el CVV no se confirma. **Es un cambio de sujeto de test → requiere decisión, no se aplicó.** Las verificaciones (1) en el Merchant Interface pierden urgencia: ya no son la causa raíz.
+- **Evidencia 2026-08-21:** corrida `--project=api` 11/12 verde; payload del decline citado arriba (probe temporal, ya removido).
+
 ### BL-050 — Divergencia de negocio: duplicado de tarjetas en wallet (Authorize rechaza, Stripe permite)
 
 - **Estado:** 🔴 Pendiente — regla de negocio confirmada en vivo, spec por desarrollar
@@ -1294,6 +1356,24 @@ La tarjeta `1111` pertenece **solo** al pasajero `12055`. **TC1061 es el caso de
 - **Impacto en la automatización:** las assertions de los TC de hold deberían contemplar **dos** transacciones, no una. Documentado en el JSDoc de `tests/features/gateway-pg/helpers/stepwise-hold-journey.ts`.
 - **Referencias:** `tests/test-3.spec.ts`, `tests/test-4.spec.ts` (grabaciones, untracked), `tests/features/gateway-pg/helpers/stepwise-hold-journey.ts`, BL-049 (la pasarela no evalúa triggers), BL-050 (duplicado en wallet), `docs/gateway-pg/authorize/matriz_cases2.md` §5 (Voids)
 
+### BL-053 — Alta recurrente hold=ON+3DS=true no aterriza en "Programados" (queda en "Asignar")
+
+- **Estado:** 🔴 Pendiente
+- **Prioridad:** P2
+- **Tipo:** Bug (producto/backend)
+- **Reportado:** 2026-08-11
+- **Contexto:** En el alta de **Viaje Recurrente** (carrier, `POST carriers/{id}/travels` con `recurringValue`/`recurringEnd` en el payload — mismo endpoint que un alta normal), cuando la combinación es **hold=ON + tarjeta 3DS=true**, el challenge 3DS post-envío se aprueba correctamente (`completeSuccess` PASS, `travelId`/código web capturados del POST), pero el viaje **NO** aparece en la pestaña "Programados" de Gestión de Viajes — queda en "Asignar" indefinidamente. Confirmado que NO es latencia corta: se probó con re-fetch activo (búsqueda por código exacto + Enter cada 500ms) durante 30s continuos sin que el viaje migre de pestaña.
+  **Aislamiento del eje roto** — confirmado reproducible 1:1 en los **3 actores** de la matriz de Viajes Recurrentes (misma falla exacta, mismo archivo:línea):
+  - App Pax — `[TS-STRIPE-P2-TC052]` (`apppax-recurrente.spec.ts`)
+  - Colaborador — `[TS-STRIPE-P2-TC045]` (`colaborador-recurrente.spec.ts`)
+  - Empresa Individuo — `[TS-STRIPE-P2-TC058]` (`empresa-recurrente.spec.ts`)
+
+  Los casos vecinos de cada matriz SÍ aterrizan bien en "Programados": mismo hold=ON sin 3DS (TC048/TC041/TC054) y mismo 3DS=true con hold=OFF (TC053/TC046/TC059) — el quiebre es específicamente la combinación **hold=ON + 3DS=true**, y específicamente en altas **recurrentes** (un alta normal — no recurrente — con la misma combinación no fue afectada en el resto de la suite `hold/`).
+- **Evidencia:** Screenshot filtrando por el código exacto del viaje: `Asignar (1) / Programados (0) / En Conflicto (0)`. Los 3 tests fallan con el mismo `expect.poll` timeout en `TravelManagementPage.expectTripRowInCurrentTab` tras 30s de re-fetch activo.
+- **Hipótesis:** el backend podría clasificar el estado inicial de un alta recurrente-con-3DS distinto a un alta recurrente simple — quizás por el timing del POST relativo a la resolución del challenge, o por una interacción entre `recurringValue`/`recurringEnd` y el motor de auto-asignación que no se dispara en altas recurrentes sin 3DS.
+- **Próxima acción:** reportar a dev/backend con la evidencia de los 3 actores. Preguntar específicamente: ¿el motor de auto-asignación evalúa el viaje ANTES de que el 3DS post-envío se resuelva, clasificándolo por error como "pendiente de asignación inmediata" en vez de "programado para más tarde"?
+- **Mitigación aplicada en tests:** los 3 TCs quedaron gateados con `test.skip` citando esta evidencia exacta — no se enmascaró bajando la severidad del assert ni ensanchando el timeout indefinidamente.
+- **Referencias:** `tests/components/steps/RecurrentesSteps.ts`, `tests/pages/carrier/TravelManagementPage.ts` (`expectTripRowInCurrentTab`), commits `fcf2679` / `5333458` / `1707246` (worktree `carrier/stripe-full-iteration`)
 ### BL-052 — `AppStoreGatewaysPage.readState()` da FALSO NEGATIVO por race condition de la card
 
 - **Estado:** 🔴 Pendiente — causa raíz confirmada en vivo, fix no aplicado

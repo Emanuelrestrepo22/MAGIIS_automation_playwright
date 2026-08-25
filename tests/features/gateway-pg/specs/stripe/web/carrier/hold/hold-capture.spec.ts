@@ -22,6 +22,14 @@ import {
 	TEST_DATA,
 	STRIPE_TEST_CARDS
 } from '@features/gateway-pg/fixtures/gateway.fixtures';
+import { cancelTravelIfCreated, captureCreatedTravelId, type TravelIdRef } from '@features/gateway-pg/helpers/travel-cleanup';
+import { cleanupGatewayCardByLast4, extractAuthToken } from '@features/gateway-pg/helpers/card-precondition';
+
+// Tramo corto de la dirección (calle + número) para el match en la grilla: el autocomplete y la
+// grilla muestran un sufijo de localidad DISTINTO del string canónico ("Cazadores 1987, Ciudad
+// Autónoma…" vs "…, Buenos Aires, Argentina") — matchear el string completo da falso negativo
+// (mismo trap documentado en NewTravelPageBase.shortDestination; corrida hold-group 2026-08-05).
+const shortDestination = (destination: string): string => destination.split(',')[0].trim();
 
 test.describe.configure({ mode: 'serial' });
 test.describe.configure({ timeout: 120_000 });
@@ -32,16 +40,38 @@ test.describe('Gateway PG · Carrier · App Pax — Hold sin 3DS @gateway @strip
 
 	test.beforeEach(async ({ page }) => {
 		await loginAsDispatcher(page);
+		// Idempotencia de wallet (fix 2026-08-06, alineado a runHoldScenario): este spec valida la
+		// MISMA 4242 en 3 tests seguidos sin limpiar — la tarjeta ya-attacheada + el detach/attach
+		// acelerado es el patron exacto de los transitorios "No such setupintent" (7 ocurrencias).
+		// Warm-up del JWT con retry x3 (patron establecido) y read-back de settle en el helper.
+		let token: string | null = null;
+		for (let attempt = 0; attempt < 3 && !token; attempt++) {
+			token = await extractAuthToken(page);
+		}
+		await cleanupGatewayCardByLast4(page, [TEST_DATA.passenger], STRIPE_TEST_CARDS.successDirect.slice(-4));
 		const preferences = new CarrierOperationalPreferencesPage({ page });
 		await preferences.goto();
 		await preferences.ensureHoldEnabled();
 	});
 
 	test.describe('[TS-STRIPE-TC1049] Hold ON exitoso — tarjeta preautorizada sin 3DS (4242 4242 4242 4242)', () => {
+		// Higiene del carrier compartido (fix 2026-08-05): estos tests CREAN un viaje real y no lo
+		// cancelaban — cada corrida dejaba viajes "Buscando chofer" acumulados para el pax en 1521.
+		// Mismo patrón de tracking+cleanup que runHoldScenario (captureCreatedTravelId + cancel).
+		let travelRef: TravelIdRef | null = null;
+
+		test.afterEach(async ({ page }) => {
+			if (travelRef) {
+				await cancelTravelIfCreated(page, travelRef);
+				travelRef = null;
+			}
+		});
+
 		test('viaje pasa a "Buscando conductor" inmediatamente tras el hold', async ({ page }) => {
 			const travel = new CarrierNewTravelPage({ page });
 			const management = new CarrierTravelManagementPage({ page });
 
+			travelRef = await captureCreatedTravelId(page);
 			await travel.goto();
 			await travel.fillMinimum({
 				passenger: TEST_DATA.passenger,
@@ -52,12 +82,14 @@ test.describe('Gateway PG · Carrier · App Pax — Hold sin 3DS @gateway @strip
 			await travel.submit();
 
 			await management.goto();
-			await management.expectPassengerInPorAsignar(TEST_DATA.passenger, TEST_DATA.destination, 'Buscando chofer');
+			// Destino CORTO: la grilla muestra otro sufijo de localidad (ver shortDestination arriba).
+			await management.expectPassengerInPorAsignar(TEST_DATA.passenger, shortDestination(TEST_DATA.destination), 'Buscando chofer');
 		});
 
 		test('no aparece modal 3DS cuando el hold es directo', async ({ page }) => {
 			const travel = new CarrierNewTravelPage({ page });
 
+			travelRef = await captureCreatedTravelId(page);
 			await travel.goto();
 			await travel.fillMinimum({
 				passenger: TEST_DATA.passenger,
@@ -74,6 +106,7 @@ test.describe('Gateway PG · Carrier · App Pax — Hold sin 3DS @gateway @strip
 			const travel = new CarrierNewTravelPage({ page });
 			const management = new CarrierTravelManagementPage({ page });
 
+			travelRef = await captureCreatedTravelId(page);
 			await travel.goto();
 			await travel.fillMinimum({
 				passenger: TEST_DATA.passenger,

@@ -8,8 +8,8 @@
  * `linkMutationUrlPattern`). Un cambio en uno sin el otro producía drift silencioso.
  * Mismo patrón de fuente única que `data/xray-keys.ts`.
  *
- * Consumidores: `authorizeGatewayAdapter` / `ebizchargeGatewayAdapter` (campos S2) y el POM
- * `AppStoreGatewaysPage` (defaults de los wrappers de status del link).
+ * Consumidores: `authorizeGatewayAdapter` / `ebizchargeGatewayAdapter` / `stripeGatewayAdapter`
+ * (campos S2) y el POM `AppStoreGatewaysPage` (defaults de los wrappers de status del link).
  *
  * Decisión de capas: vive en `features/data` como fuente única consumida por `components` —
  * excepción de capas ACEPTADA (precedente: `card-forms` → `@features/.../adapters`),
@@ -50,3 +50,21 @@ export const EBIZCHARGE_LINK_SUCCESS_STATUSES = [200] as const;
 
 /** TODO(live): matcher NO verificado — base del matcher Authorize + needle propio eBiz. */
 export const EBIZCHARGE_LINK_MUTATION_URL_PATTERN = /odnservice|payment.?gateway|paymentgateway|vendor|integration|ebiz/i;
+
+/**
+ * TODO(live): [200] ASUMIDO — status real de la mutación de link Stripe NO verificado
+ * (mismo criterio de documentación que eBizCharge). En Stripe la mutación NO sale del
+ * modal de credenciales (no hay): la dispara el FE al aterrizar de vuelta del OAuth
+ * Connect con `?code=ac_...` (setStripeCode). Fijar en la primera corrida viva.
+ */
+export const STRIPE_LINK_SUCCESS_STATUSES = [200] as const;
+
+/**
+ * TODO(live): matcher NO verificado — basado en la ruta backend del VendorController
+ * (`vendor/stripe/*`, business docs), espejo del patrón VERIFICADO `vendor/authorize`.
+ * Deliberadamente ESTRECHO (a diferencia del matcher amplio de eBiz): durante el
+ * onboarding OAuth el browser navega por `connect.stripe.com` disparando POSTs propios
+ * de Stripe — un needle amplio con `stripe` los matchearía y el assert tomaría el status
+ * de una request AJENA a la mutación de link de MAGIIS.
+ */
+export const STRIPE_LINK_MUTATION_URL_PATTERN = /vendor\/stripe/i;

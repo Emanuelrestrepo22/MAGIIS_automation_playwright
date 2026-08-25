@@ -184,11 +184,15 @@ export class CargoABordoSteps extends UiBase {
 					'gateway-pg:carrier',
 					`[card-precondition] ${scenario.passenger ?? scenario.client}: ${check.activeCards} tarjetas, tiene ${pre.requiredLast4}: ${check.hasRequiredCard}, limpiadas: ${check.cardsDeleted}`
 				);
-				if (!check.hasRequiredCard) {
-					throw new Error(
-						`[${pre.tcLabel}] PRECONDICIÓN NO CUMPLIDA: pasajero sin tarjeta ${pre.requiredLast4} activa (tarjetas activas: ${check.activeCards}). Vincular manualmente en TEST antes de ejecutar.`
-					);
-				}
+				// FIX 2026-08-07 (diagnóstico live TC1081): hard-throw → test.skip. Semántica de
+				// precondición-ausente, mismo patrón que CarrierHoldSteps.resolveCardFlow /
+				// ContractorHoldSteps card.kind='saved' — el pax sin la tarjeta requerida en TEST
+				// no es un bug de código ni de producto, es un dato de ambiente por vincular
+				// manualmente; un throw duro lo reportaba como fallo en vez de precondición.
+				test.skip(
+					!check.hasRequiredCard,
+					`[${pre.tcLabel}] Precondición: pasajero debe tener tarjeta ${pre.requiredLast4} vinculada en TEST (tarjetas activas: ${check.activeCards}). Vincular manualmente antes de ejecutar.`
+				);
 			});
 		}
 
