@@ -63,8 +63,7 @@ function readRequiredEnv(names: string[], what: string): string {
 		if (value) return value;
 	}
 	throw new Error(
-		`Falta ${names.join(' o ')} — ${what}. ` +
-			`Definilo en ${getMobileEnvFile()} (o exportalo en la terminal).`
+		`Falta ${names.join(' o ')} — ${what}. ` + `Definilo en ${getMobileEnvFile()} (o exportalo en la terminal).`
 	);
 }
 
@@ -97,10 +96,7 @@ export function resolveDriverTarget(actor: MobileActor = 'driver'): DriverTarget
 			[`ANDROID_${actor.toUpperCase()}_UDID`, 'ANDROID_UDID'],
 			'el dispositivo Android contra el que corre la sesión (adb devices)'
 		),
-		appiumUrl: readRequiredEnv(
-			['APPIUM_SERVER_URL'],
-			'la URL del servidor Appium (ej: http://localhost:4723)'
-		),
+		appiumUrl: readRequiredEnv(['APPIUM_SERVER_URL'], 'la URL del servidor Appium (ej: http://localhost:4723)'),
 		// Sólo es "override" si CONTRADICE al mapa. Declarar el mismo paquete que ya resuelve `ENV`
 		// no es un override, y marcarlo como tal diluye la señal: la etiqueta dejaría de distinguir
 		// la corrida sospechosa (marca blanca, build ad hoc) de la corrida normal.

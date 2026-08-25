@@ -126,7 +126,10 @@ const MAX_STRIPE_CONNECT_STEPS = 12;
  * la suite destructiva en vez de reventar dentro de `unlinkGateway()`.
  */
 export function isGatewayDestructiveSwitchAllowed(): boolean {
-	return process.env.GATEWAY_ALLOW_DESTRUCTIVE_SWITCH === 'true' || process.env.AUTHORIZE_ALLOW_DESTRUCTIVE_SWITCH === 'true';
+	return (
+		process.env.GATEWAY_ALLOW_DESTRUCTIVE_SWITCH === 'true' ||
+		process.env.AUTHORIZE_ALLOW_DESTRUCTIVE_SWITCH === 'true'
+	);
 }
 
 export class AppStoreGatewaysPage extends UiBase {
@@ -161,7 +164,10 @@ export class AppStoreGatewaysPage extends UiBase {
 	 * + `id="apiLoginKey"`. `ng-reflect-name` (debug-only, Angular dev mode) generó la confusión.
 	 */
 	private readonly authModal = (): Locator =>
-		this.page.locator('.modal, [role="dialog"]').filter({ has: this.page.locator('input[formcontrolname="apiLoginKey"]') }).first();
+		this.page
+			.locator('.modal, [role="dialog"]')
+			.filter({ has: this.page.locator('input[formcontrolname="apiLoginKey"]') })
+			.first();
 
 	/** Campos del modal Authorize por `formcontrolname` (verificado en vivo, corrige HANDOFF §1). */
 	private readonly apiLoginInput = (): Locator => this.page.locator('input[formcontrolname="apiLoginKey"]');
@@ -213,7 +219,9 @@ export class AppStoreGatewaysPage extends UiBase {
 				return this.ebizModal();
 			default:
 				// stripe = OAuth Connect (sin modal de creds); mercado-pago sin modal modelado.
-				throw new Error(`Modal de credenciales de '${company}' no modelado — solo authorize/ebizcharge tienen modal de link en este POM.`);
+				throw new Error(
+					`Modal de credenciales de '${company}' no modelado — solo authorize/ebizcharge tienen modal de link en este POM.`
+				);
 		}
 	}
 
@@ -321,7 +329,10 @@ export class AppStoreGatewaysPage extends UiBase {
 			await field.input.fill(field.value);
 		}
 		await this.linkSubmitIn(this.linkModalFor(company)).click();
-		await expect(this.desvincularLink(company), `la card ${company} debe quedar vinculada ("Unlink"/"Desvincular")`).toBeVisible({ timeout: 20_000 });
+		await expect(
+			this.desvincularLink(company),
+			`la card ${company} debe quedar vinculada ("Unlink"/"Desvincular")`
+		).toBeVisible({ timeout: 20_000 });
 		expect(await this.readState(company), 'estado esperado tras vincular = linked').toBe('linked');
 	}
 
@@ -330,16 +341,25 @@ export class AppStoreGatewaysPage extends UiBase {
 	 * `errorPattern` es el matcher de error POR PASARELA (E00008 es Authorize-only).
 	 * FRAGILE: el mensaje de error puede venir inline en el modal o como toast/swal.
 	 */
-	private async expectLinkRejectedImpl(company: GatewayCompany, args: { fields: LinkFieldEntry[]; errorPattern: RegExp }): Promise<void> {
+	private async expectLinkRejectedImpl(
+		company: GatewayCompany,
+		args: { fields: LinkFieldEntry[]; errorPattern: RegExp }
+	): Promise<void> {
 		await this.openLinkModalFor(company, args.fields[0].input);
 		for (const field of args.fields) {
 			await field.input.fill(field.value);
 		}
 		await this.linkSubmitIn(this.linkModalFor(company)).click();
-		await expect(this.page.getByText(args.errorPattern).first(), `debe mostrar el error de autenticación de ${company} sin vincular`).toBeVisible({
+		await expect(
+			this.page.getByText(args.errorPattern).first(),
+			`debe mostrar el error de autenticación de ${company} sin vincular`
+		).toBeVisible({
 			timeout: 20_000
 		});
-		expect(await this.readState(company), `${company} NO debe quedar vinculada tras credenciales inválidas`).not.toBe('linked');
+		expect(
+			await this.readState(company),
+			`${company} NO debe quedar vinculada tras credenciales inválidas`
+		).not.toBe('linked');
 	}
 
 	/**
@@ -358,7 +378,9 @@ export class AppStoreGatewaysPage extends UiBase {
 			await field.input.fill(field.value);
 		}
 		const [response] = await Promise.all([
-			this.page.waitForResponse(r => isGatewayMutation(r.url()) && r.request().method() !== 'GET', { timeout: 20_000 }),
+			this.page.waitForResponse(r => isGatewayMutation(r.url()) && r.request().method() !== 'GET', {
+				timeout: 20_000
+			}),
 			this.linkSubmitIn(this.linkModalFor(company)).click()
 		]);
 		expect(response.status(), `link ${company}: 400 = NO conectada`).not.toBe(400);
@@ -488,7 +510,8 @@ export class AppStoreGatewaysPage extends UiBase {
 			const action = ((await actionLink.textContent().catch(() => '')) ?? '').trim().toLowerCase();
 			if (action.includes('no disponible') || action.includes('not available')) return 'unavailable';
 			if (action.includes('desvincular') || action.includes('unlink')) return 'linked';
-			if (action.includes('vincular') || action.includes('link') || action.includes('habilitar')) return 'linkable';
+			if (action.includes('vincular') || action.includes('link') || action.includes('habilitar'))
+				return 'linkable';
 		}
 		// Fallback al texto completo de la card (sin link de acción visible, p.ej. MP fuera de región).
 		const raw = ((await card.textContent().catch(() => '')) ?? '').trim().toLowerCase();
@@ -527,7 +550,10 @@ export class AppStoreGatewaysPage extends UiBase {
 	 * controlado (response code E00008 — matcher Authorize-only) sin activar el gateway.
 	 * Wrapper por pasarela (S4); lógica compartida en `expectLinkRejectedImpl`.
 	 */
-	@atc('MG-221', { severity: 'critical', description: 'Impedir vincular Authorize con credenciales inválidas (E00008)' })
+	@atc('MG-221', {
+		severity: 'critical',
+		description: 'Impedir vincular Authorize con credenciales inválidas (E00008)'
+	})
 	async expectLinkRejected(creds: AuthorizeCreds): Promise<void> {
 		await this.expectLinkRejectedImpl('authorize', {
 			fields: this.authorizeLinkFields(creds),
@@ -560,7 +586,7 @@ export class AppStoreGatewaysPage extends UiBase {
 		if (!isGatewayDestructiveSwitchAllowed()) {
 			throw new Error(
 				'unlinkGateway() es DESTRUCTIVO: dispara cleaningWallets en cascada sobre el carrier 1521 (compartido por toda la suite gateway), borrando la tarjeta real del pasajero. ' +
-					'Requiere GATEWAY_ALLOW_DESTRUCTIVE_SWITCH=true puesto explícitamente para correr (alias legacy AUTHORIZE_ALLOW_DESTRUCTIVE_SWITCH también aceptado) — no está habilitado por defecto.',
+					'Requiere GATEWAY_ALLOW_DESTRUCTIVE_SWITCH=true puesto explícitamente para correr (alias legacy AUTHORIZE_ALLOW_DESTRUCTIVE_SWITCH también aceptado) — no está habilitado por defecto.'
 			);
 		}
 		await this.openUnlinkPopup(company);
@@ -594,7 +620,10 @@ export class AppStoreGatewaysPage extends UiBase {
 	 * cleaningWallets e inicia la desvinculación".
 	 * NO lleva MG-166: ese Test exige que las wallets locales queden vacías, y acá no se mira ni una
 	 * — lo acredita `api/vendor-cleaning-wallets/cleaning-wallets-db.api.spec.ts` contra Oracle. */
-	@atc('MG-165', { severity: 'critical', description: 'Confirmar el modal de desvinculación de eBizCharge dispara cleaningWallets' })
+	@atc('MG-165', {
+		severity: 'critical',
+		description: 'Confirmar el modal de desvinculación de eBizCharge dispara cleaningWallets'
+	})
 	async unlinkEbizcharge(): Promise<void> {
 		await this.unlinkGatewayImpl('ebizcharge');
 	}
@@ -634,7 +663,9 @@ export class AppStoreGatewaysPage extends UiBase {
 		await this.openUnlinkPopup(company);
 		await this.unlinkCancelButton().click();
 		// El cierre se verifica por la desaparición del botón afirmativo (mismo anclaje que la apertura).
-		await expect(this.unlinkConfirmButton(), 'el popup debe cerrarse sin desvincular').toBeHidden({ timeout: 10_000 });
+		await expect(this.unlinkConfirmButton(), 'el popup debe cerrarse sin desvincular').toBeHidden({
+			timeout: 10_000
+		});
 		expect(await this.readState(company), `${company} sigue vinculada tras cancelar`).toBe('linked');
 	}
 
@@ -659,7 +690,10 @@ export class AppStoreGatewaysPage extends UiBase {
 	 *
 	 * @atc MG-169 — área G (bug transversal: cleaningWallets no debe reportar éxito falso, TC-PAY-G-05).
 	 */
-	@atc('MG-169', { severity: 'critical', description: 'Fallo mockeado (500) de cleaningWallets no debe reportar éxito falso' })
+	@atc('MG-169', {
+		severity: 'critical',
+		description: 'Fallo mockeado (500) de cleaningWallets no debe reportar éxito falso'
+	})
 	async expectUnlinkFailureShowsRealError(company: GatewayCompany): Promise<void> {
 		await this.page.route('**/vendor/cleaningWallets/**', (route: Route) =>
 			route.fulfill({
@@ -690,7 +724,9 @@ export class AppStoreGatewaysPage extends UiBase {
 				.locator('ngb-modal-window[role="dialog"], .modal, [role="dialog"], .swal2-popup')
 				.filter({ hasText: /desvincular/i })
 				.first();
-			await expect(popup, 'debe abrirse el popup de confirmación de desvinculación').toBeVisible({ timeout: 15_000 });
+			await expect(popup, 'debe abrirse el popup de confirmación de desvinculación').toBeVisible({
+				timeout: 15_000
+			});
 			await popup
 				.getByRole('button', { name: /^confirmar$/i })
 				.first()
@@ -699,16 +735,20 @@ export class AppStoreGatewaysPage extends UiBase {
 			// El bug documentado (TC-PAY-G-05) es un toast/ícono de ÉXITO INCONDICIONAL — NO debe
 			// aparecer cuando el backend respondió 500 a la desvinculación.
 			const successIcon = this.page.locator('.swal2-icon.swal2-success, .swal2-success');
-			await expect(successIcon, 'BUG MG-169: el FE mostró un ícono/toast de ÉXITO pese al 500 mockeado de cleaningWallets').toBeHidden({
+			await expect(
+				successIcon,
+				'BUG MG-169: el FE mostró un ícono/toast de ÉXITO pese al 500 mockeado de cleaningWallets'
+			).toBeHidden({
 				timeout: 8_000
 			});
 
 			// Prueba funcional robusta (no depende del copy del toast): un fallo de backend NO puede
 			// dejar el FE "creyendo" que se desvinculó — la card debe seguir "linked" (y por lo tanto
 			// reintentable: el link "Desvincular" sigue visible).
-			expect(await this.readState(company), 'BUG MG-169: la pasarela quedó "no vinculada" en el FE pese al 500 mockeado — éxito falso').toBe(
-				'linked'
-			);
+			expect(
+				await this.readState(company),
+				'BUG MG-169: la pasarela quedó "no vinculada" en el FE pese al 500 mockeado — éxito falso'
+			).toBe('linked');
 		} finally {
 			this.page.off('request', onRequest);
 		}
@@ -743,14 +783,20 @@ export class AppStoreGatewaysPage extends UiBase {
 	}
 
 	/** ATC — exclusividad con Stripe activa. Wrapper por pasarela (key ESTRUCTURAL — TS-STRIPE-TC1006). */
-	@atc('MG-216', { severity: 'critical', description: 'Exclusividad: con Stripe activa no se puede vincular otra pasarela' })
+	@atc('MG-216', {
+		severity: 'critical',
+		description: 'Exclusividad: con Stripe activa no se puede vincular otra pasarela'
+	})
 	async expectExclusivityStripe(): Promise<void> {
 		await this.expectExclusivityImpl('stripe');
 	}
 
 	/** ATC — exclusividad con eBizCharge activa. Wrapper por pasarela (key ESTRUCTURAL — TS-EBIZ-TC1055).
 	 * MG-143 (A-03) del ATR estandarizado MG-559: "se garantiza una sola PSP conectada por carrier". */
-	@atc('MG-143', { severity: 'critical', description: 'Exclusividad: con eBizCharge activa no se puede vincular otra pasarela' })
+	@atc('MG-143', {
+		severity: 'critical',
+		description: 'Exclusividad: con eBizCharge activa no se puede vincular otra pasarela'
+	})
 	async expectExclusivityEbizcharge(): Promise<void> {
 		await this.expectExclusivityImpl('ebizcharge');
 	}
@@ -794,7 +840,10 @@ export class AppStoreGatewaysPage extends UiBase {
 	 * INVÁLIDAS (defecto de backend, ver DRAFT-improvement en docs/gateway-pg/authorize/) — por eso
 	 * el caso asserta además la persistencia del estado.
 	 */
-	@atc('MG-226', { severity: 'normal', description: 'La request de link de Authorize retorna status 200 (AC de matriz) y la pasarela queda vinculada' })
+	@atc('MG-226', {
+		severity: 'normal',
+		description: 'La request de link de Authorize retorna status 200 (AC de matriz) y la pasarela queda vinculada'
+	})
 	async expectLinkStatusOk(creds: AuthorizeCreds, options: LinkStatusOptions = {}): Promise<void> {
 		await this.expectLinkStatusOkImpl('authorize', {
 			fields: this.authorizeLinkFields(creds),
@@ -890,7 +939,9 @@ export class AppStoreGatewaysPage extends UiBase {
 		// Selectores del onboarding hosteado (record legacy + data-test público del test-mode
 		// de Stripe). INLINE acá: solo los usa este loop. FRAGILE/TODO(live).
 		const fillButton = this.page.locator('[data-test="test-mode-fill-button"]').first();
-		const submitButton = this.page.locator('[data-test="continue-button"], [data-testid="continue-button"], button[type="submit"]').first();
+		const submitButton = this.page
+			.locator('[data-test="continue-button"], [data-testid="continue-button"], button[type="submit"]')
+			.first();
 
 		for (let connectStep = 0; connectStep < MAX_STRIPE_CONNECT_STEPS && Date.now() < deadline; connectStep++) {
 			if (this.isBackAtApp()) return;
@@ -948,7 +999,10 @@ export class AppStoreGatewaysPage extends UiBase {
 	 *      asíncrono y la lista del App Store sirve un render cacheado.
 	 */
 	private async expectStripeLinkedAfterOAuthReturn(): Promise<void> {
-		expect(this.page.url(), 'el retorno de Stripe Connect debe traer el authorization code (?code=ac_...)').toContain('code=');
+		expect(
+			this.page.url(),
+			'el retorno de Stripe Connect debe traer el authorization code (?code=ac_...)'
+		).toContain('code=');
 		await this.page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {
 			/* polling en background — el goto+readState de abajo re-verifica contra el estado real */
 		});
@@ -986,14 +1040,22 @@ export class AppStoreGatewaysPage extends UiBase {
 	 * MAGIIS"), endurecer este ATC para ejercitar el rechazo explícito (redirect con
 	 * `?error=access_denied`) en lugar del abandono.
 	 */
-	@atc('MG-213', { severity: 'critical', description: 'Impedir vincular Stripe sin autorización OAuth completada (abandono del consent)' })
+	@atc('MG-213', {
+		severity: 'critical',
+		description: 'Impedir vincular Stripe sin autorización OAuth completada (abandono del consent)'
+	})
 	async expectStripeLinkRejected(): Promise<void> {
 		await this.startStripeOAuthFlow();
 		// Abandono: volver a la app por navegación propia (goto estabiliza cards + networkidle).
 		await this.goto();
 		// Documenta el contrato del abandono: sin consent completado NO existe authorization code.
-		expect(this.page.url(), 'sin completar el consent NO debe haber authorization code (code=)').not.toContain('code=');
-		expect(await this.readState('stripe'), 'Stripe NO debe quedar vinculada tras abandonar el OAuth sin autorizar').not.toBe('linked');
+		expect(this.page.url(), 'sin completar el consent NO debe haber authorization code (code=)').not.toContain(
+			'code='
+		);
+		expect(
+			await this.readState('stripe'),
+			'Stripe NO debe quedar vinculada tras abandonar el OAuth sin autorizar'
+		).not.toBe('linked');
 	}
 
 	/**
@@ -1010,7 +1072,11 @@ export class AppStoreGatewaysPage extends UiBase {
 	 * VendorController (`vendor/stripe/*`) — ver `data/link-status-defaults.ts`; fijar ambos
 	 * en la primera corrida viva (mismo criterio de documentación que eBizCharge).
 	 */
-	@atc('MG-218', { severity: 'normal', description: 'La mutación de link de Stripe tras el OAuth retorna un status de éxito conocido y la pasarela queda vinculada' })
+	@atc('MG-218', {
+		severity: 'normal',
+		description:
+			'La mutación de link de Stripe tras el OAuth retorna un status de éxito conocido y la pasarela queda vinculada'
+	})
 	async expectStripeLinkStatusOk(options: LinkStatusOptions = {}): Promise<void> {
 		const successStatuses = options.successStatuses ?? [...STRIPE_LINK_SUCCESS_STATUSES];
 		const urlPattern = options.urlPattern ?? STRIPE_LINK_MUTATION_URL_PATTERN;
@@ -1021,7 +1087,10 @@ export class AppStoreGatewaysPage extends UiBase {
 			.waitForResponse(r => urlPattern.test(r.url()) && r.request().method() !== 'GET', { timeout: 150_000 })
 			.catch((error: unknown) => (error instanceof Error ? error : new Error(String(error))));
 		await this.completeStripeConnectTestMode();
-		expect(this.page.url(), 'el retorno de Stripe Connect debe traer el authorization code (?code=ac_...)').toContain('code=');
+		expect(
+			this.page.url(),
+			'el retorno de Stripe Connect debe traer el authorization code (?code=ac_...)'
+		).toContain('code=');
 		const linkResponse = await linkResponsePromise;
 		if (linkResponse instanceof Error) {
 			throw new Error(

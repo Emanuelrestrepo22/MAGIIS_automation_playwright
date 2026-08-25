@@ -99,7 +99,11 @@ test('recorded — Authorize Quote CON hold · usuario invitado no registrado (r
 	await page.goto('https://yopmail.com/');
 	await page.getByRole('textbox', { name: 'Login' }).fill('magiisquote');
 	await page.getByRole('button', { name: '' }).click();
-	await page.locator('iframe[name="ifinbox"]').contentFrame().getByRole('button', { name: '17:45 no-reply@magiis.com' }).click();
+	await page
+		.locator('iframe[name="ifinbox"]')
+		.contentFrame()
+		.getByRole('button', { name: '17:45 no-reply@magiis.com' })
+		.click();
 	const confirmPagePromise = page.waitForEvent('popup');
 	await page.locator('iframe[name="ifmail"]').contentFrame().getByRole('link', { name: 'confirm_your_trip' }).click();
 	const confirmPage = await confirmPagePromise;

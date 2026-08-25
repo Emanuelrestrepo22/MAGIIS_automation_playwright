@@ -169,9 +169,12 @@ export class CargoABordoSteps extends UiBase {
 			await assertAuthorizeAccountMeasuresRealAuthorizations();
 		}
 
-		await test.step(scenario.gateway ? `Login carrier (creds chain ${scenario.gateway})` : 'Login carrier', async () => {
-			await this.login(scenario.gateway);
-		});
+		await test.step(
+			scenario.gateway ? `Login carrier (creds chain ${scenario.gateway})` : 'Login carrier',
+			async () => {
+				await this.login(scenario.gateway);
+			}
+		);
 
 		if (scenario.cardPrecondition) {
 			const pre = scenario.cardPrecondition;
@@ -366,7 +369,9 @@ export class CargoABordoSteps extends UiBase {
 					description: `${travelId} — viaje VIVO para cobrar manualmente desde la Driver App (keepTravel activo: no se canceló)${cardHint}`
 				});
 				await test.step(`Viaje ${travelId} queda VIVO para cobro manual en la Driver App`, async () => {
-					console.log(`[cargo-a-bordo] travelId=${travelId} — cobrar desde la Driver App; NO se canceló.${cardHint}`);
+					console.log(
+						`[cargo-a-bordo] travelId=${travelId} — cobrar desde la Driver App; NO se canceló.${cardHint}`
+					);
 				});
 			}
 		}

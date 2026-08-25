@@ -38,7 +38,7 @@ const appPaxScenario: CargoScenario = {
 	destination: TEST_DATA.destination,
 	// Card 3DS DETERMINÍSTICA always_authenticate (••••3184). Migrado desde la deprecada 3155
 	// (flaky por risk-score variable + ESLint anti-card-3155). apppax-hold-3ds ya usa esta card.
-	cardPrecondition: { apiSearchQuery: PASSENGERS.appPax.apiSearchQuery!, requiredLast4: '3184', tcLabel: 'TC1092' },
+	cardPrecondition: { apiSearchQuery: PASSENGERS.appPax.apiSearchQuery!, requiredLast4: '3184', tcLabel: 'TC1092' }
 };
 
 const APPIUM_NOTE = 'PENDIENTE: fase Driver App — requiere Appium.';
@@ -50,58 +50,64 @@ const APPIUM_NOTE = 'PENDIENTE: fase Driver App — requiere Appium.';
  */
 const charge3ds = (
 	raw: { number: string; exp: string; cvc: string; holderName: string; zip_code: string },
-	expectedOutcome: DriverChargeSpec['expectedOutcome'],
+	expectedOutcome: DriverChargeSpec['expectedOutcome']
 ): DriverChargeSpec => ({
 	card: { number: raw.number, expiry: raw.exp, cvc: raw.cvc, holderName: raw.holderName, postal: raw.zip_code },
 	expectedOutcome,
-	is3ds: true,
+	is3ds: true
 });
 
-test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo · 3DS @gateway @stripe @cargo-a-bordo @hold @3ds @critical', { annotation: [{ type: 'tms', description: 'MG-161' }] }, () => {
-
-	test('[TS-STRIPE-TC1092] @critical @3ds @cargo-a-bordo pago exitoso con 3DS desde Driver App', async ({ page }) => {
-		await new CargoABordoSteps({ page }).runCargoScenario(appPaxScenario, {
-			driverAppStep: {
-				title: '[DRIVER APP] Conductor finaliza viaje → 3DS requerido → pasajero completa challenge → cobro exitoso',
-				note: 'PENDIENTE: fase Driver App — requiere Appium + DriverTripPaymentScreen + manejo de WebView 3DS.',
-				// three_ds_required (4000 0000 0000 3220): misma card probada en empresa-cargo-3ds (TC1123).
-				charge: charge3ds(STRIPE_TEST_CARDS_RAW.three_ds_required, 'success'),
-			},
+test.describe(
+	'Gateway PG · Carrier · App Pax — Cargo a Bordo · 3DS @gateway @stripe @cargo-a-bordo @hold @3ds @critical',
+	{ annotation: [{ type: 'tms', description: 'MG-161' }] },
+	() => {
+		test('[TS-STRIPE-TC1092] @critical @3ds @cargo-a-bordo pago exitoso con 3DS desde Driver App', async ({
+			page
+		}) => {
+			await new CargoABordoSteps({ page }).runCargoScenario(appPaxScenario, {
+				driverAppStep: {
+					title: '[DRIVER APP] Conductor finaliza viaje → 3DS requerido → pasajero completa challenge → cobro exitoso',
+					note: 'PENDIENTE: fase Driver App — requiere Appium + DriverTripPaymentScreen + manejo de WebView 3DS.',
+					// three_ds_required (4000 0000 0000 3220): misma card probada en empresa-cargo-3ds (TC1123).
+					charge: charge3ds(STRIPE_TEST_CARDS_RAW.three_ds_required, 'success')
+				}
+			});
 		});
-	});
 
-	test('[TS-STRIPE-TC1093] @regression @3ds @cargo-a-bordo 3DS rechazado desde Driver App', async ({ page }) => {
-		await new CargoABordoSteps({ page }).runCargoScenario(appPaxScenario, {
-			driverAppStep: {
-				title: '[DRIVER APP] Conductor finaliza viaje → 3DS requerido → pasajero rechaza challenge → cobro fallido',
-				note: APPIUM_NOTE,
-				// visa_3ds_fail (4000 0084 0000 1629): el challenge aparece y la autenticación FALLA.
-				charge: charge3ds(STRIPE_TEST_CARDS_RAW.visa_3ds_fail, 'declined'),
-			},
+		test('[TS-STRIPE-TC1093] @regression @3ds @cargo-a-bordo 3DS rechazado desde Driver App', async ({ page }) => {
+			await new CargoABordoSteps({ page }).runCargoScenario(appPaxScenario, {
+				driverAppStep: {
+					title: '[DRIVER APP] Conductor finaliza viaje → 3DS requerido → pasajero rechaza challenge → cobro fallido',
+					note: APPIUM_NOTE,
+					// visa_3ds_fail (4000 0084 0000 1629): el challenge aparece y la autenticación FALLA.
+					charge: charge3ds(STRIPE_TEST_CARDS_RAW.visa_3ds_fail, 'declined')
+				}
+			});
 		});
-	});
 
-	test('[TS-STRIPE-TC1094] @regression @3ds @cargo-a-bordo error durante 3DS desde Driver App', async ({ page }) => {
-		await new CargoABordoSteps({ page }).runCargoScenario(appPaxScenario, {
-			driverAppStep: {
-				title: '[DRIVER APP] Conductor finaliza viaje → 3DS con error de autenticación → cobro fallido',
-				note: APPIUM_NOTE,
-				// error_3ds (4000 0084 2000 1629): error DURANTE la autenticación 3DS (fuente Excel TC1094).
-				charge: charge3ds(STRIPE_TEST_CARDS_RAW.error_3ds, 'declined'),
-			},
+		test('[TS-STRIPE-TC1094] @regression @3ds @cargo-a-bordo error durante 3DS desde Driver App', async ({
+			page
+		}) => {
+			await new CargoABordoSteps({ page }).runCargoScenario(appPaxScenario, {
+				driverAppStep: {
+					title: '[DRIVER APP] Conductor finaliza viaje → 3DS con error de autenticación → cobro fallido',
+					note: APPIUM_NOTE,
+					// error_3ds (4000 0084 2000 1629): error DURANTE la autenticación 3DS (fuente Excel TC1094).
+					charge: charge3ds(STRIPE_TEST_CARDS_RAW.error_3ds, 'declined')
+				}
+			});
 		});
-	});
 
-	test('[TS-STRIPE-TC1095] @regression @3ds @cargo-a-bordo falla 3DS desde Driver App', async ({ page }) => {
-		await new CargoABordoSteps({ page }).runCargoScenario(appPaxScenario, {
-			driverAppStep: {
-				title: '[DRIVER APP] Conductor finaliza viaje → 3DS falla completamente → cobro no procesado',
-				note: APPIUM_NOTE,
-				// declined_after_3ds: autenticación completa pero el cargo se rechaza post-auth (card_declined).
-				// NOTA SoT: comparte PAN con visa_3ds_fail (4000 0084 0000 1629) — misma card, semántica distinta.
-				charge: charge3ds(STRIPE_TEST_CARDS_RAW.declined_after_3ds, 'declined'),
-			},
+		test('[TS-STRIPE-TC1095] @regression @3ds @cargo-a-bordo falla 3DS desde Driver App', async ({ page }) => {
+			await new CargoABordoSteps({ page }).runCargoScenario(appPaxScenario, {
+				driverAppStep: {
+					title: '[DRIVER APP] Conductor finaliza viaje → 3DS falla completamente → cobro no procesado',
+					note: APPIUM_NOTE,
+					// declined_after_3ds: autenticación completa pero el cargo se rechaza post-auth (card_declined).
+					// NOTA SoT: comparte PAN con visa_3ds_fail (4000 0084 0000 1629) — misma card, semántica distinta.
+					charge: charge3ds(STRIPE_TEST_CARDS_RAW.declined_after_3ds, 'declined')
+				}
+			});
 		});
-	});
-
-});
+	}
+);

@@ -587,17 +587,17 @@ export type AuthorizeContractCase =
  * en `docs/gateway-pg/authorize/matriz_cases.md` §§2.2-2.5.
  */
 export const AUTHORIZE_CONTRACT_XRAY_KEYS: Record<AuthorizeContractCase, XrayIssueKey> = {
-	happyVisa: 'MG-590', /*       TC1  · tcid TC-PAY-SBX-01 */
-	happyMastercard: 'MG-591', /* TC2  · tcid TC-PAY-SBX-02 */
-	happyAmex: 'MG-592', /*       TC3  · tcid TC-PAY-SBX-03 */
-	echoCvv: 'MG-593', /*         TC4  · tcid TC-PAY-SBX-04 */
-	declineZip46282: 'MG-594', /* TC5  · tcid TC-PAY-SBX-05 */
-	cvv901: 'MG-595', /*          TC6  · tcid TC-PAY-SBX-06 */
-	cvv904: 'MG-596', /*          TC7  · tcid TC-PAY-SBX-07 */
-	avs46205: 'MG-597', /*        TC8  · tcid TC-PAY-SBX-08 */
-	happyDiscover: 'MG-598', /*   TC9  · tcid TC-PAY-SBX-09 */
-	avs46204: 'MG-599', /*        TC10 · tcid TC-PAY-SBX-10 */
-	partial46225: 'MG-600', /*    TC11 · tcid TC-PAY-SBX-11 */
+	happyVisa: 'MG-590' /*       TC1  · tcid TC-PAY-SBX-01 */,
+	happyMastercard: 'MG-591' /* TC2  · tcid TC-PAY-SBX-02 */,
+	happyAmex: 'MG-592' /*       TC3  · tcid TC-PAY-SBX-03 */,
+	echoCvv: 'MG-593' /*         TC4  · tcid TC-PAY-SBX-04 */,
+	declineZip46282: 'MG-594' /* TC5  · tcid TC-PAY-SBX-05 */,
+	cvv901: 'MG-595' /*          TC6  · tcid TC-PAY-SBX-06 */,
+	cvv904: 'MG-596' /*          TC7  · tcid TC-PAY-SBX-07 */,
+	avs46205: 'MG-597' /*        TC8  · tcid TC-PAY-SBX-08 */,
+	happyDiscover: 'MG-598' /*   TC9  · tcid TC-PAY-SBX-09 */,
+	avs46204: 'MG-599' /*        TC10 · tcid TC-PAY-SBX-10 */,
+	partial46225: 'MG-600' /*    TC11 · tcid TC-PAY-SBX-11 */,
 	prepaid46228: 'MG-601' /*     TC12 · tcid TC-PAY-SBX-12 */
 };
 

@@ -15,15 +15,16 @@ import type { TestContextOptions } from '@TestContext';
 
 import { test, expect } from '@TestFixture';
 import { UiBase } from '@ui/UiBase';
-import {
-	CarrierDashboardPage,
-	CarrierNewTravelPage,
-	CarrierTravelManagementPage,
-} from '@ui/carrier';
+import { CarrierDashboardPage, CarrierNewTravelPage, CarrierTravelManagementPage } from '@ui/carrier';
 import { CarrierHoldSteps, type CardFlow } from './CarrierHoldSteps';
 import { loginAsDispatcher, STRIPE_TEST_CARDS } from '@features/gateway-pg/fixtures/gateway.fixtures';
 import { setHoldViaApi, getCarrierParameters } from '@features/gateway-pg/helpers/parameters-api';
-import { captureCreatedTravelId, cancelTravel, cancelTravelDetailed, type TravelIdRef } from '@features/gateway-pg/helpers/travel-cleanup';
+import {
+	captureCreatedTravelId,
+	cancelTravel,
+	cancelTravelDetailed,
+	type TravelIdRef
+} from '@features/gateway-pg/helpers/travel-cleanup';
 import { waitForTravelCreation } from '@features/gateway-pg/helpers/stripe.helpers';
 
 export type ReactivationScenario = {
@@ -98,7 +99,7 @@ export class CarrierReactivationSteps extends UiBase {
 					passenger: scenario.passenger,
 					origin: scenario.origin,
 					destination: scenario.destination,
-					cardLast4,
+					cardLast4
 				});
 				await this.travel.clickSelectVehicle();
 				await this.travel.clickSendService();
@@ -114,8 +115,14 @@ export class CarrierReactivationSteps extends UiBase {
 				// (SQLGrammarException) — la PRECONDICION es imposible, no el sujeto del TC. Skip con
 				// motivo (misma semantica que los gates de Appium); un rojo aca mis-señalaria
 				// "reactivacion rota". 4xx/otros = fallo real de la precondicion -> assert.
-				test.skip(cancel.status >= 500, `BLOQUEADO backend TEST: cancel ${createdId} -> ${cancel.status} ${cancel.body.slice(0, 120)}`);
-				expect(cancel.ok, `La cancelación del viaje debe ser exitosa (status ${cancel.status}: ${cancel.body.slice(0, 160)})`).toBe(true);
+				test.skip(
+					cancel.status >= 500,
+					`BLOQUEADO backend TEST: cancel ${createdId} -> ${cancel.status} ${cancel.body.slice(0, 120)}`
+				);
+				expect(
+					cancel.ok,
+					`La cancelación del viaje debe ser exitosa (status ${cancel.status}: ${cancel.body.slice(0, 160)})`
+				).toBe(true);
 			});
 
 			await test.step('Reactivar el viaje cancelado desde Gestión de Viajes', async () => {
@@ -124,7 +131,12 @@ export class CarrierReactivationSteps extends UiBase {
 				// travelIdForCarrier — el href de travelId está muerto desde v1.72.8, confirmado en
 				// vivo): sin ancla, la primera coincidencia por texto en el carrier compartido podia
 				// ser una fila ya-reactivada/ajena (review MEDIUM-4).
-				await this.management.reactivate(scenario.passenger, shortDest, createdId as number, travelIdRef?.travelIdForCarrier ?? undefined);
+				await this.management.reactivate(
+					scenario.passenger,
+					shortDest,
+					createdId as number,
+					travelIdRef?.travelIdForCarrier ?? undefined
+				);
 			});
 
 			await test.step('Verificar reactivación — navega al despacho/asignación de conductores', async () => {
@@ -169,7 +181,12 @@ export class CarrierReactivationSteps extends UiBase {
 				await this.management.goto();
 				// Anclaje por código WEB del seed cuando está disponible (fix 2026-08-05 travelId,
 				// migrado 2026-08-12 a travelIdForCarrier — href muerto desde v1.72.8).
-				await this.management.reactivate(scenario.passenger, shortDest, seededTravelId, seededTravelIdForCarrier);
+				await this.management.reactivate(
+					scenario.passenger,
+					shortDest,
+					seededTravelId,
+					seededTravelIdForCarrier
+				);
 			});
 
 			await test.step('Verificar reactivación — navega al despacho/asignación de conductores', async () => {
@@ -200,7 +217,10 @@ export class CarrierReactivationSteps extends UiBase {
 	 * debería re-desafiar 3DS; si el PSP exigiera re-autenticación, el viaje reactivado caería
 	 * en NO_AUTORIZADO y este oráculo (URL de despacho) lo reportaría. Validar en corrida viva.
 	 */
-	async runReactivationScenario(scenario: ReactivationVariantScenario, options: ReactivationRunOptions): Promise<void> {
+	async runReactivationScenario(
+		scenario: ReactivationVariantScenario,
+		options: ReactivationRunOptions
+	): Promise<void> {
 		const holdSteps = new CarrierHoldSteps({ page: this.page });
 		// Listener propio para conocer el travelId del seed (runHoldScenario no lo retorna) —
 		// disciplina snapshot+dispose ANTES de la fase de reactivacion (review CRITICAL-1: la
@@ -234,16 +254,26 @@ export class CarrierReactivationSteps extends UiBase {
 			// ok=true (cancelo aca) o 4xx (ya cancelado por el cleanup interno) -> precondicion lista.
 			if (seededTravelId) {
 				const cancel = await cancelTravelDetailed(this.page, seededTravelId);
-				test.skip(cancel.status >= 500, `BLOQUEADO backend TEST: cancel ${seededTravelId} -> ${cancel.status} ${cancel.body.slice(0, 120)}`);
+				test.skip(
+					cancel.status >= 500,
+					`BLOQUEADO backend TEST: cancel ${seededTravelId} -> ${cancel.status} ${cancel.body.slice(0, 120)}`
+				);
 			}
-			await this.reactivateSeededCancelledTrip(scenario, seededTravelId ?? undefined, seededTravelIdForCarrier ?? undefined);
+			await this.reactivateSeededCancelledTrip(
+				scenario,
+				seededTravelId ?? undefined,
+				seededTravelIdForCarrier ?? undefined
+			);
 		} finally {
 			if (options.hold === 'off') {
 				await test.step('Restaurar hold al final del test', async () => {
 					await setHoldViaApi(this.page, true);
 					// Read-back CRUDO (misma disciplina que CarrierHoldSteps.enableHoldViaApi).
 					const persisted = await getCarrierParameters(this.page);
-					expect(persisted.enableCreditCardHold, 'read-back API: enableCreditCardHold debe quedar true tras restaurar').toBe(true);
+					expect(
+						persisted.enableCreditCardHold,
+						'read-back API: enableCreditCardHold debe quedar true tras restaurar'
+					).toBe(true);
 				});
 			}
 		}

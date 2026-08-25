@@ -47,7 +47,10 @@ async function run(): Promise<void> {
 
 	const out: Record<string, unknown> = { env: TARGET.env, appPackage: TARGET.appPackage };
 	let webview = '';
-	const evidence = new ScreenEvidence(driver, `pax-confirmar-programado-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}`);
+	const evidence = new ScreenEvidence(
+		driver,
+		`pax-confirmar-programado-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}`
+	);
 
 	try {
 		const contexts = (await driver.getContexts()) as unknown as string[];
@@ -74,7 +77,12 @@ async function run(): Promise<void> {
 						t.scrollIntoView({ block: 'center' });
 						const b = t.getBoundingClientRect();
 						if (!b.width || !b.height) return null;
-						return { x: b.left + b.width / 2, y: b.top + b.height / 2, vw: window.innerWidth, vh: window.innerHeight };
+						return {
+							x: b.left + b.width / 2,
+							y: b.top + b.height / 2,
+							vw: window.innerWidth,
+							vh: window.innerHeight
+						};
 					},
 					sel,
 					needle
@@ -91,7 +99,12 @@ async function run(): Promise<void> {
 					id: 'finger1',
 					parameters: { pointerType: 'touch' },
 					actions: [
-						{ type: 'pointerMove', duration: 0, x: Math.round(loc.x + box.x * (size.width / box.vw)), y: Math.round(loc.y + box.y * (size.height / box.vh)) },
+						{
+							type: 'pointerMove',
+							duration: 0,
+							x: Math.round(loc.x + box.x * (size.width / box.vw)),
+							y: Math.round(loc.y + box.y * (size.height / box.vh))
+						},
 						{ type: 'pointerDown', button: 0 },
 						{ type: 'pause', duration: 130 },
 						{ type: 'pointerUp', button: 0 }
@@ -132,11 +145,15 @@ async function run(): Promise<void> {
 		await evidence.capture('01-antes-de-confirmar').catch(() => undefined);
 
 		if (!/travel-info/i.test(before.url)) {
-			log('ABORTA: la app no esta en travel-info con un viaje armado. Correr primero passenger-schedule-trip.ts.');
+			log(
+				'ABORTA: la app no esta en travel-info con un viaje armado. Correr primero passenger-schedule-trip.ts.'
+			);
 			return;
 		}
 		if (!ALLOWED_PAYMENT.test(before.selectedPayment)) {
-			log(`ABORTA: el medio seleccionado es "${before.selectedPayment || '(ninguno)'}", y solo se permite Efectivo o Cuenta Corriente.`);
+			log(
+				`ABORTA: el medio seleccionado es "${before.selectedPayment || '(ninguno)'}", y solo se permite Efectivo o Cuenta Corriente.`
+			);
 			log('       No se confirma nada. Elegir el medio a mano y volver a correr.');
 			return;
 		}
@@ -146,7 +163,8 @@ async function run(): Promise<void> {
 		}
 		log('precondiciones OK -> se confirma el viaje programado');
 
-		const tapped = (await tap('programado para', 'button, ion-button')) || (await tap('programado', 'button, ion-button'));
+		const tapped =
+			(await tap('programado para', 'button, ion-button')) || (await tap('programado', 'button, ion-button'));
 		out.tapped = tapped;
 		log(tapped ? 'confirmacion enviada' : 'AVISO: no se encontro el boton de confirmacion');
 		await driver.pause(7000);

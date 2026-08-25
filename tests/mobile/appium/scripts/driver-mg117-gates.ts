@@ -97,19 +97,23 @@ async function clearField(driver: WebdriverIO.Browser): Promise<void> {
 
 async function typeTerm(driver: WebdriverIO.Browser, term: string, gapMs: number): Promise<void> {
 	for (let i = 1; i <= term.length; i++) {
-		await driver.execute((value: string, isLast: boolean) => {
-			const visible = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
-			const target = Array.from(document.querySelectorAll('input'))
-				.filter(visible)
-				.find(el => !(el as HTMLInputElement).readOnly) as HTMLInputElement | undefined;
-			if (!target) return;
-			const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
-			setter?.call(target, value);
-			target.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
-			target.dispatchEvent(new Event('ionInput', { bubbles: true, composed: true } as EventInit));
-			// Same clock as the capture hook, so the debounce delta has no host/device skew.
-			if (isLast) (window as any).__mg117LastKeystrokeAt = Date.now();
-		}, term.slice(0, i), i === term.length);
+		await driver.execute(
+			(value: string, isLast: boolean) => {
+				const visible = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
+				const target = Array.from(document.querySelectorAll('input'))
+					.filter(visible)
+					.find(el => !(el as HTMLInputElement).readOnly) as HTMLInputElement | undefined;
+				if (!target) return;
+				const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+				setter?.call(target, value);
+				target.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+				target.dispatchEvent(new Event('ionInput', { bubbles: true, composed: true } as EventInit));
+				// Same clock as the capture hook, so the debounce delta has no host/device skew.
+				if (isLast) (window as any).__mg117LastKeystrokeAt = Date.now();
+			},
+			term.slice(0, i),
+			i === term.length
+		);
 		if (i < term.length) await driver.pause(gapMs);
 	}
 }
@@ -125,14 +129,15 @@ async function measure(
 	await typeTerm(driver, term, KEY_GAP_MS);
 	await driver.pause(settleMs);
 
-	const lastKeystrokeAt = (await driver.execute(() => (window as any).__mg117LastKeystrokeAt ?? null)) as number | null;
+	const lastKeystrokeAt = (await driver.execute(() => (window as any).__mg117LastKeystrokeAt ?? null)) as
+		| number
+		| null;
 	const capture = await readWebViewNetworkCapture(driver);
 	const calls = (capture.entries as Entry[]).filter(e => String(e.url).includes('places/autocomplete'));
 
 	const startedTimes = calls.map(c => new Date(c.startedAt).getTime()).sort((a, b) => a - b);
 	const gapsMs = startedTimes.slice(1).map((t, i) => t - startedTimes[i]);
-	const msFromLastKeystroke =
-		lastKeystrokeAt && startedTimes.length > 0 ? startedTimes[0] - lastKeystrokeAt : null;
+	const msFromLastKeystroke = lastKeystrokeAt && startedTimes.length > 0 ? startedTimes[0] - lastKeystrokeAt : null;
 
 	const param = (url: string, name: string): string => {
 		const match = new RegExp(`[?&]${name}=([^&]*)`).exec(url);
@@ -248,8 +253,12 @@ async function run(): Promise<void> {
 		const threeChars = results.find(r => r.label.startsWith('TM-657'));
 		const debounce = results.find(r => r.label.startsWith('TM-654'));
 
-		log(`TM-656 (2 chars no consulta): ${twoChars && twoChars.calls === 0 ? 'PASA' : 'FALLA'} — ${twoChars?.calls} llamadas`);
-		log(`TM-657 (3 chars sí consulta): ${threeChars && threeChars.calls > 0 ? 'PASA' : 'FALLA'} — ${threeChars?.calls} llamadas`);
+		log(
+			`TM-656 (2 chars no consulta): ${twoChars && twoChars.calls === 0 ? 'PASA' : 'FALLA'} — ${twoChars?.calls} llamadas`
+		);
+		log(
+			`TM-657 (3 chars sí consulta): ${threeChars && threeChars.calls > 0 ? 'PASA' : 'FALLA'} — ${threeChars?.calls} llamadas`
+		);
 		if (debounce) {
 			const single = debounce.calls === 1;
 			const timing = debounce.msFromLastKeystroke;
@@ -259,8 +268,12 @@ async function run(): Promise<void> {
 					`${debounce.calls} llamada(s), ${timing ?? '?'} ms tras la última tecla`
 			);
 		}
-		log(`TM-655 (término repetido): ${repeatCalls.length === 0 ? 'PASA' : 'FALLA'} — ${repeatCalls.length} llamadas`);
-		log(`TM-650 (sin tráfico a Google): ${googleAfter.available ? (newGoogle === 0 ? 'PASA' : 'FALLA') : 'INDETERMINADO'} — ${newGoogle} recursos nuevos`);
+		log(
+			`TM-655 (término repetido): ${repeatCalls.length === 0 ? 'PASA' : 'FALLA'} — ${repeatCalls.length} llamadas`
+		);
+		log(
+			`TM-650 (sin tráfico a Google): ${googleAfter.available ? (newGoogle === 0 ? 'PASA' : 'FALLA') : 'INDETERMINADO'} — ${newGoogle} recursos nuevos`
+		);
 
 		const allTokens = Array.from(new Set(results.flatMap(r => r.sessionTokens).filter(Boolean)));
 		log(`TM-662 (sessionToken): ${allTokens.length} token(s) distintos en toda la sesión`);

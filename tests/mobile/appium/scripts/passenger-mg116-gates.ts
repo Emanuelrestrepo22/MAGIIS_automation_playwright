@@ -196,7 +196,10 @@ function paramOf(url: string, name: string): string {
 function paramNames(url: string): string[] {
 	const qs = url.split('?')[1];
 	if (!qs) return [];
-	return qs.split('&').map(kv => kv.split('=')[0]).filter(Boolean);
+	return qs
+		.split('&')
+		.map(kv => kv.split('=')[0])
+		.filter(Boolean);
 }
 
 /** El endpoint devuelve un ARRAY PELADO, sin envelope — medido en vivo el 2026-08-12. */
@@ -221,9 +224,9 @@ async function measure(
 	await typeTerm(driver, mode, FIELD_PREFIX, term, KEY_GAP_MS);
 	await driver.pause(SETTLE_MS);
 
-	const lastKeystrokeAt = (await driver.execute(
-		() => (window as any).__mg116LastKeystrokeAt ?? null
-	)) as number | null;
+	const lastKeystrokeAt = (await driver.execute(() => (window as any).__mg116LastKeystrokeAt ?? null)) as
+		| number
+		| null;
 	const capture = await readWebViewNetworkCapture(driver);
 	const calls = (capture.entries as Entry[]).filter(e => String(e.url).includes('places/autocomplete'));
 
@@ -257,7 +260,11 @@ function report(m: Measurement): void {
 			acc[k] = (acc[k] ?? 0) + 1;
 			return acc;
 		}, {});
-		log(`   filas por source: ${Object.entries(bySource).map(([k, v]) => `${k}=${v}`).join(', ')}`);
+		log(
+			`   filas por source: ${Object.entries(bySource)
+				.map(([k, v]) => `${k}=${v}`)
+				.join(', ')}`
+		);
 	}
 }
 
@@ -268,11 +275,11 @@ function analyzePredictions(all: Prediction[]): {
 	googleNullCoords: Prediction[];
 	stringCoords: boolean;
 } {
-	const airportNullPlaceId = all.filter(p => p.source === 'AIRPORT' && (p.placeId === null || p.placeId === undefined));
-	const cacheFlaggedAirport = all.filter(p => p.source === 'CACHE' && p.airport === true);
-	const googleNullCoords = all.filter(
-		p => p.source === 'GOOGLE' && (p.latitude === null || p.longitude === null)
+	const airportNullPlaceId = all.filter(
+		p => p.source === 'AIRPORT' && (p.placeId === null || p.placeId === undefined)
 	);
+	const cacheFlaggedAirport = all.filter(p => p.source === 'CACHE' && p.airport === true);
+	const googleNullCoords = all.filter(p => p.source === 'GOOGLE' && (p.latitude === null || p.longitude === null));
 	const withCoords = all.find(p => p.latitude !== null && p.latitude !== undefined);
 	return {
 		airportNullPlaceId,
@@ -401,7 +408,9 @@ async function run(): Promise<void> {
 		const mixed = results.find(r => r.label.startsWith('TM-682'));
 		const debounce = results.find(r => r.label.startsWith('TM-678'));
 
-		log(`TM-680 (2 chars no consulta): ${twoChars && twoChars.calls === 0 ? 'PASA' : 'FALLA'} — ${twoChars?.calls} llamadas`);
+		log(
+			`TM-680 (2 chars no consulta): ${twoChars && twoChars.calls === 0 ? 'PASA' : 'FALLA'} — ${twoChars?.calls} llamadas`
+		);
 		log(
 			`TM-681 (3 chars si consulta): ${threeChars && threeChars.calls > 0 ? 'PASA' : 'FALLA'} — ${threeChars?.calls} llamadas`
 		);
@@ -416,14 +425,17 @@ async function run(): Promise<void> {
 			);
 		}
 
-		log(`TM-679 (termino repetido): ${repeatCalls.length === 0 ? 'PASA' : 'FALLA'} — ${repeatCalls.length} llamadas`);
+		log(
+			`TM-679 (termino repetido): ${repeatCalls.length === 0 ? 'PASA' : 'FALLA'} — ${repeatCalls.length} llamadas`
+		);
 
 		// TM-675: contrato del request. El AC manda enviar `radius`; el endpoint lo ignora.
 		const contractSample = threeChars?.paramsSeen.length ? threeChars : results.find(r => r.paramsSeen.length);
 		if (contractSample) {
 			const p = contractSample.paramsSeen;
 			const has = (n: string): boolean => p.includes(n);
-			const contractOk = has('address') && has('latitude') && has('longitude') && !has('radius') && !has('language');
+			const contractOk =
+				has('address') && has('latitude') && has('longitude') && !has('radius') && !has('language');
 			log(
 				`TM-675 (contrato del request): ${contractOk ? 'PASA' : 'FALLA'} — presentes [${p.join(', ')}]` +
 					`${has('radius') ? ' · lleva radius, que el backend ignora' : ''}` +
@@ -454,7 +466,7 @@ async function run(): Promise<void> {
 		}
 
 		// TM-678 — se mide, no se dictamina. Ver el bloque §DEBOUNCE de la cabecera.
-        if (debounce) {
+		if (debounce) {
 			const ms = debounce.msFromLastKeystroke;
 			log(`\nTM-678 (debounce) — SIN VEREDICTO, por diseno.`);
 			log(`   llamadas: ${debounce.calls} · ms tras la ultima tecla: ${ms ?? '?'}`);

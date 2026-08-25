@@ -77,7 +77,10 @@ test.describe(
 				// verdes de punta a punta — solo el paso 9 (confirmacion por mail) esta bloqueado.
 				// Ver docstring de goToPayment/fillCardIframes en QuoteWidgetPage.ts (fix aplicado y
 				// confirmado); "Verificar el envio del lado de MAGIIS" (mensaje del propio helper).
-				test.skip(true, 'BLOQUEADO producto: mail de confirmacion de Quote no llega del backend MAGIIS (0/60s, 2 ejes) — defect report 2026-08-07');
+				test.skip(
+					true,
+					'BLOQUEADO producto: mail de confirmacion de Quote no llega del backend MAGIIS (0/60s, 2 ejes) — defect report 2026-08-07'
+				);
 				await new QuoteSteps({ page }).runColaboradorQuoteScenario(
 					browser,
 					quoteScenario('TS-STRIPE-P2-TC011 quote colaborador telefono hold (automatizado)'),
@@ -97,7 +100,10 @@ test.describe(
 				// verdes de punta a punta — solo el paso 9 (confirmacion por mail) esta bloqueado.
 				// Ver docstring de goToPayment/fillCardIframes en QuoteWidgetPage.ts (fix aplicado y
 				// confirmado); "Verificar el envio del lado de MAGIIS" (mensaje del propio helper).
-				test.skip(true, 'BLOQUEADO producto: mail de confirmacion de Quote no llega del backend MAGIIS (0/60s, 2 ejes) — defect report 2026-08-07');
+				test.skip(
+					true,
+					'BLOQUEADO producto: mail de confirmacion de Quote no llega del backend MAGIIS (0/60s, 2 ejes) — defect report 2026-08-07'
+				);
 				await new QuoteSteps({ page }).runColaboradorQuoteScenario(
 					browser,
 					quoteScenario('TS-STRIPE-P2-TC012 quote colaborador telefono sin hold (automatizado)'),
@@ -119,7 +125,10 @@ test.describe(
 				// verdes de punta a punta — solo el paso 9 (confirmacion por mail) esta bloqueado.
 				// Ver docstring de goToPayment/fillCardIframes en QuoteWidgetPage.ts (fix aplicado y
 				// confirmado); "Verificar el envio del lado de MAGIIS" (mensaje del propio helper).
-				test.skip(true, 'BLOQUEADO producto: mail de confirmacion de Quote no llega del backend MAGIIS (0/60s, 2 ejes) — defect report 2026-08-07');
+				test.skip(
+					true,
+					'BLOQUEADO producto: mail de confirmacion de Quote no llega del backend MAGIIS (0/60s, 2 ejes) — defect report 2026-08-07'
+				);
 				await new QuoteSteps({ page }).runColaboradorQuoteScenario(
 					browser,
 					quoteScenario('TS-STRIPE-P2-TC013 quote colaborador mail hold (automatizado)'),
@@ -139,7 +148,10 @@ test.describe(
 				// verdes de punta a punta — solo el paso 9 (confirmacion por mail) esta bloqueado.
 				// Ver docstring de goToPayment/fillCardIframes en QuoteWidgetPage.ts (fix aplicado y
 				// confirmado); "Verificar el envio del lado de MAGIIS" (mensaje del propio helper).
-				test.skip(true, 'BLOQUEADO producto: mail de confirmacion de Quote no llega del backend MAGIIS (0/60s, 2 ejes) — defect report 2026-08-07');
+				test.skip(
+					true,
+					'BLOQUEADO producto: mail de confirmacion de Quote no llega del backend MAGIIS (0/60s, 2 ejes) — defect report 2026-08-07'
+				);
 				await new QuoteSteps({ page }).runColaboradorQuoteScenario(
 					browser,
 					quoteScenario('TS-STRIPE-P2-TC014 quote colaborador mail sin hold (automatizado)'),
@@ -161,7 +173,10 @@ test.describe(
 				// verdes de punta a punta — solo el paso 9 (confirmacion por mail) esta bloqueado.
 				// Ver docstring de goToPayment/fillCardIframes en QuoteWidgetPage.ts (fix aplicado y
 				// confirmado); "Verificar el envio del lado de MAGIIS" (mensaje del propio helper).
-				test.skip(true, 'BLOQUEADO producto: mail de confirmacion de Quote no llega del backend MAGIIS (0/60s, 2 ejes) — defect report 2026-08-07');
+				test.skip(
+					true,
+					'BLOQUEADO producto: mail de confirmacion de Quote no llega del backend MAGIIS (0/60s, 2 ejes) — defect report 2026-08-07'
+				);
 				await new QuoteSteps({ page }).runColaboradorQuoteScenario(
 					browser,
 					quoteScenario('TS-STRIPE-P2-TC015 quote colaborador telefono hold 3DS (automatizado)'),
@@ -181,7 +196,10 @@ test.describe(
 				// verdes de punta a punta — solo el paso 9 (confirmacion por mail) esta bloqueado.
 				// Ver docstring de goToPayment/fillCardIframes en QuoteWidgetPage.ts (fix aplicado y
 				// confirmado); "Verificar el envio del lado de MAGIIS" (mensaje del propio helper).
-				test.skip(true, 'BLOQUEADO producto: mail de confirmacion de Quote no llega del backend MAGIIS (0/60s, 2 ejes) — defect report 2026-08-07');
+				test.skip(
+					true,
+					'BLOQUEADO producto: mail de confirmacion de Quote no llega del backend MAGIIS (0/60s, 2 ejes) — defect report 2026-08-07'
+				);
 				await new QuoteSteps({ page }).runColaboradorQuoteScenario(
 					browser,
 					quoteScenario('TS-STRIPE-P2-TC016 quote colaborador telefono sin hold 3DS (automatizado)'),
@@ -203,7 +221,10 @@ test.describe(
 				// verdes de punta a punta — solo el paso 9 (confirmacion por mail) esta bloqueado.
 				// Ver docstring de goToPayment/fillCardIframes en QuoteWidgetPage.ts (fix aplicado y
 				// confirmado); "Verificar el envio del lado de MAGIIS" (mensaje del propio helper).
-				test.skip(true, 'BLOQUEADO producto: mail de confirmacion de Quote no llega del backend MAGIIS (0/60s, 2 ejes) — defect report 2026-08-07');
+				test.skip(
+					true,
+					'BLOQUEADO producto: mail de confirmacion de Quote no llega del backend MAGIIS (0/60s, 2 ejes) — defect report 2026-08-07'
+				);
 				await new QuoteSteps({ page }).runColaboradorQuoteScenario(
 					browser,
 					quoteScenario('TS-STRIPE-P2-TC017 quote colaborador mail hold 3DS (automatizado)'),
@@ -223,7 +244,10 @@ test.describe(
 				// verdes de punta a punta — solo el paso 9 (confirmacion por mail) esta bloqueado.
 				// Ver docstring de goToPayment/fillCardIframes en QuoteWidgetPage.ts (fix aplicado y
 				// confirmado); "Verificar el envio del lado de MAGIIS" (mensaje del propio helper).
-				test.skip(true, 'BLOQUEADO producto: mail de confirmacion de Quote no llega del backend MAGIIS (0/60s, 2 ejes) — defect report 2026-08-07');
+				test.skip(
+					true,
+					'BLOQUEADO producto: mail de confirmacion de Quote no llega del backend MAGIIS (0/60s, 2 ejes) — defect report 2026-08-07'
+				);
 				await new QuoteSteps({ page }).runColaboradorQuoteScenario(
 					browser,
 					quoteScenario('TS-STRIPE-P2-TC018 quote colaborador mail sin hold 3DS (automatizado)'),

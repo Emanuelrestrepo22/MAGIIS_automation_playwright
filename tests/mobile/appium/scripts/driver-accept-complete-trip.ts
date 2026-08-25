@@ -24,4 +24,7 @@ async function run(): Promise<void> {
 	}
 }
 
-run().catch((e: unknown) => { console.error(`[driver-flow] ${e instanceof Error ? e.message : String(e)}`); process.exit(1); });
+run().catch((e: unknown) => {
+	console.error(`[driver-flow] ${e instanceof Error ? e.message : String(e)}`);
+	process.exit(1);
+});

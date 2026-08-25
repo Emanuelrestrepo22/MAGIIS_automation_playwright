@@ -35,7 +35,9 @@ export function cardFormFor(gateway: GatewayName): CardFormStrategy {
 
 	const adapter = getGatewayPgAdapter(gateway);
 	const strategy: CardFormStrategy =
-		adapter.cardForm === 'stripe-elements' ? new StripeElementsCardForm() : new NativeAngularCardForm({ extraField: adapter.nativeExtraField });
+		adapter.cardForm === 'stripe-elements'
+			? new StripeElementsCardForm()
+			: new NativeAngularCardForm({ extraField: adapter.nativeExtraField });
 
 	strategyCache.set(gateway, strategy);
 	return strategy;

@@ -31,14 +31,16 @@ test.describe(`[SMOKE][MP][${env.toUpperCase()}] Alta sin hold · Contractor col
 	// El fixture KATA (@TestFixture) no define la opción `role` — login explícito en el Step.
 	test.use({ storageState: { cookies: [], origins: [] } });
 
-	test('@smoke @gateway @gateway-pg @mercadopago @contractor @no-hold @happy [MP-NOHOLD-04] Colaborador empresa · alta sin hold con tarjeta APRO → redirect dashboard', async ({ page }) => {
+	test('@smoke @gateway @gateway-pg @mercadopago @contractor @no-hold @happy [MP-NOHOLD-04] Colaborador empresa · alta sin hold con tarjeta APRO → redirect dashboard', async ({
+		page
+	}) => {
 		await new ContractorHoldSteps({ page }).runColaboradorScenario({
 			gateway: 'mercado-pago',
 			user: MP_COLABORADOR,
 			origin: MP_ORIGIN,
 			destination: MP_DESTINATION,
 			card: { kind: 'new' }, // tarjeta resuelta por el Step vía resolveCard (holder APRO)
-			threeDs: 'none',
+			threeDs: 'none'
 		});
 	});
 });

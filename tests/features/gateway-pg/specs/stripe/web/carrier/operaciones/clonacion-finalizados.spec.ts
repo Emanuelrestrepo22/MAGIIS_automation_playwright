@@ -91,7 +91,9 @@ test.describe(
 		});
 
 		test.describe('Con 3DS', () => {
-			test('[TS-STRIPE-P2-TC076] @regression @3ds @hold clonación finalizado hold+cobro 3DS', async ({ page }) => {
+			test('[TS-STRIPE-P2-TC076] @regression @3ds @hold clonación finalizado hold+cobro 3DS', async ({
+				page
+			}) => {
 				await new CarrierCloneSteps({ page }).runCloneScenario(
 					empresaCloneScenario(),
 					fromFinalizados({ hold: 'on', threeDs: true, cardFlow: 'new' })

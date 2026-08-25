@@ -42,7 +42,8 @@ const FIELD =
 	process.env.MG116_FIELD_SELECTOR ??
 	'#main-content > app-addresses > ion-content > div > form > div:nth-child(2) > ion-row > ion-col > ion-item > ion-input > input';
 /** Respaldo por atributo, por si el arbol cambia de forma. */
-const FIELD_FALLBACK = process.env.MG116_FIELD_SELECTOR ?? 'app-addresses input[name="input-from"], app-addresses ion-input input';
+const FIELD_FALLBACK =
+	process.env.MG116_FIELD_SELECTOR ?? 'app-addresses input[name="input-from"], app-addresses ion-input input';
 /** Con `MG116_SKIP_NAV=1` se mide la pantalla que ya esta abierta, sin intentar navegar. */
 const SKIP_NAV = process.env.MG116_SKIP_NAV === '1';
 const SURFACE_LABEL = process.env.MG116_LABEL ?? 'S7 · Perfil > Mis Direcciones · campo Direccion';
@@ -79,7 +80,10 @@ async function run(): Promise<void> {
 		} as Record<string, unknown>
 	});
 
-	const evidence = new ScreenEvidence(driver, `mg116-${(process.env.MG116_SLUG ?? 's7')}-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}`);
+	const evidence = new ScreenEvidence(
+		driver,
+		`mg116-${process.env.MG116_SLUG ?? 's7'}-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}`
+	);
 	const out: Record<string, unknown> = {
 		ticket: 'MG-116',
 		surface: SURFACE_LABEL,
@@ -152,7 +156,9 @@ async function run(): Promise<void> {
 			await typeAndStamp(driver, selector, t);
 			await driver.pause(120);
 		}
-		const stampedAt = (await driver.execute(() => (window as never as { __mgStamp?: number }).__mgStamp ?? null)) as number | null;
+		const stampedAt = (await driver.execute(
+			() => (window as never as { __mgStamp?: number }).__mgStamp ?? null
+		)) as number | null;
 		await driver.pause(SETTLE_MS);
 
 		const own = await ownCalls(driver);
@@ -194,7 +200,8 @@ async function run(): Promise<void> {
 		let b2: { status: string; verdict: string };
 		const count = own.length > 0 ? own.length : rtNew.length;
 		if (count === 0) b2 = { status: 'SIN_DATOS', verdict: 'Sin consultas, no hay debounce que medir.' };
-		else if (delayMs === null) b2 = { status: 'NO_EJERCIDO', verdict: 'No se pudo obtener el sello temporal para medir la latencia.' };
+		else if (delayMs === null)
+			b2 = { status: 'NO_EJERCIDO', verdict: 'No se pudo obtener el sello temporal para medir la latencia.' };
 		else if (count > 1)
 			b2 = {
 				status: 'FAIL',
@@ -205,7 +212,11 @@ async function run(): Promise<void> {
 				status: 'FAIL',
 				verdict: `Agrupa en 1 consulta via ${channel}, pero la ventana medida es de ${delayMs} ms contra los ~300 ms del AC. La demora es perceptible para el usuario.`
 			};
-		else b2 = { status: 'PASS', verdict: `1 consulta via ${channel}, disparada ${delayMs} ms despues de la ultima tecla.` };
+		else
+			b2 = {
+				status: 'PASS',
+				verdict: `1 consulta via ${channel}, disparada ${delayMs} ms despues de la ultima tecla.`
+			};
 		log(`  B2 ${b2.status}: ${b2.verdict}`);
 
 		// ---------------------------------------------------------------- predicciones y seleccion
@@ -239,7 +250,10 @@ async function run(): Promise<void> {
 		out.finishedAt = new Date().toISOString();
 		const dir = path.resolve('evidence', 'network-capture');
 		await mkdir(dir, { recursive: true });
-		const f = path.join(dir, `mg116-superficie-${(process.env.MG116_SLUG ?? 's7')}-${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
+		const f = path.join(
+			dir,
+			`mg116-superficie-${process.env.MG116_SLUG ?? 's7'}-${new Date().toISOString().replace(/[:.]/g, '-')}.json`
+		);
 		await writeFile(f, JSON.stringify(out, null, 2), 'utf8');
 		log(`Evidencia -> ${f}`);
 		await driver.deleteSession().catch(() => undefined);
@@ -296,14 +310,21 @@ async function pickType(driver: WebdriverIO.Browser, webview: string): Promise<b
 	return Boolean(picked);
 }
 
-async function tapByText(driver: WebdriverIO.Browser, webview: string, needle: string, timeout = 7000): Promise<boolean> {
+async function tapByText(
+	driver: WebdriverIO.Browser,
+	webview: string,
+	needle: string,
+	timeout = 7000
+): Promise<boolean> {
 	const target = needle.toLowerCase();
 	const deadline = Date.now() + timeout;
 	while (Date.now() < deadline) {
 		const rect = (await driver
 			.execute((t: string) => {
 				const vis = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
-				const el = Array.from(document.querySelectorAll('button, ion-item, ion-col, ion-label, ion-select, div, span'))
+				const el = Array.from(
+					document.querySelectorAll('button, ion-item, ion-col, ion-label, ion-select, div, span')
+				)
 					.filter(vis)
 					.find(e => (e.textContent ?? '').toLowerCase().includes(t) && (e.textContent ?? '').length < 70) as
 					| HTMLElement
@@ -311,7 +332,12 @@ async function tapByText(driver: WebdriverIO.Browser, webview: string, needle: s
 				if (!el) return null;
 				const r = el.getBoundingClientRect();
 				if (!r.width || !r.height) return null;
-				return { x: r.left + r.width / 2, y: r.top + r.height / 2, vw: window.innerWidth, vh: window.innerHeight };
+				return {
+					x: r.left + r.width / 2,
+					y: r.top + r.height / 2,
+					vw: window.innerWidth,
+					vh: window.innerHeight
+				};
 			}, target)
 			.catch(() => null)) as { x: number; y: number; vw: number; vh: number } | null;
 		if (rect) {

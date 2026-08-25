@@ -161,7 +161,10 @@ export class ContractorHoldSteps extends UiBase {
 						// Guard future-proof (hoy INERTE): 'validation-failed' está RESERVADO a evidencia
 						// live (UAT) de un fallo distinguible de la limitación sandbox — hoy ningún camino
 						// lo retorna en TEST (el error explícito es la manifestación documentada → skip).
-						expect(mpLink, 'MP: señal de fallo real de validación distinguible de la limitación sandbox (evidencia live)').not.toBe('validation-failed');
+						expect(
+							mpLink,
+							'MP: señal de fallo real de validación distinguible de la limitación sandbox (evidencia live)'
+						).not.toBe('validation-failed');
 						test.skip(
 							mpLink !== 'linked',
 							'MP: validación de tarjeta no completa en TEST (sandbox MP no transacciona) — UAT-only. Form-fill + habilitación de "Validar" verificados.'
@@ -190,14 +193,18 @@ export class ContractorHoldSteps extends UiBase {
 						token = await extractAuthToken(this.page);
 					}
 					if (!token) {
-						debugLog('gateway-pg:contractor', '[card-cleanup] JWT no capturado tras 3 intentos — cleanup correrá sin auth y no-op');
+						debugLog(
+							'gateway-pg:contractor',
+							'[card-cleanup] JWT no capturado tras 3 intentos — cleanup correrá sin auth y no-op'
+						);
 					}
 					// `scenario.user` viene en formato "apellido, nombre" (convención del dropdown,
 					// ver tests/fixtures/users/passengers.ts) — el endpoint de búsqueda resuelve por
 					// lastName; se agrega el fragmento apellido como fallback (mismo patrón que
 					// CarrierHoldSteps con paxSearchQueries) por si el string completo no matchea.
 					const lastNameFragment = scenario.user.split(',')[0].trim();
-					const queries = lastNameFragment === scenario.user ? [scenario.user] : [scenario.user, lastNameFragment];
+					const queries =
+						lastNameFragment === scenario.user ? [scenario.user] : [scenario.user, lastNameFragment];
 					await cleanupGatewayCardByLast4(this.page, queries, cardLast4);
 				});
 				await test.step(`Completar formulario — colaborador + tarjeta ${scenario.threeDs === 'none' ? 'sin 3DS' : 'con 3DS'}`, async () => {

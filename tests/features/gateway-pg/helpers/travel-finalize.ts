@@ -76,7 +76,9 @@ export async function resolveFinalizeDriverId(page: Page, carrierId = DEFAULT_CA
 
 	const candidate = drivers.find(driver => typeof driver.driverUserId === 'number' && driver.vehicle != null);
 	if (!candidate) {
-		console.warn(`[travel-finalize] Ningún driver del carrier ${carrierId} tiene vehículo vigente (${drivers.length} drivers)`);
+		console.warn(
+			`[travel-finalize] Ningún driver del carrier ${carrierId} tiene vehículo vigente (${drivers.length} drivers)`
+		);
 		return null;
 	}
 
@@ -111,7 +113,9 @@ export async function finalizeTravelAdmin(
 	const driverId = opts.driverId ?? (await resolveFinalizeDriverId(page, carrierId));
 
 	if (driverId == null) {
-		console.warn('[travel-finalize] Sin driverId resoluble — el BE rechaza finalizar sin chofer (DRIVER_NOT_FOUND)');
+		console.warn(
+			'[travel-finalize] Sin driverId resoluble — el BE rechaza finalizar sin chofer (DRIVER_NOT_FOUND)'
+		);
 		return false;
 	}
 
@@ -132,7 +136,9 @@ export async function finalizeTravelAdmin(
 
 	if (!response.ok()) {
 		const body = await response.text().catch(() => '');
-		console.warn(`[travel-finalize] finalizeAdmin ${travelId} falló: ${response.status()} ${response.statusText()} ${body.slice(0, 300)}`);
+		console.warn(
+			`[travel-finalize] finalizeAdmin ${travelId} falló: ${response.status()} ${response.statusText()} ${body.slice(0, 300)}`
+		);
 		return false;
 	}
 	console.log(`[travel-finalize] ✓ Viaje ${travelId} finalizado administrativamente (driverId=${driverId})`);

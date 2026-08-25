@@ -165,14 +165,11 @@ export async function searchEbizTransactionsSince(
  * Resumen forense de los intentos del PSP para UNA tarjeta desde `since` — el texto que se
  * agrega al diagnóstico del caso (una línea por transacción, veredicto de auth + estado).
  */
-export async function describeEbizAttemptsForCard(
-	creds: EbizPspCreds,
-	since: Date,
-	last4: string
-): Promise<string> {
+export async function describeEbizAttemptsForCard(creds: EbizPspCreds, since: Date, last4: string): Promise<string> {
 	const all = await searchEbizTransactionsSince(creds, since);
 	const propias = all.filter(tx => tx.cardNumberMasked.endsWith(last4));
-	if (all.length === 0) return '[PSP] SearchTransactions no devolvió transacciones en la ventana (o la capa PSP no respondió).';
+	if (all.length === 0)
+		return '[PSP] SearchTransactions no devolvió transacciones en la ventana (o la capa PSP no respondió).';
 	if (propias.length === 0) {
 		return `[PSP] NINGUNA transacción para •••• ${last4} en la ventana (${all.length} de otras tarjetas): la validación del alta no llegó al procesador.`;
 	}

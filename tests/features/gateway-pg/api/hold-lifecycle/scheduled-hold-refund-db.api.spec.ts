@@ -71,9 +71,10 @@ test.describe(
 			const hold = holds[0];
 
 			// Debería estar en un estado válido del ciclo del hold (HOLD/RELEASE/CAPTURE).
-			expect([HOLD_STATUS.HOLD, HOLD_STATUS.RELEASE, HOLD_STATUS.CAPTURE], `STATUS inesperado: ${hold.holdStatus}`).toContain(
-				hold.holdStatus
-			);
+			expect(
+				[HOLD_STATUS.HOLD, HOLD_STATUS.RELEASE, HOLD_STATUS.CAPTURE],
+				`STATUS inesperado: ${hold.holdStatus}`
+			).toContain(hold.holdStatus);
 
 			// Debería ser un viaje programado (ISPROGRAMMED=1).
 			expect(hold.isProgrammed, `El viaje ${SCHED_TRAVEL_ID} no es programado (ISPROGRAMMED≠1)`).toBe(true);
@@ -85,9 +86,10 @@ test.describe(
 				hoursBefore,
 				`El hold se creó ${hoursBefore}h respecto del viaje; debería ser antes (>0) y ≤ ${HOLD_MAX_HOURS_BEFORE}h (esperado ≈2h).`
 			).toBeGreaterThan(0);
-			expect(hoursBefore, `hold→viaje ${hoursBefore}h excede la cota ${HOLD_MAX_HOURS_BEFORE}h`).toBeLessThanOrEqual(
-				HOLD_MAX_HOURS_BEFORE
-			);
+			expect(
+				hoursBefore,
+				`hold→viaje ${hoursBefore}h excede la cota ${HOLD_MAX_HOURS_BEFORE}h`
+			).toBeLessThanOrEqual(HOLD_MAX_HOURS_BEFORE);
 
 			// Si el viaje fue CANCELADO, el hold DEBE estar liberado (dinero devuelto).
 			if (hold.canceledBy) {

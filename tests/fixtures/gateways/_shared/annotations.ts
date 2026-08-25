@@ -120,7 +120,9 @@ export const CARD_ANNOTATIONS = {
 /** Todas las entradas, planas — para iterar en guards y docs. */
 export function listAnnotations(gateway?: GatewayName): CardAnnotationEntry[] {
 	const gateways = gateway ? [gateway] : (Object.keys(CARD_ANNOTATIONS) as GatewayName[]);
-	return gateways.flatMap(gw => Object.values(CARD_ANNOTATIONS[gw] as CardAnnotationRegistry).flatMap(entries => entries ?? []));
+	return gateways.flatMap(gw =>
+		Object.values(CARD_ANNOTATIONS[gw] as CardAnnotationRegistry).flatMap(entries => entries ?? [])
+	);
 }
 
 /** Cuenta de entradas por familia — útil para verificar paridad contra la doc del PSP. */
@@ -163,10 +165,14 @@ export function assertAnnotationReferenceIntegrity(): true {
 
 		for (const entry of entries) {
 			if (!entry.code.trim()) {
-				throw new Error(`[card-annotation-drift] ${gateway}/${entry.kind}: entrada con código vacío (número ${entry.number}).`);
+				throw new Error(
+					`[card-annotation-drift] ${gateway}/${entry.kind}: entrada con código vacío (número ${entry.number}).`
+				);
 			}
 			if (!isLuhnValid(entry.number)) {
-				throw new Error(`[card-annotation-drift] ${gateway}/${entry.kind}: el número ${entry.number} no pasa Luhn.`);
+				throw new Error(
+					`[card-annotation-drift] ${gateway}/${entry.kind}: el número ${entry.number} no pasa Luhn.`
+				);
 			}
 			if (entry.gateway !== gateway) {
 				throw new Error(`[card-annotation-drift] entrada de ${entry.gateway} registrada bajo ${gateway}.`);
@@ -176,7 +182,9 @@ export function assertAnnotationReferenceIntegrity(): true {
 			// una vez por marca (M de Visa, M de Mastercard, …).
 			const clave = `${entry.kind}|${entry.code}|${entry.brand ?? ''}`;
 			if (vistos.has(clave)) {
-				throw new Error(`[card-annotation-drift] ${gateway}: ${entry.kind} código '${entry.code}' duplicado${entry.brand ? ` para ${entry.brand}` : ''}.`);
+				throw new Error(
+					`[card-annotation-drift] ${gateway}: ${entry.kind} código '${entry.code}' duplicado${entry.brand ? ` para ${entry.brand}` : ''}.`
+				);
 			}
 			vistos.add(clave);
 		}

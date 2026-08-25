@@ -778,13 +778,19 @@ export abstract class NewTravelPageBase extends BasePage {
 	private async validateNewCardWithRefillRecovery(last4: string, refillCycles = 2): Promise<void> {
 		for (let cycle = 1; cycle <= refillCycles; cycle++) {
 			try {
-				await this.clickValidateCard({ retries: 2, successProbe: () => this.isVehicleSelectionReady(), expectedLast4: last4 });
+				await this.clickValidateCard({
+					retries: 2,
+					successProbe: () => this.isVehicleSelectionReady(),
+					expectedLast4: last4
+				});
 				return;
 			} catch (error) {
 				const message = error instanceof Error ? error.message : String(error);
 				if (cycle === refillCycles) throw error;
 				// eslint-disable-next-line no-console -- evidencia deliberada del ciclo de re-fill
-				console.warn(`[validateNewCard] ciclo ${cycle}/${refillCycles}: validación rechazada ("${message.slice(0, 140)}...") — re-ingresando la tarjeta para regenerar el SetupIntent (recuperación tipo-usuario)`);
+				console.warn(
+					`[validateNewCard] ciclo ${cycle}/${refillCycles}: validación rechazada ("${message.slice(0, 140)}...") — re-ingresando la tarjeta para regenerar el SetupIntent (recuperación tipo-usuario)`
+				);
 				await this.fillPreauthorizedCard(last4);
 			}
 		}
@@ -973,7 +979,9 @@ export abstract class NewTravelPageBase extends BasePage {
 	 * "Preautorizada" post-desenlace es una race. Se aceptan AMBOS estados legítimos, anclando
 	 * la last4 esperada cuando el caller la provee (más fuerte que el assert original).
 	 */
-	async clickValidateCard(opts: { retries?: number; successProbe?: () => Promise<boolean>; expectedLast4?: string } = {}): Promise<void> {
+	async clickValidateCard(
+		opts: { retries?: number; successProbe?: () => Promise<boolean>; expectedLast4?: string } = {}
+	): Promise<void> {
 		const maxAttempts = Math.max(1, opts.retries ?? 3);
 		let lastError: string | null = null;
 
@@ -993,11 +1001,15 @@ export abstract class NewTravelPageBase extends BasePage {
 			}
 			if (attempt < maxAttempts) {
 				// eslint-disable-next-line no-console -- evidencia deliberada del retry transitorio (BL hold de vinculación)
-				console.warn(`[clickValidateCard] intento ${attempt}/${maxAttempts} rechazado por la pasarela ("${lastError}") — reintentando (transitorio documentado, BACKLOG §hold de vinculación)`);
+				console.warn(
+					`[clickValidateCard] intento ${attempt}/${maxAttempts} rechazado por la pasarela ("${lastError}") — reintentando (transitorio documentado, BACKLOG §hold de vinculación)`
+				);
 			}
 		}
 
-		throw new Error(`Validación de tarjeta rechazada por la pasarela tras ${maxAttempts} intentos: "${lastError}" — si reproduce en manual, es defecto/incidencia de ambiente, no del test.`);
+		throw new Error(
+			`Validación de tarjeta rechazada por la pasarela tras ${maxAttempts} intentos: "${lastError}" — si reproduce en manual, es defecto/incidencia de ambiente, no del test.`
+		);
 	}
 
 	/**
@@ -1006,7 +1018,10 @@ export abstract class NewTravelPageBase extends BasePage {
 	 * NOTE(tier3-kept): polling con condición compuesta (error XOR probe) — no hay evento DOM
 	 * único que modele el fin del roundtrip de la pasarela.
 	 */
-	private async waitForCardValidationOutcome(successProbe?: () => Promise<boolean>, windowMs = 15_000): Promise<string | null> {
+	private async waitForCardValidationOutcome(
+		successProbe?: () => Promise<boolean>,
+		windowMs = 15_000
+	): Promise<string | null> {
 		// TERCER DESENLACE de primera clase (fix 2026-08-06, recovery/conflicto): con tarjetas 3DS
 		// (3220 threeDSRequired) el click en Validar dispara el CHALLENGE — ni error ni vehiculo
 		// habilitado. La version previa agotaba la ventana de 15s con el modal ya montado y el
@@ -1020,7 +1035,10 @@ export abstract class NewTravelPageBase extends BasePage {
 		const deadline = Date.now() + windowMs;
 		while (Date.now() < deadline) {
 			if (await this.cardValidationErrorText.isVisible().catch(() => false)) {
-				return ((await this.cardValidationErrorText.textContent().catch(() => null)) ?? 'Error de validación de tarjeta (texto ilegible)').trim();
+				return (
+					(await this.cardValidationErrorText.textContent().catch(() => null)) ??
+					'Error de validación de tarjeta (texto ilegible)'
+				).trim();
 			}
 			if (await challengeOverlay.isVisible().catch(() => false)) {
 				return null;
@@ -1163,10 +1181,7 @@ export abstract class NewTravelPageBase extends BasePage {
 
 		// Log de A QUIEN se asigno: si el viaje no le llega al device, este dato distingue
 		// "se asigno a otro conductor" de "no se asigno nada" sin gastar otra corrida.
-		const assignedTo = (await targetRow.innerText().catch(() => ''))
-			.replace(/\s+/g, ' ')
-			.trim()
-			.slice(0, 90);
+		const assignedTo = (await targetRow.innerText().catch(() => '')).replace(/\s+/g, ' ').trim().slice(0, 90);
 		console.log(`[clickSendManualAndAssign] asignando a: ${assignedTo || '<fila sin texto>'}`);
 		await targetRow.locator('.td-with-icon .btn.btn-primary').first().click();
 
@@ -1273,10 +1288,13 @@ export abstract class NewTravelPageBase extends BasePage {
 	 */
 	async assertPassengerSelected(name: string): Promise<void> {
 		await expect
-			.poll(async () => matchesSearchText((await this.passengerSelect.textContent().catch(() => '')) ?? '', name), {
-				message: `El pasajero "${name}" no quedó asignado en el formulario`,
-				timeout: 10_000
-			})
+			.poll(
+				async () => matchesSearchText((await this.passengerSelect.textContent().catch(() => '')) ?? '', name),
+				{
+					message: `El pasajero "${name}" no quedó asignado en el formulario`,
+					timeout: 10_000
+				}
+			)
 			.toBe(true);
 	}
 
@@ -1294,12 +1312,18 @@ export abstract class NewTravelPageBase extends BasePage {
 	 * vs "Cazadores 1987, Buenos Aires, Argentina").
 	 */
 	async assertOriginSet(address: string): Promise<void> {
-		await expect(this.originSelect, `El origen no quedó seteado en "${address}"`).toContainText(shortAddress(address), { timeout: 10_000 });
+		await expect(this.originSelect, `El origen no quedó seteado en "${address}"`).toContainText(
+			shortAddress(address),
+			{ timeout: 10_000 }
+		);
 	}
 
 	/** Verifica que el DESTINO quedó commiteado en el form. Ver `assertOriginSet` para el porqué. */
 	async assertDestinationSet(address: string): Promise<void> {
-		await expect(this.destinationSelect, `El destino no quedó seteado en "${address}"`).toContainText(shortAddress(address), { timeout: 10_000 });
+		await expect(this.destinationSelect, `El destino no quedó seteado en "${address}"`).toContainText(
+			shortAddress(address),
+			{ timeout: 10_000 }
+		);
 	}
 
 	/**
@@ -1331,6 +1355,9 @@ export abstract class NewTravelPageBase extends BasePage {
 	}
 
 	async assertVehicleSelectionBlocked(): Promise<void> {
-		await expect(this.vehicleButton, 'El botón "Seleccionar Vehículo" debería estar deshabilitado hasta validar la tarjeta').toBeDisabled({ timeout: 10_000 });
+		await expect(
+			this.vehicleButton,
+			'El botón "Seleccionar Vehículo" debería estar deshabilitado hasta validar la tarjeta'
+		).toBeDisabled({ timeout: 10_000 });
 	}
 }

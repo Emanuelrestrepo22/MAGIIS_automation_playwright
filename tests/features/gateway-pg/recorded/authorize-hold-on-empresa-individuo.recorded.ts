@@ -51,7 +51,11 @@ test('recorded — Authorize hold ON · cliente empresa individuo (referencia)',
 	await page.getByRole('listitem').filter({ hasText: 'Reconquista 661, C1002 Cdad.' }).click();
 
 	// Destino.
-	await page.locator('.multiple-destination-container > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder').click();
+	await page
+		.locator(
+			'.multiple-destination-container > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder'
+		)
+		.click();
 	await page.getByText('Cazadores 1987, Buenos Aires').click();
 
 	// Método de pago → tarjeta preautorizada.

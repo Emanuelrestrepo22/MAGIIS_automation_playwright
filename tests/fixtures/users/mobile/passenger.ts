@@ -53,29 +53,29 @@ const LABEL = 'passenger (Android app)';
  * esta declarada vacia y `USER_PASSENGER` tiene el valor.
  */
 function buildPassenger(envSuffix: 'TEST' | 'UAT' | 'PROD', environment: MobileUser['environment']): MobileUser {
-  const emailEnv = lazyEnv(
-    [`PASSENGER_EMAIL_${envSuffix}`, `USER_PASSENGER_${envSuffix}`, 'PASSENGER_EMAIL', 'USER_PASSENGER'],
-    `${LABEL} [${environment}] email`,
-  );
-  const passEnv = lazyEnv(
-    [`PASSENGER_PASSWORD_${envSuffix}`, `PASS_PASSENGER_${envSuffix}`, 'PASSENGER_PASSWORD', 'PASS_PASSENGER'],
-    `${LABEL} [${environment}] password`,
-  );
+	const emailEnv = lazyEnv(
+		[`PASSENGER_EMAIL_${envSuffix}`, `USER_PASSENGER_${envSuffix}`, 'PASSENGER_EMAIL', 'USER_PASSENGER'],
+		`${LABEL} [${environment}] email`
+	);
+	const passEnv = lazyEnv(
+		[`PASSENGER_PASSWORD_${envSuffix}`, `PASS_PASSENGER_${envSuffix}`, 'PASSENGER_PASSWORD', 'PASS_PASSENGER'],
+		`${LABEL} [${environment}] password`
+	);
 
-  return {
-    role: 'passenger',
-    environment,
-    get email() {
-      return emailEnv.value;
-    },
-    get password() {
-      return passEnv.value;
-    },
-    notes:
-      `Passenger app Android en ${environment}. ` +
-      `No confundir con TestPassenger (dominio) de fixtures/users/passengers.ts. ` +
-      `User histórico en TEST: emanuel.restrepo@yopmail.com (wallet con tarjetas paralelas — ver memoria).`,
-  };
+	return {
+		role: 'passenger',
+		environment,
+		get email() {
+			return emailEnv.value;
+		},
+		get password() {
+			return passEnv.value;
+		},
+		notes:
+			`Passenger app Android en ${environment}. ` +
+			`No confundir con TestPassenger (dominio) de fixtures/users/passengers.ts. ` +
+			`User histórico en TEST: emanuel.restrepo@yopmail.com (wallet con tarjetas paralelas — ver memoria).`
+	};
 }
 
 /**
@@ -89,7 +89,7 @@ function buildPassenger(envSuffix: 'TEST' | 'UAT' | 'PROD', environment: MobileU
  *   const { email, password } = PASSENGER_APP_USER.test;
  */
 export const PASSENGER_APP_USER = {
-  test: buildPassenger('TEST', 'test'),
-  uat: buildPassenger('UAT', 'uat'),
-  prod: buildPassenger('PROD', 'prod'),
+	test: buildPassenger('TEST', 'test'),
+	uat: buildPassenger('UAT', 'uat'),
+	prod: buildPassenger('PROD', 'prod')
 } as const satisfies EnvironmentMap<MobileUser>;

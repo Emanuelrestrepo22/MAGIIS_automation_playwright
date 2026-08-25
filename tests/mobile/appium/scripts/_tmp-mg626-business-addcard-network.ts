@@ -25,7 +25,12 @@ import { mkdirSync } from 'node:fs';
 import { getPassengerAppConfig } from '../config/appiumRuntime';
 import { PassengerTripHappyPathHarness } from '../harness/PassengerTripHappyPathHarness';
 import { dumpAppiumState } from '../helpers/appiumDebug';
-import { clearWebViewNetworkCapture, dumpWebViewNetworkCapture, installWebViewNetworkCapture, readWebViewNetworkCapture } from '../helpers/webViewNetworkCapture';
+import {
+	clearWebViewNetworkCapture,
+	dumpWebViewNetworkCapture,
+	installWebViewNetworkCapture,
+	readWebViewNetworkCapture
+} from '../helpers/webViewNetworkCapture';
 import { EBIZ_CARDS } from '../../../fixtures/gateways/ebizcharge/card-policy';
 import { EBIZ_BILLING } from '../../../fixtures/gateways/ebizcharge/cards';
 
@@ -50,7 +55,9 @@ function snapDir(): string {
 
 async function snap(driver: unknown, name: string): Promise<void> {
 	try {
-		await (driver as { saveScreenshot: (p: string) => Promise<unknown> }).saveScreenshot(`${snapDir()}/${name}.png`);
+		await (driver as { saveScreenshot: (p: string) => Promise<unknown> }).saveScreenshot(
+			`${snapDir()}/${name}.png`
+		);
 		log(`screenshot → evidence/mg626/${name}.png`);
 	} catch (e) {
 		log(`screenshot ${name} err: ${e instanceof Error ? e.message : String(e)}`);
@@ -74,8 +81,12 @@ async function run(): Promise<void> {
 
 		if (hasBefore) {
 			log(`la tarjeta …${LAST4} ya está vinculada → la borro para que el POST de alta se dispare`);
-			await wallet.deleteCard(LAST4).catch((e: unknown) => log(`delete err: ${e instanceof Error ? e.message : String(e)}`));
-			log(`tras borrar: count=${await wallet.countCards().catch(() => -1)} · hasCard=${await wallet.hasCard(LAST4, 4_000).catch(() => false)}`);
+			await wallet
+				.deleteCard(LAST4)
+				.catch((e: unknown) => log(`delete err: ${e instanceof Error ? e.message : String(e)}`));
+			log(
+				`tras borrar: count=${await wallet.countCards().catch(() => -1)} · hasCard=${await wallet.hasCard(LAST4, 4_000).catch(() => false)}`
+			);
 			await snap(driver, '03-wallet-business-after-delete');
 		}
 
@@ -92,7 +103,9 @@ async function run(): Promise<void> {
 		log(`GUARDAR habilitado = ${await wallet.isSaveEnabled()}`);
 		await snap(driver, '05-form-card-filled');
 
-		await wallet.saveCard().catch((e: unknown) => log(`saveCard err: ${e instanceof Error ? e.message : String(e)}`));
+		await wallet
+			.saveCard()
+			.catch((e: unknown) => log(`saveCard err: ${e instanceof Error ? e.message : String(e)}`));
 		await driver.pause(6_000); // dejar que el POST de alta cierre
 
 		const jsonPath = await dumpWebViewNetworkCapture(driver, 'mg626-business-addcard');
@@ -100,7 +113,11 @@ async function run(): Promise<void> {
 
 		// Resumen inline de los requests de alta de tarjeta (lo que importa para el veredicto).
 		const capture = await readWebViewNetworkCapture(driver);
-		const cardReqs = capture.entries.filter(e => /\/cards(\?|$)|passengers\/\d+\/cards/i.test(e.url) || /card/i.test(e.url) && e.method.toUpperCase() === 'POST');
+		const cardReqs = capture.entries.filter(
+			e =>
+				/\/cards(\?|$)|passengers\/\d+\/cards/i.test(e.url) ||
+				(/card/i.test(e.url) && e.method.toUpperCase() === 'POST')
+		);
 		log(`requests capturados: ${capture.entries.length} · candidatos de alta: ${cardReqs.length}`);
 		for (const e of cardReqs) {
 			log(`--- ${e.method} ${e.url} → ${e.status}`);
@@ -116,8 +133,12 @@ async function run(): Promise<void> {
 
 		if (LEAVE_CLEAN && hasAfter) {
 			log('MG626_LEAVE_CLEAN=1 → borro la tarjeta para que el spec formal haga un alta real');
-			await wallet.deleteCard(LAST4).catch((e: unknown) => log(`cleanup delete err: ${e instanceof Error ? e.message : String(e)}`));
-			log(`estado final: count=${await wallet.countCards().catch(() => -1)} · hasCard=${await wallet.hasCard(LAST4, 4_000).catch(() => false)}`);
+			await wallet
+				.deleteCard(LAST4)
+				.catch((e: unknown) => log(`cleanup delete err: ${e instanceof Error ? e.message : String(e)}`));
+			log(
+				`estado final: count=${await wallet.countCards().catch(() => -1)} · hasCard=${await wallet.hasCard(LAST4, 4_000).catch(() => false)}`
+			);
 		}
 	} finally {
 		await harness.endSession();

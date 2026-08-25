@@ -169,9 +169,13 @@ async function tapFirstPredictionNative(driver: WebdriverIO.Browser, webview: st
 		'})();'
 	].join('\n');
 
-	const rect = (await driver.execute(probe).catch(() => null)) as
-		| { x: number; y: number; vw: number; vh: number; label: string }
-		| null;
+	const rect = (await driver.execute(probe).catch(() => null)) as {
+		x: number;
+		y: number;
+		vw: number;
+		vh: number;
+		label: string;
+	} | null;
 	if (!rect) return null;
 
 	await driver.switchContext('NATIVE_APP');

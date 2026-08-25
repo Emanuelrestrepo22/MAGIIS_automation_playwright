@@ -135,7 +135,9 @@ async function navMap(driver: WebdriverIO.Browser): Promise<NavEl[]> {
 /** La lista de predicciones: su presencia indica que la superficie monta un autocompletado. */
 async function hasPredictionList(driver: WebdriverIO.Browser): Promise<boolean> {
 	return (await driver.execute(() => {
-		return document.querySelectorAll('ion-list.prediction-list, .prediction-list, ion-item.prediction-item').length > 0;
+		return (
+			document.querySelectorAll('ion-list.prediction-list, .prediction-list, ion-item.prediction-item').length > 0
+		);
 	})) as boolean;
 }
 
@@ -166,7 +168,11 @@ async function tapNativeByText(
 		} catch {
 			els = [];
 		}
-		for (const el of els as { isDisplayed: () => Promise<boolean>; getText: () => Promise<string>; click: () => Promise<void> }[]) {
+		for (const el of els as {
+			isDisplayed: () => Promise<boolean>;
+			getText: () => Promise<string>;
+			click: () => Promise<void>;
+		}[]) {
 			try {
 				if (!(await el.isDisplayed())) continue;
 				const txt = (await el.getText()).toLowerCase();
@@ -183,7 +189,12 @@ async function tapNativeByText(
 	return false;
 }
 
-async function snapshot(driver: WebdriverIO.Browser, label: string, reached: boolean, note?: string): Promise<Snapshot> {
+async function snapshot(
+	driver: WebdriverIO.Browser,
+	label: string,
+	reached: boolean,
+	note?: string
+): Promise<Snapshot> {
 	const snap: Snapshot = {
 		label,
 		reached,
@@ -204,7 +215,9 @@ async function snapshot(driver: WebdriverIO.Browser, label: string, reached: boo
 	}
 	log(`   inputs visibles (${snap.inputs.length}):`);
 	for (const i of snap.inputs) {
-		log(`     [${i.index}] type=${i.type} placeholder="${i.placeholder}" value="${i.value}"${i.readOnly ? ' [readonly]' : ''}`);
+		log(
+			`     [${i.index}] type=${i.type} placeholder="${i.placeholder}" value="${i.value}"${i.readOnly ? ' [readonly]' : ''}`
+		);
 	}
 	log(`   lista de predicciones montada: ${snap.predictionListPresent ? 'SI' : 'no'}`);
 	return snap;
@@ -319,7 +332,12 @@ async function run(): Promise<void> {
 		line();
 		const atHome = await backToHome(driver);
 		surfaces.push(
-			await snapshot(driver, 'HOME (S1/S2/S3 + tabs S4/S5)', atHome, atHome ? undefined : 'no se pudo volver al home')
+			await snapshot(
+				driver,
+				'HOME (S1/S2/S3 + tabs S4/S5)',
+				atHome,
+				atHome ? undefined : 'no se pudo volver al home'
+			)
 		);
 
 		const homeText = await visibleText(driver);
@@ -329,7 +347,9 @@ async function run(): Promise<void> {
 		out.homeNavMap = homeNavMap;
 		log(`\n   mapa de navegacion del home (${homeNavMap.length} elementos interactivos):`);
 		for (const e of homeNavMap) {
-			log(`     <${e.tag}>${e.id ? `#${e.id}` : ''} "${e.text}"${e.name ? ` name=${e.name}` : ''}${e.classes ? `  .${e.classes}` : ''}`);
+			log(
+				`     <${e.tag}>${e.id ? `#${e.id}` : ''} "${e.text}"${e.name ? ` name=${e.name}` : ''}${e.classes ? `  .${e.classes}` : ''}`
+			);
 		}
 
 		// Que tipos de viaje ofrece este carrier. "A Disposicion" es configurable por carrier
@@ -365,7 +385,6 @@ async function run(): Promise<void> {
 				log(`     <${e.tag}>${e.id ? `#${e.id}` : ''} "${e.text}"${e.classes ? `  .${e.classes}` : ''}`);
 			}
 		}
-
 
 		// ---------------------------------------------------------------- Cierre
 		await backToHome(driver);

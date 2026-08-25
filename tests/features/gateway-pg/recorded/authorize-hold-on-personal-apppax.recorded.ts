@@ -49,7 +49,11 @@ test('recorded — Authorize hold ON · usuario personal/app pax (referencia)', 
 	// Origen y destino.
 	await page.getByText('Ciudad de la Paz 2238, Buenos').click();
 	await page.getByText('Reconquista 661, Buenos Aires').click();
-	await page.locator('.bootstrap.width-combo.input-search.ng-untouched.ng-pristine.ng-valid > .below > .single > .placeholder').click();
+	await page
+		.locator(
+			'.bootstrap.width-combo.input-search.ng-untouched.ng-pristine.ng-valid > .below > .single > .placeholder'
+		)
+		.click();
 	await page.getByText('Cazadores 1987, Buenos Aires').click();
 
 	// Método de pago → tarjeta preautorizada.

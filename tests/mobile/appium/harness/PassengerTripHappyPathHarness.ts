@@ -116,7 +116,10 @@ export class PassengerTripHappyPathHarness {
 		await this.ensureProfileMode(this.profileMode);
 	}
 
-	async ensureWalletCard(card: CardInput, timeoutMs: number = DEFAULT_TIMEOUTS_MS.wallet): Promise<'added' | 'already-present'> {
+	async ensureWalletCard(
+		card: CardInput,
+		timeoutMs: number = DEFAULT_TIMEOUTS_MS.wallet
+	): Promise<'added' | 'already-present'> {
 		return this.withFailureDump('passenger-wallet-setup', async () => {
 			await this.ensurePassengerShell();
 			await this.walletScreen.openWallet();
@@ -146,9 +149,16 @@ export class PassengerTripHappyPathHarness {
 				return 'added';
 			}
 
-			const threeDsResult = await handleThreeDsPopup(this.getDriver(), label => dumpAppiumState(this.getDriver(), label), timeoutMs, 'passenger-wallet-setup');
+			const threeDsResult = await handleThreeDsPopup(
+				this.getDriver(),
+				label => dumpAppiumState(this.getDriver(), label),
+				timeoutMs,
+				'passenger-wallet-setup'
+			);
 			if (threeDsResult === 'failed') {
-				throw new Error(`PassengerTripHappyPathHarness.ensureWalletCard() - 3DS challenge was not completed: ${threeDsResult}`);
+				throw new Error(
+					`PassengerTripHappyPathHarness.ensureWalletCard() - 3DS challenge was not completed: ${threeDsResult}`
+				);
 			}
 
 			// Guard: re-check before verifyCardAdded — Stripe may have already persisted the card
@@ -162,7 +172,6 @@ export class PassengerTripHappyPathHarness {
 			return 'added';
 		});
 	}
-
 
 	async cleanWallet(maxIterations = 50): Promise<number> {
 		return this.withFailureDump('passenger-wallet-cleanup', async () => {
@@ -188,7 +197,9 @@ export class PassengerTripHappyPathHarness {
 			count = await this.walletScreen.countCards().catch(() => 0);
 		}
 		if (deleted > 0) {
-			console.log(`[PassengerTripHappyPathHarness] limpieza parcial wallet: ${deleted} tarjetas borradas (quedan ~${count}, keepMax=${keepMax})`);
+			console.log(
+				`[PassengerTripHappyPathHarness] limpieza parcial wallet: ${deleted} tarjetas borradas (quedan ~${count}, keepMax=${keepMax})`
+			);
 		}
 		return deleted;
 	}
@@ -277,7 +288,7 @@ export class PassengerTripHappyPathHarness {
 				const passengerEmail = process.env.PASSENGER_EMAIL?.trim() || 'unknown-passenger';
 				throw new Error(
 					`ENV_BLOCKER: Passenger ${passengerEmail} has an active or NO_AUTORIZADO trip that blocks new trip creation. ` +
-					'Clean up via Carrier portal before re-running.'
+						'Clean up via Carrier portal before re-running.'
 				);
 			}
 
@@ -304,14 +315,22 @@ export class PassengerTripHappyPathHarness {
 		return this.statusScreen.getTripStatus();
 	}
 
-	async verifyPaymentProcessed(expectedAmount?: string, timeoutMs: number = DEFAULT_TIMEOUTS_MS.payment): Promise<void> {
+	async verifyPaymentProcessed(
+		expectedAmount?: string,
+		timeoutMs: number = DEFAULT_TIMEOUTS_MS.payment
+	): Promise<void> {
 		await this.withFailureDump('passenger-trip-payment-processed', async () => {
 			await this.startSession();
 			await this.statusScreen.verifyPaymentProcessed(expectedAmount ?? undefined, timeoutMs);
 		});
 	}
 
-	async runHappyPath(card: CardInput, origin: string, destination: string, options: PassengerTripHappyPathOptions = {}): Promise<PassengerTripHappyPathResult> {
+	async runHappyPath(
+		card: CardInput,
+		origin: string,
+		destination: string,
+		options: PassengerTripHappyPathOptions = {}
+	): Promise<PassengerTripHappyPathResult> {
 		return this.withFailureDump('passenger-trip-happy-path', async () => {
 			await this.startSession();
 
@@ -320,7 +339,10 @@ export class PassengerTripHappyPathHarness {
 				...(options.timeoutsMs ?? {})
 			};
 
-			const walletState = options.ensureWalletCard === false ? 'already-present' : await this.ensureWalletCard(card, timeouts.wallet);
+			const walletState =
+				options.ensureWalletCard === false
+					? 'already-present'
+					: await this.ensureWalletCard(card, timeouts.wallet);
 
 			const cardLast4 = this.getCardLast4(card);
 			const tripId = await this.createTrip(origin, destination, cardLast4);
@@ -399,7 +421,9 @@ export class PassengerTripHappyPathHarness {
 	private async closeExpiredModalIfPresent(driver: AppiumDriver): Promise<string> {
 		return driver
 			.execute<string, []>(() => {
-				const modal = Array.from(document.querySelectorAll('ion-modal')).find(el => (el.textContent ?? '').includes('Su sesión ha expirado'));
+				const modal = Array.from(document.querySelectorAll('ion-modal')).find(el =>
+					(el.textContent ?? '').includes('Su sesión ha expirado')
+				);
 				if (!modal) {
 					return 'no-modal';
 				}
@@ -420,8 +444,12 @@ export class PassengerTripHappyPathHarness {
 		return driver
 			.execute<string, [string, string]>(
 				(loginEmail: string, loginPassword: string): string => {
-					const emailInput = document.querySelector('input[type="email"], input[placeholder="Email"]') as HTMLInputElement | null;
-					const passwordInput = document.querySelector('input[type="password"], input[placeholder="Contraseña"]') as HTMLInputElement | null;
+					const emailInput = document.querySelector(
+						'input[type="email"], input[placeholder="Email"]'
+					) as HTMLInputElement | null;
+					const passwordInput = document.querySelector(
+						'input[type="password"], input[placeholder="Contraseña"]'
+					) as HTMLInputElement | null;
 
 					if (!emailInput || !passwordInput) {
 						return 'missing-fields';
@@ -440,7 +468,9 @@ export class PassengerTripHappyPathHarness {
 					const buttons = Array.from(document.querySelectorAll('button, ion-button, [role="button"]'));
 					const submit = buttons.find(el => {
 						const text = el.textContent?.trim();
-						return text === 'Ingresar' || text === 'Entrar' || text === 'Login' || text === 'Iniciar sesión';
+						return (
+							text === 'Ingresar' || text === 'Entrar' || text === 'Login' || text === 'Iniciar sesión'
+						);
 					}) as HTMLElement | undefined;
 
 					if (submit) {

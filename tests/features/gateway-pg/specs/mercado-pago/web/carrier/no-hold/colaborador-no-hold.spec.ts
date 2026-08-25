@@ -28,14 +28,16 @@ test.describe(`[SMOKE][MP][${env.toUpperCase()}] Alta sin hold · Carrier colabo
 	// El fixture KATA (@TestFixture) no define la opción `role` — login explícito en el Step.
 	test.use({ storageState: { cookies: [], origins: [] } });
 
-	test('@smoke @gateway @gateway-pg @mercadopago @carrier @no-hold @happy [MP-NOHOLD-02] Colaborador de contractor · alta sin hold con tarjeta APRO → "Buscando chofer"', async ({ page }) => {
+	test('@smoke @gateway @gateway-pg @mercadopago @carrier @no-hold @happy [MP-NOHOLD-02] Colaborador de contractor · alta sin hold con tarjeta APRO → "Buscando chofer"', async ({
+		page
+	}) => {
 		await new CarrierHoldSteps({ page }).runHoldScenario(
 			{
 				gateway: 'mercado-pago',
 				client: MP_CLIENT,
 				passenger: MP_COLABORADOR,
 				origin: MP_ORIGIN,
-				destination: MP_DESTINATION,
+				destination: MP_DESTINATION
 			},
 			{
 				hold: 'off',
@@ -46,8 +48,8 @@ test.describe(`[SMOKE][MP][${env.toUpperCase()}] Alta sin hold · Carrier colabo
 				waitForCreation: false,
 				waitForVehicleReady: true,
 				matchDestination: false,
-				expectStatus: 'Buscando chofer',
-			},
+				expectStatus: 'Buscando chofer'
+			}
 		);
 	});
 });

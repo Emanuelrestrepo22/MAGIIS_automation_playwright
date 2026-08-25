@@ -119,13 +119,31 @@ const CARRIER_EMAIL = 'remises.eeuu@yopmail.com';
  */
 const CARDS = {
 	/** `EBIZ_AVS_REFERENCE` → AVS YYX. Vinculada y luego ELIMINADA en el tramo 1. */
-	visaAvsYyx: { number: '4000 1001 1111 2223', expiry: '09/30', cvv: '321', holder: 'pasajero inviduo empresa', address: 'reconquista 661' },
+	visaAvsYyx: {
+		number: '4000 1001 1111 2223',
+		expiry: '09/30',
+		cvv: '321',
+		holder: 'pasajero inviduo empresa',
+		address: 'reconquista 661'
+	},
 	/** `EBIZ_CVV2_REFERENCE` → Mastercard CVV2 M. Re-vinculada tras el delete del tramo 1. */
-	mastercard: { number: '5555 4444 3333 2226', expiry: '09/30', cvv: '123', holder: 'testcasewith deletecardandhold', address: 'ciudad de la paz 2238' },
+	mastercard: {
+		number: '5555 4444 3333 2226',
+		expiry: '09/30',
+		cvv: '123',
+		holder: 'testcasewith deletecardandhold',
+		address: 'ciudad de la paz 2238'
+	},
 	/** `EBIZ_CVV2_REFERENCE` → Amex CVV2 M. CVV de 4 dígitos, agrupamiento 4-6-5. */
 	amex: { number: '3711 222233 32225', expiry: '09/30', cvv: '1234' },
 	/** `EBIZ_CVV2_REFERENCE` → Visa CVV2 M. Re-vinculada tras el delete del tramo 7. */
-	visaCvv2: { number: '4000 2000 1111 2222', expiry: '09/30', cvv: '123', holder: 'individuoempresa happy', address: 'ciudad de la paz 2238' },
+	visaCvv2: {
+		number: '4000 2000 1111 2222',
+		expiry: '09/30',
+		cvv: '123',
+		holder: 'individuoempresa happy',
+		address: 'ciudad de la paz 2238'
+	}
 } as const;
 
 const ORIGIN = 'Ciudad de la Paz 2238, Buenos';
@@ -161,7 +179,11 @@ test('[EXPLORATORIO][eBizCharge] 3 actores × Hold ON/OFF + delete/re-add de tar
 		await page.getByText(DESTINATION).click();
 
 		// Parada intermedia.
-		await page.locator('.multiple-destination-container > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder').click();
+		await page
+			.locator(
+				'.multiple-destination-container > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder'
+			)
+			.click();
 		await page.getByRole('textbox', { name: 'Enter an address' }).fill('ciudad de la paz 2238');
 		await page.getByText('Ciudad de la Paz 2238, Buenos Aires, Argentina', { exact: true }).click();
 
@@ -174,7 +196,11 @@ test('[EXPLORATORIO][eBizCharge] 3 actores × Hold ON/OFF + delete/re-add de tar
 		await page.getByRole('textbox', { name: 'MM/AA' }).fill(CARDS.visaAvsYyx.expiry);
 		await page.locator('input[type="password"]').fill(CARDS.visaAvsYyx.cvv);
 		await page.getByRole('textbox').nth(3).fill(CARDS.visaAvsYyx.holder);
-		await page.locator('.ng-untouched.ng-pristine.ng-invalid > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder').click();
+		await page
+			.locator(
+				'.ng-untouched.ng-pristine.ng-invalid > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder'
+			)
+			.click();
 		await page.getByRole('textbox', { name: 'Enter an address' }).fill(CARDS.visaAvsYyx.address);
 		await page.getByRole('listitem').filter({ hasText: DESTINATION }).click();
 		await page.getByRole('button', { name: 'Valid' }).click();
@@ -183,7 +209,9 @@ test('[EXPLORATORIO][eBizCharge] 3 actores × Hold ON/OFF + delete/re-add de tar
 		// EJE NUEVO: la matriz no tenía caso de eliminación de tarjeta de la wallet (sólo
 		// desvinculación de PASARELA, TC1054). Al portar: `deleteHighlightedSavedCard()`.
 		await page.locator('.data-with-icon-col.option-content-container.ng-tns-c28-3').click();
-		await page.locator('.ng-star-inserted.highlighted > .data-with-icon-col > .deselect-payment-method > .fa').click();
+		await page
+			.locator('.ng-star-inserted.highlighted > .data-with-icon-col > .deselect-payment-method > .fa')
+			.click();
 		await page.getByRole('button', { name: 'Delete' }).click();
 
 		// ── 1.c Vincular una tarjeta DISTINTA (Mastercard) ────────────────────────────────────────
@@ -193,9 +221,16 @@ test('[EXPLORATORIO][eBizCharge] 3 actores × Hold ON/OFF + delete/re-add de tar
 		await page.getByRole('textbox', { name: 'MM/AA' }).fill(CARDS.mastercard.expiry);
 		await page.locator('input[type="password"]').fill(CARDS.mastercard.cvv);
 		await page.getByRole('textbox').nth(3).fill(CARDS.mastercard.holder);
-		await page.locator('.ng-untouched.ng-pristine.ng-invalid > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder').click();
+		await page
+			.locator(
+				'.ng-untouched.ng-pristine.ng-invalid > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder'
+			)
+			.click();
 		await page.getByRole('textbox', { name: 'Enter an address' }).fill(CARDS.mastercard.address);
-		await page.locator('select-dropdown').getByText('Ciudad de la Paz 2238, Buenos Aires, Argentina', { exact: true }).click();
+		await page
+			.locator('select-dropdown')
+			.getByText('Ciudad de la Paz 2238, Buenos Aires, Argentina', { exact: true })
+			.click();
 		await page.getByRole('button', { name: 'Valid' }).click();
 
 		// ── 1.d VIAJE PROGRAMADO: cambiar "Now" por una hora futura ───────────────────────────────
@@ -229,7 +264,11 @@ test('[EXPLORATORIO][eBizCharge] 3 actores × Hold ON/OFF + delete/re-add de tar
 
 		await page.getByText(ORIGIN).click();
 		await page.getByText(DESTINATION).click();
-		await page.locator('.bootstrap.width-combo.input-search.ng-untouched.ng-pristine.ng-valid > .below > .single > .placeholder').click();
+		await page
+			.locator(
+				'.bootstrap.width-combo.input-search.ng-untouched.ng-pristine.ng-valid > .below > .single > .placeholder'
+			)
+			.click();
 		await page.getByText('IFTS N°16, Teodoro García,').click();
 
 		// FRAGILE: `.ng-tns-c28-14`.
@@ -241,7 +280,11 @@ test('[EXPLORATORIO][eBizCharge] 3 actores × Hold ON/OFF + delete/re-add de tar
 		await page.getByRole('textbox', { name: 'MM/AA' }).fill(CARDS.amex.expiry);
 		await page.locator('input[type="password"]').fill(CARDS.amex.cvv);
 		await page.getByRole('textbox').nth(3).fill('amexhappyhold paxpax');
-		await page.locator('.bootstrap.width-combo.input-search.ng-untouched.ng-pristine.ng-valid > .below > .single > .placeholder').click();
+		await page
+			.locator(
+				'.bootstrap.width-combo.input-search.ng-untouched.ng-pristine.ng-valid > .below > .single > .placeholder'
+			)
+			.click();
 		await page.getByRole('textbox', { name: 'Enter an address' }).fill('11000 collins avenue miami');
 		await page.getByText('Collins Avenue, Miami Beach, FL, USA').click();
 		await page.getByRole('button', { name: 'Valid' }).click();
@@ -263,7 +306,12 @@ test('[EXPLORATORIO][eBizCharge] 3 actores × Hold ON/OFF + delete/re-add de tar
 		await page.locator('#clientSelect').getByText('Select User').click();
 		await page.getByRole('textbox', { name: 'User to Search' }).fill('fast car');
 		await page.locator('.data-with-icon-col').click();
-		await page.locator('.ng-tns-c28-25.ng-untouched > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder').first().click();
+		await page
+			.locator(
+				'.ng-tns-c28-25.ng-untouched > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder'
+			)
+			.first()
+			.click();
 		await page.getByRole('textbox', { name: 'Enter an address' }).fill('reconquista 661');
 		await page.getByText(DESTINATION).click();
 
@@ -275,7 +323,11 @@ test('[EXPLORATORIO][eBizCharge] 3 actores × Hold ON/OFF + delete/re-add de tar
 		await page.getByText('16001 Collins Avenue, North').click();
 		await page.getByText('✕').nth(2).click();
 		await page.getByText('Reconquista 661, Ciudad Autó').click();
-		await page.locator('.multiple-destination-container > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder').click();
+		await page
+			.locator(
+				'.multiple-destination-container > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder'
+			)
+			.click();
 		await page.getByText(ORIGIN).click();
 
 		await page.getByRole('button', { name: 'Select Vehicle' }).click();
@@ -306,9 +358,18 @@ test('[EXPLORATORIO][eBizCharge] 3 actores × Hold ON/OFF + delete/re-add de tar
 		await page.locator('.highlighted > .data-with-icon-col').click();
 
 		// FRAGILE: `.ng-tns-c28-36`.
-		await page.locator('.ng-tns-c28-36.ng-untouched > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder').first().click();
+		await page
+			.locator(
+				'.ng-tns-c28-36.ng-untouched > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder'
+			)
+			.first()
+			.click();
 		await page.getByText('Reconquista 661, Ciudad Autó').click();
-		await page.locator('.multiple-destination-container > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder').click();
+		await page
+			.locator(
+				'.multiple-destination-container > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder'
+			)
+			.click();
 		await page.getByText(ORIGIN).click();
 
 		await page.locator('.data-with-icon-col.option-content-container.ng-tns-c28-36').click();
@@ -317,7 +378,11 @@ test('[EXPLORATORIO][eBizCharge] 3 actores × Hold ON/OFF + delete/re-add de tar
 		await page.getByRole('textbox', { name: 'MM/AA' }).fill(CARDS.amex.expiry);
 		await page.locator('input[type="password"]').fill(CARDS.amex.cvv);
 		await page.getByRole('textbox').nth(3).fill('happycolaborador amexhold');
-		await page.locator('.ng-untouched.ng-pristine.ng-invalid > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder').click();
+		await page
+			.locator(
+				'.ng-untouched.ng-pristine.ng-invalid > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder'
+			)
+			.click();
 		await page.getByRole('textbox', { name: 'Enter an address' }).fill('16000 collins avenue');
 		await page.getByRole('listitem').filter({ hasText: '16000 Collins Avenue, Sunny' }).click();
 		await page.getByRole('button', { name: 'Valid' }).click();
@@ -351,7 +416,11 @@ test('[EXPLORATORIO][eBizCharge] 3 actores × Hold ON/OFF + delete/re-add de tar
 
 		await page.getByText(ORIGIN).click();
 		await page.getByText(DESTINATION).click();
-		await page.locator('.bootstrap.width-combo.input-search.ng-untouched.ng-pristine.ng-valid > .below > .single > .placeholder').click();
+		await page
+			.locator(
+				'.bootstrap.width-combo.input-search.ng-untouched.ng-pristine.ng-valid > .below > .single > .placeholder'
+			)
+			.click();
 		await page.getByText(ORIGIN).click();
 
 		// FRAGILE: `.ng-tns-c28-65`.
@@ -361,7 +430,11 @@ test('[EXPLORATORIO][eBizCharge] 3 actores × Hold ON/OFF + delete/re-add de tar
 		await page.getByRole('textbox', { name: 'MM/AA' }).fill(CARDS.amex.expiry);
 		await page.locator('input[type="password"]').fill(CARDS.amex.cvv);
 		await page.getByRole('textbox').nth(3).fill('sinhold happycolaborador');
-		await page.locator('.bootstrap.width-combo.input-search.ng-untouched.ng-pristine.ng-valid > .below > .single > .placeholder').click();
+		await page
+			.locator(
+				'.bootstrap.width-combo.input-search.ng-untouched.ng-pristine.ng-valid > .below > .single > .placeholder'
+			)
+			.click();
 		await page.getByRole('textbox', { name: 'Enter an address' }).fill('reconquista 661');
 		await page.getByRole('listitem').filter({ hasText: DESTINATION }).click();
 		await page.getByRole('button', { name: 'Valid' }).click();
@@ -384,7 +457,11 @@ test('[EXPLORATORIO][eBizCharge] 3 actores × Hold ON/OFF + delete/re-add de tar
 
 		await page.getByText(ORIGIN).click();
 		await page.getByText(DESTINATION).click();
-		await page.locator('.bootstrap.width-combo.input-search.ng-untouched.ng-pristine.ng-valid > .below > .single > .placeholder').click();
+		await page
+			.locator(
+				'.bootstrap.width-combo.input-search.ng-untouched.ng-pristine.ng-valid > .below > .single > .placeholder'
+			)
+			.click();
 		await page.getByText(ORIGIN).click();
 
 		// FRAGILE: `.ng-tns-c28-76`. La tarjeta ya está vinculada (la del tramo 5): se selecciona y
@@ -411,7 +488,11 @@ test('[EXPLORATORIO][eBizCharge] 3 actores × Hold ON/OFF + delete/re-add de tar
 
 		await page.getByText(ORIGIN).click();
 		await page.getByText(DESTINATION).click();
-		await page.locator('.multiple-destination-container > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder').click();
+		await page
+			.locator(
+				'.multiple-destination-container > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder'
+			)
+			.click();
 		await page.getByText(ORIGIN).click();
 
 		// ── 7.a ELIMINAR la tarjeta vinculada ─────────────────────────────────────────────────────
@@ -429,9 +510,16 @@ test('[EXPLORATORIO][eBizCharge] 3 actores × Hold ON/OFF + delete/re-add de tar
 		await page.getByRole('textbox', { name: 'MM/AA' }).fill(CARDS.visaCvv2.expiry);
 		await page.locator('input[type="password"]').fill(CARDS.visaCvv2.cvv);
 		await page.getByRole('textbox').nth(3).fill(CARDS.visaCvv2.holder);
-		await page.locator('.ng-untouched.ng-pristine.ng-invalid > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder').click();
+		await page
+			.locator(
+				'.ng-untouched.ng-pristine.ng-invalid > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder'
+			)
+			.click();
 		await page.getByRole('textbox', { name: 'Enter an address' }).fill(CARDS.visaCvv2.address);
-		await page.locator('select-dropdown').getByText('Ciudad de la Paz 2238, Buenos Aires, Argentina', { exact: true }).click();
+		await page
+			.locator('select-dropdown')
+			.getByText('Ciudad de la Paz 2238, Buenos Aires, Argentina', { exact: true })
+			.click();
 		await page.getByRole('button', { name: 'Valid' }).click();
 
 		await page.getByRole('button', { name: 'Select Vehicle' }).click();

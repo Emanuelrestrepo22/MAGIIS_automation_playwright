@@ -55,7 +55,10 @@ async function run(): Promise<void> {
 
 	const steps: Step[] = [];
 	let webview = '';
-	const evidence = new ScreenEvidence(driver, `pax-programar-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}`);
+	const evidence = new ScreenEvidence(
+		driver,
+		`pax-programar-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}`
+	);
 
 	try {
 		line();
@@ -76,7 +79,11 @@ async function run(): Promise<void> {
 				return {
 					url: location.href.slice(0, 120),
 					text: (document.body.innerText ?? '').replace(/\s+/g, ' ').trim().slice(0, 600),
-					tappables: Array.from(document.querySelectorAll('ion-button, button, ion-item, ion-segment-button, ion-select, ion-radio, ion-datetime'))
+					tappables: Array.from(
+						document.querySelectorAll(
+							'ion-button, button, ion-item, ion-segment-button, ion-select, ion-radio, ion-datetime'
+						)
+					)
 						.filter(vis)
 						.map(e => `<${e.tagName.toLowerCase()}> "${t(e).slice(0, 55)}"`)
 						.slice(0, 22),
@@ -104,7 +111,11 @@ async function run(): Promise<void> {
 			return full;
 		};
 
-		const tap = async (needle: string, sel = 'ion-button, button, ion-item, ion-label, ion-segment-button, ion-radio', third = false): Promise<boolean> => {
+		const tap = async (
+			needle: string,
+			sel = 'ion-button, button, ion-item, ion-label, ion-segment-button, ion-radio',
+			third = false
+		): Promise<boolean> => {
 			const box = (await driver
 				.execute(
 					(s: string, q: string, leftThird: boolean) => {
@@ -125,7 +136,12 @@ async function run(): Promise<void> {
 						t.scrollIntoView({ block: 'center' });
 						const b = t.getBoundingClientRect();
 						if (!b.width || !b.height) return null;
-						return { x: b.left + (leftThird ? b.width / 6 : b.width / 2), y: b.top + b.height / 2, vw: window.innerWidth, vh: window.innerHeight };
+						return {
+							x: b.left + (leftThird ? b.width / 6 : b.width / 2),
+							y: b.top + b.height / 2,
+							vw: window.innerWidth,
+							vh: window.innerHeight
+						};
 					},
 					sel,
 					needle,
@@ -146,7 +162,12 @@ async function run(): Promise<void> {
 					id: 'finger1',
 					parameters: { pointerType: 'touch' },
 					actions: [
-						{ type: 'pointerMove', duration: 0, x: Math.round(loc.x + box.x * (size.width / box.vw)), y: Math.round(loc.y + box.y * (size.height / box.vh)) },
+						{
+							type: 'pointerMove',
+							duration: 0,
+							x: Math.round(loc.x + box.x * (size.width / box.vw)),
+							y: Math.round(loc.y + box.y * (size.height / box.vh))
+						},
 						{ type: 'pointerDown', button: 0 },
 						{ type: 'pause', duration: 130 },
 						{ type: 'pointerUp', button: 0 }
@@ -171,37 +192,39 @@ async function run(): Promise<void> {
 		if (process.env.MG116_SKIP_ADDRESS === '1') {
 			log('MG116_SKIP_ADDRESS=1 -> se usan las direcciones que ya tiene el home, sin tipear');
 		} else {
-		const typed = (await driver.execute((value: string) => {
-			const vis = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
-			const el = Array.from(document.querySelectorAll('input'))
-				.filter(vis)
-				.find(i => {
-					const inp = i as HTMLInputElement;
-					return !inp.readOnly && !inp.disabled && /destino|direccion|direcci/i.test(inp.placeholder ?? '');
-				}) as HTMLInputElement | undefined;
-			if (!el) return '';
-			el.focus();
-			el.value = '';
-			el.dispatchEvent(new Event('input', { bubbles: true }));
-			for (const ch of value) {
-				el.value += ch;
+			const typed = (await driver.execute((value: string) => {
+				const vis = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
+				const el = Array.from(document.querySelectorAll('input'))
+					.filter(vis)
+					.find(i => {
+						const inp = i as HTMLInputElement;
+						return (
+							!inp.readOnly && !inp.disabled && /destino|direccion|direcci/i.test(inp.placeholder ?? '')
+						);
+					}) as HTMLInputElement | undefined;
+				if (!el) return '';
+				el.focus();
+				el.value = '';
 				el.dispatchEvent(new Event('input', { bubbles: true }));
-			}
-			el.dispatchEvent(new Event('change', { bubbles: true }));
-			return el.placeholder ?? '(sin placeholder)';
-		}, DESTINATION)) as string;
-		if (!typed) throw new Error('no hay campo de direccion editable en el home: no se puede fijar destino');
-		log(`destino escrito en el campo [${typed}]`);
-		await driver.pause(5000);
-		await snap('01-predicciones');
+				for (const ch of value) {
+					el.value += ch;
+					el.dispatchEvent(new Event('input', { bubbles: true }));
+				}
+				el.dispatchEvent(new Event('change', { bubbles: true }));
+				return el.placeholder ?? '(sin placeholder)';
+			}, DESTINATION)) as string;
+			if (!typed) throw new Error('no hay campo de direccion editable en el home: no se puede fijar destino');
+			log(`destino escrito en el campo [${typed}]`);
+			await driver.pause(5000);
+			await snap('01-predicciones');
 
-		// Elegir la primera prediccion de la lista.
-		if (!(await tap(DESTINATION.slice(0, 8), 'ion-item, ion-label, li, div[role="button"]', true))) {
-			// Fallback: cualquier fila de la lista de resultados.
-			await tap('argentina', 'ion-item, ion-label, li', true);
-		}
-		await driver.pause(3000);
-		await snap('02-destino-fijado');
+			// Elegir la primera prediccion de la lista.
+			if (!(await tap(DESTINATION.slice(0, 8), 'ion-item, ion-label, li, div[role="button"]', true))) {
+				// Fallback: cualquier fila de la lista de resultados.
+				await tap('argentina', 'ion-item, ion-label, li', true);
+			}
+			await driver.pause(3000);
+			await snap('02-destino-fijado');
 		}
 
 		// ------------------------------------------------------------------ 2. momento del viaje
@@ -231,14 +254,16 @@ async function run(): Promise<void> {
 			log(`fecha/hora programada -> ${setAt} (objetivo ${iso})`);
 			await driver.pause(1200);
 			await snap('04-fecha-elegida');
-			if (!(await tap('confirmar', 'ion-button, button'))) log('AVISO: no se encontro "Confirmar" del modal de momento');
+			if (!(await tap('confirmar', 'ion-button, button')))
+				log('AVISO: no se encontro "Confirmar" del modal de momento');
 			await snap('05-momento-confirmado');
 		}
 
 		// ------------------------------------------------------------------ 3. vehiculo
-		if (await tap("seleccionar veh", MOMENT_SEL)) await snap("06-vehiculos");
+		if (await tap('seleccionar veh', MOMENT_SEL)) await snap('06-vehiculos');
 		// La primera opcion de la lista: en este carrier la etiqueta observada es "Standard".
-		if (await tap("standard", "ion-item, ion-card, button, ion-radio, div, span")) await snap("07-vehiculo-elegido");
+		if (await tap('standard', 'ion-item, ion-card, button, ion-radio, div, span'))
+			await snap('07-vehiculo-elegido');
 
 		// ------------------------------------------------------------------ 4. medio de pago
 		// SOLO cuenta corriente o efectivo. Si ninguno esta disponible el script NO cae a tarjeta:
@@ -270,7 +295,10 @@ async function run(): Promise<void> {
 			log('SIN medio de pago valido -> NO se confirma, para no crear el viaje con tarjeta.');
 			line();
 		} else {
-			const confirmed = (await tap('programar viaje', MOMENT_SEL)) || (await tap('confirmar', MOMENT_SEL)) || (await tap('viajo', MOMENT_SEL));
+			const confirmed =
+				(await tap('programar viaje', MOMENT_SEL)) ||
+				(await tap('confirmar', MOMENT_SEL)) ||
+				(await tap('viajo', MOMENT_SEL));
 			log(confirmed ? 'confirmacion enviada' : 'AVISO: no se encontro el boton de confirmacion');
 			await driver.pause(6000);
 			await snap('09-resultado');
@@ -279,7 +307,11 @@ async function run(): Promise<void> {
 		const dir = path.join(process.cwd(), 'evidence', 'network-capture');
 		await mkdir(dir, { recursive: true }).catch(() => undefined);
 		const file = path.join(dir, `pax-programar-viaje-${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
-		await writeFile(file, JSON.stringify({ env: TARGET.env, dry: DRY, destination: DESTINATION, steps }, null, 2), 'utf8');
+		await writeFile(
+			file,
+			JSON.stringify({ env: TARGET.env, dry: DRY, destination: DESTINATION, steps }, null, 2),
+			'utf8'
+		);
 		log(`volcado -> ${path.relative(process.cwd(), file)}`);
 		await driver.deleteSession().catch(() => undefined);
 	}

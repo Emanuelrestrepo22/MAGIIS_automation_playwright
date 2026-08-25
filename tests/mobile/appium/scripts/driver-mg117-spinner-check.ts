@@ -145,7 +145,13 @@ async function run(): Promise<void> {
 
 		log('\nInyectando 503 y tecleando…');
 		await installWebViewFaultInjection(driver, [
-			{ id: 'spinner-check', urlPattern: 'places/autocomplete', mode: 'status', status: 503, body: '{"error":"Service Unavailable"}' }
+			{
+				id: 'spinner-check',
+				urlPattern: 'places/autocomplete',
+				mode: 'status',
+				status: 503,
+				body: '{"error":"Service Unavailable"}'
+			}
 		]);
 		await clearWebViewNetworkCapture(driver);
 

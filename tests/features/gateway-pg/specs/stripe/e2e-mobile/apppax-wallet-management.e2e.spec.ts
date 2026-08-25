@@ -24,7 +24,8 @@ import { PassengerTripHappyPathHarness } from '../../../../../mobile/appium/harn
 // visa_success: 4242 4242 4242 4242 (pago exitoso sin 3DS).
 const HAPPY = STRIPE_TEST_CARD_FIXTURES.visa_success;
 
-test.describe.serial('Gateway PG · E2E Mobile · App Pax Wallet Management @gateway @stripe @e2e-hybrid @wallet @regression', () => {
+test.describe
+	.serial('Gateway PG · E2E Mobile · App Pax Wallet Management @gateway @stripe @e2e-hybrid @wallet @regression', () => {
 	// Sin servidor Appium el harness no se puede construir → SKIP a nivel describe (no ERROR).
 	test.skip(() => !process.env.APPIUM_SERVER_URL, 'Requiere servidor Appium Android activo (APPIUM_SERVER_URL).');
 
@@ -33,18 +34,18 @@ test.describe.serial('Gateway PG · E2E Mobile · App Pax Wallet Management @gat
 		{
 			annotation: [
 				{ type: 'tms', description: 'MG-302' },
-				{ type: 'tms', description: 'MG-295' },
-			],
+				{ type: 'tms', description: 'MG-295' }
+			]
 		},
 		async () => {
 			const harness = new PassengerTripHappyPathHarness(getPassengerAppConfig(), undefined, {
-				profileMode: 'personal',
+				profileMode: 'personal'
 			});
 			const card = {
 				number: HAPPY.number,
 				expiry: HAPPY.exp,
 				cvc: HAPPY.cvc,
-				holderName: HAPPY.holderName,
+				holderName: HAPPY.holderName
 			};
 			const last4 = HAPPY.last4;
 			const wallet = harness.getWalletScreen();
@@ -59,15 +60,22 @@ test.describe.serial('Gateway PG · E2E Mobile · App Pax Wallet Management @gat
 				await test.step('[MG-302] empty-state — vaciar wallet sin crash', async () => {
 					await harness.cleanWallet();
 					expect(await wallet.countCards(), 'tras vaciar, el wallet no debe tener tarjetas').toBe(0);
-					expect(await wallet.hasCard(last4), 'ninguna tarjeta debe seguir visible tras el vaciado').toBe(false);
+					expect(await wallet.hasCard(last4), 'ninguna tarjeta debe seguir visible tras el vaciado').toBe(
+						false
+					);
 				});
 
 				// MG-295 — alta desde vacío + listado: UN solo add (parte estable del flujo device).
 				await test.step('[MG-295] alta de tarjeta desde vacío + listado (visible por last4)', async () => {
 					const state = await harness.ensureWalletCard(card);
 					expect(state, 'debe poder agregarse una tarjeta partiendo del wallet vacío').toBe('added');
-					expect(await wallet.hasCard(last4), 'la tarjeta recién agregada debe listarse en el wallet').toBe(true);
-					expect(await wallet.countCards(), 'el wallet debe tener al menos 1 tarjeta tras el alta').toBeGreaterThan(0);
+					expect(await wallet.hasCard(last4), 'la tarjeta recién agregada debe listarse en el wallet').toBe(
+						true
+					);
+					expect(
+						await wallet.countCards(),
+						'el wallet debe tener al menos 1 tarjeta tras el alta'
+					).toBeGreaterThan(0);
 				});
 
 				// NOTA (MG-291 idempotencia/duplicado): DIFERIDO. Requiere que la tarjeta PERSISTA al
@@ -77,6 +85,6 @@ test.describe.serial('Gateway PG · E2E Mobile · App Pax Wallet Management @gat
 			} finally {
 				await harness.endSession();
 			}
-		},
+		}
 	);
 });

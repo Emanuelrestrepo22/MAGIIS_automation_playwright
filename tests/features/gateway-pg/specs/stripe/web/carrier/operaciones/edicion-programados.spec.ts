@@ -72,7 +72,10 @@ test.describe(
 			// editor de pago del ABM de edicion esta roto para AMBOS estados (SCHEDULED y NO_AUTH).
 			// No se toca TravelDetailPage.ts (legacy, compartido, fuera de alcance de este batch) —
 			// reporte de defecto en Stage 6.
-			test.skip(true, 'BLOQUEADO producto: editor de Forma de Pago no abre en el ABM de edicion (mode=3) — dropdown "No results found", reproducido tambien en TC079-083 — defect report 2026-08-07');
+			test.skip(
+				true,
+				'BLOQUEADO producto: editor de Forma de Pago no abre en el ABM de edicion (mode=3) — dropdown "No results found", reproducido tambien en TC079-083 — defect report 2026-08-07'
+			);
 			await loginAsDispatcher(page);
 			const variants = new CarrierEditVariantsSteps({ page });
 			const seedRef = await variants.seedScheduledTripForAnchor(empresaEditScenario());
@@ -94,7 +97,10 @@ test.describe(
 				// GATE producto (2026-08-07 — ver docstring TC078): editor de Forma de Pago del ABM
 				// de edicion (mode=3) no abre — reproducido en vivo con este mismo path
 				// (linkAndValidatePreauthorizedCard -> TravelDetailPage.selectPaymentMethodOption).
-				test.skip(true, 'BLOQUEADO producto: editor de Forma de Pago no abre en el ABM de edicion (mode=3) — ver TC078 — defect report 2026-08-07');
+				test.skip(
+					true,
+					'BLOQUEADO producto: editor de Forma de Pago no abre en el ABM de edicion (mode=3) — ver TC078 — defect report 2026-08-07'
+				);
 				await new CarrierEditVariantsSteps({ page }).runScheduledEditScenario(empresaEditScenario(), {
 					hold: 'off',
 					variant: 'link-new-card'
@@ -110,7 +116,10 @@ test.describe(
 				// las variantes comparten el editor de pago roto del ABM de edicion (link-new-card y
 				// link-new-3ds -> linkAndValidatePreauthorizedCard; select-existing -> selectLinkedCard
 				// -> selectPaymentMethodOption, MISMO metodo legacy). defect report 2026-08-07.
-				test.skip(true, 'BLOQUEADO producto: editor de Forma de Pago no abre en el ABM de edicion (mode=3) — ver TC078 — defect report 2026-08-07');
+				test.skip(
+					true,
+					'BLOQUEADO producto: editor de Forma de Pago no abre en el ABM de edicion (mode=3) — ver TC078 — defect report 2026-08-07'
+				);
 				await new CarrierEditVariantsSteps({ page }).runScheduledEditScenario(empresaEditScenario(), {
 					hold: 'on',
 					variant: 'select-existing'
@@ -125,7 +134,10 @@ test.describe(
 				// las variantes comparten el editor de pago roto del ABM de edicion (link-new-card y
 				// link-new-3ds -> linkAndValidatePreauthorizedCard; select-existing -> selectLinkedCard
 				// -> selectPaymentMethodOption, MISMO metodo legacy). defect report 2026-08-07.
-				test.skip(true, 'BLOQUEADO producto: editor de Forma de Pago no abre en el ABM de edicion (mode=3) — ver TC078 — defect report 2026-08-07');
+				test.skip(
+					true,
+					'BLOQUEADO producto: editor de Forma de Pago no abre en el ABM de edicion (mode=3) — ver TC078 — defect report 2026-08-07'
+				);
 				await new CarrierEditVariantsSteps({ page }).runScheduledEditScenario(empresaEditScenario(), {
 					hold: 'off',
 					variant: 'select-existing'
@@ -138,7 +150,10 @@ test.describe(
 				test.setTimeout(300_000);
 				// GATE producto (2026-08-07 — ver docstring TC078): mismo editor de pago roto,
 				// path linkAndValidatePreauthorizedCard (variante 3DS).
-				test.skip(true, 'BLOQUEADO producto: editor de Forma de Pago no abre en el ABM de edicion (mode=3) — ver TC078 — defect report 2026-08-07');
+				test.skip(
+					true,
+					'BLOQUEADO producto: editor de Forma de Pago no abre en el ABM de edicion (mode=3) — ver TC078 — defect report 2026-08-07'
+				);
 				await new CarrierEditVariantsSteps({ page }).runScheduledEditScenario(empresaEditScenario(), {
 					hold: 'on',
 					variant: 'link-new-3ds'
@@ -149,7 +164,10 @@ test.describe(
 				test.setTimeout(300_000);
 				// GATE producto (2026-08-07 — ver docstring TC078): mismo editor de pago roto,
 				// path linkAndValidatePreauthorizedCard (variante 3DS).
-				test.skip(true, 'BLOQUEADO producto: editor de Forma de Pago no abre en el ABM de edicion (mode=3) — ver TC078 — defect report 2026-08-07');
+				test.skip(
+					true,
+					'BLOQUEADO producto: editor de Forma de Pago no abre en el ABM de edicion (mode=3) — ver TC078 — defect report 2026-08-07'
+				);
 				await new CarrierEditVariantsSteps({ page }).runScheduledEditScenario(empresaEditScenario(), {
 					hold: 'off',
 					variant: 'link-new-3ds'

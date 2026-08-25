@@ -59,7 +59,10 @@ export type WalletAddCardSuiteOptions = {
  */
 export function defineWalletAddCardSuite(gateway: GatewayName, options: WalletAddCardSuiteOptions = {}): void {
 	if (gateway === 'stripe') {
-		throw new Error("defineWalletAddCardSuite('stripe'): el alta de tarjeta Stripe Elements valida por el flujo fillMinimum/selectCardByLast4 " + '(otro oráculo) — la factory WAL cubre hoy el form nativo (authorize/ebizcharge/mercado-pago).');
+		throw new Error(
+			"defineWalletAddCardSuite('stripe'): el alta de tarjeta Stripe Elements valida por el flujo fillMinimum/selectCardByLast4 " +
+				'(otro oráculo) — la factory WAL cubre hoy el form nativo (authorize/ebizcharge/mercado-pago).'
+		);
 	}
 
 	const adapter = getGatewayPgAdapter(gateway);
@@ -76,87 +79,96 @@ export function defineWalletAddCardSuite(gateway: GatewayName, options: WalletAd
 
 	// Tag de pasarela SIN guiones (S9) — derivado por `gatewayTag()` (SoT única en
 	// helpers/adapters/gateway-tag.ts, verificada por assertGatewayTagContract).
-	test.describe(`Gateway PG · Carrier · ${adapter.displayName} — alta de tarjeta pre-autorizada @gateway ${gatewayTag(gateway)} @wallet @regression`, describeDetails, () => {
-		test.describe.configure({ mode: 'serial', timeout: 180_000 });
-		// El fixture KATA no define la opción `role` — login explícito vía loginAsDispatcher.
-		test.use({ storageState: { cookies: [], origins: [] } });
+	test.describe(
+		`Gateway PG · Carrier · ${adapter.displayName} — alta de tarjeta pre-autorizada @gateway ${gatewayTag(gateway)} @wallet @regression`,
+		describeDetails,
+		() => {
+			test.describe.configure({ mode: 'serial', timeout: 180_000 });
+			// El fixture KATA no define la opción `role` — login explícito vía loginAsDispatcher.
+			test.use({ storageState: { cookies: [], origins: [] } });
 
-		// Gate de validez de medición — CALIBRADO (ronda 6 del RUN-LOG, 2026-07-29). El único
-		// oráculo de esta suite es una APROBACIÓN (alta de tarjeta validada), y la doctrina de
-		// EXTERNAL-BLOCKERS §0 es explícita: la aprobación es verificable contra cualquier
-		// cuenta — el guard corta solo cuando el oráculo ES un trigger ZIP/CVV (contract specs,
-		// hold). El blanket `beforeAll` original cortaba este happy path válido; se reemplaza
-		// por una annotation auditable dentro del test cuando la cuenta detectada es la enlatada.
+			// Gate de validez de medición — CALIBRADO (ronda 6 del RUN-LOG, 2026-07-29). El único
+			// oráculo de esta suite es una APROBACIÓN (alta de tarjeta validada), y la doctrina de
+			// EXTERNAL-BLOCKERS §0 es explícita: la aprobación es verificable contra cualquier
+			// cuenta — el guard corta solo cuando el oráculo ES un trigger ZIP/CVV (contract specs,
+			// hold). El blanket `beforeAll` original cortaba este happy path válido; se reemplaza
+			// por una annotation auditable dentro del test cuando la cuenta detectada es la enlatada.
 
-		test(`${titlePrefix}${extraTags}@wallet vincular tarjeta ${adapter.displayName} (•••• ${card.last4}) desde el alta de viaje (${env.toUpperCase()})`, async ({ page }) => {
-			if (gateway === 'authorize') {
-				const verdict = await readAuthorizeAccountMode();
-				if (verdict?.canned) {
-					test.info().annotations.push({
-						type: 'measurement-caveat',
-						description:
-							`[${gateway}/WAL] Cuenta Authorize en Test Mode (respuesta enlatada: transId "${verdict.transId}", ` +
-							`authCode "${verdict.authCode}"). Este verde acredita el ALTA aprobada — oráculo de aprobación, válido ` +
-							'contra cualquier cuenta — pero NO una evaluación real de triggers ZIP/CVV. ' +
-							'Bloqueante §0 de docs/gateway-pg/authorize/EXTERNAL-BLOCKERS.md sigue abierto.'
+			test(`${titlePrefix}${extraTags}@wallet vincular tarjeta ${adapter.displayName} (•••• ${card.last4}) desde el alta de viaje (${env.toUpperCase()})`, async ({
+				page
+			}) => {
+				if (gateway === 'authorize') {
+					const verdict = await readAuthorizeAccountMode();
+					if (verdict?.canned) {
+						test.info().annotations.push({
+							type: 'measurement-caveat',
+							description:
+								`[${gateway}/WAL] Cuenta Authorize en Test Mode (respuesta enlatada: transId "${verdict.transId}", ` +
+								`authCode "${verdict.authCode}"). Este verde acredita el ALTA aprobada — oráculo de aprobación, válido ` +
+								'contra cualquier cuenta — pero NO una evaluación real de triggers ZIP/CVV. ' +
+								'Bloqueante §0 de docs/gateway-pg/authorize/EXTERNAL-BLOCKERS.md sigue abierto.'
+						});
+					}
+				}
+				const dashboard = new CarrierDashboardPage({ page });
+				const travel = new CarrierNewTravelPage({ page });
+
+				await test.step(`Given: dispatcher logueado (${env.toUpperCase()}, creds chain ${gateway})`, async () => {
+					// Retry del login ante flake de auth de apps-test (patrón del spec Authorize F4).
+					await expect(async () => {
+						await loginAsDispatcher(page, { gateway });
+					}).toPass({ timeout: 120_000, intervals: [2_000, 4_000, 8_000] });
+				});
+
+				if (cleanupBeforeAdd) {
+					await test.step('And: precondición — limpiar tarjeta previa del pax (idempotencia)', async () => {
+						await cleanupGatewayCardByLast4(page, defaults.paxSearchQueries, card.last4);
 					});
 				}
-			}
-			const dashboard = new CarrierDashboardPage({ page });
-			const travel = new CarrierNewTravelPage({ page });
 
-			await test.step(`Given: dispatcher logueado (${env.toUpperCase()}, creds chain ${gateway})`, async () => {
-				// Retry del login ante flake de auth de apps-test (patrón del spec Authorize F4).
-				await expect(async () => {
-					await loginAsDispatcher(page, { gateway });
-				}).toPass({ timeout: 120_000, intervals: [2_000, 4_000, 8_000] });
-			});
-
-			if (cleanupBeforeAdd) {
-				await test.step('And: precondición — limpiar tarjeta previa del pax (idempotencia)', async () => {
-					await cleanupGatewayCardByLast4(page, defaults.paxSearchQueries, card.last4);
+				await test.step('When: formulario de nuevo viaje con cliente y destino', async () => {
+					await dashboard.openNewTravel();
+					await travel.ensureLoaded();
+					await travel.selectClient(defaults.walletClient);
+					await travel.setDestination(defaults.walletDestination);
 				});
-			}
 
-			await test.step('When: formulario de nuevo viaje con cliente y destino', async () => {
-				await dashboard.openNewTravel();
-				await travel.ensureLoaded();
-				await travel.selectClient(defaults.walletClient);
-				await travel.setDestination(defaults.walletDestination);
-			});
+				await test.step(`And: método "Preautorizada" + alta de tarjeta ${adapter.displayName} (form ${adapter.cardForm})`, async () => {
+					await travel.selectPaymentMethod('Preautorizada');
+					await cardFormFor(gateway).fill(page, card);
+				});
 
-			await test.step(`And: método "Preautorizada" + alta de tarjeta ${adapter.displayName} (form ${adapter.cardForm})`, async () => {
-				await travel.selectPaymentMethod('Preautorizada');
-				await cardFormFor(gateway).fill(page, card);
-			});
+				await test.step(`Then: la tarjeta ${adapter.displayName} queda validada/vinculada`, async () => {
+					if (gateway === 'mercado-pago') {
+						// Vinculación satisfactoria = tarjeta resaltada en el dropdown (recording test-15).
+						const mpLink = await validateAndSelectMercadoPagoCard(page);
+						// Guard future-proof (hoy INERTE): 'validation-failed' está RESERVADO a evidencia
+						// live (UAT) de un fallo distinguible de la limitación sandbox — hoy ningún camino
+						// lo retorna en TEST (el error explícito es la manifestación documentada → skip).
+						expect(
+							mpLink,
+							'MP: señal de fallo real de validación distinguible de la limitación sandbox (evidencia live)'
+						).not.toBe('validation-failed');
+						test.skip(
+							mpLink !== 'linked',
+							'MP: validación de tarjeta no completa en TEST (sandbox MP no transacciona) — UAT-only. Form-fill + habilitación de "Validar" verificados.'
+						);
+					} else {
+						// `last4` habilita el oráculo persistente (tarjeta vinculada en Forma de Pago) además
+						// del toast "Tarjeta válida", que es transitorio y se pierde por carrera.
+						await travel.validateNativeCard(card.last4);
+					}
+				});
 
-			await test.step(`Then: la tarjeta ${adapter.displayName} queda validada/vinculada`, async () => {
-				if (gateway === 'mercado-pago') {
-					// Vinculación satisfactoria = tarjeta resaltada en el dropdown (recording test-15).
-					const mpLink = await validateAndSelectMercadoPagoCard(page);
-					// Guard future-proof (hoy INERTE): 'validation-failed' está RESERVADO a evidencia
-					// live (UAT) de un fallo distinguible de la limitación sandbox — hoy ningún camino
-					// lo retorna en TEST (el error explícito es la manifestación documentada → skip).
-					expect(mpLink, 'MP: señal de fallo real de validación distinguible de la limitación sandbox (evidencia live)').not.toBe('validation-failed');
-					test.skip(
-						mpLink !== 'linked',
-						'MP: validación de tarjeta no completa en TEST (sandbox MP no transacciona) — UAT-only. Form-fill + habilitación de "Validar" verificados.'
-					);
-				} else {
-					// `last4` habilita el oráculo persistente (tarjeta vinculada en Forma de Pago) además
-					// del toast "Tarjeta válida", que es transitorio y se pierde por carrera.
-					await travel.validateNativeCard(card.last4);
+				if (options.deleteAfterAdd) {
+					await test.step('Then: la tarjeta queda vinculada (resaltada en métodos de pago)', async () => {
+						await travel.expectHighlightedSavedCard();
+					});
+					await test.step('When/Then: se elimina la tarjeta vinculada y ya no queda resaltada', async () => {
+						await travel.deleteHighlightedSavedCard();
+					});
 				}
 			});
-
-			if (options.deleteAfterAdd) {
-				await test.step('Then: la tarjeta queda vinculada (resaltada en métodos de pago)', async () => {
-					await travel.expectHighlightedSavedCard();
-				});
-				await test.step('When/Then: se elimina la tarjeta vinculada y ya no queda resaltada', async () => {
-					await travel.deleteHighlightedSavedCard();
-				});
-			}
-		});
-	});
+		}
+	);
 }

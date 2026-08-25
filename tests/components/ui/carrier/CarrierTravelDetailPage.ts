@@ -89,7 +89,10 @@ export class CarrierTravelDetailPage extends UiBase {
 	 * @atc MG-415 — misma key de área EDIT que el hermano Stripe (mapeo por área, convención del
 	 * repo: N mini-flujos → 1 key cuando no hay 1:1 con el idmap). Sólo uno corre por test.
 	 */
-	@atc('MG-415', { severity: 'critical', description: 'Edición de viaje: vincular + validar tarjeta preautorizada (multi-pasarela)' })
+	@atc('MG-415', {
+		severity: 'critical',
+		description: 'Edición de viaje: vincular + validar tarjeta preautorizada (multi-pasarela)'
+	})
 	async linkAndValidateCardForGateway(args: { gateway: GatewayName; card: CardFormFillInput }): Promise<void> {
 		await this.legacy.selectPaymentMethodOption('Tarjeta de Crédito - Preautorizada');
 		const form = cardFormFor(args.gateway);

@@ -53,7 +53,6 @@ export class RecoverySteps extends UiBase {
 	 */
 	async setupFailedThreeDs(scenario: RecoveryScenario): Promise<string> {
 		return test.step('Seed: alta + challenge post-envío RECHAZADO → NO_AUTORIZADO (helper canónico)', () =>
-			setupTravelWithFailed3DS(this.page, scenario)
-		);
+			setupTravelWithFailed3DS(this.page, scenario));
 	}
 }

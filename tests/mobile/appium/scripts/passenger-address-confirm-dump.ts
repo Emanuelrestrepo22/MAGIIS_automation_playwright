@@ -24,7 +24,9 @@ async function run(): Promise<void> {
 		const driver = harness.getDriver();
 		const trip = new PassengerNewTripScreen(getPassengerAppConfig(), driver);
 		await trip.openNewTrip();
-		await trip.setOrigin(ORIGIN).catch((e: unknown) => log(`setOrigin err (sigo): ${e instanceof Error ? e.message : String(e)}`));
+		await trip
+			.setOrigin(ORIGIN)
+			.catch((e: unknown) => log(`setOrigin err (sigo): ${e instanceof Error ? e.message : String(e)}`));
 		log('origen ok, inyectando destino con secuencia completa…');
 
 		// Inyección con secuencia de teclado (simula tipeo real char a char en el último tramo).
@@ -35,15 +37,21 @@ async function run(): Promise<void> {
 			if (!input) return;
 			input.focus();
 			const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
-			const fire = (type: string, extra?: EventInit) => input.dispatchEvent(type.startsWith('key')
-				? new KeyboardEvent(type, { bubbles: true, key: 'a', ...extra })
-				: new Event(type, { bubbles: true, composed: true, ...extra }));
+			const fire = (type: string, extra?: EventInit) =>
+				input.dispatchEvent(
+					type.startsWith('key')
+						? new KeyboardEvent(type, { bubbles: true, key: 'a', ...extra })
+						: new Event(type, { bubbles: true, composed: true, ...extra })
+				);
 			// set gradual para gatillar valueChanges con debounce
 			for (let n = 1; n <= value.length; n++) {
 				setter?.call(input, value.slice(0, n));
-				fire('keydown'); fire('input'); fire('keyup');
+				fire('keydown');
+				fire('input');
+				fire('keyup');
 			}
-			fire('change'); fire('ionInput');
+			fire('change');
+			fire('ionInput');
 		}, DEST);
 		await driver.pause(3000);
 
@@ -53,10 +61,20 @@ async function run(): Promise<void> {
 		log(`body.outerHTML → evidence/ebiz/newtrip-dest-dropdown.html (${String(html).length} chars)`);
 
 		// Screenshot para verificación visual del dropdown.
-		try { await (driver as unknown as { saveScreenshot: (p: string) => Promise<unknown> }).saveScreenshot('evidence/ebiz/newtrip-dest-dropdown.png'); log('screenshot ok'); } catch { /* noop */ }
+		try {
+			await (driver as unknown as { saveScreenshot: (p: string) => Promise<unknown> }).saveScreenshot(
+				'evidence/ebiz/newtrip-dest-dropdown.png'
+			);
+			log('screenshot ok');
+		} catch {
+			/* noop */
+		}
 	} finally {
 		await harness.endSession();
 	}
 }
 
-run().catch((e: unknown) => { console.error(`[addr-dump] ${e instanceof Error ? e.message : String(e)}`); process.exit(1); });
+run().catch((e: unknown) => {
+	console.error(`[addr-dump] ${e instanceof Error ? e.message : String(e)}`);
+	process.exit(1);
+});

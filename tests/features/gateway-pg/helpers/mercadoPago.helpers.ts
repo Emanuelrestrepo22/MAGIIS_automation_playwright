@@ -59,7 +59,10 @@ export async function fillMercadoPagoNativeCard(page: Page, input: MpNativeCardI
 	// (scopeada al select para no matchear el placeholder). Requerido: sin esto MP rechaza "revise los datos".
 	const docTypeSelect = page.locator('#creditCardOwnerIdType');
 	await docTypeSelect.click();
-	await docTypeSelect.getByText(new RegExp(`^\\s*${docType}\\s*$`, 'i')).last().click();
+	await docTypeSelect
+		.getByText(new RegExp(`^\\s*${docType}\\s*$`, 'i'))
+		.last()
+		.click();
 	// Número de documento (formcontrolname estable, era nth(4) frágil).
 	await page.locator('input[formcontrolname="creditCardOwnerId"]').pressSequentially(docNumber, { delay: 40 });
 
@@ -85,10 +88,7 @@ const validarButton = (page: Page): Locator => page.getByRole('button', { name: 
  * (verificada para el modal Authorize, no para este form) — confirmar en una corrida viva.
  */
 export async function expectValidateCardEnabled(page: Page, timeout = 15_000): Promise<void> {
-	await expect(
-		validarButton(page),
-		'el form MP debe quedar válido y "Validar" habilitado'
-	).toBeEnabled({ timeout });
+	await expect(validarButton(page), 'el form MP debe quedar válido y "Validar" habilitado').toBeEnabled({ timeout });
 }
 
 /** Tarjeta resaltada en el dropdown de métodos de pago = vinculación satisfactoria (recording test-15). */
@@ -161,7 +161,11 @@ export async function validateAndSelectMercadoPagoCard(
 		if (await validar.isEnabled().catch(() => false)) {
 			await validar.click({ force: true });
 		}
-		await paymentMethods.locator('.below .single .value .data-with-icon-col').first().click().catch(() => {});
+		await paymentMethods
+			.locator('.below .single .value .data-with-icon-col')
+			.first()
+			.click()
+			.catch(() => {});
 		// LATCH: el desenlace se detecta UNA vez por intento (espera acotada determinista) y la
 		// clasificación de abajo usa ese valor — nunca se re-lee el DOM para clasificar después.
 		const outcome = await waitForMpValidationOutcome(page);
@@ -172,7 +176,9 @@ export async function validateAndSelectMercadoPagoCard(
 		if (outcome === 'error') {
 			// No reintentar: señal explícita (no es flakiness) = manifestación documentada de la
 			// limitación sandbox MP en TEST → habilita el skip del caller.
-			console.warn('[MP] "Error al validar tarjeta" — manifestación documentada de la limitación sandbox MP en TEST (la validación no completa). Form-fill + "Validar" verificados; el resto es UAT-only.');
+			console.warn(
+				'[MP] "Error al validar tarjeta" — manifestación documentada de la limitación sandbox MP en TEST (la validación no completa). Form-fill + "Validar" verificados; el resto es UAT-only.'
+			);
 			return 'validation-unavailable';
 		}
 		// outcome === 'none': sin señal dentro de la ventana — reintentar ("Validar" puede
@@ -181,6 +187,8 @@ export async function validateAndSelectMercadoPagoCard(
 
 	// Sin tarjeta resaltada ni error explícito tras los intentos: señal indeterminada →
 	// limitación de entorno (sandbox MP no transacciona en TEST) — también skip del caller.
-	console.warn('[MP] Tarjeta MP no quedó vinculada ni hubo error explícito — se trata como validación no disponible en TEST (sandbox).');
+	console.warn(
+		'[MP] Tarjeta MP no quedó vinculada ni hubo error explícito — se trata como validación no disponible en TEST (sandbox).'
+	);
 	return 'validation-unavailable';
 }

@@ -40,7 +40,8 @@ import { CarrierTravelManagementPage } from '@ui/carrier';
  * si un driver ya lo tomó, la fila puede haber avanzado. Lo que NO se acepta es "No autorizado" /
  * "En conflicto" — ése es el estado de pago fallido y debe romper.
  */
-const QUOTE_TRIP_ROW_STATUS = /Viaje programado|Scheduled Trip|Buscando chofer|Searching Driver|En progreso|In Progress/i;
+const QUOTE_TRIP_ROW_STATUS =
+	/Viaje programado|Scheduled Trip|Buscando chofer|Searching Driver|En progreso|In Progress/i;
 
 export type ExpectQuoteTripInPortalOptions = {
 	/**
@@ -71,7 +72,10 @@ export type ExpectQuoteTripInPortalOptions = {
  *
  * Cierra el contexto siempre — también si la assertion falla — para no dejar sesiones abiertas.
  */
-export async function expectQuoteTripInPortal(browser: Browser, options: ExpectQuoteTripInPortalOptions): Promise<void> {
+export async function expectQuoteTripInPortal(
+	browser: Browser,
+	options: ExpectQuoteTripInPortalOptions
+): Promise<void> {
 	const { requester, destination, gateway, travelId } = options;
 
 	await test.step(`Verificar en el portal que el viaje de "${requester}" quedó dado de alta`, async () => {

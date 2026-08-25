@@ -43,11 +43,7 @@ const APP_PACKAGE = TARGET.appPackage;
 const log = (msg: string): void => console.log(`[matrix665] ${msg}`);
 
 /** Términos distintos entre sí, todos con 4+ caracteres y con resultados conocidos en test. */
-const TERMS = [
-	'corrie', 'corrien', 'corrient',
-	'flori', 'florid', 'florida',
-	'callao', 'callaos', 'obelis'
-];
+const TERMS = ['corrie', 'corrien', 'corrient', 'flori', 'florid', 'florida', 'callao', 'callaos', 'obelis'];
 
 type Scenario = { label: string; mode: 'status' | 'networkError'; status?: number };
 
@@ -73,29 +69,40 @@ type Observation = {
 	googleNewResources: number;
 };
 
-async function readState(driver: WebdriverIO.Browser): Promise<{ spinner: boolean; predictions: number; errors: string[] }> {
+async function readState(
+	driver: WebdriverIO.Browser
+): Promise<{ spinner: boolean; predictions: number; errors: string[] }> {
 	return (await driver.execute(() => {
 		const seen = (el: Element): boolean => {
 			const node = el as HTMLElement;
 			const rect = node.getBoundingClientRect();
 			const style = getComputedStyle(node);
 			return (
-				rect.width > 0 && rect.height > 0 && rect.top < window.innerHeight && rect.bottom > 0 &&
-				style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity) > 0
+				rect.width > 0 &&
+				rect.height > 0 &&
+				rect.top < window.innerHeight &&
+				rect.bottom > 0 &&
+				style.display !== 'none' &&
+				style.visibility !== 'hidden' &&
+				Number(style.opacity) > 0
 			);
 		};
 
 		// Solo el spinner real de la búsqueda: `[class*=loading]` a secas matchea nodos de 0x0.
 		const spinner = Array.from(document.querySelectorAll('ion-spinner')).some(seen);
-		const predictions = Array.from(document.querySelectorAll('ion-item.prediction-item, [class*="prediction-item"]')).filter(seen).length;
+		const predictions = Array.from(
+			document.querySelectorAll('ion-item.prediction-item, [class*="prediction-item"]')
+		).filter(seen).length;
 
 		const pattern = /error|falla|fallo|intenta|reintent|no se pudo|sin conexi|problema|disponible|servicio/i;
-		const errors = Array.from(new Set(
-			Array.from(document.querySelectorAll('p, span, div, ion-label, ion-text'))
-				.filter(seen)
-				.map(el => (el.textContent ?? '').trim())
-				.filter(t => t.length > 0 && t.length < 140 && pattern.test(t))
-		));
+		const errors = Array.from(
+			new Set(
+				Array.from(document.querySelectorAll('p, span, div, ion-label, ion-text'))
+					.filter(seen)
+					.map(el => (el.textContent ?? '').trim())
+					.filter(t => t.length > 0 && t.length < 140 && pattern.test(t))
+			)
+		);
 
 		return { spinner, predictions, errors };
 	})) as { spinner: boolean; predictions: number; errors: string[] };
@@ -157,7 +164,9 @@ async function run(): Promise<void> {
 
 		const hasInput = (await driver.execute(() => {
 			const visible = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
-			return Array.from(document.querySelectorAll('input')).filter(visible).some(el => !(el as HTMLInputElement).readOnly);
+			return Array.from(document.querySelectorAll('input'))
+				.filter(visible)
+				.some(el => !(el as HTMLInputElement).readOnly);
 		})) as boolean;
 
 		if (!hasInput) {
@@ -178,13 +187,22 @@ async function run(): Promise<void> {
 			await driver.pause(2800);
 			const baseState = await readState(driver);
 			const baselineOk = baseState.predictions > 0;
-			log(`   baseline "${baselineTerm}": ${baseState.predictions} predicciones · ${baselineOk ? 'OK' : 'SIN RESULTADOS'}`);
+			log(
+				`   baseline "${baselineTerm}": ${baseState.predictions} predicciones · ${baselineOk ? 'OK' : 'SIN RESULTADOS'}`
+			);
 
 			if (!baselineOk) {
 				log('   se omite: sin baseline sano la observación no sería atribuible al fallo');
 				observations.push({
-					scenario: scenario.label, baselineOk: false, faultHits: 0, requests: 0,
-					spinnerAt3s: false, spinnerAt10s: false, predictions: 0, errorTexts: [], googleNewResources: 0
+					scenario: scenario.label,
+					baselineOk: false,
+					faultHits: 0,
+					requests: 0,
+					spinnerAt3s: false,
+					spinnerAt10s: false,
+					predictions: 0,
+					errorTexts: [],
+					googleNewResources: 0
 				});
 				continue;
 			}
@@ -245,7 +263,11 @@ async function run(): Promise<void> {
 				};
 				const back = Array.from(document.querySelectorAll('ion-icon, ion-button, button'))
 					.filter(seen)
-					.find(el => String(el.getAttribute('name') ?? el.getAttribute('ng-reflect-name') ?? '').includes('arrow-back')) as HTMLElement | undefined;
+					.find(el =>
+						String(el.getAttribute('name') ?? el.getAttribute('ng-reflect-name') ?? '').includes(
+							'arrow-back'
+						)
+					) as HTMLElement | undefined;
 				if (!back) return false;
 				back.click();
 				return true;
@@ -256,14 +278,20 @@ async function run(): Promise<void> {
 		const afterBack = (await driver.execute(() => {
 			const visible = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
 			return {
-				searchStillOpen: Array.from(document.querySelectorAll('input')).filter(visible).some(el => !(el as HTMLInputElement).readOnly),
-				spinner: Array.from(document.querySelectorAll('ion-spinner')).some(el => (el as HTMLElement).offsetParent !== null)
+				searchStillOpen: Array.from(document.querySelectorAll('input'))
+					.filter(visible)
+					.some(el => !(el as HTMLInputElement).readOnly),
+				spinner: Array.from(document.querySelectorAll('ion-spinner')).some(
+					el => (el as HTMLElement).offsetParent !== null
+				)
 			};
 		})) as { searchStillOpen: boolean; spinner: boolean };
 
 		log(`   botón volver encontrado: ${backPressed}`);
 		log(`   buscador sigue abierto: ${afterBack.searchStillOpen} · spinner: ${afterBack.spinner}`);
-		log(`   -> ${backPressed && !afterBack.searchStillOpen ? 'SÍ puede salir: el fallo no lo deja atrapado' : 'REVISAR: no se cerró el buscador'}`);
+		log(
+			`   -> ${backPressed && !afterBack.searchStillOpen ? 'SÍ puede salir: el fallo no lo deja atrapado' : 'REVISAR: no se cerró el buscador'}`
+		);
 
 		// ── SÍNTESIS ─────────────────────────────────────────────────────────────
 		log('\n════════════════ SÍNTESIS ════════════════');

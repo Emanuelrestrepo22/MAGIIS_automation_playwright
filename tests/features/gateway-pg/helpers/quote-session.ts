@@ -160,9 +160,9 @@ export async function resolveRegisteredQuoteContact(
 
 		const byEmail = expectedEmail
 			? rows.find(row => {
-				const mail = readFirstString(row, EMAIL_KEYS);
-				return mail?.toLowerCase() === expectedEmail.toLowerCase();
-			})
+					const mail = readFirstString(row, EMAIL_KEYS);
+					return mail?.toLowerCase() === expectedEmail.toLowerCase();
+				})
 			: undefined;
 		const withPhone = rows.find(row => readFirstString(row, PHONE_KEYS));
 		const chosen = byEmail ?? withPhone ?? rows[0];

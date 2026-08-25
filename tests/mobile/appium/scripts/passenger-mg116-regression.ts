@@ -193,9 +193,12 @@ async function tapNativeByText(
 			return { x: r.left + r.width / 2, y: r.top + r.height / 2, vw: window.innerWidth, vh: window.innerHeight };
 		})();`;
 
-	const rect = (await driver.execute(script).catch(() => null)) as
-		| { x: number; y: number; vw: number; vh: number }
-		| null;
+	const rect = (await driver.execute(script).catch(() => null)) as {
+		x: number;
+		y: number;
+		vw: number;
+		vh: number;
+	} | null;
 	if (!rect) return { found: false };
 
 	await driver.switchContext('NATIVE_APP');
@@ -265,7 +268,12 @@ async function measureTerm(
 		calls: calls.length,
 		status: calls[0]?.status ?? null,
 		tokens: Array.from(new Set(calls.map(c => paramOf(String(c.url), 'sessionToken')).filter(Boolean))),
-		params: calls.length ? String(calls[0].url).split('?')[1]?.split('&').map(kv => kv.split('=')[0]) ?? [] : [],
+		params: calls.length
+			? (String(calls[0].url)
+					.split('?')[1]
+					?.split('&')
+					.map(kv => kv.split('=')[0]) ?? [])
+			: [],
 		rows: preds(calls)
 	};
 }
@@ -280,13 +288,16 @@ async function measureTerm(
  * solo miente: empuja a una accion destructiva.
  */
 async function addressFieldCount(driver: WebdriverIO.Browser): Promise<number> {
-	return (await driver.execute((names: string[]) => {
-		const vis = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
-		const inputs = Array.from(document.querySelectorAll('input')).filter(vis) as HTMLInputElement[];
-		return names.filter(n =>
-			inputs.some(i => (i.placeholder ?? '').trim().toLowerCase().startsWith(n.toLowerCase()))
-		).length;
-	}, [...FIELDS])) as number;
+	return (await driver.execute(
+		(names: string[]) => {
+			const vis = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
+			const inputs = Array.from(document.querySelectorAll('input')).filter(vis) as HTMLInputElement[];
+			return names.filter(n =>
+				inputs.some(i => (i.placeholder ?? '').trim().toLowerCase().startsWith(n.toLowerCase()))
+			).length;
+		},
+		[...FIELDS]
+	)) as number;
 }
 
 /**
@@ -444,11 +455,16 @@ async function run(): Promise<void> {
 			const dropCache = drop.filter(d => cacheRows.some(c => d.main.includes((c.mainText ?? ' ').slice(0, 20))));
 			findings.phase2_icons = {
 				airportRowsInDom: dropAirport.map(d => ({ main: d.main, icons: d.icons, iconNames: d.iconNames })),
-				cacheRowsInDom: dropCache.slice(0, 3).map(d => ({ main: d.main, icons: d.icons, iconNames: d.iconNames }))
+				cacheRowsInDom: dropCache
+					.slice(0, 3)
+					.map(d => ({ main: d.main, icons: d.icons, iconNames: d.iconNames }))
 			};
 			log(
 				`TM-683 (icono diferenciado): aeropuertos con ${dropAirport.map(d => d.icons).join('/')} icono(s), ` +
-					`direcciones con ${dropCache.slice(0, 3).map(d => d.icons).join('/')} icono(s)`
+					`direcciones con ${dropCache
+						.slice(0, 3)
+						.map(d => d.icons)
+						.join('/')} icono(s)`
 			);
 
 			// CONTROL: tap nativo sobre una fila que SI trae placeId.
@@ -526,9 +542,9 @@ async function run(): Promise<void> {
 						rotated: Boolean(next.tokens[0]) && next.tokens[0] !== tokenBefore
 					};
 					log(
-						`\nTM-687 · rotacion de token: ${tokenBefore.slice(0, 8)}... -> ${
-							(next.tokens[0] ?? '(ninguno)').slice(0, 8)
-						}... ${next.tokens[0] && next.tokens[0] !== tokenBefore ? 'ROTO' : 'NO ROTO'}`
+						`\nTM-687 · rotacion de token: ${tokenBefore.slice(0, 8)}... -> ${(
+							next.tokens[0] ?? '(ninguno)'
+						).slice(0, 8)}... ${next.tokens[0] && next.tokens[0] !== tokenBefore ? 'ROTO' : 'NO ROTO'}`
 					);
 					await closeSearch(driver);
 				}
@@ -658,7 +674,8 @@ async function run(): Promise<void> {
 			const emptyDrop = await readDropdown(driver);
 			const errVisible = (await driver.execute(() => {
 				const vis = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;
-				return Array.from(document.querySelectorAll('ion-toast, .error, .alert, [role="alert"]')).filter(vis).length;
+				return Array.from(document.querySelectorAll('ion-toast, .error, .alert, [role="alert"]')).filter(vis)
+					.length;
 			})) as number;
 			findings.phase5_tm688 = {
 				calls: empty.calls,
@@ -694,7 +711,9 @@ async function run(): Promise<void> {
 			const maxLoaders = Math.max(...loaderSamples);
 			findings.phase5_tm694 = { loaderSamples, maxLoaders };
 			log(`\nTM-694 (skipLoader): muestras de loader por pulsacion -> [${loaderSamples.join(',')}]`);
-			log(`   ${maxLoaders === 0 ? 'PASA — ninguna pulsacion disparo el loader global' : `REVISAR — hasta ${maxLoaders} loader(s) visibles`}`);
+			log(
+				`   ${maxLoaders === 0 ? 'PASA — ninguna pulsacion disparo el loader global' : `REVISAR — hasta ${maxLoaders} loader(s) visibles`}`
+			);
 			await closeSearch(driver);
 		}
 

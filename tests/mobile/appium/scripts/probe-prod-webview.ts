@@ -74,7 +74,9 @@ async function main(): Promise<void> {
 			const url = await driver.getUrl().catch(() => '(no se pudo leer)');
 			console.log(`[sonda] URL actual: ${url}`);
 			const enLogin = url.includes('/login') || url.includes('invalid_token=true');
-			console.log(`[sonda] VEREDICTO: WebView instrumentable. Sesion iniciada: ${enLogin ? 'NO (esta en login)' : 'SI'}`);
+			console.log(
+				`[sonda] VEREDICTO: WebView instrumentable. Sesion iniciada: ${enLogin ? 'NO (esta en login)' : 'SI'}`
+			);
 		}
 
 		// Pantalla nativa, para saber que ve el usuario aunque no haya WebView.

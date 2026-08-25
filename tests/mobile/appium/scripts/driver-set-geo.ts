@@ -20,15 +20,23 @@ async function run(): Promise<void> {
 	try {
 		const driver = s.getDriver();
 		log(`setGeoLocation → lat=${LAT} lon=${LON}`);
-		await (driver as unknown as { setGeoLocation: (loc: { latitude: number; longitude: number; altitude: number }) => Promise<unknown> })
-			.setGeoLocation({ latitude: LAT, longitude: LON, altitude: 15 });
+		await (
+			driver as unknown as {
+				setGeoLocation: (loc: { latitude: number; longitude: number; altitude: number }) => Promise<unknown>;
+			}
+		).setGeoLocation({ latitude: LAT, longitude: LON, altitude: 15 });
 		log('geo seteada; esperando 12s a que background-geolocation propague…');
 		await driver.pause(12_000);
-		const loc = await (driver as unknown as { getGeoLocation: () => Promise<unknown> }).getGeoLocation().catch(() => 'n/a');
+		const loc = await (driver as unknown as { getGeoLocation: () => Promise<unknown> })
+			.getGeoLocation()
+			.catch(() => 'n/a');
 		log(`getGeoLocation → ${JSON.stringify(loc)}`);
 	} finally {
 		await s.endSession();
 	}
 }
 
-run().catch((e: unknown) => { console.error(`[set-geo] ${e instanceof Error ? e.message : String(e)}`); process.exit(1); });
+run().catch((e: unknown) => {
+	console.error(`[set-geo] ${e instanceof Error ? e.message : String(e)}`);
+	process.exit(1);
+});

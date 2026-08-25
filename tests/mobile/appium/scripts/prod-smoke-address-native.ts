@@ -42,7 +42,10 @@ const TARGET = resolveDriverTarget('passenger');
 // Carpeta POR CORRIDA: el A/B de carrier hace dos mediciones que hay que comparar, y un unico
 // directorio hacia que la segunda sobreescribiera la primera — perdiendo justo la mitad que da
 // sentido a la comparacion. La etiqueta se pasa por MG116_CARRIER_LABEL.
-const SLUG = (process.env.MG116_CARRIER_LABEL ?? 'sin-etiqueta').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const SLUG = (process.env.MG116_CARRIER_LABEL ?? 'sin-etiqueta')
+	.toLowerCase()
+	.replace(/[^a-z0-9]+/g, '-')
+	.replace(/^-|-$/g, '');
 const OUT_DIR = path.join('evidence', 'prod', `mg116-smoke-${SLUG}`);
 const SETTLE_MS = 3200;
 
@@ -165,7 +168,8 @@ async function atenderDialogosDePermisos(driver: Driver): Promise<string> {
 		if (fuente.includes('ubicaci') || fuente.toLowerCase().includes('location')) {
 			// Precision primero: el boton de duracion aplica la precision que este seleccionada.
 			await tocarPorTexto(driver, 'Precisa');
-			const ok = (await tocarPorTexto(driver, 'Solo esta vez')) || (await tocarPorTexto(driver, 'Only this time'));
+			const ok =
+				(await tocarPorTexto(driver, 'Solo esta vez')) || (await tocarPorTexto(driver, 'Only this time'));
 			atendidos.push(ok ? 'ubicacion: solo esta vez (precisa)' : 'ubicacion: NO se pudo responder');
 			if (!ok) break;
 			continue;
@@ -200,12 +204,18 @@ async function verificarPantalla(driver: Driver): Promise<{ ok: boolean; motivo:
 
 	const enLogin = MARCAS_LOGIN.filter(m => fuente.includes(m));
 	if (enLogin.length >= 2) {
-		return { ok: false, motivo: `la app esta en la PANTALLA DE LOGIN (marcas: ${enLogin.join(', ')}). No se toca ningun campo.` };
+		return {
+			ok: false,
+			motivo: `la app esta en la PANTALLA DE LOGIN (marcas: ${enLogin.join(', ')}). No se toca ningun campo.`
+		};
 	}
 
 	const faltantes = MARCAS_ALTA_VIAJE.filter(m => !fuente.includes(m));
 	if (faltantes.length > 0) {
-		return { ok: false, motivo: `no se reconoce la pantalla de alta de viaje (faltan marcas: ${faltantes.join(', ')}).` };
+		return {
+			ok: false,
+			motivo: `no se reconoce la pantalla de alta de viaje (faltan marcas: ${faltantes.join(', ')}).`
+		};
 	}
 
 	const campos = await driver.$$('//android.widget.EditText');
@@ -237,7 +247,12 @@ function versionInstalada(paquete: string): string {
 	}
 }
 
-async function medirTermino(driver: Driver, campo: AppElement, termino: string, etiqueta: string): Promise<{ termino: string; filas: string[]; captura: string }> {
+async function medirTermino(
+	driver: Driver,
+	campo: AppElement,
+	termino: string,
+	etiqueta: string
+): Promise<{ termino: string; filas: string[]; captura: string }> {
 	log(`termino "${termino}"`);
 	// Los permisos se piden de a uno y aparecen a mitad de la corrida: hay que atenderlos antes de
 	// cada medicion, no solo al arranque.
@@ -321,7 +336,10 @@ async function main(): Promise<void> {
 		// Ninguno prueba PROXIMIDAD. Para discriminar si el sesgo es el dispositivo hacen falta
 		// terminos que devuelvan CALLES CERCANAS: en UAT, `corri` con 5 caracteres hacia desaparecer
 		// los aeropuertos y devolvia Av. Corrientes a 350 m del usuario.
-		const terminos = (process.env.MG116_TERMS ?? 'corri,reconqu,arenal,corr,eze').split(',').map(t => t.trim()).filter(Boolean);
+		const terminos = (process.env.MG116_TERMS ?? 'corri,reconqu,arenal,corr,eze')
+			.split(',')
+			.map(t => t.trim())
+			.filter(Boolean);
 		log(`terminos a medir: ${terminos.join(' · ')}`);
 
 		for (const [i, t] of terminos.entries()) {
@@ -344,7 +362,8 @@ async function main(): Promise<void> {
 		versionApp,
 		carrier: process.env.MG116_CARRIER_LABEL ?? '(no declarado)',
 		udid: TARGET.udid,
-		limitacion: 'Build de produccion sin WebView depurable: getContexts() = ["NATIVE_APP"]. Sin captura de red, los asertos de request son INMEDIBLES aca. Lo de abajo es lo observable en pantalla.',
+		limitacion:
+			'Build de produccion sin WebView depurable: getContexts() = ["NATIVE_APP"]. Sin captura de red, los asertos de request son INMEDIBLES aca. Lo de abajo es lo observable en pantalla.',
 		resultados
 	};
 	const jsonPath = path.join(OUT_DIR, 'resumen.json');

@@ -53,7 +53,13 @@ import { gatewayTag } from '@features/gateway-pg/helpers/adapters/gateway-tag';
 import { loginAsDispatcher } from '@features/gateway-pg/fixtures/gateway.fixtures';
 
 /** Los 5 casos base de la suite CFG (los del spec Authorize F4 — cobertura de referencia). */
-export const GATEWAY_CFG_BASE_CASES: GatewayCfgCase[] = ['linkValid', 'linkInvalid', 'unlink', 'exclusivity', 'linkStatus'];
+export const GATEWAY_CFG_BASE_CASES: GatewayCfgCase[] = [
+	'linkValid',
+	'linkInvalid',
+	'unlink',
+	'exclusivity',
+	'linkStatus'
+];
 
 /** Los 8 casos CFG en orden canónico de matriz (TC1001..TC1008). */
 export const GATEWAY_CFG_ALL_CASES: GatewayCfgCase[] = [
@@ -174,7 +180,11 @@ function caseTitle(cfgCase: GatewayCfgCase, adapter: GatewayPgAdapter): string {
  * sin driver (mercado-pago) NO puede vincular programáticamente → skip limpio si la
  * pasarela no está ya vinculada (en vez del throw de `ensureActiveGateway`).
  */
-async function ensureActiveGatewayOrSkip(switcher: GatewaySwitchSteps, gateway: GatewayName, hasDriver: boolean): Promise<void> {
+async function ensureActiveGatewayOrSkip(
+	switcher: GatewaySwitchSteps,
+	gateway: GatewayName,
+	hasDriver: boolean
+): Promise<void> {
 	if (hasDriver) {
 		await switcher.ensureActiveGateway(gateway);
 		return;
@@ -212,7 +222,10 @@ export function defineGatewayConfigSuite(gateway: GatewayName, options: GatewayC
 		// El fixture KATA no define la opción `role` — login explícito vía loginAsDispatcher.
 		test.use({ storageState: { cookies: [], origins: [] } });
 
-		test.skip(!adapter.isConfigured(), `Requiere ${adapter.credsEnvKeys.join(' + ')} en .env.test (gate del adapter ${gateway}).`);
+		test.skip(
+			!adapter.isConfigured(),
+			`Requiere ${adapter.credsEnvKeys.join(' + ')} en .env.test (gate del adapter ${gateway}).`
+		);
 		test.skip(
 			!isGatewayDestructiveSwitchAllowed(),
 			'Suite CFG DESTRUCTIVA (link/unlink de la pasarela activa del carrier 1521 → cleaningWallets en cascada): ' +
@@ -241,27 +254,37 @@ export function defineGatewayConfigSuite(gateway: GatewayName, options: GatewayC
 							await switcher.ensureGatewayLinkable(gateway);
 						});
 						await test.step(`Then: la card ${gateway} es visible y vinculable`, async () => {
-							expect(await appStore.readState(gateway), `${gateway} debe mostrarse vinculable (no vinculada)`).toBe('linkable');
+							expect(
+								await appStore.readState(gateway),
+								`${gateway} debe mostrarse vinculable (no vinculada)`
+							).toBe('linkable');
 						});
 						break;
 					}
 					case 'linkValid': {
 						await test.step('Given: slot de pasarela libre', async () => {
 							await switcher.ensureGatewayLinkable(gateway);
-							expect(await appStore.readState(gateway), `${gateway} debe quedar vinculable tras liberar el slot`).toBe('linkable');
+							expect(
+								await appStore.readState(gateway),
+								`${gateway} debe quedar vinculable tras liberar el slot`
+							).toBe('linkable');
 						});
 						await test.step('When: vinculo con credenciales válidas', async () => {
 							await driver!.linkValid(appStore);
 						});
 						await test.step('Then: la card queda en estado vinculado', async () => {
-							expect(await appStore.readState(gateway), `${gateway} debe quedar vinculada`).toBe('linked');
+							expect(await appStore.readState(gateway), `${gateway} debe quedar vinculada`).toBe(
+								'linked'
+							);
 						});
 						break;
 					}
 					case 'linkInvalid': {
 						await test.step('Given: slot de pasarela libre', async () => {
 							await switcher.ensureGatewayLinkable(gateway);
-							expect(await appStore.readState(gateway), `${gateway} debe estar vinculable`).toBe('linkable');
+							expect(await appStore.readState(gateway), `${gateway} debe estar vinculable`).toBe(
+								'linkable'
+							);
 						});
 						await test.step('When/Then: intento vincular con credenciales inválidas → rechazo controlado, gateway inactivo', async () => {
 							await driver!.linkInvalid(appStore);
@@ -283,7 +306,10 @@ export function defineGatewayConfigSuite(gateway: GatewayName, options: GatewayC
 							// Pre-assert de precondición (restaurado del spec original 640eadf, perdido
 							// en la parametrización S6): el unlink solo prueba algo si la pasarela
 							// estaba REALMENTE vinculada antes de desvincular.
-							expect(await appStore.readState(gateway), `${gateway} debe estar vinculada antes del unlink (precondición explícita)`).toBe('linked');
+							expect(
+								await appStore.readState(gateway),
+								`${gateway} debe estar vinculada antes del unlink (precondición explícita)`
+							).toBe('linked');
 						});
 						// TODO(F4+/Fase 6): verificar en Alta de Viaje que "Tarjeta Preautorizada" ya NO
 						// se ofrece tras el unlink — mitad del AC de matriz TC1005 sin oráculo aún.
@@ -291,7 +317,10 @@ export function defineGatewayConfigSuite(gateway: GatewayName, options: GatewayC
 							await appStore.unlinkGateway(gateway);
 						});
 						await test.step('Then: la card queda vinculable', async () => {
-							expect(await appStore.readState(gateway), `${gateway} debe quedar vinculable tras desvincular`).toBe('linkable');
+							expect(
+								await appStore.readState(gateway),
+								`${gateway} debe quedar vinculable tras desvincular`
+							).toBe('linkable');
 						});
 						break;
 					}
@@ -307,20 +336,28 @@ export function defineGatewayConfigSuite(gateway: GatewayName, options: GatewayC
 					case 'reloadPersistence': {
 						await test.step(`Given: ${gateway} vinculada`, async () => {
 							await ensureActiveGatewayOrSkip(switcher, gateway, Boolean(driver));
-							expect(await appStore.readState(gateway), `${gateway} debe estar vinculada antes del reload`).toBe('linked');
+							expect(
+								await appStore.readState(gateway),
+								`${gateway} debe estar vinculada antes del reload`
+							).toBe('linked');
 						});
 						await test.step('When: recargo el App Store', async () => {
 							await appStore.reload();
 						});
 						await test.step('Then: el estado vinculado persiste tras el reload', async () => {
-							expect(await appStore.readState(gateway), `${gateway} debe seguir vinculada tras recargar`).toBe('linked');
+							expect(
+								await appStore.readState(gateway),
+								`${gateway} debe seguir vinculada tras recargar`
+							).toBe('linked');
 						});
 						break;
 					}
 					case 'linkStatus': {
 						await test.step('Given: slot de pasarela libre', async () => {
 							await switcher.ensureGatewayLinkable(gateway);
-							expect(await appStore.readState(gateway), `${gateway} debe estar vinculable`).toBe('linkable');
+							expect(await appStore.readState(gateway), `${gateway} debe estar vinculable`).toBe(
+								'linkable'
+							);
 						});
 						await test.step('When/Then: la request de vinculación retorna un status de éxito conocido', async () => {
 							await driver!.linkStatusOk(appStore, adapter);
@@ -335,7 +372,10 @@ export function defineGatewayConfigSuite(gateway: GatewayName, options: GatewayC
 							// de confirmar backend); la persistencia DURABLE la cubre el caso `reloadPersistence`
 							// (readState pre y post reload) — decisión registrada, sin código extra acá.
 							await expect(async () => {
-								expect(await appStore.readState(gateway), `${gateway} debe quedar vinculada tras el link (status OK sin efecto persistido = fallo)`).toBe('linked');
+								expect(
+									await appStore.readState(gateway),
+									`${gateway} debe quedar vinculada tras el link (status OK sin efecto persistido = fallo)`
+								).toBe('linked');
 							}).toPass({ timeout: 20_000 });
 						});
 						break;

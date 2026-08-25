@@ -102,12 +102,18 @@ export async function captureCreatedTravelId(page: Page, carrierId = DEFAULT_CAR
 				return;
 			}
 			if (!response.ok()) {
-				debugLog('gateway-pg:travel-capture', `[skip] POST ${response.url()} status=${response.status()} (no-ok)`);
+				debugLog(
+					'gateway-pg:travel-capture',
+					`[skip] POST ${response.url()} status=${response.status()} (no-ok)`
+				);
 				return;
 			}
 
 			const body = await response.json().catch(() => null);
-			debugLog('gateway-pg:travel-capture', `[match] POST ${response.url()} status=${response.status()} body=${JSON.stringify(body).slice(0, 200)}`);
+			debugLog(
+				'gateway-pg:travel-capture',
+				`[match] POST ${response.url()} status=${response.status()} body=${JSON.stringify(body).slice(0, 200)}`
+			);
 			// El service FE consume `response.travelId` (travel.service.ts:410), pero la interfaz
 			// del command declara `id?` (addTravelcommand.ts:33) y el DTO trae también
 			// `travelIdForCarrier`. Aceptamos cualquiera de los tres, number o string-numérico,
@@ -129,10 +135,12 @@ export async function captureCreatedTravelId(page: Page, carrierId = DEFAULT_CAR
 						: typeof rawCode === 'string' && /^\d+$/.test(rawCode)
 							? Number(rawCode)
 							: null;
-				console.log(`[travel-cleanup] Capturado travelId=${id}${ref.travelIdForCarrier ? ` (web ${ref.travelIdForCarrier}-W)` : ''}`);
+				console.log(
+					`[travel-cleanup] Capturado travelId=${id}${ref.travelIdForCarrier ? ` (web ${ref.travelIdForCarrier}-W)` : ''}`
+				);
 			} else if (body) {
 				console.warn(
-					`[travel-cleanup] POST ${response.url()} 2xx sin travelId/id numérico (keys: ${Object.keys(body).join(', ')})`,
+					`[travel-cleanup] POST ${response.url()} 2xx sin travelId/id numérico (keys: ${Object.keys(body).join(', ')})`
 				);
 			}
 		} catch {
@@ -194,7 +202,9 @@ export async function cancelTravelDetailed(
 		// Body incluido en el diagnostico (fix 2026-08-05): un `false` sin causa obligaba a
 		// re-reproducir para saber si fue 401 (token), 404 (id ajeno) o 4xx de estado del viaje.
 		const body = await response.text().catch(() => '(body ilegible)');
-		console.warn(`[travel-cleanup] cancelTravel ${travelId} failed: ${response.status()} ${response.statusText()} — ${body.slice(0, 300)}`);
+		console.warn(
+			`[travel-cleanup] cancelTravel ${travelId} failed: ${response.status()} ${response.statusText()} — ${body.slice(0, 300)}`
+		);
 		return { ok: false, status: response.status(), body: body.slice(0, 300) };
 	}
 	console.log(`[travel-cleanup] ✓ Viaje ${travelId} cancelado`);

@@ -96,7 +96,10 @@ export class CardApi extends ApiBase {
 	 *   MG-149, que es el listado sin wallet (C-02) y no tiene nada que ver con tokenizar.
 	 *   Ejecución real = UAT.
 	 */
-	@atc('MG-148', { severity: 'critical', description: 'getCardToken — tokeniza tarjeta MercadoPago (holderName = trigger)' })
+	@atc('MG-148', {
+		severity: 'critical',
+		description: 'getCardToken — tokeniza tarjeta MercadoPago (holderName = trigger)'
+	})
 	async getCardToken(input: GetCardTokenInput): Promise<MercadopagoHttpResult> {
 		if (!input.card?.cardNumber || !input.card?.cardholderName) {
 			throw new Error('[CardApi.getCardToken] card.cardNumber y card.cardholderName (trigger) son obligatorios.');
@@ -154,7 +157,10 @@ export class CardApi extends ApiBase {
 	 *   nunca 500: es ESTE endpoint. Antes decía MG-172, que es "recrear un pax con el mismo mail sin
 	 *   colisión de wallet" (H-01) — un caso que ni siquiera crea pax en este repo. Ejecución real = UAT.
 	 */
-	@atc('MG-149', { severity: 'normal', description: 'listAllCards — GET passengers/{id}/allCards (tarjetas del pax en MP)' })
+	@atc('MG-149', {
+		severity: 'normal',
+		description: 'listAllCards — GET passengers/{id}/allCards (tarjetas del pax en MP)'
+	})
 	async listAllCards(input: ListAllCardsInput): Promise<MercadopagoHttpResult<MercadopagoAllCardsResponse>> {
 		const url = `${this.resolveBase(input.baseUrl)}/magiis-v0.2/passengers/${input.passengerId}/allCards`;
 		try {
@@ -164,7 +170,12 @@ export class CardApi extends ApiBase {
 				failOnStatusCode: false
 			});
 			const raw = (await res.text()).trim();
-			return { status: res.status(), ok: res.ok(), raw, body: safeJson(raw) as MercadopagoAllCardsResponse | null };
+			return {
+				status: res.status(),
+				ok: res.ok(),
+				raw,
+				body: safeJson(raw) as MercadopagoAllCardsResponse | null
+			};
 		} catch (err) {
 			return { status: 0, ok: false, raw: String(err), body: null };
 		}

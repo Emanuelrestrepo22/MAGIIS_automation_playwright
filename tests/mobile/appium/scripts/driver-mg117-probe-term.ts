@@ -134,9 +134,13 @@ async function run(): Promise<void> {
 
 		log('─'.repeat(100));
 		log(`Por fuente: ${JSON.stringify(bySource)}`);
-		log(`Con placeId NULO: ${nulls.length}${nulls.length ? ' -> ' + nulls.map(p => `${p.iataCode ?? '?'}:${p.mainText}`).join(' | ') : ''}`);
+		log(
+			`Con placeId NULO: ${nulls.length}${nulls.length ? ' -> ' + nulls.map(p => `${p.iataCode ?? '?'}:${p.mainText}`).join(' | ') : ''}`
+		);
 		if (nulls.length > 0) {
-			log(`\nTM-660 es ejecutable con "${TERM}": seleccionar una de esas filas ejercita la resolución por nombre.`);
+			log(
+				`\nTM-660 es ejecutable con "${TERM}": seleccionar una de esas filas ejercita la resolución por nombre.`
+			);
 		} else {
 			log(`\nTM-660 NO es ejecutable con "${TERM}": todas las predicciones traen placeId.`);
 		}

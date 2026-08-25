@@ -97,7 +97,10 @@ test.describe(
 			// migra — descarta latencia corta. TC048 (mismo slot, mismo hold=ON, sin 3DS) y TC053
 			// (3DS=true pero hold=OFF) SÍ aterrizan bien — el patrón roto es específicamente
 			// hold=ON + 3DS=true en el alta RECURRENTE. Reportar, no enmascarar.
-			test.skip(true, 'BLOQUEADO producto: alta recurrente hold=ON+3DS=true no aterriza en Programados (queda en Asignar) — evidencia 2026-08-11');
+			test.skip(
+				true,
+				'BLOQUEADO producto: alta recurrente hold=ON+3DS=true no aterriza en Programados (queda en Asignar) — evidencia 2026-08-11'
+			);
 			await new RecurrentesSteps({ page }).runRecurrentScenario(appPaxScenario('new'), {
 				hold: 'on',
 				threeDs: true

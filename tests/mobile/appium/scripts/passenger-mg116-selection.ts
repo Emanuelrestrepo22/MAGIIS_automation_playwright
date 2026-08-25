@@ -204,7 +204,9 @@ async function run(): Promise<void> {
 		await driver.pause(SETTLE_MS);
 		cap = await readWebViewNetworkCapture(driver);
 		calls = autocompleteCalls(cap.entries as Entry[]);
-		const tokensInSession = Array.from(new Set(calls.map(c => paramOf(String(c.url), 'sessionToken')).filter(Boolean)));
+		const tokensInSession = Array.from(
+			new Set(calls.map(c => paramOf(String(c.url), 'sessionToken')).filter(Boolean))
+		);
 		findings.tm686 = {
 			calls: calls.length,
 			addresses: calls.map(c => paramOf(String(c.url), 'address')),
@@ -299,7 +301,12 @@ async function run(): Promise<void> {
 		}
 
 		log('\n=========== VEREDICTOS ===========');
-		const t682 = findings.tm682_step3 as { calls: number; status: number | null; rows: number; dropdownRows: number };
+		const t682 = findings.tm682_step3 as {
+			calls: number;
+			status: number | null;
+			rows: number;
+			dropdownRows: number;
+		};
 		log(
 			`TM-682 paso 3 (3 chars no-IATA -> vacio sin error): ${
 				t682.calls > 0 && t682.status === 200 && t682.rows === 0 && t682.dropdownRows === 0 ? 'PASA' : 'REVISAR'
@@ -312,7 +319,9 @@ async function run(): Promise<void> {
 			} — ${t686.calls} llamadas, ${t686.distinctTokens.length} token(s)`
 		);
 		if ((findings.tm687 as { rotated?: boolean } | undefined)?.rotated !== undefined) {
-			log(`TM-687 (token nuevo tras seleccion): ${(findings.tm687 as { rotated: boolean }).rotated ? 'PASA' : 'FALLA'}`);
+			log(
+				`TM-687 (token nuevo tras seleccion): ${(findings.tm687 as { rotated: boolean }).rotated ? 'PASA' : 'FALLA'}`
+			);
 		}
 
 		const outDir = path.resolve('evidence', 'network-capture');

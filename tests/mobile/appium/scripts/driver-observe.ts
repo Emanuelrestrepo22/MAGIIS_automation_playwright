@@ -96,8 +96,9 @@ async function run(): Promise<void> {
 			const inputs = Array.from(document.querySelectorAll('input, ion-input, ion-searchbar')).map(el => {
 				const node = el as HTMLInputElement;
 				// ion-input keeps the real <input> inside its shadow root.
-				const inner = ((el as unknown as { shadowRoot?: ShadowRoot | null }).shadowRoot?.querySelector('input') ??
-					null) as HTMLInputElement | null;
+				const inner = ((el as unknown as { shadowRoot?: ShadowRoot | null }).shadowRoot?.querySelector(
+					'input'
+				) ?? null) as HTMLInputElement | null;
 				const target = inner ?? node;
 				return {
 					tag: el.tagName.toLowerCase(),
@@ -131,7 +132,9 @@ async function run(): Promise<void> {
 			// The Driver home renders its main actions as plain divs (`div.driver-pass.home-icon` is the
 			// one that starts a street trip), so a button-only sweep would miss the entry point.
 			const buttons = Array.from(
-				document.querySelectorAll('button, ion-button, [role="button"], div[class*="home-icon"], div[class*="driver-"]')
+				document.querySelectorAll(
+					'button, ion-button, [role="button"], div[class*="home-icon"], div[class*="driver-"]'
+				)
 			)
 				.filter(isVisible)
 				.slice(0, 25)
@@ -143,9 +146,13 @@ async function run(): Promise<void> {
 				}));
 
 			// Angular component tags identify the current page far more reliably than the URL.
-			const componentTags = Array.from(new Set(Array.from(document.querySelectorAll('*'))
-				.map(el => el.tagName.toLowerCase())
-				.filter(tag => tag.startsWith('app-') || tag.startsWith('page-'))));
+			const componentTags = Array.from(
+				new Set(
+					Array.from(document.querySelectorAll('*'))
+						.map(el => el.tagName.toLowerCase())
+						.filter(tag => tag.startsWith('app-') || tag.startsWith('page-'))
+				)
+			);
 
 			return {
 				url: window.location.href,
@@ -163,7 +170,9 @@ async function run(): Promise<void> {
 		const visibleInputs = snapshot.inputs.filter(i => i.visible);
 		log(`\n=== INPUTS VISIBLES (${visibleInputs.length} de ${snapshot.inputs.length}) ===`);
 		for (const input of visibleInputs) {
-			log(`  <${input.tag}> placeholder="${input.placeholder}" id="${input.id}" class="${input.className}" value="${input.value}"`);
+			log(
+				`  <${input.tag}> placeholder="${input.placeholder}" id="${input.id}" class="${input.className}" value="${input.value}"`
+			);
 		}
 
 		log(`\n=== LISTAS DE PREDICCION ===`);

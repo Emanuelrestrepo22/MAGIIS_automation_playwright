@@ -77,7 +77,9 @@ async function fetchActiveRecurringTripsOrNull(
 			| RecurringTripRow[]
 			| null;
 		if (data === null) {
-			console.warn('[recurring-cleanup] GET recurringTrip/paginated devolvió un body no-JSON — listado NO disponible');
+			console.warn(
+				'[recurring-cleanup] GET recurringTrip/paginated devolvió un body no-JSON — listado NO disponible'
+			);
 			return null;
 		}
 		const rows = Array.isArray(data) ? data : (data.content ?? []);

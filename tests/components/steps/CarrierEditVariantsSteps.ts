@@ -24,11 +24,7 @@ import type { TestContextOptions } from '@TestContext';
 import { test, expect } from '@TestFixture';
 import { UiBase } from '@ui/UiBase';
 import { ThreeDsChallengePage } from '@ui/ThreeDsChallengePage';
-import {
-	CarrierDashboardPage,
-	CarrierNewTravelPage,
-	CarrierTravelDetailPage
-} from '@ui/carrier';
+import { CarrierDashboardPage, CarrierNewTravelPage, CarrierTravelDetailPage } from '@ui/carrier';
 import { RecoverySteps, type RecoveryScenario } from './RecoverySteps';
 import { debugLog } from '@helpers/index';
 import { getPortalUrl } from '@config/gatewayPortalRuntime';
@@ -97,9 +93,15 @@ export class CarrierEditVariantsSteps extends UiBase {
 		await setHoldViaApi(this.page, state === 'on');
 		if (state === 'on') {
 			const persisted = await getCarrierParameters(this.page);
-			expect(persisted.enableCreditCardHold, 'read-back API: enableCreditCardHold debe quedar true tras el POST').toBe(true);
+			expect(
+				persisted.enableCreditCardHold,
+				'read-back API: enableCreditCardHold debe quedar true tras el POST'
+			).toBe(true);
 		} else {
-			expect(await readHoldRaw(this.page), 'read-back API: enableCreditCardHold debe quedar false tras el POST').toBe(false);
+			expect(
+				await readHoldRaw(this.page),
+				'read-back API: enableCreditCardHold debe quedar false tras el POST'
+			).toBe(false);
 		}
 	}
 
@@ -111,7 +113,10 @@ export class CarrierEditVariantsSteps extends UiBase {
 			token = await extractAuthToken(this.page);
 		}
 		if (!token) {
-			debugLog('gateway-pg:edit', '[card-cleanup] JWT no capturado tras 3 intentos — cleanup correrá sin auth y no-op');
+			debugLog(
+				'gateway-pg:edit',
+				'[card-cleanup] JWT no capturado tras 3 intentos — cleanup correrá sin auth y no-op'
+			);
 		}
 		const queries = [scenario.passenger, ...(scenario.apiSearchQuery ? [scenario.apiSearchQuery] : [])];
 		await cleanupGatewayCardByLast4(this.page, queries, cardLast4);
@@ -329,7 +334,10 @@ export class CarrierEditVariantsSteps extends UiBase {
 				// FE v1.72.8: el detalle /travels/{id} fue ELIMINADO — el seed ya verifica la fila
 				// "En Conflicto" (oráculo vigente) y retorna el id capturado del POST /travels.
 				// La edición continúa por deep-link mode=3 (superficie viva, probe 2026-08-07).
-				expect(travelId, 'El seed debe resolver el travelId del viaje en conflicto (POST /travels)').toBeTruthy();
+				expect(
+					travelId,
+					'El seed debe resolver el travelId del viaje en conflicto (POST /travels)'
+				).toBeTruthy();
 			});
 
 			await test.step('Abrir la edición del viaje en conflicto (deep-link mode=3)', async () => {

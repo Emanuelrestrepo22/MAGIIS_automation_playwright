@@ -79,7 +79,9 @@ export class QuoteWidgetPage extends UiBase {
 		// Se asevera el HEADING, no el input de dirección: ese textbox NO existe hasta hacer click
 		// en el `.placeholder` del campo (lo hace `fillAddress`). Esperarlo acá hacía fallar el goto
 		// con el widget correctamente cargado — corrida del 2026-07-28.
-		await expect(this.page.getByRole('heading', { name: /Online Reservation|Reserva[ción]* [Oo]nline/i }).first()).toBeVisible({ timeout: 20_000 });
+		await expect(
+			this.page.getByRole('heading', { name: /Online Reservation|Reserva[ción]* [Oo]nline/i }).first()
+		).toBeVisible({ timeout: 20_000 });
 	}
 
 	/** Input de dirección del typeahead (bilingüe). */
@@ -134,7 +136,9 @@ export class QuoteWidgetPage extends UiBase {
 		// Se espera el estado observable del form, no un sleep fijo.
 		await expect(this.page.locator('app-input-search-place-quote.ng-invalid')).toHaveCount(0, { timeout: 30_000 });
 		await this.page.getByRole('button', { name: /^Select Vehicle$|^Seleccionar Veh[íi]culo$/i }).click();
-		await expect(this.tripNoteField(), 'el widget debe avanzar al paso de selección de vehículo').toBeVisible({ timeout: 20_000 });
+		await expect(this.tripNoteField(), 'el widget debe avanzar al paso de selección de vehículo').toBeVisible({
+			timeout: 20_000
+		});
 	}
 
 	/** Completa la nota del viaje (campo "Trip Note" / "Nota del Viaje"). */
@@ -175,7 +179,9 @@ export class QuoteWidgetPage extends UiBase {
 		if (contact.country) {
 			// Selector de prefijo telefónico: dropdown propio del widget (no un <select> nativo).
 			await this.page.locator('.dropbtn').click();
-			await this.page.getByRole('link', { name: new RegExp(`^${escapeRegExp(contact.country)}\\s*\\+`, 'i') }).click();
+			await this.page
+				.getByRole('link', { name: new RegExp(`^${escapeRegExp(contact.country)}\\s*\\+`, 'i') })
+				.click();
 		}
 		await this.page.getByRole('textbox', { name: /phone number|n[uú]mero de tel[eé]fono/i }).fill(contact.phone);
 	}

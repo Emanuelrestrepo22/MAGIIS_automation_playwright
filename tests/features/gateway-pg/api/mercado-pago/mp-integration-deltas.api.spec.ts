@@ -19,7 +19,11 @@
 
 import { test, expect } from '@TestBase';
 import { VendorApi, type VendorProvider } from '@api/VendorApi';
-import { oracleConfigFromEnv, countWalletsByCarrierAndApp, countCardsByCarrierAndApp } from '@features/gateway-pg/helpers/oracle-wallet';
+import {
+	oracleConfigFromEnv,
+	countWalletsByCarrierAndApp,
+	countCardsByCarrierAndApp
+} from '@features/gateway-pg/helpers/oracle-wallet';
 import { LoginPage } from '@pages/shared/LoginPage';
 import { extractAuthToken } from '@features/gateway-pg/helpers/card-precondition';
 
@@ -60,36 +64,88 @@ test.describe('[MG · MPX][API] Mercado Pago — deltas de integración @regress
 
 	// MG-167 — DELTA MP: desvincular MP NO borra wallets/cards LOCALES (viven en MP).
 	// Contraparte del cascade de Stripe (que SÍ borra local). Destructivo (desvincula MP del carrier ARG) → triple gate.
-	test('[MPX-G] desvinculación MP no ejecuta cleaning local (wallets/cards locales invariantes)', {
-		annotation: [{ type: 'tms', description: 'MG-167' }, { type: 'issue', description: 'destructivo: desvincula MP del carrier ARG' }]
-	}, async ({ request }) => {
-		test.skip(!DESTRUCTIVE_OK, 'destructivo: desvincula MP del carrier ARG. Setear MP_RUN_DESTRUCTIVE=1 + entorno dedicado.');
-		test.skip(!ORACLE, 'requiere Oracle (ORACLE_*_TEST) para verificar invariancia local.');
-		test.skip(!CARRIER_USER_ID || !APP_ID, 'Faltan MP_CARRIER_USER_ID / MP_APP_ID (datos MP del carrier ARG en TEST) [confirmar].');
+	test(
+		'[MPX-G] desvinculación MP no ejecuta cleaning local (wallets/cards locales invariantes)',
+		{
+			annotation: [
+				{ type: 'tms', description: 'MG-167' },
+				{ type: 'issue', description: 'destructivo: desvincula MP del carrier ARG' }
+			]
+		},
+		async ({ request }) => {
+			test.skip(
+				!DESTRUCTIVE_OK,
+				'destructivo: desvincula MP del carrier ARG. Setear MP_RUN_DESTRUCTIVE=1 + entorno dedicado.'
+			);
+			test.skip(!ORACLE, 'requiere Oracle (ORACLE_*_TEST) para verificar invariancia local.');
+			test.skip(
+				!CARRIER_USER_ID || !APP_ID,
+				'Faltan MP_CARRIER_USER_ID / MP_APP_ID (datos MP del carrier ARG en TEST) [confirmar].'
+			);
 
-		const filter = { carrierAccountId: CARRIER_ACCOUNT_ID, appId: APP_ID };
-		const before = { wallets: await countWalletsByCarrierAndApp(ORACLE!, filter), cards: await countCardsByCarrierAndApp(ORACLE!, filter) };
+			const filter = { carrierAccountId: CARRIER_ACCOUNT_ID, appId: APP_ID };
+			const before = {
+				wallets: await countWalletsByCarrierAndApp(ORACLE!, filter),
+				cards: await countCardsByCarrierAndApp(ORACLE!, filter)
+			};
 
-		const res = await new VendorApi({ request }).cleaningWallets({ provider: MP_PROVIDER, carrierUserId: CARRIER_USER_ID, appId: APP_ID, authToken });
-		expect(res.status, `esperado 200, body=${res.body}`).toBe(200);
+			const res = await new VendorApi({ request }).cleaningWallets({
+				provider: MP_PROVIDER,
+				carrierUserId: CARRIER_USER_ID,
+				appId: APP_ID,
+				authToken
+			});
+			expect(res.status, `esperado 200, body=${res.body}`).toBe(200);
 
-		const after = { wallets: await countWalletsByCarrierAndApp(ORACLE!, filter), cards: await countCardsByCarrierAndApp(ORACLE!, filter) };
-		// DELTA MP (vs Stripe): las tarjetas viven en MP → el cleaning NO borra local.
-		expect(after.wallets, 'MP: la desvinculación NO debe borrar wallets locales').toBe(before.wallets);
-		expect(after.cards, 'MP: la desvinculación NO debe borrar cards locales').toBe(before.cards);
-	});
+			const after = {
+				wallets: await countWalletsByCarrierAndApp(ORACLE!, filter),
+				cards: await countCardsByCarrierAndApp(ORACLE!, filter)
+			};
+			// DELTA MP (vs Stripe): las tarjetas viven en MP → el cleaning NO borra local.
+			expect(after.wallets, 'MP: la desvinculación NO debe borrar wallets locales').toBe(before.wallets);
+			expect(after.cards, 'MP: la desvinculación NO debe borrar cards locales').toBe(before.cards);
+		}
+	);
 
 	// Deltas pendientes de endpoint/component API (no hay superficie en el repo hoy).
-	test('[MPX TC1] validación de tarjeta MP no dispara challenge 3DS', { annotation: [{ type: 'tms', description: 'MG-194' }] }, async () => {
-		test.fixme(true, 'Falta endpoint/component de validación de tarjeta MP (createCardToken/validate). Confirmar contrato antes de automatizar.');
-	});
-	test('[MPX TC2] tarjetas del pax viven en la cuenta MP (customer/cards)', { annotation: [{ type: 'tms', description: 'MG-195' }] }, async () => {
-		test.fixme(true, 'Falta endpoint MP customer/cards. La ausencia en UserWallet local se cubre parcialmente en MG-167; el positivo (existen en MP) requiere API MP.');
-	});
-	test('[MPX E] alta con PSP sin hold → verificationFoundsCard (HOLD_NOT_SUPPORTED 2077)', { annotation: [{ type: 'tms', description: 'MG-160' }] }, async () => {
-		test.fixme(true, 'Falta component API de alta/hold para assert del code 2077. Confirmar endpoint de alta de viaje + payload.');
-	});
-	test('[MPX K/WEB] retorno OAuth MP no invocado en ngOnInit [gap web]', { annotation: [{ type: 'tms', description: 'MG-475' }] }, async () => {
-		test.fixme(true, 'Gap de producto (web) — validar cuando se corrija el ngOnInit del callback OAuth MP. Hoy no hay comportamiento estable que asertar.');
-	});
+	test(
+		'[MPX TC1] validación de tarjeta MP no dispara challenge 3DS',
+		{ annotation: [{ type: 'tms', description: 'MG-194' }] },
+		async () => {
+			test.fixme(
+				true,
+				'Falta endpoint/component de validación de tarjeta MP (createCardToken/validate). Confirmar contrato antes de automatizar.'
+			);
+		}
+	);
+	test(
+		'[MPX TC2] tarjetas del pax viven en la cuenta MP (customer/cards)',
+		{ annotation: [{ type: 'tms', description: 'MG-195' }] },
+		async () => {
+			test.fixme(
+				true,
+				'Falta endpoint MP customer/cards. La ausencia en UserWallet local se cubre parcialmente en MG-167; el positivo (existen en MP) requiere API MP.'
+			);
+		}
+	);
+	test(
+		'[MPX E] alta con PSP sin hold → verificationFoundsCard (HOLD_NOT_SUPPORTED 2077)',
+		{ annotation: [{ type: 'tms', description: 'MG-160' }] },
+		async () => {
+			test.fixme(
+				true,
+				'Falta component API de alta/hold para assert del code 2077. Confirmar endpoint de alta de viaje + payload.'
+			);
+		}
+	);
+	test(
+		'[MPX K/WEB] retorno OAuth MP no invocado en ngOnInit [gap web]',
+		{ annotation: [{ type: 'tms', description: 'MG-475' }] },
+		async () => {
+			test.fixme(
+				true,
+				'Gap de producto (web) — validar cuando se corrija el ngOnInit del callback OAuth MP. Hoy no hay comportamiento estable que asertar.'
+			);
+		}
+	);
 });

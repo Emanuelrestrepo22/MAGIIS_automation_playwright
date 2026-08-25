@@ -60,11 +60,13 @@ async function readUi(driver: WebdriverIO.Browser): Promise<UiState> {
 			return rect.width > 0 && rect.height > 0;
 		};
 
-		const predictionItems = Array.from(document.querySelectorAll('ion-item.prediction-item, [class*="prediction-item"]'))
-			.filter(visible).length;
+		const predictionItems = Array.from(
+			document.querySelectorAll('ion-item.prediction-item, [class*="prediction-item"]')
+		).filter(visible).length;
 
-		const spinnerVisible = Array.from(document.querySelectorAll('ion-spinner, ion-loading, [class*="spinner"], [class*="loading"]'))
-			.some(visible);
+		const spinnerVisible = Array.from(
+			document.querySelectorAll('ion-spinner, ion-loading, [class*="spinner"], [class*="loading"]')
+		).some(visible);
 
 		const input = Array.from(document.querySelectorAll('input'))
 			.filter(visible)
@@ -77,7 +79,9 @@ async function readUi(driver: WebdriverIO.Browser): Promise<UiState> {
 			.map(el => (el.textContent ?? '').trim())
 			.filter(text => text.length > 0 && text.length < 160 && errorPattern.test(text));
 
-		const visibleTexts = Array.from(document.querySelectorAll('ion-content p, ion-content span, ion-list, ion-item'))
+		const visibleTexts = Array.from(
+			document.querySelectorAll('ion-content p, ion-content span, ion-list, ion-item')
+		)
 			.filter(visible)
 			.map(el => (el.textContent ?? '').trim().replace(/\s+/g, ' '))
 			.filter(text => text.length > 0 && text.length < 120)
@@ -120,7 +124,9 @@ async function clickWeb(driver: WebdriverIO.Browser, selector: string): Promise<
 				);
 			};
 
-			const active = Array.from(document.querySelectorAll(`.ion-page:not(.ion-page-hidden) ${sel}`)).filter(onScreen);
+			const active = Array.from(document.querySelectorAll(`.ion-page:not(.ion-page-hidden) ${sel}`)).filter(
+				onScreen
+			);
 			const candidates = active.length ? active : Array.from(document.querySelectorAll(sel)).filter(onScreen);
 
 			// La página viva es la última del stack cuando no hay marca de Ionic.
@@ -147,7 +153,9 @@ async function tapNative(driver: WebdriverIO.Browser, selector: string, webviewN
 				const r = el.getBoundingClientRect();
 				return r.width > 0 && r.height > 0 && r.top < window.innerHeight && r.left < window.innerWidth;
 			};
-			const active = Array.from(document.querySelectorAll(`.ion-page:not(.ion-page-hidden) ${sel}`)).filter(onScreen);
+			const active = Array.from(document.querySelectorAll(`.ion-page:not(.ion-page-hidden) ${sel}`)).filter(
+				onScreen
+			);
 			const candidates = active.length ? active : Array.from(document.querySelectorAll(sel)).filter(onScreen);
 			const el = candidates[candidates.length - 1];
 			if (!el) return null;
@@ -168,7 +176,9 @@ async function tapNative(driver: WebdriverIO.Browser, selector: string, webviewN
 		const size = await driver.getWindowSize();
 		const tapX = Math.round(rect.x * (size.width / rect.vw));
 		const tapY = Math.round(rect.y * (size.height / rect.vh));
-		log(`       tap nativo en (${tapX}, ${tapY}) — css (${Math.round(rect.x)}, ${Math.round(rect.y)}) de ${rect.vw}x${rect.vh}`);
+		log(
+			`       tap nativo en (${tapX}, ${tapY}) — css (${Math.round(rect.x)}, ${Math.round(rect.y)}) de ${rect.vw}x${rect.vh}`
+		);
 
 		await driver.performActions([
 			{
@@ -343,7 +353,9 @@ async function typeTerm(driver: WebdriverIO.Browser, term: string): Promise<bool
 	await driver.pause(800);
 	const written = await setValueVerified(driver, term);
 	if (!written.ok) {
-		log(`   !! el término no quedó escrito: se esperaba "${term}" y el campo dice "${written.actual ?? '(sin campo)'}"`);
+		log(
+			`   !! el término no quedó escrito: se esperaba "${term}" y el campo dice "${written.actual ?? '(sin campo)'}"`
+		);
 	}
 	return written.ok;
 }
@@ -452,7 +464,9 @@ async function run(): Promise<void> {
 			const calls = capture.entries.filter(e => String(e.url).includes('places/autocomplete'));
 			const ui = await readUi(driver);
 			snapshots.push({ atMs: elapsed, requests: calls.length, ui });
-			log(`   t+${elapsed / 1000}s -> requests: ${calls.length} · predicciones: ${ui.predictionItems} · spinner: ${ui.spinnerVisible}`);
+			log(
+				`   t+${elapsed / 1000}s -> requests: ${calls.length} · predicciones: ${ui.predictionItems} · spinner: ${ui.spinnerVisible}`
+			);
 		}
 
 		const faultCapture = await readWebViewNetworkCapture(driver);
@@ -502,7 +516,9 @@ async function run(): Promise<void> {
 
 		log(`\n1) ¿Cayó a Google al fallar el endpoint propio?`);
 		if (!googleAfter.available) {
-			log(`   INDETERMINADO — la sonda de actividad Google no pudo correr (${googleAfter.unavailableReason ?? '?'})`);
+			log(
+				`   INDETERMINADO — la sonda de actividad Google no pudo correr (${googleAfter.unavailableReason ?? '?'})`
+			);
 		} else if (newGoogle === 0) {
 			log(`   NO. Cero recursos nuevos de Google durante todo el fallo. -> CRITERIO CENTRAL CUMPLIDO`);
 		} else {
@@ -510,7 +526,9 @@ async function run(): Promise<void> {
 		}
 
 		log(`\n2) ¿UN tecleo produce UNA request o la app reintenta sola?`);
-		log(`   requests con el fallo activo: ${faultCalls.length} (inyectadas: ${injected.length}, hits de la regla: ${faultState.totalHits})`);
+		log(
+			`   requests con el fallo activo: ${faultCalls.length} (inyectadas: ${injected.length}, hits de la regla: ${faultState.totalHits})`
+		);
 		if (faultCalls.length <= 1) {
 			log(`   NO reintenta. Los 654 requests de la observación anterior eran acumulación de`);
 			log(`   términos distintos (automatizados + manuales), no reintentos de la app.`);
@@ -532,7 +550,9 @@ async function run(): Promise<void> {
 		}
 
 		log(`\n4) ¿Se recupera al normalizarse el servicio?`);
-		log(`   ${recoveryUi.predictionItems > 0 ? 'SÍ — vuelve a mostrar predicciones sin reiniciar nada.' : 'NO — sigue sin resultados tras quitar el fallo.'}`);
+		log(
+			`   ${recoveryUi.predictionItems > 0 ? 'SÍ — vuelve a mostrar predicciones sin reiniciar nada.' : 'NO — sigue sin resultados tras quitar el fallo.'}`
+		);
 
 		const outDir = path.resolve('evidence', 'network-capture');
 		await mkdir(outDir, { recursive: true });
