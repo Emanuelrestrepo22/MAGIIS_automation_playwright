@@ -91,7 +91,11 @@ export class TravelDetailPage {
 		await this.paymentMethodValue.click({ force: true });
 
 		const dropdown = this.paymentMethodSection.locator('select-dropdown').first();
-		await dropdown.waitFor({ state: 'attached', timeout: 10_000 });
+		// visible, no solo attached (review HIGH-2, mismo root cause que 6016152): un nodo
+		// montado con `display:none` satisface 'attached' y el fallo real recién aparece
+		// 10-15s despues esperando opciones inexistentes, con el error apuntando al lugar
+		// equivocado.
+		await dropdown.waitFor({ state: 'visible', timeout: 10_000 });
 
 		const option = dropdown.locator('.options li').filter({ hasText: optionText }).first();
 		await expect(option).toBeVisible({ timeout: 10_000 });
