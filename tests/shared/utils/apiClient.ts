@@ -3,17 +3,23 @@ import type { APIRequestContext } from '@playwright/test';
 import type { AppRole } from '../../config/runtime';
 import { getDefaultRole, resolveAuthApiUrl } from '../../config/runtime';
 import { getCredentialsForRole } from '../../fixtures/users';
+import { redactSecrets } from '@utils/redact';
+import { wrapRequestWithRedaction } from '@utils/safeRequest';
 
 export class ApiClient {
 	private readonly role: AppRole;
 	private readonly authUrl: string | null;
+	private readonly request: APIRequestContext;
 
 	constructor(
 		// Reutilizamos el request context nativo de Playwright para heredar
 		// timeouts, tracing y manejo estándar de requests dentro de los tests.
-		private readonly request: APIRequestContext,
+		// MG-158: no extiende ApiBase (queda fuera de su getter `request`
+		// redactor), así que envolvemos acá mismo para no dejarlo desprotegido.
+		request: APIRequestContext,
 		role: AppRole = getDefaultRole()
 	) {
+		this.request = wrapRequestWithRedaction(request);
 		this.role = role;
 		this.authUrl = resolveAuthApiUrl(role);
 	}
@@ -50,12 +56,17 @@ export class ApiClient {
 		const rawBody = await response.text();
 
 		// Dejamos un log completo porque los fallos de auth suelen requerir
-		// revisar payload, status y respuesta del backend en conjunto.
+		// revisar payload, status y respuesta del backend en conjunto. Pasamos
+		// rawBody por redactSecrets como barrera defensiva (headers/cookies
+		// ecoados en el body quedan cubiertos); el propio "token" que devuelve
+		// /auth/login NO matchea el patron (es un campo JSON, no un header) --
+		// ver nota en el caller (auth-login.api.test.ts) y en el hallazgo del
+		// review MG-158 sobre este residual.
 		console.log('[TS-AUTH-TC02][AUTH LOGIN] Request:', {
 			role,
 			url: this.authUrl,
 			status,
-			rawBody
+			rawBody: redactSecrets(rawBody)
 		});
 
 		return { response, status, rawBody };

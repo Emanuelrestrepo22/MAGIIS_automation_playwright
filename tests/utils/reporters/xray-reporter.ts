@@ -80,6 +80,19 @@ function clean(text: string): string {
 	return redactSecrets(text.replace(ANSI, '')).trim();
 }
 
+// MG-158 code review: `result.error` es solo el error singular final -- un test
+// con soft-assertions (expect.soft) puede fallar por varias razones a la vez y
+// esas quedan en `result.errors[]`, no en `result.error`. Si solo leyéramos
+// `result.error?.message` un fallo reportado exclusivamente vía soft-assertion
+// pasaría de largo la redacción (nunca llega a "clean"). Unimos ambas fuentes
+// -- `errors[]` primero por ser el listado completo -- antes de redactar.
+function buildErrorComment(result: TestResult): string {
+	const messages = (result.errors ?? []).map(e => e.message).filter((m): m is string => Boolean(m));
+	if (messages.length === 0 && result.error?.message) messages.push(result.error.message);
+	const text = messages.length > 0 ? messages.join('\n---\n') : `status=${result.status}`;
+	return clean(text);
+}
+
 function mapStatus(status: TestResult['status']): XrayStatus {
 	switch (status) {
 		case 'passed':
@@ -177,10 +190,7 @@ class XrayReporter implements Reporter {
 			return;
 		}
 
-		const baseComment =
-			result.status === 'passed'
-				? undefined
-				: clean(result.error?.message ?? `status=${result.status}`).slice(0, 2000);
+		const baseComment = result.status === 'passed' ? undefined : buildErrorComment(result).slice(0, 2000);
 		const { status, comment } = resolveOutcome(test, result, mapStatus(result.status), baseComment);
 		const start = result.startTime.toISOString();
 		const finish = new Date(result.startTime.getTime() + result.duration).toISOString();
