@@ -50,7 +50,11 @@ export abstract class BasePage {
 		await trigger.click({ force: true });
 
 		const dropdown = select.locator('select-dropdown').first();
-		await dropdown.waitFor({ state: 'attached', timeout });
+		// visible, no solo attached (review HIGH-2, mismo root cause que 6016152): un nodo
+		// montado con `display:none` satisface 'attached' y el fallo real recién aparece
+		// 10-15s despues esperando opciones inexistentes, con el error apuntando al lugar
+		// equivocado.
+		await dropdown.waitFor({ state: 'visible', timeout });
 	}
 
 	protected async chooseDropdownOption(select: Locator, optionText: string, timeout = 10_000): Promise<void> {
