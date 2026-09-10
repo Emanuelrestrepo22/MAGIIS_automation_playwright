@@ -201,8 +201,15 @@ export abstract class NewTravelPageBase extends BasePage {
 		const options = select.locator('select-dropdown .options li');
 
 		await select.locator('.below').click({ force: true });
-		// Migrado tier3: waitForTimeout(400) eliminado — dropdown.waitFor({ state: 'attached' }) es el criterio determinista
-		await dropdown.waitFor({ state: 'attached', timeout: 10_000 });
+		// FIX v1.72.8 (mismo root cause que 4843aec/fcf2679 — anchors muertos por el FE): `state:
+		// 'attached'` sólo exige el nodo montado en el DOM, no que el desplegable esté REALMENTE
+		// abierto. En el modal "Destino Frecuente" el `<select-dropdown>` queda `class="modal fade"`
+		// sin `show` (display:none) cuando el click en `.below` no llega a abrirlo — 'attached' lo da
+		// por bueno igual, y el fallo real recién aparece 15s después esperando opciones que nunca
+		// van a existir porque el desplegable nunca se mostró. Reemplazado por `state: 'visible'`
+		// (criterio observable, mismo patrón que `waitForAutocompleteOptionsReady` más abajo) para
+		// fail-fast en el punto real del problema en vez de correr ciego el resto del flujo.
+		await dropdown.waitFor({ state: 'visible', timeout: 10_000 });
 
 		for (const query of fallbackQueries) {
 			await searchInput.fill(query);
