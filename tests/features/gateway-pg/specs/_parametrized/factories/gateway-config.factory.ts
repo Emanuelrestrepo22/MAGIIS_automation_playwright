@@ -383,5 +383,40 @@ export function defineGatewayConfigSuite(gateway: GatewayName, options: GatewayC
 				}
 			});
 		}
+
+		// Restauración best-effort de la pasarela activa (review CRITICAL): el `mode: 'serial'`
+		// de arriba saltea TODOS los tests restantes en cuanto uno falla. La restauración de
+		// `gateway` tras TC1005 (unlink) era INCIDENTAL — dependía de que TC1006/TC1007
+		// (`ensureActiveGatewayOrSkip`) y TC1008 (linkStatus, último de
+		// `GATEWAY_CFG_ALL_CASES`) corrieran y terminaran de re-vincular. Si cualquiera de esos
+		// falla (timeout, flake del portal OAuth, bug de FE) el `describe.serial` saltea el
+		// resto y el carrier compartido queda desvinculado — ya pasó (incidente 31/08-10/09).
+		// No depende del orden del array de casos: corre siempre que la suite no fue skippeada.
+		test.afterAll(async ({ browser }) => {
+			// Gateado por el mismo flag destructivo que la suite: sin él, la suite entera ya
+			// fue skippeada (nada que restaurar). Sin driver de link (mercado-pago) no hay forma
+			// programática de re-vincular — se mantiene el aviso manual existente.
+			if (!isGatewayDestructiveSwitchAllowed() || !driver) return;
+
+			const page = await browser.newPage();
+			try {
+				await loginAsDispatcher(page);
+				const switcher = new GatewaySwitchSteps({ page });
+				// Best-effort real: un fallo acá NO debe tumbar la suite ni enmascarar el
+				// resultado de los tests que sí corrieron. `ensureActiveGateway` ya es
+				// idempotente (no-op si `gateway` ya está activa).
+				await switcher.ensureActiveGateway(gateway).catch(error => {
+					const message = error instanceof Error ? error.message : String(error);
+					// eslint-disable-next-line no-console -- aviso deliberado de teardown manual
+					console.warn(
+						`⚠️ RESTAURACIÓN MANUAL REQUERIDA: el carrier 1521 puede haber quedado sin ` +
+							`${gateway} activa tras la suite CFG. ${message} Re-vincular manualmente en ` +
+							'la ventana exclusiva.'
+					);
+				});
+			} finally {
+				await page.close().catch(() => undefined);
+			}
+		});
 	});
 }
