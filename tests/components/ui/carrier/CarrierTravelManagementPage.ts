@@ -229,7 +229,13 @@ export class CarrierTravelManagementPage extends UiBase {
 				? this.page
 						.locator('tbody tr')
 						.filter({
-							has: this.page.locator('td:first-child').filter({ hasText: `${travelIdForCarrier}-W` })
+							// `getByText(..., { exact: true })` y NO `hasText`: el comentario de arriba dice
+							// "boundary-safe por celda", pero `hasText` es substring simple sin ancla a la
+							// izquierda — `706-W` matchea la celda de `4706-W`. El sufijo `-W` cubre solo el
+							// lado derecho. Mismo fix que en `TravelManagementPage`.
+							has: this.page
+								.locator('td:first-child')
+								.getByText(`${travelIdForCarrier}-W`, { exact: true })
 						})
 						.first()
 				: travelId != null

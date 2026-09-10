@@ -19,9 +19,19 @@ const REDACTED = '[REDACTED]';
 //   - call log de Playwright: "  - authorization: Bearer eyJ..."
 //   - headers serializados JSON: "\"Authorization\": \"Bearer eyJ...\""
 //   - texto plano: "Authorization: Bearer eyJ..."
-// El valor se corta en fin de línea, coma de cierre de JSON, o comilla de cierre.
+// Grupo 1 = prefijo completo hasta el valor (ancla de contexto + nombre + separador,
+//   comillas incluidas). El nombre solo matchea si está anclado a un contexto real de
+//   header -- inicio de línea, o inmediatamente después de "{", "," o un salto de línea --
+//   NUNCA a mitad de una oración (ej. "insufficient authorization: ..." no matchea).
+// Grupo 2 = valor entre comillas JSON (si aplica) -- se usa solo para saber si había comillas.
+// El valor se corta en fin de línea o comilla/llave de cierre de JSON -- NUNCA en una coma,
+// porque un Set-Cookie real (con "Expires=...GMT") y un set-cookie con múltiples cookies
+// unidas por ", " contienen comas legítimas dentro del propio valor.
 function buildHeaderPattern(name: string): RegExp {
-	return new RegExp(`("?\\b${name}\\b"?\\s*:\\s*)("(?:[^"\\\\]|\\\\.)*"|[^\\r\\n,}]*)`, 'gi');
+	return new RegExp(
+		`((?:^|[\\r\\n{,])\\s*[-*]?\\s*"?\\b${name}\\b"?\\s*:\\s*)("(?:[^"\\\\]|\\\\.)*"|[^\\r\\n}]*)`,
+		'gim'
+	);
 }
 
 const HEADER_PATTERNS = SENSITIVE_HEADER_NAMES.map(buildHeaderPattern);
