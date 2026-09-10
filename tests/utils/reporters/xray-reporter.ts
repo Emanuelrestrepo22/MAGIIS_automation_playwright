@@ -33,6 +33,7 @@
 import { mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import { dirname, basename } from 'node:path';
 import type { FullResult, Reporter, TestCase, TestResult } from '@playwright/test/reporter';
+import { redactSecrets } from '../redact';
 
 // Estados Xray Cloud válidos para import.
 type XrayStatus = 'PASSED' | 'FAILED' | 'ABORTED' | 'TODO';
@@ -71,8 +72,12 @@ const KEY_IN_TITLE = /\b([A-Z][A-Z0-9]+-\d+)\b/;
 // Secuencias ANSI de color (ESC[..m). ESC via fromCharCode para evitar escapes de control.
 const ANSI = new RegExp(String.fromCharCode(27) + '\\[[0-9;]*m', 'g');
 
+// Segunda barrera de redacción: aunque ApiBase ya redacte headers sensibles al
+// construir el error, el reporter redacta defensivamente ANTES de escribir el
+// comment del run de Xray -- ese comment es el destino final del volcado y el
+// costo de una fuga (token en Xray, visible a todo el proyecto) es alto.
 function clean(text: string): string {
-	return text.replace(ANSI, '').trim();
+	return redactSecrets(text.replace(ANSI, '')).trim();
 }
 
 function mapStatus(status: TestResult['status']): XrayStatus {

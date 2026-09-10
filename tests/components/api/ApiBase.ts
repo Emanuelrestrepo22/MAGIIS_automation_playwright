@@ -16,6 +16,7 @@ import type { APIRequestContext, APIResponse } from '@playwright/test';
 import type { TestContextOptions } from '@TestContext';
 
 import { TestContext } from '@TestContext';
+import { redactSecrets } from '@utils/redact';
 
 export interface RequestOptions {
 	headers?: Record<string, string>;
@@ -53,6 +54,21 @@ export class ApiBase extends TestContext {
 		return this._request;
 	}
 
+	/**
+	 * Ejecuta una llamada `this.request.*` redactando headers sensibles (Authorization,
+	 * Cookie, etc.) si el fetch falla a nivel de red -- Playwright embebe el call log
+	 * completo (headers incluidos) en error.message ante fallos como "socket hang up".
+	 * Primera barrera de defensa antes de que ese mensaje llegue a cualquier reporter/log.
+	 */
+	private async safeFetch(fn: () => Promise<APIResponse>): Promise<APIResponse> {
+		try {
+			return await fn();
+		} catch (err) {
+			if (err instanceof Error) err.message = redactSecrets(err.message);
+			throw err;
+		}
+	}
+
 	setAuthToken(token: string): void {
 		this.authToken = token;
 	}
@@ -74,11 +90,13 @@ export class ApiBase extends TestContext {
 		endpoint: string,
 		options: RequestOptions = {}
 	): Promise<[APIResponse, TBody]> {
-		const response = await this.request.get(this.apiEndpoint(endpoint), {
-			headers: this.buildHeaders(options.headers),
-			params: options.params,
-			timeout: options.timeout
-		});
+		const response = await this.safeFetch(() =>
+			this.request.get(this.apiEndpoint(endpoint), {
+				headers: this.buildHeaders(options.headers),
+				params: options.params,
+				timeout: options.timeout
+			})
+		);
 		return [response, await this.getResponseJson<TBody>(response)];
 	}
 
@@ -87,12 +105,14 @@ export class ApiBase extends TestContext {
 		data: TPayload,
 		options: RequestOptions = {}
 	): Promise<[APIResponse, TBody, TPayload]> {
-		const response = await this.request.post(this.apiEndpoint(endpoint), {
-			headers: this.buildHeaders(options.headers),
-			data,
-			params: options.params,
-			timeout: options.timeout
-		});
+		const response = await this.safeFetch(() =>
+			this.request.post(this.apiEndpoint(endpoint), {
+				headers: this.buildHeaders(options.headers),
+				data,
+				params: options.params,
+				timeout: options.timeout
+			})
+		);
 		return [response, await this.getResponseJson<TBody>(response), data];
 	}
 
@@ -101,12 +121,14 @@ export class ApiBase extends TestContext {
 		data: TPayload,
 		options: RequestOptions = {}
 	): Promise<[APIResponse, TBody, TPayload]> {
-		const response = await this.request.put(this.apiEndpoint(endpoint), {
-			headers: this.buildHeaders(options.headers),
-			data,
-			params: options.params,
-			timeout: options.timeout
-		});
+		const response = await this.safeFetch(() =>
+			this.request.put(this.apiEndpoint(endpoint), {
+				headers: this.buildHeaders(options.headers),
+				data,
+				params: options.params,
+				timeout: options.timeout
+			})
+		);
 		return [response, await this.getResponseJson<TBody>(response), data];
 	}
 
@@ -115,12 +137,14 @@ export class ApiBase extends TestContext {
 		data: TPayload,
 		options: RequestOptions = {}
 	): Promise<[APIResponse, TBody, TPayload]> {
-		const response = await this.request.patch(this.apiEndpoint(endpoint), {
-			headers: this.buildHeaders(options.headers),
-			data,
-			params: options.params,
-			timeout: options.timeout
-		});
+		const response = await this.safeFetch(() =>
+			this.request.patch(this.apiEndpoint(endpoint), {
+				headers: this.buildHeaders(options.headers),
+				data,
+				params: options.params,
+				timeout: options.timeout
+			})
+		);
 		return [response, await this.getResponseJson<TBody>(response), data];
 	}
 
@@ -128,11 +152,13 @@ export class ApiBase extends TestContext {
 		endpoint: string,
 		options: RequestOptions = {}
 	): Promise<[APIResponse, TBody]> {
-		const response = await this.request.delete(this.apiEndpoint(endpoint), {
-			headers: this.buildHeaders(options.headers),
-			params: options.params,
-			timeout: options.timeout
-		});
+		const response = await this.safeFetch(() =>
+			this.request.delete(this.apiEndpoint(endpoint), {
+				headers: this.buildHeaders(options.headers),
+				params: options.params,
+				timeout: options.timeout
+			})
+		);
 		return [response, await this.getResponseJson<TBody>(response)];
 	}
 
