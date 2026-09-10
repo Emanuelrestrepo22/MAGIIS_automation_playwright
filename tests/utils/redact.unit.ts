@@ -82,3 +82,42 @@ test('JSON de una linea: redacta Authorization y preserva el resto de las claves
 	assert.ok(!cleaned.includes('FAKE_TOKEN_XXXX'));
 	assert.equal(cleaned, '{"Authorization":"[REDACTED]","other":"keep-this"}');
 });
+
+test('redacta la clave JSON "token" en un body de respuesta y preserva el resto', () => {
+	const raw = '{"token":"eyJhbGciOiJIUzI1NiJ9.FAKE.SIG","user":"pepe"}';
+	const cleaned = redactSecrets(raw);
+	assert.ok(!cleaned.includes('eyJhbGciOiJIUzI1NiJ9.FAKE.SIG'));
+	assert.equal(cleaned, '{"token":"[REDACTED]","user":"pepe"}');
+});
+
+test('redacta access_token y refresh_token, preserva expires_in', () => {
+	const raw = '{"access_token":"FAKE1","refresh_token":"FAKE2","expires_in":3600}';
+	const cleaned = redactSecrets(raw);
+	assert.ok(!cleaned.includes('FAKE1'));
+	assert.ok(!cleaned.includes('FAKE2'));
+	assert.equal(cleaned, '{"access_token":"[REDACTED]","refresh_token":"[REDACTED]","expires_in":3600}');
+});
+
+test('no redacta "token" en prosa en inglés (no es una clave estructurada)', () => {
+	const raw = 'expected token to be truthy';
+	assert.equal(redactSecrets(raw), raw);
+});
+
+test('no redacta "token" en prosa en español (mensaje real de assert de estos repos)', () => {
+	const raw = 'el token de la ruta no se resolvió contra PARAMETERS';
+	assert.equal(redactSecrets(raw), raw);
+});
+
+test('redacta password en formato query-string (campo=valor), preserva el resto', () => {
+	const raw = 'password=FAKE_PW&user=pepe';
+	const cleaned = redactSecrets(raw);
+	assert.ok(!cleaned.includes('FAKE_PW'));
+	assert.equal(cleaned, 'password=[REDACTED]&user=pepe');
+});
+
+test('body de login anidado: redacta token dentro de "data", preserva estructura y "pepe"', () => {
+	const raw = '{"data":{"token":"FAKE","profile":{"name":"pepe"}}}';
+	const cleaned = redactSecrets(raw);
+	assert.ok(!cleaned.includes('"token":"FAKE"'));
+	assert.equal(cleaned, '{"data":{"token":"[REDACTED]","profile":{"name":"pepe"}}}');
+});
