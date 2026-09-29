@@ -15,6 +15,11 @@
  *   Se recogen TODAS las keys tms/test_key distinctas (estáticas del TestCase +
  *   runtime del TestResult) → una fila de resultado por cada Test cubierto.
  *
+ * Evidencia y comentario por run (verdict gate):
+ *   - evidence[]: PNG adjuntos + JSON adjuntos con nombre `xray-*` (medición), tope 3 por test.
+ *   - comment:    annotation `xray_comment` (qué se ejecutó y qué devolvió). En PASSED es el
+ *                 comentario; en FAILED va después del error.
+ *
  * Specs SIN key NO se exportan (no están mapeados a un Test de Xray); se reporta
  * el conteo al final para que el gap sea visible y no un drop silencioso.
  * XRAY_KEY_DENYLIST (CSV) excluye keys que no son Test (Executions/Plans/Stories).
@@ -164,6 +169,34 @@ export function resolveOutcome(
 	return { status: 'TODO', comment: `tramo web ${web}; ${partial.description!.trim()}${detail}`.slice(0, 2000) };
 }
 
+// Adjuntos que viajan como evidence[] al import de Xray: todo PNG, y los JSON sólo si el test los
+// marca con el prefijo `xray-` en el nombre (opt-in: otras suites adjuntan JSON de red o volcados
+// que pueden traer PII y no deben terminar en Xray por accidente).
+const JSON_EVIDENCE_PREFIX = 'xray-';
+
+function isXrayEvidence(att: TestResult['attachments'][number]): boolean {
+	if (att.contentType === 'image/png') return true;
+	return att.contentType === 'application/json' && att.name.startsWith(JSON_EVIDENCE_PREFIX);
+}
+
+// Annotation con la medición del run (texto plano) que se publica como comentario.
+const COMMENT_ANNOTATION_TYPE = 'xray_comment';
+
+function extractComment(test: TestCase, result: TestResult): string | undefined {
+	const all = [...test.annotations, ...(result.annotations ?? [])];
+	// Dedup: la annotation agregada en runtime aparece tanto en el TestCase como en el TestResult.
+	const texts = [
+		...new Set(all.filter(a => a.type === COMMENT_ANNOTATION_TYPE && a.description).map(a => a.description!.trim()))
+	];
+	return texts.length > 0 ? texts.join('\n\n') : undefined;
+}
+
+function evidenceFilename(name: string, contentType: string): string {
+	const safe = name.replace(/[^a-zA-Z0-9._-]/g, '_');
+	const ext = contentType === 'application/json' ? '.json' : '.png';
+	return safe.endsWith(ext) ? safe : `${safe}${ext}`;
+}
+
 class XrayReporter implements Reporter {
 	private readonly outputFile: string;
 	private readonly results = new Map<string, XrayTestResult>();
@@ -190,20 +223,35 @@ class XrayReporter implements Reporter {
 			return;
 		}
 
-		const baseComment = result.status === 'passed' ? undefined : buildErrorComment(result).slice(0, 2000);
+		// Comentario del run: el spec puede publicar QUÉ ejecutó y QUÉ devolvió con la annotation
+		// `xray_comment` (verdict gate: un PASSED sin medición no es un veredicto consistente).
+		// En un fallo va primero el error (ya redactado) y después la medición, si entra.
+		const baseComment =
+			[result.status === 'passed' ? undefined : buildErrorComment(result), extractComment(test, result)]
+				.filter(Boolean)
+				.join('\n\n')
+				.slice(0, 2000) || undefined;
 		const { status, comment } = resolveOutcome(test, result, mapStatus(result.status), baseComment);
 		const start = result.startTime.toISOString();
 		const finish = new Date(result.startTime.getTime() + result.duration).toISOString();
-		// Evidencia: screenshots (image/png) que Playwright adjunta al test. Con `--screenshot=on`
-		// los PASSED capturan un screenshot final → se embebe base64 en el import y queda anclado
-		// al run en Xray como evidencia del test-case. Cap defensivo para no inflar el JSON.
+		// Evidencia: screenshots (image/png) y mediciones (application/json) que el test adjunta, en
+		// el orden en que se adjuntaron. Con `--screenshot=on` los PASSED capturan un screenshot
+		// final → se embebe base64 en el import y queda anclado al run en Xray como evidencia del
+		// test-case. Cap defensivo para no inflar el JSON.
 		const evidence: XrayEvidence[] = [];
 		for (const att of result.attachments) {
-			if (att.contentType !== 'image/png' || !att.path) continue;
+			if (!isXrayEvidence(att)) continue;
 			try {
+				const data = att.path ? readFileSync(att.path) : att.body;
+				if (!data) continue;
 				evidence.push({
-					data: readFileSync(att.path).toString('base64'),
-					filename: basename(att.path),
+					data: data.toString('base64'),
+					// Playwright copia los adjuntos con nombre hasheado: se usa el nombre lógico del adjunto,
+					// salvo el screenshot automático (`screenshot`), que conserva el nombre del archivo.
+					filename:
+						att.name && att.name !== 'screenshot'
+							? evidenceFilename(att.name, att.contentType)
+							: basename(att.path ?? att.name),
 					contentType: att.contentType
 				});
 			} catch {
