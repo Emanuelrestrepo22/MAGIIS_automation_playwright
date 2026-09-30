@@ -199,7 +199,8 @@ class XrayReporter implements Reporter {
 			const info: Record<string, unknown> = {};
 			if (process.env.XRAY_SUMMARY) info.summary = process.env.XRAY_SUMMARY;
 			if (process.env.XRAY_VERSION) info.version = process.env.XRAY_VERSION;
-			if (process.env.XRAY_TEST_PLAN_KEY) info.testPlanKey = process.env.XRAY_TEST_PLAN_KEY;
+			// Default TM-1283 = ATP-AUTO (stock de automatización); override por campaña con XRAY_TEST_PLAN_KEY.
+			info.testPlanKey = process.env.XRAY_TEST_PLAN_KEY || "TM-1283";
 			if (Object.keys(info).length > 0) payload.info = info;
 		}
 
