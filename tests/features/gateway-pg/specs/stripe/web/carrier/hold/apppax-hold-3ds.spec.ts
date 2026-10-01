@@ -31,7 +31,12 @@ import { loginAsDispatcher, STRIPE_TEST_CARDS, TEST_DATA } from '../../../../../
 import { shortDestination, waitForTravelCreation } from '../../../../../helpers/journey-url.helpers';
 import { validateCardPrecondition, type CardPreconditionResult } from '../../../../../helpers/card-precondition';
 import { getCarrierParameters, readHoldRaw, setHoldViaApi } from '../../../../../helpers/parameters-api';
-import { captureCreatedTravelId, cancelTravelIfCreated, type TravelIdRef } from '../../../../../helpers/travel-cleanup';
+import {
+	awaitTravelRowAnchor,
+	captureCreatedTravelId,
+	cancelTravelIfCreated,
+	type TravelIdRef
+} from '../../../../../helpers/travel-cleanup';
 import { PASSENGERS } from '../../../../../data/passengers';
 import { debugLog } from '../../../../../../../helpers';
 
@@ -161,7 +166,12 @@ async function runHoldOnScenario(page: Page, scenario: Hold3dsScenario): Promise
 
 		await test.step('Validar viaje en gestion — columna Asignar (hold+3DS OK)', async () => {
 			await management.goto();
-			await management.expectPassengerInPorAsignar(scenario.passenger, shortDestination(scenario.destination));
+			await management.expectPassengerInPorAsignar(
+				scenario.passenger,
+				shortDestination(scenario.destination),
+				undefined,
+				await awaitTravelRowAnchor(travelIdRef)
+			);
 		});
 	} finally {
 		if (travelIdRef) {
@@ -251,7 +261,12 @@ async function runHoldOffScenario(page: Page, scenario: Hold3dsScenario): Promis
 
 		await test.step('Validar viaje en gestion — columna Asignar (sin hold + 3DS)', async () => {
 			await management.goto();
-			await management.expectPassengerInPorAsignar(scenario.passenger, shortDestination(scenario.destination));
+			await management.expectPassengerInPorAsignar(
+				scenario.passenger,
+				shortDestination(scenario.destination),
+				undefined,
+				await awaitTravelRowAnchor(travelIdRef)
+			);
 		});
 	} finally {
 		if (travelIdRef) {

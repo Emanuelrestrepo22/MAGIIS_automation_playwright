@@ -37,6 +37,7 @@ import { expectNoThreeDSModal, loginAsDispatcher } from '@features/gateway-pg/fi
 import { assertAuthorizeAccountMeasuresRealAuthorizations } from '@features/gateway-pg/helpers/authorize-account-guard';
 import { validateCardPrecondition } from '@features/gateway-pg/helpers/card-precondition';
 import {
+	awaitTravelRowAnchor,
 	captureCreatedTravelId,
 	cancelTravelIfCreated,
 	type TravelIdRef
@@ -271,6 +272,8 @@ export class CargoABordoSteps extends UiBase {
 						message: '[Cargo a Bordo] POST /travels no capturó travelId tras el submit'
 					})
 					.not.toBeNull();
+				// El oráculo de la grilla ancla la fila por el código WEB ("NNNN-W"): fail-fast si no vino.
+				await awaitTravelRowAnchor(travelIdRef);
 			});
 
 			// Con la fase driver ACTIVA (APPIUM + charge) hay un conductor online real (pre-warm)
@@ -293,7 +296,12 @@ export class CargoABordoSteps extends UiBase {
 				// TODO(live): pinnear el texto exacto del estado asignado una vez observado en el log.
 				if (options.manualAssign) {
 					await this.management.goto();
-					await this.management.expectPassengerInPorAsignar(scenario.passenger ?? scenario.client);
+					await this.management.expectPassengerInPorAsignar(
+						scenario.passenger ?? scenario.client,
+						undefined,
+						undefined,
+						await awaitTravelRowAnchor(travelIdRef)
+					);
 					const column = await this.management.findTripColumn(scenario.passenger ?? scenario.client);
 					debugLog(
 						'gateway-pg:carrier',
@@ -306,7 +314,8 @@ export class CargoABordoSteps extends UiBase {
 				await this.management.expectPassengerInPorAsignar(
 					scenario.passenger ?? scenario.client,
 					undefined,
-					'Buscando chofer'
+					'Buscando chofer',
+					await awaitTravelRowAnchor(travelIdRef)
 				);
 			});
 

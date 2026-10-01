@@ -23,6 +23,7 @@ import {
 	STRIPE_TEST_CARDS
 } from '@features/gateway-pg/fixtures/gateway.fixtures';
 import {
+	awaitTravelRowAnchor,
 	cancelTravelIfCreated,
 	captureCreatedTravelId,
 	type TravelIdRef
@@ -93,7 +94,8 @@ test.describe(
 				await management.expectPassengerInPorAsignar(
 					TEST_DATA.passenger,
 					shortDestination(TEST_DATA.destination),
-					'Buscando chofer'
+					'Buscando chofer',
+					await awaitTravelRowAnchor(travelRef)
 				);
 			});
 
@@ -128,7 +130,12 @@ test.describe(
 				await travel.submit();
 
 				await management.goto();
-				await management.expectPassengerInPorAsignar(TEST_DATA.passenger);
+				await management.expectPassengerInPorAsignar(
+					TEST_DATA.passenger,
+					undefined,
+					undefined,
+					await awaitTravelRowAnchor(travelRef)
+				);
 			});
 		});
 

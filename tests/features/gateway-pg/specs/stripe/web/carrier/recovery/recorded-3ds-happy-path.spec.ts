@@ -27,6 +27,7 @@ import { ThreeDsChallengePage } from '@ui/ThreeDsChallengePage';
 import { loginAsDispatcher, STRIPE_TEST_CARDS, TEST_DATA } from '@features/gateway-pg/fixtures/gateway.fixtures';
 import { PASSENGERS } from '@features/gateway-pg/data/passengers';
 import {
+	awaitTravelRowAnchor,
 	captureCreatedTravelId,
 	cancelTravelIfCreated,
 	type TravelIdRef
@@ -137,7 +138,8 @@ test.describe(
 					await management.expectPassengerInPorAsignar(
 						TEST_DATA.passenger,
 						undefined,
-						/Buscando (conductor|chofer)/i
+						/Buscando (conductor|chofer)/i,
+						await awaitTravelRowAnchor(travelIdRef)
 					);
 				});
 			} finally {

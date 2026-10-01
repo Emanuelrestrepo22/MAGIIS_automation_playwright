@@ -20,7 +20,11 @@ import type { Locator } from '@playwright/test';
 import type { TestContextOptions } from '@TestContext';
 
 import { expect } from '@playwright/test';
-import { TravelManagementPage as LegacyTravelManagementPage, travelDetailHrefSelector } from '@pages/carrier';
+import {
+	TravelManagementPage as LegacyTravelManagementPage,
+	travelDetailHrefSelector,
+	type TripRowAnchor
+} from '@pages/carrier';
 import { atc, step } from '@utils/decorators';
 import { UiBase } from '@ui/UiBase';
 
@@ -62,9 +66,10 @@ export class CarrierTravelManagementPage extends UiBase {
 	async expectPassengerInPorAsignar(
 		passenger: string,
 		destination?: string,
-		status?: string | RegExp
+		status?: string | RegExp,
+		anchor?: TripRowAnchor
 	): Promise<void> {
-		await this.legacy.expectPassengerInPorAsignar(passenger, destination, status);
+		await this.legacy.expectPassengerInPorAsignar(passenger, destination, status, anchor);
 	}
 
 	/**
@@ -80,8 +85,8 @@ export class CarrierTravelManagementPage extends UiBase {
 		passenger: string;
 		destination?: string;
 		status?: string | RegExp;
-		travelId?: number;
-		travelIdForCarrier?: number;
+		travelId?: number | null;
+		travelIdForCarrier?: number | null;
 	}): Promise<void> {
 		await this.legacy.expectTripRowInCurrentTab(opts);
 	}
@@ -113,9 +118,10 @@ export class CarrierTravelManagementPage extends UiBase {
 	async expectPassengerInProgramados(
 		passenger: string,
 		destination?: string,
-		status?: string | RegExp
+		status?: string | RegExp,
+		anchor?: TripRowAnchor
 	): Promise<void> {
-		await this.legacy.expectPassengerInProgramados(passenger, destination, status);
+		await this.legacy.expectPassengerInProgramados(passenger, destination, status, anchor);
 	}
 
 	/**
@@ -127,8 +133,8 @@ export class CarrierTravelManagementPage extends UiBase {
 	 * jamás se inventan. Queda unmapped-visible hasta que el ATP tenga el TC correspondiente.
 	 */
 	@step
-	async expectPassengerInEnConflicto(passenger: string, destination?: string): Promise<void> {
-		await this.legacy.expectPassengerInEnConflicto(passenger, destination);
+	async expectPassengerInEnConflicto(passenger: string, destination?: string, anchor?: TripRowAnchor): Promise<void> {
+		await this.legacy.expectPassengerInEnConflicto(passenger, destination, anchor);
 	}
 
 	/**

@@ -14,6 +14,7 @@
  *   - POST /magiis-v0.2/carriers/{carrierId}/travels → { travelId }
  *   - PUT  /magiis-v0.2/carriers/{carrierId}/travels/{travelId}/cancel
  */
+import { expect } from '@playwright/test';
 import type { Page, Response } from '@playwright/test';
 import { cacheAuthToken, getApiHeaders } from './card-precondition';
 import { debugLog } from '@helpers/index';
@@ -150,6 +151,33 @@ export async function captureCreatedTravelId(page: Page, carrierId = DEFAULT_CAR
 
 	page.on('response', handler);
 	return ref;
+}
+
+/**
+ * Ancla de la FILA del viaje recién creado para los oráculos de la grilla de Gestión de Viajes
+ * (`expectPassengerIn*`): sin ella la fila se busca por texto (pasajero + destino), que es idéntico
+ * entre corridas y puede caer en otra página de la grilla o empatar con un viaje residual.
+ *
+ * Espera la captura (el handler de `response` es async y puede resolver DESPUÉS del submit) y exige
+ * AMBOS ids. Falla rápido si el POST /travels no devolvió `travelIdForCarrier` (el código "NNNN-W"
+ * que muestra la grilla): sin él el oráculo degradaría en silencio al match por texto.
+ */
+export async function awaitTravelRowAnchor(
+	ref: TravelIdRef | null,
+	timeout = 15_000
+): Promise<{ travelIdForCarrier: number; travelId: number }> {
+	await expect
+		.poll(() => ref?.travelId ?? null, { message: 'POST /travels debe haber capturado travelId', timeout })
+		.not.toBeNull();
+	const travelId = ref?.travelId ?? null;
+	const travelIdForCarrier = ref?.travelIdForCarrier ?? null;
+	if (travelId == null || travelIdForCarrier == null) {
+		throw new Error(
+			`El POST /travels (travelId=${travelId}) no devolvió travelIdForCarrier (código WEB "NNNN-W"): ` +
+				'el oráculo de la grilla necesita ese código para anclar la fila del viaje creado en esta corrida.'
+		);
+	}
+	return { travelIdForCarrier, travelId };
 }
 
 /**
