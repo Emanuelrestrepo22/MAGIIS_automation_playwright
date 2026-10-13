@@ -31,7 +31,13 @@ import { getApiHeaders } from './card-precondition';
 const DEFAULT_CARRIER_ID = process.env.CARRIER_ID ?? '1521';
 const DEFAULT_CARRIER_USER_ID = process.env.CARRIER_USER_ID ?? '6715';
 
-/** Subconjunto tipado del DriverResponseDTO del BE que consume la resolución de driver. */
+/**
+ * Subconjunto tipado del DriverResponseDTO del BE que consume la resolución de driver.
+ *
+ * ⚠️ Naming engañoso: `driverUserId` NO es el USER_ID. `DriverToResponseDTOMapper`
+ * (`setDriverUserId(driverUser.getId())`, con `driverUser` = `DriverAccount`, tabla DRIVER) lo llena con
+ * DRIVER.ID — justo lo que `finalizeAdmin` espera como `driverId`. El USER_ID viaja aparte en `userId`.
+ */
 type CarrierDriverDTO = {
 	driverUserId?: number;
 	firstName?: string;
@@ -48,11 +54,15 @@ function resolveApiBase(page: Page): string {
 /**
  * Resuelve el `driverId` a usar en la finalización administrativa.
  *
- * Precedencia: env `FINALIZE_DRIVER_ID` (determinismo por ambiente, sin tocar código) →
+ * Precedencia: env `FINALIZE_DRIVER_ID` (determinismo por ambiente, sin tocar código;
+ * DEBE ser un DRIVER.ID, NO un USER_ID: con un USER_ID `findCurrentVehicleByDriver`
+ * (`where d.id = :driverId`) no devuelve nada → NPE → 400 ACTION_NOT_ALLOWED) →
  * `GET /carriers/{carrierId}/drivers/allDrivers` y primer driver CON vehículo (el BE deriva el
  * vehículo del driver vía `findCurrentVehicleByDriver`, así que un driver sin vehículo revienta).
  *
- * @returns driverId numérico, o `null` si no hay candidato (el caller decide el fail-fast).
+ * `driverUserId` del DTO ya es DRIVER.ID (ver `CarrierDriverDTO`), por eso se usa tal cual.
+ *
+ * @returns driverId numérico (DRIVER.ID), o `null` si no hay candidato (el caller decide el fail-fast).
  */
 export async function resolveFinalizeDriverId(page: Page, carrierId = DEFAULT_CARRIER_ID): Promise<number | null> {
 	const fromEnv = process.env.FINALIZE_DRIVER_ID?.trim();
