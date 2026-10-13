@@ -41,7 +41,7 @@ test.describe.configure({ timeout: 180_000 });
 
 test.describe('Gateway PG · Carrier — Reactivación de Viajes Cancelados @gateway @stripe @hold @regression', () => {
 	test.describe('Sin 3DS', () => {
-		test('[TS-STRIPE-P2-TC060] @regression @hold reactivación cancelado hold+cobro', async ({ page }) => {
+		test('[TS-STRIPE-P2-TC060] @regression @hold reactivación cancelado hold+cobro', { annotation: [{ type: 'tms_only', description: 'TM-209' }, { type: 'xray_partial', description: 'cobro desde App Driver fuera de alcance' }] }, async ({ page }) => {
 			test.setTimeout(240_000); // flujo real (alta + hold + cancelación + reactivación) es lento en TEST
 			await new CarrierReactivationSteps({ page }).runReactivateCancelledPreauth({
 				client: TEST_DATA.appPaxPassenger,

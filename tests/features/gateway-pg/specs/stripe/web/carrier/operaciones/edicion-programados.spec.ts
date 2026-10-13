@@ -49,7 +49,7 @@ test.describe(
 	'Gateway PG · Carrier · Empresa Individuo - Edicion de Viajes Programados @gateway @stripe @hold @3ds @regression',
 	{ annotation: [{ type: 'tms', description: 'MG-415' }] },
 	() => {
-		test('[TS-STRIPE-P2-TC078] @regression @hold alta + edicion hold+cobro', async ({ page }) => {
+		test('[TS-STRIPE-P2-TC078] @regression @hold alta + edicion hold+cobro', { annotation: [{ type: 'tms_only', description: 'TM-375' }, { type: 'xray_partial', description: 'cobro desde App Driver fuera de alcance' }] }, async ({ page }) => {
 			test.setTimeout(300_000); // seed propio + edicion via grilla + cleanup
 			// Precondicion SELF-CONTAINED tambien para el ancla (fix 2026-08-07): la grilla de
 			// Programados del carrier compartido quedo VACIA — el ancla dependia de la primera
@@ -90,7 +90,7 @@ test.describe(
 		});
 
 		test.describe('Sin 3DS', () => {
-			test('[TS-STRIPE-P2-TC079] @regression @card-new sin hold alta + edicion — Vincular tarjeta nueva', async ({
+			test('[TS-STRIPE-P2-TC079] @regression @card-new sin hold alta + edicion — Vincular tarjeta nueva', { annotation: [{ type: 'tms_only', description: 'TM-253' }, { type: 'xray_partial', description: 'cobro desde App Driver fuera de alcance' }] }, async ({
 				page
 			}) => {
 				test.setTimeout(300_000); // alta programada (seed) + edición + restore hold

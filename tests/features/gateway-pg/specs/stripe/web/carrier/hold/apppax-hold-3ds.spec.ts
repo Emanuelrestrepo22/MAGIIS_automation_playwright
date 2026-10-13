@@ -290,7 +290,7 @@ test.describe(
 		test.describe('Hold ON — autenticación 3DS exitosa', () => {
 			// Debería crear un viaje con hold activo, completar 3DS con éxito,
 			// y dejar el viaje en estado "Buscando conductor" visible en gestión.
-			test('[TS-STRIPE-TC1053] @smoke @critical @3ds @hold hold+cobro app pax 3DS success', async ({ page }) => {
+			test('[TS-STRIPE-TC1053] @smoke @critical @3ds @hold hold+cobro app pax 3DS success', { annotation: [{ type: 'tms_only', description: 'TM-82' }] }, async ({ page }) => {
 				await runHoldOnScenario(page, {
 					client: TEST_DATA.appPaxPassenger,
 					passenger: TEST_DATA.appPaxPassenger,
