@@ -41,15 +41,24 @@ test.describe.configure({ timeout: 180_000 });
 
 test.describe('Gateway PG · Carrier — Reactivación de Viajes Cancelados @gateway @stripe @hold @regression', () => {
 	test.describe('Sin 3DS', () => {
-		test('[TS-STRIPE-P2-TC060] @regression @hold reactivación cancelado hold+cobro', { annotation: [{ type: 'tms_only', description: 'TM-209' }, { type: 'xray_partial', description: 'cobro desde App Driver fuera de alcance' }] }, async ({ page }) => {
-			test.setTimeout(240_000); // flujo real (alta + hold + cancelación + reactivación) es lento en TEST
-			await new CarrierReactivationSteps({ page }).runReactivateCancelledPreauth({
-				client: TEST_DATA.appPaxPassenger,
-				passenger: TEST_DATA.appPaxPassenger,
-				origin: TEST_DATA.origin,
-				destination: TEST_DATA.destination
-			});
-		});
+		test(
+			'[TS-STRIPE-P2-TC060] @regression @hold reactivación cancelado hold+cobro',
+			{
+				annotation: [
+					{ type: 'tms_only', description: 'TM-209' },
+					{ type: 'xray_partial', description: 'cobro desde App Driver fuera de alcance' }
+				]
+			},
+			async ({ page }) => {
+				test.setTimeout(240_000); // flujo real (alta + hold + cancelación + reactivación) es lento en TEST
+				await new CarrierReactivationSteps({ page }).runReactivateCancelledPreauth({
+					client: TEST_DATA.appPaxPassenger,
+					passenger: TEST_DATA.appPaxPassenger,
+					origin: TEST_DATA.origin,
+					destination: TEST_DATA.destination
+				});
+			}
+		);
 
 		test('[TS-STRIPE-P2-TC061] @regression @card-new sin hold reactivación cancelado — Vincular tarjeta nueva', async ({
 			page

@@ -290,16 +290,20 @@ test.describe(
 		test.describe('Hold ON — autenticación 3DS exitosa', () => {
 			// Debería crear un viaje con hold activo, completar 3DS con éxito,
 			// y dejar el viaje en estado "Buscando conductor" visible en gestión.
-			test('[TS-STRIPE-TC1053] @smoke @critical @3ds @hold hold+cobro app pax 3DS success', { annotation: [{ type: 'tms_only', description: 'TM-82' }] }, async ({ page }) => {
-				await runHoldOnScenario(page, {
-					client: TEST_DATA.appPaxPassenger,
-					passenger: TEST_DATA.appPaxPassenger,
-					origin: TEST_DATA.origin,
-					destination: TEST_DATA.destination,
-					cardLast4: STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4), // 3184
-					apiSearchQuery: PASSENGERS.appPax.apiSearchQuery
-				});
-			});
+			test(
+				'[TS-STRIPE-TC1053] @smoke @critical @3ds @hold hold+cobro app pax 3DS success',
+				{ annotation: [{ type: 'tms_only', description: 'TM-82' }] },
+				async ({ page }) => {
+					await runHoldOnScenario(page, {
+						client: TEST_DATA.appPaxPassenger,
+						passenger: TEST_DATA.appPaxPassenger,
+						origin: TEST_DATA.origin,
+						destination: TEST_DATA.destination,
+						cardLast4: STRIPE_TEST_CARDS.alwaysAuthenticate.slice(-4), // 3184
+						apiSearchQuery: PASSENGERS.appPax.apiSearchQuery
+					});
+				}
+			);
 
 			test('[TS-STRIPE-TC1055] @regression @3ds @hold hold+cobro app pax 3DS success variante', async ({
 				page

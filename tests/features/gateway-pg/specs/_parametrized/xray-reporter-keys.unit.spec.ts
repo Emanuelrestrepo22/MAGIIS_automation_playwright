@@ -19,7 +19,10 @@ test.describe('xray-reporter: tms_only / xray_partial', () => {
 	});
 
 	test('sin tms_only se acreditan todas las keys tms (comportamiento existente)', () => {
-		const keys = extractTestKeys(tc('t', [{ type: 'tms', description: 'MG-1' }]), res([{ type: 'tms', description: 'MG-2' }]));
+		const keys = extractTestKeys(
+			tc('t', [{ type: 'tms', description: 'MG-1' }]),
+			res([{ type: 'tms', description: 'MG-2' }])
+		);
 		expect(keys.sort()).toEqual(['MG-1', 'MG-2']);
 	});
 
@@ -36,6 +39,9 @@ test.describe('xray-reporter: tms_only / xray_partial', () => {
 	});
 
 	test('sin xray_partial el resultado no cambia', () => {
-		expect(resolveOutcome(tc('t', []), res(), 'PASSED', undefined)).toEqual({ status: 'PASSED', comment: undefined });
+		expect(resolveOutcome(tc('t', []), res(), 'PASSED', undefined)).toEqual({
+			status: 'PASSED',
+			comment: undefined
+		});
 	});
 });

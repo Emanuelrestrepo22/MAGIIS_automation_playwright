@@ -46,14 +46,21 @@ test.describe(
 	{ annotation: [{ type: 'tms', description: 'MG-428' }] },
 	() => {
 		test.describe('Sin 3DS', () => {
-			test('[TS-STRIPE-P2-TC066] @regression @hold @card-new clonación cancelado hold+cobro — Vincular tarjeta nueva', { annotation: [{ type: 'tms_only', description: 'TM-288' }, { type: 'xray_partial', description: 'cobro desde App Driver fuera de alcance' }] }, async ({
-				page
-			}) => {
-				await new CarrierCloneSteps({ page }).runCloneScenario(
-					empresaCloneScenario(),
-					fromCancelados({ hold: 'on', threeDs: false, cardFlow: 'new' })
-				);
-			});
+			test(
+				'[TS-STRIPE-P2-TC066] @regression @hold @card-new clonación cancelado hold+cobro — Vincular tarjeta nueva',
+				{
+					annotation: [
+						{ type: 'tms_only', description: 'TM-288' },
+						{ type: 'xray_partial', description: 'cobro desde App Driver fuera de alcance' }
+					]
+				},
+				async ({ page }) => {
+					await new CarrierCloneSteps({ page }).runCloneScenario(
+						empresaCloneScenario(),
+						fromCancelados({ hold: 'on', threeDs: false, cardFlow: 'new' })
+					);
+				}
+			);
 
 			test('[TS-STRIPE-P2-TC067] @regression @card-new sin hold clonación cancelado — Vincular tarjeta nueva', async ({
 				page
