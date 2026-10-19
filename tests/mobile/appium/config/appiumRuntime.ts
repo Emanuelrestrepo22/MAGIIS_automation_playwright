@@ -28,6 +28,10 @@
  *   APPIUM_NEW_COMMAND_TIMEOUT    — Timeout comandos en segundos (default: 120)
  *   APPIUM_NO_RESET               — No resetear la app (default: true cuando app instalada)
  *   APPIUM_FULL_RESET             — Resetear completamente la app (default: false)
+ *   APPIUM_CHROMEDRIVER_AUTODOWNLOAD — true: Appium baja el chromedriver que coincide con el WebView
+ *                                   (default: false). EXIGE arrancar el servidor con
+ *                                   `--allow-insecure uiautomator2:chromedriver_autodownload`;
+ *                                   si no, Appium rechaza la sesión.
  */
 
 import { loadMobileEnvFile } from './mobileEnvFile';
@@ -82,6 +86,7 @@ export type MobileActorConfig = {
 	newCommandTimeout: number;
 	noReset: boolean;
 	fullReset: boolean;
+	chromedriverAutodownload: boolean;
 };
 
 export type AppiumRemoteConnection = {
@@ -178,7 +183,8 @@ function buildActorConfig(actor: MobileActor, appPathEnvVar: string, appPackageE
 		udid: readOptionalEnv(`ANDROID_${actor.toUpperCase()}_UDID`) ?? readOptionalEnv('ANDROID_UDID'),
 		newCommandTimeout: readOptionalNumberEnv('APPIUM_NEW_COMMAND_TIMEOUT', 120),
 		noReset: readOptionalBooleanEnv('APPIUM_NO_RESET', usingInstalledApp),
-		fullReset: readOptionalBooleanEnv('APPIUM_FULL_RESET', false)
+		fullReset: readOptionalBooleanEnv('APPIUM_FULL_RESET', false),
+		chromedriverAutodownload: readOptionalBooleanEnv('APPIUM_CHROMEDRIVER_AUTODOWNLOAD', false)
 	};
 }
 
@@ -219,6 +225,7 @@ export function buildAndroidCapabilities(config: MobileActorConfig): Record<stri
 		'appium:newCommandTimeout': config.newCommandTimeout,
 		'appium:noReset': config.noReset,
 		'appium:fullReset': config.fullReset,
+		...(config.chromedriverAutodownload ? { 'appium:chromedriverAutodownload': true } : {}),
 		...(config.udid ? { 'appium:udid': config.udid } : {}),
 		...(useInstalledApp
 			? {

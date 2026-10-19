@@ -22,6 +22,7 @@ coverage/
 .env.*.local
 # .env.example es la plantilla pública sin valores — debe quedar trackeada.
 !.env.example
+!.env.*.example
 
 # ─── Evidencia y artefactos de ejecución ───────────────────
 # Screenshots, videos y reportes generados por los tests

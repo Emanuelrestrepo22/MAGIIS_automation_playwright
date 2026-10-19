@@ -2,6 +2,7 @@ import type { AppiumDriver } from '../base/AppiumSessionBase';
 import type { MobileActorConfig } from '../config/appiumRuntime';
 import { DRIVER_CHECKPOINT_SELECTORS, type DriverCheckpointStage } from '../driver/DriverFlowSelectors';
 import { DriverHomeScreen } from '../driver/DriverHomeScreen';
+import { assertDriverPreflight, type DriverPreflightExpectation } from '../driver/DriverTripPreflight';
 import { DriverTripNavigationScreen } from '../driver/DriverTripNavigationScreen';
 import { DriverTripRequestScreen } from '../driver/DriverTripRequestScreen';
 import { DriverTripSummaryScreen } from '../driver/DriverTripSummaryScreen';
@@ -22,6 +23,10 @@ export type DriverTripHappyPathResult = {
 
 export type DriverTripHappyPathOptions = {
 	ensureDriverOnline?: boolean;
+	/** Si se da, corre el pre-flight (app, chofer, sin viaje en curso) y aborta antes de tocar la app. */
+	preflight?: DriverPreflightExpectation;
+	/** Hook con el viaje en curso (ej: alimentar la ruta GPS con GpsRouteFeeder), antes de finalizarlo. */
+	duringTrip?: (driver: AppiumDriver) => Promise<void>;
 	timeoutsMs?: Partial<Record<DriverCheckpointStage, number>>;
 };
 
@@ -69,6 +74,15 @@ export class DriverTripHappyPathHarness {
 		};
 
 		try {
+			if (options.preflight) {
+				// Sesión ya iniciada: se verifica la identidad; el login solo ocurre si está deslogueada.
+				// El overlay /pre-home oculta el header con el nombre del chofer, por eso se cierra antes.
+				const dismissPreHome = (): Promise<boolean> => this.homeScreen.dismissPreHomeOverlayIfPresent();
+				await dismissPreHome().catch(() => false);
+				await assertDriverPreflight(this.homeScreen.getDriver(), options.preflight, {
+					afterLogin: dismissPreHome
+				});
+			}
 			if (ensureDriverOnline && !(await this.homeScreen.isDriverOnline())) {
 				await this.homeScreen.goOnline();
 			}
@@ -88,6 +102,9 @@ export class DriverTripHappyPathHarness {
 				throw new Error(`Checkpoint "in-progress" not reached in ${timeouts['in-progress']}ms.`);
 			}
 			checkpoints.push(await this.waitForCheckpoint('in-progress', 5_000));
+			if (options.duringTrip) {
+				await options.duringTrip(this.homeScreen.getDriver());
+			}
 
 			await this.getNavigationScreen().endTrip();
 			await this.getNavigationScreen().confirmEndTripPopup();

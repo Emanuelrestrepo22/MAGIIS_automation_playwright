@@ -565,6 +565,40 @@ To run mapped scenarios when device and Appium are ready:
 RUN_MOBILE_HAPPY_PATH=true npx playwright test tests/features/gateway-pg/specs/stripe/e2e-mobile/carrier-driver-happy-path-template.spec.ts --project chromium
 ```
 
+## Driver TEST + chofer FR (cierre real con GPS simulado)
+
+Harness: `harness/DriverTripHappyPathHarness.ts` con `preflight` + `duringTrip`; ruta GPS:
+`gps/GpsRouteFeeder.ts`; guard: `driver/DriverTripPreflight.ts`. Plantilla de entorno:
+`.env.emulator-test-fr.example` (copiar a `.env.emulator-test-fr`, gitignored).
+
+1. Arrancar el servidor Appium (no lo hace el código). Flag necesario para
+   `APPIUM_CHROMEDRIVER_AUTODOWNLOAD=true` (WebView del emulador y chromedriver local pueden diferir):
+
+   ```bash
+   appium --allow-insecure uiautomator2:chromedriver_autodownload
+   ```
+
+2. Emulador arriba (`adb devices` -> `emulator-5554`) y app TEST del Driver con el chofer FR ya logueado.
+3. Pre-flight (aborta si falla; login solo si está deslogueada): paquete en primer plano == esperado, chofer logueado == `DRIVER_DISPLAY_NAME_FR`
+   en el header del home, sin viaje en curso (URL en confirm / in-progress / resume). Claves requeridas
+   (fail-fast, valores nunca impresos): `DRIVER_EMAIL_FR`, `DRIVER_PASSWORD_FR`, `DRIVER_DISPLAY_NAME_FR`.
+4. Uso:
+
+   ```ts
+   await harness.runHappyPath({
+     preflight: readFrPreflightExpectation(config.appPackage!),
+     duringTrip: async driver => {
+       const result = await new GpsRouteFeeder(driver, { stepMeters: 30, intervalMs: 2000 }).feed(readGpsRouteFromEnv());
+       console.log(`GPS teórico: ${result.theoreticalMeters.toFixed(0)} m`);
+     }
+   });
+   ```
+
+5. Al terminar liberar el mock: `adb -s emulator-5554 shell am stopservice io.appium.settings/.LocationService`.
+
+Unit tests (sin Appium): `npx tsx --test tests/mobile/appium/gps/GpsRouteFeeder.unit.ts tests/mobile/appium/driver/DriverTripPreflight.unit.ts`.
+Sesión: con `APPIUM_NO_RESET=true` el pre-flight verifica el chofer ya logueado y solo hace login (`DRIVER_EMAIL_FR`/`DRIVER_PASSWORD_FR`) si ve el formulario de login.
+
 ## Passenger flow 2 lane
 
 - Passenger personal no3ds spec: `tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-personal-no3ds.e2e.spec.ts`
