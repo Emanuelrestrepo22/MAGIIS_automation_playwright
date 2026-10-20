@@ -32,6 +32,8 @@
  *                                   (default: false). EXIGE arrancar el servidor con
  *                                   `--allow-insecure uiautomator2:chromedriver_autodownload`;
  *                                   si no, Appium rechaza la sesión.
+ *   APPIUM_CHROMEDRIVER_EXECUTABLE — Ruta a un chromedriver local que coincide con el WebView
+ *                                   (cuando la autodescarga no consigue la versión).
  */
 
 import { loadMobileEnvFile } from './mobileEnvFile';
@@ -87,6 +89,7 @@ export type MobileActorConfig = {
 	noReset: boolean;
 	fullReset: boolean;
 	chromedriverAutodownload: boolean;
+	chromedriverExecutable: string | null;
 };
 
 export type AppiumRemoteConnection = {
@@ -184,7 +187,8 @@ function buildActorConfig(actor: MobileActor, appPathEnvVar: string, appPackageE
 		newCommandTimeout: readOptionalNumberEnv('APPIUM_NEW_COMMAND_TIMEOUT', 120),
 		noReset: readOptionalBooleanEnv('APPIUM_NO_RESET', usingInstalledApp),
 		fullReset: readOptionalBooleanEnv('APPIUM_FULL_RESET', false),
-		chromedriverAutodownload: readOptionalBooleanEnv('APPIUM_CHROMEDRIVER_AUTODOWNLOAD', false)
+		chromedriverAutodownload: readOptionalBooleanEnv('APPIUM_CHROMEDRIVER_AUTODOWNLOAD', false),
+		chromedriverExecutable: readOptionalEnv('APPIUM_CHROMEDRIVER_EXECUTABLE')
 	};
 }
 
@@ -226,6 +230,7 @@ export function buildAndroidCapabilities(config: MobileActorConfig): Record<stri
 		'appium:noReset': config.noReset,
 		'appium:fullReset': config.fullReset,
 		...(config.chromedriverAutodownload ? { 'appium:chromedriverAutodownload': true } : {}),
+		...(config.chromedriverExecutable ? { 'appium:chromedriverExecutable': config.chromedriverExecutable } : {}),
 		...(config.udid ? { 'appium:udid': config.udid } : {}),
 		...(useInstalledApp
 			? {

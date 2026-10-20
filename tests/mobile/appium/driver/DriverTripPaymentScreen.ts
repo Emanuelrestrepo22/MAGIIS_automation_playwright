@@ -551,7 +551,7 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 					form: form ? form.className : '<no-form>',
 					fields,
 					chargeValidVisible: Array.from(scope.querySelectorAll('.header.end span.title')).some(s =>
-						/cobrar/i.test((s as HTMLElement).innerText || '')
+						/cobrar|collect/i.test((s as HTMLElement).innerText || '')
 					),
 					chargeInvalidVisible: !!scope.querySelector('span.invalid-charge'),
 					submit: {
@@ -719,7 +719,7 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 						const alertEl = document.querySelector(alertSel) as HTMLElement | null;
 						if (alertEl) {
 							const t = norm(alertEl.innerText ?? alertEl.textContent);
-							if (/perdid|cancelad|expir/i.test(t))
+							if (/perdid|cancelad|expir|lost|cancel|expired/i.test(t))
 								return { status: 'trip-lost', reason: t.slice(0, 200) };
 						}
 
@@ -727,7 +727,7 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 						const modal = document.querySelector(attentionSel) as HTMLElement | null;
 						if (modal) {
 							const t = norm(modal.innerText ?? modal.textContent);
-							if (/perdid|cancelad|expir/i.test(t))
+							if (/perdid|cancelad|expir|lost|cancel|expired/i.test(t))
 								return { status: 'trip-lost', reason: t.slice(0, 200) };
 							return { status: 'declined', reason: t.slice(0, 200) || 'attention-modal' };
 						}
@@ -757,7 +757,7 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 					if (alertBtn) return alertBtn;
 					return (
 						(Array.from(document.querySelectorAll('button, [role="button"]')) as HTMLElement[]).find(b =>
-							/aceptar|captar|cerrar|ok|salir/i.test(b.textContent ?? '')
+							/aceptar|captar|cerrar|ok|salir|accept|close|exit/i.test(b.textContent ?? '')
 						) ?? null
 					);
 				};

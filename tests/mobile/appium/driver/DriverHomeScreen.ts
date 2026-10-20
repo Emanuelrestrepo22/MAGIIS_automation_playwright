@@ -559,8 +559,11 @@ export class DriverHomeScreen extends AppiumSessionBase {
 				[
 					'//*[@text="Disponible"]',
 					'//*[@text="No disponible"]',
+					'//*[@text="Available"]',
+					'//*[@text="Not Available"]',
 					'//*[contains(@text, "Disponible")]',
-					'//*[contains(@text, "No disponible")]'
+					'//*[contains(@text, "No disponible")]',
+					'//*[contains(@text, "Available")]'
 				],
 				5_000
 			);

@@ -51,3 +51,15 @@ test('readFrPreflightExpectation: nombra todas las claves faltantes, sin valores
 	process.env.DRIVER_DISPLAY_NAME_FR = 'Chofer Prueba';
 	assert.equal(readFrPreflightExpectation(PKG).driverDisplayName, 'Chofer Prueba');
 });
+
+test('oferta del viaje esperado: no cuenta como viaje en curso', () => {
+	const url = 'https://localhost/navigator/TravelConfirmPage;data=' + encodeURIComponent('{"travelId":71510,"simulatedPrice":2828}');
+	const offer = { ...ok, webUrl: url, headerTexts: [] };
+	assert.deepEqual(evaluateDriverPreflight(offer, { ...expected, expectedTravelId: 71510 }), []);
+});
+
+test('oferta de OTRO viaje: sigue abortando', () => {
+	const url = 'https://localhost/navigator/TravelConfirmPage;data=' + encodeURIComponent('{"travelId":71502}');
+	const v = evaluateDriverPreflight({ ...ok, webUrl: url }, { ...expected, expectedTravelId: 71510 });
+	assert.ok(v.some(x => /viaje en curso/.test(x)));
+});

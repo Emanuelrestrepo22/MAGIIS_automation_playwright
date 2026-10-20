@@ -6,7 +6,7 @@
 import type { GeoPoint } from '../../../features/gateway-pg/contracts/gateway-pg.types';
 import type { MobileActorConfig } from '../config/appiumRuntime';
 import { AppiumSessionBase, type AppiumDriver } from '../base/AppiumSessionBase';
-import { DRIVER_ACTION_SELECTORS } from './DriverFlowSelectors';
+import { DRIVER_ACTION_SELECTORS, DRIVER_UI_TEXTS, matchesAnyText } from './DriverFlowSelectors';
 import { DriverTripCompletionScreen } from './DriverTripCompletionScreen';
 
 const TRIP_IN_PROGRESS_CONTAINER_SELECTOR = 'app-page-travel-in-progress';
@@ -205,7 +205,7 @@ export class DriverTripNavigationScreen extends AppiumSessionBase {
 				for (const btn of allBtns) {
 					const text = (await btn.getText().catch(() => '')).trim();
 					const visible = await btn.isDisplayed().catch(() => false);
-					if (text === 'Empezar Viaje' && visible) {
+					if (matchesAnyText(text, DRIVER_UI_TEXTS.startTrip) && visible) {
 						await btn.click();
 						clicked = true;
 						break;
@@ -245,7 +245,7 @@ export class DriverTripNavigationScreen extends AppiumSessionBase {
 			for (const btn of allBtns) {
 				const text = (await btn.getText().catch(() => '')).trim();
 				const visible = await btn.isDisplayed().catch(() => false);
-				if (text === 'Si' && visible) {
+				if (matchesAnyText(text, DRIVER_UI_TEXTS.confirmYes) && visible) {
 					await btn.click();
 					clicked = true;
 					break;
@@ -258,7 +258,7 @@ export class DriverTripNavigationScreen extends AppiumSessionBase {
 				for (const btn of fallbackBtns) {
 					const text = (await btn.getText().catch(() => '')).trim();
 					const visible = await btn.isDisplayed().catch(() => false);
-					if (text === 'Si' && visible) {
+					if (matchesAnyText(text, DRIVER_UI_TEXTS.confirmYes) && visible) {
 						await btn.click();
 						clicked = true;
 						break;
@@ -311,7 +311,7 @@ export class DriverTripNavigationScreen extends AppiumSessionBase {
 			const btn = await driver.$(TRIP_IN_PROGRESS_FINISH_SELECTOR);
 			if (await btn.isDisplayed().catch(() => false)) {
 				const text = (await btn.getText().catch(() => '')).trim();
-				if (text === 'Finalizar Viaje') {
+				if (matchesAnyText(text, DRIVER_UI_TEXTS.endTrip)) {
 					await btn.click();
 					clicked = true;
 				}
@@ -323,7 +323,7 @@ export class DriverTripNavigationScreen extends AppiumSessionBase {
 				for (const b of allBtns) {
 					const text = (await b.getText().catch(() => '')).trim();
 					const visible = await b.isDisplayed().catch(() => false);
-					if (text === 'Finalizar Viaje' && visible) {
+					if (matchesAnyText(text, DRIVER_UI_TEXTS.endTrip) && visible) {
 						await b.click();
 						clicked = true;
 						break;
@@ -362,7 +362,7 @@ export class DriverTripNavigationScreen extends AppiumSessionBase {
 			for (const btn of modalBtns) {
 				const text = (await btn.getText().catch(() => '')).trim();
 				const visible = await btn.isDisplayed().catch(() => false);
-				if (text === 'Si' && visible) {
+				if (matchesAnyText(text, DRIVER_UI_TEXTS.confirmYes) && visible) {
 					await btn.click();
 					clicked = true;
 					break;
@@ -375,7 +375,7 @@ export class DriverTripNavigationScreen extends AppiumSessionBase {
 				for (const btn of allBtns) {
 					const text = (await btn.getText().catch(() => '')).trim();
 					const visible = await btn.isDisplayed().catch(() => false);
-					if (text === 'Si' && visible) {
+					if (matchesAnyText(text, DRIVER_UI_TEXTS.confirmYes) && visible) {
 						await btn.click();
 						clicked = true;
 						break;

@@ -14,6 +14,8 @@
  * `adb shell am stopservice io.appium.settings/.LocationService`.
  */
 
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import type { AppiumDriver } from '../base/AppiumSessionBase';
 
 export type LatLng = { lat: number; lng: number };
@@ -82,6 +84,16 @@ function parseLatLng(raw: string, key: string): LatLng {
  * (`lat,lng;lat,lng`, intermedios en orden — p. ej. derivados de OSRM). Falla nombrando la clave.
  */
 export function readGpsRouteFromEnv(prefix = 'GPS_ROUTE'): LatLng[] {
+	// `<PREFIX>_FILE`: JSON con `points: [{lat,lng}]` (p. ej. gps/routes/cannes-nice.json); tiene prioridad.
+	const file = process.env[`${prefix}_FILE`]?.trim();
+	if (file) {
+		const parsed = JSON.parse(readFileSync(resolve(file), 'utf8')) as { points?: LatLng[] };
+		const pts = parsed.points ?? [];
+		if (pts.length < 2 || pts.some(p => !Number.isFinite(p.lat) || !Number.isFinite(p.lng))) {
+			throw new Error(`${prefix}_FILE inválido: se esperan >= 2 puntos {lat,lng}.`);
+		}
+		return pts;
+	}
 	const need = (key: string): string => {
 		const v = process.env[key]?.trim();
 		if (!v) throw new Error(`Falta la variable ${key} (ruta GPS del emulador). Definila en el archivo de entorno.`);

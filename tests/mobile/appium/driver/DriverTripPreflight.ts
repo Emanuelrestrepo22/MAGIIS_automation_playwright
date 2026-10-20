@@ -21,6 +21,12 @@ export type DriverPreflightExpectation = {
 	appPackage: string;
 	/** Nombre visible esperado del chofer en el header del home (comparación sin tildes/mayúsculas). */
 	driverDisplayName: string;
+	/**
+	 * Viaje ya asignado que la corrida va a operar. Si la app está en la oferta de ESE viaje, la
+	 * pantalla de confirmación no cuenta como "viaje en curso" (el home con el nombre no se ve ahí;
+	 * la identidad la garantiza la asignación al chofer).
+	 */
+	expectedTravelId?: number;
 };
 
 export type DriverPreflightSnapshot = {
@@ -42,7 +48,12 @@ export function readFrPreflightExpectation(appPackage: string): DriverPreflightE
 				'Definilas en el archivo de entorno (ver .env.emulator-test-fr.example); no se imprimen sus valores.'
 		);
 	}
-	return { appPackage, driverDisplayName: process.env.DRIVER_DISPLAY_NAME_FR!.trim() };
+	const expectedTravelId = Number(process.env.EXPECTED_TRAVEL_ID);
+	return {
+		appPackage,
+		driverDisplayName: process.env.DRIVER_DISPLAY_NAME_FR!.trim(),
+		...(Number.isInteger(expectedTravelId) && expectedTravelId > 0 ? { expectedTravelId } : {})
+	};
 }
 
 const normalize = (v: string): string =>
@@ -52,6 +63,14 @@ const normalize = (v: string): string =>
 		.toLowerCase()
 		.normalize('NFD')
 		.replace(/[̀-ͯ]/g, '');
+
+const safeDecode = (v: string): string => {
+	try {
+		return decodeURIComponent(v);
+	} catch {
+		return v;
+	}
+};
 
 /** Devuelve la lista de violaciones; vacía = OK. */
 export function evaluateDriverPreflight(
@@ -68,13 +87,20 @@ export function evaluateDriverPreflight(
 		);
 	}
 
+	const confirmToken = DRIVER_CHECKPOINT_SELECTORS.confirm.urlTokens.find(t => snapshot.webUrl.includes(t));
+	const onExpectedOffer =
+		!!confirmToken &&
+		expected.expectedTravelId !== undefined &&
+		safeDecode(snapshot.webUrl).includes(`"travelId":${expected.expectedTravelId}`);
+
 	const want = normalize(expected.driverDisplayName);
-	if (!want || !snapshot.headerTexts.some(t => normalize(t).includes(want))) {
+	if (!onExpectedOffer && (!want || !snapshot.headerTexts.some(t => normalize(t).includes(want)))) {
 		violations.push('el chofer logueado no coincide con el chofer FR esperado (nombre no visible en el header del home)');
 	}
 
 	const busyStages = ['confirm', 'in-progress', 'resume'] as const;
 	for (const stage of busyStages) {
+		if (stage === 'confirm' && onExpectedOffer) continue;
 		const token = DRIVER_CHECKPOINT_SELECTORS[stage].urlTokens.find(t => snapshot.webUrl.includes(t));
 		if (token) violations.push(`ya hay un viaje en curso (stage "${stage}", URL contiene ${token})`);
 	}

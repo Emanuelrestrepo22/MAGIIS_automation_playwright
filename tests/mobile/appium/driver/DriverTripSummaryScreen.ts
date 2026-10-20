@@ -23,7 +23,7 @@
 
 import type { MobileActorConfig } from '../config/appiumRuntime';
 import { AppiumSessionBase, type AppiumDriver } from '../base/AppiumSessionBase';
-import { DRIVER_ACTION_SELECTORS } from './DriverFlowSelectors';
+import { DRIVER_ACTION_SELECTORS, DRIVER_UI_TEXTS } from './DriverFlowSelectors';
 
 export type TripSummarySnapshot = {
 	url: string;
@@ -175,7 +175,7 @@ export class DriverTripSummaryScreen extends AppiumSessionBase {
 		const driver = this.getDriver();
 
 		// Textos posibles del botón de cierre, en orden de prioridad
-		const CLOSE_TEXTS = ['Cerrar Viaje', 'Firmar y Cerrar viaje', 'Finalizar Viaje'];
+		const CLOSE_TEXTS = [...DRIVER_UI_TEXTS.closeTrip]; // ES + EN (i18n travel_resume.close_travel / sign)
 
 		const clicked = (await driver.execute((candidates: string[]) => {
 			const container = document.querySelector('app-travel-resume');
@@ -183,7 +183,7 @@ export class DriverTripSummaryScreen extends AppiumSessionBase {
 			const btns = Array.from(container.querySelectorAll('button')) as HTMLButtonElement[];
 			for (const txt of candidates) {
 				const btn = btns.find(
-					b => (b.innerText ?? '').trim() === txt && b.offsetParent !== null && !b.disabled
+					b => (b.innerText ?? '').trim().toLowerCase() === txt.toLowerCase() && b.offsetParent !== null && !b.disabled
 				);
 				if (btn) {
 					btn.click();
