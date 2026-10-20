@@ -176,8 +176,8 @@ export class DriverTripNavigationScreen extends AppiumSessionBase {
 	 *   [BTN] class="btn primary trip-pax-start" text="Empezar Viaje"
 	 *   CONTAINER: button.btn.primary.trip-pax-start  ← selector estable, único en el DOM
 	 */
-	async startTrip(): Promise<void> {
-		const onPage = await this.waitForTravelToStartPage();
+	async startTrip(waitForPageMs = 15_000): Promise<void> {
+		const onPage = await this.waitForTravelToStartPage(waitForPageMs);
 		if (!onPage) {
 			console.warn('[DriverTripNavigationScreen] startTrip: no estamos en TravelToStartPage');
 		}

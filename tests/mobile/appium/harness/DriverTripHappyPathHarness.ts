@@ -27,6 +27,11 @@ export type DriverTripHappyPathOptions = {
 	preflight?: DriverPreflightExpectation;
 	/** Hook con el viaje en curso (ej: alimentar la ruta GPS con GpsRouteFeeder), antes de finalizarlo. */
 	duringTrip?: (driver: AppiumDriver) => Promise<void>;
+	/**
+	 * Reanuda un viaje ya aceptado que quedó en TravelToStartPage (corrida anterior cortada): omite
+	 * pre-flight y aceptación y arranca desde "Iniciar viaje".
+	 */
+	resumeFromToStart?: boolean;
 	timeoutsMs?: Partial<Record<DriverCheckpointStage, number>>;
 };
 
@@ -74,7 +79,7 @@ export class DriverTripHappyPathHarness {
 		};
 
 		try {
-			if (options.preflight) {
+			if (options.preflight && !options.resumeFromToStart) {
 				// Sesión ya iniciada: se verifica la identidad; el login solo ocurre si está deslogueada.
 				// El overlay /pre-home oculta el header con el nombre del chofer, por eso se cierra antes.
 				const dismissPreHome = (): Promise<boolean> => this.homeScreen.dismissPreHomeOverlayIfPresent();
@@ -87,14 +92,17 @@ export class DriverTripHappyPathHarness {
 				await this.homeScreen.goOnline();
 			}
 
-			const confirmReached = await this.getRequestScreen().waitForTripConfirmPage(timeouts.confirm);
-			if (!confirmReached) {
-				throw new Error(`Checkpoint "confirm" not reached in ${timeouts.confirm}ms.`);
+			if (!options.resumeFromToStart) {
+				const confirmReached = await this.getRequestScreen().waitForTripConfirmPage(timeouts.confirm);
+				if (!confirmReached) {
+					throw new Error(`Checkpoint "confirm" not reached in ${timeouts.confirm}ms.`);
+				}
+				checkpoints.push(await this.waitForCheckpoint('confirm', 5_000));
+				await this.getRequestScreen().acceptTrip();
 			}
-			checkpoints.push(await this.waitForCheckpoint('confirm', 5_000));
-			await this.getRequestScreen().acceptTrip();
 
-			await this.getNavigationScreen().startTrip();
+			// Accept -> TravelToStartPage can take >15 s on TEST: wait up to the in-progress budget.
+			await this.getNavigationScreen().startTrip(timeouts['in-progress']);
 			const inProgressReached = await this.getNavigationScreen().waitForTravelInProgressPage(
 				timeouts['in-progress']
 			);

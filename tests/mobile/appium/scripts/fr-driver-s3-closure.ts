@@ -24,7 +24,8 @@ async function run(): Promise<void> {
 	const harness = new DriverTripHappyPathHarness(config);
 	try {
 		const result = await harness.runHappyPath({
-			ensureDriverOnline: true,
+			ensureDriverOnline: process.env.FR_RESUME_TO_START !== '1',
+			resumeFromToStart: process.env.FR_RESUME_TO_START === '1',
 			preflight: readFrPreflightExpectation(config.appPackage),
 			duringTrip: async driver => {
 				const gps = new GpsRouteFeeder(driver, {
