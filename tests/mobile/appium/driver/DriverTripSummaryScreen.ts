@@ -13,8 +13,8 @@
  *                               Este tap HABILITA el botón de cierre.
  *   2. confirmAndFinish()     → tap en button.btn.finish
  *                               Texto varía: "Cerrar Viaje" | "Firmar y Cerrar viaje"
- *                               Si es "Firmar y Cerrar viaje" → aparece un segundo
- *                               "Cerrar Viaje" post-firma (llamar confirmAndFinish() de nuevo)
+ *                               Si es "Firmar y Cerrar viaje" / "Sign and Close Trip" → abre el
+ *                               modal de firma del pasajero: llamar signAndConfirm()
  *
  *   Botón peaje:   button (sin clase) text="Peaje"   (extra, antes de cerrar)
  *   Botón estac.:  button (sin clase) text="Estac."  (extra, antes de cerrar)
@@ -170,7 +170,7 @@ export class DriverTripSummaryScreen extends AppiumSessionBase {
 	 *   "Cerrar Viaje"          → flujo estándar
 	 *   "Firmar y Cerrar viaje" → flujo con firma requerida (requiere un segundo tap post-firma)
 	 */
-	async confirmAndFinish(): Promise<void> {
+	async confirmAndFinish(): Promise<string> {
 		await this.switchToWebView();
 		const driver = this.getDriver();
 
@@ -183,7 +183,10 @@ export class DriverTripSummaryScreen extends AppiumSessionBase {
 			const btns = Array.from(container.querySelectorAll('button')) as HTMLButtonElement[];
 			for (const txt of candidates) {
 				const btn = btns.find(
-					b => (b.innerText ?? '').trim().toLowerCase() === txt.toLowerCase() && b.offsetParent !== null && !b.disabled
+					b =>
+						(b.innerText ?? '').trim().toLowerCase() === txt.toLowerCase() &&
+						b.offsetParent !== null &&
+						!b.disabled
 				);
 				if (btn) {
 					btn.click();
@@ -203,6 +206,115 @@ export class DriverTripSummaryScreen extends AppiumSessionBase {
 
 		console.log(`[DriverTripSummaryScreen] ✓ Tap "${clicked}"`);
 		await driver.pause(4_000);
+		return clicked;
+	}
+
+	/** true si el texto del botón de cierre corresponde a la variante con firma del pasajero. */
+	static requiresSignature(closeButtonText: string): boolean {
+		return /sign|firm/i.test(closeButtonText);
+	}
+
+	/**
+	 * Firma del pasajero (modal app-page-signer, confirmado DOM dump 2026-10-21, viaje CC 71654):
+	 *   canvas `app-page-signer canvas.canvas-draw` + footer «Clear» (btn-outlined-primary) /
+	 *   «Confirm» (button.btn.primary). Tras «Sign and Close Trip» el viaje NO cierra hasta confirmar.
+	 * Dibuja un trazo con W3C touch actions, verifica que el canvas tenga tinta y toca «Confirm».
+	 * Fail fast: sin modal, sin tinta o sin cierre del modal lanza error con el detalle.
+	 */
+	async signAndConfirm(timeout = 15_000): Promise<void> {
+		await this.switchToWebView();
+		const driver = this.getDriver();
+		type Rect = { x: number; y: number; w: number; h: number };
+
+		const deadline = Date.now() + timeout;
+		let rect: Rect | null = null;
+		while (Date.now() < deadline && !rect) {
+			rect = await driver
+				.execute<Rect | null, []>(() => {
+					const canvas = document.querySelector('app-page-signer canvas') as HTMLCanvasElement | null;
+					if (!canvas) return null;
+					const r = canvas.getBoundingClientRect();
+					return r.width > 5 && r.height > 5 ? { x: r.left, y: r.top, w: r.width, h: r.height } : null;
+				})
+				.catch(() => null);
+			if (!rect) await driver.pause(500);
+		}
+		if (!rect) {
+			throw new Error(
+				`[DriverTripSummaryScreen] signAndConfirm: modal de firma (app-page-signer) no apareció en ${timeout}ms.`
+			);
+		}
+
+		const { x, y, w, h } = rect;
+		const px = (fx: number) => Math.round(x + w * fx);
+		const py = (fy: number) => Math.round(y + h * fy);
+		const stroke = [
+			[0.2, 0.5],
+			[0.35, 0.3],
+			[0.5, 0.7],
+			[0.65, 0.35],
+			[0.8, 0.6]
+		] as const;
+		await driver.performActions([
+			{
+				type: 'pointer',
+				id: 'finger1',
+				parameters: { pointerType: 'touch' },
+				actions: [
+					{ type: 'pointerMove', duration: 0, x: px(stroke[0][0]), y: py(stroke[0][1]) },
+					{ type: 'pointerDown', button: 0 },
+					...stroke
+						.slice(1)
+						.map(([fx, fy]) => ({ type: 'pointerMove' as const, duration: 120, x: px(fx), y: py(fy) })),
+					{ type: 'pointerUp', button: 0 }
+				]
+			}
+		]);
+		await driver.releaseActions().catch(() => undefined);
+		await driver.pause(500);
+
+		const inked = await driver
+			.execute<boolean, []>(() => {
+				const canvas = document.querySelector('app-page-signer canvas') as HTMLCanvasElement | null;
+				const ctx = canvas?.getContext('2d');
+				if (!canvas || !ctx) return false;
+				const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+				for (let i = 3; i < data.length; i += 4) if (data[i] !== 0) return true;
+				return false;
+			})
+			.catch(() => false);
+		if (!inked) {
+			throw new Error('[DriverTripSummaryScreen] signAndConfirm: el trazo no dejó tinta en el canvas de firma.');
+		}
+
+		const confirmed = await driver
+			.execute<boolean, []>(() => {
+				const btn = document.querySelector(
+					'app-page-signer ion-footer button.btn.primary'
+				) as HTMLButtonElement | null;
+				if (!btn || btn.offsetParent === null || btn.disabled) return false;
+				btn.click();
+				return true;
+			})
+			.catch(() => false);
+		if (!confirmed) {
+			throw new Error(
+				'[DriverTripSummaryScreen] signAndConfirm: botón «Confirm» de la firma no encontrado o deshabilitado.'
+			);
+		}
+		console.log('[DriverTripSummaryScreen] ✓ Firma del pasajero confirmada');
+
+		const closeDeadline = Date.now() + timeout;
+		while (Date.now() < closeDeadline) {
+			const open = await driver
+				.execute<boolean, []>(() => !!document.querySelector('app-page-signer canvas'))
+				.catch(() => false);
+			if (!open) return;
+			await driver.pause(500);
+		}
+		throw new Error(
+			`[DriverTripSummaryScreen] signAndConfirm: el modal de firma siguió abierto ${timeout}ms tras «Confirm».`
+		);
 	}
 
 	/**

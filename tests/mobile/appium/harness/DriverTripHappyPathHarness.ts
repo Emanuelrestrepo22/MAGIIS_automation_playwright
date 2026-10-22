@@ -125,7 +125,11 @@ export class DriverTripHappyPathHarness {
 			const totalAmount = await this.getSummaryScreen().getTotalAmount();
 			const paymentMethod = await this.getSummaryScreen().getActivePaymentMethod();
 
-			await this.getSummaryScreen().confirmAndFinish();
+			const closeText = await this.getSummaryScreen().confirmAndFinish();
+			// Viajes en cuenta corriente: «Sign and Close Trip» abre la firma del pasajero y no cierra sin ella.
+			if (DriverTripSummaryScreen.requiresSignature(closeText)) {
+				await this.getSummaryScreen().signAndConfirm();
+			}
 			const closedReached = await this.homeScreen.waitForClosedCheckpoint(timeouts.closed);
 			if (!closedReached) {
 				throw new Error(`Checkpoint "closed" not reached in ${timeouts.closed}ms.`);
