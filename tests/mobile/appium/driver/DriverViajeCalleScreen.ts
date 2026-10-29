@@ -28,7 +28,7 @@ const SEL = {
 	/** P6 — botón del método de pago con tarjeta en el resumen. */
 	cardMethod: 'app-travel-resume div.travel-payment ion-row ion-col:nth-child(2) button',
 	/** P7 — botón "Ingresar tarjeta" (footer del resumen) → abre el modal de cobro. */
-	ingresarTarjeta: 'app-travel-resume ion-footer ion-toolbar button',
+	ingresarTarjeta: 'app-travel-resume ion-footer ion-toolbar button'
 } as const;
 
 export class DriverViajeCalleScreen extends AppiumSessionBase {
@@ -73,7 +73,9 @@ export class DriverViajeCalleScreen extends AppiumSessionBase {
 	/** P2-P3 — inicia el viaje calle y confirma el modal. Espera TravelInProgressPage. */
 	async startViajeCalle(): Promise<void> {
 		if (!(await this.clickWeb(SEL.viajeCalleIcon))) {
-			throw new Error('[DriverViajeCalleScreen] botón viaje calle (div.driver-pass.home-icon) no encontrado/visible');
+			throw new Error(
+				'[DriverViajeCalleScreen] botón viaje calle (div.driver-pass.home-icon) no encontrado/visible'
+			);
 		}
 		if (!(await this.clickWeb(SEL.confirmPrimary))) {
 			throw new Error('[DriverViajeCalleScreen] modal de confirmación de viaje calle no apareció');

@@ -25,7 +25,13 @@ import type { AuthorizeApiResponse } from '@schemas/authorize.types';
 import { classifyAuthorizeAccount } from '@features/gateway-pg/helpers/authorize-account-guard';
 
 /** Respuesta mínima del sandbox con los campos que el clasificador lee. */
-function responseWith(fields: { transId: string; authCode: string; testRequest?: string; avs?: string; cvv?: string }): AuthorizeApiResponse {
+function responseWith(fields: {
+	transId: string;
+	authCode: string;
+	testRequest?: string;
+	avs?: string;
+	cvv?: string;
+}): AuthorizeApiResponse {
 	return {
 		transactionResponse: {
 			transId: fields.transId,
@@ -60,7 +66,10 @@ test.describe('[unit] guard de cuenta Authorize — clasificador @gateway @autho
 		// El caso que se colaba como REAL: rechazo por transacción duplicada.
 		const verdict = classifyAuthorizeAccount(responseWith({ transId: '0', authCode: '', avs: 'P', cvv: '' }));
 
-		expect(verdict.inconclusive, 'transId 0 sin authCode enlatado NO prueba que la cuenta mida: es indeterminado').toBe(true);
+		expect(
+			verdict.inconclusive,
+			'transId 0 sin authCode enlatado NO prueba que la cuenta mida: es indeterminado'
+		).toBe(true);
 		expect(verdict.canned, 'no es la firma enlatada conocida, así que no se reporta como Test Mode').toBe(false);
 	});
 

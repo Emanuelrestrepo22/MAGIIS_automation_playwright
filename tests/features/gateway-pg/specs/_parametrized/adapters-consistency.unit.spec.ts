@@ -22,7 +22,11 @@
  */
 import { test, expect } from '@playwright/test';
 import { assertAdapterFixtureConsistency } from '@features/gateway-pg/helpers/adapters';
-import { assertGatewayTagContract, gatewayTag, EXPECTED_GATEWAY_TAGS } from '@features/gateway-pg/helpers/adapters/gateway-tag';
+import {
+	assertGatewayTagContract,
+	gatewayTag,
+	EXPECTED_GATEWAY_TAGS
+} from '@features/gateway-pg/helpers/adapters/gateway-tag';
 import {
 	assertCardMatrixIntegrity,
 	intentSupport,
@@ -33,7 +37,12 @@ import {
 	SUPPORTED_INTENTS_BY_GATEWAY,
 	type GatewayName
 } from '@fixtures/gateways/_shared';
-import { outcomeFor, hasObservedOutcome, observedIntents, liveVerifiedIntents } from '@features/gateway-pg/helpers/card-outcome-oracle';
+import {
+	outcomeFor,
+	hasObservedOutcome,
+	observedIntents,
+	liveVerifiedIntents
+} from '@features/gateway-pg/helpers/card-outcome-oracle';
 
 test.describe('[unit] Adapters — consistencia declarativa cross-gateway @gateway @unit @regression', () => {
 	test('@unit assertAdapterFixtureConsistency: adapters ↔ resolver ↔ xray-keys ↔ journey-defaults sin drift', () => {
@@ -55,13 +64,18 @@ test.describe('[unit] Adapters — consistencia declarativa cross-gateway @gatew
 		// Los conteos derivados DEBEN coincidir con el pin. Si esto falla con "todos los
 		// intents soportados" en las 4 pasarelas, falta el .filter(isSupported) al derivar.
 		for (const [gateway, esperado] of Object.entries(EXPECTED_SUPPORTED_COUNTS)) {
-			expect(SUPPORTED_INTENTS_BY_GATEWAY[gateway as GatewayName], `intents soportados de ${gateway}`).toHaveLength(esperado);
+			expect(
+				SUPPORTED_INTENTS_BY_GATEWAY[gateway as GatewayName],
+				`intents soportados de ${gateway}`
+			).toHaveLength(esperado);
 		}
 
 		// 3DS sigue siendo exclusivo de Stripe.
 		expect(SUPPORTED_INTENTS_BY_GATEWAY.stripe).toContain('HAPPY_AUTH');
 		for (const gateway of ['authorize', 'ebizcharge', 'mercado-pago'] as GatewayName[]) {
-			expect(SUPPORTED_INTENTS_BY_GATEWAY[gateway], `${gateway} no debe soportar 3DS`).not.toContain('HAPPY_AUTH');
+			expect(SUPPORTED_INTENTS_BY_GATEWAY[gateway], `${gateway} no debe soportar 3DS`).not.toContain(
+				'HAPPY_AUTH'
+			);
 		}
 	});
 
@@ -85,7 +99,9 @@ test.describe('[unit] Adapters — consistencia declarativa cross-gateway @gatew
 		}
 
 		// resolveCard mantiene el contrato histórico: lanza para un intent no soportado.
-		expect(() => resolveCard({ gateway: 'ebizcharge', intent: 'HAPPY_AUTH' })).toThrow(/no soportado por gateway 'ebizcharge'/);
+		expect(() => resolveCard({ gateway: 'ebizcharge', intent: 'HAPPY_AUTH' })).toThrow(
+			/no soportado por gateway 'ebizcharge'/
+		);
 	});
 
 	test('@unit el vocabulario de intents cubre los 4 gateways sin huecos declarativos', () => {
@@ -106,7 +122,9 @@ test.describe('[unit] Adapters — consistencia declarativa cross-gateway @gatew
 
 		// eBizCharge es la pasarela con más outcomes de negocio expresables: su doc publica
 		// 14 códigos de decline + antifraude + referral + latencia.
-		expect(SUPPORTED_INTENTS_BY_GATEWAY.ebizcharge.length).toBeGreaterThan(SUPPORTED_INTENTS_BY_GATEWAY.stripe.length);
+		expect(SUPPORTED_INTENTS_BY_GATEWAY.ebizcharge.length).toBeGreaterThan(
+			SUPPORTED_INTENTS_BY_GATEWAY.stripe.length
+		);
 	});
 
 	test('@unit el oráculo de sistema distingue lo verificado en vivo de lo documentado', () => {
@@ -130,7 +148,10 @@ test.describe('[unit] Adapters — consistencia declarativa cross-gateway @gatew
 			const outcome = outcomeFor(intent);
 			expect(outcome.evidence.length, `${intent} sin evidencia`).toBeGreaterThan(20);
 			if (outcome.basis === 'documented-class') {
-				expect(outcome.messagePattern, `${intent}: el copy no está verificado, no se puede assertar texto`).toBeUndefined();
+				expect(
+					outcome.messagePattern,
+					`${intent}: el copy no está verificado, no se puede assertar texto`
+				).toBeUndefined();
 			}
 		}
 

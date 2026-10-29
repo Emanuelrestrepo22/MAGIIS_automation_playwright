@@ -86,7 +86,11 @@ import type { CardIntent, GatewayName } from '@fixtures/gateways/_shared';
 import type { GatewayHoldCase, XrayIssueKey } from '@features/gateway-pg/data/xray-keys';
 import type { GatewayPgAdapter } from '@features/gateway-pg/helpers/adapters/types';
 import type { GatewayJourneyDefaults } from '@features/gateway-pg/data/journey-defaults';
-import type { StepwiseDispatch, StepwisePickupSchedule, StepwisePreludeCard } from '@features/gateway-pg/helpers/stepwise-hold-journey';
+import type {
+	StepwiseDispatch,
+	StepwisePickupSchedule,
+	StepwisePreludeCard
+} from '@features/gateway-pg/helpers/stepwise-hold-journey';
 
 import { test } from '@TestFixture';
 import { SUPPORTED_INTENTS_BY_GATEWAY } from '@fixtures/gateways/_shared';
@@ -142,32 +146,157 @@ type HoldCaseSpec = {
  * §4.1/§4.2 (empresa); ebizcharge TC1058..1070; stripe §5.1/§4.1/§6.1.
  */
 const HOLD_CASE_SPECS: Record<GatewayHoldCase, HoldCaseSpec> = {
-	personalHappyHoldOn: { actor: 'personal', intent: 'HAPPY_NO_AUTH', holdAxis: 'on', cardFlow: 'new', label: 'usuario personal · tarjeta nueva aprobada · Hold ON' },
-	personalHappyHoldOff: { actor: 'personal', intent: 'HAPPY_NO_AUTH', holdAxis: 'off', cardFlow: 'new', label: 'usuario personal · tarjeta nueva aprobada · Hold OFF' },
-	personalDeclineHoldOn: { actor: 'personal', intent: 'DECLINE_AUTHORIZE', holdAxis: 'on', cardFlow: 'new', label: 'usuario personal · tarjeta declinada · Hold ON' },
-	personalDeclineHoldOff: { actor: 'personal', intent: 'DECLINE_AUTHORIZE', holdAxis: 'off', cardFlow: 'new', label: 'usuario personal · tarjeta declinada · Hold OFF' },
-	personalAvsNoMatch: { actor: 'personal', intent: 'DECLINE_ZIP_MISMATCH', holdAxis: 'on', cardFlow: 'new', label: 'usuario personal · ZIP que no coincide (AVS no match) · Hold ON' },
-	colaboradorHappyNewHoldOn: { actor: 'colaborador', intent: 'HAPPY_NO_AUTH', holdAxis: 'on', cardFlow: 'new', label: 'colaborador de contractor · tarjeta nueva aprobada · Hold ON' },
-	colaboradorHappyExistingHoldOn: { actor: 'colaborador', intent: 'HAPPY_NO_AUTH', holdAxis: 'on', cardFlow: 'existing', label: 'colaborador de contractor · tarjeta vinculada existente · Hold ON' },
-	colaboradorHappyNewHoldOff: { actor: 'colaborador', intent: 'HAPPY_NO_AUTH', holdAxis: 'off', cardFlow: 'new', label: 'colaborador de contractor · tarjeta nueva aprobada · Hold OFF' },
-	colaboradorHappyExistingHoldOff: { actor: 'colaborador', intent: 'HAPPY_NO_AUTH', holdAxis: 'off', cardFlow: 'existing', label: 'colaborador de contractor · tarjeta vinculada existente · Hold OFF' },
-	empresaHappyNewHoldOn: { actor: 'empresa', intent: 'HAPPY_NO_AUTH', holdAxis: 'on', cardFlow: 'new', label: 'empresa individuo · tarjeta nueva aprobada · Hold ON' },
-	empresaHappyExistingHoldOn: { actor: 'empresa', intent: 'HAPPY_NO_AUTH', holdAxis: 'on', cardFlow: 'existing', label: 'empresa individuo · tarjeta vinculada existente · Hold ON' },
-	empresaHappyNewHoldOff: { actor: 'empresa', intent: 'HAPPY_NO_AUTH', holdAxis: 'off', cardFlow: 'new', label: 'empresa individuo · tarjeta nueva aprobada · Hold OFF' },
-	empresaHappyExistingHoldOff: { actor: 'empresa', intent: 'HAPPY_NO_AUTH', holdAxis: 'off', cardFlow: 'existing', label: 'empresa individuo · tarjeta vinculada existente · Hold OFF' },
+	personalHappyHoldOn: {
+		actor: 'personal',
+		intent: 'HAPPY_NO_AUTH',
+		holdAxis: 'on',
+		cardFlow: 'new',
+		label: 'usuario personal · tarjeta nueva aprobada · Hold ON'
+	},
+	personalHappyHoldOff: {
+		actor: 'personal',
+		intent: 'HAPPY_NO_AUTH',
+		holdAxis: 'off',
+		cardFlow: 'new',
+		label: 'usuario personal · tarjeta nueva aprobada · Hold OFF'
+	},
+	personalDeclineHoldOn: {
+		actor: 'personal',
+		intent: 'DECLINE_AUTHORIZE',
+		holdAxis: 'on',
+		cardFlow: 'new',
+		label: 'usuario personal · tarjeta declinada · Hold ON'
+	},
+	personalDeclineHoldOff: {
+		actor: 'personal',
+		intent: 'DECLINE_AUTHORIZE',
+		holdAxis: 'off',
+		cardFlow: 'new',
+		label: 'usuario personal · tarjeta declinada · Hold OFF'
+	},
+	personalAvsNoMatch: {
+		actor: 'personal',
+		intent: 'DECLINE_ZIP_MISMATCH',
+		holdAxis: 'on',
+		cardFlow: 'new',
+		label: 'usuario personal · ZIP que no coincide (AVS no match) · Hold ON'
+	},
+	colaboradorHappyNewHoldOn: {
+		actor: 'colaborador',
+		intent: 'HAPPY_NO_AUTH',
+		holdAxis: 'on',
+		cardFlow: 'new',
+		label: 'colaborador de contractor · tarjeta nueva aprobada · Hold ON'
+	},
+	colaboradorHappyExistingHoldOn: {
+		actor: 'colaborador',
+		intent: 'HAPPY_NO_AUTH',
+		holdAxis: 'on',
+		cardFlow: 'existing',
+		label: 'colaborador de contractor · tarjeta vinculada existente · Hold ON'
+	},
+	colaboradorHappyNewHoldOff: {
+		actor: 'colaborador',
+		intent: 'HAPPY_NO_AUTH',
+		holdAxis: 'off',
+		cardFlow: 'new',
+		label: 'colaborador de contractor · tarjeta nueva aprobada · Hold OFF'
+	},
+	colaboradorHappyExistingHoldOff: {
+		actor: 'colaborador',
+		intent: 'HAPPY_NO_AUTH',
+		holdAxis: 'off',
+		cardFlow: 'existing',
+		label: 'colaborador de contractor · tarjeta vinculada existente · Hold OFF'
+	},
+	empresaHappyNewHoldOn: {
+		actor: 'empresa',
+		intent: 'HAPPY_NO_AUTH',
+		holdAxis: 'on',
+		cardFlow: 'new',
+		label: 'empresa individuo · tarjeta nueva aprobada · Hold ON'
+	},
+	empresaHappyExistingHoldOn: {
+		actor: 'empresa',
+		intent: 'HAPPY_NO_AUTH',
+		holdAxis: 'on',
+		cardFlow: 'existing',
+		label: 'empresa individuo · tarjeta vinculada existente · Hold ON'
+	},
+	empresaHappyNewHoldOff: {
+		actor: 'empresa',
+		intent: 'HAPPY_NO_AUTH',
+		holdAxis: 'off',
+		cardFlow: 'new',
+		label: 'empresa individuo · tarjeta nueva aprobada · Hold OFF'
+	},
+	empresaHappyExistingHoldOff: {
+		actor: 'empresa',
+		intent: 'HAPPY_NO_AUTH',
+		holdAxis: 'off',
+		cardFlow: 'existing',
+		label: 'empresa individuo · tarjeta vinculada existente · Hold OFF'
+	},
 	// La matriz Authorize §4.2 (TC1065) no fija el eje Hold para el decline de empresa.
-	empresaDecline: { actor: 'empresa', intent: 'DECLINE_AUTHORIZE', holdAxis: null, cardFlow: 'new', label: 'empresa individuo · tarjeta declinada' },
+	empresaDecline: {
+		actor: 'empresa',
+		intent: 'DECLINE_AUTHORIZE',
+		holdAxis: null,
+		cardFlow: 'new',
+		label: 'empresa individuo · tarjeta declinada'
+	},
 
 	// ── Ejes agregados el 2026-07-30 desde el E2E exploratorio eBizCharge #2 ──────────────────────
 	// `recorded/ebizcharge-e2e-3actores-hold-onoff-delete-recard-programado.recorded.ts`.
 	// Cada caso aísla UN eje nuevo a propósito: el E2E los combinó (tramo 1 = reemplazo + programado +
 	// asignación manual), pero con varios ejes en un mismo caso un fallo no diría cuál rompió.
-	personalHappyExistingHoldOn: { actor: 'personal', intent: 'HAPPY_NO_AUTH', holdAxis: 'on', cardFlow: 'existing', label: 'usuario personal · tarjeta vinculada existente · Hold ON' },
-	personalHappyExistingHoldOff: { actor: 'personal', intent: 'HAPPY_NO_AUTH', holdAxis: 'off', cardFlow: 'existing', label: 'usuario personal · tarjeta vinculada existente · Hold OFF' },
-	empresaReplaceCardHoldOn: { actor: 'empresa', intent: 'HAPPY_NO_AUTH', holdAxis: 'on', cardFlow: 'new', replaceCard: true, label: 'empresa individuo · eliminar tarjeta vinculada y vincular otra · Hold ON' },
-	empresaReplaceCardHoldOff: { actor: 'empresa', intent: 'HAPPY_NO_AUTH', holdAxis: 'off', cardFlow: 'new', replaceCard: true, label: 'empresa individuo · eliminar tarjeta vinculada y vincular otra · Hold OFF' },
-	empresaScheduledManualHoldOn: { actor: 'empresa', intent: 'HAPPY_NO_AUTH', holdAxis: 'on', cardFlow: 'new', schedule: 'scheduled', dispatch: 'manual', label: 'empresa individuo · viaje PROGRAMADO con asignación manual · Hold ON' },
-	empresaManualAssignHoldOn: { actor: 'empresa', intent: 'HAPPY_NO_AUTH', holdAxis: 'on', cardFlow: 'new', dispatch: 'manual', label: 'empresa individuo · viaje inmediato con asignación MANUAL del conductor · Hold ON' }
+	personalHappyExistingHoldOn: {
+		actor: 'personal',
+		intent: 'HAPPY_NO_AUTH',
+		holdAxis: 'on',
+		cardFlow: 'existing',
+		label: 'usuario personal · tarjeta vinculada existente · Hold ON'
+	},
+	personalHappyExistingHoldOff: {
+		actor: 'personal',
+		intent: 'HAPPY_NO_AUTH',
+		holdAxis: 'off',
+		cardFlow: 'existing',
+		label: 'usuario personal · tarjeta vinculada existente · Hold OFF'
+	},
+	empresaReplaceCardHoldOn: {
+		actor: 'empresa',
+		intent: 'HAPPY_NO_AUTH',
+		holdAxis: 'on',
+		cardFlow: 'new',
+		replaceCard: true,
+		label: 'empresa individuo · eliminar tarjeta vinculada y vincular otra · Hold ON'
+	},
+	empresaReplaceCardHoldOff: {
+		actor: 'empresa',
+		intent: 'HAPPY_NO_AUTH',
+		holdAxis: 'off',
+		cardFlow: 'new',
+		replaceCard: true,
+		label: 'empresa individuo · eliminar tarjeta vinculada y vincular otra · Hold OFF'
+	},
+	empresaScheduledManualHoldOn: {
+		actor: 'empresa',
+		intent: 'HAPPY_NO_AUTH',
+		holdAxis: 'on',
+		cardFlow: 'new',
+		schedule: 'scheduled',
+		dispatch: 'manual',
+		label: 'empresa individuo · viaje PROGRAMADO con asignación manual · Hold ON'
+	},
+	empresaManualAssignHoldOn: {
+		actor: 'empresa',
+		intent: 'HAPPY_NO_AUTH',
+		holdAxis: 'on',
+		cardFlow: 'new',
+		dispatch: 'manual',
+		label: 'empresa individuo · viaje inmediato con asignación MANUAL del conductor · Hold ON'
+	}
 };
 
 /** Los 14 casos HOLD en orden canónico de taxonomía. */
@@ -177,7 +306,9 @@ export const HOLD_ALL_CASES: GatewayHoldCase[] = Object.keys(HOLD_CASE_SPECS) as
  * Los casos que el motor `runStepwiseHoldJourney` ejercita DE VERDAD: hoy todos menos el que
  * carece de oráculo verificado (decline + Hold OFF). Ver el docblock del módulo.
  */
-export const HOLD_BASE_CASES: GatewayHoldCase[] = HOLD_ALL_CASES.filter(holdCase => unsupportedReason(HOLD_CASE_SPECS[holdCase]) === null);
+export const HOLD_BASE_CASES: GatewayHoldCase[] = HOLD_ALL_CASES.filter(
+	holdCase => unsupportedReason(HOLD_CASE_SPECS[holdCase]) === null
+);
 
 /**
  * Motivo por el que el caso NO se puede ejercitar honestamente, o `null` si es ejecutable.
@@ -190,7 +321,14 @@ function unsupportedReason(spec: HoldCaseSpec): { tag: string; detail: string } 
 	if (spec.intent !== 'HAPPY_NO_AUTH' && spec.holdAxis === 'off') {
 		return {
 			tag: 'oráculo decline+HoldOFF no verificado',
-			detail: 'el desenlace esperado de un decline con Hold OFF está declarado NO VERIFICADO ' + '(ver `JourneyOutcome.card-rejected` en `helpers/journey-outcome.ts`): `OUTCOME_BY_INTENT` mapea ' + 'DECLINE_AUTHORIZE a `card-rejected`, pero ese desenlace DEPENDE del hold ACTIVO — con el hold ' + 'apagado la vinculación podría no disparar transacción y el rechazo se movería al alta del viaje ' + '(`trip-unauthorized`) o no ocurrir. El motor SÍ sabe apagar el toggle (`holdMode: "off"`); lo que ' + 'falta es OBSERVAR una corrida real y recién ahí mapear el outcome. Sin oráculo confirmado no hay ' + 'assertion honesta que escribir.'
+			detail:
+				'el desenlace esperado de un decline con Hold OFF está declarado NO VERIFICADO ' +
+				'(ver `JourneyOutcome.card-rejected` en `helpers/journey-outcome.ts`): `OUTCOME_BY_INTENT` mapea ' +
+				'DECLINE_AUTHORIZE a `card-rejected`, pero ese desenlace DEPENDE del hold ACTIVO — con el hold ' +
+				'apagado la vinculación podría no disparar transacción y el rechazo se movería al alta del viaje ' +
+				'(`trip-unauthorized`) o no ocurrir. El motor SÍ sabe apagar el toggle (`holdMode: "off"`); lo que ' +
+				'falta es OBSERVAR una corrida real y recién ahí mapear el outcome. Sin oráculo confirmado no hay ' +
+				'assertion honesta que escribir.'
 		};
 	}
 
@@ -293,7 +431,11 @@ export function defineHoldSuite(gateway: GatewayName, options: HoldSuiteOptions 
 	const cases = options.cases ?? HOLD_ALL_CASES;
 
 	if (adapter.cardForm !== 'native-angular') {
-		throw new Error(`defineHoldSuite('${gateway}'): el motor \`runStepwiseHoldJourney\` sólo soporta pasarelas de form ` + `NATIVO Angular y '${gateway}' usa '${adapter.cardForm}'. Stripe tiene su propio flujo de hold ` + '(Elements + fillMinimum/selectCardByLast4) en `specs/stripe/web/carrier/hold/`.');
+		throw new Error(
+			`defineHoldSuite('${gateway}'): el motor \`runStepwiseHoldJourney\` sólo soporta pasarelas de form ` +
+				`NATIVO Angular y '${gateway}' usa '${adapter.cardForm}'. Stripe tiene su propio flujo de hold ` +
+				'(Elements + fillMinimum/selectCardByLast4) en `specs/stripe/web/carrier/hold/`.'
+		);
 	}
 
 	// Filtro por intents que la pasarela SÍ expone: `resolveCard` LANZA para los que no
@@ -302,7 +444,10 @@ export function defineHoldSuite(gateway: GatewayName, options: HoldSuiteOptions 
 	const generated = cases.filter(holdCase => supportedIntents.includes(HOLD_CASE_SPECS[holdCase].intent));
 	const droppedByIntent = cases.filter(holdCase => !generated.includes(holdCase));
 	if (droppedByIntent.length > 0) {
-		debugLog('gateway-pg:hold-factory', `[${gateway}] casos NO generados por intent no soportado: ${droppedByIntent.map(c => `${c} (${HOLD_CASE_SPECS[c].intent})`).join(', ')}`);
+		debugLog(
+			'gateway-pg:hold-factory',
+			`[${gateway}] casos NO generados por intent no soportado: ${droppedByIntent.map(c => `${c} (${HOLD_CASE_SPECS[c].intent})`).join(', ')}`
+		);
 	}
 
 	// Tag de pasarela SIN guiones (S9): 'mercado-pago' → '@mercadopago'.
@@ -315,7 +460,10 @@ export function defineHoldSuite(gateway: GatewayName, options: HoldSuiteOptions 
 		// El fixture KATA (@TestFixture) no define la opción `role` — el login es explícito.
 		test.use({ storageState: { cookies: [], origins: [] } });
 
-		test.skip(!adapter.isConfigured(), `Requiere ${adapter.credsEnvKeys.join(' + ')} en .env.test (gate del adapter ${gateway}).`);
+		test.skip(
+			!adapter.isConfigured(),
+			`Requiere ${adapter.credsEnvKeys.join(' + ')} en .env.test (gate del adapter ${gateway}).`
+		);
 
 		// Guard de IDENTIDAD de pasarela (DB): la suite mide dinero contra la pasarela ACTIVA del
 		// carrier, y el form de tarjeta es agnóstico — sin esto, correr la suite de eBiz con
@@ -338,8 +486,11 @@ export function defineHoldSuite(gateway: GatewayName, options: HoldSuiteOptions 
 			// caso es un PLACEHOLDER trazable y no cobertura ejecutada.
 			// El marcador de gate destructivo va en el TÍTULO (no sólo en el motivo del skip) para que
 			// `--list` y el reporte muestren POR QUÉ un caso Hold OFF no corrió, sin abrir el trace.
-			const destructiveHint = !blocked && spec.holdAxis === 'off' ? ' [requiere GATEWAY_ALLOW_DESTRUCTIVE_SWITCH]' : '';
-			const title = `${tcId ? `[${tcId}] ` : ''}${outcomeTag(spec.intent)} Validar alta de viaje ${adapter.displayName} · ${spec.label} ${outcomeHint(spec.intent)}` + (blocked ? ` [FIXME: ${blocked.tag}]` : destructiveHint);
+			const destructiveHint =
+				!blocked && spec.holdAxis === 'off' ? ' [requiere GATEWAY_ALLOW_DESTRUCTIVE_SWITCH]' : '';
+			const title =
+				`${tcId ? `[${tcId}] ` : ''}${outcomeTag(spec.intent)} Validar alta de viaje ${adapter.displayName} · ${spec.label} ${outcomeHint(spec.intent)}` +
+				(blocked ? ` [FIXME: ${blocked.tag}]` : destructiveHint);
 
 			if (blocked) {
 				// `fixme` = el caso EXISTE en la matriz y queda trazable por su TC ID, pero no se

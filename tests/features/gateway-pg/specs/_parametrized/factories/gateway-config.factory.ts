@@ -6,9 +6,9 @@
  * los tests CFG (matriz TC1001..TC1008) para cualquier pasarela, gobernada por su adapter
  * declarativo (`helpers/adapters`) y el registry Xray local (`data/xray-keys.ts`).
  * Los consumidores por pasarela quedan THIN (1 llamada):
- *   - `specs/authorize/web/carrier/config/authorize-link-unlink.spec.ts` (5 casos base).
- *   - `specs/stripe/config/gateway-config.spec.ts` (casos genéricos + fixme OAuth en el consumidor).
- *   - `specs/ebizcharge/web/carrier/config/ebizcharge-link-unlink.spec.ts` (5 casos base).
+ *   - `specs/authorize/web/carrier/config/authorize-link-unlink.spec.ts` (8 casos).
+ *   - `specs/stripe/config/gateway-config.spec.ts` (8 casos — driver OAuth Connect, F5).
+ *   - `specs/ebizcharge/web/carrier/config/ebizcharge-link-unlink.spec.ts` (8 casos).
  *
  * REGLAS load-bearing (trazabilidad emit-all del xray-reporter):
  *   1. Annotation `{type:'tms',description:<MG-key>}` POR TEST, resuelta del registry
@@ -24,13 +24,13 @@
  *      `AppStoreGatewaysPage` + el Step `GatewaySwitchSteps`.
  *
  * Capacidades por pasarela:
- *   - Casos que requieren LINK PROGRAMÁTICO (linkValid/linkInvalid/linkStatus) solo se
- *     generan para pasarelas con modal de credenciales modelado (authorize, ebizcharge).
- *     Pedirlos para stripe/mercado-pago lanza en tiempo de definición (error de consumo,
- *     no de runtime) — el consumidor stripe los mantiene `fixme` con nota (OAuth Connect).
+ *   - Casos que requieren LINK PROGRAMÁTICO (linkValid/linkInvalid/linkStatus) se generan
+ *     para pasarelas con driver de link: modal de credenciales modelado (authorize,
+ *     ebizcharge) u OAuth Connect test-mode (stripe, F5). Pedirlos para mercado-pago lanza
+ *     en tiempo de definición (error de consumo, no de runtime).
  *   - Casos que requieren la pasarela ACTIVA (cancelUnlink/unlink/exclusivity/
  *     reloadPersistence): con driver de link usan `ensureActiveGateway` (idempotente);
- *     sin driver (stripe) skipean limpio si la pasarela no está vinculada ya.
+ *     sin driver (mercado-pago) skipean limpio si la pasarela no está vinculada ya.
  *
  * Login: `loginAsDispatcher(page)` default — la suite CFG opera sobre el carrier 1521
  * compartido (App Store único para las 4 pasarelas), igual que el spec Authorize F4.
@@ -53,7 +53,13 @@ import { gatewayTag } from '@features/gateway-pg/helpers/adapters/gateway-tag';
 import { loginAsDispatcher } from '@features/gateway-pg/fixtures/gateway.fixtures';
 
 /** Los 5 casos base de la suite CFG (los del spec Authorize F4 — cobertura de referencia). */
-export const GATEWAY_CFG_BASE_CASES: GatewayCfgCase[] = ['linkValid', 'linkInvalid', 'unlink', 'exclusivity', 'linkStatus'];
+export const GATEWAY_CFG_BASE_CASES: GatewayCfgCase[] = [
+	'linkValid',
+	'linkInvalid',
+	'unlink',
+	'exclusivity',
+	'linkStatus'
+];
 
 /** Los 8 casos CFG en orden canónico de matriz (TC1001..TC1008). */
 export const GATEWAY_CFG_ALL_CASES: GatewayCfgCase[] = [
@@ -127,8 +133,20 @@ const LINK_DRIVERS: Partial<Record<GatewayName, GatewayLinkDriver>> = {
 				successStatuses: adapter.linkSuccessStatuses,
 				urlPattern: adapter.linkMutationUrlPattern
 			})
+	},
+	stripe: {
+		// OAuth Connect test-mode (F5) — SIN credenciales de env: el consent se completa con
+		// el auto-fill test-mode de Stripe. `linkInvalid` = ABANDONO del consent (Stripe no
+		// tiene credenciales que rechazar) — MVP honesto del AC, ver docstring MG-213 del POM.
+		linkValid: appStore => appStore.linkStripeViaConnect(),
+		linkInvalid: appStore => appStore.expectStripeLinkRejected(),
+		linkStatusOk: (appStore, adapter) =>
+			appStore.expectStripeLinkStatusOk({
+				successStatuses: adapter.linkSuccessStatuses,
+				urlPattern: adapter.linkMutationUrlPattern
+			})
 	}
-	// stripe: OAuth Connect (sin modal de creds) — TODO F5. mercado-pago: modal sin modelar.
+	// mercado-pago: modal sin modelar — sin driver de link aún.
 };
 
 /** Título humano por caso (sin TC ID ni tags — se componen en `defineGatewayConfigSuite`). */
@@ -159,10 +177,14 @@ function caseTitle(cfgCase: GatewayCfgCase, adapter: GatewayPgAdapter): string {
 
 /**
  * Precondición "pasarela activa": con driver de link delega en el switch idempotente;
- * sin driver (stripe/mp) NO puede vincular programáticamente → skip limpio si la
+ * sin driver (mercado-pago) NO puede vincular programáticamente → skip limpio si la
  * pasarela no está ya vinculada (en vez del throw de `ensureActiveGateway`).
  */
-async function ensureActiveGatewayOrSkip(switcher: GatewaySwitchSteps, gateway: GatewayName, hasDriver: boolean): Promise<void> {
+async function ensureActiveGatewayOrSkip(
+	switcher: GatewaySwitchSteps,
+	gateway: GatewayName,
+	hasDriver: boolean
+): Promise<void> {
 	if (hasDriver) {
 		await switcher.ensureActiveGateway(gateway);
 		return;
@@ -188,8 +210,8 @@ export function defineGatewayConfigSuite(gateway: GatewayName, options: GatewayC
 	if (unsupported.length > 0) {
 		throw new Error(
 			`defineGatewayConfigSuite('${gateway}'): los casos [${unsupported.join(', ')}] requieren link programático ` +
-				`y '${gateway}' no tiene modal de credenciales modelado (drivers: ${Object.keys(LINK_DRIVERS).join(', ')}). ` +
-				'Mantenerlos fixme en el consumidor con nota (ver consumidor stripe).'
+				`y '${gateway}' no tiene driver de link (drivers: ${Object.keys(LINK_DRIVERS).join(', ')}). ` +
+				'Mantenerlos fixme en el consumidor con nota hasta modelar el driver.'
 		);
 	}
 
@@ -200,7 +222,10 @@ export function defineGatewayConfigSuite(gateway: GatewayName, options: GatewayC
 		// El fixture KATA no define la opción `role` — login explícito vía loginAsDispatcher.
 		test.use({ storageState: { cookies: [], origins: [] } });
 
-		test.skip(!adapter.isConfigured(), `Requiere ${adapter.credsEnvKeys.join(' + ')} en .env.test (gate del adapter ${gateway}).`);
+		test.skip(
+			!adapter.isConfigured(),
+			`Requiere ${adapter.credsEnvKeys.join(' + ')} en .env.test (gate del adapter ${gateway}).`
+		);
 		test.skip(
 			!isGatewayDestructiveSwitchAllowed(),
 			'Suite CFG DESTRUCTIVA (link/unlink de la pasarela activa del carrier 1521 → cleaningWallets en cascada): ' +
@@ -229,27 +254,37 @@ export function defineGatewayConfigSuite(gateway: GatewayName, options: GatewayC
 							await switcher.ensureGatewayLinkable(gateway);
 						});
 						await test.step(`Then: la card ${gateway} es visible y vinculable`, async () => {
-							expect(await appStore.readState(gateway), `${gateway} debe mostrarse vinculable (no vinculada)`).toBe('linkable');
+							expect(
+								await appStore.readState(gateway),
+								`${gateway} debe mostrarse vinculable (no vinculada)`
+							).toBe('linkable');
 						});
 						break;
 					}
 					case 'linkValid': {
 						await test.step('Given: slot de pasarela libre', async () => {
 							await switcher.ensureGatewayLinkable(gateway);
-							expect(await appStore.readState(gateway), `${gateway} debe quedar vinculable tras liberar el slot`).toBe('linkable');
+							expect(
+								await appStore.readState(gateway),
+								`${gateway} debe quedar vinculable tras liberar el slot`
+							).toBe('linkable');
 						});
 						await test.step('When: vinculo con credenciales válidas', async () => {
 							await driver!.linkValid(appStore);
 						});
 						await test.step('Then: la card queda en estado vinculado', async () => {
-							expect(await appStore.readState(gateway), `${gateway} debe quedar vinculada`).toBe('linked');
+							expect(await appStore.readState(gateway), `${gateway} debe quedar vinculada`).toBe(
+								'linked'
+							);
 						});
 						break;
 					}
 					case 'linkInvalid': {
 						await test.step('Given: slot de pasarela libre', async () => {
 							await switcher.ensureGatewayLinkable(gateway);
-							expect(await appStore.readState(gateway), `${gateway} debe estar vinculable`).toBe('linkable');
+							expect(await appStore.readState(gateway), `${gateway} debe estar vinculable`).toBe(
+								'linkable'
+							);
 						});
 						await test.step('When/Then: intento vincular con credenciales inválidas → rechazo controlado, gateway inactivo', async () => {
 							await driver!.linkInvalid(appStore);
@@ -271,7 +306,10 @@ export function defineGatewayConfigSuite(gateway: GatewayName, options: GatewayC
 							// Pre-assert de precondición (restaurado del spec original 640eadf, perdido
 							// en la parametrización S6): el unlink solo prueba algo si la pasarela
 							// estaba REALMENTE vinculada antes de desvincular.
-							expect(await appStore.readState(gateway), `${gateway} debe estar vinculada antes del unlink (precondición explícita)`).toBe('linked');
+							expect(
+								await appStore.readState(gateway),
+								`${gateway} debe estar vinculada antes del unlink (precondición explícita)`
+							).toBe('linked');
 						});
 						// TODO(F4+/Fase 6): verificar en Alta de Viaje que "Tarjeta Preautorizada" ya NO
 						// se ofrece tras el unlink — mitad del AC de matriz TC1005 sin oráculo aún.
@@ -279,7 +317,10 @@ export function defineGatewayConfigSuite(gateway: GatewayName, options: GatewayC
 							await appStore.unlinkGateway(gateway);
 						});
 						await test.step('Then: la card queda vinculable', async () => {
-							expect(await appStore.readState(gateway), `${gateway} debe quedar vinculable tras desvincular`).toBe('linkable');
+							expect(
+								await appStore.readState(gateway),
+								`${gateway} debe quedar vinculable tras desvincular`
+							).toBe('linkable');
 						});
 						break;
 					}
@@ -295,20 +336,28 @@ export function defineGatewayConfigSuite(gateway: GatewayName, options: GatewayC
 					case 'reloadPersistence': {
 						await test.step(`Given: ${gateway} vinculada`, async () => {
 							await ensureActiveGatewayOrSkip(switcher, gateway, Boolean(driver));
-							expect(await appStore.readState(gateway), `${gateway} debe estar vinculada antes del reload`).toBe('linked');
+							expect(
+								await appStore.readState(gateway),
+								`${gateway} debe estar vinculada antes del reload`
+							).toBe('linked');
 						});
 						await test.step('When: recargo el App Store', async () => {
 							await appStore.reload();
 						});
 						await test.step('Then: el estado vinculado persiste tras el reload', async () => {
-							expect(await appStore.readState(gateway), `${gateway} debe seguir vinculada tras recargar`).toBe('linked');
+							expect(
+								await appStore.readState(gateway),
+								`${gateway} debe seguir vinculada tras recargar`
+							).toBe('linked');
 						});
 						break;
 					}
 					case 'linkStatus': {
 						await test.step('Given: slot de pasarela libre', async () => {
 							await switcher.ensureGatewayLinkable(gateway);
-							expect(await appStore.readState(gateway), `${gateway} debe estar vinculable`).toBe('linkable');
+							expect(await appStore.readState(gateway), `${gateway} debe estar vinculable`).toBe(
+								'linkable'
+							);
 						});
 						await test.step('When/Then: la request de vinculación retorna un status de éxito conocido', async () => {
 							await driver!.linkStatusOk(appStore, adapter);
@@ -323,7 +372,10 @@ export function defineGatewayConfigSuite(gateway: GatewayName, options: GatewayC
 							// de confirmar backend); la persistencia DURABLE la cubre el caso `reloadPersistence`
 							// (readState pre y post reload) — decisión registrada, sin código extra acá.
 							await expect(async () => {
-								expect(await appStore.readState(gateway), `${gateway} debe quedar vinculada tras el link (status OK sin efecto persistido = fallo)`).toBe('linked');
+								expect(
+									await appStore.readState(gateway),
+									`${gateway} debe quedar vinculada tras el link (status OK sin efecto persistido = fallo)`
+								).toBe('linked');
 							}).toPass({ timeout: 20_000 });
 						});
 						break;

@@ -57,130 +57,194 @@ function toCardDetail(card: MercadoPagoTestCard): MercadopagoCardDetail {
 	};
 }
 
-test.describe(`[MG · C/H/MPX][API] ${mercadoPagoGatewayAdapter.displayName} — ciclo de tarjeta @regression @gateway @gateway-pg @mercadopago`, {
-	// MG-150 y MG-172 salieron: acá el alta es el HAPPY (no un PSP degradado, que es MG-150) y no se
-	// crea ni recrea ningún pax (que es MG-172). MG-489 entra por el caso de rechazo por código.
-	annotation: [
-		{ type: 'tms', description: 'MG-148' },
-		{ type: 'tms', description: 'MG-149' },
-		{ type: 'tms', description: 'MG-489' },
-		{ type: 'tms', description: 'MG-194' },
-		{ type: 'tms', description: 'MG-195' }
-	]
-}, () => {
-	test.skip(!CREDS_READY, 'Faltan USER_CARRIER / PASS_CARRIER / BASE_URL (carrier ARG) — configurar .env.test');
-	test.skip(
-		!MP_UAT_EXEC,
-		'MercadoPago no transacciona en el entorno TEST — la tokenización real exige el SDK MP + sandbox vivo. ' +
-			'Ejecución real diferida a UAT: setear MP_SANDBOX_TRANSACTS=1 + MP_PASSENGER_ID / MP_APP_ID / MP_ISSUER_ID.'
-	);
+test.describe(
+	`[MG · C/H/MPX][API] ${mercadoPagoGatewayAdapter.displayName} — ciclo de tarjeta @regression @gateway @gateway-pg @mercadopago`,
+	{
+		// MG-150 y MG-172 salieron: acá el alta es el HAPPY (no un PSP degradado, que es MG-150) y no se
+		// crea ni recrea ningún pax (que es MG-172). MG-489 entra por el caso de rechazo por código.
+		annotation: [
+			{ type: 'tms', description: 'MG-148' },
+			{ type: 'tms', description: 'MG-149' },
+			{ type: 'tms', description: 'MG-489' },
+			{ type: 'tms', description: 'MG-194' },
+			{ type: 'tms', description: 'MG-195' }
+		]
+	},
+	() => {
+		test.skip(!CREDS_READY, 'Faltan USER_CARRIER / PASS_CARRIER / BASE_URL (carrier ARG) — configurar .env.test');
+		test.skip(
+			!MP_UAT_EXEC,
+			'MercadoPago no transacciona en el entorno TEST — la tokenización real exige el SDK MP + sandbox vivo. ' +
+				'Ejecución real diferida a UAT: setear MP_SANDBOX_TRANSACTS=1 + MP_PASSENGER_ID / MP_APP_ID / MP_ISSUER_ID.'
+		);
 
-	let authToken: string;
+		let authToken: string;
 
-	test.beforeAll(async ({ browser }) => {
-		if (!CREDS_READY || !MP_UAT_EXEC) return;
-		const context = await browser.newContext();
-		const page = await context.newPage();
-		try {
-			const login = new LoginPage(page, 'carrier');
-			await login.goto();
-			await login.login(process.env.USER_CARRIER as string, process.env.PASS_CARRIER as string);
-			await page.waitForURL(/dashboard/, { timeout: 30_000 });
-			let token: string | null = null;
-			for (let attempt = 0; attempt < 3 && !token; attempt++) {
-				token = await extractAuthToken(page);
+		test.beforeAll(async ({ browser }) => {
+			if (!CREDS_READY || !MP_UAT_EXEC) return;
+			const context = await browser.newContext();
+			const page = await context.newPage();
+			try {
+				const login = new LoginPage(page, 'carrier');
+				await login.goto();
+				await login.login(process.env.USER_CARRIER as string, process.env.PASS_CARRIER as string);
+				await page.waitForURL(/dashboard/, { timeout: 30_000 });
+				let token: string | null = null;
+				for (let attempt = 0; attempt < 3 && !token; attempt++) {
+					token = await extractAuthToken(page);
+				}
+				expect(token, 'no se pudo extraer el JWT del SPA tras el login').toBeTruthy();
+				authToken = token as string;
+			} finally {
+				await context.close();
 			}
-			expect(token, 'no se pudo extraer el JWT del SPA tras el login').toBeTruthy();
-			authToken = token as string;
-		} finally {
-			await context.close();
-		}
-	});
-
-	// C-01 — happy: tokeniza APRO → addCard → tarjeta persistida. Cubre MG-148 completo (sus Steps 3
-	// y 4 son justamente tokenizar client-side y persistir).
-	// MG-150 removido: era una key cruzada. MG-150 (C-03) valida "el alta falla de forma CONTROLADA
-	// cuando el PSP está degradado" — un addCard con 200 acredita lo OPUESTO a ese Test.
-	test('[C-01] getCardToken (APRO) → token + addCard → 200', {
-		annotation: [{ type: 'tms', description: 'MG-148' }]
-	}, async ({ request }) => {
-		test.skip(!MP_APP_ID || !PASSENGER_ID, 'Faltan MP_APP_ID / MP_PASSENGER_ID (datos de UAT) [confirmar].');
-		const api = new CardApi({ request });
-		const card = resolveCard('APPROVED'); // holderName APRO = trigger approved
-
-		const tokenRes = await api.getCardToken({ card: toCardDetail(card), mercadopagoAppId: MP_APP_ID, authToken });
-		expect(tokenRes.ok, `getCardToken esperado 2xx, status=${tokenRes.status} body=${tokenRes.raw}`).toBe(true);
-		const token = (tokenRes.body as { id?: string } | null)?.id;
-		expect(token, 'getCardToken debe devolver un card token (id)').toBeTruthy();
-
-		const addRes = await api.addCard({
-			user: PASSENGER_ID,
-			token: token as string,
-			mercadopagoAppId: MP_APP_ID,
-			issuerId: MP_ISSUER_ID,
-			cardDetail: toCardDetail(card),
-			carrierId: CARRIER_ACCOUNT_ID,
-			authToken
 		});
-		expect(addRes.ok, `addCard esperado 2xx, status=${addRes.status} body=${addRes.raw}`).toBe(true);
-	});
 
-	// Negativo de contrato: keyword SECU (CVV inválido) → tokenización/alta rechazada.
-	// MG-489 (F-06, "catálogo de declines/antifraude por código"), no MG-149: un rechazo por security
-	// code es una entrada de ese catálogo. MG-149 (C-02) es "el listado sin wallet no rompe y muestra
-	// vacío" — no tiene relación con tokenizar, y su spec real es `[H-01]` de más abajo.
-	test('[C-03] getCardToken (SECU) → rechazo por security code inválido', {
-		annotation: [{ type: 'tms', description: 'MG-489' }]
-	}, async ({ request }) => {
-		test.skip(!MP_APP_ID, 'Falta MP_APP_ID (dato de UAT) [confirmar].');
-		const card = resolveCard('REJECTED_INVALID_CVV'); // holderName SECU
-		const res = await new CardApi({ request }).getCardToken({ card: toCardDetail(card), mercadopagoAppId: MP_APP_ID, authToken });
-		// El rechazo puede llegar como 4xx (token) o como statusDetail del sandbox — se asierta la no-aprobación.
-		expect(res.ok, `SECU no debe producir un token aprobado (status=${res.status} body=${res.raw})`).toBe(false);
-	});
+		// C-01 — happy: tokeniza APRO → addCard → tarjeta persistida. Cubre MG-148 completo (sus Steps 3
+		// y 4 son justamente tokenizar client-side y persistir).
+		// MG-150 removido: era una key cruzada. MG-150 (C-03) valida "el alta falla de forma CONTROLADA
+		// cuando el PSP está degradado" — un addCard con 200 acredita lo OPUESTO a ese Test.
+		test(
+			'[C-01] getCardToken (APRO) → token + addCard → 200',
+			{
+				annotation: [{ type: 'tms', description: 'MG-148' }]
+			},
+			async ({ request }) => {
+				test.skip(
+					!MP_APP_ID || !PASSENGER_ID,
+					'Faltan MP_APP_ID / MP_PASSENGER_ID (datos de UAT) [confirmar].'
+				);
+				const api = new CardApi({ request });
+				const card = resolveCard('APPROVED'); // holderName APRO = trigger approved
 
-	// Listado de tarjetas del pax (GET passengers/{id}/allCards).
-	// MG-149 (C-02), no MG-172: el único Step de MG-149 es "Consultar GET
-	// passengers/{passengerId}/allCards" — este endpoint, literal. MG-172 (H-01) es "recrear un pax con
-	// el mismo mail y dar de alta tarjeta sin colisión de wallet", y este spec no crea ningún pax.
-	// El id local se deja en `[H-01]` para no romper greps ni el histórico de corridas.
-	test('[H-01] listAllCards → tarjetas del pax', {
-		annotation: [{ type: 'tms', description: 'MG-149' }]
-	}, async ({ request }) => {
-		test.skip(!PASSENGER_ID || !CARRIER_ACCOUNT_ID, 'Faltan MP_PASSENGER_ID / CARRIER_ID (datos de UAT) [confirmar].');
-		const res = await new CardApi({ request }).listAllCards({ passengerId: PASSENGER_ID, carrierId: CARRIER_ACCOUNT_ID, authToken });
-		expect(res.ok, `listAllCards esperado 2xx, status=${res.status} body=${res.raw}`).toBe(true);
-		expect(Array.isArray(res.body), 'allCards debe devolver un array de tarjetas').toBe(true);
-	});
+				const tokenRes = await api.getCardToken({
+					card: toCardDetail(card),
+					mercadopagoAppId: MP_APP_ID,
+					authToken
+				});
+				expect(tokenRes.ok, `getCardToken esperado 2xx, status=${tokenRes.status} body=${tokenRes.raw}`).toBe(
+					true
+				);
+				const token = (tokenRes.body as { id?: string } | null)?.id;
+				expect(token, 'getCardToken debe devolver un card token (id)').toBeTruthy();
 
-	// MPX-194 — la validación de tarjeta MP NO dispara challenge 3DS (delta vs Stripe).
-	test('[MPX-194] tokenización MP no dispara challenge 3DS', {
-		annotation: [{ type: 'tms', description: 'MG-194' }]
-	}, async ({ request }) => {
-		test.skip(!MP_APP_ID, 'Falta MP_APP_ID (dato de UAT) [confirmar].');
-		// Contrato de diseño: el adapter MAGIIS declara MP sin 3DS.
-		expect(mercadoPagoGatewayAdapter.requires3ds, 'el adapter MP debe declarar requires3ds=false').toBe(false);
-		// Contrato runtime: la tokenización aprobada no devuelve una URL/token de challenge 3DS.
-		const card = resolveCard('APPROVED');
-		const res = await new CardApi({ request }).getCardToken({ card: toCardDetail(card), mercadopagoAppId: MP_APP_ID, authToken });
-		expect(res.ok, `getCardToken esperado 2xx, status=${res.status}`).toBe(true);
-		expect(res.raw, 'la respuesta no debe incluir un challenge 3DS').not.toMatch(/three_?ds|challenge|acs_url/i);
-	});
+				const addRes = await api.addCard({
+					user: PASSENGER_ID,
+					token: token as string,
+					mercadopagoAppId: MP_APP_ID,
+					issuerId: MP_ISSUER_ID,
+					cardDetail: toCardDetail(card),
+					carrierId: CARRIER_ACCOUNT_ID,
+					authToken
+				});
+				expect(addRes.ok, `addCard esperado 2xx, status=${addRes.status} body=${addRes.raw}`).toBe(true);
+			}
+		);
 
-	// MPX-195 — las tarjetas del pax viven en la cuenta MP, no en UserWallet local (+Oracle).
-	test('[MPX-195] tarjetas del pax en MP + invariancia local (UserWallet) — +Oracle', {
-		annotation: [{ type: 'tms', description: 'MG-195' }]
-	}, async ({ request }) => {
-		test.skip(!PASSENGER_ID || !CARRIER_ACCOUNT_ID, 'Faltan MP_PASSENGER_ID / CARRIER_ID (datos de UAT) [confirmar].');
-		test.skip(!ORACLE, 'Sin conexión Oracle (ORACLE_*_TEST) — la invariancia local es capa DB.');
+		// Negativo de contrato: keyword SECU (CVV inválido) → tokenización/alta rechazada.
+		// MG-489 (F-06, "catálogo de declines/antifraude por código"), no MG-149: un rechazo por security
+		// code es una entrada de ese catálogo. MG-149 (C-02) es "el listado sin wallet no rompe y muestra
+		// vacío" — no tiene relación con tokenizar, y su spec real es `[H-01]` de más abajo.
+		test(
+			'[C-03] getCardToken (SECU) → rechazo por security code inválido',
+			{
+				annotation: [{ type: 'tms', description: 'MG-489' }]
+			},
+			async ({ request }) => {
+				test.skip(!MP_APP_ID, 'Falta MP_APP_ID (dato de UAT) [confirmar].');
+				const card = resolveCard('REJECTED_INVALID_CVV'); // holderName SECU
+				const res = await new CardApi({ request }).getCardToken({
+					card: toCardDetail(card),
+					mercadopagoAppId: MP_APP_ID,
+					authToken
+				});
+				// El rechazo puede llegar como 4xx (token) o como statusDetail del sandbox — se asierta la no-aprobación.
+				expect(res.ok, `SECU no debe producir un token aprobado (status=${res.status} body=${res.raw})`).toBe(
+					false
+				);
+			}
+		);
 
-		// Positivo (API): las tarjetas MP del pax son visibles vía allCards.
-		const res = await new CardApi({ request }).listAllCards({ passengerId: PASSENGER_ID, carrierId: CARRIER_ACCOUNT_ID, authToken });
-		expect(res.ok, `listAllCards esperado 2xx, status=${res.status} body=${res.raw}`).toBe(true);
+		// Listado de tarjetas del pax (GET passengers/{id}/allCards).
+		// MG-149 (C-02), no MG-172: el único Step de MG-149 es "Consultar GET
+		// passengers/{passengerId}/allCards" — este endpoint, literal. MG-172 (H-01) es "recrear un pax con
+		// el mismo mail y dar de alta tarjeta sin colisión de wallet", y este spec no crea ningún pax.
+		// El id local se deja en `[H-01]` para no romper greps ni el histórico de corridas.
+		test(
+			'[H-01] listAllCards → tarjetas del pax',
+			{
+				annotation: [{ type: 'tms', description: 'MG-149' }]
+			},
+			async ({ request }) => {
+				test.skip(
+					!PASSENGER_ID || !CARRIER_ACCOUNT_ID,
+					'Faltan MP_PASSENGER_ID / CARRIER_ID (datos de UAT) [confirmar].'
+				);
+				const res = await new CardApi({ request }).listAllCards({
+					passengerId: PASSENGER_ID,
+					carrierId: CARRIER_ACCOUNT_ID,
+					authToken
+				});
+				expect(res.ok, `listAllCards esperado 2xx, status=${res.status} body=${res.raw}`).toBe(true);
+				expect(Array.isArray(res.body), 'allCards debe devolver un array de tarjetas').toBe(true);
+			}
+		);
 
-		// Delta MP (DB): las tarjetas MP NO se persisten en UserWallet local (viven en la cuenta MP).
-		const localCards = await countCardsByPassenger(ORACLE!, { passengerUserId: PASSENGER_ID });
-		const mpCards = Array.isArray(res.body) ? res.body.length : 0;
-		expect(localCards, `MP: las tarjetas del pax (${mpCards} en MP) no deben materializarse en UserWallet local`).toBe(0);
-	});
-});
+		// MPX-194 — la validación de tarjeta MP NO dispara challenge 3DS (delta vs Stripe).
+		test(
+			'[MPX-194] tokenización MP no dispara challenge 3DS',
+			{
+				annotation: [{ type: 'tms', description: 'MG-194' }]
+			},
+			async ({ request }) => {
+				test.skip(!MP_APP_ID, 'Falta MP_APP_ID (dato de UAT) [confirmar].');
+				// Contrato de diseño: el adapter MAGIIS declara MP sin 3DS.
+				expect(mercadoPagoGatewayAdapter.requires3ds, 'el adapter MP debe declarar requires3ds=false').toBe(
+					false
+				);
+				// Contrato runtime: la tokenización aprobada no devuelve una URL/token de challenge 3DS.
+				const card = resolveCard('APPROVED');
+				const res = await new CardApi({ request }).getCardToken({
+					card: toCardDetail(card),
+					mercadopagoAppId: MP_APP_ID,
+					authToken
+				});
+				expect(res.ok, `getCardToken esperado 2xx, status=${res.status}`).toBe(true);
+				expect(res.raw, 'la respuesta no debe incluir un challenge 3DS').not.toMatch(
+					/three_?ds|challenge|acs_url/i
+				);
+			}
+		);
+
+		// MPX-195 — las tarjetas del pax viven en la cuenta MP, no en UserWallet local (+Oracle).
+		test(
+			'[MPX-195] tarjetas del pax en MP + invariancia local (UserWallet) — +Oracle',
+			{
+				annotation: [{ type: 'tms', description: 'MG-195' }]
+			},
+			async ({ request }) => {
+				test.skip(
+					!PASSENGER_ID || !CARRIER_ACCOUNT_ID,
+					'Faltan MP_PASSENGER_ID / CARRIER_ID (datos de UAT) [confirmar].'
+				);
+				test.skip(!ORACLE, 'Sin conexión Oracle (ORACLE_*_TEST) — la invariancia local es capa DB.');
+
+				// Positivo (API): las tarjetas MP del pax son visibles vía allCards.
+				const res = await new CardApi({ request }).listAllCards({
+					passengerId: PASSENGER_ID,
+					carrierId: CARRIER_ACCOUNT_ID,
+					authToken
+				});
+				expect(res.ok, `listAllCards esperado 2xx, status=${res.status} body=${res.raw}`).toBe(true);
+
+				// Delta MP (DB): las tarjetas MP NO se persisten en UserWallet local (viven en la cuenta MP).
+				const localCards = await countCardsByPassenger(ORACLE!, { passengerUserId: PASSENGER_ID });
+				const mpCards = Array.isArray(res.body) ? res.body.length : 0;
+				expect(
+					localCards,
+					`MP: las tarjetas del pax (${mpCards} en MP) no deben materializarse en UserWallet local`
+				).toBe(0);
+			}
+		);
+	}
+);

@@ -43,7 +43,10 @@ export type ClearQuoteRequesterCardOptions = {
  *
  * Cierra el contexto siempre, también si algo falla.
  */
-export async function clearQuoteRequesterCard(browser: Browser, options: ClearQuoteRequesterCardOptions): Promise<void> {
+export async function clearQuoteRequesterCard(
+	browser: Browser,
+	options: ClearQuoteRequesterCardOptions
+): Promise<void> {
 	const { paxSearchQueries, last4, gateway } = options;
 
 	await test.step(`Precondición: dejar al solicitante sin la tarjeta •••• ${last4}`, async () => {

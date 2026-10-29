@@ -129,7 +129,9 @@ export function outcomeForIntent(intent: CardIntent): JourneyOutcome {
 	const outcome = OUTCOME_BY_INTENT[intent];
 
 	if (!outcome) {
-		throw new Error(`No hay outcome verificado para el intent '${intent}'. Opciones: (a) pasar 'expectOutcome' explícito en el spec, o (b) agregar la entrada a OUTCOME_BY_INTENT (tests/features/gateway-pg/helpers/journey-outcome.ts) citando la evidencia que la sostiene. NO se aplica un default: acreditaría un desenlace que nadie verificó.`);
+		throw new Error(
+			`No hay outcome verificado para el intent '${intent}'. Opciones: (a) pasar 'expectOutcome' explícito en el spec, o (b) agregar la entrada a OUTCOME_BY_INTENT (tests/features/gateway-pg/helpers/journey-outcome.ts) citando la evidencia que la sostiene. NO se aplica un default: acreditaría un desenlace que nadie verificó.`
+		);
 	}
 
 	return outcome;

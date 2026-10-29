@@ -45,14 +45,23 @@ test('recorded — cupo de tipo de servicio: Associates + Confirm Reset en UAT (
 	await page.getByText('v1.72.6', { exact: true }).click();
 	await page.getByText('v1.72.6', { exact: true }).click();
 	await page.getByRole('listitem').filter({ hasText: 'v1.72.6' }).click();
-	await page.locator('.ng-tns-c28-3.ng-untouched > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder').first().click();
+	await page
+		.locator(
+			'.ng-tns-c28-3.ng-untouched > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder'
+		)
+		.first()
+		.click();
 	await page.getByText('Reconquista 661, Buenos Aires').click();
 	await page.getByText('Reconquista 661, Buenos Aires').click();
 	await page.getByText('Ciudad de la Paz 2238, Buenos').first().click();
 	await page.getByText('Ciudad de la Paz 2238, Buenos').click();
 	await page.getByText('Reconquista 661, Buenos Aires').click();
 	await page.getByText('Avoid Tolls Avoid Highways').click();
-	await page.locator('.multiple-destination-container > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder').click();
+	await page
+		.locator(
+			'.multiple-destination-container > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder'
+		)
+		.click();
 	await page.getByText('Ciudad de la Paz 2238, Buenos').first().click();
 	await page.getByRole('button', { name: 'Select Vehicle' }).click();
 	await page.getByRole('button', { name: 'Send Manual' }).click();
@@ -66,7 +75,9 @@ test('recorded — cupo de tipo de servicio: Associates + Confirm Reset en UAT (
 	await page.getByRole('link', { name: 'Corporations Management' }).click();
 	await page.getByRole('textbox', { name: 'Search...' }).click();
 	await page.getByRole('textbox', { name: 'Search...' }).fill('dark');
-	await page.locator('tr:nth-child(2) > .acciones-container > span > .action-btn.action-btn-sm.action-btn-default > .fa').click();
+	await page
+		.locator('tr:nth-child(2) > .acciones-container > span > .action-btn.action-btn-sm.action-btn-default > .fa')
+		.click();
 	await page.getByRole('link', { name: 'Associates', exact: true }).click();
 	await page.locator('span:nth-child(3) > .fa').first().click();
 	await page.getByRole('cell', { name: 'v1.72.6' }).click();
@@ -84,9 +95,18 @@ test('recorded — cupo de tipo de servicio: Associates + Confirm Reset en UAT (
 	await page.getByText('Select User').click();
 	await page.getByRole('textbox', { name: 'User to Search' }).fill('anakin');
 	await page.locator('.highlighted > .data-with-icon-col').click();
-	await page.locator('.ng-tns-c28-19.ng-untouched > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder').first().click();
+	await page
+		.locator(
+			'.ng-tns-c28-19.ng-untouched > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder'
+		)
+		.first()
+		.click();
 	await page.getByText('Reconquista 661, Buenos Aires').click();
-	await page.locator('.multiple-destination-container > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder').click();
+	await page
+		.locator(
+			'.multiple-destination-container > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder'
+		)
+		.click();
 	await page.getByText('Ciudad de la Paz 2238, Buenos').nth(1).click();
 	await page.getByRole('button', { name: 'Select Vehicle' }).click();
 	await page.getByRole('button', { name: 'Send Service' }).click();
@@ -95,7 +115,9 @@ test('recorded — cupo de tipo de servicio: Associates + Confirm Reset en UAT (
 	await page.locator('tr:nth-child(2) > td:nth-child(16) > .text-nowrap > button:nth-child(4)').click();
 	await page.getByRole('button', { name: 'Continue' }).click();
 	await page.locator('button').nth(3).click();
-	await page.goto('https://apps-uat.magiis.com/#/home/carrier/travel/dashboard?find=&startDate=2026-07-16&endDate=2026-08-15');
+	await page.goto(
+		'https://apps-uat.magiis.com/#/home/carrier/travel/dashboard?find=&startDate=2026-07-16&endDate=2026-08-15'
+	);
 	await page.locator('button:nth-child(4)').click();
 	await page.getByRole('button', { name: 'Continue' }).click();
 	await page.getByRole('link', { name: 'Programmed (4)' }).click();
@@ -138,7 +160,9 @@ test('recorded — cupo de tipo de servicio: Associates + Confirm Reset en UAT (
 	await page.getByRole('link', { name: 'Corporations Management' }).click();
 	await page.getByRole('textbox', { name: 'Search...' }).click();
 	await page.getByRole('textbox', { name: 'Search...' }).fill('dark');
-	await page.locator('tr:nth-child(2) > .acciones-container > span > .action-btn.action-btn-sm.action-btn-default > .fa').click();
+	await page
+		.locator('tr:nth-child(2) > .acciones-container > span > .action-btn.action-btn-sm.action-btn-default > .fa')
+		.click();
 	await page.getByRole('link', { name: 'Preferences', exact: true }).click();
 	await page.getByRole('link', { name: 'Associates', exact: true }).click();
 	await page.locator('span:nth-child(3) > .fa').first().click();
@@ -154,13 +178,26 @@ test('recorded — cupo de tipo de servicio: Associates + Confirm Reset en UAT (
 	await page.getByText('Select User').click();
 	await page.getByRole('textbox', { name: 'User to Search' }).fill('anakin');
 	await page.getByText('skywaker, Anakin (+543456789)').click();
-	await page.locator('.ng-tns-c28-60.ng-untouched > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder').first().click();
+	await page
+		.locator(
+			'.ng-tns-c28-60.ng-untouched > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder'
+		)
+		.first()
+		.click();
 	await page.getByText('Regular').click();
 	await page.getByText('Regular').click();
 	await page.getByText('v1.72.6', { exact: true }).click();
-	await page.locator('.bootstrap.width-combo.input-search.ng-pristine.ng-valid.ng-touched > .below > .single > .placeholder').click();
+	await page
+		.locator(
+			'.bootstrap.width-combo.input-search.ng-pristine.ng-valid.ng-touched > .below > .single > .placeholder'
+		)
+		.click();
 	await page.getByText('Reconquista 661, Buenos Aires').click();
-	await page.locator('.multiple-destination-container > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder').click();
+	await page
+		.locator(
+			'.multiple-destination-container > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder'
+		)
+		.click();
 	await page.getByText('Ciudad de la Paz 2238, Buenos').first().click();
 	await page.getByText('Ciudad de la Paz 2238, Buenos').first().click();
 	await page.getByText('Ciudad de la Paz 2238, Buenos').nth(1).click();
@@ -181,7 +218,9 @@ test('recorded — cupo de tipo de servicio: Associates + Confirm Reset en UAT (
 	await page.getByRole('link', { name: 'Corporations Management' }).click();
 	await page.getByRole('textbox', { name: 'Search...' }).click();
 	await page.getByRole('textbox', { name: 'Search...' }).fill('dar');
-	await page.locator('tr:nth-child(2) > .acciones-container > span > .action-btn.action-btn-sm.action-btn-default > .fa').click();
+	await page
+		.locator('tr:nth-child(2) > .acciones-container > span > .action-btn.action-btn-sm.action-btn-default > .fa')
+		.click();
 	await page.getByRole('link', { name: 'Associates', exact: true }).click();
 	await page.locator('tr:nth-child(2) > .acciones-container > span:nth-child(3) > .fa').click();
 	await page.getByRole('dialog').getByRole('button', { name: '' }).click();
@@ -198,9 +237,18 @@ test('recorded — cupo de tipo de servicio: Associates + Confirm Reset en UAT (
 	await page.getByText('skiwalker, Arturitu (+').click();
 	await page.getByText('Regular').click();
 	await page.getByText('v1.72.6', { exact: true }).click();
-	await page.locator('.ng-tns-c28-76.ng-untouched > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder').first().click();
+	await page
+		.locator(
+			'.ng-tns-c28-76.ng-untouched > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder'
+		)
+		.first()
+		.click();
 	await page.getByText('Reconquista 661, Buenos Aires').click();
-	await page.locator('.multiple-destination-container > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder').click();
+	await page
+		.locator(
+			'.multiple-destination-container > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder'
+		)
+		.click();
 	await page.getByText('Mendoza 2002, Buenos Aires,').click();
 	await page.getByRole('button', { name: 'Select Vehicle' }).click();
 	await page.getByRole('heading', { name: '► Fixed Fees' }).click();
@@ -210,7 +258,9 @@ test('recorded — cupo de tipo de servicio: Associates + Confirm Reset en UAT (
 	await page.getByRole('link', { name: 'Corporations Management' }).click();
 	await page.getByRole('textbox', { name: 'Search...' }).click();
 	await page.getByRole('textbox', { name: 'Search...' }).fill('dar');
-	await page.locator('tr:nth-child(2) > .acciones-container > span > .action-btn.action-btn-sm.action-btn-default > .fa').click();
+	await page
+		.locator('tr:nth-child(2) > .acciones-container > span > .action-btn.action-btn-sm.action-btn-default > .fa')
+		.click();
 	await page.getByRole('link', { name: 'Associates', exact: true }).click();
 	await page.locator('tr:nth-child(2) > .acciones-container > span:nth-child(3)').click();
 	await page.getByRole('cell', { name: 'v1.72.6' }).click();
@@ -231,9 +281,18 @@ test('recorded — cupo de tipo de servicio: Associates + Confirm Reset en UAT (
 	await page.locator('.highlighted > .data-with-icon-col').click();
 	await page.getByText('Regular').click();
 	await page.getByText('v1.72.6', { exact: true }).click();
-	await page.locator('.ng-tns-c28-92.ng-untouched > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder').first().click();
+	await page
+		.locator(
+			'.ng-tns-c28-92.ng-untouched > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder'
+		)
+		.first()
+		.click();
 	await page.getByText('Reconquista 661, Buenos Aires').click();
-	await page.locator('.multiple-destination-container > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder').click();
+	await page
+		.locator(
+			'.multiple-destination-container > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder'
+		)
+		.click();
 	await page.getByText('Ciudad de la Paz 2238, Buenos').first().click();
 	await page.getByRole('button', { name: 'Select Vehicle' }).click();
 	await page.getByRole('button', { name: 'Send Manual' }).click();
@@ -242,7 +301,9 @@ test('recorded — cupo de tipo de servicio: Associates + Confirm Reset en UAT (
 	await page.getByRole('link', { name: 'Corporations Management' }).click();
 	await page.getByRole('textbox', { name: 'Search...' }).click();
 	await page.getByRole('textbox', { name: 'Search...' }).fill('dark');
-	await page.locator('tr:nth-child(2) > .acciones-container > span > .action-btn.action-btn-sm.action-btn-default > .fa').click();
+	await page
+		.locator('tr:nth-child(2) > .acciones-container > span > .action-btn.action-btn-sm.action-btn-default > .fa')
+		.click();
 	await page.getByRole('link', { name: 'Associates', exact: true }).click();
 	await page.locator('span:nth-child(3) > .fa').first().click();
 	await page.getByRole('dialog').click();
@@ -259,7 +320,9 @@ test('recorded — cupo de tipo de servicio: Associates + Confirm Reset en UAT (
 	await page.getByRole('link', { name: 'Corporations Management' }).click();
 	await page.getByRole('textbox', { name: 'Search...' }).click();
 	await page.getByRole('textbox', { name: 'Search...' }).fill('dark');
-	await page.locator('tr:nth-child(2) > .acciones-container > span > .action-btn.action-btn-sm.action-btn-default > .fa').click();
+	await page
+		.locator('tr:nth-child(2) > .acciones-container > span > .action-btn.action-btn-sm.action-btn-default > .fa')
+		.click();
 	await page.getByRole('link', { name: 'Associates', exact: true }).click();
 	await page.locator('span:nth-child(3) > .fa').first().click();
 	await page.getByRole('cell', { name: '2', exact: true }).nth(2).click();

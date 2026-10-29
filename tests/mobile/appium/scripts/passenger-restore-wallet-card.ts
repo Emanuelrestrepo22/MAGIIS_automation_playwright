@@ -41,16 +41,26 @@ async function run(): Promise<void> {
 			driver.execute(() => window.location.href.includes('/cards')).catch(() => false);
 		for (let i = 0; i < 4 && !(await onCards()); i++) {
 			log(`No estamos en /cards (intento ${i + 1}) — navegando menú→Billetera...`);
-			await driver.execute(() => {
-				const t = document.querySelector('#app-tab-bar ion-menu-toggle, ion-menu-toggle, ion-menu-button') as HTMLElement | null;
-				t?.click();
-			}).catch(() => {});
+			await driver
+				.execute(() => {
+					const t = document.querySelector(
+						'#app-tab-bar ion-menu-toggle, ion-menu-toggle, ion-menu-button'
+					) as HTMLElement | null;
+					t?.click();
+				})
+				.catch(() => {});
 			await driver.pause(1_200);
-			await driver.execute(() => {
-				const els = Array.from(document.querySelectorAll('ion-item, ion-label, a, button, span, div')) as HTMLElement[];
-				const b = els.find(e => /^\s*billetera\s*$/i.test(e.textContent ?? '') && (e as HTMLElement).offsetParent !== null);
-				(b as HTMLElement | undefined)?.click();
-			}).catch(() => {});
+			await driver
+				.execute(() => {
+					const els = Array.from(
+						document.querySelectorAll('ion-item, ion-label, a, button, span, div')
+					) as HTMLElement[];
+					const b = els.find(
+						e => /^\s*billetera\s*$/i.test(e.textContent ?? '') && (e as HTMLElement).offsetParent !== null
+					);
+					(b as HTMLElement | undefined)?.click();
+				})
+				.catch(() => {});
 			await driver.pause(2_800);
 		}
 		if (!(await onCards())) {
@@ -66,14 +76,23 @@ async function run(): Promise<void> {
 
 		// Cerrar modales de alta APILADOS (residuo de noReset) para arrancar con uno solo limpio.
 		for (let i = 0; i < 4; i++) {
-			const closed = await driver.execute(() => {
-				const modals = Array.from(document.querySelectorAll('app-credit-card-payment-data')) as HTMLElement[];
-				const open = modals.find(m => (m as HTMLElement).offsetParent !== null);
-				if (!open) return false;
-				const back = open.querySelector('.arrow-back, ion-icon[name="arrow-back-outline"]') as HTMLElement | null;
-				if (back) { back.click(); return true; }
-				return false;
-			}).catch(() => false);
+			const closed = await driver
+				.execute(() => {
+					const modals = Array.from(
+						document.querySelectorAll('app-credit-card-payment-data')
+					) as HTMLElement[];
+					const open = modals.find(m => (m as HTMLElement).offsetParent !== null);
+					if (!open) return false;
+					const back = open.querySelector(
+						'.arrow-back, ion-icon[name="arrow-back-outline"]'
+					) as HTMLElement | null;
+					if (back) {
+						back.click();
+						return true;
+					}
+					return false;
+				})
+				.catch(() => false);
 			if (!closed) break;
 			await driver.pause(1_200);
 		}
@@ -93,21 +112,37 @@ async function run(): Promise<void> {
 
 		// Tap AGREGAR → modal nativo. FLAKY: a veces el form no monta → reintentar AGREGAR
 		// hasta que exista el input #cardNumber (poll), no solo asumir que abrió.
-		const tapAgregar = async (): Promise<boolean> => driver.execute(() => {
-			const btns = Array.from(document.querySelectorAll('button.btn.primary, ion-button.btn.primary, button.primary, .btn.primary, ion-button')) as HTMLElement[];
-			const t = btns.find(b => /agregar/i.test((b.textContent ?? '') + (b.getAttribute('aria-label') ?? '')) && (b as HTMLElement).offsetParent !== null);
-			if (!t) return false;
-			t.click();
-			return true;
-		}).catch(() => false);
-		const cardInputPresent = async (): Promise<boolean> => driver.execute(() =>
-			!!document.querySelector('ion-input[formcontrolname="cardNumber"] input, #cardNumber input')).catch(() => false);
+		const tapAgregar = async (): Promise<boolean> =>
+			driver
+				.execute(() => {
+					const btns = Array.from(
+						document.querySelectorAll(
+							'button.btn.primary, ion-button.btn.primary, button.primary, .btn.primary, ion-button'
+						)
+					) as HTMLElement[];
+					const t = btns.find(
+						b =>
+							/agregar/i.test((b.textContent ?? '') + (b.getAttribute('aria-label') ?? '')) &&
+							(b as HTMLElement).offsetParent !== null
+					);
+					if (!t) return false;
+					t.click();
+					return true;
+				})
+				.catch(() => false);
+		const cardInputPresent = async (): Promise<boolean> =>
+			driver
+				.execute(
+					() => !!document.querySelector('ion-input[formcontrolname="cardNumber"] input, #cardNumber input')
+				)
+				.catch(() => false);
 
 		let formReady = false;
 		for (let attempt = 0; attempt < 3 && !formReady; attempt++) {
 			const tapped = await tapAgregar();
 			log(`AGREGAR intento ${attempt + 1} tapped=${tapped}`);
-			for (let w = 0; w < 30 && !formReady; w++) { // hasta 15s esperando el form
+			for (let w = 0; w < 30 && !formReady; w++) {
+				// hasta 15s esperando el form
 				await driver.pause(500);
 				formReady = await cardInputPresent();
 			}
@@ -122,35 +157,47 @@ async function run(): Promise<void> {
 		// set del native + `input`, y set del host.value + `ionInput`/`ionChange` en el HOST.
 		// (El set-value crudo solo-nativo no registraba en cvv/titular/zip; WDIO click se intercepta.)
 		const fill = async (fcn: string, value: string): Promise<string> =>
-			driver.execute((name: string, val: string) => {
-				const host = document.querySelector(`ion-input[formcontrolname="${name}"]`) as (HTMLElement & { value?: unknown }) | null;
-				if (!host) return 'no-host';
-				const native = host.querySelector('input') as HTMLInputElement | null;
-				if (native) {
-					native.focus();
-					native.value = val;
-					native.dispatchEvent(new Event('input', { bubbles: true }));
-				}
-				host.value = val;
-				host.dispatchEvent(new CustomEvent('ionInput', { bubbles: true, detail: { value: val } }));
-				host.dispatchEvent(new CustomEvent('ionChange', { bubbles: true, detail: { value: val } }));
-				if (native) {
-					native.dispatchEvent(new Event('change', { bubbles: true }));
-					native.dispatchEvent(new Event('blur', { bubbles: true }));
-				}
-				host.dispatchEvent(new CustomEvent('ionBlur', { bubbles: true }));
-				return 'ok';
-			}, fcn, value).catch((e: unknown) => `err:${e instanceof Error ? e.message.slice(0, 50) : String(e)}`);
+			driver
+				.execute(
+					(name: string, val: string) => {
+						const host = document.querySelector(`ion-input[formcontrolname="${name}"]`) as
+							| (HTMLElement & { value?: unknown })
+							| null;
+						if (!host) return 'no-host';
+						const native = host.querySelector('input') as HTMLInputElement | null;
+						if (native) {
+							native.focus();
+							native.value = val;
+							native.dispatchEvent(new Event('input', { bubbles: true }));
+						}
+						host.value = val;
+						host.dispatchEvent(new CustomEvent('ionInput', { bubbles: true, detail: { value: val } }));
+						host.dispatchEvent(new CustomEvent('ionChange', { bubbles: true, detail: { value: val } }));
+						if (native) {
+							native.dispatchEvent(new Event('change', { bubbles: true }));
+							native.dispatchEvent(new Event('blur', { bubbles: true }));
+						}
+						host.dispatchEvent(new CustomEvent('ionBlur', { bubbles: true }));
+						return 'ok';
+					},
+					fcn,
+					value
+				)
+				.catch((e: unknown) => `err:${e instanceof Error ? e.message.slice(0, 50) : String(e)}`);
 
 		// cardNumber: TAP en el campo + TIPEO REAL de los dígitos → el sistema valida el emisor
 		// y RECIÉN AHÍ emergen los demás campos (comportamiento confirmado por el usuario).
-		const focused = await driver.execute(() => {
-			const n = document.querySelector('ion-input[formcontrolname="cardNumber"] input') as HTMLInputElement | null;
-			if (!n) return false;
-			n.focus();
-			n.click();
-			return true;
-		}).catch(() => false);
+		const focused = await driver
+			.execute(() => {
+				const n = document.querySelector(
+					'ion-input[formcontrolname="cardNumber"] input'
+				) as HTMLInputElement | null;
+				if (!n) return false;
+				n.focus();
+				n.click();
+				return true;
+			})
+			.catch(() => false);
 		await driver.keys(card.number.split('')).catch(() => {});
 		log(`cardNumber (tap+type, focused=${focused}) → tipeado`);
 		await driver.pause(3_500); // validación del emisor → revela expiry/cvv/titular/zip
@@ -159,14 +206,16 @@ async function run(): Promise<void> {
 		// desde SU captura interna, no del modelo Angular. El JS value-set no alimenta el SDK;
 		// solo los keystrokes reales sí. Focus del native-input por JS + driver.keys.
 		const typeField = async (fcn: string, value: string): Promise<string> => {
-			const ok = await driver.execute((name: string) => {
-				const host = document.querySelector(`ion-input[formcontrolname="${name}"]`) as HTMLElement | null;
-				const n = host?.querySelector('input') as HTMLInputElement | null;
-				if (!n) return false;
-				n.focus();
-				n.click();
-				return true;
-			}, fcn).catch(() => false);
+			const ok = await driver
+				.execute((name: string) => {
+					const host = document.querySelector(`ion-input[formcontrolname="${name}"]`) as HTMLElement | null;
+					const n = host?.querySelector('input') as HTMLInputElement | null;
+					if (!n) return false;
+					n.focus();
+					n.click();
+					return true;
+				}, fcn)
+				.catch(() => false);
 			if (!ok) return 'no-host';
 			await driver.keys(value.split('')).catch(() => {});
 			await driver.pause(600);
@@ -184,16 +233,33 @@ async function run(): Promise<void> {
 		// Poll hasta ~12s a que un botón primario del modal quede ENABLED y recién ahí click.
 		let submitted = 'no-submit';
 		for (let i = 0; i < 24; i++) {
-			const r = await driver.execute(() => {
-				const modals = Array.from(document.querySelectorAll('app-credit-card-payment-data')) as HTMLElement[];
-				const modal = modals.find(m => (m as HTMLElement).offsetParent !== null) ?? modals[modals.length - 1] ?? document.body;
-				const btns = Array.from(modal.querySelectorAll('button.btn.primary, ion-button.btn.primary, button[type="submit"], ion-button')) as HTMLElement[];
-				const enabled = btns.find(b => (b as HTMLElement).offsetParent !== null
-					&& !((b as HTMLButtonElement).disabled || b.getAttribute('disabled') !== null)
-					&& /agregar|guardar|confirmar|continuar|a[ñn]adir|siguiente/i.test(b.textContent ?? ''));
-				if (enabled) { enabled.click(); return 'clicked'; }
-				return 'disabled';
-			}).catch((e: unknown) => `err:${e instanceof Error ? e.message.slice(0, 40) : String(e)}`);
+			const r = await driver
+				.execute(() => {
+					const modals = Array.from(
+						document.querySelectorAll('app-credit-card-payment-data')
+					) as HTMLElement[];
+					const modal =
+						modals.find(m => (m as HTMLElement).offsetParent !== null) ??
+						modals[modals.length - 1] ??
+						document.body;
+					const btns = Array.from(
+						modal.querySelectorAll(
+							'button.btn.primary, ion-button.btn.primary, button[type="submit"], ion-button'
+						)
+					) as HTMLElement[];
+					const enabled = btns.find(
+						b =>
+							(b as HTMLElement).offsetParent !== null &&
+							!((b as HTMLButtonElement).disabled || b.getAttribute('disabled') !== null) &&
+							/agregar|guardar|confirmar|continuar|a[ñn]adir|siguiente/i.test(b.textContent ?? '')
+					);
+					if (enabled) {
+						enabled.click();
+						return 'clicked';
+					}
+					return 'disabled';
+				})
+				.catch((e: unknown) => `err:${e instanceof Error ? e.message.slice(0, 40) : String(e)}`);
 			submitted = r;
 			if (r === 'clicked') break;
 			await driver.pause(500);
@@ -201,18 +267,26 @@ async function run(): Promise<void> {
 		log(`submit → ${submitted}`);
 		await driver.pause(1_200);
 		// Capturar toast inmediato (razón backend si el alta se rechaza).
-		const toast = await driver.execute(() => {
-			const t = document.querySelector('ion-toast');
-			const msg = t?.shadowRoot?.querySelector('.toast-message')?.textContent
-				?? document.querySelector('.toast-message, .toast-wrapper')?.textContent
-				?? '';
-			return (msg ?? '').replace(/\s+/g, ' ').trim().slice(0, 200);
-		}).catch(() => '');
+		const toast = await driver
+			.execute(() => {
+				const t = document.querySelector('ion-toast');
+				const msg =
+					t?.shadowRoot?.querySelector('.toast-message')?.textContent ??
+					document.querySelector('.toast-message, .toast-wrapper')?.textContent ??
+					'';
+				return (msg ?? '').replace(/\s+/g, ' ').trim().slice(0, 200);
+			})
+			.catch(() => '');
 		log(`toast post-submit: "${toast}"`);
 		await driver.pause(2_000);
 
 		// 3155 es 3DS → el alta puede disparar un challenge Stripe. Completarlo.
-		const tds = await handleThreeDsPopup(driver, label => dumpAppiumState(driver, label), 60_000, 'passenger-restore-3ds');
+		const tds = await handleThreeDsPopup(
+			driver,
+			label => dumpAppiumState(driver, label),
+			60_000,
+			'passenger-restore-3ds'
+		);
 		log(`3DS challenge → ${tds}`);
 		await driver.pause(5_000);
 
@@ -220,9 +294,12 @@ async function run(): Promise<void> {
 		await wallet.openWallet();
 		const ok = await wallet.hasCard(card.last4).catch(() => false);
 		await dumpAppiumState(driver, 'passenger-restore-card-after');
-		log(ok ? `✅ Tarjeta ••••${card.last4} restaurada.` : `⚠️ No se confirmó ••••${card.last4} en el wallet tras submit (revisar dump).`);
-	}
-	finally {
+		log(
+			ok
+				? `✅ Tarjeta ••••${card.last4} restaurada.`
+				: `⚠️ No se confirmó ••••${card.last4} en el wallet tras submit (revisar dump).`
+		);
+	} finally {
 		await harness.endSession();
 	}
 }

@@ -34,7 +34,11 @@ import type { StripeTestCard } from '../stripe/cards';
 import { resolveCard as authorizeResolveCard, type AuthorizeCardId } from '../authorize/card-resolver';
 import type { AuthorizeTestCard } from '../authorize/cards';
 import { resolveCard as ebizResolveCard, type EbizCardId } from '../ebizcharge/card-resolver';
-import { EBIZ_DEFAULT_BILLING_ADDRESS, EBIZ_DEFAULT_BILLING_ADDRESS_OPTION, type EbizTestCard } from '../ebizcharge/cards';
+import {
+	EBIZ_DEFAULT_BILLING_ADDRESS,
+	EBIZ_DEFAULT_BILLING_ADDRESS_OPTION,
+	type EbizTestCard
+} from '../ebizcharge/cards';
 import { resolveCard as mpResolveCard, type MercadoPagoCardId } from '../mercado-pago/card-resolver';
 import type { MercadoPagoTestCard } from '../mercado-pago/cards';
 import { CARD_MATRIX, isSupported, type CardMatrixCell } from './card-matrix';

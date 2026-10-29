@@ -42,7 +42,9 @@ test.describe(
 			'Faltan ORACLE_*_TEST (host/port/service/user/password) — la pata DB de la trifuerza queda sin cablear.'
 		);
 
-		test('[WAL-DB] la tarjeta que la UI/API reportan vinculada existe en DB para el mismo pax', async ({ page }) => {
+		test('[WAL-DB] la tarjeta que la UI/API reportan vinculada existe en DB para el mismo pax', async ({
+			page
+		}) => {
 			const login = new LoginPage(page, 'carrier');
 			await login.goto();
 			await login.login(process.env.USER_CARRIER as string, process.env.PASS_CARRIER as string);

@@ -98,7 +98,10 @@ export const OUTCOME_BY_INTENT: Partial<Record<CardIntent, JourneyOutcome>> = {
 		'Verificado en vivo en Stripe, Authorize (MG-285, 2026-07-24) y MercadoPago; es el oráculo del piloto hold-happy-no3ds.',
 		'live-verified'
 	),
-	HAPPY_MASTERCARD: aprobada('aprobada (Mastercard)', `Variante de marca del happy path — mismo comportamiento. ${DOC_MAPPING}`),
+	HAPPY_MASTERCARD: aprobada(
+		'aprobada (Mastercard)',
+		`Variante de marca del happy path — mismo comportamiento. ${DOC_MAPPING}`
+	),
 	HAPPY_AMEX: aprobada('aprobada (Amex, CVV 4 dígitos)', `Variante de marca del happy path. ${DOC_MAPPING}`),
 	HAPPY_DISCOVER: aprobada('aprobada (Discover)', `Variante de marca del happy path. ${DOC_MAPPING}`),
 	HAPPY_SLOW_PROCESSING: aprobada(
@@ -145,7 +148,10 @@ export const OUTCOME_BY_INTENT: Partial<Record<CardIntent, JourneyOutcome>> = {
 	DECLINE_CARD_FLAGGED: rechazada('rechazada (tarjeta marcada por el emisor)', DOC_MAPPING),
 
 	// ── Antifraude y referral: no autorizan la operación ─────────────────
-	FRAUD_REJECT: rechazada('rechazada por antifraude', `El antifraude rechaza: la operación no queda autorizada. ${DOC_MAPPING}`),
+	FRAUD_REJECT: rechazada(
+		'rechazada por antifraude',
+		`El antifraude rechaza: la operación no queda autorizada. ${DOC_MAPPING}`
+	),
 	REFERRAL: rechazada(
 		'derivada a autorización por voz',
 		'El emisor no aprueba: deriva a autorización telefónica, así que el viaje NO puede quedar autorizado. Tabla Referral Response de la doc eBizCharge.'

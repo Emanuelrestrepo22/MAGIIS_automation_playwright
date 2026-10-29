@@ -24,52 +24,75 @@ async function run(): Promise<void> {
 		await wallet.openWallet();
 
 		// Tap AGREGAR (JS click en .btn.primary que diga "agregar").
-		const tapped = await driver.execute(() => {
-			const btns = Array.from(document.querySelectorAll('button.btn.primary, ion-button.btn.primary, button.primary, .btn.primary')) as HTMLElement[];
-			const target = btns.find(b => /agregar/i.test((b.textContent ?? '') + (b.getAttribute('aria-label') ?? '')));
-			if (!target) return false;
-			target.click();
-			return true;
-		}).catch(() => false);
+		const tapped = await driver
+			.execute(() => {
+				const btns = Array.from(
+					document.querySelectorAll(
+						'button.btn.primary, ion-button.btn.primary, button.primary, .btn.primary'
+					)
+				) as HTMLElement[];
+				const target = btns.find(b =>
+					/agregar/i.test((b.textContent ?? '') + (b.getAttribute('aria-label') ?? ''))
+				);
+				if (!target) return false;
+				target.click();
+				return true;
+			})
+			.catch(() => false);
 		log(`AGREGAR tapped=${tapped}`);
 		await driver.pause(2_500);
 
 		// Escribir el número en #cardNumber (ion-input → native-input) con eventos reales.
-		const filled = await driver.execute((num: string) => {
-			const host = document.querySelector('#cardNumber, ion-input[formcontrolname="cardNumber"]') as HTMLElement | null;
-			if (!host) return 'no-host';
-			const native = (host.querySelector('input.native-input') ?? host.querySelector('input')) as HTMLInputElement | null;
-			if (!native) return 'no-native';
-			native.focus();
-			native.value = num;
-			native.dispatchEvent(new Event('input', { bubbles: true }));
-			native.dispatchEvent(new Event('change', { bubbles: true }));
-			native.dispatchEvent(new Event('blur', { bubbles: true }));
-			return 'ok';
-		}, CARD).catch((e: unknown) => `err:${e instanceof Error ? e.message : String(e)}`);
+		const filled = await driver
+			.execute((num: string) => {
+				const host = document.querySelector(
+					'#cardNumber, ion-input[formcontrolname="cardNumber"]'
+				) as HTMLElement | null;
+				if (!host) return 'no-host';
+				const native = (host.querySelector('input.native-input') ??
+					host.querySelector('input')) as HTMLInputElement | null;
+				if (!native) return 'no-native';
+				native.focus();
+				native.value = num;
+				native.dispatchEvent(new Event('input', { bubbles: true }));
+				native.dispatchEvent(new Event('change', { bubbles: true }));
+				native.dispatchEvent(new Event('blur', { bubbles: true }));
+				return 'ok';
+			}, CARD)
+			.catch((e: unknown) => `err:${e instanceof Error ? e.message : String(e)}`);
 		log(`fill cardNumber → ${filled}`);
 		await driver.pause(3_500);
 
 		// Volcar TODOS los inputs/selects/botones del modal ahora visibles.
-		const fields = await driver.execute(() => {
-			const modal = document.querySelector('app-credit-card-payment-data') ?? document;
-			const els = Array.from(modal.querySelectorAll('ion-input, input, ion-select, select, button, ion-button')) as HTMLElement[];
-			return els.map((e) => ({
-				tag: e.tagName.toLowerCase(),
-				id: e.id || '',
-				fcn: e.getAttribute('formcontrolname') || '',
-				checkout: e.getAttribute('data-checkout') || '',
-				ph: e.getAttribute('placeholder') || (e.querySelector('input')?.getAttribute('placeholder') ?? ''),
-				type: e.getAttribute('type') || '',
-				text: (e.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 25),
-				shown: (e as HTMLElement).offsetParent !== null,
-			})).filter(f => f.id || f.fcn || f.checkout || f.text);
-		}).catch(() => []);
+		const fields = await driver
+			.execute(() => {
+				const modal = document.querySelector('app-credit-card-payment-data') ?? document;
+				const els = Array.from(
+					modal.querySelectorAll('ion-input, input, ion-select, select, button, ion-button')
+				) as HTMLElement[];
+				return els
+					.map(e => ({
+						tag: e.tagName.toLowerCase(),
+						id: e.id || '',
+						fcn: e.getAttribute('formcontrolname') || '',
+						checkout: e.getAttribute('data-checkout') || '',
+						ph:
+							e.getAttribute('placeholder') ||
+							(e.querySelector('input')?.getAttribute('placeholder') ?? ''),
+						type: e.getAttribute('type') || '',
+						text: (e.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 25),
+						shown: (e as HTMLElement).offsetParent !== null
+					}))
+					.filter(f => f.id || f.fcn || f.checkout || f.text);
+			})
+			.catch(() => []);
 		log(`CAMPOS DEL MODAL:\n${JSON.stringify(fields, null, 2)}`);
-	}
-	finally {
+	} finally {
 		await harness.endSession();
 	}
 }
 
-run().catch((e: unknown) => { console.error(`[explore-addcard] ${e instanceof Error ? e.message : String(e)}`); process.exit(1); });
+run().catch((e: unknown) => {
+	console.error(`[explore-addcard] ${e instanceof Error ? e.message : String(e)}`);
+	process.exit(1);
+});

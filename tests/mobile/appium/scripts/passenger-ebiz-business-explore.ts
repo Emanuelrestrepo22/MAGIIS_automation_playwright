@@ -39,8 +39,14 @@ async function run(): Promise<void> {
 		try {
 			await harness.ensureProfileMode('personal');
 			await harness.getWalletScreen().openWallet();
-			const personalCount = await harness.getWalletScreen().countCards().catch(() => -1);
-			const personalHasCard = await harness.getWalletScreen().hasCard(last4, 3_000).catch(() => false);
+			const personalCount = await harness
+				.getWalletScreen()
+				.countCards()
+				.catch(() => -1);
+			const personalHasCard = await harness
+				.getWalletScreen()
+				.hasCard(last4, 3_000)
+				.catch(() => false);
 			log(`PERSONAL: wallet count=${personalCount} · hasCard(${last4})=${personalHasCard}`);
 		} catch (e) {
 			log(`no pude leer wallet Personal: ${e instanceof Error ? e.message : String(e)}`);
@@ -64,7 +70,9 @@ async function run(): Promise<void> {
 		await wallet.openWallet();
 		const bizCountBefore = await wallet.countCards().catch(() => -1);
 		const bizHasBefore = await wallet.hasCard(last4, 3_000).catch(() => false);
-		log(`BUSINESS: wallet count=${bizCountBefore} · hasCard(${last4})=${bizHasBefore} (aislamiento: debería diferir del Personal)`);
+		log(
+			`BUSINESS: wallet count=${bizCountBefore} · hasCard(${last4})=${bizHasBefore} (aislamiento: debería diferir del Personal)`
+		);
 
 		log('alta de tarjeta eBiz en Business (directo)…');
 		try {
@@ -83,4 +91,7 @@ async function run(): Promise<void> {
 	}
 }
 
-run().catch((e: unknown) => { console.error(`[ebiz-business] ${e instanceof Error ? e.message : String(e)}`); process.exit(1); });
+run().catch((e: unknown) => {
+	console.error(`[ebiz-business] ${e instanceof Error ? e.message : String(e)}`);
+	process.exit(1);
+});

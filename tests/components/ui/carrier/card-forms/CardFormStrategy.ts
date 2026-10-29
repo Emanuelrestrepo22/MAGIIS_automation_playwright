@@ -29,7 +29,10 @@ import type { GenericTestCard } from '@fixtures/gateways/_shared';
  * Subconjunto estructural de `GenericTestCard` — cualquier tarjeta del resolver
  * cross-gateway (`resolveCard({ gateway, intent })`) es asignable tal cual.
  */
-export type CardFormFillInput = Pick<GenericTestCard, 'number' | 'expiry' | 'cvc' | 'holderName' | 'zip' | 'address' | 'addressOption' | 'expectedZip'> & {
+export type CardFormFillInput = Pick<
+	GenericTestCard,
+	'number' | 'expiry' | 'cvc' | 'holderName' | 'zip' | 'address' | 'addressOption' | 'expectedZip'
+> & {
 	/** Solo form nativo con 5° campo 'document' (Mercado Pago). Default 'DNI'. */
 	docType?: string;
 	/** Solo form nativo con 5° campo 'document' (Mercado Pago). Default '12345678'. */

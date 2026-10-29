@@ -34,7 +34,7 @@ const DRIVER_E2E_PICKUP = 'Ciudad de la Paz 2238, Buenos Aires, Argentina';
 const appPaxScenario: CargoScenario = {
 	client: TEST_DATA.appPaxPassenger,
 	origin: DRIVER_E2E_PICKUP,
-	destination: TEST_DATA.destination,
+	destination: TEST_DATA.destination
 };
 
 const APPIUM_NOTE = 'PENDIENTE: fase Driver App — requiere Appium.';
@@ -45,59 +45,65 @@ const APPIUM_NOTE = 'PENDIENTE: fase Driver App — requiere Appium.';
  */
 const decline = (raw: { number: string; exp: string; cvc: string; holderName: string }): DriverChargeSpec => ({
 	card: { number: raw.number, expiry: raw.exp, cvc: raw.cvc, holderName: raw.holderName },
-	expectedOutcome: 'declined',
+	expectedOutcome: 'declined'
 });
 
-test.describe('Gateway PG · Carrier · App Pax — Cargo a Bordo · Declines @gateway @stripe @cargo-a-bordo @hold @decline @regression', { annotation: [{ type: 'tms', description: 'MG-161' }] }, () => {
-
-	test('[TS-STRIPE-TC1082] @regression @cargo-a-bordo pago rechazado genérico desde Driver App', async ({ page }) => {
-		await new CargoABordoSteps({ page }).runCargoScenario(appPaxScenario, {
-			driverAppStep: {
-				title: '[DRIVER APP] Conductor finaliza viaje → cobra con tarjeta declinada → pago rechazado genérico',
-				note: 'PENDIENTE: fase Driver App — requiere Appium + DriverTripPaymentScreen implementado.',
-				charge: decline(STRIPE_TEST_CARDS_RAW.declined_generic),
-			},
+test.describe(
+	'Gateway PG · Carrier · App Pax — Cargo a Bordo · Declines @gateway @stripe @cargo-a-bordo @hold @decline @regression',
+	{ annotation: [{ type: 'tms', description: 'MG-161' }] },
+	() => {
+		test('[TS-STRIPE-TC1082] @regression @cargo-a-bordo pago rechazado genérico desde Driver App', async ({
+			page
+		}) => {
+			await new CargoABordoSteps({ page }).runCargoScenario(appPaxScenario, {
+				driverAppStep: {
+					title: '[DRIVER APP] Conductor finaliza viaje → cobra con tarjeta declinada → pago rechazado genérico',
+					note: 'PENDIENTE: fase Driver App — requiere Appium + DriverTripPaymentScreen implementado.',
+					charge: decline(STRIPE_TEST_CARDS_RAW.declined_generic)
+				}
+			});
 		});
-	});
 
-	test('[TS-STRIPE-TC1083] @regression @cargo-a-bordo fondos insuficientes desde Driver App', async ({ page }) => {
-		await new CargoABordoSteps({ page }).runCargoScenario(appPaxScenario, {
-			driverAppStep: {
-				title: '[DRIVER APP] Conductor finaliza viaje → cobra con tarjeta sin fondos → pago rechazado',
-				note: APPIUM_NOTE,
-				charge: decline(STRIPE_TEST_CARDS_RAW.declined_funds),
-			},
+		test('[TS-STRIPE-TC1083] @regression @cargo-a-bordo fondos insuficientes desde Driver App', async ({
+			page
+		}) => {
+			await new CargoABordoSteps({ page }).runCargoScenario(appPaxScenario, {
+				driverAppStep: {
+					title: '[DRIVER APP] Conductor finaliza viaje → cobra con tarjeta sin fondos → pago rechazado',
+					note: APPIUM_NOTE,
+					charge: decline(STRIPE_TEST_CARDS_RAW.declined_funds)
+				}
+			});
 		});
-	});
 
-	test('[TS-STRIPE-TC1084] @regression @cargo-a-bordo tarjeta perdida desde Driver App', async ({ page }) => {
-		await new CargoABordoSteps({ page }).runCargoScenario(appPaxScenario, {
-			driverAppStep: {
-				title: '[DRIVER APP] Conductor finaliza viaje → cobra con tarjeta reportada como perdida → rechazo',
-				note: APPIUM_NOTE,
-				charge: decline(STRIPE_TEST_CARDS_RAW.lost_card),
-			},
+		test('[TS-STRIPE-TC1084] @regression @cargo-a-bordo tarjeta perdida desde Driver App', async ({ page }) => {
+			await new CargoABordoSteps({ page }).runCargoScenario(appPaxScenario, {
+				driverAppStep: {
+					title: '[DRIVER APP] Conductor finaliza viaje → cobra con tarjeta reportada como perdida → rechazo',
+					note: APPIUM_NOTE,
+					charge: decline(STRIPE_TEST_CARDS_RAW.lost_card)
+				}
+			});
 		});
-	});
 
-	test('[TS-STRIPE-TC1085] @regression @cargo-a-bordo CVC incorrecto desde Driver App', async ({ page }) => {
-		await new CargoABordoSteps({ page }).runCargoScenario(appPaxScenario, {
-			driverAppStep: {
-				title: '[DRIVER APP] Conductor finaliza viaje → cobra con CVC incorrecto → rechazo',
-				note: APPIUM_NOTE,
-				charge: decline(STRIPE_TEST_CARDS_RAW.incorrect_cvc),
-			},
+		test('[TS-STRIPE-TC1085] @regression @cargo-a-bordo CVC incorrecto desde Driver App', async ({ page }) => {
+			await new CargoABordoSteps({ page }).runCargoScenario(appPaxScenario, {
+				driverAppStep: {
+					title: '[DRIVER APP] Conductor finaliza viaje → cobra con CVC incorrecto → rechazo',
+					note: APPIUM_NOTE,
+					charge: decline(STRIPE_TEST_CARDS_RAW.incorrect_cvc)
+				}
+			});
 		});
-	});
 
-	test('[TS-STRIPE-TC1086] @regression @cargo-a-bordo tarjeta robada desde Driver App', async ({ page }) => {
-		await new CargoABordoSteps({ page }).runCargoScenario(appPaxScenario, {
-			driverAppStep: {
-				title: '[DRIVER APP] Conductor finaliza viaje → cobra con tarjeta reportada como robada → rechazo',
-				note: APPIUM_NOTE,
-				charge: decline(STRIPE_TEST_CARDS_RAW.stolen_card),
-			},
+		test('[TS-STRIPE-TC1086] @regression @cargo-a-bordo tarjeta robada desde Driver App', async ({ page }) => {
+			await new CargoABordoSteps({ page }).runCargoScenario(appPaxScenario, {
+				driverAppStep: {
+					title: '[DRIVER APP] Conductor finaliza viaje → cobra con tarjeta reportada como robada → rechazo',
+					note: APPIUM_NOTE,
+					charge: decline(STRIPE_TEST_CARDS_RAW.stolen_card)
+				}
+			});
 		});
-	});
-
-});
+	}
+);

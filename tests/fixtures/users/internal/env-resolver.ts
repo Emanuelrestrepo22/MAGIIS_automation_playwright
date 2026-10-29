@@ -21,9 +21,9 @@ export type EnvSuffix = 'TEST' | 'UAT' | 'PROD';
  * Antes estaba inline en cada fixture (`buildDispatcher('TEST', 'test')`).
  */
 export const ENV_SUFFIX_BY_ENVIRONMENT = {
-  test: 'TEST',
-  uat: 'UAT',
-  prod: 'PROD',
+	test: 'TEST',
+	uat: 'UAT',
+	prod: 'PROD'
 } as const satisfies Record<UserEnvironment, EnvSuffix>;
 
 /**
@@ -35,11 +35,11 @@ export const ENV_SUFFIX_BY_ENVIRONMENT = {
  * del barrel. No usa `console.warn` para no romper el check 6 del pre-push.
  */
 export function resolveActiveEnvironment(): UserEnvironment {
-  const env = process.env.ENV ?? 'test';
-  if (env === 'test' || env === 'uat' || env === 'prod') {
-    return env;
-  }
-  return 'test';
+	const env = process.env.ENV ?? 'test';
+	if (env === 'test' || env === 'uat' || env === 'prod') {
+		return env;
+	}
+	return 'test';
 }
 
 /** Devuelve el valor trimeado o undefined si está vacío / ausente. */

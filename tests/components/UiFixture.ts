@@ -14,11 +14,7 @@ import type { TestContextOptions } from '@TestContext';
 
 import { ThreeDsChallengePage } from '@ui/ThreeDsChallengePage';
 import { UiBase } from '@ui/UiBase';
-import {
-	CarrierGlobalIntegrationsPage,
-	CarrierQuotePage,
-	CarrierRecurrentTravelPage,
-} from '@ui/carrier';
+import { CarrierGlobalIntegrationsPage, CarrierQuotePage, CarrierRecurrentTravelPage } from '@ui/carrier';
 
 export class UiFixture extends UiBase {
 	/** Modal 3DS de Stripe (feature gateway-pg). */

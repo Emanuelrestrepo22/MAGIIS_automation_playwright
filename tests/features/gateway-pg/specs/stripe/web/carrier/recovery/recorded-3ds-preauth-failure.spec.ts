@@ -17,6 +17,8 @@ import { CarrierDashboardPage, CarrierNewTravelPage, CarrierOperationalPreferenc
 import { ThreeDsChallengePage } from '@ui/ThreeDsChallengePage';
 import { ThreeDsErrorPopup } from '@ui/ThreeDsErrorPopup';
 import { loginAsDispatcher, STRIPE_TEST_CARDS, TEST_DATA } from '@features/gateway-pg/fixtures/gateway.fixtures';
+import { PASSENGERS } from '@features/gateway-pg/data/passengers';
+import { ensureRecoverableCardIdempotence } from '@features/gateway-pg/helpers/stripe/recovery.helpers';
 
 test.use({ storageState: undefined });
 
@@ -37,6 +39,15 @@ test.describe(
 
 			await test.step('Login carrier', async () => {
 				await loginAsDispatcher(page);
+			});
+
+			await test.step('Precondición: limpiar 3220 previa del pax (idempotencia BL-050)', async () => {
+				// La 3220 queda vinculada al wallet en cada corrida (attach al completar los iframes);
+				// BL-050 bloquea "Validar" si el mismo número ya está vinculado — limpieza silent-fail.
+				await ensureRecoverableCardIdempotence(page, {
+					passenger: TEST_DATA.appPaxPassenger,
+					apiSearchQuery: PASSENGERS.appPax.apiSearchQuery
+				});
 			});
 
 			await test.step('Validar hold activo en preferencias operativas', async () => {

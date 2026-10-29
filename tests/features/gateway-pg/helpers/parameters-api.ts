@@ -64,15 +64,24 @@ export async function setHoldViaApi(
 	// cae al throw detallado de abajo (retryAsync no la reintenta porque no lanzamos).
 	const res = await retryAsync(
 		async () => {
-			const r = await page.request.post(`${apiBase(page)}/carriers/${carrierId}/parameters`, { headers, data: params });
+			const r = await page.request.post(`${apiBase(page)}/carriers/${carrierId}/parameters`, {
+				headers,
+				data: params
+			});
 			if (!r.ok() && RETRYABLE_STATUS.has(r.status())) {
-				throw new Error(`[parameters-api] POST parameters ${r.status()} ${r.statusText()} (transitorio) — reintentando`);
+				throw new Error(
+					`[parameters-api] POST parameters ${r.status()} ${r.statusText()} (transitorio) — reintentando`
+				);
 			}
 			return r;
 		},
 		// El 403 en TEST puede persistir varios segundos (bug v1.72.8 preauth-save / ventana de permisos):
 		// 5 intentos con backoff incremental (~1.5+3+4.5+6 ≈ 15s) para tolerar la ventana antes de fallar.
-		{ attempts: 5, delayMs: 1500, onRetry: (attempt, err) => console.warn(`[parameters-api] retry ${attempt}/4: ${err.message}`) },
+		{
+			attempts: 5,
+			delayMs: 1500,
+			onRetry: (attempt, err) => console.warn(`[parameters-api] retry ${attempt}/4: ${err.message}`)
+		}
 	);
 	if (!res.ok()) {
 		const body = await res.text().catch(() => '');
@@ -97,4 +106,24 @@ export async function readHoldEnabled(page: Page, carrierId = DEFAULT_CARRIER_ID
  */
 export async function readHoldRaw(page: Page, carrierId = DEFAULT_CARRIER_ID): Promise<boolean | undefined> {
 	return (await getCarrierParameters(page, carrierId)).enableCreditCardHold;
+}
+
+/**
+ * Re-asegura hold=ON de forma IDEMPOTENTE y best-effort (lee primero; sólo postea si quedó OFF).
+ *
+ * Pensado para el `test.afterEach` de los specs que apagan el hold (review MEDIUM-4): un timeout
+ * del test ABORTA el `finally` del orquestador y dejaría el carrier compartido sin hold para el
+ * resto de la suite; el afterEach sí corre tras el timeout, con presupuesto propio (mismo
+ * precedente de cleanup post-timeout que `hold-capture.spec.ts`). Nunca lanza: la restauración no
+ * debe tapar el desenlace del test — si falla, queda el warn como diagnóstico y el próximo
+ * `setHold` del orquestador corrige el estado al arrancar.
+ */
+export async function ensureHoldRestoredOn(page: Page, carrierId = DEFAULT_CARRIER_ID): Promise<void> {
+	try {
+		if ((await readHoldRaw(page, carrierId)) === true) return;
+		await setHoldViaApi(page, true, { carrierId });
+		console.log('[parameters-api] hold re-asegurado a ON (red de seguridad afterEach)');
+	} catch (err) {
+		console.warn('[parameters-api] ensureHoldRestoredOn falló (best-effort, no fatal):', err);
+	}
 }

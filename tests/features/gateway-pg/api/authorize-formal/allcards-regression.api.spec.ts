@@ -57,7 +57,10 @@ test.describe(
 	},
 	() => {
 		test.skip(!CREDS_READY, 'Faltan USER_CARRIER / PASS_CARRIER / BASE_URL — configurar .env.test');
-		test.skip(!CARRIER_ACCOUNT_ID || !PASSENGER_ID, 'Faltan CARRIER_ID / AUTHORIZE_PASSENGER_ID (carrier Authorize + pax sin wallet) [confirmar en UAT].');
+		test.skip(
+			!CARRIER_ACCOUNT_ID || !PASSENGER_ID,
+			'Faltan CARRIER_ID / AUTHORIZE_PASSENGER_ID (carrier Authorize + pax sin wallet) [confirmar en UAT].'
+		);
 
 		let authToken: string;
 
@@ -96,7 +99,9 @@ test.describe(
 					carrierId: CARRIER_ACCOUNT_ID,
 					authToken
 				});
-				expect(res.status, `allCards no debe devolver 500 (status=${res.status} body=${res.raw})`).not.toBe(500);
+				expect(res.status, `allCards no debe devolver 500 (status=${res.status} body=${res.raw})`).not.toBe(
+					500
+				);
 				expect(res.ok, `allCards esperado 2xx, status=${res.status} body=${res.raw}`).toBe(true);
 				expect(Array.isArray(res.body), `allCards debe devolver un array (body=${res.raw})`).toBe(true);
 				// Endurecido (auditoría 2026-07-28): el título promete "200 + lista vacía" y

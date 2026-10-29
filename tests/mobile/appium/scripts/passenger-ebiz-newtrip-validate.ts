@@ -45,7 +45,11 @@ async function run(): Promise<void> {
 		try {
 			const tripId = await harness.createTrip(ORIGIN, DESTINATION, last4);
 			log(`tripId/código = ${tripId ?? '(sin id estable)'}`);
-			log(tripId ? '✅ GO — alta de viaje eBiz con tarjeta vinculada creada' : '⚠️ viaje creado pero sin id/código estable (revisar build)');
+			log(
+				tripId
+					? '✅ GO — alta de viaje eBiz con tarjeta vinculada creada'
+					: '⚠️ viaje creado pero sin id/código estable (revisar build)'
+			);
 		} catch (e) {
 			const msg = e instanceof Error ? e.message : String(e);
 			if (msg.includes('ENV_BLOCKER')) {
@@ -60,4 +64,7 @@ async function run(): Promise<void> {
 	}
 }
 
-run().catch((e: unknown) => { console.error(`[ebiz-newtrip] ${e instanceof Error ? e.message : String(e)}`); process.exit(1); });
+run().catch((e: unknown) => {
+	console.error(`[ebiz-newtrip] ${e instanceof Error ? e.message : String(e)}`);
+	process.exit(1);
+});

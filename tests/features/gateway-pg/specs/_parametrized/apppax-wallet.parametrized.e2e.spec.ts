@@ -31,7 +31,9 @@ import type { CardInput } from '../../../../mobile/appium/passenger/PassengerWal
 async function snap(harness: PassengerTripHappyPathHarness, name: string): Promise<void> {
 	try {
 		mkdirSync('evidence/ebiz', { recursive: true });
-		await (harness.getDriver() as unknown as { saveScreenshot: (p: string) => Promise<unknown> }).saveScreenshot(`evidence/ebiz/${name}.png`);
+		await (harness.getDriver() as unknown as { saveScreenshot: (p: string) => Promise<unknown> }).saveScreenshot(
+			`evidence/ebiz/${name}.png`
+		);
 	} catch {
 		// La evidencia visual es best-effort; su ausencia no invalida las aserciones.
 	}
@@ -50,7 +52,9 @@ const GATEWAY_TAG: Record<GatewayName, string> = {
 // Falla temprano con mensaje claro ante un WALLET_GATEWAY inválido (evita un tag "undefined"
 // en el título y el críptico "Gateway desconocido" del resolver al colectar el archivo).
 if (!Object.prototype.hasOwnProperty.call(GATEWAY_TAG, GATEWAY)) {
-	throw new Error(`WALLET_GATEWAY="${GATEWAY}" no es una pasarela válida. Válidas: ${Object.keys(GATEWAY_TAG).join(', ')}.`);
+	throw new Error(
+		`WALLET_GATEWAY="${GATEWAY}" no es una pasarela válida. Válidas: ${Object.keys(GATEWAY_TAG).join(', ')}.`
+	);
 }
 
 /**
@@ -77,82 +81,108 @@ function walletCardInput(gateway: GatewayName): CardInput & { last4: string } {
 	return input;
 }
 
-test.describe.serial(`Gateway PG · E2E Mobile · App Pax Wallet CRUD [${GATEWAY}] @gateway ${GATEWAY_TAG[GATEWAY]} @e2e-hybrid @wallet @regression`, () => {
+test.describe
+	.serial(`Gateway PG · E2E Mobile · App Pax Wallet CRUD [${GATEWAY}] @gateway ${GATEWAY_TAG[GATEWAY]} @e2e-hybrid @wallet @regression`, () => {
 	// Sin servidor Appium el harness no se puede construir → SKIP a nivel describe (no ERROR).
 	test.skip(() => !process.env.APPIUM_SERVER_URL, 'Requiere servidor Appium Android activo (APPIUM_SERVER_URL).');
 
 	const card = walletCardInput(GATEWAY);
 	const last4 = card.last4;
 
-	test('[wallet-add] empty-state → alta de tarjeta + listado (visible por last4)', {
-		annotation: [
-			{ type: 'tms', description: 'MG-148' }, // Vinculación de tarjeta (TC-PAY-C-01)
-			{ type: 'tms', description: 'MG-295' }  // Eliminar última tarjeta → estado vacío (TC-PAY-WAL-12)
-		]
-	}, async () => {
-		const harness = new PassengerTripHappyPathHarness(getPassengerAppConfig(), undefined, { profileMode: 'personal' });
-		const wallet = harness.getWalletScreen();
-
-		try {
-			await test.step('start passenger shell', async () => {
-				await harness.ensurePassengerShell();
+	test(
+		'[wallet-add] empty-state → alta de tarjeta + listado (visible por last4)',
+		{
+			annotation: [
+				{ type: 'tms', description: 'MG-148' }, // Vinculación de tarjeta (TC-PAY-C-01)
+				{ type: 'tms', description: 'MG-295' } // Eliminar última tarjeta → estado vacío (TC-PAY-WAL-12)
+			]
+		},
+		async () => {
+			const harness = new PassengerTripHappyPathHarness(getPassengerAppConfig(), undefined, {
+				profileMode: 'personal'
 			});
+			const wallet = harness.getWalletScreen();
 
-			// Empty-state (MG-295 / TC-PAY-WAL-12): borrar TODAS las tarjetas — incluida la última —
-			// y verificar estado vacío (count 0) sin crash ni error 500. Además es precondición del
-			// alta: un wallet lleno impide que el gateway persista la tarjeta nueva (BL-055).
-			await test.step('[MG-295] empty-state — borrar hasta vaciar + estado vacío sin crash', async () => {
-				await harness.cleanWallet();
-				expect(await wallet.countCards(), 'tras borrar la última, el wallet debe quedar vacío (estado vacío)').toBe(0);
-				expect(await wallet.hasCard(last4), 'ninguna tarjeta debe seguir visible tras el vaciado').toBe(false);
-			});
+			try {
+				await test.step('start passenger shell', async () => {
+					await harness.ensurePassengerShell();
+				});
 
-			await test.step(`alta de tarjeta ${GATEWAY} (…${last4}) desde vacío + listado`, async () => {
-				const state = await harness.ensureWalletCard(card);
-				expect(state, 'debe poder agregarse una tarjeta partiendo del wallet vacío').toBe('added');
-				expect(await wallet.hasCard(last4), 'la tarjeta recién agregada debe listarse en el wallet').toBe(true);
-				expect(await wallet.countCards(), 'el wallet debe tener al menos 1 tarjeta tras el alta').toBeGreaterThan(0);
-				await snap(harness, `wallet-add-${GATEWAY}-${last4}`); // evidencia: tarjeta vinculada visible
-			});
-		} finally {
-			await harness.endSession();
+				// Empty-state (MG-295 / TC-PAY-WAL-12): borrar TODAS las tarjetas — incluida la última —
+				// y verificar estado vacío (count 0) sin crash ni error 500. Además es precondición del
+				// alta: un wallet lleno impide que el gateway persista la tarjeta nueva (BL-055).
+				await test.step('[MG-295] empty-state — borrar hasta vaciar + estado vacío sin crash', async () => {
+					await harness.cleanWallet();
+					expect(
+						await wallet.countCards(),
+						'tras borrar la última, el wallet debe quedar vacío (estado vacío)'
+					).toBe(0);
+					expect(await wallet.hasCard(last4), 'ninguna tarjeta debe seguir visible tras el vaciado').toBe(
+						false
+					);
+				});
+
+				await test.step(`alta de tarjeta ${GATEWAY} (…${last4}) desde vacío + listado`, async () => {
+					const state = await harness.ensureWalletCard(card);
+					expect(state, 'debe poder agregarse una tarjeta partiendo del wallet vacío').toBe('added');
+					expect(await wallet.hasCard(last4), 'la tarjeta recién agregada debe listarse en el wallet').toBe(
+						true
+					);
+					expect(
+						await wallet.countCards(),
+						'el wallet debe tener al menos 1 tarjeta tras el alta'
+					).toBeGreaterThan(0);
+					await snap(harness, `wallet-add-${GATEWAY}-${last4}`); // evidencia: tarjeta vinculada visible
+				});
+			} finally {
+				await harness.endSession();
+			}
 		}
-	});
+	);
 
-	test('[wallet-delete] desvincular la tarjeta vinculada + verificar que desaparece', {
-		annotation: [
-			{ type: 'tms', description: 'MG-293' } // Eliminar tarjeta desde App PAX (TC-PAY-WAL-10)
-		]
-	}, async () => {
-		const harness = new PassengerTripHappyPathHarness(getPassengerAppConfig(), undefined, { profileMode: 'personal' });
-		const wallet = harness.getWalletScreen();
-
-		try {
-			await test.step('start passenger shell', async () => {
-				await harness.ensurePassengerShell();
+	test(
+		'[wallet-delete] desvincular la tarjeta vinculada + verificar que desaparece',
+		{
+			annotation: [
+				{ type: 'tms', description: 'MG-293' } // Eliminar tarjeta desde App PAX (TC-PAY-WAL-10)
+			]
+		},
+		async () => {
+			const harness = new PassengerTripHappyPathHarness(getPassengerAppConfig(), undefined, {
+				profileMode: 'personal'
 			});
+			const wallet = harness.getWalletScreen();
 
-			// Precondición: la tarjeta debe existir (la sembró el test anterior en la misma serie).
-			// Si no está (corrida aislada), la sembramos para que el delete tenga objetivo.
-			await test.step('asegurar tarjeta a borrar', async () => {
-				const state = await harness.ensureWalletCard(card);
-				expect(state).toMatch(/added|already-present/);
-				expect(await wallet.hasCard(last4), 'la tarjeta debe estar vinculada antes del borrado').toBe(true);
-				await snap(harness, `wallet-before-delete-${GATEWAY}-${last4}`); // evidencia: tarjeta presente
-			});
+			try {
+				await test.step('start passenger shell', async () => {
+					await harness.ensurePassengerShell();
+				});
 
-			await test.step(`borrar la tarjeta …${last4} y verificar que desaparece`, async () => {
-				await harness.deleteWalletCard(last4);
-				expect(await wallet.hasCard(last4), 'la tarjeta debe desaparecer del wallet tras el borrado').toBe(false);
-				await snap(harness, `wallet-after-delete-${GATEWAY}-${last4}`); // evidencia: wallet sin la tarjeta
-			});
-		} finally {
-			await harness.endSession();
+				// Precondición: la tarjeta debe existir (la sembró el test anterior en la misma serie).
+				// Si no está (corrida aislada), la sembramos para que el delete tenga objetivo.
+				await test.step('asegurar tarjeta a borrar', async () => {
+					const state = await harness.ensureWalletCard(card);
+					expect(state).toMatch(/added|already-present/);
+					expect(await wallet.hasCard(last4), 'la tarjeta debe estar vinculada antes del borrado').toBe(true);
+					await snap(harness, `wallet-before-delete-${GATEWAY}-${last4}`); // evidencia: tarjeta presente
+				});
+
+				await test.step(`borrar la tarjeta …${last4} y verificar que desaparece`, async () => {
+					await harness.deleteWalletCard(last4);
+					expect(await wallet.hasCard(last4), 'la tarjeta debe desaparecer del wallet tras el borrado').toBe(
+						false
+					);
+					await snap(harness, `wallet-after-delete-${GATEWAY}-${last4}`); // evidencia: wallet sin la tarjeta
+				});
+			} finally {
+				await harness.endSession();
+			}
 		}
-	});
+	);
 });
 
-test.describe.serial(`Gateway PG · E2E Mobile · App Pax Wallet Business [${GATEWAY}] @gateway ${GATEWAY_TAG[GATEWAY]} @e2e-hybrid @wallet @regression`, () => {
+test.describe
+	.serial(`Gateway PG · E2E Mobile · App Pax Wallet Business [${GATEWAY}] @gateway ${GATEWAY_TAG[GATEWAY]} @e2e-hybrid @wallet @regression`, () => {
 	// Requiere servidor Appium + que el pax tenga perfil Business (colaborador/empresa vinculada) con
 	// dirección guardada (el backend eBiz exige placeId del colaborador para el alta — ver MG-151).
 	test.skip(() => !process.env.APPIUM_SERVER_URL, 'Requiere servidor Appium Android activo (APPIUM_SERVER_URL).');
@@ -160,27 +190,37 @@ test.describe.serial(`Gateway PG · E2E Mobile · App Pax Wallet Business [${GAT
 	const card = walletCardInput(GATEWAY);
 	const last4 = card.last4;
 
-	test('[wallet-add-business] alta de tarjeta válida en modo Business/Compañía', {
-		annotation: [
-			{ type: 'tms', description: 'MG-288' } // Vincular tarjeta desde App PAX modo Business (TC-PAY-WAL-05)
-		]
-	}, async () => {
-		const harness = new PassengerTripHappyPathHarness(getPassengerAppConfig(), undefined, { profileMode: 'business' });
-		const wallet = harness.getWalletScreen();
-
-		try {
-			await test.step('start passenger shell (modo Compañía)', async () => {
-				await harness.ensurePassengerShell(); // togglea a modo Business/Compañía
+	test(
+		'[wallet-add-business] alta de tarjeta válida en modo Business/Compañía',
+		{
+			annotation: [
+				{ type: 'tms', description: 'MG-288' } // Vincular tarjeta desde App PAX modo Business (TC-PAY-WAL-05)
+			]
+		},
+		async () => {
+			const harness = new PassengerTripHappyPathHarness(getPassengerAppConfig(), undefined, {
+				profileMode: 'business'
 			});
+			const wallet = harness.getWalletScreen();
 
-			await test.step(`alta de tarjeta ${GATEWAY} (…${last4}) en modo Business`, async () => {
-				const state = await harness.ensureWalletCard(card);
-				expect(state, 'debe poder vincularse una tarjeta en el perfil Business').toMatch(/added|already-present/);
-				expect(await wallet.hasCard(last4), 'la tarjeta debe quedar vinculada en el wallet Business').toBe(true);
-				await snap(harness, `wallet-add-business-${GATEWAY}-${last4}`);
-			});
-		} finally {
-			await harness.endSession();
+			try {
+				await test.step('start passenger shell (modo Compañía)', async () => {
+					await harness.ensurePassengerShell(); // togglea a modo Business/Compañía
+				});
+
+				await test.step(`alta de tarjeta ${GATEWAY} (…${last4}) en modo Business`, async () => {
+					const state = await harness.ensureWalletCard(card);
+					expect(state, 'debe poder vincularse una tarjeta en el perfil Business').toMatch(
+						/added|already-present/
+					);
+					expect(await wallet.hasCard(last4), 'la tarjeta debe quedar vinculada en el wallet Business').toBe(
+						true
+					);
+					await snap(harness, `wallet-add-business-${GATEWAY}-${last4}`);
+				});
+			} finally {
+				await harness.endSession();
+			}
 		}
-	});
+	);
 });

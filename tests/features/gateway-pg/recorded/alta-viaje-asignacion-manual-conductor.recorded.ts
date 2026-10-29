@@ -39,7 +39,11 @@ test('recorded — alta de viaje con asignación manual de conductor (referencia
 	await page.getByText('Restrepo, Emanuel (+').click();
 
 	// Origen (viaje PLANO: sin método de pago — el cobro va por App Driver).
-	await page.locator('.bootstrap.width-combo.input-search.ng-untouched.ng-pristine.ng-valid > .below > .single > .placeholder').click();
+	await page
+		.locator(
+			'.bootstrap.width-combo.input-search.ng-untouched.ng-pristine.ng-valid > .below > .single > .placeholder'
+		)
+		.click();
 	await page.getByText('Reconquista 661, Buenos Aires').click();
 	await page.locator('.data-with-icon-col.option-content-container.ng-tns-c28-3').click();
 	await page.locator('.ng-star-inserted.highlighted > .data-with-icon-col').click();

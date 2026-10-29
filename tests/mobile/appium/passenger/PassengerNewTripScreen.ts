@@ -152,7 +152,12 @@ export class PassengerNewTripScreen extends AppiumSessionBase {
 		const driver = this.getDriver();
 		const deadline = Date.now() + timeout;
 		const normalize = (value: string): string =>
-			value.replace(/\s+/g, ' ').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+			value
+				.replace(/\s+/g, ' ')
+				.trim()
+				.toLowerCase()
+				.normalize('NFD')
+				.replace(/[\u0300-\u036f]/g, '');
 		const target = normalize(street);
 
 		while (Date.now() < deadline) {
@@ -405,13 +410,18 @@ export class PassengerNewTripScreen extends AppiumSessionBase {
 		// si no está visible (sub-página), usamos el back nativo de Android.
 		const driver = this.getDriver();
 		const atHome = async (waitMs: number): Promise<boolean> =>
-			(await this.waitForWebUrlContains('HomePage', waitMs)) && (await this.waitForWebText('Solo Ida', waitMs, true));
+			(await this.waitForWebUrlContains('HomePage', waitMs)) &&
+			(await this.waitForWebText('Solo Ida', waitMs, true));
 
 		for (let attempt = 0; attempt < 6; attempt++) {
 			if (await atHome(3_000)) {
 				return;
 			}
-			const tappedInicio = await this.tapNativeByText('ion-tab-button, a, button, [role="button"], ion-item', 'inicio', 2_500);
+			const tappedInicio = await this.tapNativeByText(
+				'ion-tab-button, a, button, [role="button"], ion-item',
+				'inicio',
+				2_500
+			);
 			if (!tappedInicio) {
 				await driver.back().catch(() => undefined);
 			}
@@ -527,7 +537,9 @@ export class PassengerNewTripScreen extends AppiumSessionBase {
 			(await this.waitForWebText('Cancelar Viaje', 15_000, true)) ||
 			(await this.waitForWebText('Buscando servicio', 3_000, true));
 		if (!created) {
-			throw new Error('PassengerNewTripScreen.confirmTrip() - viaje no creado (sin "Buscando servicio"/"Cancelar Viaje" tras "Viajo Ahora")');
+			throw new Error(
+				'PassengerNewTripScreen.confirmTrip() - viaje no creado (sin "Buscando servicio"/"Cancelar Viaje" tras "Viajo Ahora")'
+			);
 		}
 
 		// Código del viaje best-effort (puede volver undefined si no está visible en esta pantalla).

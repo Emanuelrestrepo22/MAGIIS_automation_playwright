@@ -49,9 +49,18 @@ test('recorded — Authorize hold ON · colaborador de contractor (referencia)',
 	await page.getByText('smith, Emanuel (+54124048846)').click();
 
 	// Origen y destino.
-	await page.locator('.ng-tns-c28-3.ng-untouched > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder').first().click();
+	await page
+		.locator(
+			'.ng-tns-c28-3.ng-untouched > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder'
+		)
+		.first()
+		.click();
 	await page.getByText('Reconquista 661, Buenos Aires').click();
-	await page.locator('.multiple-destination-container > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder').click();
+	await page
+		.locator(
+			'.multiple-destination-container > div > .search-container > .search-container-input > .bootstrap > .below > .single > .placeholder'
+		)
+		.click();
 	await page.getByText('Cazadores 1987, Ciudad Autó').click();
 
 	// Método de pago → tarjeta preautorizada. El pax no tenía tarjetas (card flow "new seed"),

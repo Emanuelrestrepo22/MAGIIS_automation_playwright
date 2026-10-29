@@ -169,9 +169,12 @@ export class CargoABordoSteps extends UiBase {
 			await assertAuthorizeAccountMeasuresRealAuthorizations();
 		}
 
-		await test.step(scenario.gateway ? `Login carrier (creds chain ${scenario.gateway})` : 'Login carrier', async () => {
-			await this.login(scenario.gateway);
-		});
+		await test.step(
+			scenario.gateway ? `Login carrier (creds chain ${scenario.gateway})` : 'Login carrier',
+			async () => {
+				await this.login(scenario.gateway);
+			}
+		);
 
 		if (scenario.cardPrecondition) {
 			const pre = scenario.cardPrecondition;
@@ -184,11 +187,15 @@ export class CargoABordoSteps extends UiBase {
 					'gateway-pg:carrier',
 					`[card-precondition] ${scenario.passenger ?? scenario.client}: ${check.activeCards} tarjetas, tiene ${pre.requiredLast4}: ${check.hasRequiredCard}, limpiadas: ${check.cardsDeleted}`
 				);
-				if (!check.hasRequiredCard) {
-					throw new Error(
-						`[${pre.tcLabel}] PRECONDICIÓN NO CUMPLIDA: pasajero sin tarjeta ${pre.requiredLast4} activa (tarjetas activas: ${check.activeCards}). Vincular manualmente en TEST antes de ejecutar.`
-					);
-				}
+				// FIX 2026-08-07 (diagnóstico live TC1081): hard-throw → test.skip. Semántica de
+				// precondición-ausente, mismo patrón que CarrierHoldSteps.resolveCardFlow /
+				// ContractorHoldSteps card.kind='saved' — el pax sin la tarjeta requerida en TEST
+				// no es un bug de código ni de producto, es un dato de ambiente por vincular
+				// manualmente; un throw duro lo reportaba como fallo en vez de precondición.
+				test.skip(
+					!check.hasRequiredCard,
+					`[${pre.tcLabel}] Precondición: pasajero debe tener tarjeta ${pre.requiredLast4} vinculada en TEST (tarjetas activas: ${check.activeCards}). Vincular manualmente antes de ejecutar.`
+				);
 			});
 		}
 
@@ -362,7 +369,9 @@ export class CargoABordoSteps extends UiBase {
 					description: `${travelId} — viaje VIVO para cobrar manualmente desde la Driver App (keepTravel activo: no se canceló)${cardHint}`
 				});
 				await test.step(`Viaje ${travelId} queda VIVO para cobro manual en la Driver App`, async () => {
-					console.log(`[cargo-a-bordo] travelId=${travelId} — cobrar desde la Driver App; NO se canceló.${cardHint}`);
+					console.log(
+						`[cargo-a-bordo] travelId=${travelId} — cobrar desde la Driver App; NO se canceló.${cardHint}`
+					);
 				});
 			}
 		}

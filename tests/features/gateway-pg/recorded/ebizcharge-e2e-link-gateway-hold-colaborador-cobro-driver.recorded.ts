@@ -151,7 +151,7 @@ const EBIZ = {
 	subscriptionKey: process.env.EBIZ_SUBSCRIPTION_KEY ?? '',
 	securityId: process.env.EBIZ_SECURITY_KEY ?? '',
 	userId: process.env.EBIZ_MERCHANT_USER ?? '',
-	password: process.env.EBIZ_MERCHANT_PASSWORD ?? '',
+	password: process.env.EBIZ_MERCHANT_PASSWORD ?? ''
 };
 
 /** Tarjeta happy path de eBiz — coincide con `EBIZ_TEST_CARDS.…number = '4000100011112224'`. */
@@ -162,7 +162,7 @@ const CARD = {
 	holder: 'smith Emanuel',
 	/** El ZIP NO se tipea: lo autocompleta el sistema al elegir la dirección (HALLAZGO 1). */
 	address: '1234 Main street',
-	addressOption: 'Main Street, Los Angeles, CA, USA',
+	addressOption: 'Main Street, Los Angeles, CA, USA'
 };
 
 test('[EXPLORATORIO][eBizCharge] switch de pasarela + alta de viaje colaborador + cobro driver', async ({ page }) => {

@@ -28,7 +28,24 @@ class Dumper extends AppiumSessionBase {
 				const h = el as HTMLElement;
 				const attrs: Record<string, string> = {};
 				for (const a of Array.from(h.attributes)) {
-					if (['id', 'name', 'formcontrolname', 'placeholder', 'type', 'value', 'color', 'class', 'aria-label', 'label', 'slot', 'fill', 'role', 'expand'].includes(a.name)) {
+					if (
+						[
+							'id',
+							'name',
+							'formcontrolname',
+							'placeholder',
+							'type',
+							'value',
+							'color',
+							'class',
+							'aria-label',
+							'label',
+							'slot',
+							'fill',
+							'role',
+							'expand'
+						].includes(a.name)
+					) {
 						attrs[a.name] = a.value.slice(0, 80);
 					}
 				}
@@ -39,12 +56,24 @@ class Dumper extends AppiumSessionBase {
 				};
 			};
 			// Page component (children of the router outlet).
-			const pages = Array.from(document.querySelectorAll('ion-router-outlet > *'))
-				.map(e => `${e.tagName.toLowerCase()}${(e as HTMLElement).offsetParent === null ? '(hidden)' : ''}`);
-			const seg = Array.from(document.querySelectorAll('ion-segment, ion-segment-button')).filter(isVisible).map(desc);
-			const inputs = Array.from(document.querySelectorAll('ion-input, input, ion-searchbar, ion-textarea')).filter(isVisible).map(desc);
-			const buttons = Array.from(document.querySelectorAll('ion-button, button, [role="button"], ion-fab-button, ion-item[button]')).filter(isVisible).map(desc);
-			const items = Array.from(document.querySelectorAll('ion-item, ion-card, ion-list > *')).filter(isVisible).map(desc).slice(0, 30);
+			const pages = Array.from(document.querySelectorAll('ion-router-outlet > *')).map(
+				e => `${e.tagName.toLowerCase()}${(e as HTMLElement).offsetParent === null ? '(hidden)' : ''}`
+			);
+			const seg = Array.from(document.querySelectorAll('ion-segment, ion-segment-button'))
+				.filter(isVisible)
+				.map(desc);
+			const inputs = Array.from(document.querySelectorAll('ion-input, input, ion-searchbar, ion-textarea'))
+				.filter(isVisible)
+				.map(desc);
+			const buttons = Array.from(
+				document.querySelectorAll('ion-button, button, [role="button"], ion-fab-button, ion-item[button]')
+			)
+				.filter(isVisible)
+				.map(desc);
+			const items = Array.from(document.querySelectorAll('ion-item, ion-card, ion-list > *'))
+				.filter(isVisible)
+				.map(desc)
+				.slice(0, 30);
 			const bodyText = (document.body?.innerText || '').replace(/\s+/g, ' ').trim().slice(0, 600);
 			return { url: location.href, pages, seg, inputs, buttons, items, bodyText };
 		});
@@ -65,4 +94,7 @@ async function run(): Promise<void> {
 	}
 }
 
-run().catch((e: unknown) => { console.error(`[newtrip-dump] ${e instanceof Error ? e.message : String(e)}`); process.exit(1); });
+run().catch((e: unknown) => {
+	console.error(`[newtrip-dump] ${e instanceof Error ? e.message : String(e)}`);
+	process.exit(1);
+});

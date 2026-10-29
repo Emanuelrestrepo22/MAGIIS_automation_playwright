@@ -87,17 +87,33 @@ const NA_SIN_MARCA = (gateway: string): string =>
 
 export const CARD_MATRIX = {
 	stripe: {
-		HAPPY_NO_AUTH: { card: 'SUCCESS_NO_3DS', note: '4242 — SetupIntent OK → PaymentIntent OK → Capture OK, sin challenge.' },
+		HAPPY_NO_AUTH: {
+			card: 'SUCCESS_NO_3DS',
+			note: '4242 — SetupIntent OK → PaymentIntent OK → Capture OK, sin challenge.'
+		},
 		HAPPY_MASTERCARD: { card: 'SUCCESS_MASTERCARD', note: 'Mastercard débito.' },
-		HAPPY_AMEX: { na: 'El registry Stripe del repo no tiene una Amex de prueba — agregarla a STRIPE_TEST_CARDS_RAW primero.' },
+		HAPPY_AMEX: {
+			na: 'El registry Stripe del repo no tiene una Amex de prueba — agregarla a STRIPE_TEST_CARDS_RAW primero.'
+		},
 		HAPPY_DISCOVER: { na: 'El registry Stripe del repo no tiene una Discover de prueba.' },
 		HAPPY_PARTIAL_AUTH: { na: 'Las test cards de Stripe no exponen autorización parcial en el flujo MAGIIS.' },
 		HAPPY_SLOW_PROCESSING: { na: 'Stripe no publica tarjetas de retraso de procesamiento.' },
-		HAPPY_AUTH: { card: 'HAPPY_3DS', requires3ds: true, note: '3184 always_authenticate — challenge determinístico (la 3155 varía por risk score).' },
-		FAIL_AUTH: { card: 'FAIL_3DS', requires3ds: true, note: '1629 — el challenge se completa y el cobro se declina igual (irrecuperable).' },
+		HAPPY_AUTH: {
+			card: 'HAPPY_3DS',
+			requires3ds: true,
+			note: '3184 always_authenticate — challenge determinístico (la 3155 varía por risk score).'
+		},
+		FAIL_AUTH: {
+			card: 'FAIL_3DS',
+			requires3ds: true,
+			note: '1629 — el challenge se completa y el cobro se declina igual (irrecuperable).'
+		},
 		DECLINE_AUTHORIZE: { card: 'DECLINE_AUTHORIZE', note: '0002 generic_decline — rechaza al intentar el hold.' },
 		DECLINE_CAPTURE: { card: 'DECLINE_CAPTURE', note: '9995 — authorize OK y el cobro final falla.' },
-		DECLINE_INVALID_CVC: { card: 'DECLINE_INVALID_CVC', note: '0127 incorrect_cvc — rechaza (distinto de APPROVED_CVV_MISMATCH).' },
+		DECLINE_INVALID_CVC: {
+			card: 'DECLINE_INVALID_CVC',
+			note: '0127 incorrect_cvc — rechaza (distinto de APPROVED_CVV_MISMATCH).'
+		},
 		DECLINE_INSUFFICIENT_FUNDS: {
 			card: 'DECLINE_CAPTURE',
 			note: 'Misma 9995: en Stripe el decline de capture ES por fondos insuficientes. Mismo dato, dos intents con oráculo distinto (uno mira el capture, el otro el mensaje).'
@@ -106,23 +122,38 @@ export const CARD_MATRIX = {
 		DECLINE_INVALID_TRANSACTION: { na: NA_COLAPSA_EN_GENERICO('Stripe') },
 		DECLINE_INVALID_ISSUER: { na: NA_COLAPSA_EN_GENERICO('Stripe') },
 		DECLINE_RESTRICTED_CARD: { na: NA_COLAPSA_EN_GENERICO('Stripe') },
-		DECLINE_EXPIRED_CARD: { card: 'DECLINE_EXPIRED_CARD', note: 'expired_card — el rechazo lo produce el PSP, no la validación del form.' },
+		DECLINE_EXPIRED_CARD: {
+			card: 'DECLINE_EXPIRED_CARD',
+			note: 'expired_card — el rechazo lo produce el PSP, no la validación del form.'
+		},
 		DECLINE_PREPAID_ZERO_BALANCE: { na: 'Stripe no expone prepaga con saldo cero.' },
-		DECLINE_CARD_FLAGGED: { card: 'DECLINE_LOST_CARD', note: 'lost_card (la variante stolen_card está en CARDS.DECLINE_STOLEN_CARD).' },
+		DECLINE_CARD_FLAGGED: {
+			card: 'DECLINE_LOST_CARD',
+			note: 'lost_card (la variante stolen_card está en CARDS.DECLINE_STOLEN_CARD).'
+		},
 		DECLINE_ZIP_MISMATCH: {
-			na: 'La card que falla el `zip_check` (4000 0000 0000 0036) APRUEBA el cargo igual salvo que la cuenta tenga la Radar rule `Block if :card_address_zip_check: = \'fail\'`, hoy NO verificada en la cuenta MAGIIS. Mapearla produciría un spec que espera un rechazo que no ocurre. Al confirmar la regla: agregar la card a stripe/cards.ts + card-policy.ts y declararla acá, en un commit propio.'
+			na: "La card que falla el `zip_check` (4000 0000 0000 0036) APRUEBA el cargo igual salvo que la cuenta tenga la Radar rule `Block if :card_address_zip_check: = 'fail'`, hoy NO verificada en la cuenta MAGIIS. Mapearla produciría un spec que espera un rechazo que no ocurre. Al confirmar la regla: agregar la card a stripe/cards.ts + card-policy.ts y declararla acá, en un commit propio."
 		},
 		FRAUD_REVIEW: {
 			na: 'Radar bloquea o deja pasar; no expone un estado "en revisión" que el front de MAGIIS muestre distinto de un decline.'
 		},
 		FRAUD_REJECT: { card: 'FRAUD_BLOCKED', note: 'always_blocked — Radar la rechaza siempre.' },
-		APPROVED_CVV_MISMATCH: { card: 'APPROVED_CVV_MISMATCH', note: 'cvc_check falla DESPUÉS de autorizar: el cargo pasa, la verificación no.' },
-		APPROVED_AVS_MISMATCH: { card: 'APPROVED_AVS_MISMATCH', note: 'zip_fail_elevated — aprueba con la verificación de ZIP fallida.' },
+		APPROVED_CVV_MISMATCH: {
+			card: 'APPROVED_CVV_MISMATCH',
+			note: 'cvc_check falla DESPUÉS de autorizar: el cargo pasa, la verificación no.'
+		},
+		APPROVED_AVS_MISMATCH: {
+			card: 'APPROVED_AVS_MISMATCH',
+			note: 'zip_fail_elevated — aprueba con la verificación de ZIP fallida.'
+		},
 		REFERRAL: { na: 'Stripe no expone la respuesta de referral (autorización por voz).' }
 	},
 
 	authorize: {
-		HAPPY_NO_AUTH: { card: 'SUCCESS', note: '4111…1111 + CVV 900 → Response Code 1 (verificado en vivo 2026-07-27).' },
+		HAPPY_NO_AUTH: {
+			card: 'SUCCESS',
+			note: '4111…1111 + CVV 900 → Response Code 1 (verificado en vivo 2026-07-27).'
+		},
 		HAPPY_MASTERCARD: { card: 'SUCCESS_MASTERCARD' },
 		HAPPY_AMEX: { card: 'SUCCESS_AMEX', note: 'CVV de 4 dígitos (9000) — el form nativo tiene que aceptar 4.' },
 		HAPPY_DISCOVER: { card: 'SUCCESS_DISCOVER' },
@@ -140,8 +171,13 @@ export const CARD_MATRIX = {
 		DECLINE_INVALID_TRANSACTION: { na: NA_COLAPSA_EN_GENERICO('Authorize') },
 		DECLINE_INVALID_ISSUER: { na: NA_COLAPSA_EN_GENERICO('Authorize') },
 		DECLINE_RESTRICTED_CARD: { na: NA_COLAPSA_EN_GENERICO('Authorize') },
-		DECLINE_EXPIRED_CARD: { na: 'Authorize valida la expiración del lado del cliente: la request no llega a la pasarela.' },
-		DECLINE_PREPAID_ZERO_BALANCE: { card: 'PREPAID_ZERO', note: 'Trigger por ZIP 46228 → Prepaid Auth con saldo $0.' },
+		DECLINE_EXPIRED_CARD: {
+			na: 'Authorize valida la expiración del lado del cliente: la request no llega a la pasarela.'
+		},
+		DECLINE_PREPAID_ZERO_BALANCE: {
+			card: 'PREPAID_ZERO',
+			note: 'Trigger por ZIP 46228 → Prepaid Auth con saldo $0.'
+		},
 		DECLINE_CARD_FLAGGED: { na: NA_COLAPSA_EN_GENERICO('Authorize') },
 		DECLINE_ZIP_MISMATCH: {
 			card: 'AVS_NO_MATCH',
@@ -164,7 +200,10 @@ export const CARD_MATRIX = {
 
 	ebizcharge: {
 		HAPPY_NO_AUTH: { card: 'SUCCESS', note: '4000100011112224 — approved, AVS YYY, CVV2 M.' },
-		HAPPY_MASTERCARD: { card: 'SUCCESS_MASTERCARD', note: '5555444433332226 — fila M de la tabla CVV2 de Mastercard.' },
+		HAPPY_MASTERCARD: {
+			card: 'SUCCESS_MASTERCARD',
+			note: '5555444433332226 — fila M de la tabla CVV2 de Mastercard.'
+		},
 		HAPPY_AMEX: { card: 'SUCCESS_AMEX', note: '371122223332225 — CVV de 4 dígitos.' },
 		HAPPY_DISCOVER: { card: 'SUCCESS_DISCOVER', note: '6011222233332224.' },
 		HAPPY_PARTIAL_AUTH: { na: 'eBizCharge no expone autorización parcial.' },
@@ -177,19 +216,33 @@ export const CARD_MATRIX = {
 			na: `${NA_3DS_STRIPE_ONLY} La serie CAVV de eBiz es un INDICADOR de respuesta, no un challenge — vive en EBIZ_CAVV_REFERENCE.`
 		},
 		FAIL_AUTH: { na: NA_3DS_STRIPE_ONLY },
-		DECLINE_AUTHORIZE: { card: 'DECLINE_DO_NOT_HONOR', note: 'Código 05 Do not Honor — decline canónico de eBiz para MAGIIS.' },
+		DECLINE_AUTHORIZE: {
+			card: 'DECLINE_DO_NOT_HONOR',
+			note: 'Código 05 Do not Honor — decline canónico de eBiz para MAGIIS.'
+		},
 		DECLINE_CAPTURE: {
 			na: 'eBizCharge no expone un decline específico de capture: el número decide el outcome en la autorización.'
 		},
 		DECLINE_INVALID_CVC: { card: 'DECLINE_CVV', note: 'Código 97 Declined for CVV failure.' },
 		DECLINE_INSUFFICIENT_FUNDS: { card: 'DECLINE_INSUFFICIENT', note: 'Código 51 Insufficient funds.' },
-		DECLINE_DO_NOT_HONOR: { card: 'DECLINE_DO_NOT_HONOR', note: 'Código 05 — mismo dato que DECLINE_AUTHORIZE, nombrado por su causa.' },
+		DECLINE_DO_NOT_HONOR: {
+			card: 'DECLINE_DO_NOT_HONOR',
+			note: 'Código 05 — mismo dato que DECLINE_AUTHORIZE, nombrado por su causa.'
+		},
 		DECLINE_INVALID_TRANSACTION: { card: 'DECLINE_INVALID_TRANSACTION', note: 'Código 12 Invalid Transaction.' },
-		DECLINE_INVALID_ISSUER: { card: 'DECLINE_INVALID_ISSUER', note: 'Código 15 Invalid Issuer — OJO: la única con exp 0922.' },
+		DECLINE_INVALID_ISSUER: {
+			card: 'DECLINE_INVALID_ISSUER',
+			note: 'Código 15 Invalid Issuer — OJO: la única con exp 0922.'
+		},
 		DECLINE_RESTRICTED_CARD: { card: 'DECLINE_RESTRICTED', note: 'Código 62 Restricted Card.' },
-		DECLINE_EXPIRED_CARD: { na: 'La expiración se valida del lado del cliente: la request no llega a la pasarela.' },
+		DECLINE_EXPIRED_CARD: {
+			na: 'La expiración se valida del lado del cliente: la request no llega a la pasarela.'
+		},
 		DECLINE_PREPAID_ZERO_BALANCE: { na: 'eBizCharge no expone prepaga con saldo cero.' },
-		DECLINE_CARD_FLAGGED: { card: 'DECLINE_PICKUP_CARD', note: 'Código 04 Pickup Card — el emisor pide retener la tarjeta.' },
+		DECLINE_CARD_FLAGGED: {
+			card: 'DECLINE_PICKUP_CARD',
+			note: 'Código 04 Pickup Card — el emisor pide retener la tarjeta.'
+		},
 		DECLINE_ZIP_MISMATCH: {
 			na: 'eBizCharge no expone un rechazo por ZIP: sus números AVS son eje de ANOTACIÓN y todos devuelven approved (equivalente a investigar — BL-027).'
 		},
@@ -204,7 +257,10 @@ export const CARD_MATRIX = {
 	},
 
 	'mercado-pago': {
-		HAPPY_NO_AUTH: { card: 'APPROVED', note: 'Trigger por holderName APRO (en MP el titular ES el disparador del outcome).' },
+		HAPPY_NO_AUTH: {
+			card: 'APPROVED',
+			note: 'Trigger por holderName APRO (en MP el titular ES el disparador del outcome).'
+		},
 		HAPPY_MASTERCARD: { na: NA_SIN_MARCA('MercadoPago') },
 		HAPPY_AMEX: { na: NA_SIN_MARCA('MercadoPago') },
 		HAPPY_DISCOVER: { na: NA_SIN_MARCA('MercadoPago') },
@@ -219,8 +275,14 @@ export const CARD_MATRIX = {
 		DECLINE_DO_NOT_HONOR: { na: NA_COLAPSA_EN_GENERICO('MercadoPago') },
 		DECLINE_INVALID_TRANSACTION: { na: NA_COLAPSA_EN_GENERICO('MercadoPago') },
 		DECLINE_INVALID_ISSUER: { na: NA_COLAPSA_EN_GENERICO('MercadoPago') },
-		DECLINE_RESTRICTED_CARD: { card: 'REJECTED_CARD_DISABLED', note: 'Trigger por holderName LOCK — tarjeta deshabilitada.' },
-		DECLINE_EXPIRED_CARD: { card: 'REJECTED_EXPIRED', note: 'Trigger por holderName EXPI — el rechazo lo produce MP, no el form.' },
+		DECLINE_RESTRICTED_CARD: {
+			card: 'REJECTED_CARD_DISABLED',
+			note: 'Trigger por holderName LOCK — tarjeta deshabilitada.'
+		},
+		DECLINE_EXPIRED_CARD: {
+			card: 'REJECTED_EXPIRED',
+			note: 'Trigger por holderName EXPI — el rechazo lo produce MP, no el form.'
+		},
 		DECLINE_PREPAID_ZERO_BALANCE: { na: 'MercadoPago no expone prepaga con saldo cero.' },
 		DECLINE_CARD_FLAGGED: {
 			na: 'MP no distingue "tarjeta marcada por el emisor" de tarjeta deshabilitada (LOCK) ni de lista negra (BLAC), ya cubiertos por otros intents.'
@@ -300,7 +362,9 @@ export function assertCardMatrixIntegrity(): true {
 		}
 
 		if (!isSupported(row.HAPPY_NO_AUTH)) {
-			throw new Error(`[card-matrix-drift] ${gateway} no soporta HAPPY_NO_AUTH (intent mínimo de cualquier suite).`);
+			throw new Error(
+				`[card-matrix-drift] ${gateway} no soporta HAPPY_NO_AUTH (intent mínimo de cualquier suite).`
+			);
 		}
 	}
 

@@ -33,7 +33,7 @@ const contractorScenario: CargoScenario = {
 	client: TEST_DATA.contractorClient,
 	passenger: TEST_DATA.contractorPassenger,
 	origin: DRIVER_E2E_PICKUP,
-	destination: TEST_DATA.destination,
+	destination: TEST_DATA.destination
 };
 
 const APPIUM_NOTE = 'PENDIENTE: fase Driver App — requiere Appium.';
@@ -45,59 +45,65 @@ const APPIUM_NOTE = 'PENDIENTE: fase Driver App — requiere Appium.';
  */
 const blocked = (raw: { number: string; exp: string; cvc: string; holderName: string }): DriverChargeSpec => ({
 	card: { number: raw.number, expiry: raw.exp, cvc: raw.cvc, holderName: raw.holderName },
-	expectedOutcome: 'declined',
+	expectedOutcome: 'declined'
 });
 
-test.describe('Gateway PG · Carrier · Colaborador/Contractor — Cargo a Bordo · Antifraud @gateway @stripe @cargo-a-bordo @hold @decline @regression', { annotation: [{ type: 'tms', description: 'MG-161' }] }, () => {
-
-	test('[TS-STRIPE-TC1102] @regression @cargo-a-bordo tarjeta alto riesgo desde Driver App', async ({ page }) => {
-		await new CargoABordoSteps({ page }).runCargoScenario(contractorScenario, {
-			driverAppStep: {
-				title: '[DRIVER APP] Conductor cobra → tarjeta de alto riesgo → bloqueado',
-				note: 'PENDIENTE: fase Driver App — requiere Appium + DriverTripPaymentScreen.',
-				charge: blocked(STRIPE_TEST_CARDS_RAW.highest_risk),
-			},
+test.describe(
+	'Gateway PG · Carrier · Colaborador/Contractor — Cargo a Bordo · Antifraud @gateway @stripe @cargo-a-bordo @hold @decline @regression',
+	{ annotation: [{ type: 'tms', description: 'MG-161' }] },
+	() => {
+		test('[TS-STRIPE-TC1102] @regression @cargo-a-bordo tarjeta alto riesgo desde Driver App', async ({ page }) => {
+			await new CargoABordoSteps({ page }).runCargoScenario(contractorScenario, {
+				driverAppStep: {
+					title: '[DRIVER APP] Conductor cobra → tarjeta de alto riesgo → bloqueado',
+					note: 'PENDIENTE: fase Driver App — requiere Appium + DriverTripPaymentScreen.',
+					charge: blocked(STRIPE_TEST_CARDS_RAW.highest_risk)
+				}
+			});
 		});
-	});
 
-	test('[TS-STRIPE-TC1103] @regression @cargo-a-bordo tarjeta siempre bloqueada desde Driver App', async ({ page }) => {
-		await new CargoABordoSteps({ page }).runCargoScenario(contractorScenario, {
-			driverAppStep: {
-				title: '[DRIVER APP] Conductor cobra → always_blocked → bloqueado por antifraud',
-				note: APPIUM_NOTE,
-				charge: blocked(STRIPE_TEST_CARDS_RAW.always_blocked),
-			},
+		test('[TS-STRIPE-TC1103] @regression @cargo-a-bordo tarjeta siempre bloqueada desde Driver App', async ({
+			page
+		}) => {
+			await new CargoABordoSteps({ page }).runCargoScenario(contractorScenario, {
+				driverAppStep: {
+					title: '[DRIVER APP] Conductor cobra → always_blocked → bloqueado por antifraud',
+					note: APPIUM_NOTE,
+					charge: blocked(STRIPE_TEST_CARDS_RAW.always_blocked)
+				}
+			});
 		});
-	});
 
-	test('[TS-STRIPE-TC1104] @regression @cargo-a-bordo CVC check fail elevated desde Driver App', async ({ page }) => {
-		await new CargoABordoSteps({ page }).runCargoScenario(contractorScenario, {
-			driverAppStep: {
-				title: '[DRIVER APP] Conductor cobra → CVC check fail elevado → bloqueado',
-				note: APPIUM_NOTE,
-				charge: blocked(STRIPE_TEST_CARDS_RAW.cvc_check_fail_elevated),
-			},
+		test('[TS-STRIPE-TC1104] @regression @cargo-a-bordo CVC check fail elevated desde Driver App', async ({
+			page
+		}) => {
+			await new CargoABordoSteps({ page }).runCargoScenario(contractorScenario, {
+				driverAppStep: {
+					title: '[DRIVER APP] Conductor cobra → CVC check fail elevado → bloqueado',
+					note: APPIUM_NOTE,
+					charge: blocked(STRIPE_TEST_CARDS_RAW.cvc_check_fail_elevated)
+				}
+			});
 		});
-	});
 
-	test('[TS-STRIPE-TC1105] @regression @cargo-a-bordo ZIP fail elevated desde Driver App', async ({ page }) => {
-		await new CargoABordoSteps({ page }).runCargoScenario(contractorScenario, {
-			driverAppStep: {
-				title: '[DRIVER APP] Conductor cobra → ZIP fail elevado → bloqueado por antifraud',
-				note: APPIUM_NOTE,
-				charge: blocked(STRIPE_TEST_CARDS_RAW.zip_fail_elevated),
-			},
+		test('[TS-STRIPE-TC1105] @regression @cargo-a-bordo ZIP fail elevated desde Driver App', async ({ page }) => {
+			await new CargoABordoSteps({ page }).runCargoScenario(contractorScenario, {
+				driverAppStep: {
+					title: '[DRIVER APP] Conductor cobra → ZIP fail elevado → bloqueado por antifraud',
+					note: APPIUM_NOTE,
+					charge: blocked(STRIPE_TEST_CARDS_RAW.zip_fail_elevated)
+				}
+			});
 		});
-	});
 
-	test('[TS-STRIPE-TC1106] @regression @cargo-a-bordo address unavailable desde Driver App', async ({ page }) => {
-		await new CargoABordoSteps({ page }).runCargoScenario(contractorScenario, {
-			driverAppStep: {
-				title: '[DRIVER APP] Conductor cobra → dirección no disponible → bloqueado por antifraud',
-				note: APPIUM_NOTE,
-				charge: blocked(STRIPE_TEST_CARDS_RAW.address_unavailable),
-			},
+		test('[TS-STRIPE-TC1106] @regression @cargo-a-bordo address unavailable desde Driver App', async ({ page }) => {
+			await new CargoABordoSteps({ page }).runCargoScenario(contractorScenario, {
+				driverAppStep: {
+					title: '[DRIVER APP] Conductor cobra → dirección no disponible → bloqueado por antifraud',
+					note: APPIUM_NOTE,
+					charge: blocked(STRIPE_TEST_CARDS_RAW.address_unavailable)
+				}
+			});
 		});
-	});
-
-});
+	}
+);

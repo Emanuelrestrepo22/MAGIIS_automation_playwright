@@ -196,11 +196,11 @@ const CARDS = Object.values(EBIZ_TEST_CARDS) as readonly EbizTestCard[];
  */
 function fixtureNumbersBySource(): Record<string, readonly string[]> {
 	return {
-		'EBIZ_TEST_CARDS': CARDS.map(c => c.number),
-		'EBIZ_AVS_REFERENCE': EBIZ_AVS_REFERENCE.map(r => r.number),
-		'EBIZ_CVV2_REFERENCE': EBIZ_CVV2_REFERENCE.map(r => r.number),
-		'EBIZ_CAVV_REFERENCE': EBIZ_CAVV_REFERENCE.map(r => r.number),
-		'EBIZ_CARD_LEVEL_REFERENCE': EBIZ_CARD_LEVEL_REFERENCE.map(r => r.number)
+		EBIZ_TEST_CARDS: CARDS.map(c => c.number),
+		EBIZ_AVS_REFERENCE: EBIZ_AVS_REFERENCE.map(r => r.number),
+		EBIZ_CVV2_REFERENCE: EBIZ_CVV2_REFERENCE.map(r => r.number),
+		EBIZ_CAVV_REFERENCE: EBIZ_CAVV_REFERENCE.map(r => r.number),
+		EBIZ_CARD_LEVEL_REFERENCE: EBIZ_CARD_LEVEL_REFERENCE.map(r => r.number)
 	};
 }
 
@@ -368,7 +368,9 @@ test.describe('[unit] eBizCharge — fidelidad del fixture contra la doc oficial
 	test('@unit largo de CVV por marca: Amex 4 dígitos, el resto 3', () => {
 		for (const card of CARDS) {
 			const esperado = card.brand === 'amex' ? 4 : 3;
-			expect(card.cvc.length, `${card.number} (${card.brand}) debe llevar CVV de ${esperado} dígitos`).toBe(esperado);
+			expect(card.cvc.length, `${card.number} (${card.brand}) debe llevar CVV de ${esperado} dígitos`).toBe(
+				esperado
+			);
 		}
 	});
 
@@ -394,7 +396,9 @@ test.describe('[unit] eBizCharge — fidelidad del fixture contra la doc oficial
 
 		// Ningún código de anotación puede haberse convertido en intent de negocio: el
 		// tamaño del eje de anotación de eBiz supera por mucho a su fila en la matriz.
-		expect(listAnnotations('ebizcharge').length).toBe(DOC_AVS.length + DOC_CVV2.length + DOC_CAVV.length + DOC_CARD_LEVEL.length);
+		expect(listAnnotations('ebizcharge').length).toBe(
+			DOC_AVS.length + DOC_CVV2.length + DOC_CAVV.length + DOC_CARD_LEVEL.length
+		);
 	});
 
 	test('@unit el namespace EBIZ_CARDS solo expone tarjetas que existen en el registry', () => {

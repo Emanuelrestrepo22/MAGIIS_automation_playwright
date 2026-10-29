@@ -107,8 +107,14 @@ test.describe('[PROBE] oráculo de decline de Authorize en el alta de tarjeta @p
 				const offset = clickedAtMs ? Date.now() - clickedAtMs : 0;
 				void response
 					.text()
-					.then(body => netLog.push(`t+${offset}ms ${request.method()} ${response.status()} ${url}\n      body: ${body.slice(0, 600)}`))
-					.catch(() => netLog.push(`t+${offset}ms ${request.method()} ${response.status()} ${url} (body no legible)`));
+					.then(body =>
+						netLog.push(
+							`t+${offset}ms ${request.method()} ${response.status()} ${url}\n      body: ${body.slice(0, 600)}`
+						)
+					)
+					.catch(() =>
+						netLog.push(`t+${offset}ms ${request.method()} ${response.status()} ${url} (body no legible)`)
+					);
 			});
 
 			await loginAsDispatcher(page, { gateway: 'authorize' });
@@ -136,7 +142,9 @@ test.describe('[PROBE] oráculo de decline de Authorize en el alta de tarjeta @p
 			);
 			console.log(`[PROBE][DECLINE-ORACLE] pre-click: "Validar" habilitado = ${enabledPreClick}`);
 			if (!enabledPreClick) {
-				console.log('[PROBE][DECLINE-ORACLE] el form NO habilita el submit (validación de front). Fin del caso.');
+				console.log(
+					'[PROBE][DECLINE-ORACLE] el form NO habilita el submit (validación de front). Fin del caso.'
+				);
 				return;
 			}
 
@@ -146,7 +154,9 @@ test.describe('[PROBE] oráculo de decline de Authorize en el alta de tarjeta @p
 			await validar.click();
 
 			// ── Muestreo temporal ──────────────────────────────────────────────
-			console.log('[PROBE][DECLINE-ORACLE] muestreo | t(ms) | Validar | éxito en DOM | éxito visible | texto nuevo');
+			console.log(
+				'[PROBE][DECLINE-ORACLE] muestreo | t(ms) | Validar | éxito en DOM | éxito visible | texto nuevo'
+			);
 			for (const at of SAMPLE_AT_MS) {
 				const espera = at - (Date.now() - t0);
 				if (espera > 0) await page.waitForTimeout(espera); // reloj del probe: se MIDE en t fijos, no se espera un estado

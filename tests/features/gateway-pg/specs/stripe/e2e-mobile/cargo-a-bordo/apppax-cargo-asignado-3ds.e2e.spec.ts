@@ -24,34 +24,42 @@ test.describe.configure({ timeout: 420_000 });
 const appPaxScenario: CargoScenario = {
 	client: TEST_DATA.appPaxPassenger,
 	origin: TEST_DATA.origin,
-	destination: TEST_DATA.destination,
+	destination: TEST_DATA.destination
 	// Cargo a Bordo: la tarjeta la ingresa el conductor en el viaje → sin cardPrecondition pre-vinculada.
 };
 
 test.describe(
 	'[E2E-MOBILE][STRIPE] Cargo a Bordo asignado · cobro driver 3DS @e2e-hybrid @gateway-pg @stripe @cargo-a-bordo @3ds @happy',
-	{ annotation: [{ type: 'tms', description: 'MG-161' }, { type: 'tms', description: 'MG-158' }] },
+	{
+		annotation: [
+			{ type: 'tms', description: 'MG-161' },
+			{ type: 'tms', description: 'MG-158' }
+		]
+	},
 	() => {
-	test.skip(() => !process.env.APPIUM_SERVER_URL, 'Requiere servidor Appium + device driver');
+		test.skip(() => !process.env.APPIUM_SERVER_URL, 'Requiere servidor Appium + device driver');
 
-	test('[TS-STRIPE-TC1092][CARGO-ASIGNADO-3DS] alta + asignación manual → driver cobra a bordo con 3DS → success', async ({ page }) => {
-		await new CargoABordoSteps({ page }).runCargoScenario(appPaxScenario, {
-			manualAssign: true,
-			createTimeout: 30_000,
-			driverAppStep: {
-				title: '[DRIVER APP] acepta viaje asignado → finaliza → cobra a bordo (3DS) → success',
-				charge: {
-					card: {
-						number: '4000000000003220',
-						expiry: '12/34',
-						cvc: '123',
-						holderName: 'RESTREPO EMA',
-						postal: '1343',
-					},
-					expectedOutcome: 'success',
-					is3ds: true,
-				},
-			},
+		test('[TS-STRIPE-TC1092][CARGO-ASIGNADO-3DS] alta + asignación manual → driver cobra a bordo con 3DS → success', async ({
+			page
+		}) => {
+			await new CargoABordoSteps({ page }).runCargoScenario(appPaxScenario, {
+				manualAssign: true,
+				createTimeout: 30_000,
+				driverAppStep: {
+					title: '[DRIVER APP] acepta viaje asignado → finaliza → cobra a bordo (3DS) → success',
+					charge: {
+						card: {
+							number: '4000000000003220',
+							expiry: '12/34',
+							cvc: '123',
+							holderName: 'RESTREPO EMA',
+							postal: '1343'
+						},
+						expectedOutcome: 'success',
+						is3ds: true
+					}
+				}
+			});
 		});
-	});
-});
+	}
+);

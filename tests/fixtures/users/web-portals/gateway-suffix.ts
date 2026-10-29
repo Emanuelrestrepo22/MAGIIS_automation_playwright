@@ -21,8 +21,8 @@ export type GatewaySuffix = 'STRIPE' | 'AUTHORIZE' | 'MP' | 'EBIZ';
  * builders de los roles web (dispatcher, contractor-collaborator).
  */
 export const GATEWAY_ENV_SUFFIX = {
-  stripe: 'STRIPE',
-  authorize: 'AUTHORIZE',
-  'mercado-pago': 'MP',
-  ebizcharge: 'EBIZ',
+	stripe: 'STRIPE',
+	authorize: 'AUTHORIZE',
+	'mercado-pago': 'MP',
+	ebizcharge: 'EBIZ'
 } as const satisfies Record<GatewayName, GatewaySuffix>;

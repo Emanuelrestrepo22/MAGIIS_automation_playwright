@@ -63,12 +63,16 @@ export abstract class AppiumSessionBase {
 			try {
 				await Promise.race([
 					driver.deleteSession(),
-					new Promise((_, reject) => setTimeout(() => reject(new Error('deleteSession timeout (20s)')), 20_000)),
+					new Promise((_, reject) =>
+						setTimeout(() => reject(new Error('deleteSession timeout (20s)')), 20_000)
+					)
 				]);
 				console.log('[AppiumSessionBase] Session closed');
 			} catch (error) {
 				const message = error instanceof Error ? error.message : String(error);
-				console.warn(`[AppiumSessionBase] endSession: deleteSession no completó limpiamente (${message}) — driver liberado igual.`);
+				console.warn(
+					`[AppiumSessionBase] endSession: deleteSession no completó limpiamente (${message}) — driver liberado igual.`
+				);
 			}
 		}
 	}

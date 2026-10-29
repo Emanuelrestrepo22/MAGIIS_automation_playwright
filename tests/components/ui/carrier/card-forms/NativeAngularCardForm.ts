@@ -90,14 +90,16 @@ export class NativeAngularCardForm implements CardFormStrategy {
 		await expect
 			.poll(async () => unmasked(await numberField.inputValue().catch(() => '')), {
 				message: `El número de tarjeta quedó vacío o incompleto tras el fill (el form reactivo lo limpió). Esperado ${card.number}.`,
-				timeout: 10_000,
+				timeout: 10_000
 			})
 			.toBe(unmasked(card.number));
 
 		// Debería conservar vencimiento, CVV y titular.
 		await expect(page.locator('input[formcontrolname="expiryDate"]'), 'vencimiento').toHaveValue(card.expiry);
 		await expect(page.locator('input[formcontrolname="creditCardCVV"]'), 'CVV').toHaveValue(card.cvc);
-		await expect(page.locator('input[formcontrolname="creditCardOwnerName"]'), 'titular').toHaveValue(card.holderName);
+		await expect(page.locator('input[formcontrolname="creditCardOwnerName"]'), 'titular').toHaveValue(
+			card.holderName
+		);
 
 		// El 5° campo sólo si la pasarela lo exige; el ZIP se resuelve igual que en fill().
 		if (this.options.extraField === 'zip' && card.zip) {
@@ -118,7 +120,7 @@ export class NativeAngularCardForm implements CardFormStrategy {
 	 *
 	 * `addressOption` es opcional a propósito: si el fixture no declara qué sugerencia elegir, se
 	 * toma la primera de la lista. Se prefiere la declarada porque el geocoder devuelve varias y
-     * elegir "la primera" hace que el ZIP derivado dependa de un orden que no controlamos.
+	 * elegir "la primera" hace que el ZIP derivado dependa de un orden que no controlamos.
 	 */
 	private async fillAddressField(page: Page, card: CardFormFillInput): Promise<void> {
 		if (!card.address) {
@@ -157,7 +159,9 @@ export class NativeAngularCardForm implements CardFormStrategy {
 		// inmediato y lo que venga detrás mide el placeholder. Verificado en vivo 2026-07-30: la
 		// misma query devolvió 5 sugerencias en una corrida y el placeholder en la siguiente.
 		// Por eso el poll excluye ese texto: espera una sugerencia de verdad.
-		const sugerencias = combo.getByRole('listitem').filter({ hasNotText: /no se encontraron resultados|no results/i });
+		const sugerencias = combo
+			.getByRole('listitem')
+			.filter({ hasNotText: /no se encontraron resultados|no results/i });
 		await expect
 			.poll(async () => sugerencias.count(), {
 				message: `El autocomplete de dirección no devolvió sugerencias reales para "${card.address}" (sólo el placeholder de sin-resultados).`,
@@ -285,7 +289,10 @@ export class NativeAngularCardForm implements CardFormStrategy {
 		// (scopeada al select para no matchear el placeholder).
 		const docTypeSelect = page.locator('#creditCardOwnerIdType');
 		await docTypeSelect.click();
-		await docTypeSelect.getByText(new RegExp(`^\\s*${docType}\\s*$`, 'i')).last().click();
+		await docTypeSelect
+			.getByText(new RegExp(`^\\s*${docType}\\s*$`, 'i'))
+			.last()
+			.click();
 		// Número de documento (formcontrolname estable, era nth(4) frágil).
 		await page.locator('input[formcontrolname="creditCardOwnerId"]').pressSequentially(docNumber, { delay: 40 });
 	}
@@ -297,7 +304,9 @@ export class NativeAngularCardForm implements CardFormStrategy {
 	 */
 	private async fillZipField(page: Page, card: CardFormFillInput): Promise<void> {
 		if (!card.zip) {
-			throw new Error("NativeAngularCardForm: la tarjeta no trae `zip` pero la pasarela exige el 5° campo ZIP (extraField: 'zip').");
+			throw new Error(
+				"NativeAngularCardForm: la tarjeta no trae `zip` pero la pasarela exige el 5° campo ZIP (extraField: 'zip')."
+			);
 		}
 
 		await this.zipField(page).pressSequentially(card.zip, { delay: 40 });
@@ -316,7 +325,7 @@ export class NativeAngularCardForm implements CardFormStrategy {
 	 */
 	private zipField(page: Page, options: { allowPositionalFallback?: boolean } = {}) {
 		const byFormControl = page.locator(
-			'input[formcontrolname="creditCardOwnerZipCode"], input[formcontrolname="zipCode"], input[formcontrolname="postalCode"], input[formcontrolname="creditCardOwnerZip"]',
+			'input[formcontrolname="creditCardOwnerZipCode"], input[formcontrolname="zipCode"], input[formcontrolname="postalCode"], input[formcontrolname="creditCardOwnerZip"]'
 		);
 		const byLabel = page.getByRole('textbox', { name: /c[oó]digo postal|postal code|zip/i });
 		const resolved = byFormControl.first().or(byLabel.first());

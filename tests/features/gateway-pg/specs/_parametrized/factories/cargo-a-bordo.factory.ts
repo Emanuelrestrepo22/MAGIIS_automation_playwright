@@ -200,7 +200,10 @@ export function defineCargoABordoSuite(gateway: GatewayName, options: CargoABord
 		// El fixture KATA no define la opción `role` — login explícito vía el Step (loginAsDispatcher).
 		test.use({ storageState: { cookies: [], origins: [] } });
 
-		test.skip(!adapter.isConfigured(), `Requiere ${adapter.credsEnvKeys.join(' + ')} en .env.test (gate del adapter ${gateway}).`);
+		test.skip(
+			!adapter.isConfigured(),
+			`Requiere ${adapter.credsEnvKeys.join(' + ')} en .env.test (gate del adapter ${gateway}).`
+		);
 
 		for (const cargoCase of cases) {
 			const { clientType, intent } = CARGO_CASE_AXES[cargoCase];

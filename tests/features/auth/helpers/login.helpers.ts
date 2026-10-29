@@ -58,7 +58,10 @@ async function loginWithRetry(role: string, page: Page, run: () => Promise<void>
 			return;
 		} catch (err) {
 			lastErr = err;
-			debugLog('auth', `[${role}] login intento ${attempt}/${LOGIN_ATTEMPTS} falló — ${err instanceof Error ? err.message : String(err)}`);
+			debugLog(
+				'auth',
+				`[${role}] login intento ${attempt}/${LOGIN_ATTEMPTS} falló — ${err instanceof Error ? err.message : String(err)}`
+			);
 			if (attempt < LOGIN_ATTEMPTS) await page.waitForTimeout(2_000);
 		}
 	}

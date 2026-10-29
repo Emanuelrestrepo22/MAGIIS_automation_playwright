@@ -409,13 +409,13 @@ de una prueba es el **run** dentro del Execution; el status del issue no lo repr
    además `GATEWAY_SCHEDULED_PICKUP_TIME` (ej. `"12:10 PM"`).
 6. Reportar el typo "confimed" a DEV/MX (**BL-056**).
 
+
 ---
 
-# Rondas registradas por la campaña Authorize/eBiz (rama carrier/ebiz-matrix-standardization)
+# Rondas registradas en la rama de integracion (main)
 
-> Estas secciones se escribieron en paralelo, en otro RUN-LOG del mismo path (conflicto add/add
-> resuelto el 2026-07-31 conservando AMBAS bitácoras). No se solapan con las rondas de arriba:
-> registran la campaña de contrato/API con su propio criterio de acreditación.
+> Estas rondas se registraron en paralelo, en la version de este archivo que vivia en `main`.
+> Se conservan integras al unir las dos historias del log: una ronda registrada no se descarta.
 
 # eBizCharge — log de corridas vivas
 

@@ -242,10 +242,12 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 				const isReady = (el: HTMLElement): boolean => {
 					const host = numberHost(el) as (HTMLElement & { shadowRoot?: ShadowRoot | null }) | null;
 					if (!host) return false;
-					const inner = (host.matches('input, textarea')
-						? host
-						: (host.shadowRoot?.querySelector('input, textarea') ??
-							host.querySelector('input, textarea'))) as HTMLInputElement | null;
+					const inner = (
+						host.matches('input, textarea')
+							? host
+							: (host.shadowRoot?.querySelector('input, textarea') ??
+								host.querySelector('input, textarea'))
+					) as HTMLInputElement | null;
 					return !!inner && !inner.readOnly && !inner.disabled;
 				};
 
@@ -485,10 +487,11 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 			for (const sel of sels) {
 				const host = document.querySelector(sel) as (HTMLElement & { shadowRoot?: ShadowRoot | null }) | null;
 				if (!host) continue;
-				const inner = (host.matches('input, textarea')
-					? host
-					: (host.shadowRoot?.querySelector('input, textarea') ??
-						host.querySelector('input, textarea'))) as HTMLInputElement | null;
+				const inner = (
+					host.matches('input, textarea')
+						? host
+						: (host.shadowRoot?.querySelector('input, textarea') ?? host.querySelector('input, textarea'))
+				) as HTMLInputElement | null;
 				return String(inner?.value ?? '');
 			}
 			return '';
@@ -527,10 +530,12 @@ export class DriverTripPaymentScreen extends AppiumSessionBase {
 						fields[name] = { found: false, value: '', invalid: false };
 						continue;
 					}
-					const inner = (host.matches('input, textarea')
-						? host
-						: (host.shadowRoot?.querySelector('input, textarea') ??
-							host.querySelector('input, textarea'))) as HTMLInputElement | null;
+					const inner = (
+						host.matches('input, textarea')
+							? host
+							: (host.shadowRoot?.querySelector('input, textarea') ??
+								host.querySelector('input, textarea'))
+					) as HTMLInputElement | null;
 					fields[name] = {
 						found: true,
 						value: String(inner?.value ?? ''),

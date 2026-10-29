@@ -48,8 +48,10 @@ export default defineConfig({
     headless: process.env.HEADLESS !== "false",
     trace: "on-first-retry",
 
-    // Evidencia organizada por entorno
-    screenshot: "only-on-failure",
+    // Evidencia organizada por entorno. Con XRAY_EVIDENCE=1 capturamos screenshot en TODOS
+    // los tests (también PASSED) para que el xray-reporter la embeba como evidence[] en el
+    // import a Xray; sin el flag, solo on-failure (no penaliza corridas normales).
+    screenshot: process.env.XRAY_EVIDENCE ? "on" : "only-on-failure",
     video: "retain-on-failure",
 
     // Nota: NO definimos storageState global aquí a propósito.

@@ -91,7 +91,9 @@ export async function assertActiveGatewayInDb(
 		throw new Error(
 			`[gateway-identity-guard] La suite ejercita '${gateway}' pero MGW_LINKED NO tiene a '${provider}' ` +
 				`activo para el carrier ${carrierAccountId}` +
-				(ultimo ? ` (última fila: id=${ultimo.id}, active=${ultimo.active}, deleteDate=${ultimo.deleteDate ?? 'null'})` : ' (sin filas)') +
+				(ultimo
+					? ` (última fila: id=${ultimo.id}, active=${ultimo.active}, deleteDate=${ultimo.deleteDate ?? 'null'})`
+					: ' (sin filas)') +
 				'. Medir así produciría resultados de OTRA pasarela: vincular la correcta desde el App Store ' +
 				'(o con GatewaySwitchSteps.ensureActiveGateway) y re-correr.'
 		);

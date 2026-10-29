@@ -1,12 +1,20 @@
 import { JOURNEY_DEFAULTS_BY_GATEWAY } from '../../data/journey-defaults';
-import { EBIZCHARGE_LINK_MUTATION_URL_PATTERN, EBIZCHARGE_LINK_SUCCESS_STATUSES } from '../../data/link-status-defaults';
+import {
+	EBIZCHARGE_LINK_MUTATION_URL_PATTERN,
+	EBIZCHARGE_LINK_SUCCESS_STATUSES
+} from '../../data/link-status-defaults';
 import { XRAY_KEYS_BY_GATEWAY } from '../../data/xray-keys';
 import type { GatewayPgAdapter } from './types';
 import { areEnvKeysConfigured } from './types';
 
 /** Credenciales merchant del modal de link eBizCharge (ver `.env.example`). */
 // 4 factores del modal real (verificado en vivo 2026-07-30): Subscription-Key + Security Id + User Id + Password.
-const EBIZCHARGE_CREDS_ENV_KEYS = ['EBIZ_MERCHANT_USER', 'EBIZ_MERCHANT_PASSWORD', 'EBIZ_SECURITY_KEY', 'EBIZ_SUBSCRIPTION_KEY'];
+const EBIZCHARGE_CREDS_ENV_KEYS = [
+	'EBIZ_MERCHANT_USER',
+	'EBIZ_MERCHANT_PASSWORD',
+	'EBIZ_SECURITY_KEY',
+	'EBIZ_SUBSCRIPTION_KEY'
+];
 
 /**
  * Adapter declarativo eBizCharge.

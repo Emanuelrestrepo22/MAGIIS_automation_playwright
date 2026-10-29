@@ -21,16 +21,6 @@ export interface CardInput {
 }
 
 export class PassengerWalletScreen extends AppiumSessionBase {
-	/**
-	 * La billetera puede tener VARIAS instancias de `app-credit-card-payment-data` montadas a la
-	 * vez (ion-pages ocultas), así que el scope del form no es "el documento" sino la instancia
-	 * con más señales de estar activa. Mantiene el comportamiento previo a promover
-	 * `findAnyElement`/`fillWebInputField` a `AppiumSessionBase`.
-	 */
-	protected override async getWebFormScope(): Promise<any | null> {
-		return this.getVisibleCreditCardPaymentModal();
-	}
-
 	private async getVisibleCreditCardPaymentModal(): Promise<any | null> {
 		const driver = this.getDriver();
 		let modals: any = [];
@@ -569,10 +559,11 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 			// formcontrolname viven en el HOST ion-input, no en el <input> interno `.native-input`)
 			// → hay que detectar el host, no `input#cardNumber`. Se chequea vía JS en el webview
 			// (document.querySelector, robusto a frame-focus) — no por WDIO $$ (context-frágil).
-			const nativePresent = await this.executeInWebView(() =>
-				!!document.querySelector(
-					'app-credit-card-payment-data ion-input[formcontrolname="cardNumber"], ion-input#cardNumber, app-credit-card-payment-data input#cardNumber, input[formcontrolname="cardNumber"], input[data-checkout="cardNumber"]'
-				)
+			const nativePresent = await this.executeInWebView(
+				() =>
+					!!document.querySelector(
+						'app-credit-card-payment-data ion-input[formcontrolname="cardNumber"], ion-input#cardNumber, app-credit-card-payment-data input#cardNumber, input[formcontrolname="cardNumber"], input[data-checkout="cardNumber"]'
+					)
 			).catch(() => false);
 			if (nativePresent) {
 				return true;
@@ -1191,7 +1182,9 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 		// el frame activo está ALINEADO con el documento del form → así el fill posterior también lo ve.
 		// (No usar getPageSource aquí: detectaría el form aun con el frame desalineado y el fill fallaría.)
 		await this.switchFrameTarget(null).catch(() => {});
-		const nativeCardNumber = await this.findAnyElement('app-credit-card-payment-data ion-input[formcontrolname="cardNumber"], ion-input#cardNumber, app-credit-card-payment-data input#cardNumber, input[formcontrolname="cardNumber"], input[data-checkout="cardNumber"]');
+		const nativeCardNumber = await this.findAnyElement(
+			'app-credit-card-payment-data ion-input[formcontrolname="cardNumber"], ion-input#cardNumber, app-credit-card-payment-data input#cardNumber, input[formcontrolname="cardNumber"], input[data-checkout="cardNumber"]'
+		);
 		if (nativeCardNumber) {
 			await this.fillNativeCardForm(card, sanitizedNumber);
 			return;
@@ -1308,12 +1301,18 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 	private async fillIonInputControl(controlName: string, value: string): Promise<boolean> {
 		return this.executeInWebView(
 			(fcn: string, val: string) => {
-				const host = document.querySelector(`ion-input[formcontrolname="${fcn}"], #${fcn}, input[formcontrolname="${fcn}"]`) as HTMLElement | null;
+				const host = document.querySelector(
+					`ion-input[formcontrolname="${fcn}"], #${fcn}, input[formcontrolname="${fcn}"]`
+				) as HTMLElement | null;
 				if (!host) {
 					return false;
 				}
 
-				const input = (host.matches('input') ? host : (host.querySelector('input.native-input') ?? host.querySelector('input'))) as HTMLInputElement | null;
+				const input = (
+					host.matches('input')
+						? host
+						: (host.querySelector('input.native-input') ?? host.querySelector('input'))
+				) as HTMLInputElement | null;
 				if (!input) {
 					return false;
 				}
@@ -1330,8 +1329,12 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 				} catch {
 					// La prop `value` del ion-input puede ser de sólo lectura en algunos builds; los eventos igual disparan.
 				}
-				host.dispatchEvent(new CustomEvent('ionInput', { bubbles: true, composed: true, detail: { value: val } }));
-				host.dispatchEvent(new CustomEvent('ionChange', { bubbles: true, composed: true, detail: { value: val } }));
+				host.dispatchEvent(
+					new CustomEvent('ionInput', { bubbles: true, composed: true, detail: { value: val } })
+				);
+				host.dispatchEvent(
+					new CustomEvent('ionChange', { bubbles: true, composed: true, detail: { value: val } })
+				);
 
 				input.dispatchEvent(new Event('blur', { bubbles: true, composed: true }));
 				host.dispatchEvent(new CustomEvent('ionBlur', { bubbles: true, composed: true }));
@@ -1360,7 +1363,10 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 	 * inválido): la app debe dejar el FormGroup inválido → GUARDAR deshabilitado.
 	 * `formValid = null` cuando no hay form nativo (p.ej. gateway Stripe con iframes).
 	 */
-	async readFormValidity(): Promise<{ formValid: boolean | null; invalidControls: Array<{ name: string; errors: unknown }> }> {
+	async readFormValidity(): Promise<{
+		formValid: boolean | null;
+		invalidControls: Array<{ name: string; errors: unknown }>;
+	}> {
 		return this.executeInWebView(() => {
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			const ng = (window as any).ng;
@@ -1398,7 +1404,10 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 			}
 
 			return { formValid: Boolean(group.valid), invalidControls };
-		}).catch(() => ({ formValid: null as boolean | null, invalidControls: [] as Array<{ name: string; errors: unknown }> }));
+		}).catch(() => ({
+			formValid: null as boolean | null,
+			invalidControls: [] as Array<{ name: string; errors: unknown }>
+		}));
 	}
 
 	/**
@@ -1414,7 +1423,10 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 				return false;
 			}
 
-			const disabled = save.getAttribute('disabled') !== null || save.getAttribute('aria-disabled') === 'true' || (save as HTMLButtonElement).disabled === true;
+			const disabled =
+				save.getAttribute('disabled') !== null ||
+				save.getAttribute('aria-disabled') === 'true' ||
+				(save as HTMLButtonElement).disabled === true;
 			return !disabled;
 		}).catch(() => false);
 	}
@@ -1435,7 +1447,9 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 
 		// 1) cardNumber → dispara la validación/reveal progresivo del form reactivo.
 		if (!(await this.fillIonInputControl('cardNumber', sanitizedNumber))) {
-			throw new Error('PassengerWalletScreen.fillNativeCardForm() - no se pudo llenar cardNumber nativo (control ion-input no encontrado)');
+			throw new Error(
+				'PassengerWalletScreen.fillNativeCardForm() - no se pudo llenar cardNumber nativo (control ion-input no encontrado)'
+			);
 		}
 		await driver.pause(2_500);
 
@@ -1451,7 +1465,9 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 		const holderOk = holderName ? await this.fillIonInputControl('cardholderName', holderName) : true;
 
 		if (!expiryOk || !cvcOk || !holderOk) {
-			console.warn(`[PassengerWalletScreen] fillNativeCardForm: control(es) sin llenar → expiry=${expiryOk} cvc=${cvcOk} holder=${holderOk} (¿reveal progresivo tardó más que el pause?)`);
+			console.warn(
+				`[PassengerWalletScreen] fillNativeCardForm: control(es) sin llenar → expiry=${expiryOk} cvc=${cvcOk} holder=${holderOk} (¿reveal progresivo tardó más que el pause?)`
+			);
 		}
 
 		// 5) Dirección de Facturación (sólo eBizCharge). maxlength=30 → truncar para no invalidar
@@ -1469,7 +1485,9 @@ export class PassengerWalletScreen extends AppiumSessionBase {
 		}
 
 		await driver.pause(300);
-		console.log('[PassengerWalletScreen] form NATIVO app-credit-card-payment-data completado (ion-input + ionInput/ionChange)');
+		console.log(
+			'[PassengerWalletScreen] form NATIVO app-credit-card-payment-data completado (ion-input + ionInput/ionChange)'
+		);
 	}
 
 	/**

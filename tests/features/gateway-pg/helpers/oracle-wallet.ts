@@ -159,7 +159,10 @@ export interface CarrierCardLast4Filter {
  *   ORACLE_WALLET_TABLE             (default USER_WALLET)
  *   ORACLE_CARD_BY_CARRIER_LAST4_SQL (query completa; binds :carrier y :last4 — debe alias "cnt")
  */
-export async function countCardsByCarrierAndLast4(cfg: OracleReadConfig, filter: CarrierCardLast4Filter): Promise<number> {
+export async function countCardsByCarrierAndLast4(
+	cfg: OracleReadConfig,
+	filter: CarrierCardLast4Filter
+): Promise<number> {
 	const cardTable = process.env.ORACLE_CARD_TABLE ?? 'CARD';
 	const walletTable = process.env.ORACLE_WALLET_TABLE ?? 'USER_WALLET';
 	const defaultSql = `SELECT COUNT(*) AS "cnt" FROM ${cardTable} c JOIN ${walletTable} w ON c.user_wallet_id = w.id
@@ -230,7 +233,10 @@ export async function readMgwTransactionsByTravel(
 	return new OracleDb(cfg).query<MgwTransactionRow>(sql, binds);
 }
 
-export async function countMgwTransactionsByRef(cfg: OracleReadConfig, filter: MgwTransactionsByRefFilter): Promise<number> {
+export async function countMgwTransactionsByRef(
+	cfg: OracleReadConfig,
+	filter: MgwTransactionsByRefFilter
+): Promise<number> {
 	const table = process.env.ORACLE_MGWTX_TABLE ?? 'MGW_TRANSACTIONS';
 	const statuses = filter.statuses && filter.statuses.length > 0 ? filter.statuses : ['APPROVED', 'CONFIRM'];
 	const binds: Record<string, unknown> = { ref: filter.transactionRef };

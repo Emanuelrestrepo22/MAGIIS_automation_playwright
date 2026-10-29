@@ -15,8 +15,14 @@
  *     aportó los de dirección/contacto).
  *   - El **pago vive DENTRO del widget** (botón "Payment" tras "Quote"), no en una conversión
  *     posterior desde Cotizaciones del portal.
- *   - El form de tarjeta es el **MISMO form nativo Angular** del portal, así que se llena con
- *     `cardFormFor(gateway)` — no hace falta duplicar nada.
+ *   - CORRECCIÓN 2026-08-07 (diagnóstico live TC011 — reemplaza la premisa original de esta
+ *     nota): para Stripe el widget monta **Stripe Elements real** (3 iframes `js.stripe.com`,
+ *     uno por campo), NO el form nativo Angular que se asumía por el precedente de Authorize.
+ *     Tampoco reusa `StripeElementsCardForm` del portal: esos iframes usan un esquema de URL
+ *     distinto (`elements-inner-card-<hash>.html`, sin el `componentName=` que ese matcher
+ *     espera) — variante/versión de Stripe.js propia del widget. Se llena con
+ *     `fillCardIframes()` de esta clase, que ancla por `title` (`"Secure <campo> input frame"`),
+ *     estable entre versiones y sin ambigüedad (hay 5 iframes `js.stripe.com` en la página).
  *   - El viaje resultante queda en **"Programados"** (no en "Por asignar"): es un resultado válido
  *     del hold según el oráculo definido por el líder de QA.
  *
@@ -73,7 +79,9 @@ export class QuoteWidgetPage extends UiBase {
 		// Se asevera el HEADING, no el input de dirección: ese textbox NO existe hasta hacer click
 		// en el `.placeholder` del campo (lo hace `fillAddress`). Esperarlo acá hacía fallar el goto
 		// con el widget correctamente cargado — corrida del 2026-07-28.
-		await expect(this.page.getByRole('heading', { name: /Online Reservation|Reserva[ción]* [Oo]nline/i }).first()).toBeVisible({ timeout: 20_000 });
+		await expect(
+			this.page.getByRole('heading', { name: /Online Reservation|Reserva[ción]* [Oo]nline/i }).first()
+		).toBeVisible({ timeout: 20_000 });
 	}
 
 	/** Input de dirección del typeahead (bilingüe). */
@@ -128,7 +136,9 @@ export class QuoteWidgetPage extends UiBase {
 		// Se espera el estado observable del form, no un sleep fijo.
 		await expect(this.page.locator('app-input-search-place-quote.ng-invalid')).toHaveCount(0, { timeout: 30_000 });
 		await this.page.getByRole('button', { name: /^Select Vehicle$|^Seleccionar Veh[íi]culo$/i }).click();
-		await expect(this.tripNoteField(), 'el widget debe avanzar al paso de selección de vehículo').toBeVisible({ timeout: 20_000 });
+		await expect(this.tripNoteField(), 'el widget debe avanzar al paso de selección de vehículo').toBeVisible({
+			timeout: 20_000
+		});
 	}
 
 	/** Completa la nota del viaje (campo "Trip Note" / "Nota del Viaje"). */
@@ -169,7 +179,9 @@ export class QuoteWidgetPage extends UiBase {
 		if (contact.country) {
 			// Selector de prefijo telefónico: dropdown propio del widget (no un <select> nativo).
 			await this.page.locator('.dropbtn').click();
-			await this.page.getByRole('link', { name: new RegExp(`^${escapeRegExp(contact.country)}\\s*\\+`, 'i') }).click();
+			await this.page
+				.getByRole('link', { name: new RegExp(`^${escapeRegExp(contact.country)}\\s*\\+`, 'i') })
+				.click();
 		}
 		await this.page.getByRole('textbox', { name: /phone number|n[uú]mero de tel[eé]fono/i }).fill(contact.phone);
 	}
@@ -181,14 +193,55 @@ export class QuoteWidgetPage extends UiBase {
 	}
 
 	/**
-	 * Abre el paso de pago ("Payment" / "Pago"). Después de esto el form de tarjeta está montado
-	 * y el caller lo llena con `cardFormFor(gateway)` — es el mismo form nativo del portal.
+	 * Abre el paso de pago ("Payment" / "Pago"). Después de esto el form de tarjeta (Stripe
+	 * Elements, 3 iframes) está montado — el caller lo llena con `fillCardIframes()`.
 	 */
 	@step
 	async goToPayment(): Promise<void> {
 		await this.page.getByRole('button', { name: /^Payment$|^Pago$/i }).click();
-		// Debería montar el form de tarjeta del widget.
-		await expect(this.page.getByRole('textbox', { name: /Card number|N[uú]mero de tarjeta/i })).toBeVisible({ timeout: 20_000 });
+		// FIX 2026-08-07 (diagnóstico live TC011): el widget monta Stripe Elements real (3 iframes
+		// js.stripe.com) — `getByRole` sobre `this.page` nunca entra al iframe (el textbox existía,
+		// nombre accesible real "Credit or debit card number", pero fuera del scope buscado).
+		// Ancla por `title` del iframe (no por `src`/`componentName=`: hay 5 iframes js.stripe.com
+		// en la página — strict-mode violation confirmada en vivo — y esta variante de Stripe.js usa
+		// un esquema de URL `elements-inner-card-<hash>.html` distinto al que espera
+		// StripeElementsCardForm del portal).
+		await expect(this.cardNumberFrame().getByRole('textbox')).toBeVisible({ timeout: 20_000 });
+	}
+
+	/** Iframe del número de tarjeta — ancla por `title`, estable entre versiones de Stripe.js. */
+	private cardNumberFrame() {
+		return this.page.frameLocator('iframe[title="Secure card number input frame"]');
+	}
+
+	private cardExpiryFrame() {
+		return this.page.frameLocator('iframe[title="Secure expiration date input frame"]');
+	}
+
+	private cardCvcFrame() {
+		return this.page.frameLocator('iframe[title="Secure CVC input frame"]');
+	}
+
+	/**
+	 * Llena los 3 iframes de Stripe Elements del widget (número/vencimiento/CVC) + holder/ZIP si
+	 * el widget los expone. Mismo mecanismo de tipeo (`pressSequentially` char-por-char) que
+	 * `StripeElementsCardForm` del portal — Stripe Elements no siempre registra `fill()`
+	 * programático — pero con locators propios (ver `cardNumberFrame`/etc.) porque el esquema de
+	 * URL de este widget no matchea `componentName=` (ver `goToPayment`).
+	 */
+	@step
+	async fillCardIframes(card: { number: string; expiry: string; cvc: string }): Promise<void> {
+		const fields: Array<[ReturnType<typeof this.cardNumberFrame>, string]> = [
+			[this.cardNumberFrame(), card.number],
+			[this.cardExpiryFrame(), card.expiry],
+			[this.cardCvcFrame(), card.cvc]
+		];
+		for (const [frame, value] of fields) {
+			const input = frame.getByRole('textbox').first();
+			await input.click();
+			await input.fill('');
+			await input.pressSequentially(value, { delay: 30 });
+		}
 	}
 
 	/** Confirma la cotización y crea el viaje ("Confirm your Quote" / "Confirmar Cotización"). */
@@ -206,10 +259,7 @@ export class QuoteWidgetPage extends UiBase {
 	 * "Select Vehicle" NO avanza y **no emite ninguna validación visible** — el paso siguiente
 	 * (Trip Note) nunca se monta. Ver el hallazgo QUOTE-PAX-0 del RUN-LOG.
 	 *
-	 * Se setea por el rol `spinbutton` (semántico) en vez del `dblclick` posicional de la grabación
-	 * y del `i:nth-child(3)` de `increasePassengerCount()`. Se ASEVERA el valor efectivo: si el
-	 * input reactivo descarta el fill, el test falla acá con el motivo real en vez de arrastrar el
-	 * síntoma dos pasos más adelante (a un locator de Trip Note que nunca iba a montar).
+	 * Se setea por el rol `spinbutton` (semántico) en vez del `dblclick` posicional de la grabación.
 	 */
 	@step
 	async setPassengerCount(count: number): Promise<void> {

@@ -68,7 +68,10 @@ test.describe('[MG · B][API] MercadoPago — ePayment sobre carrier sin pasarel
 		'[B-01] carrier sin pasarela vinculada → 412 CARRIER_NOT_LINKED',
 		{ annotation: [{ type: 'tms', description: 'MG-146' }] },
 		async ({ request }) => {
-			test.skip(!DATA_READY, 'Faltan MP_UNLINKED_CARRIER_ID / MP_PASSENGER_ID (carrier sin vendor MP conectado) [confirmar].');
+			test.skip(
+				!DATA_READY,
+				'Faltan MP_UNLINKED_CARRIER_ID / MP_PASSENGER_ID (carrier sin vendor MP conectado) [confirmar].'
+			);
 
 			// No requiere tarjeta real ni hold: el gate 412 se resuelve ANTES de tocar el
 			// pago — por eso cardId es un placeholder inerte (nunca se llega a usarlo).

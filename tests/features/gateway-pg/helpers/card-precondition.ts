@@ -255,7 +255,24 @@ export async function cleanupGatewayCardByLast4(page: Page, queries: readonly st
 			const toDelete = cards.filter(card => card.lastFourDigits === last4);
 			for (const card of toDelete) await deletePassengerCard(page, paxId, card.id);
 			totalDeleted += toDelete.length;
-			if (toDelete.length > 0) paxTouched += 1;
+			if (toDelete.length > 0) {
+				paxTouched += 1;
+				// READ-BACK hasta que el borrado asiente (fix 2026-08-05 — 5 ocurrencias de
+				// "No such setupintent" en validaciones inmediatamente posteriores al cleanup):
+				// el DELETE dispara un detach ASÍNCRONO en backend/pasarela; crear el SetupIntent
+				// nuevo mientras la cascada sigue corriendo puede dejarlo cancelado server-side —
+				// carrera creada por la CADENCIA del harness (un usuario real no borra y re-agrega
+				// la misma tarjeta en segundos). Poll acotado; si no asienta, se sigue (el flujo
+				// tiene además retry/re-fill como segunda línea de defensa).
+				// NOTE(tier3-kept): poll de settle de estado backend — sin evento observable.
+				const settleDeadline = Date.now() + 10_000;
+				while (Date.now() < settleDeadline) {
+					const after = await getPassengerCards(page, paxId).catch(() => null);
+					const remaining = (after?.cards ?? []).filter(card => card.lastFourDigits === last4).length;
+					if (remaining === 0) break;
+					await page.waitForTimeout(500);
+				}
+			}
 			debugLog(
 				'gateway-pg:wallet',
 				`[precond] query="${query}" pax=${paxId}: ${cards.length} tarjetas, borradas ${toDelete.length} con last4=${last4}`
@@ -524,7 +541,11 @@ export async function validateCardPrecondition(
  *
  * @returns cantidad de tarjetas borradas.
  */
-export async function cleanupCardsByLast4(page: Page, searchQueries: readonly string[], last4: string): Promise<number> {
+export async function cleanupCardsByLast4(
+	page: Page,
+	searchQueries: readonly string[],
+	last4: string
+): Promise<number> {
 	for (const query of searchQueries) {
 		try {
 			const passengerId = await getPassengerId(page, query);
@@ -535,7 +556,10 @@ export async function cleanupCardsByLast4(page: Page, searchQueries: readonly st
 			for (const card of toDelete) {
 				await deletePassengerCard(page, passengerId, card.id);
 			}
-			debugLog('gateway-pg:card-precondition', `[cleanup] query="${query}" pax=${passengerId}: ${cards.length} tarjetas, borradas ${toDelete.length} con last4=${last4}`);
+			debugLog(
+				'gateway-pg:card-precondition',
+				`[cleanup] query="${query}" pax=${passengerId}: ${cards.length} tarjetas, borradas ${toDelete.length} con last4=${last4}`
+			);
 			if (toDelete.length > 0) {
 				return toDelete.length;
 			}
