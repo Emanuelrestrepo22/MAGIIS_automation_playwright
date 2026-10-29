@@ -5,7 +5,12 @@
 
 import type { MobileActorConfig } from '../config/appiumRuntime';
 import { AppiumSessionBase, type AppiumDriver } from '../base/AppiumSessionBase';
-import { DRIVER_ACTION_SELECTORS, DRIVER_CHECKPOINT_SELECTORS } from './DriverFlowSelectors';
+import {
+	DRIVER_ACTION_SELECTORS,
+	DRIVER_CHECKPOINT_SELECTORS,
+	DRIVER_UI_TEXTS,
+	matchesAnyText
+} from './DriverFlowSelectors';
 
 type TripRequestSnapshot = {
 	url: string;
@@ -190,11 +195,17 @@ export class DriverTripRequestScreen extends AppiumSessionBase {
 			const webview = await this.switchToWebView();
 			if (webview) {
 				const driver = this.getDriver();
-				const allBtns = await driver.$$(DRIVER_ACTION_SELECTORS.acceptTripPrimaryButton);
+				// Vía independiente de idioma (ES "Aceptar" / EN "Accept"): CTA del footer de TravelConfirmPage.
+				const confirmBtn = await driver.$(DRIVER_ACTION_SELECTORS.acceptTripConfirmPageButton);
+				if (await confirmBtn.isDisplayed().catch(() => false)) {
+					await confirmBtn.click();
+					clicked = true;
+				}
+				const allBtns = clicked ? [] : await driver.$$(DRIVER_ACTION_SELECTORS.acceptTripPrimaryButton);
 				for (const btn of allBtns) {
 					const text = (await btn.getText().catch(() => '')).trim();
 					const visible = await btn.isDisplayed().catch(() => false);
-					if (text === 'Aceptar' && visible) {
+					if (matchesAnyText(text, DRIVER_UI_TEXTS.accept) && visible) {
 						await btn.click();
 						clicked = true;
 						break;
@@ -212,8 +223,10 @@ export class DriverTripRequestScreen extends AppiumSessionBase {
 			clicked = await this.clickFirstNative(
 				[
 					'//*[@text="Aceptar"]',
+					'//*[@text="Accept"]',
 					'//*[@text="Tomar viaje"]',
 					'//*[contains(@text, "Aceptar")]',
+					'//*[contains(@text, "Accept")]',
 					'//*[contains(@text, "Tomar viaje")]'
 				],
 				5_000
