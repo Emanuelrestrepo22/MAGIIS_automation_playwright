@@ -20,6 +20,7 @@ import {
 } from '../../gateway-pg/fixtures/gateway.fixtures';
 import { CARDS } from '../../../fixtures/stripe/card-policy';
 import {
+	awaitTravelRowAnchor,
 	captureCreatedTravelId,
 	cancelTravelIfCreated,
 	type TravelIdRef
@@ -110,6 +111,7 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 
 		await test.step('Then: viaje visible en gestión — columna "Por asignar", estado "Buscando chofer" [SMOKE-GW-TC01]', async () => {
 			await management.goto();
+			// Sin captureCreatedTravelId en este test: match por texto (pasajero), exige fila única (si hay 2+ falla como ambiguo).
 			await management.expectPassengerInPorAsignar(TEST_DATA.appPaxPassenger, undefined, 'Buscando chofer');
 			debugLog('smoke', `[SMOKE-GW-TC01] AppPax Hold ON sin 3DS — SEARCHING_DRIVER en ${env.toUpperCase()} ✅`);
 		});
@@ -167,6 +169,7 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 
 		await test.step('Then: viaje visible en gestión — estado "Buscando chofer" [SMOKE-GW-TC02]', async () => {
 			await management.goto();
+			// Sin captureCreatedTravelId en este test: match por texto (pasajero), exige fila única (si hay 2+ falla como ambiguo).
 			await management.expectPassengerInPorAsignar(TEST_DATA.appPaxPassenger, undefined, 'Buscando chofer');
 			debugLog('smoke', `[SMOKE-GW-TC02] AppPax Hold ON 3DS éxito — SEARCHING_DRIVER en ${env.toUpperCase()} ✅`);
 		});
@@ -217,6 +220,7 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 
 			await test.step('Then: viaje visible en gestión — "Buscando chofer" sin preautorización [SMOKE-GW-TC03]', async () => {
 				await management.goto();
+				// Sin captureCreatedTravelId en este test: match por texto (pasajero), exige fila única (si hay 2+ falla como ambiguo).
 				await management.expectPassengerInPorAsignar(TEST_DATA.appPaxPassenger, undefined, 'Buscando chofer');
 				debugLog(
 					'smoke',
@@ -297,7 +301,12 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 
 			await test.step('Then: viaje creado visible en gestión [SMOKE-GW-TC04]', async () => {
 				await management.goto();
-				await management.expectPassengerInPorAsignar(TEST_DATA.appPaxPassenger, undefined, 'Buscando chofer');
+				await management.expectPassengerInPorAsignar(
+					TEST_DATA.appPaxPassenger,
+					undefined,
+					'Buscando chofer',
+					await awaitTravelRowAnchor(travelIdRef)
+				);
 				debugLog('smoke', `[SMOKE-GW-TC04] AppPax Cargo a Bordo — viaje creado en ${env.toUpperCase()} ✅`);
 			});
 		} finally {
@@ -354,6 +363,7 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 
 			await test.step('Then: viaje visible en gestión — "Buscando chofer" [SMOKE-GW-TC05]', async () => {
 				await management.goto();
+				// Sin captureCreatedTravelId en este test: match por texto (pasajero), exige fila única (si hay 2+ falla como ambiguo).
 				await management.expectPassengerInPorAsignar(
 					TEST_DATA.contractorColaborador,
 					undefined,
@@ -419,6 +429,7 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 
 		await test.step('Then: viaje visible en gestión — "Buscando chofer" [SMOKE-GW-TC06]', async () => {
 			await management.goto();
+			// Sin captureCreatedTravelId en este test: match por texto (pasajero), exige fila única (si hay 2+ falla como ambiguo).
 			await management.expectPassengerInPorAsignar(TEST_DATA.contractorColaborador, undefined, 'Buscando chofer');
 			debugLog(
 				'smoke',
@@ -499,7 +510,8 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 				await management.expectPassengerInPorAsignar(
 					TEST_DATA.contractorPassenger,
 					undefined,
-					'Buscando chofer'
+					'Buscando chofer',
+					await awaitTravelRowAnchor(travelIdRef)
 				);
 				debugLog(
 					'smoke',
@@ -556,6 +568,7 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 
 		await test.step('Then: viaje visible en gestión — "Buscando chofer" [SMOKE-GW-TC08]', async () => {
 			await management.goto();
+			// Sin captureCreatedTravelId en este test: match por texto (pasajero), exige fila única (si hay 2+ falla como ambiguo).
 			await management.expectPassengerInPorAsignar(TEST_DATA.passenger, undefined, 'Buscando chofer');
 			debugLog('smoke', `[SMOKE-GW-TC08] Empresa Hold ON sin 3DS — SEARCHING_DRIVER en ${env.toUpperCase()} ✅`);
 		});
@@ -614,7 +627,12 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 				await management.goto();
 				// La grilla muestra al cliente titular, no al sub-passenger. matchesSearchText normaliza
 				// por tokens, así "Marcelle Stripe" matchea la celda "Stripe, Marcelle".
-				await management.expectPassengerInPorAsignar(TEST_DATA.client, undefined, 'Buscando chofer');
+				await management.expectPassengerInPorAsignar(
+					TEST_DATA.client,
+					undefined,
+					'Buscando chofer',
+					await awaitTravelRowAnchor(travelIdRef)
+				);
 				debugLog('smoke', `[SMOKE-GW-TC09] Empresa Cargo a Bordo — alta exitosa en ${env.toUpperCase()} ✅`);
 			});
 		} finally {
@@ -669,6 +687,7 @@ test.describe(`[SMOKE][${env.toUpperCase()}] Gateway PG — Portal Carrier`, () 
 			await management.goto();
 			// expectPassengerInEnConflicto es la aserción crítica: valida que el viaje con 3DS
 			// rechazado queda en "En conflicto" (NO_AUTORIZADO) y no en "Por asignar" (SEARCHING_DRIVER).
+			// Sin captureCreatedTravelId en este test: match por texto (pasajero), exige fila única (si hay 2+ falla como ambiguo).
 			await management.expectPassengerInEnConflicto(TEST_DATA.appPaxPassenger);
 			debugLog(
 				'smoke',

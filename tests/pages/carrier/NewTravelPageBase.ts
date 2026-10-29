@@ -1129,8 +1129,18 @@ export abstract class NewTravelPageBase extends BasePage {
 		await this.waitForEnabledButton(this.vehicleButton);
 		await this.waitForLoadingOverlayToDisappear();
 		await this.vehicleButton.click({ force: true });
-		// NOTE(tier3-kept): lista de vehículos carga desde backend sin indicador DOM de "lista lista"; reducir causa flakiness TC01-TC14
-		await this.page.waitForTimeout(5_000);
+		// Espera por ESTADO OBSERVABLE, no por tiempo (fix 2026-10-01, TC1111 repeat 1 de 5): el
+		// `waitForTimeout(5_000)` anterior no garantizaba que el click hubiera abierto la selección —
+		// en una corrida el formulario siguió en "Seleccionar Vehículo" y el fallo recién apareció 45 s
+		// después en `clickSendService` ("Button did not become enabled"), lejos de la causa. Tras el
+		// click, el FE o bien lista vehículos (`.vehicle-img`) o bien habilita el envío
+		// ("Dar de Alta" / "Enviar Servicio"); cualquiera de los dos es el "listo" real.
+		// `.first()` sobre la unión: cuando el FE muestra la lista Y el botón a la vez, `or()` resuelve
+		// a 2 elementos y `toBeVisible` (strict) fallaría por ambigüedad (medido 2026-10-01, 3/3).
+		await expect(
+			this.page.locator('.vehicle-img').first().or(this.submitButton).first(),
+			'Tras "Seleccionar Vehículo" debe aparecer la lista de vehículos o el botón de envío'
+		).toBeVisible({ timeout: 20_000 });
 	}
 
 	async clickSendService(): Promise<void> {

@@ -56,6 +56,7 @@ import {
 	type CardPreconditionResult
 } from '@features/gateway-pg/helpers/card-precondition';
 import {
+	awaitTravelRowAnchor,
 	captureCreatedTravelId,
 	cancelTravelIfCreated,
 	type TravelIdRef
@@ -103,7 +104,12 @@ export type HoldRunOptions = {
 	threeDs: boolean;
 	/** Resolver `cardFlow` vía API (default true). false = preferSavedCard=false directo. */
 	useCardFlow?: boolean;
-	/** Capturar y cancelar el travelId creado (cleanup). Default true. */
+	/**
+	 * Cancelar el viaje creado al final (cleanup). Default true. La CAPTURA del travelId es
+	 * siempre activa (listener pasivo del POST /travels): el oráculo de la grilla ancla la fila por
+	 * el código WEB "NNNN-W" y sin él degradaría a un match por texto que no distingue viajes
+	 * residuales (fix 2026-10-01).
+	 */
 	trackTravelId?: boolean;
 	/** Esperar el alta de viaje completa (waitForTravelCreation). Default true. */
 	waitForCreation?: boolean;
@@ -347,9 +353,8 @@ export class CarrierHoldSteps extends UiBase {
 		}
 
 		try {
-			if (trackTravelId) {
-				travelIdRef = await captureCreatedTravelId(this.page);
-			}
+			// Captura SIEMPRE (pasiva): la necesita el oráculo de la grilla aunque no se cancele el viaje.
+			travelIdRef = await captureCreatedTravelId(this.page);
 
 			if (options.hold === 'on') {
 				await test.step('Validar que el hold esté activado en preferencias operativas', async () => {
@@ -461,7 +466,10 @@ export class CarrierHoldSteps extends UiBase {
 				await this.management.expectPassengerInPorAsignar(
 					scenario.passenger,
 					matchDestination ? shortDestination(scenario.destination) : undefined,
-					options.expectStatus
+					options.expectStatus,
+					// Anclaje por código WEB siempre: `awaitTravelRowAnchor` espera la captura async del
+					// POST /travels y falla con causa si el backend no devolvió el código.
+					await awaitTravelRowAnchor(travelIdRef)
 				);
 			});
 		} finally {

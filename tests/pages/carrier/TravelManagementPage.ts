@@ -16,6 +16,30 @@ function matchesSearchText(candidate: string, searchText: string): boolean {
 	return searchTokens.every(token => candidateText.includes(token));
 }
 
+function escapeRegExp(value: string): string {
+	return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Regex equivalente a `matchesSearchText` para usar en `locator.filter({ hasText })`: la fila debe
+ * contener TODOS los tokens (insensible a mayúsculas, sin importar el orden) de las cadenas dadas.
+ * Permite contar las filas coincidentes en el DOM sin recorrerlas a mano ni dormir entre pasadas.
+ */
+function allTokensRegex(...texts: Array<string | undefined>): RegExp {
+	const tokens = normalizeText(texts.filter(Boolean).join(' ')).split(' ').filter(Boolean);
+	return new RegExp(`^${tokens.map(token => `(?=[\\s\\S]*${escapeRegExp(token)})`).join('')}`, 'i');
+}
+
+/**
+ * Anclaje de la fila de un viaje recién creado: lo que devuelve `captureCreatedTravelId`
+ * (`travelIdForCarrier` = código WEB "NNNN-W" de la grilla, PREFERIDO; `travelId` = id interno, legacy).
+ * Acepta `null` para poder pasar el ref tal cual sin ramificar en el caller.
+ */
+export interface TripRowAnchor {
+	travelIdForCarrier?: number | null;
+	travelId?: number | null;
+}
+
 /**
  * Selector BOUNDARY-SAFE del link de detalle de un viaje (review LOW-1): un substring plano
  * `a[href*="/travels/12345"]` también matchea los ids 123450..123459 — se exige que después
@@ -43,8 +67,8 @@ export class TravelManagementPage {
 
 	/** Abre la pestaña de viajes programados dentro de gestion de viajes. */
 	async openScheduledTrips(): Promise<void> {
-		// Acepta "Programados (N)" o "Programados" sin contador.
-		const scheduledTripsLink = this.page.getByRole('link', { name: /Programados/i }).first();
+		// Acepta "Programados (N)" / "Programmed (N)" o sin contador (UI bilingüe, ver gridSearchBox).
+		const scheduledTripsLink = this.page.getByRole('link', { name: /Programados|Programmed|Scheduled/i }).first();
 		await expect(scheduledTripsLink).toBeVisible({ timeout: 10_000 });
 		await scheduledTripsLink.click();
 	}
@@ -94,49 +118,127 @@ export class TravelManagementPage {
 		await actionBtn.click();
 	}
 
-	/**
-	 * UNA pasada por las filas visibles. Devuelve `null` si ninguna matchea — no espera ni lanza.
-	 * Extraído de `tripRow` para que el escaneo de pestañas de `findTripColumn` pueda usar el MISMO
-	 * criterio de match sin heredar su deadline de 30s (7 pestañas × 30s serían 3,5 minutos).
-	 */
-	private async matchRowOnce(passenger: string, destination?: string): Promise<Locator | null> {
-		const rows = this.page.locator('tr');
-		const count = await rows.count();
-
-		for (let index = 0; index < count; index += 1) {
-			const row = rows.nth(index);
-			const text = normalizeText(await row.textContent().catch(() => ''));
-
-			if (!matchesSearchText(text, passenger)) {
-				continue;
-			}
-
-			if (destination && !matchesSearchText(text, destination)) {
-				continue;
-			}
-
-			return row;
-		}
-
-		return null;
+	/** Buscador de la grilla (`input.search-header`). Sólo filtra con el evento Enter (`fill()` solo es no-op). */
+	private gridSearchBox(): Locator {
+		// Bilingüe (medido en vivo 2026-10-01, carrier 1521 US): la grilla de este carrier renderiza
+		// "Search..." y pestañas "Assign / Programmed / Cancelled" aunque el resto del portal esté en
+		// español. Con el literal 'Buscar...' el buscador no se encontraba y el filtro degradaba en
+		// silencio a "sin filtrar" — la raíz de los falsos "No travel row found" y de los falsos verdes.
+		return this.page.getByRole('textbox', { name: /^(Buscar|Search)\.{3}$/ });
 	}
 
-	private async tripRow(passenger: string, destination?: string) {
-		const deadline = Date.now() + 30_000;
+	/** Filtra la grilla por el buscador (fill + Enter). No-op si la pestaña activa no expone buscador. */
+	private async applyGridSearch(term: string): Promise<void> {
+		const search = this.gridSearchBox();
+		// Falla cerrado: sin buscador no hay forma de garantizar que la fila evaluada sea la del viaje
+		// de esta corrida (paginación + viajes residuales). Antes era un no-op silencioso.
+		await expect(
+			search,
+			'La grilla debe exponer el buscador ("Buscar..." / "Search...") para anclar la fila'
+		).toBeVisible({ timeout: 10_000 });
+		await search.fill(term);
+		await search.press('Enter');
+	}
 
-		while (Date.now() < deadline) {
-			const row = await this.matchRowOnce(passenger, destination);
+	/**
+	 * Término para el buscador cuando NO hay anclaje: el token más largo del pasajero, sin puntuación.
+	 * Un solo token funciona igual si el FE filtra por campo o sobre el texto concatenado de la fila
+	 * (el orden "apellido, nombre" de la grilla no coincide con el de los datos de prueba); el match
+	 * exacto por todos los tokens + destino se aplica después sobre las filas filtradas.
+	 */
+	private searchTermForPassenger(passenger: string): string {
+		const tokens = passenger
+			.split(/[\s,]+/)
+			.map(token => token.replace(/[^\p{L}\p{N}]/gu, ''))
+			.filter(Boolean);
+		return tokens.reduce((best, token) => (token.length > best.length ? token : best), tokens[0] ?? passenger);
+	}
 
-			if (row) {
-				return row;
-			}
+	/** Filas de la pestaña actual que contienen TODOS los tokens de pasajero (+ destino). */
+	private rowsByText(passenger: string, destination?: string): Locator {
+		return this.page.locator('tbody tr').filter({ hasText: allTokensRegex(passenger, destination) });
+	}
 
-			await this.page.waitForTimeout(500);
+	/**
+	 * Filas cuya celda "Código" (primer <td>) muestra `NNNN-W`. Boundary-safe: el carácter previo no puede
+	 * ser otro dígito (si no, el código 234 anclaría a la fila "1234-W") y sólo mira esa celda, no
+	 * teléfono/fecha/presupuesto (review LOW-1).
+	 */
+	private rowsByWebCode(travelIdForCarrier: number): Locator {
+		return this.page.locator('tbody tr').filter({
+			has: this.page
+				.locator('td:first-child')
+				.filter({ hasText: new RegExp(`(?:^|[^0-9])${travelIdForCarrier}-W`) })
+		});
+	}
+
+	/**
+	 * Resuelve LA fila del viaje en la pestaña actual y exige que sea ÚNICA (nunca `.first()`).
+	 *
+	 * - Con `travelIdForCarrier`: ancla por el código WEB y filtra la grilla por ese código.
+	 * - Con `travelId` (legacy): ancla por el href de detalle (v1.72.8 lo eliminó: no matchea → falla).
+	 * - Sin anclaje: filtra la grilla por el pasajero y exige que pasajero + destino coincidan con
+	 *   EXACTAMENTE una fila; si hay más, lanza "Coincidencia ambigua" en vez de elegir una (podría ser el
+	 *   residuo de una corrida anterior → falso positivo).
+	 *
+	 * El filtro se RE-EJECUTA en cada intento del `expect.poll` (cada Enter dispara un fetch nuevo; una
+	 * fila que migra de estado tras 3DS/hold no aparece en el snapshot inicial). El poll es la única
+	 * espera: sin `waitForTimeout`.
+	 */
+	private async resolveUniqueRow(opts: {
+		passenger: string;
+		destination?: string;
+		travelId?: number | null;
+		travelIdForCarrier?: number | null;
+	}): Promise<{ row: Locator; label: string }> {
+		const { passenger, destination, travelId, travelIdForCarrier } = opts;
+		let rows: Locator;
+		let label: string;
+		let searchTerm: string | null;
+
+		if (travelIdForCarrier != null) {
+			rows = this.rowsByWebCode(travelIdForCarrier);
+			label = `del viaje ${travelIdForCarrier}-W (anclaje por código WEB)`;
+			searchTerm = String(travelIdForCarrier);
+		} else if (travelId != null) {
+			rows = this.page.locator('tbody tr').filter({ has: this.page.locator(travelDetailHrefSelector(travelId)) });
+			label = `del viaje ${travelId} (anclaje por travelId)`;
+			searchTerm = null;
+		} else {
+			rows = this.rowsByText(passenger, destination);
+			label = `de "${passenger}"${destination ? ` / "${destination}"` : ''}`;
+			searchTerm = this.searchTermForPassenger(passenger);
 		}
 
-		throw new Error(
-			`No travel row found for passenger "${passenger}"${destination ? ` and destination "${destination}"` : ''}`
-		);
+		let lastCount = 0;
+		try {
+			await expect
+				.poll(
+					async () => {
+						if (searchTerm) {
+							await this.applyGridSearch(searchTerm);
+						}
+						lastCount = await rows.count();
+						return lastCount;
+					},
+					{
+						message: `La fila ${label} debe aparecer UNA sola vez en la pestaña actual (re-fetch por búsqueda — puede tardar en migrar de estado tras 3DS)`,
+						timeout: 30_000
+					}
+				)
+				.toBe(1);
+		} catch (error) {
+			if (lastCount > 1) {
+				throw new Error(
+					travelIdForCarrier != null || travelId != null
+						? `Coincidencia ambigua: ${lastCount} filas para el viaje anclado ${label}`
+						: `Coincidencia ambigua: ${lastCount} filas para "${passenger}" / "${destination ?? '(sin destino)'}" — pasar travelIdForCarrier`
+				);
+			}
+			throw error;
+		}
+
+		return { row: rows, label };
 	}
 
 	/**
@@ -146,15 +248,18 @@ export class TravelManagementPage {
 	 * patrón que `expectPassengerInEnConflicto`.
 	 */
 	async openPorAsignarTab(): Promise<void> {
+		// Bilingüe + falla cerrado (2026-10-01): con la UI del carrier 1521 en inglés ("Assign") el regex
+		// /asignar/i no matcheaba y el `if (count)` dejaba la pestaña activa que estuviera — el oráculo
+		// evaluaba OTRA pestaña sin que nada lo delatara.
 		const tab = this.page
 			.locator('tabset ul li a')
-			.filter({ hasText: /asignar/i })
+			.filter({ hasText: /asignar|assign/i })
 			.first();
-		if (await tab.count()) {
-			await expect(tab).toBeVisible({ timeout: 10_000 });
-			await tab.click();
-			await this.page.waitForSelector('table tbody', { state: 'visible', timeout: 15_000 }).catch(() => {});
-		}
+		await expect(tab, 'La pestaña "Por asignar" / "Assign" debe existir en Gestión de Viajes').toBeVisible({
+			timeout: 10_000
+		});
+		await tab.click();
+		await this.page.waitForSelector('table tbody', { state: 'visible', timeout: 15_000 }).catch(() => {});
 	}
 
 	/**
@@ -164,7 +269,7 @@ export class TravelManagementPage {
 	 * Existe porque "no aparece en Por asignar" tapa dos situaciones OPUESTAS que mandan a investigar
 	 * lugares distintos: el viaje cayó en "En conflicto" (se creó y el hold NO se aprobó → hallazgo de
 	 * pago, escalar a dev) o no hay fila en ninguna columna (el alta no se completó → causa aguas
-	 * arriba, p. ej. tarifa/ruta). El mensaje crudo de `tripRow` no las distingue, y en la corrida de
+	 * arriba, p. ej. tarifa/ruta). El mensaje crudo de la assertion no las distingue, y en la corrida de
 	 * TC1011 del 2026-07-28 esa ambigüedad dejó sin respuesta justamente la pregunta que había que
 	 * contestar.
 	 *
@@ -174,6 +279,8 @@ export class TravelManagementPage {
 	async findTripColumn(passenger: string, destination?: string): Promise<string | null> {
 		const tabs = this.page.locator('tabset ul li a');
 		const tabCount = await tabs.count();
+		const rows = this.rowsByText(passenger, destination);
+		const searchTerm = this.searchTermForPassenger(passenger);
 
 		for (let index = 0; index < tabCount; index += 1) {
 			const tab = tabs.nth(index);
@@ -182,15 +289,24 @@ export class TravelManagementPage {
 			await tab.click({ timeout: 5_000 }).catch(() => undefined);
 			await this.page.waitForSelector('table tbody', { state: 'visible', timeout: 5_000 }).catch(() => {});
 
-			// Margen corto por pestaña: la grilla ya está cargada, sólo se re-renderiza el filtro.
-			const deadline = Date.now() + 2_000;
+			// Margen corto por pestaña (poll acotado, sin sleep): la grilla ya está cargada, sólo se re-filtra.
+			// Diagnóstico: basta con que EXISTA alguna fila (no exige unicidad).
+			const found = await expect
+				.poll(
+					async () => {
+						await this.applyGridSearch(searchTerm);
+						return rows.count();
+					},
+					{ timeout: 2_000 }
+				)
+				.toBeGreaterThan(0)
+				.then(
+					() => true,
+					() => false
+				);
 
-			while (Date.now() < deadline) {
-				if (await this.matchRowOnce(passenger, destination)) {
-					return label;
-				}
-
-				await this.page.waitForTimeout(250);
+			if (found) {
+				return label;
 			}
 		}
 
@@ -216,11 +332,12 @@ export class TravelManagementPage {
 	async expectPassengerInPorAsignar(
 		passenger: string,
 		destination?: string,
-		status?: string | RegExp
+		status?: string | RegExp,
+		anchor?: TripRowAnchor
 	): Promise<void> {
 		// La grilla arranca en otra pestaña: sin este click la fila no existe en el DOM.
 		await this.openPorAsignarTab();
-		await this.expectTripRowInCurrentTab({ passenger, destination, status });
+		await this.expectTripRowInCurrentTab({ passenger, destination, status, ...anchor });
 	}
 
 	/**
@@ -236,81 +353,32 @@ export class TravelManagementPage {
 	 * en vivo (recurrentes/, 2026-08-11) que v1.72.8 ELIMINÓ esos anchors de esta grilla — el id
 	 * interno del POST tampoco es el código que se muestra, así que este camino nunca matchea.
 	 * Se mantiene por compatibilidad con callers que aún no migraron (p.ej. quote-trip-verification);
-	 * preferir `travelIdForCarrier` en código nuevo. Sin ninguno de los dos, el match por texto
-	 * puede tomar una fila AJENA con el mismo pasajero/destino de otra corrida (review LOW-1).
+	 * preferir `travelIdForCarrier` en código nuevo.
+	 *
+	 * Sin ninguno de los dos el match es por texto (pasajero + destino) sobre la grilla filtrada por el
+	 * buscador, y debe ser ÚNICO: con 2+ filas lanza "Coincidencia ambigua" en vez de tomar una (podría
+	 * ser un viaje AJENO de otra corrida con el mismo pasajero/destino — falso positivo, review LOW-1).
 	 */
 	async expectTripRowInCurrentTab(opts: {
 		passenger: string;
 		destination?: string;
 		status?: string | RegExp;
-		travelId?: number;
-		travelIdForCarrier?: number;
+		travelId?: number | null;
+		travelIdForCarrier?: number | null;
 	}): Promise<void> {
 		const { passenger, destination, status, travelId, travelIdForCarrier } = opts;
 		// Filtrar por el buscador de la grilla ANTES de evaluar la fila (fix 2026-08-11, corrida
-		// live TC052): la pestaña "Programados" del carrier compartido acumula decenas de filas
-		// entre corridas (paginada, "1 de 2" confirmado en vivo con 33 filas) — un `tbody tr` sin
-		// filtrar puede no traer la fila recién creada si cae en otra página, aunque exista
-		// (confirmado: 0 matches de "4180" en el snapshot completo del DOM). El buscador
-		// (`input.search-header`, mismo control que `CarrierRecurrentTravelPage.searchInList`)
-		// NO filtra con solo `fill()` — exige el evento Enter (confirmado en vivo: `fill()` sin
-		// Enter deja la grilla intacta; con Enter, filtra a la fila exacta y saca la paginación de
-		// la ecuación). `reactivate()` más abajo tiene el mismo `fill()` sin Enter — no tocado acá,
-		// pertenece al bloqueador ya documentado de Cancelados (500 backend).
-		//
-		// RE-EJECUTAR el filtro en cada intento del poll (no solo una vez, fix 2026-08-11, corrida
-		// live TC052 variante hold+3DS): cada Enter dispara un fetch nuevo al backend ("Última
-		// actualización" visible en la UI) — un solo filtro contra el snapshot inicial no ve una
-		// fila cuya escritura backend post-3DS todavía no comitió. Confirmado en vivo: la fila
-		// existía en "Asignar" mientras "Programados" reportaba 0 — no es ausencia, es una
-		// migración de estado async más lenta que el resto (mismo patrón de latencia extra ya
-		// confirmado en el challenge 3DS post-envío).
-		const search = this.page.getByRole('textbox', { name: 'Buscar...' });
-		const hasSearch = travelIdForCarrier != null && (await search.count()) > 0;
-		// Boundary-safe (review LOW-1, mismo criterio que travelDetailHrefSelector): matchear SOLO
-		// la celda "Código" (primer <td>), no toda la fila — un `hasText` sin acotar corre contra
-		// pasajero/teléfono/fecha/presupuesto también, y una coincidencia de dígitos ajena (p.ej.
-		// un teléfono) anclaría a la fila equivocada sin que el test lo note.
-		const row =
-			travelIdForCarrier != null
-				? this.page
-						.locator('tbody tr')
-						.filter({
-							has: this.page.locator('td:first-child').filter({ hasText: `${travelIdForCarrier}-W` })
-						})
-						.first()
-				: travelId != null
-					? this.page
-							.locator('tbody tr')
-							.filter({ has: this.page.locator(travelDetailHrefSelector(travelId)) })
-							.first()
-					: await this.tripRow(passenger, destination);
-		const anchorLabel =
-			travelIdForCarrier != null
-				? `del viaje ${travelIdForCarrier}-W (anclaje por código WEB)`
-				: travelId != null
-					? `del viaje ${travelId} (anclaje por travelId)`
-					: `de "${passenger}"`;
-		if (hasSearch) {
-			await expect
-				.poll(
-					async () => {
-						await search.fill(String(travelIdForCarrier));
-						await search.press('Enter');
-						await this.page.waitForTimeout(500); // debounce del filtro de la grilla
-						return row.count();
-					},
-					{
-						message: `La fila ${anchorLabel} debe estar visible en la pestaña actual (re-fetch por búsqueda — puede tardar en migrar de estado tras 3DS)`,
-						timeout: 30_000
-					}
-				)
-				.toBeGreaterThan(0);
-		} else {
-			await expect(row, `La fila ${anchorLabel} debe estar visible en la pestaña actual`).toBeVisible({
-				timeout: travelId != null ? 30_000 : 10_000
-			});
-		}
+		// live TC052): las pestañas del carrier compartido acumulan decenas de filas entre corridas
+		// (paginadas, "1 de 2" confirmado en vivo con 33 filas) — un `tbody tr` sin filtrar puede no
+		// traer la fila recién creada si cae en otra página, aunque exista. El buscador NO filtra con
+		// solo `fill()`: exige Enter (confirmado en vivo). La fila se resuelve y se exige ÚNICA en
+		// `resolveUniqueRow` (filtro re-ejecutado en cada intento del poll: cada Enter dispara un fetch
+		// nuevo, y una fila que migra de estado tras 3DS no aparece en el snapshot inicial).
+		// `reactivate()` más abajo tiene el mismo `fill()` sin Enter — no tocado acá, pertenece al
+		// bloqueador ya documentado de Cancelados (500 backend).
+		const { row, label } = await this.resolveUniqueRow({ passenger, destination, travelId, travelIdForCarrier });
+		// Unicidad (count === 1) no implica visibilidad: la fila única debe estar renderizada en la pestaña.
+		await expect(row, `La fila ${label} debe estar visible en la pestaña actual`).toBeVisible({ timeout: 10_000 });
 		await expect
 			.poll(
 				async () => {
@@ -327,7 +395,6 @@ export class TravelManagementPage {
 	}
 
 	/**
-
 	 * Oráculo del viaje PROGRAMADO (alta con hora futura): NO cae en "Por asignar" sino en la pestaña
 	 * "Programados". Mismo patrón que `expectPassengerInEnConflicto` — hay que cambiar de pestaña
 	 * primero porque la grilla arranca en otra y la fila no existe en el DOM hasta el click.
@@ -339,16 +406,12 @@ export class TravelManagementPage {
 	async expectPassengerInProgramados(
 		passenger: string,
 		destination?: string,
-		status?: string | RegExp
+		status?: string | RegExp,
+		anchor?: TripRowAnchor
 	): Promise<void> {
 		await this.openScheduledTrips();
 		await this.page.waitForSelector('table tbody', { state: 'visible', timeout: 15_000 }).catch(() => {});
-		const row = await this.tripRow(passenger, destination);
-		await expect(row).toBeVisible({ timeout: 10_000 });
-
-		if (status) {
-			await expect(row).toContainText(status, { timeout: 10_000 });
-		}
+		await this.expectTripRowInCurrentTab({ passenger, destination, status, ...anchor });
 	}
 
 	/**
@@ -356,7 +419,7 @@ export class TravelManagementPage {
 	 * es un `link` cuyo nombre incluye el contador (p.ej. "Cancelados (68)") → match por regex.
 	 */
 	async openCanceladosTab(): Promise<void> {
-		const tab = this.page.getByRole('link', { name: /Cancelados/i }).first();
+		const tab = this.page.getByRole('link', { name: /Cancelados|Cancell?ed/i }).first();
 		await expect(tab).toBeVisible({ timeout: 10_000 });
 		await tab.click();
 		await this.page.waitForSelector('table tbody', { state: 'visible', timeout: 15_000 }).catch(() => {});
@@ -431,21 +494,30 @@ export class TravelManagementPage {
 		await reactivateBtn.click();
 	}
 
-	async expectPassengerInEnConflicto(passenger: string, destination?: string): Promise<void> {
+	/**
+	 * Verifica el viaje en "En conflicto" con estado "No autorizado" sobre la MISMA fila (anclada si se
+	 * pasa `anchor`, única si no — ver `expectTripRowInCurrentTab`).
+	 */
+	async expectPassengerInEnConflicto(passenger: string, destination?: string, anchor?: TripRowAnchor): Promise<void> {
 		const enConflictoTab = this.page
 			.locator('tabset ul li a')
-			.filter({ hasText: /en conflicto/i })
+			.filter({ hasText: /en conflicto|in conflict/i })
 			.first();
-		await expect(enConflictoTab).toBeVisible({ timeout: 10_000 });
+		await expect(enConflictoTab, 'La pestaña "En conflicto" / "In Conflict" debe existir').toBeVisible({
+			timeout: 10_000
+		});
 		await enConflictoTab.click();
 		await this.page.waitForSelector('table tbody', { state: 'visible', timeout: 15_000 }).catch(() => {});
-		const row = await this.tripRow(passenger, destination);
-		await expect(row).toBeVisible({ timeout: 10_000 });
-		await expect(row).toContainText(/No autorizado|NO_AUTORIZADO/i, { timeout: 10_000 });
+		await this.expectTripRowInCurrentTab({
+			passenger,
+			destination,
+			status: /No autorizado|NO_AUTORIZADO/i,
+			...anchor
+		});
 	}
 
-	async openDetailForPassenger(passenger: string, destination?: string): Promise<void> {
-		const row = await this.tripRow(passenger, destination);
+	async openDetailForPassenger(passenger: string, destination?: string, anchor?: TripRowAnchor): Promise<void> {
+		const { row } = await this.resolveUniqueRow({ passenger, destination, ...anchor });
 		await expect(row).toBeVisible({ timeout: 10_000 });
 		const detailLink = row.locator('a[href*="/travels/"]').first();
 

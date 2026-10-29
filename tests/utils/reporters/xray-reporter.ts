@@ -60,6 +60,13 @@ interface ReporterOptions {
 // Tipos de annotation que portan la key del Test de Xray (orden = prioridad).
 // 'tms' es la convención existente del org (Allure links + carrier-v2).
 const KEY_ANNOTATION_TYPES = ['tms', 'test_key'];
+// Annotation EXCLUSIVA (opt-in por test): si el test la declara, acredita SOLO esa(s) key(s) y
+// se ignoran las keys heredadas del describe / @atc y el fallback de título.
+const EXCLUSIVE_KEY_ANNOTATION = 'tms_only';
+// Annotation de cobertura PARCIAL (opt-in por test): description = tramo fuera de alcance
+// (p. ej. "cobro desde App Driver fuera de alcance"). El resultado NUNCA se publica como
+// PASSED/FAILED: sale TODO con comentario "tramo web <resultado>; <description>".
+const PARTIAL_ANNOTATION = 'xray_partial';
 const KEY_IN_TITLE = /\b([A-Z][A-Z0-9]+-\d+)\b/;
 // Secuencias ANSI de color (ESC[..m). ESC via fromCharCode para evitar escapes de control.
 const ANSI = new RegExp(String.fromCharCode(27) + '\\[[0-9;]*m', 'g');
@@ -104,9 +111,13 @@ const KEY_DENYLIST = new Set(
 // TestCase (declaradas en describe/test) con las de RUNTIME del TestResult (donde el
 // decorador @atc las agrega). Así la corrida acredita evidencia a cada Test cubierto.
 // Fallback al título solo si no hay ninguna annotation. Denylist filtra no-Tests.
-function extractTestKeys(test: TestCase, result: TestResult): string[] {
+export function extractTestKeys(test: TestCase, result: TestResult): string[] {
 	const keys = new Set<string>();
 	const all = [...test.annotations, ...(result.annotations ?? [])];
+	const exclusive = all.filter(a => a.type === EXCLUSIVE_KEY_ANNOTATION && a.description);
+	if (exclusive.length > 0) {
+		return [...new Set(exclusive.map(a => a.description!.trim()))].filter(k => !KEY_DENYLIST.has(k));
+	}
 	for (const type of KEY_ANNOTATION_TYPES) {
 		for (const ann of all) {
 			if (ann.type === type && ann.description) keys.add(ann.description.trim());
@@ -118,6 +129,21 @@ function extractTestKeys(test: TestCase, result: TestResult): string[] {
 	}
 	for (const k of [...keys]) if (KEY_DENYLIST.has(k)) keys.delete(k);
 	return [...keys];
+}
+
+// Aplica la cobertura parcial: pasa/falla/skip del tramo web -> TODO + comentario explícito.
+export function resolveOutcome(
+	test: TestCase,
+	result: TestResult,
+	status: XrayStatus,
+	comment: string | undefined
+): { status: XrayStatus; comment?: string } {
+	const all = [...test.annotations, ...(result.annotations ?? [])];
+	const partial = all.find(a => a.type === PARTIAL_ANNOTATION && a.description);
+	if (!partial) return { status, comment };
+	const web = status === 'PASSED' ? 'PASSED' : status === 'TODO' ? 'SKIPPED' : 'FAILED';
+	const detail = comment ? ` — ${comment}` : '';
+	return { status: 'TODO', comment: `tramo web ${web}; ${partial.description!.trim()}${detail}`.slice(0, 2000) };
 }
 
 class XrayReporter implements Reporter {
@@ -146,14 +172,13 @@ class XrayReporter implements Reporter {
 			return;
 		}
 
-		const status = mapStatus(result.status);
-		const start = result.startTime.toISOString();
-		const finish = new Date(result.startTime.getTime() + result.duration).toISOString();
-		const comment =
+		const baseComment =
 			result.status === 'passed'
 				? undefined
 				: clean(result.error?.message ?? `status=${result.status}`).slice(0, 2000);
-
+		const { status, comment } = resolveOutcome(test, result, mapStatus(result.status), baseComment);
+		const start = result.startTime.toISOString();
+		const finish = new Date(result.startTime.getTime() + result.duration).toISOString();
 		// Evidencia: screenshots (image/png) que Playwright adjunta al test. Con `--screenshot=on`
 		// los PASSED capturan un screenshot final → se embebe base64 en el import y queda anclado
 		// al run en Xray como evidencia del test-case. Cap defensivo para no inflar el JSON.
@@ -200,7 +225,7 @@ class XrayReporter implements Reporter {
 			if (process.env.XRAY_SUMMARY) info.summary = process.env.XRAY_SUMMARY;
 			if (process.env.XRAY_VERSION) info.version = process.env.XRAY_VERSION;
 			// Default TM-1283 = ATP-AUTO (stock de automatización); override por campaña con XRAY_TEST_PLAN_KEY.
-			info.testPlanKey = process.env.XRAY_TEST_PLAN_KEY || "TM-1283";
+			info.testPlanKey = process.env.XRAY_TEST_PLAN_KEY || 'TM-1283';
 			if (Object.keys(info).length > 0) payload.info = info;
 		}
 

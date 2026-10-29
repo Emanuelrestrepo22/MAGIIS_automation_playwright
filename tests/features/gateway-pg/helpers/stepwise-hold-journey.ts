@@ -78,7 +78,11 @@ import { getGatewayPgAdapter } from '@features/gateway-pg/helpers/adapters';
 import { cleanupCardsByLast4 } from '@features/gateway-pg/helpers/card-precondition';
 import { outcomeForIntent, type JourneyOutcome } from '@features/gateway-pg/helpers/journey-outcome';
 import { readHoldEnabled, setHoldViaApi } from '@features/gateway-pg/helpers/parameters-api';
-import { cancelTravelIfCreated, captureCreatedTravelId } from '@features/gateway-pg/helpers/travel-cleanup';
+import {
+	awaitTravelRowAnchor,
+	cancelTravelIfCreated,
+	captureCreatedTravelId
+} from '@features/gateway-pg/helpers/travel-cleanup';
 import { CarrierNewTravelPage, CarrierTravelManagementPage, isGatewayDestructiveSwitchAllowed } from '@ui/carrier';
 import { cardFormFor } from '@ui/carrier/card-forms';
 
@@ -714,7 +718,11 @@ export async function runStepwiseHoldJourney(page: Page, input: StepwiseHoldJour
 				// pero el hold del VIAJE falló, así que el viaje existe y queda marcado. Es el desenlace
 				// del fallo 3DS de Stripe (TS-STRIPE-TC1057) — distinto de 'card-rejected', donde el
 				// rechazo ocurre antes y no hay viaje.
-				await management.expectPassengerInEnConflicto(gridName, shortDestination(destination));
+				await management.expectPassengerInEnConflicto(
+					gridName,
+					shortDestination(destination),
+					await awaitTravelRowAnchor(travelRef)
+				);
 				return;
 			}
 
@@ -737,6 +745,10 @@ export async function runStepwiseHoldJourney(page: Page, input: StepwiseHoldJour
 			// el viaje cayó en "En conflicto" (existe y el hold NO se aprobó → hallazgo de pago) o no
 			// hay fila en ninguna columna (el alta no se completó → causa aguas arriba). En la corrida
 			// de TC1011 del 2026-07-28 esa ambigüedad dejó sin responder justamente la pregunta del caso.
+			// Ancla por el código WEB del viaje creado en ESTA corrida (fail-fast si el POST no lo devolvió).
+			// Se resuelve fuera del try: un fallo de captura no es un "viaje en otra columna" y no debe
+			// pasar por el diagnóstico de `findTripColumn`.
+			const rowAnchor = await awaitTravelRowAnchor(travelRef);
 			try {
 				if (schedule === 'scheduled') {
 					// Un viaje con hora futura NO entra en "Por asignar": queda en "Programados" hasta que
@@ -745,12 +757,18 @@ export async function runStepwiseHoldJourney(page: Page, input: StepwiseHoldJour
 					// El estado de la fila NO se asevera: un programado sin conductor y uno ya asignado son
 					// los dos resultados válidos del hold aprobado, y `HOLD_APPROVED_ROW_STATUS` está
 					// calibrado para el ciclo de un viaje inmediato.
-					await management.expectPassengerInProgramados(gridName, shortDestination(destination));
+					await management.expectPassengerInProgramados(
+						gridName,
+						shortDestination(destination),
+						undefined,
+						rowAnchor
+					);
 				} else {
 					await management.expectPassengerInPorAsignar(
 						gridName,
 						shortDestination(destination),
-						HOLD_APPROVED_ROW_STATUS
+						HOLD_APPROVED_ROW_STATUS,
+						rowAnchor
 					);
 				}
 			} catch (error) {

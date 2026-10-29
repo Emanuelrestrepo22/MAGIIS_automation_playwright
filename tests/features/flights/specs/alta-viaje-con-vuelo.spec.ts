@@ -60,6 +60,7 @@ test.describe(`[FLIGHT][${env.toUpperCase()}] Alta de viaje con vuelo — Portal
 
 		await test.step('Then: viaje visible en Gestión de Viajes ("Buscando chofer")', async () => {
 			await management.goto();
+			// Sin captureCreatedTravelId en este spec (fixture de provisión propio): match por texto, exige fila única (si hay 2+ falla como ambiguo).
 			await management.expectPassengerInPorAsignar(FLIGHT_TEST_DATA.client, undefined, 'Buscando chofer');
 			debugLog('flight', `[ALTA-VUELO] Viaje con vuelo asociado creado en ${env.toUpperCase()} ✅`);
 		});

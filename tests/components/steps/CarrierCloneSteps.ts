@@ -41,6 +41,7 @@ import { setHoldViaApi, getCarrierParameters } from '@features/gateway-pg/helper
 import { extractAuthToken, cleanupGatewayCardByLast4 } from '@features/gateway-pg/helpers/card-precondition';
 import { finalizeTravelAdmin } from '@features/gateway-pg/helpers/travel-finalize';
 import {
+	awaitTravelRowAnchor,
 	captureCreatedTravelId,
 	cancelTravelDetailed,
 	cancelTravelIfCreated,
@@ -258,7 +259,12 @@ export class CarrierCloneSteps extends UiBase {
 
 			await test.step('Validar viaje clonado en gestión — columna Por Asignar', async () => {
 				await this.management.goto();
-				await this.management.expectPassengerInPorAsignar(scenario.passenger, shortDest);
+				await this.management.expectPassengerInPorAsignar(
+					scenario.passenger,
+					shortDest,
+					undefined,
+					await awaitTravelRowAnchor(cloneRef)
+				);
 			});
 		} finally {
 			// seedRef ya fue disposeado al cerrar la fase de seed (CRITICAL-1); dispose es
