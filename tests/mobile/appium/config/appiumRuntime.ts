@@ -232,6 +232,16 @@ export function buildAndroidCapabilities(config: MobileActorConfig): Record<stri
 		...(config.chromedriverAutodownload ? { 'appium:chromedriverAutodownload': true } : {}),
 		...(config.chromedriverExecutable ? { 'appium:chromedriverExecutable': config.chromedriverExecutable } : {}),
 		...(config.udid ? { 'appium:udid': config.udid } : {}),
+		// Chromedriver fijo para el WebView (opcional). Cuando el WebView del dispositivo se
+		// actualiza por delante de los chromedrivers descargables (ej. Chrome 153 en el emulador
+		// con chromedriver 151), Appium no logra entrar al contexto WEBVIEW. Sin las variables,
+		// las capabilities quedan exactamente como antes.
+		...(process.env.APPIUM_CHROMEDRIVER_EXECUTABLE
+			? { 'appium:chromedriverExecutable': process.env.APPIUM_CHROMEDRIVER_EXECUTABLE }
+			: {}),
+		...(readOptionalBooleanEnv('APPIUM_CHROMEDRIVER_DISABLE_BUILD_CHECK', false)
+			? { 'appium:chromedriverDisableBuildCheck': true }
+			: {}),
 		...(useInstalledApp
 			? {
 					// App instalada: lanzar por package, sin instalar APK
