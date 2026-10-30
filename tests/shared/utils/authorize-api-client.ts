@@ -31,6 +31,7 @@
 
 import type { APIRequestContext, APIResponse } from '@playwright/test';
 import type { AuthorizeTestCard } from '../../fixtures/gateways/authorize/cards';
+import { wrapRequestWithRedaction } from '@utils/safeRequest';
 
 // ═══════════════════════════════════════════════════════════════════════
 // TYPES
@@ -106,15 +107,19 @@ export class AuthorizeApiClient {
 	private readonly apiLoginId: string;
 	private readonly transactionKey: string;
 	private readonly endpoint: string;
+	private readonly request: APIRequestContext;
 
 	constructor(
-		private readonly request: APIRequestContext,
+		request: APIRequestContext,
 		opts: {
 			apiLoginId?: string;
 			transactionKey?: string;
 			endpoint?: string;
 		} = {}
 	) {
+		// MG-158: no extiende ApiBase (queda fuera de su getter `request`
+		// redactor), así que envolvemos acá mismo para no dejarlo desprotegido.
+		this.request = wrapRequestWithRedaction(request);
 		this.apiLoginId = opts.apiLoginId ?? process.env.AUTHORIZE_API_LOGIN_ID ?? '';
 		this.transactionKey = opts.transactionKey ?? process.env.AUTHORIZE_TRANSACTION_KEY ?? '';
 		this.endpoint = opts.endpoint ?? AUTHORIZE_SANDBOX_ENDPOINT;

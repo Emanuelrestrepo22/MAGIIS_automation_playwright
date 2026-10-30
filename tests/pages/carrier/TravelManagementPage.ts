@@ -464,7 +464,13 @@ export class TravelManagementPage {
 				? this.page
 						.locator('tbody tr')
 						.filter({
-							has: this.page.locator('td:first-child').filter({ hasText: `${travelIdForCarrier}-W` })
+							// `getByText(..., { exact: true })` y NO `hasText`: `hasText` es substring simple,
+							// sin ancla a la izquierda, de modo que `706-W` matchea la celda de `4706-W` y
+							// ancla la fila de otro viaje del carrier compartido. El sufijo `-W` solo cubre
+							// el lado derecho. Mismo fix que en `expectTripRowInCurrentTab`.
+							has: this.page
+								.locator('td:first-child')
+								.getByText(`${travelIdForCarrier}-W`, { exact: true })
 						})
 						.first()
 				: travelId != null

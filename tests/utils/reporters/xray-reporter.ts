@@ -33,6 +33,7 @@
 import { mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import { dirname, basename } from 'node:path';
 import type { FullResult, Reporter, TestCase, TestResult } from '@playwright/test/reporter';
+import { redactSecrets } from '../redact';
 
 // Estados Xray Cloud válidos para import.
 type XrayStatus = 'PASSED' | 'FAILED' | 'ABORTED' | 'TODO';
@@ -71,8 +72,25 @@ const KEY_IN_TITLE = /\b([A-Z][A-Z0-9]+-\d+)\b/;
 // Secuencias ANSI de color (ESC[..m). ESC via fromCharCode para evitar escapes de control.
 const ANSI = new RegExp(String.fromCharCode(27) + '\\[[0-9;]*m', 'g');
 
+// Segunda barrera de redacción: aunque ApiBase ya redacte headers sensibles al
+// construir el error, el reporter redacta defensivamente ANTES de escribir el
+// comment del run de Xray -- ese comment es el destino final del volcado y el
+// costo de una fuga (token en Xray, visible a todo el proyecto) es alto.
 function clean(text: string): string {
-	return text.replace(ANSI, '').trim();
+	return redactSecrets(text.replace(ANSI, '')).trim();
+}
+
+// MG-158 code review: `result.error` es solo el error singular final -- un test
+// con soft-assertions (expect.soft) puede fallar por varias razones a la vez y
+// esas quedan en `result.errors[]`, no en `result.error`. Si solo leyéramos
+// `result.error?.message` un fallo reportado exclusivamente vía soft-assertion
+// pasaría de largo la redacción (nunca llega a "clean"). Unimos ambas fuentes
+// -- `errors[]` primero por ser el listado completo -- antes de redactar.
+function buildErrorComment(result: TestResult): string {
+	const messages = (result.errors ?? []).map(e => e.message).filter((m): m is string => Boolean(m));
+	if (messages.length === 0 && result.error?.message) messages.push(result.error.message);
+	const text = messages.length > 0 ? messages.join('\n---\n') : `status=${result.status}`;
+	return clean(text);
 }
 
 function mapStatus(status: TestResult['status']): XrayStatus {
@@ -172,10 +190,7 @@ class XrayReporter implements Reporter {
 			return;
 		}
 
-		const baseComment =
-			result.status === 'passed'
-				? undefined
-				: clean(result.error?.message ?? `status=${result.status}`).slice(0, 2000);
+		const baseComment = result.status === 'passed' ? undefined : buildErrorComment(result).slice(0, 2000);
 		const { status, comment } = resolveOutcome(test, result, mapStatus(result.status), baseComment);
 		const start = result.startTime.toISOString();
 		const finish = new Date(result.startTime.getTime() + result.duration).toISOString();
