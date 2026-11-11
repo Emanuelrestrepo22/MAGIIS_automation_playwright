@@ -116,6 +116,12 @@ export class TripConfirmScreen {
 		return parseTravelIdFromUrl(await this.currentUrl());
 	}
 
+	/** Texto visible de la oferta (incluye el código `<n>-<canal>` del encabezado, p. ej. «5282-W»). */
+	async readVisibleText(): Promise<string> {
+		const driver = await this.web();
+		return driver.execute(() => document.body?.innerText ?? '').catch(() => '');
+	}
+
 	async readState(): Promise<TripConfirmState> {
 		const url = await this.currentUrl();
 		const acceptVisible = await this.isAcceptVisible();

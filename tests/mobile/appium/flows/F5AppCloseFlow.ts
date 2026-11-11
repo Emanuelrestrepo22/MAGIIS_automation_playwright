@@ -34,6 +34,8 @@ export type F5AppCloseInput = {
 	carrier: CarrierProfile;
 	/** Viaje que DEBE ser el de la oferta en pantalla; `null` = no se exige (solo S3 FR sin handoff). */
 	travelId: number | null;
+	/** Código visible del viaje (`<n>-<canal>`, p. ej. «5282-W»): la oferta no siempre expone el id en la URL. */
+	travelCode?: string;
 	/** Pre-flight del chofer (identidad + credenciales por si está deslogueado); lo arma el runner. */
 	expectation: DriverPreflightExpectation;
 	route: LatLng[];
@@ -76,7 +78,7 @@ export class GpsAbortedError extends Error {
 export type F5AppCloseDeps = {
 	session: Pick<DriverSessionPBO, 'startSession'>;
 	/** Lee el travelId de la oferta mostrada SIN aceptarla (guard previo al irreversible). */
-	offer: { peekTravelId(): Promise<string | null> };
+	offer: { peekTravelId(): Promise<string | null>; readVisibleText?(): Promise<string> };
 	trip: Pick<TripLifecyclePBO, 'acceptAssignedTrip' | 'startTrip' | 'finishTrip' | 'closeTrip'>;
 	gps: Pick<GpsSimulationPBO, 'driveRoute'>;
 	evidence: Pick<Evidence, 'checkpoint'>;
@@ -102,7 +104,8 @@ export class F5AppCloseFlow {
 				peekTravelId: async () => {
 					await confirm.waitUntilShown();
 					return confirm.readTravelId();
-				}
+				},
+				readVisibleText: () => confirm.readVisibleText()
 			},
 			trip: TripLifecyclePBO.forSession(session, i18n, log ? { log } : undefined),
 			gps: GpsSimulationPBO.forSession(session),
@@ -138,7 +141,15 @@ export class F5AppCloseFlow {
 			if (!input.resumeFromToStart) {
 				stage = 'offer';
 				const seen = await deps.offer.peekTravelId();
-				if (input.travelId !== null && seen !== String(input.travelId)) throw new OfferMismatchError(input.travelId, seen);
+				if (input.travelId !== null && seen !== String(input.travelId)) {
+					// Sin id en la URL: se acepta solo si el código visible de la oferta es el del handoff.
+					const codeMatches =
+						seen === null &&
+						Boolean(input.travelCode) &&
+						((await deps.offer.readVisibleText?.()) ?? '').includes(input.travelCode as string);
+					if (!codeMatches) throw new OfferMismatchError(input.travelId, seen);
+					this.log(`[F5AppCloseFlow] oferta identificada por código visible «${input.travelCode}».`);
+				}
 				steps.push('offer.peekTravelId');
 				stage = 'accept';
 				irreversibleStarted = true;

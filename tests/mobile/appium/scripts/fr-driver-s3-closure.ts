@@ -49,9 +49,10 @@ async function run(): Promise<number> {
 	const expectation = readDriverPreflightExpectation(profile, config.appPackage, travelId ?? undefined);
 	const session = new MobileSession(config, { log });
 	const evidence = session.evidence(`fr-s3-closure-${travelId ?? 'sin-travel'}`);
-	const flow = F5AppCloseFlow.forSession(session, I18n.forProfile(profile.id), evidence, log);
 	try {
+		// Las screens/PBOs toman `session.driver` al construirse: el flow se arma DESPUÉS de abrir la sesión.
 		await session.start();
+		const flow = F5AppCloseFlow.forSession(session, I18n.forProfile(profile.id), evidence, log);
 		const result = await flow.run({
 			carrier,
 			travelId,
