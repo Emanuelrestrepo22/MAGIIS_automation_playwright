@@ -27,6 +27,11 @@ export type DriverPreflightExpectation = {
 	 * la identidad la garantiza la asignación al chofer).
 	 */
 	expectedTravelId?: number;
+	/**
+	 * Credenciales del chofer a usar SOLO si la app está deslogueada (perfil W5b). Si se omite, se
+	 * usan DRIVER_EMAIL_FR / DRIVER_PASSWORD_FR (comportamiento histórico). Nunca se imprimen.
+	 */
+	credentials?: { email: string; password: string };
 };
 
 export type DriverPreflightSnapshot = {
@@ -72,6 +77,18 @@ const safeDecode = (v: string): string => {
 	}
 };
 
+/** true si la URL de la oferta (TripConfirm) corresponde al viaje `travelId` (parámetro URL-encoded). */
+export function confirmUrlMatchesTravel(url: string, travelId: number): boolean {
+	// Se exige que el siguiente carácter no sea dígito: 7000 no debe coincidir con 70001.
+	const decoded = safeDecode(url);
+	const needle = `"travelId":${travelId}`;
+	for (let i = decoded.indexOf(needle); i !== -1; i = decoded.indexOf(needle, i + 1)) {
+		const next = decoded.charAt(i + needle.length);
+		if (!(next >= '0' && next <= '9')) return true;
+	}
+	return false;
+}
+
 /** Devuelve la lista de violaciones; vacía = OK. */
 export function evaluateDriverPreflight(
 	snapshot: DriverPreflightSnapshot,
@@ -91,7 +108,7 @@ export function evaluateDriverPreflight(
 	const onExpectedOffer =
 		!!confirmToken &&
 		expected.expectedTravelId !== undefined &&
-		safeDecode(snapshot.webUrl).includes(`"travelId":${expected.expectedTravelId}`);
+		confirmUrlMatchesTravel(snapshot.webUrl, expected.expectedTravelId);
 
 	const want = normalize(expected.driverDisplayName);
 	if (!onExpectedOffer && (!want || !snapshot.headerTexts.some(t => normalize(t).includes(want)))) {
@@ -195,9 +212,11 @@ export async function assertDriverPreflight(
 	let snapshot = await captureDriverPreflightSnapshot(driver);
 
 	if (snapshot.loggedOut && snapshot.foregroundPackage === expected.appPackage) {
-		const email = process.env.DRIVER_EMAIL_FR?.trim();
-		const password = process.env.DRIVER_PASSWORD_FR?.trim();
-		if (!email || !password) throw new Error('App deslogueada y faltan DRIVER_EMAIL_FR / DRIVER_PASSWORD_FR para el login.');
+		const email = expected.credentials?.email ?? process.env.DRIVER_EMAIL_FR?.trim();
+		const password = expected.credentials?.password ?? process.env.DRIVER_PASSWORD_FR?.trim();
+		if (!email || !password) {
+			throw new Error('App deslogueada y faltan las credenciales del chofer (perfil o DRIVER_EMAIL_FR / DRIVER_PASSWORD_FR).');
+		}
 		if (!(await loginDriver(driver, email, password))) {
 			throw new Error('Pre-flight del Driver abortado: no se pudo completar el formulario de login.');
 		}

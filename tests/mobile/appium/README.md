@@ -723,3 +723,12 @@ de configs, y el criterio para decidir si un caso va a dispositivo o a API— es
 `docs/mobile/GUIA-APPIUM-MAGIIS.pdf` (fuente editable: el `.html` al lado).
 
 Este README es el manual de operación del motor; esa guía es la visión general.
+
+## Cierre de viaje por la app para el lote de rendición (W5b)
+
+Cierra en el emulador (solo TEST, app `com.magiis.app.test.driver`) un viaje ya asignado por cv2-f5 y anexa el resultado al handoff `evidence/test/f5-app-handoff-<carrier>.json` (contrato en `contracts/f5AppHandoff.ts`).
+
+- Perfiles de chofer (`driver/DriverProfiles.ts`): `fr-1901` (`DRIVER_*_FR`), `test-default` (`DRIVER_EMAIL`/`DRIVER_PASSWORD`/`DRIVER_DISPLAY_NAME`), `test-mp` (`*_MP`). Las credenciales solo viven en `ENV_FILE`/shell y nunca se imprimen.
+- Plan sin sesión: `ENV_FILE=<env> npx tsx tests/mobile/appium/scripts/f5-driver-close-trip.ts --profile fr-1901 --carrier 1901 --device emulator-5554 --dry-run`.
+- Corrida real (irreversible, un viaje permanente): `F5_APP_CLOSE=1` + `--confirm`, con Appium y emulador arriba. Sin reintentos: tras aceptar, un corte deja el handoff `failed`.
+- Unitarios (sin Appium): `npx tsx --test tests/mobile/appium/contracts/f5AppHandoff.unit.ts tests/mobile/appium/gps/RoutePlan.unit.ts tests/mobile/appium/harness/F5CloseTripPlan.unit.ts`.
