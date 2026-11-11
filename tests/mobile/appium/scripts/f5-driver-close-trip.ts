@@ -29,28 +29,15 @@ import { execFile } from 'node:child_process';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import { getDriverAppConfig } from '../config/appiumRuntime';
-import {
-	f5AppHandoffPath,
-	parseMoneyText,
-	readF5AppHandoff,
-	withClosure,
-	withFailure,
-	writeF5AppHandoff,
-	type F5AppHandoff
-} from '../contracts/f5AppHandoff';
-import { getDriverProfile, readDriverPreflightExpectation } from '../driver/DriverProfiles';
+import { f5AppHandoffPath, readF5AppHandoff, writeF5AppHandoff } from '../contracts/f5AppHandoff';
+import { assertNoForeignMockGps, evaluateGates, irreversibleCloseGates } from '../core/Gates';
+import { I18n } from '../core/I18n';
+import { MobileSession } from '../core/MobileSession';
 import { getCarrier, loadCarrierRoute } from '../data/carriers';
+import { getDriverProfile, readDriverPreflightExpectation } from '../driver/DriverProfiles';
+import { F5AppCloseFlow, applyF5CloseResult, type F5AppCloseResult } from '../flows/F5AppCloseFlow';
 import { loadRouteFile } from '../gps/GpsRouteFeeder';
-import { DriverTripHappyPathHarness } from '../harness/DriverTripHappyPathHarness';
-import {
-	buildF5ClosePlan,
-	formatF5ClosePlan,
-	isMockLocationServiceRunning,
-	missingCloseGates,
-	parseF5CloseArgs
-} from '../harness/F5CloseTripPlan';
-import { ScreenEvidence } from '../helpers/screenEvidence';
-import { GpsSimulationPBO } from '../pbo/GpsSimulationPBO';
+import { buildF5ClosePlan, formatF5ClosePlan, parseF5CloseArgs } from '../harness/F5CloseTripPlan';
 
 const log = (m: string): void => console.log(`[f5-close] ${m}`);
 const execFileAsync = promisify(execFile);
@@ -65,9 +52,7 @@ async function run(): Promise<number> {
 	const config = getDriverAppConfig();
 	const env = config.environment;
 
-	const handoffFile = args.handoff
-		? path.resolve(args.handoff)
-		: f5AppHandoffPath(env, args.carrier!);
+	const handoffFile = args.handoff ? path.resolve(args.handoff) : f5AppHandoffPath(env, args.carrier!);
 	const handoff = readF5AppHandoff(handoffFile);
 
 	// Ruta GPS: override explícito (--route, o GPS_ROUTE_FILE leído SOLO aquí) o la del carrier del handoff.
@@ -94,109 +79,56 @@ async function run(): Promise<number> {
 		return plan.blockers.length === 0 ? 0 : 2;
 	}
 	if (plan.blockers.length > 0) return 1;
-	const gates = missingCloseGates(args, process.env);
-	if (gates.length > 0) {
-		log(`Cierre irreversible: faltan ${gates.join(' y ')}. No se hizo nada.`);
+	const gates = evaluateGates(irreversibleCloseGates(args, process.env));
+	if (!gates.open) {
+		log(`Cierre irreversible: faltan ${gates.missing.join(' y ')}. No se hizo nada.`);
 		return 1;
 	}
 
 	// Guard: ningún mock GPS de otra sesión (un mock ajeno falsea el km y el chofer ONLINE ajeno mueve ofertas).
 	const udid = plan.udid;
-	let services: string;
-	try {
-		services = await adb(udid, ['shell', 'dumpsys', 'activity', 'services', 'io.appium.settings']);
-	} catch (e) {
-		throw new Error(`No se pudo verificar el mock GPS por adb (${e instanceof Error ? e.message : String(e)}); no se continúa.`);
-	}
-	if (isMockLocationServiceRunning(services)) {
-		throw new Error('Hay un mock GPS activo (io.appium.settings/.LocationService) de otra sesión; liberalo antes de cerrar.');
-	}
+	await assertNoForeignMockGps(a => adb(udid, a));
 
 	const expectation = readDriverPreflightExpectation(profile, plan.appPackage, handoff.travelId);
-	const harness = new DriverTripHappyPathHarness(config);
-	let shots: ScreenEvidence | null = null;
-	let irreversibleStarted = false;
-	let feedStartedAt = 0;
-	let feedEndedAt = 0;
-	let fedMeters = 0;
-	let theoreticalMeters = 0;
-	const startedAt = new Date().toISOString();
-	let outcome: F5AppHandoff = handoff;
-	let exitCode = 0;
-
+	const session = new MobileSession(config, { log });
+	const evidence = session.evidence(`f5-app-close-${handoff.carrierId}-${handoff.travelId}`);
+	const flow = F5AppCloseFlow.forSession(session, I18n.forProfile(profile.id), evidence, log);
+	let result: F5AppCloseResult;
 	try {
-		const result = await harness.runHappyPath({
-			ensureDriverOnline: true,
-			preflight: expectation,
-			expectedConfirmTravelId: handoff.travelId,
-			onCheckpoint: async (stage, driver) => {
-				shots ??= new ScreenEvidence(driver, `f5-app-close-${handoff.carrierId}-${handoff.travelId}`);
-				await shots.capture(`checkpoint-${stage}`);
+		await session.start();
+		result = await flow.run({
+			carrier: carrierProfile,
+			travelId: handoff.travelId,
+			expectation,
+			route,
+			gps: {
+				stepMeters: args.stepMeters,
+				intervalMs: args.intervalMs,
+				onProgress: (fed, total) => {
+					if (fed % 50 === 0 || fed === total) log(`gps ${fed}/${total}`);
+				}
 			},
-			duringTrip: async driver => {
-				irreversibleStarted = true;
-				const gps = GpsSimulationPBO.forDriver(driver);
-				feedStartedAt = Date.now();
-				const r = await gps.driveRoute(route, {
-					stepMeters: args.stepMeters,
-					intervalMs: args.intervalMs,
-					onProgress: (fed, total) => {
-						if (fed % 50 === 0 || fed === total) log(`gps ${fed}/${total}`);
-					}
-				});
-				feedEndedAt = Date.now();
-				fedMeters = r.fedMeters;
-				theoreticalMeters = r.theoreticalMeters;
-				log(`gps listo: teórico=${Math.round(r.theoreticalMeters)} m alimentado=${Math.round(r.fedMeters)} m abortado=${r.aborted}`);
-				if (r.aborted) throw new Error('La alimentación GPS fue abortada; el viaje no se finaliza.');
-			}
+			confirmed: args.confirm
 		});
-
-		const finishedAt = new Date().toISOString();
-		const totalAmount = parseMoneyText(result.totalAmount);
-		outcome = withClosure(handoff, {
-			closedAt: finishedAt,
-			measured: {
-				km: Number((fedMeters / 1000).toFixed(3)),
-				minutes: Number((((feedEndedAt || Date.now()) - feedStartedAt) / 60_000).toFixed(2)),
-				kmSource: 'gps-fed',
-				routeKm: Number((theoreticalMeters / 1000).toFixed(3))
-			},
-			result: {
-				totalAmountText: result.totalAmount,
-				totalAmount,
-				paymentMethod: result.paymentMethod,
-				closeButtonText: result.closeButtonText,
-				checkpoints: result.checkpoints.map(c => ({ stage: c.stage, matchedBy: c.matchedBy, observedAt: c.observedAt })),
-				startedAt,
-				finishedAt
-			}
-		});
-		if (totalAmount === null) {
-			outcome = { ...outcome, observations: [...(outcome.observations ?? []), `monto "${result.totalAmount}" no interpretable: revisar captura`] };
-		}
-		log(`cerrado: total=${result.totalAmount} pago=${result.paymentMethod} km=${(fedMeters / 1000).toFixed(2)}`);
-	} catch (e) {
-		const message = e instanceof Error ? e.message : String(e);
-		log(`ERROR: ${message}`);
-		exitCode = 1;
-		// Antes de aceptar no se tocó nada del viaje: el handoff queda intacto y se puede corregir y repetir.
-		if (irreversibleStarted) outcome = withFailure(handoff, 'in-trip', message, new Date().toISOString());
 	} finally {
-		await harness.endSession().catch(() => undefined);
+		await session.end().catch(() => undefined);
 		// El mock lo inició esta corrida (el guard garantizó que no había otro): se libera.
 		await adb(udid, ['shell', 'am', 'stopservice', 'io.appium.settings/.LocationService']).catch(() =>
 			log('no se pudo liberar el mock GPS: adb -s <udid> shell am stopservice io.appium.settings/.LocationService')
 		);
 	}
 
+	if (result.status === 'closed') {
+		const r = result.closure.result;
+		log(`cerrado: total=${r.totalAmountText} pago=${r.paymentMethod} km=${result.closure.measured.km.toFixed(2)}`);
+	}
+	const outcome = applyF5CloseResult(handoff, result, new Date().toISOString());
 	if (outcome !== handoff) {
 		writeF5AppHandoff(handoffFile, outcome);
 		log(`handoff actualizado (status=${outcome.status}).`);
 	}
-	const shotLines = (shots as ScreenEvidence | null)?.manifest() ?? [];
-	for (const l of shotLines) log(`evidencia: ${l}`);
-	return exitCode;
+	for (const l of evidence.manifest()) log(`evidencia: ${l}`);
+	return result.status === 'closed' ? 0 : 1;
 }
 
 run()
