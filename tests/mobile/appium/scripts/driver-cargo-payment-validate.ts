@@ -15,7 +15,7 @@
  *   npx ts-node --esm tests/mobile/appium/scripts/driver-cargo-payment-validate.ts
  */
 
-import { remote } from 'webdriverio';
+import { MobileSession } from '../core/MobileSession';
 import type { MobileActorConfig } from '../config/appiumRuntime';
 import type { AppiumDriver } from '../base/AppiumSessionBase';
 import { DriverTripRequestScreen } from '../driver/DriverTripRequestScreen';
@@ -110,7 +110,7 @@ async function dumpPaymentModalInfo(driver: AppiumDriver): Promise<void> {
 
 async function run(): Promise<void> {
 	const url = new URL(APPIUM_URL);
-	const driver = await remote({
+	const driver = await MobileSession.open({
 		protocol: url.protocol.replace(':', '') as 'http' | 'https',
 		hostname: url.hostname,
 		port: Number(url.port) || 4723,

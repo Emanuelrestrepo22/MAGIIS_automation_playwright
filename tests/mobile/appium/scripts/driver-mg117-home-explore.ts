@@ -6,7 +6,7 @@
  * alerta, vuelca el home y reporta los controles reales para decidir el camino de navegacion.
  */
 
-import { remote } from 'webdriverio';
+import { MobileSession } from '../core/MobileSession';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { describe as describeTarget, resolveDriverTarget } from './_shared/resolveDriverTarget';
@@ -158,7 +158,7 @@ const HOME_DUMP = `
 
 async function run(): Promise<void> {
 	const u = new URL(APPIUM_URL);
-	const driver = await remote({
+	const driver = await MobileSession.open({
 		protocol: u.protocol.replace(':', '') as 'http' | 'https',
 		hostname: u.hostname,
 		port: Number(u.port || 4723),

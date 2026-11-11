@@ -12,7 +12,7 @@
  *   $env:PROBE_TERM="corr"; node --loader ts-node/esm tests/mobile/appium/scripts/driver-mg117-probe-term.ts
  */
 
-import { remote } from 'webdriverio';
+import { MobileSession } from '../core/MobileSession';
 import { describe as describeTarget, resolveDriverTarget } from './_shared/resolveDriverTarget';
 import {
 	installWebViewNetworkCapture,
@@ -43,7 +43,7 @@ type Prediction = {
 
 async function run(): Promise<void> {
 	const appiumUrl = new URL(APPIUM_URL);
-	const driver = await remote({
+	const driver = await MobileSession.open({
 		protocol: appiumUrl.protocol.replace(':', '') as 'http' | 'https',
 		hostname: appiumUrl.hostname,
 		port: Number(appiumUrl.port) || 4723,

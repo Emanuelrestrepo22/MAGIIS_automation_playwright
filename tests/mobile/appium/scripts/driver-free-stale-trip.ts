@@ -19,7 +19,7 @@
  *   node --loader ts-node/esm --experimental-specifier-resolution=node \
  *   tests/mobile/appium/scripts/driver-free-stale-trip.ts
  */
-import { remote } from 'webdriverio';
+import { MobileSession } from '../core/MobileSession';
 import { describeStaleTripRecovery, recoverDriverToHome, shortRoute } from '../helpers/driverStaleTripRecovery';
 
 const APPIUM_URL = process.env.APPIUM_SERVER_URL ?? 'http://localhost:4723';
@@ -29,7 +29,7 @@ const log = (m: string) => console.log(`[free] ${m}`);
 
 async function run(): Promise<void> {
 	const url = new URL(APPIUM_URL);
-	const driver = await remote({
+	const driver = await MobileSession.open({
 		protocol: url.protocol.replace(':', '') as 'http' | 'https',
 		hostname: url.hostname,
 		port: Number(url.port) || 4723,

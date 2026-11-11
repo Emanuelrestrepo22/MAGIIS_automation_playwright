@@ -20,7 +20,7 @@
  *   $env:ANDROID_UDID="R92XB0B8F3J"; npx ... driver-mg117-gates.ts
  */
 
-import { remote } from 'webdriverio';
+import { MobileSession } from '../core/MobileSession';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { describe as describeTarget, resolveDriverTarget } from './_shared/resolveDriverTarget';
@@ -166,7 +166,7 @@ function report(m: Measurement): void {
 
 async function run(): Promise<void> {
 	const appiumUrl = new URL(APPIUM_URL);
-	const driver = await remote({
+	const driver = await MobileSession.open({
 		protocol: appiumUrl.protocol.replace(':', '') as 'http' | 'https',
 		hostname: appiumUrl.hostname,
 		port: Number(appiumUrl.port) || 4723,

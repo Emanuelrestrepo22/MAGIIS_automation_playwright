@@ -15,7 +15,7 @@
  * decision de negocio. En UAT eso ademas seria dejar datos: la corrida es de lectura.
  */
 
-import { remote } from 'webdriverio';
+import { MobileSession } from '../core/MobileSession';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { resolveDriverTarget } from './_shared/resolveDriverTarget';
@@ -48,7 +48,7 @@ const line = (): void => log('='.repeat(74));
 
 async function run(): Promise<void> {
 	const u = new URL(TARGET.appiumUrl);
-	const driver = await remote({
+	const driver = await MobileSession.open({
 		protocol: u.protocol.replace(':', '') as 'http' | 'https',
 		hostname: u.hostname,
 		port: Number(u.port) || 4723,

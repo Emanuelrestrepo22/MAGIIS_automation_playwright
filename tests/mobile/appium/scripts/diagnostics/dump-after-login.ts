@@ -11,7 +11,7 @@
  *   npx ts-node --esm tests/mobile/appium/scripts/dump-after-login.ts
  */
 
-import { remote } from 'webdriverio';
+import { MobileSession } from '../../core/MobileSession';
 import { writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 
@@ -178,7 +178,7 @@ async function dumpWebView(driver: WebdriverIO.Browser): Promise<string> {
 }
 
 async function run(): Promise<void> {
-	const driver = await remote({
+	const driver = await MobileSession.open({
 		protocol: 'http',
 		hostname: 'localhost',
 		port: 4723,

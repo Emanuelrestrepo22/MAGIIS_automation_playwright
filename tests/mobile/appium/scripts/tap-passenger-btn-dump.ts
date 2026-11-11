@@ -2,12 +2,12 @@
  * Tap botón pasajero amarillo (driver-home.home-icon-base) y dump del resultado.
  * Entry point del flujo "viaje calle" desde el home del driver.
  */
-import { remote } from 'webdriverio';
+import { MobileSession } from '../core/MobileSession';
 import { writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 const log = (m: string) => console.log(`[pax-btn] ${m}`);
 async function run() {
-	const driver = await remote({
+	const driver = await MobileSession.open({
 		protocol: 'http',
 		hostname: 'localhost',
 		port: 4723,

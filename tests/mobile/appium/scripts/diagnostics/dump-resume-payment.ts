@@ -2,7 +2,7 @@
  * Dump mínimo del estado de pago del TravelResumePage ACTUAL (attach, sin manejar viaje).
  * Sirve para determinar si paymentMethodShowList tiene CREDIT_CARD (Cargo a Bordo) o está vacío.
  */
-import { remote } from 'webdriverio';
+import { MobileSession } from '../../core/MobileSession';
 
 const APPIUM_URL = process.env.APPIUM_SERVER_URL ?? 'http://localhost:4723';
 const UDID = process.env.ANDROID_UDID ?? 'R92XB0B8F3J';
@@ -10,7 +10,7 @@ const APP_PACKAGE = process.env.ANDROID_DRIVER_APP_PACKAGE ?? 'com.magiis.app.te
 
 async function run(): Promise<void> {
 	const url = new URL(APPIUM_URL);
-	const driver = await remote({
+	const driver = await MobileSession.open({
 		protocol: url.protocol.replace(':', '') as 'http' | 'https',
 		hostname: url.hostname,
 		port: Number(url.port) || 4723,

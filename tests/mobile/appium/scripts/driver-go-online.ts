@@ -9,7 +9,7 @@
  *   tests/mobile/appium/scripts/driver-go-online.ts
  */
 
-import { remote } from 'webdriverio';
+import { MobileSession } from '../core/MobileSession';
 import type { MobileActorConfig } from '../config/appiumRuntime';
 import { DriverHomeScreen } from '../driver/DriverHomeScreen';
 
@@ -20,7 +20,7 @@ const log = (m: string) => console.log(`[go-online] ${m}`);
 
 async function run(): Promise<void> {
 	const url = new URL(APPIUM_URL);
-	const driver = await remote({
+	const driver = await MobileSession.open({
 		protocol: url.protocol.replace(':', '') as 'http' | 'https',
 		hostname: url.hostname,
 		port: Number(url.port) || 4723,

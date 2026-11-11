@@ -14,7 +14,7 @@
  * `MG116_DRY=1` recorre y volca sin tocar el boton final de confirmacion.
  */
 
-import { remote } from 'webdriverio';
+import { MobileSession } from '../core/MobileSession';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { resolveDriverTarget } from './_shared/resolveDriverTarget';
@@ -33,7 +33,7 @@ type Step = { step: string; url: string; text: string; tappables: string[]; inpu
 
 async function run(): Promise<void> {
 	const u = new URL(TARGET.appiumUrl);
-	const driver = await remote({
+	const driver = await MobileSession.open({
 		protocol: u.protocol.replace(':', '') as 'http' | 'https',
 		hostname: u.hostname,
 		port: Number(u.port) || 4723,

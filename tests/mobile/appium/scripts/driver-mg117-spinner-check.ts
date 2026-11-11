@@ -9,7 +9,7 @@
  * Inyecta el 503, teclea, y describe cada candidato con su geometría.
  */
 
-import { remote } from 'webdriverio';
+import { MobileSession } from '../core/MobileSession';
 import { describe as describeTarget, resolveDriverTarget } from './_shared/resolveDriverTarget';
 import {
 	installWebViewNetworkCapture,
@@ -99,7 +99,7 @@ function report(label: string, candidates: Candidate[]): void {
 
 async function run(): Promise<void> {
 	const appiumUrl = new URL(APPIUM_URL);
-	const driver = await remote({
+	const driver = await MobileSession.open({
 		protocol: appiumUrl.protocol.replace(':', '') as 'http' | 'https',
 		hostname: appiumUrl.hostname,
 		port: Number(appiumUrl.port) || 4723,

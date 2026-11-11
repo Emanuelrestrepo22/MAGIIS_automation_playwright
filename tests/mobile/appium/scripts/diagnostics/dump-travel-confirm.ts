@@ -11,7 +11,7 @@
 
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { remote } from 'webdriverio';
+import { MobileSession } from '../../core/MobileSession';
 
 type WebElementSummary = {
 	tag: string;
@@ -214,7 +214,7 @@ async function run(): Promise<void> {
 		`[dump-travel-confirm] Connecting to ${APPIUM_URL} | device=${DEVICE_NAME} | udid=${UDID} | travelId=${TRAVEL_ID}`
 	);
 
-	const driver = await remote({
+	const driver = await MobileSession.open({
 		protocol: appiumUrl.protocol.replace(':', '') as 'http' | 'https',
 		hostname: appiumUrl.hostname,
 		port: Number(appiumUrl.port) || 4723,

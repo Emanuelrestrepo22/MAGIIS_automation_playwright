@@ -42,7 +42,7 @@
  *   pnpm exec ts-node --esm tests/mobile/appium/scripts/passenger-mg116-gates.ts
  */
 
-import { remote } from 'webdriverio';
+import { MobileSession } from '../core/MobileSession';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { resolveDriverTarget } from './_shared/resolveDriverTarget';
@@ -291,7 +291,7 @@ function analyzePredictions(all: Prediction[]): {
 
 async function run(): Promise<void> {
 	const appiumUrl = new URL(APPIUM_URL);
-	const driver = await remote({
+	const driver = await MobileSession.open({
 		protocol: appiumUrl.protocol.replace(':', '') as 'http' | 'https',
 		hostname: appiumUrl.hostname,
 		port: Number(appiumUrl.port) || 4723,

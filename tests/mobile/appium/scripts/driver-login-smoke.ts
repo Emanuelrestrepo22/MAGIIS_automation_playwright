@@ -20,7 +20,7 @@
  *   npx ts-node --esm tests/mobile/appium/scripts/driver-login-smoke.ts
  */
 
-import { remote } from 'webdriverio';
+import { MobileSession } from '../core/MobileSession';
 
 const APPIUM_URL = process.env.APPIUM_SERVER_URL ?? 'http://localhost:4723';
 const UDID = process.env.ANDROID_UDID ?? 'R92XB0B8F3J';
@@ -303,7 +303,7 @@ async function run(): Promise<void> {
 	const appiumUrl = new URL(APPIUM_URL);
 	log(`Conectando: ${APPIUM_URL} | Dispositivo: ${UDID} | App: ${APP_PACKAGE}`);
 
-	const driver = await remote({
+	const driver = await MobileSession.open({
 		protocol: appiumUrl.protocol.replace(':', '') as 'http' | 'https',
 		hostname: appiumUrl.hostname,
 		port: Number(appiumUrl.port) || 4723,

@@ -10,14 +10,15 @@
  *
  * Correr en BACKGROUND antes de la fase web (poll TravelConfirmPage hasta ~150s).
  */
-import { remote } from 'webdriverio';
+import type { Browser } from 'webdriverio';
+import { MobileSession } from '../core/MobileSession';
 import { writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 const UDID = process.env.ANDROID_UDID ?? 'R92XB0B8F3J';
 const PKG = process.env.ANDROID_DRIVER_APP_PACKAGE ?? 'com.magiis.app.test.driver';
 const CONFIRM_TIMEOUT = Number(process.env.CONFIRM_TIMEOUT_MS ?? 150_000);
 const log = (m: string): void => console.log(`[geocerca] ${m}`);
-type Driver = Awaited<ReturnType<typeof remote>>;
+type Driver = Browser;
 const report: Array<{ step: string; status: 'OK' | 'FAIL' | 'PARTIAL' | 'INFO'; detail: string }> = [];
 function add(step: string, status: 'OK' | 'FAIL' | 'PARTIAL' | 'INFO', detail = ''): void {
 	report.push({ step, status, detail });
@@ -84,7 +85,7 @@ async function dumpOverlays(d: Driver): Promise<Record<string, unknown>> {
 }
 
 async function run(): Promise<void> {
-	const driver = await remote({
+	const driver = await MobileSession.open({
 		protocol: 'http',
 		hostname: 'localhost',
 		port: 4723,

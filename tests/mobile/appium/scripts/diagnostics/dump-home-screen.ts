@@ -5,10 +5,10 @@
  * Ejecutar (desde la raíz del proyecto):
  *   ANDROID_HOME=... npx ts-node tests/mobile/appium/scripts/dump-home-screen.ts
  */
-import { remote } from 'webdriverio';
+import { MobileSession } from '../../core/MobileSession';
 
 async function run(): Promise<void> {
-	const driver = await remote({
+	const driver = await MobileSession.open({
 		protocol: 'http',
 		hostname: 'localhost',
 		port: 4723,

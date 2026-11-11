@@ -1,11 +1,11 @@
 /** DRAFT — diagnóstico: ¿llegó el viaje asignado (manual) al device? Dump home "Viaje Asignado" + URL. */
-import { remote } from 'webdriverio';
+import { MobileSession } from '../../core/MobileSession';
 import { writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 const UDID = process.env.ANDROID_UDID ?? 'R92XB0B8F3J';
 const PKG = process.env.ANDROID_DRIVER_APP_PACKAGE ?? 'com.magiis.app.test.driver';
 async function run(): Promise<void> {
-	const driver = await remote({
+	const driver = await MobileSession.open({
 		protocol: 'http',
 		hostname: 'localhost',
 		port: 4723,

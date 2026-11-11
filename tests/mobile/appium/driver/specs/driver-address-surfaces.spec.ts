@@ -41,7 +41,7 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { remote } from 'webdriverio';
+import { MobileSession } from '../../core/MobileSession';
 import { resolveDriverTarget } from '../../scripts/_shared/resolveDriverTarget';
 import { DriverAddressCaseBattery, type CaseResult } from '../DriverAddressCaseBattery';
 import { mkdir, writeFile } from 'node:fs/promises';
@@ -56,7 +56,7 @@ const EVIDENCE_DIR = path.resolve('evidence', 'driver-address-surfaces');
 
 async function newSession(): Promise<{ driver: Driver; webview: string }> {
 	const u = new URL(TARGET.appiumUrl);
-	const driver = await remote({
+	const driver = await MobileSession.open({
 		protocol: u.protocol.replace(':', '') as 'http' | 'https',
 		hostname: u.hostname,
 		port: Number(u.port) || 4723,

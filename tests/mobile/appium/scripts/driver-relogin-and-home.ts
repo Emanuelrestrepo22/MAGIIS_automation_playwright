@@ -10,7 +10,8 @@
  *   node --loader ts-node/esm --experimental-specifier-resolution=node \
  *     tests/mobile/appium/scripts/driver-relogin-and-home.ts
  */
-import { remote } from 'webdriverio';
+import type { Browser } from 'webdriverio';
+import { MobileSession } from '../core/MobileSession';
 
 const APPIUM_URL = process.env.APPIUM_SERVER_URL ?? 'http://localhost:4723';
 const UDID = process.env.ANDROID_UDID ?? 'R92XB0B8F3J';
@@ -19,7 +20,7 @@ const EMAIL = process.env.DRIVER_EMAIL ?? '';
 const PASSWORD = process.env.DRIVER_PASSWORD ?? '';
 const log = (m: string): void => console.log(`[relogin] ${m}`);
 
-type Driver = Awaited<ReturnType<typeof remote>>;
+type Driver = Browser;
 
 async function switchWv(driver: Driver, timeout = 12_000): Promise<boolean> {
 	const deadline = Date.now() + timeout;
@@ -148,7 +149,7 @@ async function advancePreHome(driver: Driver, timeout = 40_000): Promise<string>
 
 async function run(): Promise<void> {
 	const u = new URL(APPIUM_URL);
-	const driver = await remote({
+	const driver = await MobileSession.open({
 		protocol: u.protocol.replace(':', '') as 'http' | 'https',
 		hostname: u.hostname,
 		port: Number(u.port) || 4723,

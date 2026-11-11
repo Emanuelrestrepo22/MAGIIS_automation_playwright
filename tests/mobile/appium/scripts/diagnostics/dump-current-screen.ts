@@ -10,7 +10,7 @@
  *   npx ts-node --esm tests/mobile/appium/scripts/dump-current-screen.ts
  */
 
-import { remote } from 'webdriverio';
+import { MobileSession } from '../../core/MobileSession';
 import { writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 
@@ -21,7 +21,7 @@ const LABEL = process.env.SCREEN_LABEL ?? 'screen';
 const log = (msg: string) => console.log(`[dump] ${msg}`);
 
 async function run(): Promise<void> {
-	const driver = await remote({
+	const driver = await MobileSession.open({
 		protocol: 'http',
 		hostname: 'localhost',
 		port: 4723,

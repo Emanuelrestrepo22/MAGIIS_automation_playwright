@@ -6,7 +6,7 @@
  *   NODE_OPTIONS=--experimental-specifier-resolution=node \
  *   node --loader ts-node/esm tests/mobile/appium/scripts/dump-modal-html.ts
  */
-import { remote } from 'webdriverio';
+import { MobileSession } from '../../core/MobileSession';
 import { writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 
@@ -16,7 +16,7 @@ const LABEL = process.env.SCREEN_LABEL ?? 'modal-deep';
 const DUMP_DIR = process.env.DUMP_DIR ?? 'evidence/dom-dump';
 
 async function run(): Promise<void> {
-	const driver = await remote({
+	const driver = await MobileSession.open({
 		protocol: 'http',
 		hostname: 'localhost',
 		port: 4723,
