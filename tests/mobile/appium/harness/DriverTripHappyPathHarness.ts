@@ -2,7 +2,7 @@ import type { AppiumDriver } from '../base/AppiumSessionBase';
 import type { MobileActorConfig } from '../config/appiumRuntime';
 import { DRIVER_CHECKPOINT_SELECTORS, type DriverCheckpointStage } from '../driver/DriverFlowSelectors';
 import { DriverHomeScreen } from '../driver/DriverHomeScreen';
-import { assertDriverPreflight, type DriverPreflightExpectation } from '../driver/DriverTripPreflight';
+import { assertDriverPreflight, confirmUrlMatchesTravel, type DriverPreflightExpectation } from '../driver/DriverTripPreflight';
 import { DriverTripNavigationScreen } from '../driver/DriverTripNavigationScreen';
 import { DriverTripRequestScreen } from '../driver/DriverTripRequestScreen';
 import { DriverTripSummaryScreen } from '../driver/DriverTripSummaryScreen';
@@ -19,6 +19,8 @@ export type DriverTripHappyPathResult = {
 	checkpoints: DriverCheckpointEvidence[];
 	totalAmount: string;
 	paymentMethod: string;
+	/** Texto del botón de cierre (`Cerrar Viaje` / `Firmar y Cerrar viaje`). */
+	closeButtonText: string;
 };
 
 export type DriverTripHappyPathOptions = {
@@ -32,6 +34,13 @@ export type DriverTripHappyPathOptions = {
 	 * pre-flight y aceptación y arranca desde "Iniciar viaje".
 	 */
 	resumeFromToStart?: boolean;
+	/**
+	 * Si se da, antes de aceptar se exige que la oferta en pantalla sea de ESE viaje (URL de
+	 * TripConfirm). Evita cerrar —de forma permanente— otro viaje que justo llegó al chofer.
+	 */
+	expectedConfirmTravelId?: number;
+	/** Se invoca al alcanzar cada checkpoint (p. ej. para capturar pantalla). Sus errores no cortan la corrida. */
+	onCheckpoint?: (stage: DriverCheckpointStage, driver: AppiumDriver) => Promise<void>;
 	timeoutsMs?: Partial<Record<DriverCheckpointStage, number>>;
 };
 
@@ -73,6 +82,7 @@ export class DriverTripHappyPathHarness {
 		await this.startSession();
 		const ensureDriverOnline = options.ensureDriverOnline ?? true;
 		const checkpoints: DriverCheckpointEvidence[] = [];
+		this.onCheckpoint = options.onCheckpoint;
 		const timeouts = {
 			...DEFAULT_TIMEOUTS_MS,
 			...(options.timeoutsMs ?? {})
@@ -97,7 +107,16 @@ export class DriverTripHappyPathHarness {
 				if (!confirmReached) {
 					throw new Error(`Checkpoint "confirm" not reached in ${timeouts.confirm}ms.`);
 				}
-				checkpoints.push(await this.waitForCheckpoint('confirm', 5_000));
+				const confirmCheckpoint = await this.waitForCheckpoint('confirm', 5_000);
+				checkpoints.push(confirmCheckpoint);
+				if (
+					options.expectedConfirmTravelId !== undefined &&
+					!confirmUrlMatchesTravel(confirmCheckpoint.url, options.expectedConfirmTravelId)
+				) {
+					throw new Error(
+						`La oferta en pantalla no es la del viaje esperado ${options.expectedConfirmTravelId}; no se acepta nada.`
+					);
+				}
 				await this.getRequestScreen().acceptTrip();
 			}
 
@@ -139,7 +158,8 @@ export class DriverTripHappyPathHarness {
 			return {
 				checkpoints,
 				totalAmount,
-				paymentMethod
+				paymentMethod,
+				closeButtonText: closeText
 			};
 		} catch (error) {
 			const dumpPath = await dumpAppiumState(this.homeScreen.getDriver(), 'driver-happy-path-failure').catch(
@@ -187,7 +207,18 @@ export class DriverTripHappyPathHarness {
 		return this.summaryScreen!;
 	}
 
+	private onCheckpoint: DriverTripHappyPathOptions['onCheckpoint'];
+
 	private async waitForCheckpoint(
+		stage: DriverCheckpointStage,
+		timeoutMs: number
+	): Promise<DriverCheckpointEvidence> {
+		const evidence = await this.locateCheckpoint(stage, timeoutMs);
+		await this.onCheckpoint?.(stage, this.homeScreen.getDriver()).catch(() => undefined);
+		return evidence;
+	}
+
+	private async locateCheckpoint(
 		stage: DriverCheckpointStage,
 		timeoutMs: number
 	): Promise<DriverCheckpointEvidence> {

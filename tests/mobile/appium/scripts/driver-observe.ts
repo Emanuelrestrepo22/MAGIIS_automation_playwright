@@ -16,7 +16,7 @@
  *   $env:ANDROID_UDID="R92XB0B8F3J"; $env:LABEL="paso-01"; npx ts-node --esm tests/mobile/appium/scripts/driver-observe.ts
  */
 
-import { remote } from 'webdriverio';
+import { MobileSession } from '../core/MobileSession';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
@@ -49,7 +49,7 @@ type PageSnapshot = {
 
 async function run(): Promise<void> {
 	const appiumUrl = new URL(APPIUM_URL);
-	const driver = await remote({
+	const driver = await MobileSession.open({
 		protocol: appiumUrl.protocol.replace(':', '') as 'http' | 'https',
 		hostname: appiumUrl.hostname,
 		port: Number(appiumUrl.port) || 4723,

@@ -21,7 +21,7 @@
  *   $env:ANDROID_UDID="R92XB0B8F3J"; $env:TERM_TO_TYPE="corr"; npx ts-node --esm tests/mobile/appium/scripts/driver-mg117-smoke.ts
  */
 
-import { remote } from 'webdriverio';
+import { MobileSession } from '../core/MobileSession';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import {
@@ -185,7 +185,7 @@ async function run(): Promise<void> {
 	// Primera línea de toda corrida: contra qué ambiente y qué binario se está midiendo.
 	log(describeTarget(TARGET));
 	const appiumUrl = new URL(APPIUM_URL);
-	const driver = await remote({
+	const driver = await MobileSession.open({
 		protocol: appiumUrl.protocol.replace(':', '') as 'http' | 'https',
 		hostname: appiumUrl.hostname,
 		port: Number(appiumUrl.port) || 4723,

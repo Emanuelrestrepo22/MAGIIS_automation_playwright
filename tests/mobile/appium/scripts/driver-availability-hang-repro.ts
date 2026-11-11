@@ -19,7 +19,7 @@
  * bloqueo NO se reproduce, tambien es un resultado y queda registrado como tal.
  */
 
-import { remote } from 'webdriverio';
+import { MobileSession } from '../core/MobileSession';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import {
@@ -194,7 +194,7 @@ type Sample = {
 
 async function run(): Promise<void> {
 	const u = new URL(APPIUM_URL);
-	const driver = await remote({
+	const driver = await MobileSession.open({
 		protocol: u.protocol.replace(':', '') as 'http' | 'https',
 		hostname: u.hostname,
 		port: Number(u.port || 4723),

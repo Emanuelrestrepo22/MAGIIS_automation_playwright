@@ -3,16 +3,17 @@
  * Enumera métodos de pago + footer, luego intenta cerrar con método NO-tarjeta;
  * si todo lleva a "Ingresar tarjeta"/disabled, reporta para decisión manual/API.
  */
-import { remote } from 'webdriverio';
+import type { Browser } from 'webdriverio';
+import { MobileSession } from '../core/MobileSession';
 import { writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 const UDID = process.env.ANDROID_UDID ?? 'R92XB0B8F3J';
 const PKG = process.env.ANDROID_DRIVER_APP_PACKAGE ?? 'com.magiis.app.test.driver';
 const log = (m: string): void => console.log(`[free-resume] ${m}`);
-type Driver = Awaited<ReturnType<typeof remote>>;
+type Driver = Browser;
 
 async function run(): Promise<void> {
-	const driver = await remote({
+	const driver = await MobileSession.open({
 		protocol: 'http',
 		hostname: 'localhost',
 		port: 4723,

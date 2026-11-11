@@ -16,11 +16,18 @@
  *   4000000000003220  → 3DS obligatorio — Radar (challenge obligatorio)
  *   4000002760003184  → Autenticar siempre — independiente de configuración
  *
+ * Legado deliberado: los pasos 1-6 usan clicks JS acotados a contenedor, 3DS de Stripe y el loop de tarjeta +
+ * cierre iterativo; ninguno tiene equivalente directo en TripLifecyclePBO (selectores y flujo distintos), así
+ * que se mantienen tal cual. Solo la apertura de sesión pasa por `MobileSession.open`.
+ *
+ * IRREVERSIBLE: exige F5_APP_CLOSE=1 y --confirm (sin ambos no abre sesión ni toca el dispositivo).
+ *
  * Ejecutar:
- *   npx ts-node --esm tests/mobile/appium/scripts/validate-driver-happy-path.ts
+ *   F5_APP_CLOSE=1 npx ts-node --esm tests/mobile/appium/scripts/validate-driver-happy-path.ts --confirm
  */
 
-import { remote } from 'webdriverio';
+import { evaluateGates, irreversibleCloseGates } from '../core/Gates';
+import { MobileSession } from '../core/MobileSession';
 import { writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 
@@ -178,7 +185,15 @@ function saveEvidence(label: string, content: string): void {
 }
 
 async function run(): Promise<void> {
-	const driver = await remote({
+	// Acepta, finaliza y cierra un viaje real: mismo gate de irreversibles que el runner F5 (antes de abrir sesión).
+	const gates = evaluateGates(irreversibleCloseGates({ confirm: process.argv.slice(2).includes('--confirm') }, process.env));
+	if (!gates.open) {
+		log(`Cierre irreversible: faltan ${gates.missing.join(' y ')}. No se hizo nada.`);
+		process.exitCode = 1;
+		return;
+	}
+
+	const driver = await MobileSession.open({
 		protocol: 'http',
 		hostname: 'localhost',
 		port: 4723,

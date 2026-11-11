@@ -11,7 +11,8 @@
  *     tests/mobile/appium/scripts/driver-explore-menu.ts
  */
 import { mkdir, writeFile } from 'node:fs/promises';
-import { remote } from 'webdriverio';
+import type { Browser } from 'webdriverio';
+import { MobileSession } from '../core/MobileSession';
 
 const APPIUM_URL = process.env.APPIUM_SERVER_URL ?? 'http://localhost:4723';
 const UDID = process.env.ANDROID_UDID ?? 'R92XB0B8F3J';
@@ -20,7 +21,7 @@ const OUT_DIR =
 	process.env.EXPLORE_OUT_DIR ??
 	'C:/Users/Erika/AppData/Local/Temp/claude/c--Users-Erika-OneDrive---MAGIIS-USA-LLC--1--Escritorio-automation-projects-magiis-playwright/200063c2-3948-4975-8bf9-16001d37cf9f/scratchpad';
 const log = (m: string): void => console.log(`[menu] ${m}`);
-type Driver = Awaited<ReturnType<typeof remote>>;
+type Driver = Browser;
 
 const out: Array<Record<string, unknown>> = [];
 
@@ -190,7 +191,7 @@ async function clickMenuItem(driver: Driver, label: string): Promise<boolean> {
 
 async function run(): Promise<void> {
 	const u = new URL(APPIUM_URL);
-	const driver = await remote({
+	const driver = await MobileSession.open({
 		protocol: u.protocol.replace(':', '') as 'http' | 'https',
 		hostname: u.hostname,
 		port: Number(u.port) || 4723,

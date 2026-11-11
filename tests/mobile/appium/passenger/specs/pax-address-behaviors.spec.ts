@@ -48,7 +48,8 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { remote } from 'webdriverio';
+import type { Browser } from 'webdriverio';
+import { MobileSession } from '../../core/MobileSession';
 import { resolveDriverTarget } from '../../scripts/_shared/resolveDriverTarget';
 import { AddressFieldProbe, type AddressSurface, type BehaviorVerdict } from '../AddressFieldProbe';
 import { installWebViewNetworkCapture } from '../../helpers/webViewNetworkCapture';
@@ -64,7 +65,7 @@ import {
 const TARGET = resolveDriverTarget('passenger');
 const SEED_DESTINATION = process.env.MG116_SEED_DESTINATION ?? 'Arenales 1233';
 
-type Driver = Awaited<ReturnType<typeof remote>>;
+type Driver = Browser;
 
 /** Una conducta a medir sobre una superficie, con los casos de Xray que acredita. */
 type BehaviorRow = {
@@ -209,7 +210,7 @@ const SURFACES: SurfaceDef[] = [
 
 async function newSession(): Promise<{ driver: Driver; webview: string }> {
 	const u = new URL(TARGET.appiumUrl);
-	const driver = await remote({
+	const driver = await MobileSession.open({
 		protocol: u.protocol.replace(':', '') as 'http' | 'https',
 		hostname: u.hostname,
 		port: Number(u.port) || 4723,

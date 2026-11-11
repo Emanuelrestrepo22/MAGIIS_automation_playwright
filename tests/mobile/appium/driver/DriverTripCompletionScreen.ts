@@ -1,6 +1,10 @@
 /**
  * DriverTripCompletionScreen
  * Post-completion summary screen for the Android Driver App.
+ *
+ * @deprecated Usar `screens/driver/TripResumeScreen` (canónica: `DriverTripSummaryScreen`, selectores
+ * confirmados con DOM dump). Esta clase usa heurísticas de texto, no tiene consumidores reales y se
+ * retira al migrar `DriverTripNavigationScreen`. Ver `docs/qa/baseline/canonica-summary-completion.md`.
  */
 
 import type { MobileActorConfig } from '../config/appiumRuntime';

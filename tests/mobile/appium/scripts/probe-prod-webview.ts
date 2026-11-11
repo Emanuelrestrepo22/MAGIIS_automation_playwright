@@ -18,7 +18,7 @@
  *   node --loader ts-node/esm tests/mobile/appium/scripts/probe-prod-webview.ts
  */
 
-import { remote } from 'webdriverio';
+import { MobileSession } from '../core/MobileSession';
 
 import { resolveDriverTarget } from './_shared/resolveDriverTarget';
 
@@ -27,7 +27,7 @@ const TARGET = resolveDriverTarget('passenger');
 async function main(): Promise<void> {
 	console.log(`[sonda] ambiente=${TARGET.env}  paquete=${TARGET.appPackage}  udid=${TARGET.udid}`);
 
-	const driver = await remote({
+	const driver = await MobileSession.open({
 		hostname: new URL(TARGET.appiumUrl).hostname,
 		port: Number(new URL(TARGET.appiumUrl).port || 4723),
 		path: '/',

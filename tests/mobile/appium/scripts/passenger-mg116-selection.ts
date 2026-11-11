@@ -24,7 +24,7 @@
  * Uso: mismo runner que gates (ver package.json -> mobile:passenger:mg116-selection).
  */
 
-import { remote } from 'webdriverio';
+import { MobileSession } from '../core/MobileSession';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { resolveDriverTarget } from './_shared/resolveDriverTarget';
@@ -129,7 +129,7 @@ async function tapPrediction(driver: WebdriverIO.Browser, needle: string): Promi
 
 async function run(): Promise<void> {
 	const appiumUrl = new URL(TARGET.appiumUrl);
-	const driver = await remote({
+	const driver = await MobileSession.open({
 		protocol: appiumUrl.protocol.replace(':', '') as 'http' | 'https',
 		hostname: appiumUrl.hostname,
 		port: Number(appiumUrl.port) || 4723,

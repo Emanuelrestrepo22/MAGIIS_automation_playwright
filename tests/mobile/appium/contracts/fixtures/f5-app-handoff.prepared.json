@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "status": "prepared",
+  "runId": "20261111-abc123",
+  "carrierId": 1521,
+  "travelId": 72001,
+  "code": "5123-W",
+  "driverId": 5076,
+  "vehicleId": 3849,
+  "ownerId": 3287,
+  "scenario": "EF-NC-COM",
+  "currency": "USD",
+  "quoted": { "total": 85.5, "otherCosts": 20 },
+  "app": { "package": "com.magiis.app.test.driver", "version": "2.6.17", "udid": "emulator-5554" },
+  "route": {
+    "region": "US",
+    "origin": "Origen de ejemplo",
+    "destination": "Destino de ejemplo",
+    "gpsRoute": null,
+    "note": "TODO runner: ruta GPS US"
+  },
+  "observations": ["ruta-gps-pendiente-en-runner"]
+}

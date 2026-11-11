@@ -4,7 +4,7 @@
  *   npx ts-node --esm tests/mobile/appium/scripts/driver-login-password-only.ts
  */
 
-import { remote } from 'webdriverio';
+import { MobileSession } from '../core/MobileSession';
 
 const UDID = process.env.ANDROID_UDID ?? 'R92XB0B8F3J';
 const PACKAGE = process.env.ANDROID_APP_PACKAGE ?? 'com.magiis.app.test.driver';
@@ -13,7 +13,7 @@ const PASSWORD = process.env.DRIVER_PASSWORD ?? '123';
 const log = (msg: string) => console.log(`[login] ${msg}`);
 
 async function run(): Promise<void> {
-	const driver = await remote({
+	const driver = await MobileSession.open({
 		protocol: 'http',
 		hostname: 'localhost',
 		port: 4723,

@@ -1,0 +1,17 @@
+# Baseline dry-run del runner F5 (paso 0) — 2026-11-11
+# Comando A (sin APPIUM_SERVER_URL): ENV=test ANDROID_DRIVER_UDID=emulator-5554 npx tsx tests/mobile/appium/scripts/f5-driver-close-trip.ts --profile test-default --handoff evidence/test/f5-app-handoff-baseline.json --device emulator-5554 --dry-run
+# Sin F5_APP_CLOSE, sin --confirm. Handoff = copia del fixture 'prepared' de cv2-f5 (carrierId 1521). Exit code: 1
+[dotenv@17.2.3] injecting env (0) from .env.test -- tip: 🗂️ backup and recover secrets: https://dotenvx.com/ops
+[f5-close] Missing environment variable: APPIUM_SERVER_URL
+
+# Comando B (agrega APPIUM_SERVER_URL=http://127.0.0.1:4723, solo valor de forma; no se conecta). Exit code: 2 (bloqueos del plan, esperado sin credenciales)
+[dotenv@17.2.3] injecting env (0) from .env.test -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+[f5-close] handoff: evidence/test/f5-app-handoff-baseline.json
+[f5-close] viaje 72001 · carrier 1521 · perfil test-default
+[f5-close] app com.magiis.app.test.driver · dispositivo emulator-5554
+[f5-close] ruta GPS: 1856 puntos · 32.46 km · 62 min · 15.0 m/s
+[f5-close] tramos: min 12.2 m · max 17.6 m · cortos(<15 m) 1
+[f5-close] nota: Perfil test-default no fija carrier: se confía en handoff.driverId=5076 (la asignación ya fue hecha por W5a).
+[f5-close] nota: Ruta GPS: 1 tramos < 15 m (12 m) que la app puede descartar.
+[f5-close] BLOQUEO: Faltan variables del perfil test-default: DRIVER_EMAIL, DRIVER_PASSWORD, DRIVER_DISPLAY_NAME.
+[f5-close] --dry-run: no se creó sesión Appium ni se tocó el emulador.

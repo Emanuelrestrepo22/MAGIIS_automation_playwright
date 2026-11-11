@@ -30,11 +30,12 @@ import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { remote } from 'webdriverio';
+import type { Browser } from 'webdriverio';
+import { MobileSession } from '../core/MobileSession';
 
 import { resolveDriverTarget } from './_shared/resolveDriverTarget';
 
-type Driver = Awaited<ReturnType<typeof remote>>;
+type Driver = Browser;
 /** Elemento ya resuelto: `$$` devuelve encadenables, y al indexarlos se obtiene este tipo. */
 type AppElement = Awaited<ReturnType<Driver['$']>>;
 
@@ -283,7 +284,7 @@ async function main(): Promise<void> {
 	log('NO se crean viajes ni se guardan direcciones: solo se escribe en el campo y se lee la lista.');
 
 	const url = new URL(TARGET.appiumUrl);
-	const driver = await remote({
+	const driver = await MobileSession.open({
 		hostname: url.hostname,
 		port: Number(url.port || 4723),
 		path: '/',

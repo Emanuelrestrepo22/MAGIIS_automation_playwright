@@ -80,26 +80,33 @@ function parseLatLng(raw: string, key: string): LatLng {
 }
 
 /**
+ * Carga una ruta desde un JSON con `points: [{lat,lng}]` (p. ej. gps/routes/us/miami-brickell.json).
+ * Pura respecto de `process.env`: la ruta se inyecta por argumento. Valida >= 2 puntos finitos.
+ */
+export function loadRouteFile(file: string, label = 'ruta GPS'): LatLng[] {
+	const parsed = JSON.parse(readFileSync(resolve(file), 'utf8')) as { points?: LatLng[] };
+	const pts = parsed.points ?? [];
+	if (pts.length < 2 || pts.some(p => !Number.isFinite(p.lat) || !Number.isFinite(p.lng))) {
+		throw new Error(`${label} inválida: se esperan >= 2 puntos {lat,lng}.`);
+	}
+	return pts;
+}
+
+/**
  * Lee la ruta de env: `<PREFIX>_ORIGIN`, `<PREFIX>_DESTINATION` y opcional `<PREFIX>_WAYPOINTS`
  * (`lat,lng;lat,lng`, intermedios en orden — p. ej. derivados de OSRM). Falla nombrando la clave.
+ * `env` es inyectable (default `process.env`) para no depender de estado global mutable.
  */
-export function readGpsRouteFromEnv(prefix = 'GPS_ROUTE'): LatLng[] {
-	// `<PREFIX>_FILE`: JSON con `points: [{lat,lng}]` (p. ej. gps/routes/cannes-nice.json); tiene prioridad.
-	const file = process.env[`${prefix}_FILE`]?.trim();
-	if (file) {
-		const parsed = JSON.parse(readFileSync(resolve(file), 'utf8')) as { points?: LatLng[] };
-		const pts = parsed.points ?? [];
-		if (pts.length < 2 || pts.some(p => !Number.isFinite(p.lat) || !Number.isFinite(p.lng))) {
-			throw new Error(`${prefix}_FILE inválido: se esperan >= 2 puntos {lat,lng}.`);
-		}
-		return pts;
-	}
+export function readGpsRouteFromEnv(prefix = 'GPS_ROUTE', env: NodeJS.ProcessEnv = process.env): LatLng[] {
+	// `<PREFIX>_FILE`: JSON con `points: [{lat,lng}]`; tiene prioridad.
+	const file = env[`${prefix}_FILE`]?.trim();
+	if (file) return loadRouteFile(file, `${prefix}_FILE`);
 	const need = (key: string): string => {
-		const v = process.env[key]?.trim();
+		const v = env[key]?.trim();
 		if (!v) throw new Error(`Falta la variable ${key} (ruta GPS del emulador). Definila en el archivo de entorno.`);
 		return v;
 	};
-	const waypoints = (process.env[`${prefix}_WAYPOINTS`] ?? '')
+	const waypoints = (env[`${prefix}_WAYPOINTS`] ?? '')
 		.split(';')
 		.map(s => s.trim())
 		.filter(Boolean)

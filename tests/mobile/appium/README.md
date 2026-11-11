@@ -321,8 +321,10 @@ tests/mobile/appium/
 |                    punta a punta) que varios tests comparten.
 |
 +-- scripts/         Herramientas de investigacion y volcados. NO son tests:
-|                    corren a mano y no producen reporte. Sirven para descubrir
-|                    selectores y entender una pantalla antes de automatizarla.
+|   |                corren a mano y no producen reporte. Sirven para descubrir
+|   |                selectores y entender una pantalla antes de automatizarla.
+|   +-- diagnostics/ Volcados de solo lectura (`dump-*`): inspeccionan la pantalla
+|                    actual sin cerrar viajes ni cambiar datos.
 |
 +-- .generated/      Config de Appium MCP generada. No se edita a mano.
 ```
@@ -409,7 +411,7 @@ Use these when you need a custom label or want the raw script instead of the `mo
 ```powershell
 $env:ANDROID_APP_PACKAGE="com.magiis.app.test.passenger"
 $env:SCREEN_LABEL="passenger-home"
-pnpm exec ts-node --esm tests/mobile/appium/scripts/dump-current-screen.ts
+pnpm exec ts-node --esm tests/mobile/appium/scripts/diagnostics/dump-current-screen.ts
 ```
 
 If you need the default login or a different app state, keep the same pattern and only change `SCREEN_LABEL` plus the package/activity env vars.
@@ -599,6 +601,19 @@ Harness: `harness/DriverTripHappyPathHarness.ts` con `preflight` + `duringTrip`;
 Unit tests (sin Appium): `npx tsx --test tests/mobile/appium/gps/GpsRouteFeeder.unit.ts tests/mobile/appium/driver/DriverTripPreflight.unit.ts`.
 Sesión: con `APPIUM_NO_RESET=true` el pre-flight verifica el chofer ya logueado y solo hace login (`DRIVER_EMAIL_FR`/`DRIVER_PASSWORD_FR`) si ve el formulario de login.
 
+## Contrato de handoff con cv2-f5 (W5a <-> W5b)
+
+Contrato: `contracts/f5AppHandoff.ts` (`F5_APP_HANDOFF_SCHEMA_VERSION`, `parseF5AppHandoff`). cv2-f5 mantiene una copia
+(`tests/helpers/f5-app-handoff.ts`, misma constante). No hay paquete compartido: la garantía son los fixtures.
+
+- Fixtures en `contracts/fixtures/f5-app-handoff.{prepared,closed}.json`, copiados tal cual de cv2-f5
+  (`tests/helpers/fixtures/`). Los valida `contracts/f5AppHandoffFixtures.unit.ts`:
+  `npx tsx --test tests/mobile/appium/contracts/f5AppHandoffFixtures.unit.ts`.
+- Cómo sincronizar: si cv2-f5 cambia el contrato, copiar los 2 JSON de cv2-f5 a `contracts/fixtures/`, actualizar el tipo y el parser
+  aquí y subir `F5_APP_HANDOFF_SCHEMA_VERSION` en AMBOS repos. El unit queda rojo si el `schemaVersion` del fixture no coincide con la
+  constante, si el parser rechaza el fixture o si aparece una clave de primer nivel desconocida.
+- Los fixtures no llevan credenciales ni tokens: solo ids y datos del viaje.
+
 ## Passenger flow 2 lane
 
 - Passenger personal no3ds spec: `tests/features/gateway-pg/specs/stripe/e2e-mobile/apppax-personal-no3ds.e2e.spec.ts`
@@ -723,3 +738,12 @@ de configs, y el criterio para decidir si un caso va a dispositivo o a API— es
 `docs/mobile/GUIA-APPIUM-MAGIIS.pdf` (fuente editable: el `.html` al lado).
 
 Este README es el manual de operación del motor; esa guía es la visión general.
+
+## Cierre de viaje por la app para el lote de rendición (W5b)
+
+Cierra en el emulador (solo TEST, app `com.magiis.app.test.driver`) un viaje ya asignado por cv2-f5 y anexa el resultado al handoff `evidence/test/f5-app-handoff-<carrier>.json` (contrato en `contracts/f5AppHandoff.ts`).
+
+- Perfiles de chofer (`driver/DriverProfiles.ts`): `fr-1901` (`DRIVER_*_FR`), `test-default` (`DRIVER_EMAIL`/`DRIVER_PASSWORD`/`DRIVER_DISPLAY_NAME`), `test-mp` (`*_MP`). Las credenciales solo viven en `ENV_FILE`/shell y nunca se imprimen.
+- Plan sin sesión: `ENV_FILE=<env> npx tsx tests/mobile/appium/scripts/f5-driver-close-trip.ts --profile fr-1901 --carrier 1901 --device emulator-5554 --dry-run`.
+- Corrida real (irreversible, un viaje permanente): `F5_APP_CLOSE=1` + `--confirm`, con Appium y emulador arriba. Sin reintentos: tras aceptar, un corte deja el handoff `failed`.
+- Unitarios (sin Appium): `npx tsx --test tests/mobile/appium/contracts/f5AppHandoff.unit.ts tests/mobile/appium/gps/RoutePlan.unit.ts tests/mobile/appium/harness/F5CloseTripPlan.unit.ts`.

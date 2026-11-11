@@ -5,7 +5,7 @@
  *
  * Precondición: el driver está en /TravelResumePage con el footer "Ingresar tarjeta".
  */
-import { remote } from 'webdriverio';
+import { MobileSession } from '../core/MobileSession';
 import type { MobileActorConfig } from '../config/appiumRuntime';
 import { DriverTripPaymentScreen, type CardData } from '../driver/DriverTripPaymentScreen';
 import { dumpAppiumState } from '../helpers/appiumDebug';
@@ -18,7 +18,7 @@ const log = (m: string) => console.log(`[charge] ${m}`);
 
 async function run(): Promise<void> {
 	const url = new URL(APPIUM_URL);
-	const driver = await remote({
+	const driver = await MobileSession.open({
 		protocol: url.protocol.replace(':', '') as 'http' | 'https',
 		hostname: url.hostname,
 		port: Number(url.port) || 4723,

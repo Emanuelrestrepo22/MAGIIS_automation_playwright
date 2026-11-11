@@ -14,7 +14,8 @@
  *   node --loader ts-node/esm --experimental-specifier-resolution=node \
  *     tests/mobile/appium/scripts/driver-validate-menu-destructive.ts
  */
-import { remote } from 'webdriverio';
+import type { Browser } from 'webdriverio';
+import { MobileSession } from '../core/MobileSession';
 import { writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 
@@ -28,7 +29,7 @@ if (!EMAIL || !PASSWORD) {
 	process.exit(1);
 }
 const log = (m: string): void => console.log(`[menu-destr] ${m}`);
-type Driver = Awaited<ReturnType<typeof remote>>;
+type Driver = Browser;
 
 const report: Array<{ task: string; status: 'OK' | 'FAIL' | 'PARTIAL' | 'INFO'; detail: string }> = [];
 function add(task: string, status: 'OK' | 'FAIL' | 'PARTIAL' | 'INFO', detail = ''): void {
@@ -279,7 +280,7 @@ async function ensureDisponible(d: Driver): Promise<string> {
 
 async function run(): Promise<void> {
 	const u = new URL(APPIUM_URL);
-	const driver = await remote({
+	const driver = await MobileSession.open({
 		protocol: u.protocol.replace(':', '') as 'http' | 'https',
 		hostname: u.hostname,
 		port: Number(u.port) || 4723,

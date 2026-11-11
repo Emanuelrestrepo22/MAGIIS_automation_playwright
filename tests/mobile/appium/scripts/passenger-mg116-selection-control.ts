@@ -21,7 +21,7 @@
  * Uso: mismo runner que los otros dos scripts de MG-116.
  */
 
-import { remote } from 'webdriverio';
+import { MobileSession } from '../core/MobileSession';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { resolveDriverTarget } from './_shared/resolveDriverTarget';
@@ -95,7 +95,7 @@ async function tapByText(driver: WebdriverIO.Browser, needle: string): Promise<{
 
 async function run(): Promise<void> {
 	const u = new URL(TARGET.appiumUrl);
-	const driver = await remote({
+	const driver = await MobileSession.open({
 		protocol: u.protocol.replace(':', '') as 'http' | 'https',
 		hostname: u.hostname,
 		port: Number(u.port) || 4723,

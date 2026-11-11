@@ -1,7 +1,7 @@
-import { remote } from 'webdriverio';
+import { MobileSession } from '../core/MobileSession';
 const log = (m: string) => console.log(`[pre-home] ${m}`);
 async function run() {
-	const driver = await remote({
+	const driver = await MobileSession.open({
 		protocol: 'http',
 		hostname: 'localhost',
 		port: 4723,

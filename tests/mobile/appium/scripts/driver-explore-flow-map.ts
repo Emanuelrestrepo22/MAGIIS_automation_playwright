@@ -12,7 +12,8 @@
  *     tests/mobile/appium/scripts/driver-explore-flow-map.ts
  */
 import { mkdir, writeFile } from 'node:fs/promises';
-import { remote } from 'webdriverio';
+import type { Browser } from 'webdriverio';
+import { MobileSession } from '../core/MobileSession';
 
 const APPIUM_URL = process.env.APPIUM_SERVER_URL ?? 'http://localhost:4723';
 const UDID = process.env.ANDROID_UDID ?? 'R92XB0B8F3J';
@@ -58,7 +59,7 @@ type Transition = { from: string; action: string; selector: string; to: string; 
 const screens: ScreenDump[] = [];
 const transitions: Transition[] = [];
 
-type Driver = Awaited<ReturnType<typeof remote>>;
+type Driver = Browser;
 
 async function persist(): Promise<void> {
 	await mkdir(OUT_DIR, { recursive: true });
@@ -471,7 +472,7 @@ async function loginIfNeeded(driver: Driver): Promise<void> {
 async function run(): Promise<void> {
 	const u = new URL(APPIUM_URL);
 	log(`Connecting ${APPIUM_URL} udid=${UDID}`);
-	const driver = await remote({
+	const driver = await MobileSession.open({
 		protocol: u.protocol.replace(':', '') as 'http' | 'https',
 		hostname: u.hostname,
 		port: Number(u.port) || 4723,

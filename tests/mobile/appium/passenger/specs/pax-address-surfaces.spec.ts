@@ -28,7 +28,8 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { remote } from 'webdriverio';
+import type { Browser } from 'webdriverio';
+import { MobileSession } from '../../core/MobileSession';
 import { resolveDriverTarget } from '../../scripts/_shared/resolveDriverTarget';
 
 const TARGET = resolveDriverTarget('passenger');
@@ -54,11 +55,11 @@ const INSTALL_PROBES = `
 	})();
 `;
 
-type Driver = Awaited<ReturnType<typeof remote>>;
+type Driver = Browser;
 
 async function newSession(forceLaunch = false): Promise<{ driver: Driver; webview: string }> {
 	const u = new URL(TARGET.appiumUrl);
-	const driver = await remote({
+	const driver = await MobileSession.open({
 		protocol: u.protocol.replace(':', '') as 'http' | 'https',
 		hostname: u.hostname,
 		port: Number(u.port) || 4723,
