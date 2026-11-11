@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "status": "closed",
+  "runId": "20261111-abc123",
+  "carrierId": 1521,
+  "travelId": 72001,
+  "code": "5123-W",
+  "driverId": 5076,
+  "vehicleId": 3849,
+  "ownerId": 3287,
+  "scenario": "EF-NC-COM",
+  "currency": "USD",
+  "quoted": { "total": 85.5, "otherCosts": 20 },
+  "app": { "package": "com.magiis.app.test.driver", "version": "2.6.17", "udid": "emulator-5554" },
+  "closedAt": "2026-11-12T15:04:05.000Z",
+  "measured": { "km": 12.4, "minutes": 21, "kmSource": "gps-fed", "routeKm": 12.4 },
+  "result": {
+    "totalAmountText": "$92.10",
+    "totalAmount": 92.1,
+    "paymentMethod": "Cash",
+    "closeButtonText": "Cerrar Viaje",
+    "checkpoints": [
+      { "stage": "accepted", "matchedBy": "text", "observedAt": "2026-11-12T14:40:00.000Z" }
+    ],
+    "startedAt": "2026-11-12T14:41:00.000Z",
+    "finishedAt": "2026-11-12T15:03:00.000Z"
+  },
+  "observations": [
+    "cierre-por-app-recalcula-total: no comparar con quoted.total (diferido-f7 para costo)"
+  ]
+}

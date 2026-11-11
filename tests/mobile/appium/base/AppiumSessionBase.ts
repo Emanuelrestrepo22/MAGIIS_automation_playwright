@@ -3,10 +3,10 @@
  * Base class for Android sessions using WebdriverIO + Appium.
  */
 
-import { remote } from 'webdriverio';
 import type { Browser, ChainablePromiseElement } from 'webdriverio';
 import type { MobileActorConfig } from '../config/appiumRuntime';
-import { buildAndroidCapabilities, buildAppiumRemoteConnection } from '../config/appiumRuntime';
+import { MobileSession } from '../core/MobileSession';
+import { sleep } from '../core/Waits';
 
 export type AppiumDriver = Browser;
 export type AppiumElement = ChainablePromiseElement;
@@ -14,10 +14,12 @@ export type AppiumElement = ChainablePromiseElement;
 export abstract class AppiumSessionBase {
 	protected driver: AppiumDriver | null = null;
 	protected readonly config: MobileActorConfig;
+	private readonly session: MobileSession;
 
 	constructor(config: MobileActorConfig, driver?: AppiumDriver) {
 		this.config = config;
 		this.driver = driver ?? null;
+		this.session = new MobileSession(config, { driver });
 	}
 
 	public getDriver(): AppiumDriver {
@@ -25,55 +27,21 @@ export abstract class AppiumSessionBase {
 	}
 
 	/**
-	 * Starts a session against the Android emulator/device.
+	 * Starts a session against the Android emulator/device (delegado en MobileSession).
 	 */
 	async startSession(): Promise<void> {
 		if (this.driver) {
 			return;
 		}
-
-		const caps = buildAndroidCapabilities(this.config);
-		const connection = buildAppiumRemoteConnection(this.config);
-
-		console.log(`[AppiumSessionBase] Connecting to ${this.config.appiumServerUrl}...`);
-		console.log(`[AppiumSessionBase] Device: ${this.config.deviceName} (Android ${this.config.platformVersion})`);
-		console.log(`[AppiumSessionBase] Base path: ${connection.path}`);
-
-		this.driver = await remote({
-			protocol: connection.protocol,
-			hostname: connection.hostname,
-			port: connection.port,
-			path: connection.path,
-			capabilities: caps as Record<string, unknown>,
-			logLevel: 'warn',
-			connectionRetryTimeout: 60_000,
-			connectionRetryCount: 3
-		});
-
-		console.log('[AppiumSessionBase] Session started');
+		await this.session.start();
+		this.driver = this.session.driver;
 	}
 
 	async endSession(): Promise<void> {
 		if (this.driver) {
-			// Guard: deleteSession() puede colgar si el device/appium no responde (p.ej. tras
-			// interferencia de otro device). El teardown NO debe bloquear un test cuyos asserts
-			// ya pasaron → timeout de 20s y liberar el driver igual.
-			const driver = this.driver;
+			// El timeout de 20 s de deleteSession vive en MobileSession.end().
 			this.driver = null;
-			try {
-				await Promise.race([
-					driver.deleteSession(),
-					new Promise((_, reject) =>
-						setTimeout(() => reject(new Error('deleteSession timeout (20s)')), 20_000)
-					)
-				]);
-				console.log('[AppiumSessionBase] Session closed');
-			} catch (error) {
-				const message = error instanceof Error ? error.message : String(error);
-				console.warn(
-					`[AppiumSessionBase] endSession: deleteSession no completó limpiamente (${message}) — driver liberado igual.`
-				);
-			}
+			await this.session.end();
 		}
 	}
 
@@ -105,7 +73,7 @@ export abstract class AppiumSessionBase {
 				return true;
 			}
 
-			await driver.pause(250);
+			await sleep(250);
 		}
 
 		return false;
@@ -172,7 +140,7 @@ export abstract class AppiumSessionBase {
 				return true;
 			}
 
-			await driver.pause(250);
+			await sleep(250);
 		}
 
 		return false;
@@ -269,7 +237,7 @@ export abstract class AppiumSessionBase {
 				return true;
 			}
 
-			await driver.pause(250);
+			await sleep(250);
 		}
 
 		return false;
@@ -295,7 +263,7 @@ export abstract class AppiumSessionBase {
 				return webview;
 			}
 
-			await driver.pause(250);
+			await sleep(250);
 		}
 
 		return null;
@@ -568,7 +536,7 @@ export abstract class AppiumSessionBase {
 				}
 			}
 
-			await driver.pause(250);
+			await sleep(250);
 		}
 
 		const suffix = lastError instanceof Error ? ` (${lastError.message})` : '';
@@ -603,6 +571,6 @@ export abstract class AppiumSessionBase {
 	}
 
 	protected async pause(ms: number): Promise<void> {
-		await this.requireDriver().pause(ms);
+		await sleep(ms);
 	}
 }

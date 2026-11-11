@@ -2,11 +2,13 @@
 // Run: npx tsx --test tests/mobile/appium/gps/GpsRouteFeeder.unit.ts
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { fileURLToPath } from 'node:url';
 import {
 	GpsRouteFeeder,
 	bearingDegrees,
 	haversineMeters,
 	interpolateRoute,
+	loadRouteFile,
 	readGpsRouteFromEnv,
 	routeDistanceMeters,
 	type LatLng
@@ -116,4 +118,13 @@ test('feeder: abort() corta la alimentación', async () => {
 test('feeder: rechaza cadencia/step fuera del mínimo que la app tolera', () => {
 	assert.throws(() => new GpsRouteFeeder({ execute: async () => null } as never, { stepMeters: 10 }), /stepMeters/);
 	assert.throws(() => new GpsRouteFeeder({ execute: async () => null } as never, { intervalMs: 500 }), /intervalMs/);
+});
+
+test('loadRouteFile / readGpsRouteFromEnv(env inyectado): lee archivo sin tocar process.env', () => {
+	const file = fileURLToPath(new URL('./routes/us/miami-brickell.json', import.meta.url));
+	const viaFile = loadRouteFile(file);
+	assert.ok(viaFile.length > 2);
+	assert.deepEqual(readGpsRouteFromEnv('X', { X_FILE: file }), viaFile);
+	assert.equal(process.env.X_FILE, undefined);
+	assert.throws(() => readGpsRouteFromEnv('X', {}), /X_ORIGIN/);
 });

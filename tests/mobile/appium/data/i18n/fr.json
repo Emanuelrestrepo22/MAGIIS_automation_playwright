@@ -1,0 +1,10 @@
+{
+	"driver.buttons.accept": ["TODO-verificar"],
+	"driver.buttons.confirmYes": ["TODO-verificar"],
+	"driver.travelToStart.startTrip": ["TODO-verificar"],
+	"driver.travelInProgress.endTrip": ["TODO-verificar"],
+	"driver.travelResume.closeTrip": ["TODO-verificar"],
+	"driver.travelResume.signAndCloseTrip": ["TODO-verificar"],
+	"driver.home.available": ["TODO-verificar"],
+	"driver.home.notAvailable": ["TODO-verificar"]
+}

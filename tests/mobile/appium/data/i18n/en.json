@@ -1,0 +1,10 @@
+{
+	"driver.buttons.accept": ["Accept"],
+	"driver.buttons.confirmYes": ["Yes"],
+	"driver.travelToStart.startTrip": ["Start Trip"],
+	"driver.travelInProgress.endTrip": ["End Trip"],
+	"driver.travelResume.closeTrip": ["Close Trip", "End Trip"],
+	"driver.travelResume.signAndCloseTrip": ["Sign and Close Trip"],
+	"driver.home.available": ["Available"],
+	"driver.home.notAvailable": ["Not Available"]
+}
