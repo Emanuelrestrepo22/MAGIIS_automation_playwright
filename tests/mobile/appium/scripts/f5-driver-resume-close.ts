@@ -14,7 +14,7 @@ import path from 'node:path';
 import { getDriverAppConfig } from '../config/appiumRuntime';
 import { readF5AppHandoff, withClosure, writeF5AppHandoff, parseMoneyText } from '../contracts/f5AppHandoff';
 import { evaluateGates, irreversibleCloseGates } from '../core/Gates';
-import { I18n, type Locale } from '../core/I18n';
+import { I18n } from '../core/I18n';
 import { MobileSession } from '../core/MobileSession';
 import { getCarrier, loadCarrierRoute } from '../data/carriers';
 import { analyzeRoutePlan } from '../gps/RoutePlan';
@@ -49,7 +49,7 @@ async function run(): Promise<number> {
 		return 2;
 	}
 
-	const locale = (process.env.APP_LOCALE?.trim() || 'es') as Locale;
+	const i18n = I18n.forProfileWithEnv("test-default", process.env);
 	const route = loadCarrierRoute(getCarrier(handoff.carrierId));
 	// Mismos defaults del runner (--step 30 · --interval 2000) con que se alimentó el GPS.
 	const routePlan = analyzeRoutePlan(route, { stepMeters: 30, intervalMs: 2000 });
@@ -57,7 +57,7 @@ async function run(): Promise<number> {
 	const startedAt = new Date().toISOString();
 	try {
 		await session.start();
-		const trip = TripLifecyclePBO.forSession(session, new I18n(locale), { log });
+		const trip = TripLifecyclePBO.forSession(session, i18n, { log });
 		const summary = await trip.readSummary();
 		const close = await trip.closeTrip({ confirmed: true });
 		const finishedAt = new Date().toISOString();

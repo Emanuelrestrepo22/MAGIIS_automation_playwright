@@ -62,15 +62,16 @@ function listRoutes(dir: string): string[] {
 	);
 }
 
-test('ruta US del 1521: paso constante, sin violaciones duras y 1.5-2.5 km en 90-300 s a 30 m / 2 s', () => {
+test('ruta US del 1521: paso constante, sin violaciones duras, 2-3 km y arranca/termina en el origen/destino del alta F5', () => {
 	const route = loadCarrierRoute(getCarrier(1521));
 	const plan = analyzeRoutePlan(route, { stepMeters: 30, intervalMs: 2_000 });
 	assert.deepEqual(plan.violations, []);
 	assert.equal(plan.shortSegments, 0);
-	assert.ok(plan.theoreticalMeters > 1_000 && plan.theoreticalMeters < 2_500, `m=${plan.theoreticalMeters}`);
-	assert.ok(plan.durationSeconds >= 90 && plan.durationSeconds <= 300, `s=${plan.durationSeconds}`);
-	// Origen en el sur de Florida (guarda gruesa contra coordenadas invertidas).
-	assert.ok(haversineMeters(route[0], { lat: 25.76, lng: -80.19 }) < 2_000);
+	assert.ok(plan.theoreticalMeters > 2_000 && plan.theoreticalMeters < 3_000, `m=${plan.theoreticalMeters}`);
+	assert.ok(plan.durationSeconds >= 90 && plan.durationSeconds <= 400, `s=${plan.durationSeconds}`);
+	// Origen 900 Collins Ave y destino 1111 Lincoln Rd (Miami Beach): sin salto desde otro punto (11/11).
+	assert.ok(haversineMeters(route[0], { lat: 25.7797, lng: -80.1311 }) < 100, 'origen');
+	assert.ok(haversineMeters(route[route.length - 1], { lat: 25.7906, lng: -80.1393 }) < 100, 'destino');
 });
 
 test('todas las rutas del repo pasan RoutePlan sin violaciones duras', () => {

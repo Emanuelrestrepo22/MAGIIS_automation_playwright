@@ -87,3 +87,10 @@ test('Locator: orden accessibility id -> resource-id/clase -> web -> texto -> xp
 	assert.deepEqual(orderedStrategies({ id: 'z', native: { xpath: '//x' }, textKey: 'k' }).map(s => s.kind), ['text', 'xpath']);
 	assert.throws(() => defineLocator({ id: 'vacío' }), /ninguna estrategia/);
 });
+
+test('forProfileWithEnv: APP_LOCALE pisa el locale del perfil; vacío usa el perfil; inválido lanza', () => {
+	assert.equal(I18n.forProfileWithEnv('test-default', { APP_LOCALE: 'en' }).locale, 'en');
+	assert.equal(I18n.forProfileWithEnv('test-default', {}).locale, 'es');
+	assert.equal(I18n.forProfileWithEnv('test-default', { APP_LOCALE: ' ' }).locale, 'es');
+	assert.throws(() => I18n.forProfileWithEnv('test-default', { APP_LOCALE: 'pt' }), /APP_LOCALE="pt" inválido/);
+});

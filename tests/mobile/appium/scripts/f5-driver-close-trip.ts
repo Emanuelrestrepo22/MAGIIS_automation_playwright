@@ -96,7 +96,7 @@ async function run(): Promise<number> {
 	try {
 		// Las screens/PBOs toman `session.driver` al construirse: el flow se arma DESPUÉS de abrir la sesión.
 		await session.start();
-		const flow = F5AppCloseFlow.forSession(session, I18n.forProfile(profile.id), evidence, log);
+		const flow = F5AppCloseFlow.forSession(session, I18n.forProfileWithEnv(profile.id, process.env), evidence, log);
 		result = await flow.run({
 			carrier: carrierProfile,
 			travelId: handoff.travelId,

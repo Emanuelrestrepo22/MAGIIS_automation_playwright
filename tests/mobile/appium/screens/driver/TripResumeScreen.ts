@@ -32,6 +32,25 @@ export function looksLikeMoney(text: string): boolean {
 	return /^[$€£]?\s*\d[\d.,\s]*\s*[$€£]?$/.test(t) && /[$€£]/.test(t) && parseMoneyText(t) !== null;
 }
 
+/** Datos crudos de un botón de pago del resumen (los de efectivo/tarjeta solo tienen ícono, sin texto). */
+export type PaymentButtonRaw = { className: string; text: string; html: string };
+
+/**
+ * Pura: etiqueta de un botón de pago. Usa el texto si lo hay (p. ej. «VISA 4242»); si no, el ícono
+ * (`cash|money|bill` → `cash`, `card|credit` → `card`) y, en último caso, la posición observada en el DOM
+ * del 11/11 (efectivo primero, tarjeta después). El seleccionado lleva la clase `active` y el sufijo ` (activo)`.
+ */
+export function describePaymentButtons(buttons: readonly PaymentButtonRaw[]): string[] {
+	const byPosition = ['cash', 'card'];
+	return buttons.map((b, i) => {
+		const html = b.html.toLowerCase();
+		const kind =
+			b.text.trim() ||
+			(/cash|money|bill|efectivo/.test(html) ? 'cash' : /card|credit|tarjeta/.test(html) ? 'card' : (byPosition[i] ?? `payment-${i}`));
+		return /(^|\s)active(\s|$)/.test(b.className) ? `${kind} (activo)` : kind;
+	});
+}
+
 export class TripResumeScreen {
 	constructor(
 		private readonly session: MobileSession,
@@ -87,13 +106,31 @@ export class TripResumeScreen {
 
 	/** Textos de los botones de pago visibles (p. ej. «VISA 4242»). */
 	async readPaymentMethods(): Promise<string[]> {
-		const lists = await Promise.all(resolveWebSelectors(PAYMENT_BUTTONS).map(s => this.visibleTexts(s)));
-		return [...new Set(lists.flat())];
+		const driver = await this.web();
+		const raw = await driver
+			.execute<PaymentButtonRaw[], [string[]]>(
+				(sels: string[]) => {
+					const seen = new Set<Element>();
+					const out: Array<{ className: string; text: string; html: string }> = [];
+					for (const s of sels) {
+						for (const el of Array.from(document.querySelectorAll(s))) {
+							if (seen.has(el) || (el as HTMLElement).offsetParent === null) continue;
+							seen.add(el);
+							out.push({ className: el.className, text: ((el as HTMLElement).innerText ?? '').trim(), html: el.innerHTML });
+						}
+					}
+					return out;
+				},
+				resolveWebSelectors(PAYMENT_BUTTONS)
+			)
+			.catch(() => [] as PaymentButtonRaw[]);
+		return describePaymentButtons(raw);
 	}
 
-	/** Forma de pago visible (primera); '' si no hay. */
+	/** Forma de pago seleccionada (botón `active`), o la primera visible; '' si no hay. */
 	async readPaymentMethod(): Promise<string> {
-		return (await this.readPaymentMethods())[0] ?? '';
+		const methods = await this.readPaymentMethods();
+		return methods.find(m => m.endsWith(' (activo)')) ?? methods[0] ?? '';
 	}
 
 	/**

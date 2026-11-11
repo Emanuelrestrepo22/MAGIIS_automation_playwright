@@ -8,7 +8,7 @@ import { I18n } from '../../core/I18n';
 import { MobileSession } from '../../core/MobileSession';
 import { ConfirmModal } from './ConfirmModal';
 import { SignaturePadScreen, strokePoints } from './SignaturePadScreen';
-import { TripResumeScreen, looksLikeMoney } from './TripResumeScreen';
+import { TripResumeScreen, describePaymentButtons, looksLikeMoney } from './TripResumeScreen';
 
 const CONFIG = {
 	actor: 'driver',
@@ -148,4 +148,23 @@ test('SignaturePadScreen.sign dibuja con touch actions y devuelve los puntos', a
 test('SignaturePadScreen.confirm lanza si el botón no está', async () => {
 	const { session } = fake(() => false);
 	await assert.rejects(() => new SignaturePadScreen(session).confirm(), /«Confirm»/);
+});
+
+test('describePaymentButtons: íconos sin texto se clasifican y el activo se marca (DOM 11/11)', () => {
+	assert.deepEqual(
+		describePaymentButtons([
+			{ className: 'payment active', text: '', html: '<ion-icon name="cash-outline"></ion-icon>' },
+			{ className: 'payment', text: '', html: '<ion-icon name="card"></ion-icon>' }
+		]),
+		['cash (activo)', 'card']
+	);
+	assert.deepEqual(
+		describePaymentButtons([
+			{ className: 'payment active', text: '', html: '<i></i>' },
+			{ className: 'payment', text: '', html: '<i></i>' }
+		]),
+		['cash (activo)', 'card']
+	);
+	assert.deepEqual(describePaymentButtons([{ className: 'payment', text: 'VISA 4242', html: '' }]), ['VISA 4242']);
+	assert.deepEqual(describePaymentButtons([]), []);
 });

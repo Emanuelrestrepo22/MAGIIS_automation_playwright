@@ -51,10 +51,13 @@ export const CARRIERS: CarrierRegistry = {
 		region: 'us',
 		locale: 'en-US',
 		currency: 'USD',
-		routeId: 'us/miami-brickell.json',
+		// Ruta del alta F5 de cv2-f5 (origen 900 Collins Ave -> destino 1111 Lincoln Rd, Miami Beach): arranca en el
+		// origen para que el km medido por la app no sume el salto desde otro punto (11/11: Brickell dio 14,14 km).
+		routeId: 'us/miami-beach-collins-lincoln.json',
 		driverProfiles: { test: 'test-default' },
 		notes: [
-			'Geocerca/ciudad de 1521 sin verificar: us/miami-brickell.json es una ruta urbana corta de EE. UU., no la geocerca del carrier.'
+			'Ruta con vértices aproximados sobre calles (sin router externo); la geocerca del carrier 1521 sigue sin verificar.',
+			'us/miami-brickell.json queda como alternativa; no empieza en el origen del alta F5.'
 		]
 	}
 };

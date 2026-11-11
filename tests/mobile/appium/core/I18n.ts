@@ -81,6 +81,17 @@ export class I18n {
 		return new I18n(localeForProfile(profileId), dictionaries);
 	}
 
+	/**
+	 * Locale del perfil salvo override `APP_LOCALE` (es|en|fr) en el `env` recibido: el idioma lo fija el
+	 * dispositivo (11/11: emulator-5556 en inglés con perfil test-default). Valor inválido = error explícito.
+	 */
+	static forProfileWithEnv(profileId: string, env: Readonly<Record<string, string | undefined>>): I18n {
+		const override = env.APP_LOCALE?.trim();
+		if (!override) return I18n.forProfile(profileId);
+		if (!isLocale(override)) throw new Error(`i18n: APP_LOCALE="${override}" inválido (es|en|fr).`);
+		return new I18n(override);
+	}
+
 	/** Todas las variantes de la key (canónica primero). */
 	variants(key: string, locale: Locale = this.locale): string[] {
 		const values = this.dictionaries[locale]?.[key];
