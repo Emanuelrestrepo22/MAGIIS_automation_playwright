@@ -19,14 +19,14 @@
  *     --profile fr-1901 --carrier 1901 --device emulator-5554 --confirm
  *
  * Flags: --profile <fr-1901|test-default|test-mp> · --carrier <id> | --handoff <archivo> ·
- *   --device <udid> · --route <json con points[]> (default gps/routes/cannes-nice.json) ·
+ *   --device <udid> · --route <json con points[]> (override; default = ruta del carrier del handoff vía
+ *   data/carriers.ts; GPS_ROUTE_FILE=<json> es override equivalente, leído solo en este script) ·
  *   --step <m> (30) · --interval <ms> (2000) · --dry-run · --confirm
  * Env: ENV=test, F5_APP_CLOSE=1 (gate), ADB_PATH (opcional), credenciales del perfil (nunca se imprimen).
  */
 
 import { execFile } from 'node:child_process';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { getDriverAppConfig } from '../config/appiumRuntime';
 import {
@@ -39,7 +39,8 @@ import {
 	type F5AppHandoff
 } from '../contracts/f5AppHandoff';
 import { getDriverProfile, readDriverPreflightExpectation } from '../driver/DriverProfiles';
-import { GpsRouteFeeder, readGpsRouteFromEnv } from '../gps/GpsRouteFeeder';
+import { getCarrier, loadCarrierRoute } from '../data/carriers';
+import { loadRouteFile } from '../gps/GpsRouteFeeder';
 import { DriverTripHappyPathHarness } from '../harness/DriverTripHappyPathHarness';
 import {
 	buildF5ClosePlan,
@@ -49,11 +50,10 @@ import {
 	parseF5CloseArgs
 } from '../harness/F5CloseTripPlan';
 import { ScreenEvidence } from '../helpers/screenEvidence';
+import { GpsSimulationPBO } from '../pbo/GpsSimulationPBO';
 
 const log = (m: string): void => console.log(`[f5-close] ${m}`);
 const execFileAsync = promisify(execFile);
-const here = path.dirname(fileURLToPath(import.meta.url));
-const DEFAULT_ROUTE = path.resolve(here, '../gps/routes/cannes-nice.json');
 
 function adb(udid: string, args: string[]): Promise<string> {
 	return execFileAsync(process.env.ADB_PATH?.trim() || 'adb', ['-s', udid, ...args], { timeout: 15_000 }).then(r => r.stdout);
@@ -70,8 +70,13 @@ async function run(): Promise<number> {
 		: f5AppHandoffPath(env, args.carrier!);
 	const handoff = readF5AppHandoff(handoffFile);
 
-	process.env.GPS_ROUTE_FILE = args.route ?? process.env.GPS_ROUTE_FILE ?? DEFAULT_ROUTE;
-	const route = readGpsRouteFromEnv();
+	// Ruta GPS: override explícito (--route, o GPS_ROUTE_FILE leído SOLO aquí) o la del carrier del handoff.
+	const routeOverride = args.route ?? process.env.GPS_ROUTE_FILE?.trim();
+	const carrierProfile = getCarrier(handoff.carrierId);
+	const route = routeOverride
+		? loadRouteFile(path.resolve(routeOverride), 'ruta GPS (override)')
+		: loadCarrierRoute(carrierProfile);
+	log(`fuente de ruta GPS: ${routeOverride ? `override ${routeOverride}` : `carrier ${carrierProfile.carrierId} -> ${carrierProfile.routeId}`}`);
 
 	const plan = buildF5ClosePlan({
 		args,
@@ -130,15 +135,15 @@ async function run(): Promise<number> {
 			},
 			duringTrip: async driver => {
 				irreversibleStarted = true;
-				const gps = new GpsRouteFeeder(driver, {
+				const gps = GpsSimulationPBO.forDriver(driver);
+				feedStartedAt = Date.now();
+				const r = await gps.driveRoute(route, {
 					stepMeters: args.stepMeters,
 					intervalMs: args.intervalMs,
 					onProgress: (fed, total) => {
 						if (fed % 50 === 0 || fed === total) log(`gps ${fed}/${total}`);
 					}
 				});
-				feedStartedAt = Date.now();
-				const r = await gps.feed(route);
 				feedEndedAt = Date.now();
 				fedMeters = r.fedMeters;
 				theoreticalMeters = r.theoreticalMeters;
