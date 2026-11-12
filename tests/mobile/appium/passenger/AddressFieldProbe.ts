@@ -214,7 +214,7 @@ export class AddressFieldProbe {
 	 *
 	 * POR QUE NATIVO Y NO `row.click()`. El click programatico del DOM NO dispara el handler de Ionic
 	 * en esta app: el campo no se puebla y la seleccion nunca ocurre. Este repo ya lo tiene MEDIDO
-	 * (`passenger-mg116-selection-control.ts`, veredicto `harness-limitation` con `populated:false`), y
+	 * (`_quarantine/passenger-mg116-selection-control.ts`, veredicto `harness-limitation` con `populated:false`), y
 	 * ese metodo ya simulo dos defectos INEXISTENTES en los casos TM-684 y TM-687: el token no rotaba
 	 * porque nunca se selecciono nada, y el harness lo reportaba como defecto del producto.
 	 *

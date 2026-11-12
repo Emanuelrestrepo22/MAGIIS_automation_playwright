@@ -73,7 +73,7 @@ async function listInputs(driver: WebdriverIO.Browser): Promise<InputRow[]> {
 	})) as InputRow[];
 }
 
-/** Los tabs de tipo de viaje. `passenger-newtrip-dump.ts:44` los volcaba pero nunca se persistieron. */
+/** Los tabs de tipo de viaje. `_quarantine/passenger-newtrip-dump.ts:44` los volcaba pero nunca se persistieron. */
 async function listSegments(driver: WebdriverIO.Browser): Promise<SegmentRow[]> {
 	return (await driver.execute(() => {
 		const vis = (el: Element): boolean => (el as HTMLElement).offsetParent !== null;

@@ -54,7 +54,7 @@ const RESULTS: StepResult[] = [];
  *   string        → mensaje de error
  *
  * NOTA: Los selectores del botón "Complete" dentro del iframe 3DS deben
- * confirmarse con dump-3ds-popup.ts en el momento en que el popup esté activo.
+ * confirmarse con _quarantine/diagnostics/dump-3ds-popup.ts en el momento en que el popup esté activo.
  * Los valores actuales son los estándar de Stripe test mode.
  */
 async function handle3DS(

@@ -10,7 +10,7 @@ Queda canónica **`DriverTripSummaryScreen`**. **`DriverTripCompletionScreen`** 
 
 | Aspecto | `DriverTripSummaryScreen` (429 l) | `DriverTripCompletionScreen` (273 l) |
 |---|---|---|
-| Quién la usa | `harness/DriverTripHappyPathHarness.ts:8,186,203` (camino real del runner F5, líneas 138-150); `harness/DriverCargoDeclineHarness.ts:30,904,918`; `scripts/driver-cargo-payment-validate.ts:23,140` | Solo `driver/DriverTripNavigationScreen.ts:10,398,403` (métodos `verifyTripCompleted` y `closeTrip`) |
+| Quién la usa | `harness/DriverTripHappyPathHarness.ts:8,186,203` (camino real del runner F5, líneas 138-150); `harness/DriverCargoDeclineHarness.ts:30,904,918`; `scripts/_quarantine/driver-cargo-payment-validate.ts:23,140` | Solo `driver/DriverTripNavigationScreen.ts:10,398,403` (métodos `verifyTripCompleted` y `closeTrip`) |
 | Consumidores de ese puente | — | Ninguno: `verifyTripCompleted` y `closeTrip` no se llaman desde ningún archivo de `tests/mobile/appium/` (grep). Es código muerto transitivo |
 | Selectores | Confirmados con DOM dump 2026-04-13 (`/TravelResumePage`, `app-travel-resume`, `button.btn.finish`), cabecera `DriverTripSummaryScreen.ts:1-23`; usa `DRIVER_ACTION_SELECTORS`/`DRIVER_UI_TEXTS` | Heurística: `waitForCompletionScreen` acepta cualquier texto `finalizado|completado|pago|amount|resumen` (`:136-166`); `close()` tiene `TODO: reemplazar heurística del cierre por selector confirmado` (`:~190`) |
 | Cobertura funcional | Pago (`selectPaymentMethod`, `assertPaymentMethod`, `getActivePaymentMethod`), total (`getTotalAmount`), cierre (`confirmAndFinish`), firma de cuenta corriente (`requiresSignature`, `signAndConfirm`), extras (`addToll`, `addParking`) | Espera + monto cobrado + cierre genérico; sin firma ni pago |

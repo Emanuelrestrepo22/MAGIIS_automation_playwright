@@ -9,7 +9,7 @@
  *
  * La evaluación es una función pura (`evaluateDriverPreflight`) para poder testearla sin Appium.
  * Identidad: la app no expone el email logueado, así que se compara el NOMBRE visible en el header
- * del home (mismos selectores que `scripts/dump-driver-identity.ts`) contra `DRIVER_DISPLAY_NAME_FR`.
+ * del home (mismos selectores que `scripts/_quarantine/diagnostics/dump-driver-identity.ts`) contra `DRIVER_DISPLAY_NAME_FR`.
  * Las credenciales solo se validan por presencia: nunca se imprimen.
  */
 

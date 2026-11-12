@@ -727,7 +727,7 @@ Cosas que parecen una cosa y son otra:
 | `recorded/*.recorded.ts` | **No es Appium.** Volcados crudos del codegen de Playwright sobre un portal **web**. Ningún config los colecta (el `testMatch` por defecto exige `.spec.`/`.test.`). Están mal ubicados acá. |
 | `gateway-pg/*Draft.ts` | **Código muerto.** Nadie los importa; `GatewayPaymentMobileDraft.completeTripAndTriggerCharge()` es literalmente un no-op con un TODO. |
 | `passenger/specs/pax-new-trip-blocked.spec.ts` | Spec real y bien escrita pero **huérfana**: ningún config la colecta, no tiene anotaciones, y su encabezado se declara borrador. Su título usa `[PASO-4]`, que el respaldo por título del reporter **confundiría con una key de Jira** si alguna vez se conectara con `XRAY=1`. |
-| Scripts que citan `TM-*` en comentarios | Citarlas no las convierte en cobertura. Los 106 archivos de `scripts/` son instrumentos de investigación: no emiten veredicto por el runner ni llegan a ningún reporte. |
+| Scripts que citan `TM-*` en comentarios | Citarlas no las convierte en cobertura. Los archivos de `scripts/` (45 activos; los demás en `scripts/_quarantine/`, ver su README) son instrumentos de investigación: no emiten veredicto por el runner ni llegan a ningún reporte. |
 | El proyecto `e2e-mobile` colecta más archivos que los móviles | Selecciona por etiqueta, así que una spec de carrier **web** etiquetada `@e2e-hybrid` también entra. Explica por qué el conteo del proyecto es mayor. |
 
 ---

@@ -11,7 +11,7 @@
  * mecanismo de cada rama.
  *
  * El import relativo sin extensión funciona igual que en el resto de scripts de esta carpeta
- * (`driver-go-online.ts`, `driver-charge-from-resume.ts`): el loader ts-node/esm los resuelve
+ * (`driver-go-online.ts`, `_quarantine/driver-charge-from-resume.ts`): el loader ts-node/esm los resuelve
  * con `--experimental-specifier-resolution=node`, así que no hace falta duplicar el helper.
  *
  * Uso:

@@ -15,8 +15,8 @@
  *
  * Evidencia:
  *   - tests/mobile/appium/scripts/driver-login-smoke.ts → process.env.DRIVER_EMAIL / DRIVER_PASSWORD
- *   - tests/mobile/appium/scripts/driver-login-password-only.ts → DRIVER_PASSWORD (sin fallback; falla si falta)
- *   - tests/mobile/appium/scripts/dump-after-login.ts → usa las mismas vars
+ *   - tests/mobile/appium/scripts/_quarantine/driver-login-password-only.ts → DRIVER_PASSWORD (sin fallback; falla si falta)
+ *   - tests/mobile/appium/scripts/_quarantine/diagnostics/dump-after-login.ts → usa las mismas vars
  *   - .env.test declara DRIVER_EMAIL + DRIVER_PASSWORD
  */
 

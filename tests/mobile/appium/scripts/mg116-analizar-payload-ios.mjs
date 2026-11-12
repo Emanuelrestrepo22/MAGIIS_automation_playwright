@@ -1,7 +1,7 @@
 /**
  * MG-116 — analizador de payloads de autocomplete capturados A MANO (iOS).
  *
- * POR QUE EXISTE. La medicion del sesgo en Android la hace `passenger-mg116-carrier-ab.ts`
+ * POR QUE EXISTE. La medicion del sesgo en Android la hace `_quarantine/passenger-mg116-carrier-ab.ts`
  * conduciendo Appium. En iOS no tenemos ese canal: la evidencia llega como capturas y payloads
  * pegados por el tester. Este script cierra ese hueco — toma el payload tal como viene y emite el
  * MISMO veredicto que la version automatizada, para que las dos plataformas se comparen contra el

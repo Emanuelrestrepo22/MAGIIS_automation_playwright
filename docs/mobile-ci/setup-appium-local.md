@@ -113,7 +113,7 @@ Abrir la **Driver App TEST** en el teléfono y dejarla en la pantalla correcta s
 Desde la Terminal 2 (proyecto), correr el script deseado:
 
 ```powershell
-npx ts-node --esm tests/mobile/appium/scripts/full-trip-flow-dump.ts
+npx ts-node --esm tests/mobile/appium/scripts/_quarantine/full-trip-flow-dump.ts
 ```
 
 Ver la salida en consola y los archivos generados en `evidence/dom-dump/`.
@@ -124,11 +124,11 @@ Ver la salida en consola y los archivos generados en `evidence/dom-dump/`.
 
 | Script | Pantalla requerida en el teléfono | Qué hace |
 |---|---|---|
-| `full-trip-flow-dump.ts` | TravelConfirmPage (viaje llegando al driver) | Acepta viaje → empieza viaje → confirma modal → dumpea navegación |
-| `accept-trip-and-dump.ts` | TravelConfirmPage | Solo acepta el viaje y dumpea |
-| `start-trip-and-dump.ts` | TravelToStartPage (viaje ya aceptado) | Solo empieza el viaje y dumpea |
+| `_quarantine/full-trip-flow-dump.ts` | TravelConfirmPage (viaje llegando al driver) | Acepta viaje → empieza viaje → confirma modal → dumpea navegación |
+| `_quarantine/accept-trip-and-dump.ts` | TravelConfirmPage | Solo acepta el viaje y dumpea |
+| `_quarantine/start-trip-and-dump.ts` | TravelToStartPage (viaje ya aceptado) | Solo empieza el viaje y dumpea |
 | `dump-current-screen.ts` | Cualquier pantalla | Dumpea lo que se ve en pantalla ahora mismo |
-| `dump-after-login.ts` | Pantalla de login | Loguea y dumpea el home |
+| `_quarantine/diagnostics/dump-after-login.ts` | Pantalla de login | Loguea y dumpea el home |
 
 ---
 
