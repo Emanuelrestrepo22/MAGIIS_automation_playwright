@@ -15,8 +15,8 @@
  *   $env:APPIUM_SERVER_URL="http://localhost:4723"
  *   $env:ANDROID_UDID="R92XB0B8F3J"
  *   $env:ENV="test"
- *   $env:DRIVER_EMAIL="nuevoemailyo12312213@yopmail.com"
- *   $env:DRIVER_PASSWORD="123"
+ *   $env:DRIVER_EMAIL="<from .env.test>"
+ *   $env:DRIVER_PASSWORD="<from .env.test>"
  *   npx ts-node --esm tests/mobile/appium/scripts/driver-login-smoke.ts
  */
 

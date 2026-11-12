@@ -7,7 +7,7 @@
  *
  * Run:
  *   $env:APPIUM_SERVER_URL="http://localhost:4723"; $env:ANDROID_UDID="R92XB0B8F3J";
- *   $env:DRIVER_EMAIL="nuevoemailyo12312213@yopmail.com"; $env:DRIVER_PASSWORD="123";
+ *   $env:DRIVER_EMAIL="<from .env.test>"; $env:DRIVER_PASSWORD="<from .env.test>";
  *   node --loader ts-node/esm --experimental-specifier-resolution=node \
  *     tests/mobile/appium/scripts/driver-explore-flow-map.ts
  */
@@ -20,6 +20,9 @@ const UDID = process.env.ANDROID_UDID ?? 'R92XB0B8F3J';
 const APP_PACKAGE = process.env.ANDROID_DRIVER_APP_PACKAGE ?? 'com.magiis.app.test.driver';
 const EMAIL = process.env.DRIVER_EMAIL ?? '';
 const PASSWORD = process.env.DRIVER_PASSWORD ?? '';
+if (!EMAIL || !PASSWORD) {
+	throw new Error('Falta DRIVER_EMAIL o DRIVER_PASSWORD en el entorno (definirlas en .env.test); sin valores por defecto.');
+}
 const OUT_DIR =
 	process.env.EXPLORE_OUT_DIR ??
 	'C:/Users/Erika/AppData/Local/Temp/claude/c--Users-Erika-OneDrive---MAGIIS-USA-LLC--1--Escritorio-automation-projects-magiis-playwright/200063c2-3948-4975-8bf9-16001d37cf9f/scratchpad';

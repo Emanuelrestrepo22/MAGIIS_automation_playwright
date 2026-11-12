@@ -8,7 +8,10 @@ import { MobileSession } from '../core/MobileSession';
 
 const UDID = process.env.ANDROID_UDID ?? 'R92XB0B8F3J';
 const PACKAGE = process.env.ANDROID_APP_PACKAGE ?? 'com.magiis.app.test.driver';
-const PASSWORD = process.env.DRIVER_PASSWORD ?? '123';
+const PASSWORD = process.env.DRIVER_PASSWORD?.trim();
+if (!PASSWORD) {
+	throw new Error('Falta DRIVER_PASSWORD en el entorno (definirla en .env.test); este script no tiene valor por defecto.');
+}
 
 const log = (msg: string) => console.log(`[login] ${msg}`);
 

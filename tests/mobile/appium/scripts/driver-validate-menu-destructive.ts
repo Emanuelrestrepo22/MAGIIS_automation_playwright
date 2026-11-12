@@ -10,7 +10,7 @@
  *
  * Run:
  *   $env:APPIUM_SERVER_URL="http://localhost:4723"; $env:ANDROID_UDID="R92XB0B8F3J";
- *   $env:DRIVER_EMAIL="nuevoemailyo12312213@yopmail.com"; $env:DRIVER_PASSWORD="123";
+ *   $env:DRIVER_EMAIL="<from .env.test>"; $env:DRIVER_PASSWORD="<from .env.test>";
  *   node --loader ts-node/esm --experimental-specifier-resolution=node \
  *     tests/mobile/appium/scripts/driver-validate-menu-destructive.ts
  */

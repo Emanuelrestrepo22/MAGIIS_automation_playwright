@@ -24,7 +24,7 @@ UC-PAX-BILLETERA-ADD-CARD
 
 ## Precondiciones
 1. App `com.magiis.app.test.passenger` v2.5.7 instalada en emulador/dispositivo Android.
-2. Passenger logueado (`emanuel.restrepo@yopmail.com`).
+2. Passenger logueado (`$PASSENGER_EMAIL (.env.test)`).
 3. Billetera vacía (`Aún no tienes Tarjetas para este País.`).
 4. País de la cuenta: US (United States).
 5. Acceso a tarjeta de prueba Stripe con 3DS requerido.

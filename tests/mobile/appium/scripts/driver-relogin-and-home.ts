@@ -6,7 +6,7 @@
  *
  * Run:
  *   $env:APPIUM_SERVER_URL="http://localhost:4723"; $env:ANDROID_UDID="R92XB0B8F3J";
- *   $env:DRIVER_EMAIL="nuevoemailyo12312213@yopmail.com"; $env:DRIVER_PASSWORD="123";
+ *   $env:DRIVER_EMAIL="<from .env.test>"; $env:DRIVER_PASSWORD="<from .env.test>";
  *   node --loader ts-node/esm --experimental-specifier-resolution=node \
  *     tests/mobile/appium/scripts/driver-relogin-and-home.ts
  */
@@ -18,6 +18,9 @@ const UDID = process.env.ANDROID_UDID ?? 'R92XB0B8F3J';
 const APP_PACKAGE = process.env.ANDROID_DRIVER_APP_PACKAGE ?? 'com.magiis.app.test.driver';
 const EMAIL = process.env.DRIVER_EMAIL ?? '';
 const PASSWORD = process.env.DRIVER_PASSWORD ?? '';
+if (!EMAIL || !PASSWORD) {
+	throw new Error('Falta DRIVER_EMAIL o DRIVER_PASSWORD en el entorno (definirlas en .env.test); sin valores por defecto.');
+}
 const log = (m: string): void => console.log(`[relogin] ${m}`);
 
 type Driver = Browser;

@@ -18,7 +18,7 @@
 | App package | `com.magiis.app.test.passenger` |
 | Dispositivo | `R92XB0B8F3J` (Pixel 7, Android 15) |
 | Ambiente | TEST |
-| User passenger | `emanuel.restrepo@yopmail.com` |
+| User passenger | `$PASSENGER_EMAIL (.env.test)` |
 | Origin demo | Reconquista 661, Buenos Aires |
 | Destination demo | Av. 9 de Julio 1000, Buenos Aires |
 

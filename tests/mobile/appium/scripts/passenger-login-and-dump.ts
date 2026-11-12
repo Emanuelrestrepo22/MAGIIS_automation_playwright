@@ -4,8 +4,8 @@
  *
  * Ejecutar desde la raíz del repo:
  *   $env:ANDROID_UDID="R92XB0B8F3J"
- *   $env:PASSENGER_EMAIL="emanuel.restrepo@yopmail.com"
- *   $env:PASSENGER_PASSWORD="123"
+ *   $env:PASSENGER_EMAIL="<from .env.test>"
+ *   $env:PASSENGER_PASSWORD="<from .env.test>"
  *   pnpm exec ts-node --esm tests/mobile/appium/scripts/passenger-login-and-dump.ts
  */
 

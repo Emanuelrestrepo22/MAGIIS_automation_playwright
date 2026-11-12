@@ -43,7 +43,7 @@ Card canónica sugerida: `4242 4242 4242 4242`. Variante 3DS del mismo escenario
 
 ### De datos
 
-- [ ] Usuario passenger de prueba: `PASSENGER_EMAIL=emanuel.restrepo@yopmail.com`, `PASSENGER_PASSWORD=123`.
+- [ ] Usuario passenger de prueba: `PASSENGER_EMAIL` y `PASSENGER_PASSWORD` definidos en `.env.test`.
 - [ ] Usuario driver de prueba disponible, **online** o capaz de pasar a online desde `DriverHomeScreen.goOnline()`.
 - [ ] **Precondición crítica — limpieza previa:** el pasajero NO debe tener viajes en estado
   `SEARCHING_DRIVER`, `EN_CURSO` ni `NO_AUTORIZADO`. Caso contrario la app bloquea con modal
@@ -253,7 +253,7 @@ draft
 | R2 | `JourneyBridge.buildJourneyId()` hardcoded a `flow1-*` | Parametrizar prefijo o crear variante Flow 2 antes de implementar spec TC1011 |
 | R3 | `initJourneyContext()` asume `flowType='carrier-web-driver-app'` | Extender firma para aceptar `flowType` como parámetro |
 | R4 | `PassengerTripStatusScreen` usa keywords heurísticos sin selectores canónicos — puede dar falsos positivos si el DOM cambia | Priorizar dump live durante próxima sesión Appium para formalizar selectores |
-| R5 | El modal "Ya tiene viaje creado" (`ENV_BLOCKER`) puede disparar en sesiones paralelas si el user emanuel.restrepo@yopmail.com se usa en múltiples tests simultáneos | Serializar con `workers: 1` en el project `e2e` + limpieza previa desde Carrier |
+| R5 | El modal "Ya tiene viaje creado" (`ENV_BLOCKER`) puede disparar en sesiones paralelas si el user $PASSENGER_EMAIL se usa en múltiples tests simultáneos | Serializar con `workers: 1` en el project `e2e` + limpieza previa desde Carrier |
 | R6 | Notificación push del driver puede no llegar si el emulador no tiene Google Play Services o FCM configurado | Alternar a polling del backend: driver navega manualmente a lista de viajes si no hay push |
 | R7 | `DriverTripHappyPathHarness` asume que el driver ya recibió un viaje — no espera handshake con passenger | Añadir espera explícita `waitForTripAvailable()` antes de `waitForTripConfirmPage()` para el caso TC1011 |
 | R8 | Capture efectivo puede tardar varios segundos post cierre — timeout de `verifyPaymentProcessed` (120s) puede ser estrecho en ambientes lentos | Validar contra webhook Stripe o DB (no solo UI passenger) como fuente secundaria |
@@ -313,8 +313,8 @@ El entregable de este BL-021 es:
 # Standalone passenger (debugging Fase A)
 E2E_JOURNEY_ID=standalone \
 APPIUM_SERVER_URL=http://localhost:4723 \
-PASSENGER_EMAIL=emanuel.restrepo@yopmail.com \
-PASSENGER_PASSWORD=123 \
+PASSENGER_EMAIL="<from .env.test>" \
+PASSENGER_PASSWORD="<from .env.test>" \
 E2E_CARD_LAST4=4242 \
 npx ts-node --esm tests/e2e/gateway/flow2-passenger-driver/mobile-phase-passenger.ts
 

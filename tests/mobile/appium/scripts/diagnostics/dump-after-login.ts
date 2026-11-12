@@ -6,8 +6,8 @@
  *   ANDROID_HOME="C:/Users/Erika/AppData/Local/Android/Sdk" \
  *   ANDROID_SDK_ROOT="C:/Users/Erika/AppData/Local/Android/Sdk" \
  *   JAVA_HOME="C:/Program Files/Android/Android Studio/jbr" \
- *   DRIVER_EMAIL="nuevoemailyo12312213@yopmail.com" \
- *   DRIVER_PASSWORD="123" \
+ *   DRIVER_EMAIL="<from .env.test>" \
+ *   DRIVER_PASSWORD="<from .env.test>" \
  *   npx ts-node --esm tests/mobile/appium/scripts/dump-after-login.ts
  */
 

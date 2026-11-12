@@ -17,6 +17,10 @@ import { OracleDb, oracleConfigFromEnv } from '../../../components/db/OracleDb';
 const log = (m: string): void => console.log(`[mg626-db] ${m}`);
 const PAX = process.env.MG626_PAX_ID ?? '9869';
 const CARRIER = process.env.MG626_CARRIER_ID ?? '1521';
+const passengerEmail = process.env.PASSENGER_EMAIL?.trim();
+if (!passengerEmail) {
+	throw new Error('Falta PASSENGER_EMAIL en el entorno (definirla en .env.test); este script no tiene valor por defecto.');
+}
 
 async function main(): Promise<void> {
 	const cfg = oracleConfigFromEnv();
@@ -69,7 +73,7 @@ async function main(): Promise<void> {
 	const byEmail = await db.query(
 		`SELECT id AS "id", user_id AS "userId", email AS "email", defaultcarrier_id AS "carrier", app_name AS "app"
 		   FROM passenger WHERE LOWER(email) = LOWER(:mail) ORDER BY id`,
-		{ mail: process.env.PASSENGER_EMAIL ?? 'emanuel.restrepo@yopmail.com' }
+		{ mail: passengerEmail }
 	);
 	log(`PASSENGER por email:\n${JSON.stringify(byEmail, null, 2)}`);
 

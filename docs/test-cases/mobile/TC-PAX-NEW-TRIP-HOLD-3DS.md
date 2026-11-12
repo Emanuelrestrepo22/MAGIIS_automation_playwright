@@ -31,7 +31,7 @@ UC-PAX-TRIP-CREATE-WITH-HOLD-3DS
 | 3 | Passenger **sin viajes en `NO_AUTORIZADO`** (pestaña "En conflicto") | Carrier → Gestión → **En conflicto**: vacío para ese user |
 | 4 | Tarjeta 3DS vinculada en Billetera pax | App Pax → Mi cuenta → Billetera muestra `VISA ...3220` |
 | 5 | Tarjeta seteada como **método de pago default** | Al crear viaje se ve `...3220` seleccionada automáticamente |
-| 6 | App Pax logueada con `emanuel.restrepo@yopmail.com` en modo Personal | Side menu muestra `Emanuel Restrepo` + `Modo Personal` |
+| 6 | App Pax logueada con `$PASSENGER_EMAIL (.env.test)` en modo Personal | Side menu muestra `Emanuel Restrepo` + `Modo Personal` |
 
 ## Datos de prueba
 | Campo | Valor |

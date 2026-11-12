@@ -74,7 +74,7 @@ function buildPassenger(envSuffix: 'TEST' | 'UAT' | 'PROD', environment: MobileU
 		notes:
 			`Passenger app Android en ${environment}. ` +
 			`No confundir con TestPassenger (dominio) de fixtures/users/passengers.ts. ` +
-			`User histórico en TEST: emanuel.restrepo@yopmail.com (wallet con tarjetas paralelas — ver memoria).`
+			`User histórico en TEST (ver PASSENGER_EMAIL_TEST en .env.test; wallet con tarjetas paralelas — ver memoria).`
 	};
 }
 
