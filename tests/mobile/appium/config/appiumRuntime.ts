@@ -34,6 +34,14 @@
  *                                   si no, Appium rechaza la sesión.
  *   APPIUM_CHROMEDRIVER_EXECUTABLE — Ruta a un chromedriver local que coincide con el WebView
  *                                   (cuando la autodescarga no consigue la versión).
+ *   ANDROID_DRIVER_SYSTEM_PORT    — `appium:systemPort` del driver (cae a ANDROID_SYSTEM_PORT). Hace falta para
+ *   ANDROID_PASSENGER_SYSTEM_PORT   correr dos dispositivos a la vez: cada uno necesita su propio puerto (ej: 8200
+ *   ANDROID_SYSTEM_PORT             teléfono, 8201 emulador). Sin definir, Appium usa el suyo (8200).
+ *   ANDROID_LANGUAGE              — `appium:language` (ej: es). Sin definir, la app usa el idioma del dispositivo.
+ *   ANDROID_LOCALE                — `appium:locale` (ej: AR). Sin definir, la app usa la región del dispositivo.
+ *   APPIUM_FORCE_APP_LAUNCH       — `appium:forceAppLaunch` (default: false, no se manda). Con noReset=true, si la otra
+ *                                   app MAGIIS ya está en primer plano la sesión se engancha a ELLA en silencio (se
+ *                                   pide driver y responde passenger). Con true Appium relanza la app pedida.
  */
 
 import { loadMobileEnvFile } from './mobileEnvFile';
@@ -90,6 +98,14 @@ export type MobileActorConfig = {
 	fullReset: boolean;
 	chromedriverAutodownload: boolean;
 	chromedriverExecutable: string | null;
+	/** `appium:systemPort` de la sesión UiAutomator2. null = lo elige Appium. */
+	systemPort: number | null;
+	/** `appium:language` (ej. 'es'). null = el idioma del dispositivo. */
+	language: string | null;
+	/** `appium:locale` (ej. 'AR'). null = la región del dispositivo. */
+	locale: string | null;
+	/** `appium:forceAppLaunch`. false = no se manda (comportamiento histórico). */
+	forceAppLaunch: boolean;
 };
 
 export type AppiumRemoteConnection = {
@@ -125,6 +141,23 @@ function readOptionalNumberEnv(name: string, defaultValue: number): number {
 	const parsed = Number(value);
 	if (Number.isNaN(parsed)) {
 		throw new Error(`Invalid numeric environment variable: ${name}=${value}`);
+	}
+	return parsed;
+}
+
+/** Texto opcional: vacío o ausente es "sin definir" (una línea `ANDROID_LANGUAGE=` no debe mandar `''` a Appium). */
+function readOptionalTextEnv(name: string): string | null {
+	const value = readOptionalEnv(name)?.trim();
+	return value ? value : null;
+}
+
+/** Puerto opcional: ausente o vacío es null; lo definido debe ser un entero de puerto válido. */
+function readOptionalPortEnv(name: string): number | null {
+	const value = readOptionalTextEnv(name);
+	if (value === null) return null;
+	const parsed = Number(value);
+	if (!Number.isInteger(parsed) || parsed < 1 || parsed > 65535) {
+		throw new Error(`Invalid port environment variable: ${name}=${value}`);
 	}
 	return parsed;
 }
@@ -188,7 +221,15 @@ function buildActorConfig(actor: MobileActor, appPathEnvVar: string, appPackageE
 		noReset: readOptionalBooleanEnv('APPIUM_NO_RESET', usingInstalledApp),
 		fullReset: readOptionalBooleanEnv('APPIUM_FULL_RESET', false),
 		chromedriverAutodownload: readOptionalBooleanEnv('APPIUM_CHROMEDRIVER_AUTODOWNLOAD', false),
-		chromedriverExecutable: readOptionalEnv('APPIUM_CHROMEDRIVER_EXECUTABLE')
+		chromedriverExecutable: readOptionalEnv('APPIUM_CHROMEDRIVER_EXECUTABLE'),
+		// Opcionales y sin default: si no están en el entorno las capabilities salen igual que antes, así que
+		// el flujo del teléfono (que no las declara) no cambia. Mismo criterio rol-primero que el udid.
+		systemPort:
+			readOptionalPortEnv(`ANDROID_${actor.toUpperCase()}_SYSTEM_PORT`) ??
+			readOptionalPortEnv('ANDROID_SYSTEM_PORT'),
+		language: readOptionalTextEnv('ANDROID_LANGUAGE'),
+		locale: readOptionalTextEnv('ANDROID_LOCALE'),
+		forceAppLaunch: readOptionalBooleanEnv('APPIUM_FORCE_APP_LAUNCH', false)
 	};
 }
 
@@ -242,6 +283,11 @@ export function buildAndroidCapabilities(config: MobileActorConfig): Record<stri
 		...(readOptionalBooleanEnv('APPIUM_CHROMEDRIVER_DISABLE_BUILD_CHECK', false)
 			? { 'appium:chromedriverDisableBuildCheck': true }
 			: {}),
+		// Solo si están definidos: no se manda `appium:systemPort`/`language`/`locale` a quien no los configuró.
+		...(config.systemPort !== null ? { 'appium:systemPort': config.systemPort } : {}),
+		...(config.language ? { 'appium:language': config.language } : {}),
+		...(config.locale ? { 'appium:locale': config.locale } : {}),
+		...(config.forceAppLaunch ? { 'appium:forceAppLaunch': true } : {}),
 		...(useInstalledApp
 			? {
 					// App instalada: lanzar por package, sin instalar APK

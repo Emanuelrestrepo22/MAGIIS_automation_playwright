@@ -23,7 +23,11 @@ const CONFIG: MobileActorConfig = {
 	noReset: true,
 	fullReset: false,
 	chromedriverAutodownload: false,
-	chromedriverExecutable: null
+	chromedriverExecutable: null,
+	systemPort: null,
+	language: null,
+	locale: null,
+	forceAppLaunch: false
 };
 
 test('start crea el driver una sola vez; end lo libera', async () => {
