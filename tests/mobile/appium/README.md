@@ -599,6 +599,7 @@ Harness: `harness/DriverTripHappyPathHarness.ts` con `preflight` + `duringTrip`;
 5. Al terminar liberar el mock: `adb -s emulator-5554 shell am stopservice io.appium.settings/.LocationService`.
 
 Unit tests (sin Appium): `npx tsx --test tests/mobile/appium/gps/GpsRouteFeeder.unit.ts tests/mobile/appium/driver/DriverTripPreflight.unit.ts`.
+Todos los unit tests móviles (sin emulador ni Appium): `pnpm test:mobile:unit`.
 Sesión: con `APPIUM_NO_RESET=true` el pre-flight verifica el chofer ya logueado y solo hace login (`DRIVER_EMAIL_FR`/`DRIVER_PASSWORD_FR`) si ve el formulario de login.
 
 ## Contrato de handoff con cv2-f5 (W5a <-> W5b)
