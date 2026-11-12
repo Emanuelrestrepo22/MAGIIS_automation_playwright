@@ -322,6 +322,8 @@ Observaciones:
 
 ## 7. Propuesta para T0.4
 
+**Movido en 7894ae8**: los 69 scripts de 7.1 y 7.2 (65 cuarentena + 4 borrar, D8: nada se borra) pasaron a `tests/mobile/appium/scripts/_quarantine/` con `git mv`; ver el README de esa carpeta. Credenciales literales saneadas en el commit anterior.
+
 Destino: `tests/mobile/appium/scripts/_quarantine/` (conservando subcarpeta, p. ej. `_quarantine/diagnostics/`). Mover con `git mv` para no perder historia. Nada de esto se ejecuto en T0.3.
 
 ### 7.1 Mover a cuarentena (65)
