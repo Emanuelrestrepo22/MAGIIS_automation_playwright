@@ -1,0 +1,1287 @@
+<title>Onboarding Appium MAGIIS</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Tokens first. Layout: sticky header (title + progress) > level tabs > one level visible at a time (hash-bound) > footer. */
+:root {
+  --bg: #f1f4f6;
+  --surface: #ffffff;
+  --surface-2: #e7edf1;
+  --fg: #14202b;
+  --muted: #4d5b68;
+  --line: #c8d2da;
+  --accent: #0a6c88;
+  --accent-fg: #ffffff;
+  --accent-soft: #d5ecf2;
+  --warn: #8f4700;
+  --warn-soft: #fbead2;
+  --ok: #166a3d;
+  --ok-soft: #d8f0e2;
+  --bad: #a02a2a;
+  --bad-soft: #f8dada;
+  --code-bg: #0f1c26;
+  --code-fg: #d9e7f0;
+  --code-muted: #8ba5b6;
+  --code-line: #223644;
+  --focus: #0a6c88;
+  --font-head: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "Cascadia Mono", Consolas, "Courier New", monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d171f;
+    --surface: #15232d;
+    --surface-2: #1d2f3b;
+    --fg: #e3edf3;
+    --muted: #9db1bf;
+    --line: #2c4252;
+    --accent: #58c3de;
+    --accent-fg: #06222b;
+    --accent-soft: #11353f;
+    --warn: #f0b266;
+    --warn-soft: #3a2a12;
+    --ok: #5fd096;
+    --ok-soft: #123426;
+    --bad: #f28d8d;
+    --bad-soft: #3d1b1b;
+    --code-bg: #091219;
+    --code-fg: #d9e7f0;
+    --code-muted: #7e97a8;
+    --code-line: #1d3140;
+    --focus: #58c3de;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d171f;
+  --surface: #15232d;
+  --surface-2: #1d2f3b;
+  --fg: #e3edf3;
+  --muted: #9db1bf;
+  --line: #2c4252;
+  --accent: #58c3de;
+  --accent-fg: #06222b;
+  --accent-soft: #11353f;
+  --warn: #f0b266;
+  --warn-soft: #3a2a12;
+  --ok: #5fd096;
+  --ok-soft: #123426;
+  --bad: #f28d8d;
+  --bad-soft: #3d1b1b;
+  --code-bg: #091219;
+  --code-fg: #d9e7f0;
+  --code-muted: #7e97a8;
+  --code-line: #1d3140;
+  --focus: #58c3de;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-padding-top: 120px; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 48px;
+  -webkit-text-size-adjust: 100%;
+}
+a { color: var(--accent); text-underline-offset: 3px; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 3px; }
+code, kbd { font-family: var(--font-mono); font-size: 0.88em; }
+:not(pre) > code { background: var(--surface-2); padding: 0.1em 0.38em; border-radius: 4px; overflow-wrap: anywhere; }
+.wrap { max-width: 980px; margin: 0 auto; min-width: 0; }
+
+/* header */
+.top {
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 10;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+  padding-block: 12px 0;
+}
+.top-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 24px; justify-content: space-between; }
+.brand { min-width: 0; }
+.brand h1 { font-family: var(--font-head); font-size: 1.35rem; line-height: 1.15; margin: 0; letter-spacing: -0.01em; }
+.brand p { margin: 2px 0 0; color: var(--muted); font-size: 0.85rem; }
+.tools { display: flex; align-items: center; gap: 12px; flex: 1 1 260px; justify-content: flex-end; min-width: 0; }
+.meter { flex: 1 1 160px; max-width: 320px; min-width: 120px; }
+.meter-label { display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.meter-track { height: 8px; background: var(--surface-2); border-radius: 4px; overflow: hidden; margin-top: 3px; border: 1px solid var(--line); }
+.meter-fill { height: 100%; width: 0; background: var(--accent); transition: width 0.3s ease; }
+.btn {
+  font: inherit; font-size: 0.82rem; font-weight: 600; cursor: pointer;
+  background: var(--surface); color: var(--fg); border: 1px solid var(--line);
+  padding: 5px 11px; border-radius: 6px; min-height: 32px;
+}
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+
+.levels { display: flex; gap: 2px; overflow-x: auto; margin-top: 10px; scrollbar-width: thin; }
+.levels a {
+  flex: 0 0 auto; text-decoration: none; color: var(--muted); font-weight: 600; font-size: 0.9rem;
+  padding: 9px 14px 8px; border-bottom: 3px solid transparent; white-space: nowrap;
+}
+.levels a:hover { color: var(--fg); }
+.levels a[aria-current="page"] { color: var(--fg); border-bottom-color: var(--accent); }
+.levels .n { font-family: var(--font-mono); color: var(--accent); margin-right: 6px; font-size: 0.8rem; }
+.levels .cnt { font-family: var(--font-mono); font-size: 0.74rem; color: var(--muted); margin-left: 7px; }
+
+/* level */
+.level { padding-top: 28px; }
+.level + .level { margin-top: 48px; border-top: 2px solid var(--line); }
+.pager { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; margin-top: 36px; padding-top: 14px; border-top: 1px dashed var(--line); }
+.pager a { font-weight: 600; text-decoration: none; padding: 6px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+.pager a:hover { border-color: var(--accent); }
+.pager .next { margin-left: auto; }
+.level-head { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; margin-bottom: 8px; }
+.kicker { font-family: var(--font-mono); font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+h2 { font-family: var(--font-head); font-size: clamp(1.7rem, 4.5vw, 2.4rem); line-height: 1.1; margin: 0; letter-spacing: -0.02em; }
+h3 { font-family: var(--font-head); font-size: 1.2rem; margin: 40px 0 10px; display: flex; align-items: baseline; gap: 10px; }
+h3 .idx { font-family: var(--font-mono); font-size: 0.78rem; color: var(--muted); font-weight: 400; }
+h4 { font-size: 1rem; margin: 22px 0 6px; }
+p, li { max-width: 65ch; }
+p { margin: 0 0 12px; }
+.lede { font-size: 1.1rem; max-width: 65ch; border-left: 4px solid var(--accent); padding: 4px 0 4px 16px; margin: 14px 0 0; }
+.note { background: var(--warn-soft); color: var(--fg); border-left: 4px solid var(--warn); padding: 10px 14px; border-radius: 0 6px 6px 0; max-width: 72ch; margin: 14px 0; font-size: 0.94rem; }
+.note b:first-child { color: var(--warn); }
+.info { background: var(--accent-soft); border-left: 4px solid var(--accent); padding: 10px 14px; border-radius: 0 6px 6px 0; max-width: 72ch; margin: 14px 0; font-size: 0.94rem; }
+
+/* concepts: definition rows */
+dl.defs { margin: 0; display: grid; grid-template-columns: minmax(0, 1fr); border-top: 1px solid var(--line); }
+dl.defs > div { display: grid; grid-template-columns: minmax(0, 190px) minmax(0, 1fr); gap: 4px 24px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+dl.defs dt { font-weight: 600; }
+dl.defs dd { margin: 0; max-width: 65ch; }
+@media (max-width: 640px) { dl.defs > div { grid-template-columns: minmax(0, 1fr); } }
+
+/* steps */
+ol.steps { list-style: none; margin: 0; padding: 0; counter-reset: step; }
+ol.steps > li { counter-increment: step; position: relative; padding: 0 0 22px 52px; max-width: none; min-width: 0; }
+ol.steps > li::before {
+  content: counter(step); position: absolute; left: 0; top: 0; width: 34px; height: 34px;
+  display: grid; place-items: center; border-radius: 50%;
+  background: var(--accent); color: var(--accent-fg); font-family: var(--font-mono); font-weight: 600; font-size: 0.9rem;
+}
+ol.steps > li::after { content: ""; position: absolute; left: 16px; top: 38px; bottom: 4px; width: 2px; background: var(--line); }
+ol.steps > li:last-child::after { display: none; }
+ol.steps > li > p:first-child { margin-top: 5px; }
+ol.steps .why { color: var(--muted); font-size: 0.92rem; }
+
+/* code */
+figure.code { margin: 10px 0 16px; background: var(--code-bg); border-radius: 8px; border: 1px solid var(--code-line); max-width: 100%; min-width: 0; }
+figure.code figcaption { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 5px 8px 5px 14px; border-bottom: 1px solid var(--code-line); }
+figure.code .path { font-family: var(--font-mono); font-size: 0.74rem; color: var(--code-muted); overflow-wrap: anywhere; min-width: 0; }
+figure.code .copy { font: inherit; font-size: 0.74rem; font-weight: 600; cursor: pointer; flex: 0 0 auto; color: var(--code-fg); background: transparent; border: 1px solid var(--code-line); border-radius: 5px; padding: 3px 9px; min-height: 28px; }
+figure.code .copy:hover { border-color: var(--code-muted); }
+figure.code pre { margin: 0; padding: 12px 14px; overflow-x: auto; color: var(--code-fg); font-family: var(--font-mono); font-size: 0.82rem; line-height: 1.55; tab-size: 2; }
+figure.code pre code { font-size: inherit; background: none; padding: 0; color: inherit; }
+
+/* exercise */
+.exercise { border: 2px dashed var(--accent); border-radius: 10px; padding: 16px 20px 8px; margin: 12px 0; background: var(--surface); min-width: 0; }
+.exercise > .tag { display: inline-block; font-family: var(--font-mono); font-size: 0.74rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; background: var(--accent); color: var(--accent-fg); padding: 2px 9px; border-radius: 4px; margin-bottom: 10px; }
+.exercise ol { margin: 0 0 8px 1.2em; padding: 0; }
+.exercise li { margin-bottom: 6px; }
+
+/* checks */
+ul.checks { list-style: none; padding: 0; margin: 0; display: grid; gap: 2px; }
+ul.checks li { max-width: 72ch; }
+ul.checks label { display: flex; gap: 12px; align-items: flex-start; cursor: pointer; padding: 7px 10px; border-radius: 6px; }
+ul.checks label:hover { background: var(--surface-2); }
+ul.checks input { margin-top: 4px; width: 18px; height: 18px; flex: 0 0 auto; accent-color: var(--accent); }
+ul.checks input:checked + span { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--line); }
+
+/* quiz */
+.quiz { background: var(--surface-2); border-radius: 10px; padding: 16px 20px; margin: 12px 0; border: 1px solid var(--line); min-width: 0; }
+.quiz fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.quiz legend { font-weight: 600; padding: 0; margin-bottom: 8px; max-width: 65ch; }
+.quiz .opt { display: flex; gap: 10px; align-items: flex-start; padding: 6px 8px; border-radius: 6px; cursor: pointer; max-width: 70ch; }
+.quiz .opt:hover { background: var(--surface); }
+.quiz .opt input { margin-top: 5px; accent-color: var(--accent); }
+.quiz .opt.right { background: var(--ok-soft); }
+.quiz .opt.wrong { background: var(--bad-soft); }
+.quiz .feedback { margin: 10px 0 0; font-size: 0.94rem; max-width: 65ch; }
+.quiz .feedback.ok { color: var(--ok); }
+.quiz .feedback.ko { color: var(--bad); }
+
+/* details */
+details { border-top: 1px solid var(--line); max-width: 78ch; }
+details:last-of-type { border-bottom: 1px solid var(--line); }
+details > summary { cursor: pointer; padding: 11px 4px; font-weight: 600; list-style: none; display: flex; gap: 10px; align-items: baseline; }
+details > summary::-webkit-details-marker { display: none; }
+details > summary::before { content: "+"; font-family: var(--font-mono); color: var(--accent); width: 1ch; flex: 0 0 auto; }
+details[open] > summary::before { content: "-"; }
+details > div { padding: 0 4px 14px 2.2ch; }
+details .sym { font-weight: 400; color: var(--muted); font-size: 0.9rem; }
+
+/* tables */
+.tablewrap { overflow-x: auto; margin: 10px 0 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); max-width: 100%; }
+table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { background: var(--surface-2); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+tr:last-child td { border-bottom: 0; }
+td:first-child { white-space: nowrap; }
+td.wrapfirst:first-child { white-space: normal; }
+
+/* diagrams */
+.diagram { overflow-x: auto; margin: 12px 0 18px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 8px; max-width: 100%; }
+.diagram svg { display: block; width: 100%; height: auto; min-width: 640px; font-family: var(--font-body); }
+.svg-box { fill: var(--surface-2); stroke: var(--line); stroke-width: 1.5; }
+.svg-acc { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
+.svg-warn { fill: var(--warn-soft); stroke: var(--warn); stroke-width: 1.5; }
+.svg-ok { fill: var(--ok-soft); stroke: var(--ok); stroke-width: 1.5; }
+.svg-line { stroke: var(--muted); stroke-width: 2; fill: none; }
+.svg-arrow { fill: var(--muted); }
+.svg-t { fill: var(--fg); font-size: 14px; }
+.svg-tb { fill: var(--fg); font-size: 14px; font-weight: 700; }
+.svg-ts { fill: var(--muted); font-size: 12px; }
+.svg-tm { fill: var(--warn); font-size: 12px; font-family: var(--font-mono); font-weight: 600; }
+
+.links { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+.links li::before { content: "->"; font-family: var(--font-mono); color: var(--accent); margin-right: 10px; }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 18px 28px; }
+.cols > * { min-width: 0; }
+
+footer { margin-top: 56px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.85rem; max-width: 80ch; }
+@media (prefers-reduced-motion: reduce) { .meter-fill { transition: none; } * { scroll-behavior: auto !important; } }
+@media (max-width: 520px) { ol.steps > li { padding-left: 44px; } .exercise { padding: 14px 14px 6px; } .tools { justify-content: flex-start; } }
+</style>
+
+<div class="top">
+  <div class="wrap">
+    <div class="top-row">
+      <div class="brand">
+        <h1>Appium en MAGIIS: de cero a experto</h1>
+        <p>Automatización mobile de las apps Driver y Passenger, con nuestro código real. Se lee de corrido o por nivel; las casillas son opcionales y no bloquean nada.</p>
+      </div>
+      <div class="tools">
+        <div class="meter">
+          <div class="meter-label"><span>Tu progreso</span><span id="progress-text">0 / 0</span></div>
+          <div class="meter-track" role="progressbar" aria-label="Progreso del onboarding" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progress-track"><div class="meter-fill" id="progress-fill"></div></div>
+        </div>
+        <button type="button" class="btn" id="theme-toggle" aria-label="Cambiar entre tema claro y oscuro">Tema</button>
+        <button type="button" class="btn" id="reset-progress">Reiniciar</button>
+      </div>
+    </div>
+    <nav class="levels" aria-label="Niveles del onboarding" id="level-nav">
+      <a href="#principiante" data-level="principiante"><span class="n">01</span>Principiante<span class="cnt" data-count="principiante"></span></a>
+      <a href="#intermedio" data-level="intermedio"><span class="n">02</span>Intermedio<span class="cnt" data-count="intermedio"></span></a>
+      <a href="#avanzado" data-level="avanzado"><span class="n">03</span>Avanzado<span class="cnt" data-count="avanzado"></span></a>
+      <a href="#experto" data-level="experto"><span class="n">04</span>Experto<span class="cnt" data-count="experto"></span></a>
+      <a href="#referencia" data-level="referencia"><span class="n">05</span>Referencia</a>
+    </nav>
+  </div>
+</div>
+
+<main class="wrap" id="main">
+
+<!-- ====================== PRINCIPIANTE ====================== -->
+<section class="level" id="lvl-principiante" data-level="principiante" aria-labelledby="h-principiante">
+  <div class="level-head">
+    <span class="kicker">Nivel 01 · Principiante</span>
+    <h2 id="h-principiante">Tu primera sesión contra el emulador</h2>
+  </div>
+  <p class="lede"><b>Objetivo.</b> Que levantes Appium, veas el emulador desde <code>adb</code>, abras una sesión real contra la app Driver de TEST y puedas leer el volcado de su pantalla. Todo lo demás se apoya en esto.</p>
+
+  <h3><span class="idx">01</span>Conceptos</h3>
+  <dl class="defs">
+    <div><dt>Appium</dt><dd>Un servidor que recibe comandos WebDriver por HTTP (puerto 4723) y los traduce a un <em>driver</em> de plataforma. Para Android usamos el driver <code>uiautomator2</code>. El modelo «server + drivers» es el de Appium 2; nosotros corremos <strong>Appium 3.x</strong> (el README del módulo documenta 3.5.2 y <code>uiautomator2</code> 7.x).</dd></div>
+    <div><dt>WebdriverIO</dt><dd>El cliente Node/TypeScript que habla con ese servidor. Usamos el modo <em>standalone</em>: <code>remote({...})</code> de <code>webdriverio</code> (^9.27 en <code>package.json</code>), no el runner <code>wdio</code>. El runner de tests es Playwright.</dd></div>
+    <div><dt>adb</dt><dd>El puente a Android. Appium lo encuentra por <code>ANDROID_HOME</code>. Sin esa variable no ve el dispositivo.</dd></div>
+    <div><dt>Capabilities</dt><dd>El «pedido» que le hacemos a Appium: plataforma, dispositivo, app y si debe conservar la sesión del usuario. Se arman en <code>config/appiumRuntime.ts</code>.</dd></div>
+    <div><dt>App híbrida</dt><dd>Las apps Driver y Passenger son un contenedor nativo Android con una web app Ionic/Angular adentro. Lo que se <em>toca</em> nativo vive en <code>NATIVE_APP</code>; el DOM, los formularios y los requests viven en el <code>WEBVIEW_&lt;package&gt;</code>.</dd></div>
+    <div><dt>Package por ambiente</dt><dd><code>com.magiis.app.test.driver</code> es TEST, <code>com.magiis.app.uat.driver</code> es UAT y <code>com.magiis.app.driver</code> es producción. La app real del cierre de viajes corre solo en TEST.</dd></div>
+  </dl>
+
+  <div class="diagram" role="img" aria-label="Diagrama: el test habla por HTTP con Appium, que por adb maneja el emulador con sus dos contextos">
+    <svg viewBox="0 0 800 190" xmlns="http://www.w3.org/2000/svg">
+      <defs><marker id="ar1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="svg-arrow"/></marker></defs>
+      <rect x="10" y="40" width="200" height="100" rx="8" class="svg-box"/>
+      <text x="26" y="68" class="svg-tb">Tu PC · el test</text>
+      <text x="26" y="90" class="svg-t">WebdriverIO remote()</text>
+      <text x="26" y="110" class="svg-ts">MobileSession / AppiumSessionBase</text>
+      <rect x="300" y="20" width="220" height="140" rx="8" class="svg-acc"/>
+      <text x="316" y="50" class="svg-tb">Appium Server :4723</text>
+      <text x="316" y="76" class="svg-t">driver uiautomator2</text>
+      <text x="316" y="98" class="svg-t">chromedriver (WebView)</text>
+      <text x="316" y="128" class="svg-ts">necesita ANDROID_HOME</text>
+      <rect x="610" y="10" width="180" height="170" rx="8" class="svg-box"/>
+      <text x="624" y="36" class="svg-tb">Emulador Android</text>
+      <text x="624" y="54" class="svg-ts">emulator-5554</text>
+      <rect x="622" y="68" width="156" height="42" rx="5" class="svg-warn"/>
+      <text x="632" y="86" class="svg-t">NATIVE_APP</text>
+      <text x="632" y="102" class="svg-ts">taps, permisos</text>
+      <rect x="622" y="120" width="156" height="50" rx="5" class="svg-ok"/>
+      <text x="632" y="138" class="svg-t">WEBVIEW_&lt;package&gt;</text>
+      <text x="632" y="154" class="svg-ts">DOM Ionic, requests</text>
+      <path d="M210 90 L296 90" class="svg-line" marker-end="url(#ar1)"/>
+      <text x="222" y="80" class="svg-ts">HTTP</text>
+      <path d="M520 90 L606 90" class="svg-line" marker-end="url(#ar1)"/>
+      <text x="548" y="80" class="svg-ts">adb</text>
+    </svg>
+  </div>
+
+  <h3><span class="idx">02</span>Pasos prácticos</h3>
+  <ol class="steps">
+    <li>
+      <p><strong>Instalá Appium y el driver de Android.</strong> Verificá antes de seguir.</p>
+      <figure class="code"><figcaption><span class="path">PowerShell · tests/mobile/appium/README.md §4.3</span></figcaption><pre><code>npm install -g appium
+appium driver install uiautomator2
+appium --version
+appium driver list --installed</code></pre></figure>
+      <p class="why">Tiene que listar <code>uiautomator2</code> como instalado. Los errores de esta etapa se arrastran y después aparecen disfrazados de «el test falla».</p>
+    </li>
+    <li>
+      <p><strong>Definí <code>ANDROID_HOME</code> y comprobá <code>adb</code>.</strong></p>
+      <figure class="code"><figcaption><span class="path">PowerShell · README §4.2</span></figcaption><pre><code>[Environment]::SetEnvironmentVariable("ANDROID_HOME", "$env:LOCALAPPDATA\Android\Sdk", "User")
+adb --version</code></pre></figure>
+      <p class="why">Cerrá y reabrí la terminal. Si <code>adb</code> no se reconoce, agregá <code>platform-tools</code> al <code>PATH</code>.</p>
+    </li>
+    <li>
+      <p><strong>Mirá el emulador desde <code>adb</code> y sacá una captura.</strong> <code>adb</code> es el mismo en cualquier proyecto Android; estos comandos son estándar, no del repo.</p>
+      <figure class="code"><figcaption><span class="path">PowerShell · adb estándar</span></figcaption><pre><code>adb devices
+adb -s emulator-5554 shell screencap -p /sdcard/captura.png
+adb -s emulator-5554 pull /sdcard/captura.png .</code></pre></figure>
+      <p class="why">Esperás <code>emulator-5554    device</code>. Si dice <code>unauthorized</code> falta aceptar el diálogo en el dispositivo; si no aparece nada, el emulador no terminó de arrancar.</p>
+    </li>
+    <li>
+      <p><strong>Levantá el servidor Appium en su propia terminal</strong> y comprobá que responde.</p>
+      <figure class="code"><figcaption><span class="path">PowerShell · README §5 y «Driver TEST + chofer FR»</span></figcaption><pre><code>appium --port 4723 --base-path / --allow-insecure uiautomator2:chromedriver_autodownload
+# en otra terminal:
+Invoke-RestMethod http://localhost:4723/status</code></pre></figure>
+      <p class="why">El flag <code>chromedriver_autodownload</code> deja que Appium baje el chromedriver del WebView (lo retomamos en Intermedio).</p>
+    </li>
+    <li>
+      <p><strong>Abrí una sesión real.</strong> Este es el único chequeo de punta a punta: <code>adb devices</code> y <code>/status</code> pueden dar verde con un stack que no logra abrir sesión. Lo hace por vos el script de volcado de la home del chofer:</p>
+      <figure class="code"><figcaption><span class="path">PowerShell · package.json → mobile:driver:home-dump</span></figcaption><pre><code>$env:ANDROID_UDID = "emulator-5554"
+pnpm mobile:driver:home-dump</code></pre></figure>
+      <p class="why">La app Driver de TEST tiene que estar instalada y con sesión iniciada: los tests no crean cuentas y <code>noReset: true</code> conserva la sesión entre corridas.</p>
+    </li>
+    <li>
+      <p><strong>Entendé qué hizo.</strong> Las capabilities salen de <code>buildAndroidCapabilities</code>; la sesión se abre con <code>remote()</code>.</p>
+      <figure class="code"><figcaption><span class="path">tests/mobile/appium/config/appiumRuntime.ts (recortado)</span></figcaption><pre><code>return {
+  platformName: 'Android',
+  'appium:deviceName': config.deviceName,
+  'appium:platformVersion': config.platformVersion,
+  'appium:automationName': 'UiAutomator2',
+  'appium:newCommandTimeout': config.newCommandTimeout,
+  'appium:noReset': config.noReset,
+  'appium:fullReset': config.fullReset,
+  ...(config.udid ? { 'appium:udid': config.udid } : {}),
+  ...(useInstalledApp
+    ? {
+        // App instalada: lanzar por package, sin instalar APK
+        'appium:appPackage': config.appPackage,
+        'appium:appActivity': config.appActivity
+      }
+    : { /* APK: 'appium:app' + package/activity opcionales */ })
+};</code></pre></figure>
+      <figure class="code"><figcaption><span class="path">tests/mobile/appium/base/AppiumSessionBase.ts · startSession()</span></figcaption><pre><code>const caps = buildAndroidCapabilities(this.config);
+const connection = buildAppiumRemoteConnection(this.config);
+
+this.driver = await remote({
+  protocol: connection.protocol,
+  hostname: connection.hostname,
+  port: connection.port,
+  path: connection.path,
+  capabilities: caps as Record&lt;string, unknown&gt;,
+  logLevel: 'warn',
+  connectionRetryTimeout: 60_000,
+  connectionRetryCount: 3
+});</code></pre></figure>
+    </li>
+    <li>
+      <p><strong>Leé el page source.</strong> Cada volcado queda en <code>evidence/dom-dump/</code>. <code>dumpAppiumState</code> guarda el árbol nativo y, por cada <code>WEBVIEW_*</code>, la URL y el HTML.</p>
+      <figure class="code"><figcaption><span class="path">tests/mobile/appium/helpers/appiumDebug.ts · dumpAppiumState()</span></figcaption><pre><code>const originalContext = await driver.getContext().catch(() =&gt; '');
+const rawContexts = await driver.getContexts().catch(() =&gt; [] as unknown[]);
+const contexts = rawContexts.map(contextToLabel).filter(Boolean);
+const nativeSource = await driver.getPageSource().catch(() =&gt; '');
+// ...
+const webviews = contexts.filter(context =&gt; context.startsWith('WEBVIEW'));
+for (const webview of webviews) {
+  await driver.switchContext(webview);
+  lines.push(await captureWebViewState(driver, webview));
+}</code></pre></figure>
+      <p class="why">Compará las dos secciones del archivo: en el árbol nativo vas a ver poco; los botones de Ionic (<code>button.btn.primary</code>, <code>app-page-travel-confirm</code>) están en la parte <code>WEBVIEW</code>.</p>
+    </li>
+  </ol>
+
+  <h3><span class="idx">03</span>Ejercicio en el emulador (TEST)</h3>
+  <div class="exercise">
+    <span class="tag">Emulador · TEST</span>
+    <ol>
+      <li>Con la app Driver TEST abierta en el home, corré <code>pnpm mobile:driver:home-dump</code>.</li>
+      <li>Abrí el archivo más nuevo de <code>evidence/dom-dump/</code> y anotá: la lista de contextos, la URL del WebView y el texto del botón de disponibilidad.</li>
+      <li>Sacá una captura con <code>adb</code> y compará lo que ves con lo que reporta el volcado.</li>
+      <li>Cerrá la app a mano, repetí el volcado y explicá qué cambió en la lista de contextos.</li>
+    </ol>
+    <p>Solo lectura: no aceptes ni inicies viajes en este ejercicio.</p>
+  </div>
+
+  <h3><span class="idx">04</span>Sé hacer</h3>
+  <ul class="checks" data-level="principiante">
+    <li>Explico con mis palabras qué hacen el server Appium, el driver <code>uiautomator2</code> y WebdriverIO.</li>
+    <li>Instalé Appium y el driver; <code>appium driver list --installed</code> muestra <code>uiautomator2</code>.</li>
+    <li><code>adb devices</code> lista <code>emulator-5554</code> con estado <code>device</code> y saqué una captura.</li>
+    <li>Levanté Appium en :4723 y verifiqué <code>/status</code>.</li>
+    <li>Corrí <code>pnpm mobile:driver:home-dump</code> y abrí el volcado en <code>evidence/dom-dump/</code>.</li>
+    <li>Distingo en el volcado el árbol nativo del estado del WebView.</li>
+    <li>Leo las capabilities de <code>appiumRuntime.ts</code> y sé qué hacen <code>noReset</code>, <code>udid</code> y <code>appPackage</code>.</li>
+  </ul>
+
+  <h3><span class="idx">05</span>Autoevaluación</h3>
+  <div data-quiz="p1"></div>
+  <div data-quiz="p2"></div>
+
+  <h3><span class="idx">06</span>Errores comunes</h3>
+  <details><summary>Appium no ve ningún dispositivo</summary><div><p>Casi siempre es <code>ANDROID_HOME</code> sin definir o una terminal abierta antes de definirla. Reabrí la terminal y repetí <code>adb --version</code>. Con dispositivo físico, los cables de solo carga no sirven.</p></div></details>
+  <details><summary>Hay dos apps abiertas y la sesión no se crea</summary><div><p>Android solo permite depurar remotamente un WebView a la vez. Si quedó abierta la app del otro actor, cerrala antes: <code>adb shell am force-stop com.magiis.app.uat.passenger</code> y recién ahí lanzá la app que vas a usar.</p></div></details>
+  <details><summary>La primera sesión tarda mucho</summary><div><p>Es normal la primera vez: Appium baja el chromedriver que corresponde al WebView. Las siguientes son rápidas.</p></div></details>
+  <details><summary>La app aparece deslogueada</summary><div><p>Los tests asumen una sesión válida. Nunca tipees contraseñas con <code>adb</code> (pierde caracteres y las deja expuestas): las credenciales salen de los archivos <code>.env.*</code> y nunca se imprimen.</p></div></details>
+  <details><summary>El comando se corta a los 2 minutos</summary><div><p><code>newCommandTimeout</code> vale 120 s por defecto (<code>APPIUM_NEW_COMMAND_TIMEOUT</code>): si tu script se queda quieto más tiempo, Appium cierra la sesión.</p></div></details>
+
+  <h3><span class="idx">07</span>Recursos</h3>
+  <ul class="links">
+    <li><a href="https://github.com/webdriverio/appium-boilerplate" rel="noopener">webdriverio/appium-boilerplate</a>: proyecto de referencia con WebdriverIO + Appium.</li>
+    <li><a href="https://webdriver.io/docs/api/mobile" rel="noopener">WebdriverIO · API mobile</a>: comandos disponibles para mobile.</li>
+    <li><a href="https://www.udemy.com/course/appium-webdriverio-mobile-automation/" rel="noopener">Curso Udemy Appium + WebdriverIO</a>: JavaScript; usa el runner wdio, nosotros usamos webdriverio standalone.</li>
+  </ul>
+</section>
+
+<!-- ====================== INTERMEDIO ====================== -->
+<section class="level" id="lvl-intermedio" data-level="intermedio" aria-labelledby="h-intermedio">
+  <div class="level-head">
+    <span class="kicker">Nivel 02 · Intermedio</span>
+    <h2 id="h-intermedio">Contextos, WebView y pantallas modeladas</h2>
+  </div>
+  <p class="lede"><b>Objetivo.</b> Moverte entre <code>NATIVE_APP</code> y el WebView, hacer clicks que de verdad lleguen, escribir una pantalla como Page Object y esperar por estado en vez de dormir.</p>
+
+  <h3><span class="idx">01</span>Conceptos</h3>
+  <dl class="defs">
+    <div><dt>Contextos</dt><dd><code>driver.getContexts()</code> devuelve <code>NATIVE_APP</code> y uno o más <code>WEBVIEW_&lt;package&gt;</code>. El cambio es explícito con <code>switchContext</code>. Un test que mide requests o lee el DOM trabaja en WEBVIEW; uno que toca un permiso o el teclado, en nativo.</dd></div>
+    <div><dt>Chromedriver</dt><dd>Maneja el WebView y su versión tiene que coincidir con la del WebView del emulador. Si el WebView va por delante de los chromedrivers descargables, Appium no logra entrar al contexto WEBVIEW. En nuestro emulador necesitamos chromedriver 154.</dd></div>
+    <div><dt>Click por JS</dt><dd>En la app Driver casi todo se hace con <code>driver.execute(...)</code> y <code>element.click()</code> dentro del WebView: los clicks por coordenadas los intercepta el <code>ion-content</code>.</dd></div>
+    <div><dt>POM y PBO</dt><dd>Una <strong>Screen</strong> (Page Object) tiene locators y acciones atómicas, sin decisiones de negocio. Un <strong>PBO</strong> (Page Business Object) compone screens y expone verbos con resultado tipado, p. ej. <code>TripLifecyclePBO.startTrip()</code>. Una screen no llama a otra: navegar es del PBO. Detalle en <code>docs/qa/appium-pom-pbo-architecture.md</code>.</dd></div>
+    <div><dt>Selectores</dt><dd>Primero clases, <code>app-*</code> y ids del DOM Ionic; el texto es el último recurso. Los textos van por idioma (ES, EN y FR) y no se hardcodean en la screen.</dd></div>
+    <div><dt>Esperas</dt><dd>Se espera una <em>condición observable</em> (URL, elemento, estado), no un tiempo. <code>core/Waits.ts</code> es el único lugar donde existe un <code>sleep</code>.</dd></div>
+  </dl>
+
+  <h3><span class="idx">02</span>Pasos prácticos</h3>
+  <ol class="steps">
+    <li>
+      <p><strong>Cambiá de contexto.</strong> Así lo hace la base: busca el primer contexto que empiece con <code>WEBVIEW</code> y reintenta hasta el timeout.</p>
+      <figure class="code"><figcaption><span class="path">tests/mobile/appium/base/AppiumSessionBase.ts · switchToWebView()</span></figcaption><pre><code>const deadline = Date.now() + timeout;
+
+while (Date.now() &lt; deadline) {
+  const contexts = (await driver.getContexts()) as string[];
+  const webview = contexts.find(context =&gt; context.startsWith('WEBVIEW'));
+  if (webview) {
+    await driver.switchContext(webview);
+    return webview;
+  }
+
+  await driver.pause(250);
+}
+
+return null;</code></pre></figure>
+      <p class="why">Volver a lo nativo es <code>driver.switchContext('NATIVE_APP')</code> (<code>switchToNative()</code> en la base).</p>
+    </li>
+    <li>
+      <p><strong>Hacé que el WebView entre.</strong> Si Appium no consigue el contexto, el primer sospechoso es el chromedriver. Las capabilities aceptan un ejecutable fijo; se configura por entorno.</p>
+      <figure class="code"><figcaption><span class="path">tests/mobile/appium/config/appiumRuntime.ts · capabilities (recortado)</span></figcaption><pre><code>...(config.chromedriverAutodownload ? { 'appium:chromedriverAutodownload': true } : {}),
+...(config.chromedriverExecutable ? { 'appium:chromedriverExecutable': config.chromedriverExecutable } : {}),
+...(readOptionalBooleanEnv('APPIUM_CHROMEDRIVER_DISABLE_BUILD_CHECK', false)
+  ? { 'appium:chromedriverDisableBuildCheck': true }
+  : {}),</code></pre></figure>
+      <p class="why">Variables: <code>APPIUM_CHROMEDRIVER_AUTODOWNLOAD=true</code> (exige el flag <code>chromedriver_autodownload</code> en el server), o <code>APPIUM_CHROMEDRIVER_EXECUTABLE</code> con la ruta a un chromedriver local que coincida con el WebView.</p>
+    </li>
+    <li>
+      <p><strong>Clickeá con JS dentro del WebView.</strong> El patrón de nuestras screens: ubicar el elemento, comprobar que está visible y habilitado, y llamar a <code>click()</code>.</p>
+      <figure class="code"><figcaption><span class="path">tests/mobile/appium/screens/driver/SignaturePadScreen.ts · tapFooter()</span></figcaption><pre><code>return driver
+  .execute&lt;boolean, [string]&gt;((s: string) =&gt; {
+    const btn = document.querySelector(s) as HTMLButtonElement | null;
+    if (!btn || btn.offsetParent === null || btn.disabled) return false;
+    btn.click();
+    return true;
+  }, sel)
+  .catch(() =&gt; false);</code></pre></figure>
+    </li>
+    <li>
+      <p><strong>Reconocé las pantallas por checkpoint.</strong> El flujo del chofer es <code>confirm → in-progress → resume → closed</code>; cada etapa se identifica por un fragmento de URL y un selector del DOM.</p>
+      <figure class="code"><figcaption><span class="path">tests/mobile/appium/driver/DriverFlowSelectors.ts</span></figcaption><pre><code>export const DRIVER_CHECKPOINT_SELECTORS: Record&lt;DriverCheckpointStage, DriverCheckpointSelector&gt; = {
+  confirm: {
+    urlTokens: ['TravelConfirmPage'],
+    webSelectors: ['app-page-travel-confirm', 'button.btn.primary']
+  },
+  'in-progress': {
+    urlTokens: ['TravelInProgressPage'],
+    webSelectors: ['app-page-travel-in-progress', 'app-page-travel-in-progress button.btn.finish']
+  },
+  resume: {
+    urlTokens: ['TravelResumePage'],
+    webSelectors: ['app-travel-resume', 'app-travel-resume button.btn.finish']
+  },
+  // closed: ...
+};</code></pre></figure>
+    </li>
+    <li>
+      <p><strong>Manejá el idioma sin romper nada.</strong> El camino nuevo usa <code>data/i18n/{es,en,fr}.json</code> con keys como <code>driver.buttons.accept</code> y variantes por key (la primera es la canónica). El diccionario <code>fr.json</code> hoy tiene todo marcado <code>TODO-verificar</code> y <code>I18n</code> <em>falla</em> al pedirlo: no se inventa un texto francés.</p>
+      <figure class="code"><figcaption><span class="path">tests/mobile/appium/data/i18n/es.json (recortado)</span></figcaption><pre><code>{
+  "driver.buttons.accept": ["Aceptar", "Tomar viaje"],
+  "driver.travelToStart.startTrip": ["Empezar Viaje"],
+  "driver.travelInProgress.endTrip": ["Finalizar Viaje"],
+  "driver.travelResume.closeTrip": ["Cerrar Viaje", "Finalizar Viaje"],
+  "driver.travelResume.signAndCloseTrip": ["Firmar y Cerrar viaje"],
+  "driver.home.available": ["Disponible"]
+}</code></pre></figure>
+    </li>
+    <li>
+      <p><strong>Esperá por estado.</strong> <code>tryUntil</code> reintenta una condición hasta que sea verdadera y devuelve <code>null</code> si vence; una excepción dentro cuenta como «todavía no».</p>
+      <figure class="code"><figcaption><span class="path">tests/mobile/appium/core/Waits.ts · tryUntil()</span></figcaption><pre><code>const timeout = options.timeout ?? DEFAULT_TIMEOUT;
+const interval = options.interval ?? DEFAULT_INTERVAL;
+const deadline = Date.now() + timeout;
+for (;;) {
+  try {
+    const value = await condition();
+    if (value) return value as T;
+  } catch {
+    // se reintenta hasta el deadline
+  }
+  const remaining = deadline - Date.now();
+  if (remaining &lt;= 0) return null;
+  await sleep(Math.min(interval, remaining));
+}</code></pre></figure>
+      <p class="why">Variante estricta: <code>Waits.until(cond, { label, timeout })</code> lanza <code>WaitTimeoutError</code> con el <code>label</code> en el mensaje. Poné siempre un <code>label</code> humano.</p>
+    </li>
+    <li>
+      <p><strong>Dejá al chofer «Disponible».</strong> El carrier no puede asignar viajes a un chofer que no lo está (backend responde <code>DRIVER_IS_NOT_AVAILABLE</code>). <code>DriverHomeScreen.goOnline()</code> cierra el overlay <code>/pre-home</code> y toca <code>#availability</code> con JS.</p>
+      <figure class="code"><figcaption><span class="path">tests/mobile/appium/driver/DriverHomeScreen.ts · goOnline() (recortado)</span></figcaption><pre><code>await this.dismissPreHomeOverlayIfPresent().catch(() =&gt; false);
+
+if (await this.isDriverOnline()) {
+  return;
+}
+// ...
+clicked = await this.getDriver().execute(() =&gt; {
+  const availability = document.querySelector('#availability') as HTMLElement | null;
+  if (availability) {
+    availability.click();
+    return true;
+  }
+  // ... heurística por texto: disponible / available / online
+});</code></pre></figure>
+    </li>
+  </ol>
+
+  <h3><span class="idx">03</span>Ejercicio en el emulador (TEST)</h3>
+  <div class="exercise">
+    <span class="tag">Emulador · TEST</span>
+    <p>Armá un script de práctica con las APIs reales de <code>MobileSession</code>. <strong>Es un esquema didáctico, no está en el repo</strong>: guardalo con un nombre propio dentro de <code>scripts/</code> y no lo commitees.</p>
+    <figure class="code"><figcaption><span class="path">tests/mobile/appium/scripts/practica-&lt;tunombre&gt;.ts · esquema</span></figcaption><pre><code>import { getDriverAppConfig } from '../config/appiumRuntime';
+import { MobileSession } from '../core/MobileSession';
+
+async function run(): Promise&lt;void&gt; {
+  const session = new MobileSession(getDriverAppConfig());
+  try {
+    await session.start();
+    const driver = session.driver;
+    const contexts = (await driver.getContexts()) as string[];
+    console.log(contexts);
+    const web = contexts.find(c =&gt; c.startsWith('WEBVIEW'));
+    if (web) await driver.switchContext(web);
+    console.log(await driver.execute(() =&gt; window.location.href));
+  } finally {
+    await session.end();
+  }
+}
+run().catch(e =&gt; { console.error(e); process.exit(1); });</code></pre></figure>
+    <ol>
+      <li>Corrélo con <code>ENV=test</code>, <code>ANDROID_DRIVER_APP_PACKAGE=com.magiis.app.test.driver</code> y <code>ANDROID_UDID=emulator-5554</code> (<code>npx tsx</code> o <code>pnpm exec ts-node --esm</code>, como los demás scripts).</li>
+      <li>Verificá que la URL del WebView contiene <code>/navigator/home</code> o <code>pre-home</code>.</li>
+      <li>Agregá un <code>tryUntil</code> que espere hasta 10 s a que <code>#availability</code> exista y mostrá su texto.</li>
+    </ol>
+  </div>
+
+  <h3><span class="idx">04</span>Sé hacer</h3>
+  <ul class="checks" data-level="intermedio">
+    <li>Listo los contextos, cambio a <code>WEBVIEW_*</code> y vuelvo a <code>NATIVE_APP</code>.</li>
+    <li>Sé qué pasa y qué variables tocar si Appium no entra al WebView (chromedriver).</li>
+    <li>Hice un click con <code>driver.execute</code> y puedo explicar por qué no por coordenadas.</li>
+    <li>Leo <code>DriverFlowSelectors.ts</code> y <code>data/i18n/*.json</code> y sé dónde agregar un texto sin hardcodearlo.</li>
+    <li>Reemplacé una pausa fija por <code>Waits.until</code> o <code>tryUntil</code> con un <code>label</code>.</li>
+    <li>Dejé al chofer «Disponible» y sé por qué el carrier lo exige.</li>
+    <li>Distingo una Screen (POM) de un PBO y sé dónde va cada cosa.</li>
+  </ul>
+
+  <h3><span class="idx">05</span>Autoevaluación</h3>
+  <div data-quiz="i1"></div>
+  <div data-quiz="i2"></div>
+
+  <h3><span class="idx">06</span>Errores comunes</h3>
+  <details><summary>Chromedriver no coincide con el WebView</summary><div><p><span class="sym">Síntoma:</span> la sesión abre pero nunca aparece el contexto <code>WEBVIEW_*</code>, o <code>switchContext</code> falla.</p><p>Usá <code>APPIUM_CHROMEDRIVER_EXECUTABLE</code> con el chromedriver que coincide con el WebView del emulador (en el nuestro, el 154) o el autodownload con su flag.</p></div></details>
+  <details><summary>El click «funciona» pero no pasa nada</summary><div><p>Un click por coordenadas cayó sobre el <code>ion-content</code>. Pasalo a <code>execute</code> con <code>click()</code> sobre el elemento y verificá la consecuencia (URL o elemento nuevo), no el click.</p></div></details>
+  <details><summary>El header del chofer no se ve</summary><div><p>El overlay <code>/pre-home</code> lo tapa. <code>dismissPreHomeOverlayIfPresent()</code> lo cierra; el preflight lo hace antes de leer el nombre.</p></div></details>
+  <details><summary>Un texto en español no se encuentra</summary><div><p>La app puede estar en otro idioma. Los textos viven por locale en <code>data/i18n</code>; el francés está pendiente de verificar y falla a propósito en vez de adivinar.</p></div></details>
+  <details><summary>Dormir «un rato» para que cargue</summary><div><p>Se cae con un emulador lento y pierde tiempo en uno rápido. Esperá una condición. <code>sleep</code> solo existe como backoff dentro de <code>Waits</code>.</p></div></details>
+
+  <h3><span class="idx">07</span>Recursos</h3>
+  <ul class="links">
+    <li><a href="https://appium.io/docs/en/2.4/guides/context" rel="noopener">Appium · guía de contextos</a>: NATIVE_APP y WEBVIEW en detalle.</li>
+    <li><a href="https://webdriver.io/docs/api/mobile/switchContext" rel="noopener">WebdriverIO · switchContext</a>: la API que usamos.</li>
+    <li><a href="https://testautomationu.applitools.com/appium-java-tutorial/chapter6.1.html" rel="noopener">Test Automation University · Appium, capítulo 6.1</a>: el tema de contextos en otro lenguaje; el concepto es el mismo.</li>
+  </ul>
+</section>
+
+<!-- ====================== AVANZADO ====================== -->
+<section class="level" id="lvl-avanzado" data-level="avanzado" aria-labelledby="h-avanzado">
+  <div class="level-head">
+    <span class="kicker">Nivel 03 · Avanzado</span>
+    <h2 id="h-avanzado">Flujos completos, GPS, firma y cierre por app</h2>
+  </div>
+  <p class="lede"><b>Objetivo.</b> Entender cómo se cierra un viaje real desde la app del chofer: harness con checkpoints, evidencia al fallar, GPS simulado que la app sí mide, firma con gestos W3C y por qué el total no coincide con la cotización.</p>
+
+  <h3><span class="idx">01</span>Conceptos</h3>
+  <dl class="defs">
+    <div><dt>Harness con checkpoints</dt><dd><code>DriverTripHappyPathHarness</code> recorre <code>confirm → in-progress → resume → closed</code>. Acepta un <code>preflight</code>, un hook <code>duringTrip</code> (acá se alimenta el GPS), <code>resumeFromToStart</code> para retomar una corrida cortada y <code>expectedConfirmTravelId</code> para no aceptar un viaje ajeno.</dd></div>
+    <div><dt>Preflight</dt><dd>Aborta <em>antes</em> de tocar la app si el paquete en primer plano no es el esperado, faltan credenciales del perfil, el chofer logueado no coincide por nombre o ya hay un viaje en curso. La evaluación es una función pura, testeable sin dispositivo. Solo hace login si la app está deslogueada.</dd></div>
+    <div><dt>Evidencia</dt><dd>Dos tipos: volcados de diagnóstico (<code>evidence/dom-dump/</code>, para entender) y capturas por checkpoint (<code>evidence/screenshots/&lt;corrida&gt;</code>, para auditar). Una captura que falla no corta la corrida.</dd></div>
+    <div><dt>GPS</dt><dd>La app calcula los km con sus propios puntos GPS; el backend solo guarda el <code>finalKm</code> que ella reporta. Hay que alimentar el emulador con <code>mobile: setGeolocation</code> <strong>con</strong> <code>speed</code>, <code>bearing</code> y <code>accuracy</code>, a cadencia estable. El <code>setGeoLocation</code> plano (sin speed) se descarta y los km no se miden. Si el km medido queda muy por debajo del presupuestado, la app conserva el presupuestado.</dd></div>
+    <div><dt>Firma</dt><dd>Los viajes de cuenta corriente muestran «Sign and Close Trip»: abre el modal <code>app-page-signer</code> (canvas + Clear/Confirm). El viaje no cierra hasta confirmar la firma.</dd></div>
+    <div><dt>Cotización ≠ total</dt><dd>El cierre por app <em>recalcula</em> total y tarifa con los km, el tiempo y las esperas medidos. Solo un cierre de administrador sin cambios iguala la cotización de alta. Por eso el contrato <strong>nunca</strong> compara <code>quoted.total</code> con el total del resumen por igualdad.</dd></div>
+  </dl>
+
+  <h3><span class="idx">02</span>Pasos prácticos</h3>
+  <ol class="steps">
+    <li>
+      <p><strong>Conocé las opciones del harness.</strong> Todo lo opcional del recorrido está en un solo tipo.</p>
+      <figure class="code"><figcaption><span class="path">tests/mobile/appium/harness/DriverTripHappyPathHarness.ts (recortado)</span></figcaption><pre><code>export type DriverTripHappyPathOptions = {
+  ensureDriverOnline?: boolean;
+  /** Si se da, corre el pre-flight y aborta antes de tocar la app. */
+  preflight?: DriverPreflightExpectation;
+  /** Hook con el viaje en curso (ej: alimentar la ruta GPS), antes de finalizarlo. */
+  duringTrip?: (driver: AppiumDriver) =&gt; Promise&lt;void&gt;;
+  /** Reanuda un viaje ya aceptado que quedó en TravelToStartPage. */
+  resumeFromToStart?: boolean;
+  /** Se exige que la oferta en pantalla sea de ESE viaje antes de aceptar. */
+  expectedConfirmTravelId?: number;
+  /** Se invoca al alcanzar cada checkpoint. Sus errores no cortan la corrida. */
+  onCheckpoint?: (stage: DriverCheckpointStage, driver: AppiumDriver) =&gt; Promise&lt;void&gt;;
+  timeoutsMs?: Partial&lt;Record&lt;DriverCheckpointStage, number&gt;&gt;;
+};</code></pre></figure>
+      <p class="why">Cada checkpoint tiene 60 s por defecto. Hoy el cierre F5 va por <code>flows/F5AppCloseFlow</code> (screens → PBOs → flow), que reutiliza las mismas ideas con resultado tipado.</p>
+    </li>
+    <li>
+      <p><strong>Alimentá el GPS como la app lo espera.</strong> El feeder interpola la ruta, calcula rumbo por punto y manda cada fix con velocidad coherente.</p>
+      <figure class="code"><figcaption><span class="path">tests/mobile/appium/gps/GpsRouteFeeder.ts · feed() (recortado)</span></figcaption><pre><code>const points = interpolateRoute(route, this.stepMeters);
+// Velocidad coherente con la separación y la cadencia configuradas (m/s).
+const speed = this.stepMeters / (this.intervalMs / 1_000);
+// ...
+await this.driver.execute('mobile: setGeolocation', {
+  latitude: point.lat,
+  longitude: point.lng,
+  altitude: this.altitude,
+  speed,
+  bearing,
+  accuracy: this.accuracyMeters
+});
+// ...
+if (i &lt; points.length - 1) await this.sleepInterruptible();</code></pre></figure>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Parámetro</th><th>Default</th><th>Mínimo</th><th>Variable en runners</th></tr></thead>
+        <tbody>
+          <tr><td>stepMeters</td><td>30 m</td><td>15 m</td><td><code>GPS_STEP_METERS</code></td></tr>
+          <tr><td>intervalMs</td><td>2000 ms</td><td>1000 ms</td><td><code>GPS_INTERVAL_MS</code></td></tr>
+          <tr><td>accuracyMeters</td><td>5 m</td><td>-</td><td>-</td></tr>
+          <tr><td>ruta</td><td>del carrier (<code>data/carriers.ts</code>)</td><td>2 puntos</td><td><code>GPS_ROUTE_FILE</code> (override)</td></tr>
+        </tbody>
+      </table></div>
+      <p class="why">Ejemplo: con la ruta corta <code>gps/routes/cannes-nice-sparse.json</code> y <code>GPS_STEP_METERS=70 GPS_INTERVAL_MS=1500</code> el cierre pasó de ~70 a ~20 minutos. La velocidad reportada es 70 / 1,5 = 46,7 m/s, bajo el techo de plausibilidad de 55 m/s que define <code>gps/RoutePlan.ts</code>.</p>
+      <p class="why">Cuando termina, el mock no se libera solo: <code>adb -s emulator-5554 shell am stopservice io.appium.settings/.LocationService</code>. Y antes de empezar, <code>assertNoForeignMockGps</code> frena si hay un mock de otra sesión.</p>
+    </li>
+    <li>
+      <p><strong>Dibujá la firma con gestos W3C.</strong> Un trazo en zigzag proporcional al canvas, con <code>performActions</code> y un puntero táctil.</p>
+      <figure class="code"><figcaption><span class="path">tests/mobile/appium/screens/driver/SignaturePadScreen.ts · sign()</span></figcaption><pre><code>await driver.performActions([
+  {
+    type: 'pointer',
+    id: 'finger1',
+    parameters: { pointerType: 'touch' },
+    actions: [
+      { type: 'pointerMove', duration: 0, x: first.x, y: first.y },
+      { type: 'pointerDown', button: 0 },
+      ...rest.map(p =&gt; ({ type: 'pointerMove' as const, duration: 120, x: p.x, y: p.y })),
+      { type: 'pointerUp', button: 0 }
+    ]
+  }
+]);
+await driver.releaseActions().catch(() =&gt; undefined);</code></pre></figure>
+      <p class="why">El orden lo fija <code>SignaturePBO.signAndConfirm()</code>: esperar el modal, firmar, verificar tinta con <code>getImageData</code>, confirmar y esperar que el modal cierre. Sin tinta limpia el canvas y lanza: nunca confirma una firma vacía. Si el botón dice «Sign…» o «Firm…», el viaje exige firma (<code>requiresSignature</code>).</p>
+    </li>
+    <li>
+      <p><strong>Corré el preflight (solo lectura).</strong> Abre sesión, lee app, chofer y estado de viaje; no hace login ni acepta nada. Sale con código 1 si hay violaciones.</p>
+      <figure class="code"><figcaption><span class="path">PowerShell · scripts/fr-driver-preflight.ts</span></figcaption><pre><code>$env:ENV_FILE = ".env.emulator-test-fr"
+pnpm exec ts-node --esm tests/mobile/appium/scripts/fr-driver-preflight.ts</code></pre></figure>
+      <p class="why">El <code>.env.emulator-test-fr</code> está fuera de git: copialo de <code>.env.emulator-test-fr.example</code> y completalo con las credenciales que te pase el equipo. Nunca se imprimen.</p>
+    </li>
+    <li>
+      <p><strong>Corré los unitarios de la capa pura.</strong> No necesitan emulador ni Appium.</p>
+      <figure class="code"><figcaption><span class="path">PowerShell · *.unit.ts</span></figcaption><pre><code>npx tsx --test tests/mobile/appium/core/Gates.unit.ts
+npx tsx --test tests/mobile/appium/gps/RoutePlan.unit.ts
+npx tsx --test tests/mobile/appium/gps/GpsRouteFeeder.unit.ts
+npx tsx --test tests/mobile/appium/flows/F5AppCloseFlow.unit.ts</code></pre></figure>
+      <p class="why">El de <code>F5AppCloseFlow</code> usa PBOs falsos: así se prueba un flujo irreversible sin tocar un viaje.</p>
+    </li>
+    <li>
+      <p><strong>Entendé la cotización frente al total.</strong> Mirá qué anota el contrato al cerrar:</p>
+      <figure class="code"><figcaption><span class="path">tests/mobile/appium/contracts/f5AppHandoff.ts</span></figcaption><pre><code>observations.add('cierre-por-app-recalcula-total: no comparar con quoted.total (diferido-f7 para costo)');</code></pre></figure>
+      <p class="why">El campo <code>quoted</code> es referencia. Lo que se verifica es que el precio final sea mayor a 0, que los km del backend estén cerca de la ruta alimentada (tolerancia 15 % por defecto en el verify de Carrier V2) y que el lote de rendición sea exactamente ese viaje.</p>
+    </li>
+  </ol>
+
+  <h3><span class="idx">03</span>Ejercicio en el emulador (TEST)</h3>
+  <div class="exercise">
+    <span class="tag">Emulador · TEST</span>
+    <ol>
+      <li>Corrí los cuatro unitarios y leé los nombres de los tests: son documentación ejecutable de las reglas (gates, filtros GPS, orden de la firma).</li>
+      <li>Corrí el preflight con el chofer de prueba y explicá cada línea que imprime (<code>foregroundPackage</code>, <code>loggedOut</code>, <code>driverNameMatches</code>, <code>tripInProgress</code>).</li>
+      <li>Calculá a mano duración y velocidad para <code>step=70 m</code>, <code>interval=1500 ms</code> sobre 4 km de ruta. Verificá con <code>RoutePlan</code> mirando su unitario.</li>
+      <li>Con la app en el home, armá un script de práctica (como el del nivel anterior) que mande un solo punto con <code>mobile: setGeolocation</code> y <code>speed</code>, y liberá el mock con <code>adb ... stopservice</code>.</li>
+    </ol>
+    <p>No aceptes ni cierres viajes reales en este ejercicio: eso va por los gates del nivel Experto.</p>
+  </div>
+
+  <h3><span class="idx">04</span>Sé hacer</h3>
+  <ul class="checks" data-level="avanzado">
+    <li>Corrí los unitarios de <code>Gates</code>, <code>RoutePlan</code>, <code>GpsRouteFeeder</code> y <code>F5AppCloseFlow</code> con <code>npx tsx --test</code>.</li>
+    <li>Corrí <code>fr-driver-preflight.ts</code> (solo lectura) y interpreto sus violaciones.</li>
+    <li>Leo un volcado de <code>evidence/dom-dump/</code> y una captura de checkpoint para ubicar en qué pantalla quedó la app.</li>
+    <li>Calculo velocidad y duración de una ruta GPS dados <code>step</code> e <code>interval</code>.</li>
+    <li>Sé liberar el mock GPS por <code>adb</code> y por qué hay que hacerlo.</li>
+    <li>Explico cómo funciona <code>signAndConfirm</code> (trazo, tinta, Confirm, cierre del modal).</li>
+    <li>Explico por qué en el cierre por app la cotización no es igual al total.</li>
+  </ul>
+
+  <h3><span class="idx">05</span>Autoevaluación</h3>
+  <div data-quiz="a1"></div>
+  <div data-quiz="a2"></div>
+
+  <h3><span class="idx">06</span>Errores comunes</h3>
+  <details><summary>La app no midió km aunque el emulador «se movió»</summary><div><p>Casi seguro usaste <code>setGeoLocation</code> sin <code>speed</code>: la app descarta esos puntos. Usá <code>mobile: setGeolocation</code> con <code>speed</code>, <code>bearing</code> y <code>accuracy</code>.</p></div></details>
+  <details><summary>El km medido es muy chico y el total no cambia</summary><div><p>Si el medido queda lejos por debajo del presupuestado, la app conserva el presupuestado (guard de tolerancia). Contrastá la distancia teórica que devuelve el feeder con el <code>finalKm</code> del backend.</p></div></details>
+  <details><summary>Saltó el guard de mock GPS ajeno</summary><div><p>Hay un <code>io.appium.settings/.LocationService</code> activo de otra sesión: falsearía el km y movería ofertas del chofer ONLINE ajeno. Liberalo antes de seguir; el código prefiere frenar a continuar a ciegas.</p></div></details>
+  <details><summary>El modal de firma no cierra</summary><div><p>El trazo no dejó tinta, o «Confirm» estaba deshabilitado. <code>SignaturePBO</code> verifica ambos casos y falla con un mensaje específico; no repitas el click: mirá el canvas con una captura.</p></div></details>
+  <details><summary>Una corrida cortada deja el viaje a medias</summary><div><p>Después de aceptar, el viaje ya no está intacto: el flow devuelve <code>failed</code> con <code>irreversibleStarted</code> y <strong>no reintenta</strong>. Se decide a mano mirando el viaje en backend. Para retomar uno que quedó en «Empezar viaje» existe <code>resumeFromToStart</code>.</p></div></details>
+
+  <h3><span class="idx">07</span>Recursos</h3>
+  <ul class="links">
+    <li><a href="https://classcentral.com/classroom/youtube-mobile-automation-test-with-nodejs-appium-webdriverio-61601" rel="noopener">Serie de YouTube (vía Class Central): mobile automation con Node.js, Appium y WebdriverIO</a>.</li>
+    <li><a href="https://webdriver.io/docs/api/mobile" rel="noopener">WebdriverIO · API mobile</a>: gestos, <code>performActions</code> y comandos <code>mobile:</code>.</li>
+  </ul>
+</section>
+
+<!-- ====================== EXPERTO ====================== -->
+<section class="level" id="lvl-experto" data-level="experto" aria-labelledby="h-experto">
+  <div class="level-head">
+    <span class="kicker">Nivel 04 · Experto</span>
+    <h2 id="h-experto">Playwright + Appium, gates, Xray y estabilidad</h2>
+  </div>
+  <p class="lede"><b>Objetivo.</b> Operar el circuito completo entre el portal Carrier V2 y la app del chofer sin dejar datos a medias, con acciones irreversibles protegidas, resultados trazables a Xray y una estrategia para que el emulador no te gane.</p>
+
+  <h3><span class="idx">01</span>El circuito: Playwright crea, Appium cierra, Playwright verifica</h3>
+  <p>Son tres programas de dos repos que se pasan un archivo JSON. Ninguno depende del otro en tiempo de ejecución: el contrato es el archivo.</p>
+  <div class="diagram" role="img" aria-label="Diagrama del circuito: prepare en Carrier V2 escribe el handoff, Appium cierra el viaje y lo actualiza, verify en Carrier V2 lo lee">
+    <svg viewBox="0 0 760 420" xmlns="http://www.w3.org/2000/svg">
+      <defs><marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="svg-arrow"/></marker></defs>
+      <text x="20" y="24" class="svg-tb">Carrier V2 (Playwright)</text>
+      <text x="290" y="24" class="svg-tb">Archivo handoff</text>
+      <text x="530" y="24" class="svg-tb">App Driver (Appium)</text>
+
+      <rect x="10" y="40" width="230" height="104" rx="8" class="svg-acc"/>
+      <text x="24" y="64" class="svg-tb">1 · prepare</text>
+      <text x="24" y="84" class="svg-t">Alta por UI «Send Manual»</text>
+      <text x="24" y="102" class="svg-t">+ asignación directa al chofer</text>
+      <text x="24" y="130" class="svg-tm">CIRCUIT_PREP_CREATE_TRIPS=1</text>
+
+      <rect x="280" y="52" width="200" height="80" rx="8" class="svg-box"/>
+      <text x="294" y="76" class="svg-tb">f5-app-handoff-&lt;carrier&gt;.json</text>
+      <text x="294" y="98" class="svg-t">status: prepared</text>
+      <text x="294" y="116" class="svg-ts">evidence/&lt;env&gt;/ · sin credenciales</text>
+
+      <rect x="520" y="170" width="230" height="124" rx="8" class="svg-warn"/>
+      <text x="534" y="194" class="svg-tb">2 · cierre en la app</text>
+      <text x="534" y="214" class="svg-t">aceptar, iniciar, GPS,</text>
+      <text x="534" y="232" class="svg-t">finalizar, cerrar (+ firma)</text>
+      <text x="534" y="262" class="svg-tm">F5_APP_CLOSE=1 + --confirm</text>
+      <text x="534" y="280" class="svg-ts">irreversible · sin reintentos</text>
+
+      <rect x="280" y="186" width="200" height="92" rx="8" class="svg-box"/>
+      <text x="294" y="210" class="svg-tb">mismo archivo, anexado</text>
+      <text x="294" y="232" class="svg-t">status: closed</text>
+      <text x="294" y="250" class="svg-ts">closedAt · measured · result</text>
+      <text x="294" y="266" class="svg-ts">o status: failed + failure</text>
+
+      <rect x="10" y="318" width="270" height="92" rx="8" class="svg-ok"/>
+      <text x="24" y="342" class="svg-tb">3 · verify (solo lectura)</text>
+      <text x="24" y="362" class="svg-t">DONE en backend, km vs ruta,</text>
+      <text x="24" y="380" class="svg-t">lote = [travelId], costo 0</text>
+      <text x="24" y="400" class="svg-ts">costo 0 → observación diferido-f7</text>
+
+      <path d="M240 92 L276 92" class="svg-line" marker-end="url(#ar2)"/>
+      <path d="M380 132 L380 150 L636 150 L636 166" class="svg-line" marker-end="url(#ar2)"/>
+      <path d="M516 232 L484 232" class="svg-line" marker-end="url(#ar2)"/>
+      <path d="M380 278 L380 364 L284 364" class="svg-line" marker-end="url(#ar2)"/>
+      <text x="400" y="144" class="svg-ts">valida y lee</text>
+      <text x="396" y="304" class="svg-ts">lo relee</text>
+    </svg>
+  </div>
+
+  <dl class="defs">
+    <div><dt>1 · prepare</dt><dd><code>magiis-carrier-v2-e2e/tests/specs/trips/f5-app-prepare.spec.ts</code>. Requiere <code>CIRCUIT_CARRIER=1521</code> (perfil con app) y el gate <code>CIRCUIT_PREP_CREATE_TRIPS=1</code>. Da de alta por UI en efectivo («Send Manual», nunca «Send Service» ni el botón «A» que dispara asignación automática) y asigna directo por <code>driverId</code>. El viaje queda permanente. Versión FR: <code>fr-circuit-s3-prepare.spec.ts</code> con <code>FR_CIRCUIT_CREATE_TRIP=1</code>.</dd></div>
+    <div><dt>2 · cierre por app</dt><dd><code>scripts/f5-driver-close-trip.ts</code> (o <code>fr-driver-s3-closure.ts</code> para FR). Valida el handoff, exige que la oferta en pantalla sea <em>ese</em> <code>travelId</code> (<code>EXPECTED_TRAVEL_ID</code> en el runner FR), corre el flujo y anexa el resultado.</dd></div>
+    <div><dt>3 · verify</dt><dd><code>f5-app-verify.spec.ts</code> (<code>fr-circuit-s3-verify.spec.ts</code> en FR). Espera DONE hasta 10 min (<code>F5_APP_WAIT_MS</code>), compara km contra <code>measured.routeKm</code>, verifica el lote y registra el costo 0. El de FR incluye la rendición irreversible y por eso tiene su propio gate (<code>FR_CONFIRM_SURRENDER=1</code>).</dd></div>
+  </dl>
+  <div class="note"><b>Horario.</b> El verify de FR avisa que no se corra entre las 13:00 y las 13:20 UTC (10:00 a 10:20 ART): el cron de rendición automática contamina el lote.</div>
+
+  <h3><span class="idx">02</span>Pasos prácticos</h3>
+  <ol class="steps">
+    <li>
+      <p><strong>Leé el contrato.</strong> El handoff es un tipo estricto, con versión y estado, que ambos repos replican a mano; un unitario valida los fixtures <code>prepared</code> y <code>closed</code> para detectar deriva.</p>
+      <figure class="code"><figcaption><span class="path">tests/mobile/appium/contracts/f5AppHandoff.ts (recortado)</span></figcaption><pre><code>export type F5AppHandoffStatus = 'prepared' | 'closed' | 'failed';
+
+export type F5AppHandoff = {
+  schemaVersion: number;
+  status: F5AppHandoffStatus;
+  runId: string;
+  carrierId: number;
+  travelId: number;
+  /** Código visible del viaje (el que muestra Carrier). */
+  code: string;
+  driverId: number;
+  scenario: string;
+  /** Cotización de alta. Referencia: el cierre por app la recalcula. */
+  quoted: { total: number; otherCosts: number };
+  app: { package: string; version?: string; udid: string };
+  closedAt?: string;
+  measured?: F5AppMeasured;
+  result?: F5AppResult;
+  failure?: { stage: string; message: string; at: string };
+  /** Notas no bloqueantes (p. ej. `diferido-f7`). */
+  observations?: string[];
+};</code></pre></figure>
+      <p class="why">Reglas: sin credenciales ni tokens, solo ids y datos del viaje; el parser es estricto con lo requerido y tolerante con campos extra.</p>
+    </li>
+    <li>
+      <p><strong>Entendé los gates.</strong> Una acción irreversible exige <em>dos</em> condiciones independientes y evalúa todas antes de hacer nada.</p>
+      <figure class="code"><figcaption><span class="path">tests/mobile/appium/core/Gates.ts</span></figcaption><pre><code>/** Gate de variable de entorno: abre solo con el valor EXACTO esperado (default `1`). */
+export function envFlagGate(name: string, env: NodeJS.ProcessEnv, expected = '1'): GateCheck {
+  return { label: `${name}=${expected}`, passed: env[name] === expected };
+}
+
+/** Los dos gates del cierre irreversible por app: `F5_APP_CLOSE=1` + `--confirm`. */
+export function irreversibleCloseGates(args: { confirm: boolean }, env: NodeJS.ProcessEnv): GateCheck[] {
+  return [envFlagGate('F5_APP_CLOSE', env), cliFlagGate('--confirm', args.confirm)];
+}</code></pre></figure>
+      <p class="why">Capas de seguridad del mismo circuito: <code>--dry-run</code> imprime el plan (ambiente, dispositivo, handoff, perfil, ruta GPS) sin abrir sesión; <code>confirmed: false</code> deja la sesión lista pero no acepta ni cierra; el flow nunca reintenta; el verify de Carrier es de solo lectura y aborta cualquier escritura de red.</p>
+    </li>
+    <li>
+      <p><strong>Ensayá el cierre sin ejecutarlo.</strong> Con un handoff <code>prepared</code> a mano, el dry-run valida todo lo que valida la corrida real.</p>
+      <figure class="code"><figcaption><span class="path">PowerShell · scripts/f5-driver-close-trip.ts --dry-run</span></figcaption><pre><code>$env:ENV_FILE = ".env.emulator-test"
+npx tsx tests/mobile/appium/scripts/f5-driver-close-trip.ts --profile fr-1901 --carrier 1901 --device emulator-5554 --dry-run</code></pre></figure>
+      <p class="why">La corrida real (<code>F5_APP_CLOSE=1</code> y <code>--confirm</code>) cierra un viaje permanente en TEST y la ejecuta el orquestador del equipo con Appium y emulador arriba. Por eso no la incluimos acá.</p>
+    </li>
+    <li>
+      <p><strong>Trazá a Xray.</strong> Cada test del runner declara su key con una anotación <code>tms</code>; sin ella el resultado no llega al reporte.</p>
+      <figure class="code"><figcaption><span class="path">tests/mobile/appium/driver/specs/other-costs-driver-close-smoke.spec.ts</span></figcaption><pre><code>{ annotation: [{ type: 'tms', description: TEST_KEY }], tag: ['@smoke', '@e2e-hybrid', '@other-costs'] },</code></pre></figure>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Convención</th><th>Granularidad</th><th>Qué pasa con el estado</th></tr></thead>
+        <tbody>
+          <tr><td>TM-* (granular)</td><td>una key por conducta, declarada en cada <code>test()</code></td><td>un veredicto por conducta</td></tr>
+          <tr><td>MG-* (por área)</td><td>una key por área, a nivel <code>describe</code></td><td>el reporter deduplica por key y gana el peor estado: un rojo pinta toda el área</td></tr>
+        </tbody>
+      </table></div>
+      <p class="why">El spec <em>prepare</em> deja la key sin acreditar a propósito: prepara datos y el veredicto lo da el <em>verify</em>. Cada commit que implementa o documenta un caso lleva su ID: <code>feat(mobile/driver): [TC-ID] descripción</code>. La evidencia de una corrida incluye imagen: usá <code>Evidence.checkpoint('etapa')</code> y pegá <code>evidence.manifest()</code> (rutas relativas) en el run.</p>
+    </li>
+    <li>
+      <p><strong>Tratá el costo 0 como observación.</strong> Hasta la fase 7 (F7) la app envía costo 0. Los tests lo etiquetan <code>diferido-f7</code> y lo registran como observación, no como falla. Cuando F7 se implemente, esa observación se convierte en aserción.</p>
+    </li>
+    <li>
+      <p><strong>Explorá con Appium MCP, implementá con WebdriverIO.</strong> Hay dos servidores MCP, <code>appium-mcp-driver</code> y <code>appium-mcp-passenger</code>, para ver pantallas, sacar capturas y proponer locators antes de escribir una screen. Se generan con el script del repo:</p>
+      <figure class="code"><figcaption><span class="path">PowerShell · package.json → appium:mcp:*</span></figcaption><pre><code>pnpm appium:mcp:help
+pnpm appium:mcp:driver:config
+pnpm appium:mcp:passenger:config</code></pre></figure>
+      <p class="why">Salen en <code>tests/mobile/appium/.generated/</code> (no se edita a mano) y usan <code>APP_ENV_FILE</code> (default <code>.env.test</code>). El MCP descubre; la ejecución repetible vive en el runtime del repo. Si una credencial del MCP falta, frená y avisá qué variable falta: no hay workaround. Detalle en <code>docs/testing/mobile-appium-mcp.md</code> del repo agentic-qa-boilerplate.</p>
+    </li>
+  </ol>
+
+  <h3><span class="idx">03</span>Estrategia de estabilidad</h3>
+  <dl class="defs">
+    <div><dt>Emulador lento</dt><dd><code>emulator-5554</code> a veces va con lag. Por eso las esperas son por condición con timeouts holgados (60 s por checkpoint) y por eso se acortó la ruta GPS. No subas pausas fijas.</dd></div>
+    <div><dt>Una sesión por dispositivo</dt><dd>Android permite depurar un WebView a la vez: una app abierta por dispositivo. Para dos dispositivos en paralelo cada uno necesita su <code>systemPort</code> (<code>ANDROID_DRIVER_SYSTEM_PORT</code>, <code>ANDROID_PASSENGER_SYSTEM_PORT</code>) y su <code>udid</code>. Cada persona o proceso que corra contra un dispositivo usa su propia sesión, su perfil y su copia de datos.</dd></div>
+    <div><dt>Datos por carrier</dt><dd>Un carrier nuevo es una entrada en <code>data/carriers.ts</code> (<code>region</code>, <code>locale</code>, <code>currency</code>, <code>routeId</code>, perfil de chofer por ambiente). Cero lógica por carrier en código; la ruta se inyecta, no se muta <code>process.env</code>.</dd></div>
+    <div><dt>Entorno y credenciales</dt><dd>Un archivo <code>.env.*</code> por contexto (TEST/emulador/FR). Las claves se validan por <em>nombre</em> y fallan nombrando la variable que falta; los valores nunca se imprimen. <code>noReset: true</code> conserva la sesión del chofer entre corridas.</dd></div>
+    <div><dt>Recuperación</dt><dd><code>helpers/driverStaleTripRecovery.ts</code> es la única implementación de «chofer varado en un viaje stale → home», como máquina de estados que verifica el éxito por polling de la URL. Úsala antes de reintentar una corrida.</dd></div>
+  </dl>
+
+  <h3><span class="idx">04</span>Checklist para revisar un PR de mobile</h3>
+  <p>Armada a partir de las reglas del documento de arquitectura y de los guards del código:</p>
+  <ul class="links" style="max-width:72ch">
+    <li>Sin <code>pause</code> ni <code>sleep</code> nuevos: esperas con <code>Waits</code> y un <code>label</code>.</li>
+    <li>Locators por clase, <code>app-*</code> o id; textos por <code>data/i18n</code>; nada de texto hardcodeado en la screen.</li>
+    <li>Las screens no leen <code>process.env</code> ni toman decisiones de negocio; eso es del PBO o del flow.</li>
+    <li>Todo paso irreversible pasa por gates y el flow no reintenta.</li>
+    <li>Credenciales solo por nombre de clave de <code>.env.*</code>; nada en logs, capturas ni commits.</li>
+    <li>La lógica pura tiene su <code>*.unit.ts</code> y corre con <code>npx tsx --test</code>.</li>
+    <li>Si cambia el handoff: sube <code>schemaVersion</code> en <em>ambos</em> repos y se actualizan los fixtures.</li>
+    <li>El caso trae su key Xray (<code>tms</code>) y el commit lleva <code>[TC-ID]</code>; hay evidencia con imagen.</li>
+    <li>El costo 0 hasta F7 va como observación <code>diferido-f7</code>, no como falla ni como pass silencioso.</li>
+  </ul>
+
+  <h3><span class="idx">05</span>Ejercicio en el emulador (TEST)</h3>
+  <div class="exercise">
+    <span class="tag">Emulador · TEST</span>
+    <ol>
+      <li>Pedile al equipo un handoff <code>prepared</code> de TEST y corré el <code>--dry-run</code>. Anotá qué bloqueantes lista el plan y cuáles son del ambiente, del dispositivo o del handoff.</li>
+      <li>Abrí <code>contracts/fixtures/f5-app-handoff.closed.json</code> y señalá qué campos agregó el runner respecto de <code>prepared</code>.</li>
+      <li>Generá la config de Appium MCP del driver y explorá la home del chofer sin escribir código: lista contextos, sacá una captura y pedí locators.</li>
+      <li>Revisá un PR mobile existente con el checklist y escribí tres comentarios.</li>
+    </ol>
+    <p>El cierre real y el verify con rendición los corre el orquestador, no vos, hasta que el equipo te habilite.</p>
+  </div>
+
+  <h3><span class="idx">06</span>Sé hacer</h3>
+  <ul class="checks" data-level="experto">
+    <li>Dibujo de memoria el circuito prepare → handoff → cierre por app → verify.</li>
+    <li>Nombro el gate de cada paso y qué pasa si falta uno.</li>
+    <li>Corrí el <code>--dry-run</code> del cierre sobre un handoff <code>prepared</code> e interpreté el plan.</li>
+    <li>Sé qué key Xray acredita cada spec y por qué <em>prepare</em> no acredita.</li>
+    <li>Registro el costo 0 como observación <code>diferido-f7</code>.</li>
+    <li>Generé la config de Appium MCP y exploré una pantalla sin escribir código.</li>
+    <li>Revisé un PR mobile con el checklist.</li>
+  </ul>
+
+  <h3><span class="idx">07</span>Autoevaluación</h3>
+  <div data-quiz="e1"></div>
+  <div data-quiz="e2"></div>
+
+  <h3><span class="idx">08</span>Recursos</h3>
+  <ul class="links">
+    <li><code>docs/qa/appium-pom-pbo-architecture.md</code>: capas screens, PBO, flows y core con sus reglas.</li>
+    <li><code>tests/mobile/appium/README.md</code>: manual de operación (suites, trazabilidad, trampas del directorio).</li>
+    <li><a href="https://github.com/webdriverio/appium-boilerplate" rel="noopener">webdriverio/appium-boilerplate</a>: contraste con una estructura mínima.</li>
+  </ul>
+</section>
+
+<!-- ====================== REFERENCIA ====================== -->
+<section class="level" id="lvl-referencia" data-level="referencia" aria-labelledby="h-referencia">
+  <div class="level-head">
+    <span class="kicker">Nivel 05 · Referencia</span>
+    <h2 id="h-referencia">Mapa del repo, glosario y troubleshooting</h2>
+  </div>
+  <p class="lede">Para consultar, no para leer de corrido. Las rutas son relativas a <code>magiis-playwright/tests/mobile/appium/</code> salvo que se indique otra cosa.</p>
+  <div class="note"><b>Versión del código.</b> Las carpetas <code>core/</code>, <code>pbo/</code>, <code>screens/</code>, <code>flows/</code> y <code>data/</code> están en <code>gitlab/main</code>. Si tu rama es anterior, actualizala antes de buscarlas.</div>
+
+  <h3><span class="idx">01</span>Mapa de archivos</h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Ruta</th><th>Para qué sirve</th></tr></thead>
+    <tbody>
+      <tr><td><code>config/appiumRuntime.ts</code></td><td class="wrapfirst">Resuelve ambiente, package, udid y arma las capabilities</td></tr>
+      <tr><td><code>base/AppiumSessionBase.ts</code></td><td>Base heredada por las screens: sesión, <code>switchToWebView</code>, helpers de WebView</td></tr>
+      <tr><td><code>core/MobileSession.ts</code></td><td>Sesión por composición (<code>start</code>, <code>end</code> con timeout, <code>evidence</code>)</td></tr>
+      <tr><td><code>core/Waits.ts</code></td><td>Esperas por condición: <code>until</code>, <code>tryUntil</code></td></tr>
+      <tr><td><code>core/Gates.ts</code></td><td>Guards de irreversibilidad y guard de mock GPS ajeno</td></tr>
+      <tr><td><code>core/I18n.ts</code> + <code>data/i18n/</code></td><td>Textos por idioma (es, en, fr); key faltante falla</td></tr>
+      <tr><td><code>data/carriers.ts</code></td><td>Carrier → región, locale, moneda, ruta GPS, perfil de chofer</td></tr>
+      <tr><td><code>driver/DriverHomeScreen.ts</code></td><td>Home del chofer: disponibilidad, overlay pre-home, viaje en cola</td></tr>
+      <tr><td><code>driver/DriverTripSummaryScreen.ts</code></td><td>Resumen del viaje, medio de pago, cierre y <code>signAndConfirm</code></td></tr>
+      <tr><td><code>driver/DriverFlowSelectors.ts</code></td><td>Checkpoints y selectores canónicos del flujo del chofer</td></tr>
+      <tr><td><code>driver/DriverTripPreflight.ts</code></td><td>Preflight puro: paquete, identidad, viaje en curso</td></tr>
+      <tr><td><code>screens/driver/*</code></td><td>POM por pantalla (confirm, in-progress, resume, firma, pagos)</td></tr>
+      <tr><td><code>pbo/*</code></td><td>Verbos de negocio con resultado tipado (sesión, ciclo del viaje, firma, GPS, pagos)</td></tr>
+      <tr><td><code>flows/F5AppCloseFlow.ts</code></td><td>Cierre de un viaje asignado, de punta a punta</td></tr>
+      <tr><td><code>harness/DriverTripHappyPathHarness.ts</code></td><td>Recorrido con checkpoints (camino anterior a los PBOs)</td></tr>
+      <tr><td><code>harness/F5CloseTripPlan.ts</code></td><td>Plan puro para <code>--dry-run</code> y corrida real</td></tr>
+      <tr><td><code>gps/GpsRouteFeeder.ts</code>, <code>gps/RoutePlan.ts</code></td><td>Alimentar y analizar rutas GPS; rutas en <code>gps/routes/</code></td></tr>
+      <tr><td><code>contracts/f5AppHandoff.ts</code></td><td>Contrato del handoff con Carrier V2 (+ fixtures)</td></tr>
+      <tr><td><code>helpers/appiumDebug.ts</code></td><td>Volcados de diagnóstico en <code>evidence/dom-dump/</code></td></tr>
+      <tr><td><code>helpers/screenEvidence.ts</code></td><td>Capturas por corrida y desbloqueo conservador de diálogos</td></tr>
+      <tr><td><code>helpers/driverStaleTripRecovery.ts</code></td><td>Sacar al chofer de un viaje stale hacia el home</td></tr>
+      <tr><td><code>helpers/webViewNetworkCapture.ts</code></td><td>Captura de fetch/XHR dentro de la página para afirmar requests</td></tr>
+      <tr><td><code>scripts/f5-driver-close-trip.ts</code></td><td>Runner del cierre por app sobre un handoff (gates + dry-run)</td></tr>
+      <tr><td><code>scripts/fr-driver-s3-closure.ts</code></td><td>Runner del cierre FR (chofer FR, carrier 1901)</td></tr>
+      <tr><td><code>scripts/fr-driver-preflight.ts</code></td><td>Preflight de solo lectura</td></tr>
+      <tr><td><code>scripts/diagnostics/dump-*.ts</code></td><td>Volcados para investigar pantallas; no son tests</td></tr>
+      <tr><td><code>scripts/generateAppiumMcpConfig.mjs</code></td><td>Genera la config de los servidores Appium MCP</td></tr>
+      <tr><td><code>*/specs/*.spec.ts</code></td><td>Los tests que corre Playwright y que dan veredicto</td></tr>
+      <tr><td><code>passenger/</code></td><td>Equivalente de la app Passenger (wallet, nuevo viaje, direcciones)</td></tr>
+      <tr><td><code>magiis-carrier-v2-e2e/tests/specs/trips/</code></td><td>Specs <code>f5-app-*</code> y <code>fr-circuit-s3-*</code> (otro repo)</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3><span class="idx">02</span>Glosario</h3>
+  <dl class="defs">
+    <div><dt>WebView</dt><dd>Navegador embebido donde corre la web app Ionic dentro del contenedor nativo.</dd></div>
+    <div><dt>Contexto</dt><dd><code>NATIVE_APP</code> o <code>WEBVIEW_*</code>. Se cambia explícitamente.</dd></div>
+    <div><dt>Capability</dt><dd>Parámetro del pedido de sesión a Appium (<code>appium:noReset</code>, <code>appium:udid</code>, etc.).</dd></div>
+    <div><dt>udid</dt><dd>Identificador del dispositivo, el que muestra <code>adb devices</code> (<code>emulator-5554</code>).</dd></div>
+    <div><dt>noReset</dt><dd>No borrar datos de la app: conserva la sesión del usuario entre corridas.</dd></div>
+    <div><dt>Handoff</dt><dd>Archivo JSON que pasa el viaje entre Playwright (crea/verifica) y Appium (cierra).</dd></div>
+    <div><dt>Checkpoint</dt><dd>Etapa observable del flujo (confirm, in-progress, resume, closed), con captura asociada.</dd></div>
+    <div><dt>Gate</dt><dd>Condición explícita (variable con valor exacto, flag de CLI) que debe cumplirse para una acción irreversible.</dd></div>
+    <div><dt>Screen / PBO / Flow</dt><dd>Pantalla modelada / verbo de negocio con resultado tipado / secuencia entre PBOs.</dd></div>
+    <div><dt>diferido-f7</dt><dd>Etiqueta para lo que se completa en la fase 7: hasta entonces la app envía costo 0 y se registra como observación.</dd></div>
+    <div><dt>PASS · FAIL · SIN_DATOS · NO_EJERCIDO</dt><dd>Estados honestos de la capa de autocomplete: un caso que no se pudo medir nunca sale verde.</dd></div>
+  </dl>
+
+  <h3><span class="idx">03</span>Troubleshooting</h3>
+  <details><summary>DRIVER_IS_NOT_AVAILABLE al asignar desde el carrier</summary><div><p><span class="sym">Causa:</span> el chofer no está «Disponible» en el home.</p><p>Dejalo disponible con <code>DriverHomeScreen.goOnline()</code> (o el script <code>driver-go-online.ts</code>) y verificá el texto «Disponible» antes de asignar.</p></div></details>
+  <details><summary>Oferta vieja en la app</summary><div><p><span class="sym">Síntoma:</span> la app muestra la oferta de un viaje que ya se canceló (el spec FR lo registra como known-issue de App Driver 2.6.17 cuando se asigna a mano).</p><p>Sacá al chofer con <code>helpers/driverStaleTripRecovery.ts</code> (script <code>driver-free-stale-trip.ts</code>) y confirmá que la URL llegó a <code>/navigator/home</code>. En un cierre real, <code>expectedTravelId</code> evita aceptar la oferta equivocada.</p></div></details>
+  <details><summary>Chromedriver no coincide con el WebView</summary><div><p><span class="sym">Síntoma:</span> no aparece el contexto <code>WEBVIEW_*</code>.</p><p><code>APPIUM_CHROMEDRIVER_EXECUTABLE</code> apuntando al chromedriver que coincide (154 en nuestro emulador), o autodownload con <code>appium --allow-insecure uiautomator2:chromedriver_autodownload</code>.</p></div></details>
+  <details><summary>Puntos GPS descartados / km sin medir</summary><div><p>Usá <code>mobile: setGeolocation</code> con <code>speed</code>, <code>bearing</code> y <code>accuracy</code>, paso mínimo 15 m, intervalo mínimo 1000 ms. Si el medido es muy bajo, la app conserva el presupuestado.</p></div></details>
+  <details><summary>Modal de firma que no cierra</summary><div><p>Revisá si hubo tinta (<code>hasInk</code>) y si «Confirm» estaba habilitado. Los viajes de cuenta corriente muestran «Sign and Close Trip» y no cierran hasta confirmar.</p></div></details>
+  <details><summary>Emulador sin sesión (app deslogueada)</summary><div><p>El preflight lo detecta (<code>loggedOut</code>) y hace login solo en ese caso, con credenciales del perfil. Si falla, corré el preflight de solo lectura, mirá el volcado y nunca tipees contraseñas con <code>adb</code>.</p></div></details>
+  <details><summary>Mock GPS de otra sesión</summary><div><p><code>assertNoForeignMockGps</code> frena la corrida. Liberá con <code>adb -s emulator-5554 shell am stopservice io.appium.settings/.LocationService</code>.</p></div></details>
+  <details><summary>Dos apps abiertas y la sesión no abre</summary><div><p>Una app a la vez por dispositivo. <code>adb shell am force-stop</code> de la otra y reintentá.</p></div></details>
+
+  <h3><span class="idx">04</span>Autoevaluación</h3>
+  <div data-quiz="r1"></div>
+
+  <h3><span class="idx">05</span>Ruta de estudio</h3>
+  <p>Orden sugerido para quien llega sin experiencia en Appium. Combiná un curso con este repo: lo aprendés una vez, lo aplicás dos veces.</p>
+  <div class="cols">
+    <div>
+      <h4>Cursos y videos</h4>
+      <ul class="links">
+        <li><a href="https://www.udemy.com/course/appium-webdriverio-mobile-automation/" rel="noopener">Udemy · Appium + WebdriverIO</a>. JavaScript. Usa el runner wdio; nosotros usamos webdriverio standalone.</li>
+        <li><a href="https://classcentral.com/classroom/youtube-mobile-automation-test-with-nodejs-appium-webdriverio-61601" rel="noopener">Serie de YouTube vía Class Central</a>. Node.js + Appium + WebdriverIO.</li>
+      </ul>
+    </div>
+    <div>
+      <h4>Documentación y ejemplos</h4>
+      <ul class="links">
+        <li><a href="https://github.com/webdriverio/appium-boilerplate" rel="noopener">webdriverio/appium-boilerplate</a></li>
+        <li><a href="https://appium.io/docs/en/2.4/guides/context" rel="noopener">Appium · guía de contextos</a></li>
+        <li><a href="https://webdriver.io/docs/api/mobile/switchContext" rel="noopener">WebdriverIO · switchContext</a></li>
+        <li><a href="https://webdriver.io/docs/api/mobile" rel="noopener">WebdriverIO · API mobile</a></li>
+        <li><a href="https://testautomationu.applitools.com/appium-java-tutorial/chapter6.1.html" rel="noopener">Test Automation University · capítulo 6.1</a></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>Fuentes: README de <code>tests/mobile/appium</code>, <code>docs/qa/appium-pom-pbo-architecture.md</code>, el código citado en cada bloque y los specs de <code>magiis-carrier-v2-e2e</code>. Los extractos de código están recortados y con la sangría reducida. El progreso se guarda solo en este navegador.</p>
+</footer>
+</main>
+
+<script>
+(function () {
+  var LEVELS = ['principiante', 'intermedio', 'avanzado', 'experto', 'referencia'];
+  var KEY = 'appium-onboarding-v1';
+  var state = { checks: {}, quiz: {}, theme: null };
+
+  function load() {
+    try {
+      var raw = window.localStorage.getItem(KEY);
+      if (raw) { var p = JSON.parse(raw); if (p && typeof p === 'object') { state.checks = p.checks || {}; state.quiz = p.quiz || {}; state.theme = p.theme || null; } }
+    } catch (e) { /* sin almacenamiento: la página funciona igual */ }
+  }
+  function save() {
+    try { window.localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* ignorar */ }
+  }
+
+  document.documentElement.classList.add('js');
+  load();
+
+  /* ---- tema ---- */
+  var root = document.documentElement;
+  var themeBtn = document.getElementById('theme-toggle');
+  function currentTheme() {
+    var t = root.getAttribute('data-theme');
+    if (t) return t;
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  if (state.theme === 'light' || state.theme === 'dark') root.setAttribute('data-theme', state.theme);
+  function paintThemeBtn() { themeBtn.textContent = currentTheme() === 'dark' ? 'Tema claro' : 'Tema oscuro'; }
+  themeBtn.addEventListener('click', function () {
+    var next = currentTheme() === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    state.theme = next; save(); paintThemeBtn();
+  });
+  paintThemeBtn();
+
+  /* ---- niveles por hash ---- */
+  var sections = {}; LEVELS.forEach(function (l) { sections[l] = document.getElementById('lvl-' + l); });
+  var navLinks = document.querySelectorAll('#level-nav a');
+  function levelFromHash() {
+    var h = (window.location.hash || '').replace('#', '');
+    return LEVELS.indexOf(h) >= 0 ? h : LEVELS[0];
+  }
+  /* Documento completo: todos los niveles visibles; las pestañas solo saltan al nivel. */
+  function markNav(lvl) {
+    Array.prototype.forEach.call(navLinks, function (a) {
+      if (a.getAttribute('data-level') === lvl) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+    });
+    var active = document.querySelector('#level-nav a[aria-current="page"]');
+    if (active && active.scrollIntoView) { try { active.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } catch (e) { /* ignorar */ } }
+  }
+  function showLevel() {
+    var h = (window.location.hash || '').replace('#', '');
+    var lvl = levelFromHash();
+    markNav(lvl);
+    if (LEVELS.indexOf(h) >= 0 && sections[lvl] && sections[lvl].scrollIntoView) {
+      try { sections[lvl].scrollIntoView({ block: 'start' }); } catch (e) { sections[lvl].scrollIntoView(); }
+    }
+  }
+  window.addEventListener('hashchange', showLevel);
+  Array.prototype.forEach.call(navLinks, function (a) {
+    a.addEventListener('click', function (ev) {
+      var lvl = a.getAttribute('data-level');
+      if ((window.location.hash || '').replace('#', '') === lvl) { ev.preventDefault(); showLevel(); }
+    });
+  });
+  /* Al desplazarse, la pestaña sigue al nivel que se está leyendo. */
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) { if (en.isIntersecting) markNav(en.target.getAttribute('data-level')); });
+    }, { rootMargin: '-35% 0px -60% 0px' });
+    LEVELS.forEach(function (l) { if (sections[l]) io.observe(sections[l]); });
+  }
+  /* Paginador al final de cada nivel: anterior / siguiente, sin requisitos. */
+  var NAMES = { principiante: 'Principiante', intermedio: 'Intermedio', avanzado: 'Avanzado', experto: 'Experto', referencia: 'Referencia' };
+  LEVELS.forEach(function (l, i) {
+    var sec = sections[l]; if (!sec) return;
+    var nav = document.createElement('nav'); nav.className = 'pager'; nav.setAttribute('aria-label', 'Pasar de nivel');
+    if (i > 0) { var p = document.createElement('a'); p.href = '#' + LEVELS[i - 1]; p.textContent = '← ' + NAMES[LEVELS[i - 1]]; nav.appendChild(p); }
+    if (i < LEVELS.length - 1) { var n = document.createElement('a'); n.className = 'next'; n.href = '#' + LEVELS[i + 1]; n.textContent = NAMES[LEVELS[i + 1]] + ' →'; nav.appendChild(n); }
+    sec.appendChild(nav);
+  });
+
+  /* ---- checklists ---- */
+  var allChecks = [];
+  Array.prototype.forEach.call(document.querySelectorAll('ul.checks'), function (ul) {
+    var level = ul.getAttribute('data-level');
+    Array.prototype.forEach.call(ul.children, function (li, i) {
+      var id = 'chk-' + level + '-' + (i + 1);
+      var label = document.createElement('label'); label.setAttribute('for', id);
+      var input = document.createElement('input'); input.type = 'checkbox'; input.id = id; input.setAttribute('data-level', level);
+      var span = document.createElement('span');
+      while (li.firstChild) span.appendChild(li.firstChild);
+      label.appendChild(input); label.appendChild(span); li.appendChild(label);
+      input.checked = state.checks[id] === true;
+      input.addEventListener('change', function () { state.checks[id] = input.checked; save(); updateProgress(); });
+      allChecks.push(input);
+    });
+  });
+
+  var fill = document.getElementById('progress-fill');
+  var track = document.getElementById('progress-track');
+  var text = document.getElementById('progress-text');
+  function updateProgress() {
+    var done = allChecks.filter(function (c) { return c.checked; }).length;
+    var total = allChecks.length;
+    var pct = total ? Math.round(done * 100 / total) : 0;
+    fill.style.width = pct + '%';
+    track.setAttribute('aria-valuenow', String(pct));
+    text.textContent = done + ' / ' + total;
+    ['principiante', 'intermedio', 'avanzado', 'experto'].forEach(function (l) {
+      var inLevel = allChecks.filter(function (c) { return c.getAttribute('data-level') === l; });
+      var d = inLevel.filter(function (c) { return c.checked; }).length;
+      var el = document.querySelector('[data-count="' + l + '"]');
+      if (el) el.textContent = d + '/' + inLevel.length;
+    });
+  }
+  updateProgress();
+
+  var resetBtn = document.getElementById('reset-progress');
+  var resetTimer = null;
+  resetBtn.addEventListener('click', function () {
+    if (resetTimer === null) {
+      resetBtn.textContent = 'Confirmar'; resetBtn.classList.add('primary');
+      resetTimer = window.setTimeout(function () { resetTimer = null; resetBtn.textContent = 'Reiniciar'; resetBtn.classList.remove('primary'); }, 4000);
+      return;
+    }
+    window.clearTimeout(resetTimer); resetTimer = null;
+    resetBtn.textContent = 'Reiniciar'; resetBtn.classList.remove('primary');
+    state.checks = {}; state.quiz = {}; save();
+    allChecks.forEach(function (c) { c.checked = false; });
+    renderQuizzes(); updateProgress();
+  });
+
+  /* ---- autoevaluaciones ---- */
+  var QUIZ = {
+    p1: { q: '¿Qué chequeo prueba el stack completo (cable, Appium, driver y chromedriver)?', opts: ['adb devices', 'GET /status del servidor Appium', 'Abrir y cerrar una sesión real contra el dispositivo'], a: 2, why: 'Los dos primeros pueden dar verde con un stack que no logra abrir sesión. Solo la sesión real prueba todo el camino.' },
+    p2: { q: 'En el page source nativo de la app Driver no encontrás el botón «Aceptar». ¿Por qué?', opts: ['Appium no soporta apps Ionic', 'El botón vive en el DOM del WebView: hay que cambiar a WEBVIEW_*', 'Falta activar noReset'], a: 1, why: 'La app es híbrida: lo nativo y el DOM son contextos distintos y el cambio es explícito.' },
+    i1: { q: 'Un click por coordenadas no hace nada en la app Driver. ¿Qué hacemos?', opts: ['Subir la pausa antes del click', 'driver.execute con element.click() dentro del WebView', 'Reintentar el click diez veces'], a: 1, why: 'El ion-content intercepta los clicks por coordenadas. El click por JS llega al elemento y se verifica por su consecuencia.' },
+    i2: { q: 'Necesitás esperar a que aparezca el modal de firma. ¿Qué es lo correcto?', opts: ['pause(5000) y seguir', 'Waits.until(() => isShown(), { label, timeout })', 'Un try/catch sin espera'], a: 1, why: 'Se espera una condición observable con un label humano; una pausa fija se cae con emulador lento.' },
+    a1: { q: 'El emulador «se movió» pero la app no midió km. ¿Causa más probable?', opts: ['Se usó setGeoLocation sin speed y la app descartó los puntos', 'El carrier está en otro país', 'Falta la firma del pasajero'], a: 0, why: 'Hace falta mobile: setGeolocation con speed, bearing y accuracy, a cadencia estable.' },
+    a2: { q: 'El viaje cerrado por la app tiene un total distinto de la cotización de alta. ¿Es un defecto?', opts: ['Sí, siempre', 'No: el cierre por app recalcula con los km y tiempos medidos', 'Solo si la moneda no es USD'], a: 1, why: 'Solo un cierre de administrador sin cambios iguala la cotización. Por eso el contrato no compara quoted.total por igualdad.' },
+    e1: { q: '¿Qué dos gates abren el cierre irreversible por app?', opts: ['F5_APP_CLOSE=1 y el flag --confirm', '--dry-run y CI=1', 'Solo --confirm'], a: 0, why: 'irreversibleCloseGates exige las dos condiciones y las evalúa antes de hacer nada.' },
+    e2: { q: 'El verify detecta costo 0 en un viaje cerrado por la app. ¿Cómo se registra?', opts: ['Como FAILED', 'Como observación diferido-f7, sin fallar', 'Se ignora sin anotar'], a: 1, why: 'Hasta la fase 7 la app envía costo 0: se anota como observación para que el dato no se pierda ni se confunda con un defecto.' },
+    r1: { q: 'Al asignar desde el carrier aparece DRIVER_IS_NOT_AVAILABLE. ¿Qué mirás primero?', opts: ['Reinstalar la app Driver', 'Que el chofer esté «Disponible» en el home', 'Cambiar el chromedriver'], a: 1, why: 'El carrier no asigna a un chofer que no está disponible.' }
+  };
+  var LETTERS = ['a', 'b', 'c'];
+  function renderQuizzes() {
+    Array.prototype.forEach.call(document.querySelectorAll('[data-quiz]'), function (slot) {
+      var id = slot.getAttribute('data-quiz'); var q = QUIZ[id]; if (!q) return;
+      slot.className = 'quiz'; slot.textContent = '';
+      var fs = document.createElement('fieldset');
+      var lg = document.createElement('legend'); lg.textContent = q.q; fs.appendChild(lg);
+      var fb = document.createElement('p'); fb.className = 'feedback'; fb.setAttribute('role', 'status'); fb.setAttribute('aria-live', 'polite'); fb.id = 'quiz-' + id + '-feedback';
+      var rows = [];
+      q.opts.forEach(function (o, i) {
+        var lab = document.createElement('label'); lab.className = 'opt'; lab.setAttribute('for', 'quiz-' + id + '-' + LETTERS[i]);
+        var inp = document.createElement('input'); inp.type = 'radio'; inp.name = 'quiz-' + id; inp.id = 'quiz-' + id + '-' + LETTERS[i]; inp.value = String(i);
+        var sp = document.createElement('span'); sp.textContent = o;
+        lab.appendChild(inp); lab.appendChild(sp); fs.appendChild(lab); rows.push({ lab: lab, inp: inp });
+        inp.addEventListener('change', function () { answer(i, true); });
+      });
+      function answer(i, persist) {
+        rows.forEach(function (r, k) { r.lab.classList.remove('right', 'wrong'); r.inp.checked = (k === i); });
+        var ok = i === q.a;
+        rows[i].lab.classList.add(ok ? 'right' : 'wrong');
+        if (!ok) rows[q.a].lab.classList.add('right');
+        fb.className = 'feedback ' + (ok ? 'ok' : 'ko');
+        fb.textContent = (ok ? 'Correcto. ' : 'No es esa. ') + q.why;
+        if (persist) { state.quiz[id] = i; save(); }
+      }
+      fs.appendChild(fb); slot.appendChild(fs);
+      if (typeof state.quiz[id] === 'number' && state.quiz[id] >= 0 && state.quiz[id] < q.opts.length) answer(state.quiz[id], false);
+    });
+  }
+  renderQuizzes();
+
+  /* ---- botones de copiar ---- */
+  var copyIndex = 0;
+  Array.prototype.forEach.call(document.querySelectorAll('figure.code'), function (fig) {
+    var cap = fig.querySelector('figcaption'); var pre = fig.querySelector('pre'); if (!cap || !pre) return;
+    var nocopy = fig.getAttribute('data-nocopy') === 'true';
+    copyIndex += 1;
+    if (nocopy) return;
+    var btn = document.createElement('button'); btn.type = 'button'; btn.className = 'copy'; btn.id = 'copy-' + copyIndex; btn.textContent = 'Copiar';
+    btn.setAttribute('aria-label', 'Copiar el bloque de código');
+    btn.addEventListener('click', function () {
+      var code = pre.innerText || pre.textContent || '';
+      function done(ok) { btn.textContent = ok ? 'Copiado' : 'Seleccioná y copiá'; window.setTimeout(function () { btn.textContent = 'Copiar'; }, 1800); }
+      function fallback() {
+        try {
+          var range = document.createRange(); range.selectNodeContents(pre);
+          var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+          done(false);
+        } catch (e) { done(false); }
+      }
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(code).then(function () { done(true); }, fallback);
+        } else { fallback(); }
+      } catch (e) { fallback(); }
+    });
+    cap.appendChild(btn);
+  });
+
+  showLevel();
+})();
+</script>
